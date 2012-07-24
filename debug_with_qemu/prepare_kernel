@@ -1,0 +1,11 @@
+## build kernel 
+
+export ARCH=arm
+export CROSS_COMPILE=arm-none-linux-gnueabi-
+
+make vexpress_defconfig 
+
+turn on. KGDB. 
+
+make -j8
+
