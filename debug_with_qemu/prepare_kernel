@@ -1,8 +1,22 @@
-## build kernel 
+## toolchain.. 
+
+# install toolchain.. 
+sudo apt-get install gcc-4.6-arm-linux-gnueabi
+
+# gcc -v
+$ arm-linux-gnueabi-gcc -v  
+Using built-in specs.
+COLLECT_GCC=arm-linux-gnueabi-gcc
+COLLECT_LTO_WRAPPER=/usr/lib/gcc/arm-linux-gnueabi/4.6.1/lto-wrapper
+Target: arm-linux-gnueabi
+Configured with: ../src/configure -v --with-pkgversion='Ubuntu/Linaro 4.6.1-9ubuntu3' --with-bugurl=file:///usr/share/doc/gcc-4.6/README.Bugs --enable-languages=c,c++,fortran,objc,obj-c++ --prefix=/usr --program-suffix=-4.6 --enable-shared --enable-linker-build-id --with-system-zlib --libexecdir=/usr/lib --without-included-gettext --enable-threads=posix --with-gxx-include-dir=/usr/arm-linux-gnueabi/include/c++/4.6.1 --libdir=/usr/lib --enable-nls --enable-clocale=gnu --enable-libstdcxx-debug --enable-libstdcxx-time=yes --enable-plugin --enable-objc-gc --enable-multilib --disable-sjlj-exceptions --with-arch=armv7-a --with-float=softfp --with-fpu=vfpv3-d16 --with-mode=thumb --disable-werror --enable-checking=release --build=i686-linux-gnu --host=i686-linux-gnu --target=arm-linux-gnueabi --program-prefix=arm-linux-gnueabi- --includedir=/usr/arm-linux-gnueabi/include --with-headers=/usr/arm-linux-gnueabi/include --with-libs=/usr/arm-linux-gnueabi/lib
+Thread model: posix
+gcc version 4.6.1 (Ubuntu/Linaro 4.6.1-9ubuntu3) 
 
 export ARCH=arm
-export CROSS_COMPILE=arm-none-linux-gnueabi-
+export CROSS_COMPILE=arm-linux-gnueabi-
 
+## build kernel..
 make vexpress_defconfig 
 
 turn on. KGDB. 
