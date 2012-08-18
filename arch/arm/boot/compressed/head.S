@@ -111,7 +111,7 @@
 		bl	memdump		/* dump 256 bytes at start of kernel */
 #endif
 		.endm
-
+		/** Iamroot kernel study C team - linux source investigation start! **/
 		/** 20120818 할당,실행가능(GNU-Assembler.pdf참조) **/
 		.section ".start", #alloc, #execinstr  
 /*
