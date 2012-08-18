@@ -112,19 +112,29 @@
 #endif
 		.endm
 
-		.section ".start", #alloc, #execinstr
+		/** 20120818 할당,실행가능(GNU-Assembler.pdf참조) **/
+		.section ".start", #alloc, #execinstr  
 /*
  * sort out different calling conventions
  */
+		
+		/** 20120818 정렬, ARM모드 **/
 		.align
 		.arm				@ Always enter in ARM state
 start:
+		/** 20120818 심볼에 대한 형과 속성을 지정**/
 		.type	start,#function
+		/** 20120818 .rept부터 .endr까지 무의미한 8번 반복함
+		http://www.iamroot.org/xe/23099) **/
 		.rept	7
+		
 		mov	r0, r0
 		.endr
+		/** 20120818 ARM, THUMB 매크로정의됨(arch/arm/include/asm/unified.h) **/
    ARM(		mov	r0, r0		)
+		/** 20120818 1f(1 레이블위치의 앞으로 점프)**/
    ARM(		b	1f		)
+
  THUMB(		adr	r12, BSYM(1f)	)
  THUMB(		bx	r12		)
 
@@ -132,6 +142,7 @@ start:
 		.word	start			@ absolute load/run zImage address
 		.word	_edata			@ zImage end address
  THUMB(		.thumb			)
+		/** 20120818 부트로더 정보(ID, ATAGS) 저장**/
 1:		mov	r7, r1			@ save architecture ID
 		mov	r8, r2			@ save atags pointer
 
@@ -141,15 +152,31 @@ start:
 		 * FIQs/IRQs (numeric definitions from angel arm.h source).
 		 * We only do this if we were in user mode on entry.
 		 */
+		/** 20120818 만약 유저모드가 아니면 Not Angel로 진입함**/
 		mrs	r2, cpsr		@ get current mode
 		tst	r2, #3			@ not user?
 		bne	not_angel
 		mov	r0, #0x17		@ angel_SWIreason_EnterSVC
+		/**
+		20120818 Angel이 사용하는 SWI번호(0x123456,0xab)
+		http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0040d/ch12s12s01.html
+		**/
  ARM(		swi	0x123456	)	@ angel_SWI_ARM
  THUMB(		svc	0xab		)	@ angel_SWI_THUMB
 not_angel:
 		mrs	r2, cpsr		@ turn off interrupts to
+		/**20120818 FIQ/IRQ Disable시킴**/
 		orr	r2, r2, #0xc0		@ prevent angel from running
+		/**
+		  _c : sets the control field mask bit(bit 0)
+		  : CPSR/SPSR 레지스터의 [0-7]bit만을 변경한다.
+		  _x : sets the extention field mask bit(bit 1)
+		  : CPSR/SPSR 레지스터의 [8-15]bit만을 변경한다.
+		  _s : sets the status field mask bit(bit 2)
+		  : CPSR/SPSR 레지스터의 [16-23]bit만을 변경한다.
+		  _f : sets the flags field mask bit(bit 3)
+		  : CPSR/SPSR 레지스터의 [24-31]bit만을 변경한다.
+		 **/
 		msr	cpsr_c, r2
 #else
 		teqp	pc, #0x0c000003		@ turn off interrupts
@@ -165,14 +192,42 @@ not_angel:
 		 * by the linker here, but it should preserve r7, r8, and r9.
 		 */
 
+		/** 
+		20120818 섹션 지정 방법 (vmlinux.lds)
+		  .text : {
+		       _start = .;
+		       *(.start)
+		       *(.text)
+		       *(.text.*)
+		       *(.fixup)
+		       *(.gnu.warning)
+		       *(.glue_7t)
+		       *(.glue_7)
+		     }
+		 **/
 		.text
 
+		/** 20120818 압축해제된 커널 이미지 어드레스 위치 지정 (Kconfig)
+		  AUTO_ZRELADDR
+		  bool "Auto calculation of the decompressed kernel image address"
+		  depends on !ZBOOT_ROM && !ARCH_U300
+		  help
+		  ZRELADDR is the physical address where the decompressed kernel
+		  image will be placed. If AUTO_ZRELADDR is selected, the address
+		  will be determined at run-time by masking the current IP with
+		  0xf8000000. This assumes the zImage being placed in the first 128MB
+		  from start of memory.
+		 **/
 #ifdef CONFIG_AUTO_ZRELADDR
 		@ determine final kernel image address
 		mov	r4, pc
 		and	r4, r4, #0xf8000000
 		add	r4, r4, #TEXT_OFFSET
 #else
+
+		/** 20120818 vexpress보드일때 zreladdr의 값 
+		arch/arm/mach-vexpress/Makefile.boot:   zreladdr-y	+= 0x60008000
+		**/
 		ldr	r4, =zreladdr
 #endif
 
@@ -198,7 +253,7 @@ restart:	adr	r0, LC0
 		ldrb	r9, [r10, #0]
 		ldrb	lr, [r10, #1]
 		orr	r9, r9, lr, lsl #8
-		ldrb	lr, [r10, #2]
+
 		ldrb	r10, [r10, #3]
 		orr	r9, r9, lr, lsl #16
 		orr	r9, r9, r10, lsl #24
@@ -501,6 +556,7 @@ params:		ldr	r0, =0x10000100		@ params_phys for RPC
  * This routine must preserve:
  *  r4, r7, r8
  */
+		/** 20120818 캐쉬라인을 고려하여 32바이트로 정렬 **/
 		.align	5
 cache_on:	mov	r3, #8			@ cache_on function
 		b	call_cache_fn
@@ -748,6 +804,7 @@ call_cache_fn:	adr	r12, proc_types
  * defined.
  */
 		.align	2
+	/** 20120818 ARM CPU Type (Data Object)**/
 		.type	proc_types,#object
 proc_types:
 		.word	0x00000000		@ old ARM ID
