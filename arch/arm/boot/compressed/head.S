@@ -253,6 +253,7 @@ restart:	adr	r0, LC0
 		ldrb	r9, [r10, #0]
 		ldrb	lr, [r10, #1]
 		orr	r9, r9, lr, lsl #8
+		ldrb	lr, [r10, #2]
 
 		ldrb	r10, [r10, #3]
 		orr	r9, r9, lr, lsl #16
