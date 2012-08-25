@@ -630,27 +630,69 @@ __armv3_mpu_cache_on:
 #define CB_BITS 0x0c
 #endif
 
+/**
+	20120825 __setup_mmu
+	mmu enable하기 전에 page directory를 구성하는 부분.
+	램 영역(압축 해제된 커널이 실행될 영역포함)에 대한 cache와 write buffer 속성 설정 (256MB 사이)
+
+	label 1 ~ b 1b 루프 다음의 코드는 현재 코드가 flash에서 실행될 경우 속성을 동일하게 처리하는 부분
+
+	 r4에는 zreladdr 값이 저장되어 있음 (_start)
+	AUTO_ZRELADDR
+	bool "Auto calculation of the decompressed kernel image address"
+
+	r3에 압축 해제된 커널이 위치할 16k 아래부터 page directory를 저장한다 
+	  -- 페이지 테이블이 시작할 위치
+**/
 __setup_mmu:	sub	r3, r4, #16384		@ Page directory size
+/**
+	20120825 16kb alignment를 맞춰주는 작업
+	bic의 immed 표현은 8비트까지 가능하기 때문에 두 번의 bic로 나눠 수행
+**/
 		bic	r3, r3, #0xff		@ Align the pointer
 		bic	r3, r3, #0x3f00
 /*
  * Initialise the page tables, turning on the cacheable and bufferable
  * bits for the RAM area only.
  */
+/**
+	20120825
+	Cortex-A Programmer Guide
+		Figure 8-3 L1 page table entry format 참고
+
+	r3->r0에 복사 vexpress는0x60004000
+ **/
 		mov	r0, r3
+/** 20120825 압축 해제될 위치 하위 256KB까지의 주소를 날린다 ... 왜 18bit인지??? 약속이 있는지??? **/
 		mov	r9, r0, lsr #18
 		mov	r9, r9, lsl #18		@ start of RAM
+/** 20120825 RAM 시작주소 + 256MB (최근의 플랫폼은 256MB를 기본으로 한다) **/
 		add	r10, r9, #0x10000000	@ a reasonable RAM size
+/** 20120825 r1: 0xc12. XN|U + section mapping ??? **/
 		mov	r1, #0x12		@ XN|U + section mapping
 		orr	r1, r1, #3 << 10	@ AP=11
+/** 20120825 r2는 page directory의 끝 주소 **/
 		add	r2, r3, #16384
+/** 20120825 r1 0xc12로, r9 0x60000000부터 시작 */
 1:		cmp	r1, r9			@ if virt > start of RAM
 		cmphs	r10, r1			@   && end of RAM > virt
+/**
+	20120825
+XN
+The Execute-never bit. Determines whether the processor can execute software from the addressed region, see Execute-never restrictions on instruction fetching on page B3-1350.
+This bit is not present in a Page table entry.   ... from ARM Architecture Reference Manual
+**/
 		bic	r1, r1, #0x1c		@ clear XN|U + C + B
 		orrlo	r1, r1, #0x10		@ Set XN|U for non-RAM
+/**
+	20120825  r6 <- CB_BITS | 0x02
+	  현재 target으로 삼은 vexpress 에서는 define 되어 있지 않음으로 0x0c | 0x02
+**/
 		orrhs	r1, r1, r6		@ set RAM section settings
+/** 20120825 r0는 page directory의 시작 주소 **/
 		str	r1, [r0], #4		@ 1:1 mapping
-		add	r1, r1, #1048576
+		add	r1, r1, #1048576	/** 20120528 r1은 1MB씩 증가 **/
+/** 20120825 page directory의 끝까지 도달했는지 검사 **/
 		teq	r0, r2
 		bne	1b
 /*
@@ -659,16 +701,41 @@ __setup_mmu:	sub	r3, r4, #16384		@ Page directory size
  * so there is no map overlap problem for up to 1 MB compressed kernel.
  * If the execution is in RAM then we would only be duplicating the above.
  */
+/** 20120825 r1 <- r6(CB_BITS|0x02) | B **/
 		orr	r1, r6, #0x04		@ ensure B is set for this
+/** 20120825 r1 <- r1 + AP(11) **/
 		orr	r1, r1, #3 << 10
 		mov	r2, pc
+/** 20120825 r2(pc)에서 1MB 아래를 날린다 - page table에 쓸 base address의 index를 구함  **/
 		mov	r2, r2, lsr #20
+/**
+	20120825 r1 <- r2(base address index) * 1MB + r1(속성값)
+	결국 r1에 page directory entry에 넣어줄 값 넣어둠
+ **/
 		orr	r1, r1, r2, lsl #20
+/**
+	20120825
+	r3 page directory start address. vexpress는 (DRAM)  0x60004000
+	r2 base address index
+	r0 <- r3 + r2 * 4(entry의 크기)
+		r0는 page directory entry의 절대주소 (pc가 위치한 page directory entry 위치)
+ **/
 		add	r0, r3, r2, lsl #2
 		str	r1, [r0], #4
+/** 20120825 그 다음 1MB에 대해서도 동일한 방법으로(base address는 1MB 증가) entry를 씀 **/
 		add	r1, r1, #1048576
 		str	r1, [r0]
 		mov	pc, lr
+/** 20120825
+  일단 debugger 등에서 사용될 정보를 넣어주는 부분. assembly에서의 역할은???
+
+#define ENDPROC(name) \
+  .type name, @function; \
+  END(name)
+
+#define END(name) \
+  .size name, .-name
+ **/
 ENDPROC(__setup_mmu)
 
 __arm926ejs_mmu_cache_on:
@@ -698,13 +765,40 @@ __armv4_mmu_cache_on:
 		mov	pc, r12
 
 __armv7_mmu_cache_on:
+/** 20120825 r12에 복귀주소 저장 **/
 		mov	r12, lr
 #ifdef CONFIG_MMU
+/**
+	20120825 memory model feature register
+	MMFR0 레지스터에서 c0, c1 4 값을 읽어온다
+**/
 		mrc	p15, 0, r11, c0, c1, 4	@ read ID_MMFR0
+/**
+	20120825 virtual memory system architecture
+	VMSA support 확인
+ **/
 		tst	r11, #0xf		@ VMSA
+/**
+	20120825  CB_BITS 값이 2를 bit or해 __setup_mmu에서 사용할 r6 값을 만들어 준다.
+	  CB_BITS는 CONFIG_CPU_DCACHE_WRITETHROUGH 여부에 따라 값이 달라진다.
+	  현재 target으로 삼은 vexpress 에서는 define 되어 있지 않음으로 0x0c | 0x02
+	 
+	#ifdef CONFIG_CPU_DCACHE_WRITETHROUGH
+	#define CB_BITS 0x08
+	#else
+	#define CB_BITS 0x0c
+	#endif
+**/
 		movne	r6, #CB_BITS | 0x02	@ !XN
+/**
+	20120825 마찬가지로 ne이므로 __setup_mmu로 bl
+**/
 		blne	__setup_mmu
 		mov	r0, #0
+/**
+	20120825 mmu enable 전의 준비 과정
+	p15, c7, c10, 4는 Drain Write Buffer (DWB) 였으나 ARMv6부터 Data Synchronization Barrier로 이름이 변경됨
+ **/
 		mcr	p15, 0, r0, c7, c10, 4	@ drain write buffer
 		tst	r11, #0xf		@ VMSA
 		mcrne	p15, 0, r0, c8, c7, 0	@ flush I,D TLBs
@@ -774,6 +868,22 @@ __common_mmu_cache_on:
  *  r12 = corrupted
  */
 
+/**
+	20120825 코프로세서로부터 processor ID를 가져오고
+	proc_types 을 순회하며 processor ID와 비교해 해당하는 엔트리를 찾는다.
+	r12에 해당 엔트리 주소가 있고, r3에 넣어준 offset 값의 함수를 가져온다.
+	함수 호출시 r3에 호출을 원하는 함수를 위한 offset을 미리 넣어줘야 한다.
+		8 => cache on
+		12 => cache off
+		16 => cache flush
+
+	W매크로는 thumb 모드에서 인스트럭션 뒤에 .w를 붙여준다.
+		.word	0x000f0000		@ new CPU Id ... value
+		.word	0x000f0000		@ ... mask
+		W(b)	__armv7_mmu_cache_on 	@ #define W(instr)	instr
+		W(b)	__armv7_mmu_cache_off
+		W(b)	__armv7_mmu_cache_flush
+ **/
 call_cache_fn:	adr	r12, proc_types
 #ifdef CONFIG_CPU_CP15
 		mrc	p15, 0, r9, c0, c0	@ get processor ID
