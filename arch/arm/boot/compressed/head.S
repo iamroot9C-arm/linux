@@ -233,14 +233,36 @@ not_angel:
 
 		bl	cache_on
 
+/**
+  20120901
+  adr 에서 상대주소의 개념.
+  objdump 결과.. 
+ 	155390 00000198 <LC0>:
+	155391      198:   00000198 00255c88 00255ca0 00255c88     .....\%..\%..\%.
+	155392      1a8:   00255c4d 00255c60 00255c84 00256ca0     M\%.`\%..\%..l%.
+	155393      1b8:   e320f000 e320f000                       .. ... .
+
+	155164 restart:    adr r0, LC0
+	155165       68:   e28f0f4a    add r0, pc, #296    ; 0x128
+	
+	adr 은 add 로 변환됨. 
+	68 라인이 수행될 때, pc 값은  0x70. 이 되고, 
+		0x128과 pc값을 더하면, 0x198이 되어서 LC0의 위치를 지정하게 됨. 
+ **/
 restart:	adr	r0, LC0
 		ldmia	r0, {r1, r2, r3, r6, r10, r11, r12}
+/** 20120901
+	stack에 L_user_stack_end의 주소를 저장시킴
+**/
 		ldr	sp, [r0, #28]
 
 		/*
 		 * We might be running at a different address.  We need
 		 * to fix up various pointers.
 		 */
+/** 20120901
+	r0, r1 에 다른 값이 있을 수 있는지 ???
+**/
 		sub	r0, r0, r1		@ calculate the delta offset
 		add	r6, r6, r0		@ _edata
 		add	r10, r10, r0		@ inflated kernel size location
@@ -250,6 +272,9 @@ restart:	adr	r0, LC0
 		 * decompressed kernel at the end of the compressed data
 		 * in little-endian form.
 		 */
+/** 20120901
+	host에서 빌드시에 바로 little endian으로 kernel size를 넣어주는게 더 좋지 않을까???
+**/
 		ldrb	r9, [r10, #0]
 		ldrb	lr, [r10, #1]
 		orr	r9, r9, lr, lsl #8
@@ -273,6 +298,9 @@ restart:	adr	r0, LC0
 #endif
 
 		mov	r5, #0			@ init dtb size to 0
+/** 20120901
+	DTB 블럭은 수행하지 않음. 
+**/
 #ifdef CONFIG_ARM_APPENDED_DTB
 /*
  *   r0  = delta
@@ -379,12 +407,28 @@ dtb_check_done:
  *   r4 - 16k page directory >= r10 -> OK
  *   r4 + image length <= address of wont_overwrite -> OK
  */
+/** 20120901 
+	r4 			: 0x60008000
+	r4 - 16k	: 0x60004000
+	XIP : eXecute In Place.
+**/
 		add	r10, r10, #16384
 		cmp	r4, r10
+/** 20120901 
+	r4(final kernel address)보다 r10(현재 이미지의 끝 주소+16k)가 작다면,  overwrite 되지 않음. 
+	if(r4 >= r10) 
+		b wont_overwrite
+**/
 		bhs	wont_overwrite
 		add	r10, r4, r9
 		adr	r9, wont_overwrite
 		cmp	r10, r9
+/** 20120901
+	r10(커널이 풀리는 주소의 마지막 위치)가 r9(wont_overwrite의 주소)보다 작다면, overwrite 되지 않음.
+	wont_overwrite 이전의 메모리는 겹쳐도 상관하지 않음. (다시 호출되지 않으므로)
+	if(r10 <= r9)
+		b wont_overwrite
+**/
 		bls	wont_overwrite
 
 /*
@@ -399,6 +443,10 @@ dtb_check_done:
 		 * the relocation code added. This avoids overwriting
 		 * ourself when the offset is small.
 		 */
+/** 20120901
+	(reloc_code_end - restart) 이 0x50  라면, 결과는 0x100
+	(reloc_code_end - restart) 이 0x150  라면, 결과는 0x200
+**/
 		add	r10, r10, #((reloc_code_end - restart + 256) & ~255)
 		bic	r10, r10, #255
 
@@ -520,12 +568,18 @@ not_relocated:	mov	r0, #0
  ARM(		mov	pc, r4	)		@ call kernel
  THUMB(		bx	r4	)		@ entry point is always ARM
 
+/**
+ **/
 		.align	2
 		.type	LC0, #object
 LC0:		.word	LC0			@ r1
 		.word	__bss_start		@ r2
 		.word	_end			@ r3
 		.word	_edata			@ r6
+/** 20120901 
+	input_data_end : 에 압축된 binary image address. 
+	inflated라는 표현은 piggy 가 끼워졌다는 뜻인듯. ???
+**/
 		.word	input_data_end - 4	@ r10 (inflated size location)
 		.word	_got_start		@ r11
 		.word	_got_end		@ ip
@@ -797,12 +851,25 @@ __armv7_mmu_cache_on:
 		mov	r0, #0
 /**
 	20120825 mmu enable 전의 준비 과정
-	p15, c7, c10, 4는 Drain Write Buffer (DWB) 였으나 ARMv6부터 Data Synchronization Barrier로 이름이 변경됨
+	p15, c7, c10, 4는 Drain Write Buffer (DWB) 였으나 ARMv6부터 Data Synchronization Barrier(DSB)로 이름이 변경됨
  **/
 		mcr	p15, 0, r0, c7, c10, 4	@ drain write buffer
+/** 20120901	r11의 하위 네 비트가 0인지 검사 
+ 	0인 경우, VMSA를 지원하지 않음. 
+**/
 		tst	r11, #0xf		@ VMSA
+/** 20120901	VMSA를 지원하는 경우, I, D TLB를 flush 한다 **/
 		mcrne	p15, 0, r0, c8, c7, 0	@ flush I,D TLBs
 #endif
+/** 20120901	
+  SCTLR, System Control Register, VMSA
+	RR[bit 14] : round robin replacement. 
+	I[bit 12] : I-cache enable
+	CP15BEN[bit 5] : Barrier enable, CP15 DMB, DSB, and ISB barrier
+	C[bit 2] : cache enable 
+		0: Data and unified caches disabled.
+		1: Data and unified caches enabled.
+**/
 		mrc	p15, 0, r0, c1, c0, 0	@ read control reg
 		orr	r0, r0, #0x5000		@ I-cache enable, RR cache replacement
 		orr	r0, r0, #0x003c		@ write buffer
@@ -810,16 +877,45 @@ __armv7_mmu_cache_on:
 #ifdef CONFIG_CPU_ENDIAN_BE8
 		orr	r0, r0, #1 << 25	@ big-endian page tables
 #endif
+/** 20120901	VMSA를 지원하는 경우, 
+  				mmu enable 
+**/
 		orrne	r0, r0, #1		@ MMU enabled
 		movne	r1, #0xfffffffd		@ domain 0 = client
+/**	20120901 r3: page directory address 0x60004000 
+ TTBR0, Translation Table Base Register 0, VMSA
+ TTBR0 에 page table pointer(page directory address)를 넣는다. 
+ **/
 		mcrne	p15, 0, r3, c2, c0, 0	@ load page table pointer
+/** 20120901
+  DACR, Domain Access Control Register, VMSA
+	DDI0406C, p1541
+	setup_mmu에서 page directory 설정 시에,	
+		모든 page에 대해서 domain을 0으로 설정시킴.
+		모든 page에 대해서 AP를 11(Full access)로 설정시킴.
+	domain 15 ~ 1 까지는 DACR:Manager : AP bit 에 상관없이 접근 
+	domain 0 : Client : Page table entry 에 설정된 AP 값을 따른다. 
+ **/
 		mcrne	p15, 0, r1, c3, c0, 0	@ load domain access control
 #endif
+/** 20120901
+  CP15ISB, CP15 Instruction Synchronization Barrier operation, VMSA
+  ISB Operation. r0는 의미 없음.
+  **/
 		mcr	p15, 0, r0, c7, c5, 4	@ ISB
+/** 20120901
+  실제 컨트롤 레지스터에 세팅! 두둥.
+  **/
 		mcr	p15, 0, r0, c1, c0, 0	@ load control register
+/** 20120901 
+  왜 다시 읽어오는지... 알 수 없음. 
+  **/
 		mrc	p15, 0, r0, c1, c0, 0	@ and read it back
 		mov	r0, #0
 		mcr	p15, 0, r0, c7, c5, 4	@ ISB
+/** 20120901
+  bl cache_on의 다음 주소로 리턴.
+ **/
 		mov	pc, r12
 
 __fa526_cache_on:
@@ -883,6 +979,11 @@ __common_mmu_cache_on:
 		W(b)	__armv7_mmu_cache_on 	@ #define W(instr)	instr
 		W(b)	__armv7_mmu_cache_off
 		W(b)	__armv7_mmu_cache_flush
+	
+	20120901
+	adr : ADR은 즉치값을 pc 값에 더하고 결과를 대상 레지스터에 기록합니다.
+	proc_types: label이 갖는 값은 상대주소이므로, 
+		실행시에 proc_types의 절대주소를 구하기 위해서 pc를 더해주어야 함. 
  **/
 call_cache_fn:	adr	r12, proc_types
 #ifdef CONFIG_CPU_CP15
@@ -1358,10 +1459,23 @@ memdump:	mov	r12, r0
 		mov	pc, r10
 #endif
 
+/**	20120901
+	.ltorg:
+		http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0473c/Bgbccbdi.html
+		http://sourceware.org/binutils/docs-2.22/as/ARM-Directives.html#ARM-Directives
+	.ltorg가 없더라도 section 의 마지막이므로 literal pool이 자동으로 생길텐데..,
+		여기에 왜 넣었을까???
+			section의 끝을 명시해주기 위한 목적인듯.. 
+**/
 		.ltorg
 reloc_code_end:
 
 		.align
+/** 20120901
+
+. space
+	This directive emits size bytes, each of value fill. Both size and fill are absolute expressions. If the comma and fill are omitted, fill is assumed to be zero.
+**/
 		.section ".stack", "aw", %nobits
 .L_user_stack:	.space	4096
 .L_user_stack_end:
