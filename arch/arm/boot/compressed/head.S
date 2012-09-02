@@ -749,6 +749,24 @@ This bit is not present in a Page table entry.   ... from ARM Architecture Refer
 /** 20120825 page directory의 끝까지 도달했는지 검사 **/
 		teq	r0, r2
 		bne	1b
+/** 20120902 
+	설정 이후, page table 
+		0x70000000 		-	0x70000000
+
+		0x60008000 		-	0x60008000	|---------------------|
+			.			|	0x600047FC	|---------------------|		0xFFF00C12
+			.			|					...
+		 	.			|	0x60004700	|---------------------|		0x70000C12
+			.			|	0x600046FC	|---------------------|		0x6FF00C0E
+		 page directory	|					...
+			.			|	0x60004600	|---------------------|		0x60000C0E
+			.			|	0x600045FC	|---------------------|		0x5FC00C12
+			.			|					...
+			.			|	0x6000400C	|---------------------|		0x00300C12
+			.			|	0x60004008	|---------------------|		0x00200C12
+			.			|	0x60004004	|---------------------|		0x00100C12
+		0x60004000 		-	0x60004000	|---------------------|		0x00000C12
+**/
 /*
  * If ever we are running from Flash, then we surely want the cache
  * to be enabled also for our execution instance...  We map 2MB of it
