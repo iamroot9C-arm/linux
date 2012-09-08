@@ -252,7 +252,8 @@ not_angel:
 restart:	adr	r0, LC0
 		ldmia	r0, {r1, r2, r3, r6, r10, r11, r12}
 /** 20120901
-	stack에 L_user_stack_end의 주소를 저장시킴
+	sp에 L_user_stack_end의 주소를 저장시킴
+	(L_user_stack_end는 소스의 끝, stack section에 해당됨)
 **/
 		ldr	sp, [r0, #28]
 
@@ -272,8 +273,14 @@ restart:	adr	r0, LC0
 		 * decompressed kernel at the end of the compressed data
 		 * in little-endian form.
 		 */
-/** 20120901
-	host에서 빌드시에 바로 little endian으로 kernel size를 넣어주는게 더 좋지 않을까???
+/** 20120908
+	arch/arm/Makefile 에서 CONFIG_CPU_BIG_ENDIAN 따라 kernel의 endian이 결정됨.
+
+	... from ARM architecture reference manual
+	In ARMv7-A, the mapping of instruction memory is always little-endian.
+	In ARMv7-R, instruction endianness can be controlled at the system level,
+
+	여기서는 cpu의 endian과 별개로 little endian으로 저장된 size 값을 레지스터로 읽어온다.
 **/
 		ldrb	r9, [r10, #0]
 		ldrb	lr, [r10, #1]
@@ -287,6 +294,9 @@ restart:	adr	r0, LC0
 #ifndef CONFIG_ZBOOT_ROM
 		/* malloc space is above the relocated stack (64k max) */
 		add	sp, sp, r0
+/** 20120908
+	sp는 user stack의 값. 여기에 +64KB한 결과를 r10에 저장.
+**/
 		add	r10, sp, #0x10000
 #else
 		/*
@@ -446,6 +456,7 @@ dtb_check_done:
 /** 20120901
 	(reloc_code_end - restart) 이 0x50  라면, 결과는 0x100
 	(reloc_code_end - restart) 이 0x150  라면, 결과는 0x200
+	왜 256-byte 단위로 정렬했는지???
 **/
 		add	r10, r10, #((reloc_code_end - restart + 256) & ~255)
 		bic	r10, r10, #255
@@ -454,22 +465,49 @@ dtb_check_done:
 		adr	r5, restart
 		bic	r5, r5, #31
 
+/** 20120908
+	r9 복사할 크기 주소
+	r5 정렬한 restart 주소
+	r6 정렬된 _edata 주소
+	r10 정렬한 커널해제 위치의 끝주소
+
+	r9 복사할 크기
+	8개의 레지스터로 복사하기에 32 바이트로 맞춰줌 (캐시 라인의 효과도...)
+**/
 		sub	r9, r6, r5		@ size to copy
 		add	r9, r9, #31		@ rounded up to a multiple
 		bic	r9, r9, #31		@ ... of 32 bytes
+/** 20120908
+	r6은 이제 복사할(소스) 이미지의 끝 주소 (복사할 크기 + 정렬한 restart 주소)
+**/
 		add	r6, r9, r5
+/** 20120908
+	r9은 이제 복사대상(목적지) 주소 (복사할 크기 + 압축해제될 위치의 끝 주소)
+	뒤에서부터 복사할 때 사용
+**/
 		add	r9, r9, r10
 
+/** 20120908
+	r6 ~ r5 사이의 이미지를 r9에 저장 (중복되지 않게 뒤에서 앞으로 복사)
+**/
 1:		ldmdb	r6!, {r0 - r3, r10 - r12, lr}
 		cmp	r6, r5
 		stmdb	r9!, {r0 - r3, r10 - r12, lr}
 		bhi	1b
 
 		/* Preserve offset to relocated code. */
+/** 20120908
+	r9는 복사된 위치의 시작 주소 (기존 restart에서 정렬한 위치)
+	r6는 복사한 위치의 시작 주소
+	r6  <- r9-r6 (offset 주소)
+**/
 		sub	r6, r9, r6
 
 #ifndef CONFIG_ZBOOT_ROM
 		/* cache_clean_flush may use the stack, so relocate it */
+/** 20120908
+	sp 위치를 새롭게 복사된 위치로 보정
+**/
 		add	sp, sp, r6
 #endif
 
@@ -1279,15 +1317,28 @@ __armv6_mmu_cache_flush:
 
 __armv7_mmu_cache_flush:
 		mrc	p15, 0, r10, c0, c1, 5	@ read ID_MMFR1
+/** 20120908
+		0b0000 None supported. This is the required setting for ARMv7, because ARMv7 requires a
+		       hierarchical cache implementation.
+**/
 		tst	r10, #0xf << 16		@ hierarchical cache (ARMv7)
 		mov	r10, #0
 		beq	hierarchical
 		mcr	p15, 0, r10, c7, c14, 0	@ clean+invalidate D
 		b	iflush
 hierarchical:
+/** 20120908
+		This operation performs the 'full system barrier' performed by the DMB instruction.
+		ARM Architecture Reference Manual A8.8.43
+**/
 		mcr	p15, 0, r10, c7, c10, 5	@ DMB
 		stmfd	sp!, {r0-r7, r9-r11}
 		mrc	p15, 1, r0, c0, c0, 1	@ read clidr
+/** 20120908
+	LoC, Level of coherence
+		This field defines the last level of cache that must be cleaned or invalidated
+		when cleaning or invalidating to the point of coherency.
+**/
 		ands	r3, r0, #0x7000000	@ extract loc from clidr
 		mov	r3, r3, lsr #23		@ left align loc bit field
 		beq	finished		@ if loc is 0, then no need to clean
@@ -1298,17 +1349,42 @@ loop1:
 		and	r1, r1, #7		@ mask of the bits for current cache only
 		cmp	r1, #2			@ see what cache we have at this level
 		blt	skip			@ skip if no cache, or just i-cache
+/** 20120908
+	CSSELR, Cache Size Selection Register, VMSA
+		-> Cache Size 채우기
+
+	CCSIDR, Cache Size ID Registers, VMSA (p.1512)
+		The implementation includes one CCSIDR for each cache that it can access. CSSELR selects which Cache Size ID Register is accessible.
+
+	-> CSSELR 에서 선택된 캐시 레벨에 해당하는 캐시 정보가 CCSIDR에 채워짐.
+	   다시 정보를 r1에 읽음
+**/
 		mcr	p15, 2, r10, c0, c0, 0	@ select current cache level in cssr
 		mcr	p15, 0, r10, c7, c5, 4	@ isb to sych the new cssr&csidr
 		mrc	p15, 1, r1, c0, c0, 0	@ read the new csidr
+/** 20120908
+	r2 <- cache line 크기 (log2 (n) - 2)
+**/
 		and	r2, r1, #7		@ extract the length of the cache lines
 		add	r2, r2, #4		@ add 4 (line length offset)
 		ldr	r4, =0x3ff
+/** 20120908
+	읽어온 CCSIDR에서 Associativity 추출
+**/
 		ands	r4, r4, r1, lsr #3	@ find maximum number on the way size
+/** 20120908
+	r5 <- r4에서 선행 0의 개수
+**/
 		clz	r5, r4			@ find bit position of way size increment
 		ldr	r7, =0x7fff
+/** 20120908
+	r7 <- 읽어온 CCSIDR에서 NumSets을 추출
+**/
 		ands	r7, r7, r1, lsr #13	@ extract max number of the index size
 loop2:
+/** 20120908
+	r9 <- r4 ( 읽어온 Associativity)
+**/
 		mov	r9, r4			@ create working copy of max way size
 loop3:
  ARM(		orr	r11, r10, r9, lsl r5	) @ factor way and cache number into r11
@@ -1317,6 +1393,13 @@ loop3:
  THUMB(		orr	r11, r10, r6		) @ factor way and cache number into r11
  THUMB(		lsl	r6, r7, r2		)
  THUMB(		orr	r11, r11, r6		) @ factor index number into r11
+/** 20120908
+	DCCISW, Data Cache Clean and Invalidate by Set/Way, VMSA only
+		Data formats for the cache and branch predictor operations
+	(p.1724)
+
+	Log2(ASSOCIATIVITY) <- SBZ에 의해 0으로 구분해서 Way와 Set을 추출하는듯???
+**/
 		mcr	p15, 0, r11, c7, c14, 2	@ clean & invalidate by set/way
 		subs	r9, r9, #1		@ decrement the way
 		bge	loop3
@@ -1470,12 +1553,12 @@ memdump:	mov	r12, r0
 		.ltorg
 reloc_code_end:
 
-		.align
 /** 20120901
 
 . space
 	This directive emits size bytes, each of value fill. Both size and fill are absolute expressions. If the comma and fill are omitted, fill is assumed to be zero.
 **/
+		.align
 		.section ".stack", "aw", %nobits
 .L_user_stack:	.space	4096
 .L_user_stack_end:
