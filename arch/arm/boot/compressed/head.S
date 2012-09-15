@@ -264,6 +264,9 @@ restart:	adr	r0, LC0
 /** 20120901
 	r0, r1 에 다른 값이 있을 수 있는지 ???
 **/
+/** 20120915
+	r0, r1에 있는 값이 overlap을 처리하기 전과 처리한 후에 바뀔수도 있을듯???
+**/
 		sub	r0, r0, r1		@ calculate the delta offset
 		add	r6, r6, r0		@ _edata
 		add	r10, r10, r0		@ inflated kernel size location
@@ -512,7 +515,9 @@ dtb_check_done:
 #endif
 
 		bl	cache_clean_flush
-
+/** 20120915
+	바로 wont_overwrite로 브랜치 하지 않고 복사된 restart 주소로 이동하는 이유는???
+**/
 		adr	r0, BSYM(restart)
 		add	r0, r0, r6
 		mov	pc, r0
@@ -1361,6 +1366,25 @@ hierarchical:
 		mov	r3, r3, lsr #23		@ left align loc bit field
 		beq	finished		@ if loc is 0, then no need to clean
 		mov	r10, #0			@ start clean at cache level 0
+/** 20120915
+	loop1,loop2,loop3
+	loop1 : 캐쉬 레벨을 증가
+	loop2 : 인덱스를 감소
+	loop3 : Way를 감소
+
+	loop1{
+		cache level 순회하면서 d-cache인경우 loop2,loop3를 순회
+		loop2{
+			way를 감소시키면서 적용
+			loop3{
+				index를 증가시키면서 적용
+				data캐쉬를 invalidate
+				}
+		}
+	}
+
+**/
+
 loop1:
 		add	r2, r10, r10, lsr #1	@ work out 3x current cache level
 		mov	r1, r0, lsr r2		@ extract cache type bits from clidr
@@ -1428,15 +1452,45 @@ skip:
 		cmp	r3, r10
 		bgt	loop1
 finished:
+
+/** 20120915 
+	cache clean & invalidate에서 사용한 r0-r11을 다시 이전 상태로 복구
+	루프돌면서 증가시킨 캐쉬 레벨을 level 0으로 되돌림
+**/
 		ldmfd	sp!, {r0-r7, r9-r11}
 		mov	r10, #0			@ swith back to cache level 0
 		mcr	p15, 2, r10, c0, c0, 0	@ select current cache level in cssr
+
+/** 20120915
+
+CP15DSB, Data Synchronization Barrier operation
+In ARMv7, the DSB instruction performs a Data Synchronization Barrier, see DSB on page A8-378.
+The deprecated CP15 c7 encoding for a Data Synchronization Barrier is an MCR instruction with <opc1> set to 0, <CRn>
+set to c7, <CRm> set to c10, and <opc2> set to 4. This operation performs the full system barrier performed by the DSB
+instruction.
+
+1. 캐쉬레벨이 0인 상태임.
+2. Write Buffer에 있는 내용에 대해 Barrier Operation을 적용시킴
+3. cache level 0으로 설정한 부분과 DSB 설정 부분과의 상관관계에 대하여(?)
+	=> This operation performs the full system barrier performed by the DSB instruction.
+
+=> DSB Operation - DDI0406 p.378참고
+
+**/
+
 iflush:
 		mcr	p15, 0, r10, c7, c10, 4	@ DSB
+/** 20120915
+	Cache and branch predictor maintenance operations, VMSA
+	ICIALLU (c c7 0 c5 0) 32-bit (Write Only) Instruction cache invalidate all PoU(to Point of Unification)
+	arm v7에서 iflush 부분에서 DSB 이후 invalidate I+BTB이후 다시 DSB를 실행하는 이유???
+
+**/
 		mcr	p15, 0, r10, c7, c5, 0	@ invalidate I+BTB
 		mcr	p15, 0, r10, c7, c10, 4	@ DSB
 		mcr	p15, 0, r10, c7, c5, 4	@ ISB
 		mov	pc, lr
+
 
 __armv5tej_mmu_cache_flush:
 1:		mrc	p15, 0, r15, c7, c14, 3	@ test,clean,invalidate D cache
