@@ -130,6 +130,9 @@ asmlinkage void __div0(void)
 extern int do_decompress(u8 *input, int len, u8 *output, void (*error)(char *x));
 
 
+/** 20120915
+	r0
+**/
 void
 decompress_kernel(unsigned long output_start, unsigned long free_mem_ptr_p,
 		unsigned long free_mem_ptr_end_p,
@@ -142,9 +145,18 @@ decompress_kernel(unsigned long output_start, unsigned long free_mem_ptr_p,
 	free_mem_end_ptr	= free_mem_ptr_end_p;
 	__machine_arch_type	= arch_id;
 
+/** 20120915
+	각 arch에 따른 사전 준비작업인듯.
+**/
 	arch_decomp_setup();
 
+/** 20120915
+	terminal 설정은 uboot에서 완료할 것으로 추정됨.
+**/
 	putstr("Uncompressing Linux...");
+/** 20120915
+	input_data, input_data_end는 piggy.gzip.S에서 incbin piggy.gzip을 지정하는것.
+**/
 	ret = do_decompress(input_data, input_data_end - input_data,
 			    output_data, error);
 	if (ret)

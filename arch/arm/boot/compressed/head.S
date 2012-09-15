@@ -263,9 +263,12 @@ restart:	adr	r0, LC0
 		 */
 /** 20120901
 	r0, r1 에 다른 값이 있을 수 있는지 ???
-**/
-/** 20120915
+
+	20120915
 	r0, r1에 있는 값이 overlap을 처리하기 전과 처리한 후에 바뀔수도 있을듯???
+	==> 아니었음. 
+	r0, r1에 있는 값은 location counter기준의 LC0값과, 실제 메모리에 로딩된 LC0 값임. 
+	__bss_start, _edata 등의 실제 메모리 주소 값을 알아내기 위해 delta 를 구해야 함. 
 **/
 		sub	r0, r0, r1		@ calculate the delta offset
 		add	r6, r6, r0		@ _edata
@@ -517,6 +520,8 @@ dtb_check_done:
 		bl	cache_clean_flush
 /** 20120915
 	바로 wont_overwrite로 브랜치 하지 않고 복사된 restart 주소로 이동하는 이유는???
+
+	==> offset을 다시 계산해야 하기 때문. restart: label 참고. 
 **/
 		adr	r0, BSYM(restart)
 		add	r0, r0, r6
@@ -536,6 +541,10 @@ wont_overwrite:
  *   r12 = GOT end
  *   sp  = stack pointer
  */
+/** 20120915
+  r0, r5 값이 같다면, not_relocated로 브랜치한다. 
+  이건 뭐지 ??? 
+**/
 		orrs	r1, r0, r5
 		beq	not_relocated
 
@@ -555,6 +564,11 @@ wont_overwrite:
 		 * Relocate all entries in the GOT table.
 		 * Bump bss entries to _edata + dtb size
 		 */
+/** 20120915
+	GOT의 각 entry의 값에 offset을 더해 실제 메모리 주소를 넣어준다. 
+	여기서의 GOT는 compressed/* 에 해당하는 GOT 이다. 
+	bss start ~ end 에 해당하는 공간에는 DTB size를 더해서 넣어준다. 왜???
+**/
 1:		ldr	r1, [r11, #0]		@ relocate entries in the GOT
 		add	r1, r1, r0		@ This fixes up C references
 		cmp	r1, r2			@ if entry >= bss_start &&
@@ -583,6 +597,9 @@ wont_overwrite:
 		blo	1b
 #endif
 
+/** 20120915
+	BSS start ~ BSS end 를 0으로 채워준다. 
+**/
 not_relocated:	mov	r0, #0
 1:		str	r0, [r2], #4		@ clear bss
 		str	r0, [r2], #4
@@ -602,12 +619,21 @@ not_relocated:	mov	r0, #0
 		mov	r1, sp			@ malloc space above stack
 		add	r2, sp, #0x10000	@ 64k max
 		mov	r3, r7
+/** 20120915
+	r0 : output start 
+	r1 : free_mem_ptr_p
+	r2 : free_mem_ptr_end_p
+	r3 : arch_id
+**/
 		bl	decompress_kernel
 		bl	cache_clean_flush
 		bl	cache_off
 		mov	r0, #0			@ must be zero
 		mov	r1, r7			@ restore architecture number
-		mov	r2, r8			@ restore atags pointer
+		mov	r2, r8		 	@ restore atags pointer
+/** 20120915
+	arch/arm/kernel/head.S 로 go go
+**/
  ARM(		mov	pc, r4	)		@ call kernel
  THUMB(		bx	r4	)		@ entry point is always ARM
 
@@ -621,7 +647,7 @@ LC0:		.word	LC0			@ r1
 		.word	_edata			@ r6
 /** 20120901 
 	input_data_end : 에 압축된 binary image address. 
-	inflated라는 표현은 piggy 가 끼워졌다는 뜻인듯. ???
+	inflated라는 표현은 piggy 가 끼워졌다는 뜻인듯. 
 **/
 		.word	input_data_end - 4	@ r10 (inflated size location)
 		.word	_got_start		@ r11
@@ -1275,6 +1301,10 @@ __armv4_mmu_cache_off:
 		mov	pc, lr
 
 __armv7_mmu_cache_off:
+/** 20120915
+	SCTLR, System Control Register, VMSA
+	cache, mmu에 해당하는 비트를 클리어. 
+**/
 		mrc	p15, 0, r0, c1, c0
 #ifdef CONFIG_MMU
 		bic	r0, r0, #0x000d
@@ -1283,11 +1313,20 @@ __armv7_mmu_cache_off:
 #endif
 		mcr	p15, 0, r0, c1, c0	@ turn MMU and cache off
 		mov	r12, lr
+/** 20120915
+	cache 를 끄고 나서도 flush가 가능하구나..
+**/
 		bl	__armv7_mmu_cache_flush
 		mov	r0, #0
 #ifdef CONFIG_MMU
 		mcr	p15, 0, r0, c8, c7, 0	@ invalidate whole TLB
 #endif
+/** 20120915
+	BPIALL, Branch Predictor Invalidate All, VMS
+	BTC : Branch Target (Address) Cache 
+	BTB : Branch Target Buffer 라면.. 
+	BTC, BTB는 같은 대상을 지칭하는듯.
+**/
 		mcr	p15, 0, r0, c7, c5, 6	@ invalidate BTC
 		mcr	p15, 0, r0, c7, c10, 4	@ DSB
 		mcr	p15, 0, r0, c7, c5, 4	@ ISB
@@ -1620,7 +1659,7 @@ memdump:	mov	r12, r0
 		http://sourceware.org/binutils/docs-2.22/as/ARM-Directives.html#ARM-Directives
 	.ltorg가 없더라도 section 의 마지막이므로 literal pool이 자동으로 생길텐데..,
 		여기에 왜 넣었을까???
-			section의 끝을 명시해주기 위한 목적인듯.. 
+		==> reloc_code_end label로 code section의 마지막(literal pool을 포함한)을 명시해주기 위한 목적임.
 **/
 		.ltorg
 reloc_code_end:
