@@ -43,6 +43,11 @@
  *  r2 either valid atags pointer, valid dtb pointer, or zero
  *  r5, r6 corrupted
  */
+
+/** 20120922
+	atag pointer값(r2)과 atag size, atag core값을 비교하여
+	유효한지를 비교
+**/
 __vet_atags:
 	tst	r2, #0x3			@ aligned?
 	bne	1f
@@ -142,6 +147,22 @@ ENDPROC(lookup_processor_type)
  *	r9 = cpuid (preserved)
  */
 	__CPUINIT
+
+/** 20120922 
+	processor type data를 가져와서 virtual address와 physical address 차이 offset
+	을 계산한후, offset값을 이용해 virtual address에서 physical address값으로 보정함
+	(r3에는 physical Address가 로드됨)
+
+	r3(physical) : __lookup_processor_type_data의 physical Address
+	r4(virtual) : . 
+	r5(virtual) : __proc_info_begin		
+	r6(virtual) : __proc_info_end	
+**/
+/** 20120922
+	__proc_info_begin부터 __proc_info_end까지 루프를 돌면서
+	cpuid(r9)를 Mask하여 value가 일치하면 processor info의 위치를 리턴한다
+	Processor info의 테이블 => linux/arch/arm/mm/proc-v7.S
+**/
 __lookup_processor_type:
 	adr	r3, __lookup_processor_type_data
 	ldmia	r3, {r4 - r6}
@@ -164,6 +185,7 @@ ENDPROC(__lookup_processor_type)
  */
 	.align	2
 	.type	__lookup_processor_type_data, %object
+
 __lookup_processor_type_data:
 	.long	.
 	.long	__proc_info_begin

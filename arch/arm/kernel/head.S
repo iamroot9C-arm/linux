@@ -34,16 +34,36 @@
  * the least significant 16 bits to be 0x8000, but we could probably
  * relax this restriction to KERNEL_RAM_VADDR >= PAGE_OFFSET + 0x4000.
  */
+
+/** 20120922 PAGE_OFFSET Define 되어있음 (0x80000000), 
+# The byte offset of the kernel image in RAM from the start of RAM.
+<arch/arm/Makefile>
+TEXT_OFFSET := $(textofs-y)
+
+textofs-y       := 0x00008000
+
+**/
+
 #define KERNEL_RAM_VADDR	(PAGE_OFFSET + TEXT_OFFSET)
 #if (KERNEL_RAM_VADDR & 0xffff) != 0x8000
 #error KERNEL_RAM_VADDR must start at 0xXXXX8000
 #endif
+
+
+/** 20120922 
+	CONFIG_ARM_LPAE는 정의되어 있지 않음 
+	LPAE(Large Physical Address Extension)
+**/
 
 #ifdef CONFIG_ARM_LPAE
 	/* LPAE requires an additional page for the PGD */
 #define PG_DIR_SIZE	0x5000
 #define PMD_ORDER	3
 #else
+/** 20120922 
+	PG_DIR_SIZE -> 16KB
+**/
+
 #define PG_DIR_SIZE	0x4000
 #define PMD_ORDER	2
 #endif
@@ -74,7 +94,9 @@
  * circumstances, zImage) is for.
  */
 	.arm
-
+/** 20120922 
+	__HEAD(define 매크로) : .head.text 섹션
+**/
 	__HEAD
 ENTRY(stext)
 
@@ -83,8 +105,15 @@ ENTRY(stext)
  THUMB(	.thumb			)	@ switch to Thumb now.
  THUMB(1:			)
 
-	setmode	PSR_F_BIT | PSR_I_BIT | SVC_MODE, r9 @ ensure svc mode
+/** 20120922
+	setmode(.macro 매크로) : CPSR_C의 모드를 지정해준다(FIQ,IRQ,SVC비트를 setting)
+**/
+	setmode	PSR_F_BIT | PSR_I_BIT | SVC_MODE, r9 @ ensure svc mode 
 						@ and irqs disabled
+/** 20120922
+	코프로세서에서 processor id를 가져온다음 프로세서 타입을 찾는다
+**/
+
 	mrc	p15, 0, r9, c0, c0		@ get processor id
 	bl	__lookup_processor_type		@ r5=procinfo r9=cpuid
 	movs	r10, r5				@ invalid processor (r5=0)?
@@ -98,11 +127,15 @@ ENTRY(stext)
  THUMB( it	lo )				@ force fixup-able long branch encoding
 	blo	__error_p			@ only classic page table format
 #endif
-
+/** 20120922
+	r3 : physical
+	r4 : .(virtual)
+	r8 : PAGE_OFFSET(virtual => physical)
+**/
 #ifndef CONFIG_XIP_KERNEL
 	adr	r3, 2f
 	ldmia	r3, {r4, r8}
-	sub	r4, r3, r4			@ (PHYS_OFFSET - PAGE_OFFSET)
+	sub	r4, r3, r4			 (PHYS_OFFSET - PAGE_OFFSET)
 	add	r8, r8, r4			@ PHYS_OFFSET
 #else
 	ldr	r8, =PHYS_OFFSET		@ always constant in this case
@@ -441,6 +474,23 @@ __turn_mmu_on_end:
 ENDPROC(__turn_mmu_on)
 	.popsection
 
+/** 20120922 
+ * ARM Ltd. Cortex A9 processor.
+	.long   0x410fc090 (r9)
+        .long   0xff0ffff0
+
+*** DDI0406C_arm_architecture_reference_manual <p.1631>
+ Bits[31], in an implementation that includes the Multiprocessing Extensions
+ RAO. Indicates that the implementation uses the Multiprocessing Extensions register format.
+
+ U, bit[30], in an implementation that includes the Multiprocessing Extensions
+ Indicates a Uniprocessor system, as distinct from processor 0 in a multiprocessor system. The
+ possible values of this bit are:
+	0 : Processor is part of a multiprocessor system.
+	1 : Processor is part of a uniprocessor system.
+
+ =>MPIDR을 읽어들여 SMP인지 검사
+**/
 
 #ifdef CONFIG_SMP_ON_UP
 	__INIT
@@ -462,6 +512,9 @@ __fixup_smp:
 	teq	r0, #0x80000000		@ not part of a uniprocessor system?
 	moveq	pc, lr			@ yes, assume SMP
 
+/** 20120922
+	__smpalt_begin(r4), __smpalt_end(r5)의 physical address 계산
+**/
 __fixup_smp_on_up:
 	adr	r0, 1f
 	ldmia	r0, {r3 - r5}

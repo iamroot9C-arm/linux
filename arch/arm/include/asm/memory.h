@@ -160,6 +160,11 @@
 extern unsigned long __pv_phys_offset;
 #define PHYS_OFFSET __pv_phys_offset
 
+/** 20120922
+	현재 섹션 정보를 섹션스택에 저장하고 .pv_table섹션에 .long타입의 
+	데이터(어드레스정보)를 저장후 섹션스택을 다시 Pop한다
+	(%0 : output, %1,%2 : input)
+**/
 #define __pv_stub(from,to,instr,type)			\
 	__asm__("@ __pv_stub\n"				\
 	"1:	" instr "	%0, %1, %2\n"		\
