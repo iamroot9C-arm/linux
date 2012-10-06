@@ -186,6 +186,11 @@ ENDPROC(__lookup_processor_type)
 	.align	2
 	.type	__lookup_processor_type_data, %object
 
+/** 20121006
+	.의 위치는 vmlinux.lds의 0x80008000으로 정의되어 있음.
+	이값은 vmliux.lds.S가 빌드되면서 변환되는 값.
+	  
+ **/
 __lookup_processor_type_data:
 	.long	.
 	.long	__proc_info_begin

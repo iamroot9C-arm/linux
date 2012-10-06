@@ -68,6 +68,10 @@ textofs-y       := 0x00008000
 #define PMD_ORDER	2
 #endif
 
+/** 20121006
+    swapper_pg_dir를 전역 변수로 선언
+    KERNEL_RAM_VADDR에서 PG_DIR_SIZE를 뺀 값을 swapper_pg_dir에 입력 
+**/
 	.globl	swapper_pg_dir
 	.equ	swapper_pg_dir, KERNEL_RAM_VADDR - PG_DIR_SIZE
 
@@ -108,6 +112,10 @@ ENTRY(stext)
 /** 20120922
 	setmode(.macro 매크로) : CPSR_C의 모드를 지정해준다(FIQ,IRQ,SVC비트를 setting)
 **/
+
+/** 20121006
+	/linux/arch/arm/include/asm/assembler.h 
+**/	
 	setmode	PSR_F_BIT | PSR_I_BIT | SVC_MODE, r9 @ ensure svc mode 
 						@ and irqs disabled
 /** 20120922
@@ -515,6 +523,15 @@ __fixup_smp:
 /** 20120922
 	__smpalt_begin(r4), __smpalt_end(r5)의 physical address 계산
 **/
+
+/** 20121006
+	참조 : http://www.iamroot.org/xe/61099#comment_61348
+	CONFIG_SMP_ON_UP
+	출처 : http://cateee.net/lkddb/web-lkddb/SMP_ON_UP.html
+	SMP 용으로 컴파일 된 커널이 UP에서 돌아가도 문제가 생기지 않도록 해주는 기능인것 같습니다.
+	arch/arm/Kconfig 1334라인에 SMP_ON_UP 컴파일 옵션으로 들어가있습니다.
+	이 기능(컴파일 옵션)은 EXPERIMENTAL로 명시 되어있습니다.
+**/
 __fixup_smp_on_up:
 	adr	r0, 1f
 	ldmia	r0, {r3 - r5}
@@ -561,7 +578,13 @@ ENTRY(fixup_smp)
 	bl	__do_fixup_smp_on_up
 	ldmfd	sp!, {r4 - r6, pc}
 ENDPROC(fixup_smp)
+/** 20121006
+arch/arm/Kconfig
+	config ARM_PATCH_PHYS_VIRT
+    	bool "Patch physical to virtual translations at runtime" if EMBEDDED
+    	default y
 
+**/
 #ifdef CONFIG_ARM_PATCH_PHYS_VIRT
 
 /* __fixup_pv_table - patch the stub instructions with the delta between
@@ -569,6 +592,11 @@ ENDPROC(fixup_smp)
  * can be expressed by an immediate shifter operand. The stub instruction
  * has a form of '(add|sub) rd, rn, #imm'.
  */
+
+/**20121006
+	좀더 확인 필요함???		
+	참고  : https://github.com/iamroot9C-arm/linux/commit/dc21af99fadcfa0ae65b52fd0895f85824f0c288	
+**/
 	__HEAD
 __fixup_pv_table:
 	adr	r0, 1f
@@ -579,6 +607,9 @@ __fixup_pv_table:
 	add	r7, r7, r3	@ adjust __pv_phys_offset address
 	str	r8, [r7]	@ save computed PHYS_OFFSET to __pv_phys_offset
 	mov	r6, r3, lsr #24	@ constant for add/sub instructions
+/**20121006
+	어떻게 16MB 정렬이 되어 있나??? 그리고 왜???
+**/
 	teq	r3, r6, lsl #24 @ must be 16MiB aligned
 THUMB(	it	ne		@ cross section branch )
 	bne	__error
@@ -587,6 +618,10 @@ THUMB(	it	ne		@ cross section branch )
 ENDPROC(__fixup_pv_table)
 
 	.align
+/** 20121006
+__pv_stub에서 .pv_table section만들어짐.
+arch/arm/include/asm/memory.h
+**/
 1:	.long	.
 	.long	__pv_table_begin
 	.long	__pv_table_end
@@ -617,11 +652,48 @@ __fixup_a_pv_table:
 	bx	lr
 #else
 	b	2f
+/** 20121006
+	1. r7인덱스가 가르키고 있는 명령어를 가져와서 ip에 저장
+	2. 명령어 코드의 하위 8비트를 clear
+	3. physical addr의 상위 8비트를 명령어 코드의 하위 8비트에
+	   저장 
+
+	eg)
+	add r5,r5,0x81000000
+	micro code : 0x00080
+	
+	0x00080 -> 0x00060 physical addr 로 변환
+	add r5,r5,0x60000000
+
+	참조 : arm/include/asm/memory.h
+		- pv_table 의 비밀	       
+		   http://www.scribd.com/doc/24366257/Arm-Instruction-Set#outer_page_10
+
+	이렇게 하는 이유 : 실제 바이너리는 VA와 작동하는 PA 차이를 보정해주기 위해서 인것 같은데..
+	CONFIG_ARM_PATCH_PHYS_VIRT define이  없으면 어떻게 될까?
+**/
 1:	ldr	ip, [r7, r3]
 	bic	ip, ip, #0x000000ff
 	orr	ip, ip, r6	@ mask in offset bits 31-24
 	str	ip, [r7, r3]
 2:	cmp	r4, r5
+/** 20121006
+	cc prefix : carry clear
+
+	if(r4 < r5)
+	{
+		ldrcc ....
+		bcc ....
+	}
+	else
+	{
+		mov ....
+	}
+**/
+
+/** 20121006
+	pv_table 의 명령어 인덱스 주소를 가져와서 r7에 저장.
+**/
 	ldrcc	r7, [r4], #4	@ use branch for delay slot
 	bcc	1b
 	mov	pc, lr

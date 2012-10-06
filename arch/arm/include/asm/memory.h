@@ -165,6 +165,22 @@ extern unsigned long __pv_phys_offset;
 	데이터(어드레스정보)를 저장후 섹션스택을 다시 Pop한다
 	(%0 : output, %1,%2 : input)
 **/
+/** 20121006
+     인라인 변환 예 : add t,x,__PV_BITS_31_24
+	 __virt_to_phys 실행시 
+	inst 는 text 섹션 어딘가에 저장이 되지만
+	pv_table은 inst의 주소만을 가지고 있다.
+
+	vmlinux dump
+		283800 Contents of section .init.pv_table:
+ 		283801  8045cd04 24b54380 18b74380 f4f00080 <b8de4380>  $.C...C.......C.	
+
+		b8de4380 -> 8043deb8
+		5755429 static inline unsigned long __phys_to_virt(unsigned long x)
+		5755430 <8043deb8>:   e2455481    sub r5, r5, #-2130706432    ; 0x81000000
+		5755431 8043debc:   ea000003    b   8043ded0 <setup_arch+0x388>
+
+**/
 #define __pv_stub(from,to,instr,type)			\
 	__asm__("@ __pv_stub\n"				\
 	"1:	" instr "	%0, %1, %2\n"		\
