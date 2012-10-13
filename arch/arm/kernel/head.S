@@ -141,6 +141,18 @@ ENTRY(stext)
 	r8 : PAGE_OFFSET(virtual => physical)
 **/
 #ifndef CONFIG_XIP_KERNEL
+/** 20121013
+    autoconf.h 빌드시 자동으로 PAGE_OFFSET이 지정되었다.
+    #define CONFIG_PAGE_OFFSET 0x80000000
+	(커널 address space의 시작 주소.
+	 보통은 USER/KERNEL 3G/1G로 split 하여 사용하지만, vexpress는 2G/2G로 split 하여 사용함)
+
+    r4 : 2f - . 즉, virtual - physical 사이의 offset 값이 저장되어 있다.
+
+	r8(PA) <= r8(VA) + r4(PA-VA)
+
+	이후 PHYS_OFFSET은 virtual address PHYS_OFFSET이 물리주소 위치
+**/
 	adr	r3, 2f
 	ldmia	r3, {r4, r8}
 	sub	r4, r3, r4			@ (PHYS_OFFSET - PAGE_OFFSET)
@@ -173,6 +185,12 @@ ENTRY(stext)
 						@ mmu has been enabled
 	adr	lr, BSYM(1f)			@ return (PIC) address
 	mov	r8, r4				@ set TTBR1 to swapper_pg_dir
+/** 20121013
+    pc에 직접 값을 넣어 W(b)    \initfunc 을 실행. initfunc은 __v7_proc을 호출할 때 지정한 argument
+
+	arch/arm/mm/proc-v7.S
+		__v7_proc __v7_ca9mp_setup
+**/
  ARM(	add	pc, r10, #PROCINFO_INITFUNC	)
  THUMB(	add	r12, r10, #PROCINFO_INITFUNC	)
  THUMB(	mov	pc, r12				)
@@ -196,6 +214,11 @@ ENDPROC(stext)
  *  r4 = physical page table address
  */
 __create_page_tables:
+/** 20121013
+	pgtbl은 macro.
+	add	r4, r8, #TEXT_OFFSET - PG_DIR_SIZE (r8: [PA]PAGE_OFFSET, 0x8000-0x4000)
+	r4 = [PA] page table address
+**/
 	pgtbl	r4, r8				@ page table address
 
 	/*
@@ -204,6 +227,9 @@ __create_page_tables:
 	mov	r0, r4
 	mov	r3, #0
 	add	r6, r0, #PG_DIR_SIZE
+/** 20121013
+    cache도 사용하지 않는데 왜 4번으로 나눠서 클리어 해주는 것일까???
+**/
 1:	str	r3, [r0], #4
 	str	r3, [r0], #4
 	str	r3, [r0], #4
@@ -230,6 +256,33 @@ __create_page_tables:
 	add	r4, r4, #0x1000			@ point to the PMD tables
 #endif
 
+/** 20121013
+    procinfo의 MMUFLAGS 값을 읽어옴
+	  procinfo : vmlinux.lds에서 __proc_info_begin ~ __proc_info_end 사이에 정의
+	  .proc.info.init 는 arch/arm/mm/proc-v7.S 에 위치
+
+    arch/arm/include/asm/page.h
+         #ifdef CONFIG_ARM_LPAE
+         #include <asm/pgtable-3level-types.h>
+         #else
+         #include <asm/pgtable-2level-types.h>		<- 아래 속성값의 정의는 이 파일을 참고한다.
+         #endif
+
+	arch/arm/include/asm/pgtable-2level-hwdef.h
+	ALT_SMP(.long	PMD_TYPE_SECT | PMD_SECT_AP_WRITE | PMD_SECT_AP_READ | \
+			PMD_SECT_AF | PMD_FLAGS_SMP | \mm_mmuflags)
+
+	각 flag에 해당하는 필드는 Cortex-A Series Programmer Guide, MMU 10-5
+	type            PMD_TYPE_SECT
+	AP              PMD_SECT_AP_WRITE | PMD_SECT_AP_READ
+	AF              0
+    PMD_FLAGS_SMP   PMD_SECT_WBWA|PMD_SECT_S
+			#define PMD_SECT_WBWA		(PMD_SECT_TEX(1) | PMD_SECT_CACHEABLE | PMD_SECT_BUFFERABLE)
+				TEX(001), C(1), B(1)에 해당하는 entry는 manual에 존재하지 않음
+			#define PMD_SECT_S		(_AT(pmdval_t, 1) << 16)	/* v6 */		<-- shareable???
+    mm_mmuflags   argument. default 0
+
+**/
 	ldr	r7, [r10, #PROCINFO_MM_MMUFLAGS] @ mm_mmuflags
 
 	/*
@@ -237,26 +290,69 @@ __create_page_tables:
 	 * This identity mapping will be removed by paging_init().
 	 */
 	adr	r0, __turn_mmu_on_loc
+/** 20121013
+	이 부분을 초기화 하는 이유??? 이게 turn_mmu_on???
+   	r5 <- .long	__turn_mmu_on
+	r6 <- .long	__turn_mmu_on_end
+**/
 	ldmia	r0, {r3, r5, r6}
 	sub	r0, r0, r3			@ virt->phys offset
 	add	r5, r5, r0			@ phys __turn_mmu_on
 	add	r6, r6, r0			@ phys __turn_mmu_on_end
+/** 20121013
+    #SECTION_SHIFT 20 -> 1M의 index를 구함
+**/
 	mov	r5, r5, lsr #SECTION_SHIFT
 	mov	r6, r6, lsr #SECTION_SHIFT
 
+/** 20121013
+    r7 : 읽어온 MM_FLAGS값
+	r5 : Section Base Address Index
+	r3 : 두 값으로 Level 1 Section Entry를 생성
+**/
 1:	orr	r3, r7, r5, lsl #SECTION_SHIFT	@ flags + kernel base
+/** 20121013
+	r4 = [PA] page table address
+    #if CONFIG_ARM_LPAE
+	  PMD_ORDER 3
+    #else
+	  PMD_ORDER 2
+**/
 	str	r3, [r4, r5, lsl #PMD_ORDER]	@ identity mapping
 	cmp	r5, r6
 	addlo	r5, r5, #1			@ next section
 	blo	1b
 
+
+/** 20121013
+    page table entry 중 커널의 VA(PAGE_OFFSET ~ BSS 섹션의 끝)에
+	해당하는 구간에 PA주소와 MM_FLAGS를 저장
+**/
 	/*
 	 * Map our RAM from the start to the end of the kernel .bss section.
 	 */
+/** 20121013
+    커널 영역의 시작에서 커널 .bss 섹션의 끝까지
+	r0 : [PA]page table address + [VA]#PAGE_OFFSET의 index 주소
+	      => [PA] entry값을 써넣을 위치. 커널의 시작 주소에 해당하는 entry 주소
+	r6 : [VA]bss 섹션의 마지막 주소
+**/
 	add	r0, r4, #PAGE_OFFSET >> (SECTION_SHIFT - PMD_ORDER)
 	ldr	r6, =(_end - 1)
+/** 20121013
+    r8 : [PA]PAGE_OFFSET (Section Base Address로 바로 적용)
+	r7 : MM_FLAGS
+	r3 : entry 값을 생성
+**/
 	orr	r3, r8, r7
+/** 20121013
+    r6 : [VA]bss섹션의 끝 주소에 해당하는 entry 주소
+**/
 	add	r6, r4, r6, lsr #(SECTION_SHIFT - PMD_ORDER)
+/** 20121013
+    r0 ~ r6 사이(커널 영역)의 page table에 entry를 채워넣음
+	반복문을 수행할 때마다 다음 entry에 써넣을 Base Address를 1MB씩 증가
+**/
 1:	str	r3, [r0], #1 << PMD_ORDER
 	add	r3, r3, #1 << SECTION_SHIFT
 	cmp	r0, r6
@@ -285,9 +381,18 @@ __create_page_tables:
 	 * Then map boot params address in r2 if specified.
 	 */
 	mov	r0, r2, lsr #SECTION_SHIFT
+/** 20121013
+    r0 : [PA]r2(atag)에 해당하는 base address
+**/
 	movs	r0, r0, lsl #SECTION_SHIFT
+/** 20121013
+    r2 [PA] - r8[PA] + [VA]#PAGE_OFFSET => [VA] atag
+**/
 	subne	r3, r0, r8
 	addne	r3, r3, #PAGE_OFFSET
+/** 20121013
+    [VA] atag에 해당하는 entry의 주소를 r3에 저장
+**/
 	addne	r3, r4, r3, lsr #(SECTION_SHIFT - PMD_ORDER)
 	orrne	r6, r7, r0
 	strne	r6, [r3]
@@ -698,6 +803,9 @@ __fixup_a_pv_table:
 	bcc	1b
 	mov	pc, lr
 #endif
+/** 20121013
+	__fixup_pv_table 에서 b로 들어왔을 때에는 __fixup_pv_table을 호출한 곳으로 리턴.
+ */
 ENDPROC(__fixup_a_pv_table)
 
 ENTRY(fixup_pv_table)

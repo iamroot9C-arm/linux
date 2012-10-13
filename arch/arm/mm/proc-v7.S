@@ -162,6 +162,15 @@ __v7_ca15mp_setup:
 	mov	r10, #0
 1:
 #ifdef CONFIG_SMP
+/** 20121013
+    ACTLR   IMPLEMENTATION DEFINE
+	Cortex-A9 TRM Auxiliary Control Register에 정의
+
+	SMP bit가 설정되어 있으면 FW (Cache and TLB maintenance broadcast)를 세팅해
+	다시 저장함.
+
+	cache coherency를 위해 'TLB and cache maintenance broadcast' 를 설정
+**/
 	ALT_SMP(mrc	p15, 0, r0, c1, c0, 1)
 	ALT_UP(mov	r0, #(1 << 6))		@ fake it for UP
 	tst	r0, #(1 << 6)			@ SMP/nAMP mode enabled?
@@ -170,8 +179,14 @@ __v7_ca15mp_setup:
 	mcreq	p15, 0, r0, c1, c0, 1
 #endif
 __v7_setup:
+/** 20121013
+    local stack 에 register 백업
+**/
 	adr	r12, __v7_setup_stack		@ the local stack
 	stmia	r12, {r0-r5, r7, r9, r11, lr}
+/** 20121013
+    v7_flush_dcache_all arch/arm/mm/cache-v7.S
+**/
 	bl	v7_flush_dcache_all
 	ldmia	r12, {r0-r5, r7, r9, r11, lr}
 
@@ -306,6 +321,12 @@ __v7_setup_stack:
 .macro __v7_proc initfunc, mm_mmuflags = 0, io_mmuflags = 0, hwcaps = 0
 	ALT_SMP(.long	PMD_TYPE_SECT | PMD_SECT_AP_WRITE | PMD_SECT_AP_READ | \
 			PMD_SECT_AF | PMD_FLAGS_SMP | \mm_mmuflags)
+/** 20121013
+    ALT_UP는 별도의 섹션에 저장하므로 index에 포함되지 않음
+	#define ALT_UP(instr...)					\
+		.pushsection ".alt.smp.init", "a"			;\
+		...
+**/
 	ALT_UP(.long	PMD_TYPE_SECT | PMD_SECT_AP_WRITE | PMD_SECT_AP_READ | \
 			PMD_SECT_AF | PMD_FLAGS_UP | \mm_mmuflags)
 	.long	PMD_TYPE_SECT | PMD_SECT_AP_WRITE | \

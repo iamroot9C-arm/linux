@@ -44,7 +44,13 @@ ENDPROC(v7_flush_icache_all)
  */
 ENTRY(v7_flush_dcache_all)
 	dmb					@ ensure ordering with previous memory accesses
+/** 20121013
+    CLIDR : Cache Level ID Register
+**/
 	mrc	p15, 1, r0, c0, c0, 1		@ read clidr
+/** 20121013
+    LoC : Level of Coherency for the cache hierarchy
+**/
 	ands	r3, r0, #0x7000000		@ extract loc from clidr
 	mov	r3, r3, lsr #23			@ left align loc bit field
 	beq	finished			@ if loc is 0, then no need to clean
@@ -53,25 +59,59 @@ loop1:
 	add	r2, r10, r10, lsr #1		@ work out 3x current cache level
 	mov	r1, r0, lsr r2			@ extract cache type bits from clidr
 	and	r1, r1, #7			@ mask of the bits for current cache only
+/** 20121013
+  CLIDR의 CtypeN format
+    000     No cache
+    001     Instruction cache only
+	010     Data cache only     <---- 여기서는 이 이후일 때만 관심이 있음
+	011     Separate instruction and data caches
+	100     Unified cache
+	101,11X Reserved
+**/
 	cmp	r1, #2				@ see what cache we have at this level
 	blt	skip				@ skip if no cache, or just i-cache
 #ifdef CONFIG_PREEMPT
 	save_and_disable_irqs_notrace r9	@ make cssr&csidr read atomic
 #endif
+/** 20121013
+  The CSSELR selects the current CCSIDR, by specifying:
+  - The required cache level.
+  - The cache type, either:
+
+  select한 캐시 레벨에 대한 set, way 등 정보가 CCSIDR에 설정됨
+**/
 	mcr	p15, 2, r10, c0, c0, 0		@ select current cache level in cssr
 	isb					@ isb to sych the new cssr&csidr
+/** 20121013
+  CSIDR Cache Size ID Registers
+**/
 	mrc	p15, 1, r1, c0, c0, 0		@ read the new csidr
 #ifdef CONFIG_PREEMPT
 	restore_irqs_notrace r9
 #endif
+/** 20121013
+    r2 LineSize
+**/
 	and	r2, r1, #7			@ extract the length of the cache lines
 	add	r2, r2, #4			@ add 4 (line length offset)
 	ldr	r4, =0x3ff
+/** 20121013
+    r4 CCSIDR Associativity 추출
+**/
 	ands	r4, r4, r1, lsr #3		@ find maximum number on the way size
+/** 20121013
+    r4에서 zero의 개수를 counting 해 r5에 저장
+**/
 	clz	r5, r4				@ find bit position of way size increment
+/** 20121013
+    r7 CCSIDR NumSets 추출
+**/
 	ldr	r7, =0x7fff
 	ands	r7, r7, r1, lsr #13		@ extract max number of the index size
 loop2:
+/** 20121013
+    r9에 r4 백업
+**/
 	mov	r9, r4				@ create working copy of max way size
 loop3:
  ARM(	orr	r11, r10, r9, lsl r5	)	@ factor way and cache number into r11
@@ -80,6 +120,9 @@ loop3:
  ARM(	orr	r11, r11, r7, lsl r2	)	@ factor index number into r11
  THUMB(	lsl	r6, r7, r2		)
  THUMB(	orr	r11, r11, r6		)	@ factor index number into r11
+/** 20121013
+     DCCISW 에 계산한 값을 포맷대로 채워넣어 clean & invalidate
+**/
 	mcr	p15, 0, r11, c7, c14, 2		@ clean & invalidate by set/way
 	subs	r9, r9, #1			@ decrement the way
 	bge	loop3
@@ -93,6 +136,9 @@ finished:
 	mov	r10, #0				@ swith back to cache level 0
 	mcr	p15, 2, r10, c0, c0, 0		@ select current cache level in cssr
 	dsb
+/** 20121013
+    isb까지 해줘야 하는지??? reference로 삼을 문서는?
+**/
 	isb
 	mov	pc, lr
 ENDPROC(v7_flush_dcache_all)
