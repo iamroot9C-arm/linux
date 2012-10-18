@@ -279,7 +279,7 @@ __create_page_tables:
     PMD_FLAGS_SMP   PMD_SECT_WBWA|PMD_SECT_S
 			#define PMD_SECT_WBWA		(PMD_SECT_TEX(1) | PMD_SECT_CACHEABLE | PMD_SECT_BUFFERABLE)
 				TEX(001), C(1), B(1)에 해당하는 entry는 manual에 존재하지 않음
-			#define PMD_SECT_S		(_AT(pmdval_t, 1) << 16)	/* v6 */		<-- shareable???
+			#define PMD_SECT_S		(_AT(pmdval_t, 1) << 16)	v6 	<-- shareable???
     mm_mmuflags   argument. default 0
 
 **/
