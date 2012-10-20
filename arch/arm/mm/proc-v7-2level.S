@@ -24,6 +24,9 @@
 #define PMD_FLAGS_UP	PMD_SECT_WB
 
 /* PTWs cacheable, inner WBWA shareable, outer WBWA not shareable */
+/** 20121020
+	TTB_FLAGS_SMP : 0b0110_1010 
+**/
 #define TTB_FLAGS_SMP	TTB_IRGN_WBWA|TTB_S|TTB_NOS|TTB_RGN_OC_WBWA
 #define PMD_FLAGS_SMP	PMD_SECT_WBWA|PMD_SECT_S
 

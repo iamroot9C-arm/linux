@@ -183,7 +183,14 @@ ENTRY(stext)
 	 */
 	ldr	r13, =__mmap_switched		@ address to jump to after
 						@ mmu has been enabled
+/** 20121020
+	lr에 __enable_mmu label 주소 저장. 
+**/
 	adr	lr, BSYM(1f)			@ return (PIC) address
+/** 20121020
+	r4 = [PA] page table address
+	r4 : 0x60004000, __create_page_tables에서 설정.
+**/
 	mov	r8, r4				@ set TTBR1 to swapper_pg_dir
 /** 20121013
     pc에 직접 값을 넣어 W(b)    \initfunc 을 실행. initfunc은 __v7_proc을 호출할 때 지정한 argument
@@ -194,6 +201,13 @@ ENTRY(stext)
  ARM(	add	pc, r10, #PROCINFO_INITFUNC	)
  THUMB(	add	r12, r10, #PROCINFO_INITFUNC	)
  THUMB(	mov	pc, r12				)
+/**
+	__v7_proc
+ 	ARM(	add	pc, r10, #PROCINFO_INITFUNC	)
+		call ==>	__v7_ca9mp_setup: 
+					__v7_setup:
+						__enable__mmu로 return
+**/
 1:	b	__enable_mmu
 ENDPROC(stext)
 	.ltorg
@@ -279,6 +293,10 @@ __create_page_tables:
     PMD_FLAGS_SMP   PMD_SECT_WBWA|PMD_SECT_S
 			#define PMD_SECT_WBWA		(PMD_SECT_TEX(1) | PMD_SECT_CACHEABLE | PMD_SECT_BUFFERABLE)
 				TEX(001), C(1), B(1)에 해당하는 entry는 manual에 존재하지 않음
+				20121020 PRRR, NMRR 의 인덱스로 사용됨. 
+					아래 테이블 참조. proc-v7.S의  v7_ttb_setup 매크로 이후 코드. 	
+					Table B4-28 Memory attributes and the n value for the PRRR field descriptions
+
 			#define PMD_SECT_S		(_AT(pmdval_t, 1) << 16)	v6 	<-- shareable???
     mm_mmuflags   argument. default 0
 
@@ -530,6 +548,9 @@ __secondary_data:
  *  r13 = *virtual* address to jump to upon completion
  */
 __enable_mmu:
+/** 20121020
+  	__LINUX_ARM_ARCH__ 어디에 정의 되어 있는지 ??? 
+**/
 #if defined(CONFIG_ALIGNMENT_TRAP) && __LINUX_ARM_ARCH__ < 6
 	orr	r0, r0, #CR_A
 #else
@@ -548,11 +569,34 @@ __enable_mmu:
 	mov	r5, #0
 	mcrr	p15, 0, r4, r5, c2		@ load TTBR0
 #else
+/** 20121020
+	#define DOMAIN_KERNEL	0
+	#define DOMAIN_TABLE	0
+	#define DOMAIN_USER	1
+	#define DOMAIN_IO	2
+	r5 = 1<<2 | 1<<0 | 1<<0 | 1<<(2*2) = 0b10101 = 0x15
+
+	항상 아래 두 값이 같은데., 왜 이렇게 계산을 하지 ???
+	domain_val(DOMAIN_KERNEL, DOMAIN_MANAGER) == domain_val(DOMAIN_TABLE, DOMAIN_MANAGER) 
+	그리고 DOMAIN_TABLE 의 의미는 ???
+	DOMAIN_CLIENT와 DOMAIN_MANAGER가 같은 값을 가지게 되는데., 이래도 되나 ??? 
+**/
 	mov	r5, #(domain_val(DOMAIN_USER, DOMAIN_MANAGER) | \
 		      domain_val(DOMAIN_KERNEL, DOMAIN_MANAGER) | \
 		      domain_val(DOMAIN_TABLE, DOMAIN_MANAGER) | \
 		      domain_val(DOMAIN_IO, DOMAIN_CLIENT))
 	mcr	p15, 0, r5, c3, c0, 0		@ load domain access register
+/** 20121020
+  	TTBR0 setting
+
+	TTBR1은 proc-v7.S 에서 아래와 같이 설정했음. 
+	r4 = r8 = 0x60004000 [PA] page table address
+	orr	r4, r4, #TTB_FLAGS_SMP
+	orr	r8, r8, #TTB_FLAGS_SMP
+	mcr	p15, 0, r8, c2, c0, 1	@ load TTB1
+
+	현 시점에서 TTBR0, TTBR1 는 같은 값임.
+**/
 	mcr	p15, 0, r4, c2, c0, 0		@ load page table pointer
 #endif
 	b	__turn_mmu_on
@@ -575,12 +619,21 @@ ENDPROC(__enable_mmu)
 	.align	5
 	.pushsection	.idmap.text, "ax"
 ENTRY(__turn_mmu_on)
+/** 20121020
+	mov r0, r0, mov r3, r3 같은 의미없는 인스트럭션이 instr_sync 명령 전후에 있는지???
+
+	SCTLR  설정 이후에 의미없어 보이는 MIDR ???
+**/
 	mov	r0, r0
 	instr_sync
 	mcr	p15, 0, r0, c1, c0, 0		@ write control reg
 	mrc	p15, 0, r3, c0, c0, 0		@ read id reg
 	instr_sync
 	mov	r3, r3
+/** 20121020
+	r13 : __mmap_switched		
+	__mmap_switched 로 b. 20121027 여기서부터 보기로 함. 
+**/
 	mov	r3, r13
 	mov	pc, r3
 __turn_mmu_on_end:

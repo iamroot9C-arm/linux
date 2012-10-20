@@ -165,6 +165,23 @@
 	.long	9999b,9001f;			\
 	.popsection
 
+/** 20121020
+ *	 ARM: Allow SMP kernels to boot on UP systems
+ *
+ *	 UP systems do not implement all the instructions that SMP systems have,
+ *	 so in order to boot a SMP kernel on a UP system, we need to rewrite
+ *	 parts of the kernel.
+ *
+ *	 Do this using an 'alternatives' scheme, where the kernel code and data
+ *	 is modified prior to initialization to replace the SMP instructions,
+ *	 thereby rendering the problematical code ineffectual.  We use the linker
+ *	 to generate a list of 32-bit word locations and their replacement values,
+ *	 and run through these replacements when we detect a UP system.
+ *
+ *	ALT_SMP, ALT_UP, ALT_UP_B 
+ *		: smp 로 설정된 커널이 up 머신에서 동작할 경우의 예외처리. 
+ *		: 앞으로 나오는 ALT_UP, ALT_UP_B는 무시하기로 함. 
+ **/
 #ifdef CONFIG_SMP
 #define ALT_SMP(instr...)					\
 9998:	instr
