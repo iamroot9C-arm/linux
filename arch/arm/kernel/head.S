@@ -550,6 +550,7 @@ __secondary_data:
 __enable_mmu:
 /** 20121020
   	__LINUX_ARM_ARCH__ 어디에 정의 되어 있는지 ??? 
+	arch/arm/Makefile에서 정의됨. vexpress에서는  __LINUX_ARM_ARCH__=7
 **/
 #if defined(CONFIG_ALIGNMENT_TRAP) && __LINUX_ARM_ARCH__ < 6
 	orr	r0, r0, #CR_A
