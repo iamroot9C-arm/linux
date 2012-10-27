@@ -192,10 +192,38 @@ SECTIONS
 	. = PAGE_OFFSET + TEXT_OFFSET;
 #else
 	__init_end = .;
+/** 20121027
+	ALIGN(exp)
+	http://korea.gnu.org/manual/release/ld/ld-sjp/ld-ko_3.html
+	다음 exp 바운더리에 정렬된 현재 위치 카운터 (.)의 결과를 리턴한다. 
+	exp는 반드시 그것의 값이 2의 몇제곱인 표현식이어야 한다. 
+**/
 	. = ALIGN(THREAD_SIZE);
 	__data_loc = .;
 #endif
 
+/** 20121027
+	AT()
+	http://korea.gnu.org/manual/release/ld/ld-sjp/ld-ko_3.html
+	AT 키워드 뒤에 따라 오는 표현식 ldadr는 그 섹션의 로드 주소를 지정한다. 
+	디폴트(AT 키워드를 사용하지 않는다면)는 위치 재지정 주소와 동일하다. 
+	이 기능은 ROM 이미지를 빌드하기 쉽도록 고안된 것이다. 
+	예를 들어서 이 SECTIONS 정의는 두가지 출력 섹션들을 생성한다: 
+		하나는 `.text'라고 불리는 것이며 이것은 0x1000에서 시작한다. 
+		그리고 다른 하나는 `.mdata'라고 불리는 것이며 
+			이것의 위치 재지정 주소가 0x2000일지라도 `.text' 섹션의 끝에 로드된다. 
+	심벌 _data은 code{0x2000} 값으로 정의된다:
+
+	SECTIONS
+	  {
+	  .text 0x1000 : { *(.text) _etext = . ; }
+	  .mdata 0x2000 : 
+		AT ( ADDR(.text) + SIZEOF ( .text ) )
+		{ _data = . ; *(.data); _edata = . ;  }
+	  .bss 0x3000 :
+		{ _bstart = . ;  *(.bss) *(COMMON) ; _bend = . ;}
+	}
+**/
 	.data : AT(__data_loc) {
 		_data = .;		/* address in memory */
 		_sdata = .;
@@ -310,5 +338,11 @@ SECTIONS
  * If you have to comment these two assert statements out, your
  * binutils is too old (for other reasons as well)
  */
+/** 20121027
+	여기서 사용되는 ASSERT는 macro가 아닌 ld command. 
+		http://www.scoberlin.de/content/media/http/informatik/gcc_docs/ld_3.html
+	ASSERT(exp, message)
+	    Ensure that exp is non-zero. If it is zero, then exit the linker with an error code, and print message. 
+**/
 ASSERT((__proc_info_end - __proc_info_begin), "missing CPU support")
 ASSERT((__arch_info_end - __arch_info_begin), "no machine record defined")

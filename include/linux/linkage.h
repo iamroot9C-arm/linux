@@ -48,11 +48,20 @@
 
 #ifndef __ALIGN
 #define __ALIGN		.align 4,0x90
+/** 20121027
+	.align 4,0x90
+		gnu as manual
+		2^4 단위로 align
+		0x90으로 pad를 채움. 
+**/
 #define __ALIGN_STR	".align 4,0x90"
 #endif
 
 #ifdef __ASSEMBLY__
 
+/** 20121027
+	arch/arm/kernel/.vmlinux.lds.cmd 에 LINKER_SCRIPT가 정의되어 있음.
+**/
 #ifndef LINKER_SCRIPT
 #define ALIGN __ALIGN
 #define ALIGN_STR __ALIGN_STR

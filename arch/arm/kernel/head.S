@@ -286,7 +286,9 @@ __create_page_tables:
 	ALT_SMP(.long	PMD_TYPE_SECT | PMD_SECT_AP_WRITE | PMD_SECT_AP_READ | \
 			PMD_SECT_AF | PMD_FLAGS_SMP | \mm_mmuflags)
 
-	각 flag에 해당하는 필드는 Cortex-A Series Programmer Guide, MMU 10-5
+	각 flag에 해당하는 필드는 Cortex-A Series Programmer Guide, 
+		Figure 10-3 Level 1 page table entry format
+
 	type            PMD_TYPE_SECT
 	AP              PMD_SECT_AP_WRITE | PMD_SECT_AP_READ
 	AF              0
@@ -298,6 +300,8 @@ __create_page_tables:
 					Table B4-28 Memory attributes and the n value for the PRRR field descriptions
 
 			#define PMD_SECT_S		(_AT(pmdval_t, 1) << 16)	v6 	<-- shareable???
+				이 비트에 대한 설명. Cortex-A Series Programmer Guide, Table 10-2 Memory attributes
+
     mm_mmuflags   argument. default 0
 
 **/
@@ -312,6 +316,11 @@ __create_page_tables:
 	이 부분을 초기화 하는 이유??? 이게 turn_mmu_on???
    	r5 <- .long	__turn_mmu_on
 	r6 <- .long	__turn_mmu_on_end
+
+	20121027
+	__turn_mmu_on ~ __turn_mmu_on_end 에 해당하는 page entry를 왜 이렇게 조작해주는지 ???
+    
+	이어지는 코드에서 커널 영역의 시작에서 커널 .bss 섹션의 끝까지 page entry를 조작하기 때문에., 필요없는 동작일 듯 ???
 **/
 	ldmia	r0, {r3, r5, r6}
 	sub	r0, r0, r3			@ virt->phys offset
@@ -603,6 +612,11 @@ __enable_mmu:
 	b	__turn_mmu_on
 ENDPROC(__enable_mmu)
 
+/** 20121027
+	???
+  	아래 주석에서 얘기하는 그 메일이 여기인듯...
+	http://www.arm.linux.org.uk/mailinglists/faq.php#f6
+**/
 /*
  * Enable the MMU.  This completely changes the structure of the visible
  * memory space.  You will not be able to trace execution through this.
@@ -622,6 +636,9 @@ ENDPROC(__enable_mmu)
 ENTRY(__turn_mmu_on)
 /** 20121020
 	mov r0, r0, mov r3, r3 같은 의미없는 인스트럭션이 instr_sync 명령 전후에 있는지???
+	
+	20121027
+	instr_sync 에 대한 사용 가이드가 어디 있는지 ???
 
 	SCTLR  설정 이후에 의미없어 보이는 MIDR ???
 **/

@@ -86,6 +86,16 @@ __mmap_switched:
 	adr	r3, __mmap_switched_data
 
 	ldmia	r3!, {r4, r5, r6, r7}
+/** 20121027
+	r4 (__data_loc) 	__data_loc는 데이터 섹션
+	r5 (_sdata) 		_sdata는 data섹션의 시작
+	r6 (__bss_start)	
+
+	???
+	XIP에서만 필요한 코드일 것으로 예상. 추측.  
+		__data_loc(ROM)에서 _sdata(RAM)로 데이터 영역 복사.
+		그렇다면 왜 CONFIG_XIP_KERNEL define으로 막아놓지 않았는지.
+**/
 	cmp	r4, r5				@ Copy data segment if needed
 1:	cmpne	r5, r6
 	ldrne	fp, [r4], #4
@@ -104,6 +114,11 @@ __mmap_switched:
 	str	r1, [r5]			@ Save machine type
 	str	r2, [r6]			@ Save atags pointer
 	bic	r4, r0, #CR_A			@ Clear 'A' bit
+/** 20121027
+  CR(Control Register)에 
+	Align bit(CR_A)가 켜진 값을 cr_alignment에 저장. 
+	Align bit(CR_A)가 꺼진 값을 cr_no_alignment에 저장. 
+**/
 	stmia	r7, {r0, r4}			@ Save control register values
 	b	start_kernel
 ENDPROC(__mmap_switched)
