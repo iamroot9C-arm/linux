@@ -27,6 +27,15 @@
    gcc also has a __attribute__((__hot__)) to move hot functions into
    a special section, but I don't see any sense in this right now in
    the kernel context */
+
+/** 20121103
+ * __cold__ 는 non-cold code의 locality 향상을 위해 사용된다고 함. 
+ * 
+ * http://www.iamroot.org/xe/7111
+ * http://gcc.gnu.org/onlinedocs/gcc/Function-Attributes.html
+ * 어떻게 사이즈에서 이득을 본다는 건지 ???  The function is optimized for size rather than speed. 
+ * - 추측 #1 cold를 뺀 섹션만 캐시에 올라가므로 캐시 라인 사이즈에서 이득을 보지만, 그러면 속도도 빨라질 듯. 
+ **/
 #define __cold			__attribute__((__cold__))
 
 #define __linktime_error(message) __attribute__((__error__(message)))

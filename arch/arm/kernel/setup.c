@@ -434,6 +434,13 @@ int __cpu_logical_map[NR_CPUS];
 void __init smp_setup_processor_id(void)
 {
 	int i;
+	/** 20121103
+	 * TRM. p68. Multiprocessor Affinity Register. CPUID를 읽는다. 
+	 *
+	 * cpu_logical_map[0,1.. NR_CPUS] 에 논리 cpu 번호를 기록한다.
+	 * 만약 MPIDR에서 읽은 cpu가 2라면, 
+	 * 	 cpu_logical_map[0,1,2,3] = {2,1,0,3} 으로 기록된다.
+	 **/
 	u32 cpu = is_smp() ? read_cpuid_mpidr() & 0xff : 0;
 
 	cpu_logical_map(0) = cpu;

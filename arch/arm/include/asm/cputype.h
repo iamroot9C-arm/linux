@@ -71,6 +71,11 @@ static inline unsigned int __attribute_const__ read_cpuid_tcmstatus(void)
 	return read_cpuid(CPUID_TCM);
 }
 
+/** 20121103
+ * MPIDR : multi processor affinity register 
+ *	ARM - B4.1.106 MPIDR, Multiprocessor Affinity Register, VMSA
+ *	TRM - 4.3.3 Multiprocessor Affinity Register
+ **/
 static inline unsigned int __attribute_const__ read_cpuid_mpidr(void)
 {
 	return read_cpuid(CPUID_MPIDR);

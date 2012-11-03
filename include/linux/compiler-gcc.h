@@ -59,6 +59,10 @@
 
 #define __deprecated			__attribute__((deprecated))
 #define __packed			__attribute__((packed))
+/** 20121103
+ * __weak를 이용하여 동일한 심볼이 global하게 정의되어 있는 경우(strong symbol), 그 심볼을 참조함. 
+ * The weak attribute causes the declaration to be emitted as a weak symbol rather than a global. This is primarily useful in defining library functions which can be overridden in user code, though it can also be used with non-function declarations. Weak symbols are supported for ELF targets, and also for a.out targets when using the GNU assembler and linker. 
+ **/
 #define __weak				__attribute__((weak))
 
 /*

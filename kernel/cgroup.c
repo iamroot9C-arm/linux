@@ -4483,6 +4483,9 @@ EXPORT_SYMBOL_GPL(cgroup_unload_subsys);
 int __init cgroup_init_early(void)
 {
 	int i;
+	/** 20121103
+	 * 여기까지...
+	 */
 	atomic_set(&init_css_set.refcount, 1);
 	INIT_LIST_HEAD(&init_css_set.cg_links);
 	INIT_LIST_HEAD(&init_css_set.tasks);

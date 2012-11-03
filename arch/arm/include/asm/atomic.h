@@ -21,6 +21,56 @@
 
 #ifdef __KERNEL__
 
+/** 20121103
+	ARMv6K부터 atomic 연산을 위해서 ldrex, strex 명령을 제공한다.
+	
+	The L1 memory system of the Cortex-A9 processor has a local monitor. This is a 2-state, open
+	and exclusive, state machine that manages load/store exclusive (LDREXB, LDREXH, LDREX, LDREXD,
+	STREXB, STREXH, STREX and STREXD) accesses and clear exclusive (CLREX) instructions.
+
+		exclusive access state
+		open access state 
+
+	ldrex (load exclusive)
+	strex (store exclusive)
+		ldrex, strex는 항상 짝으로 사용되어 동기화 연산을 보장한다. 
+		특정 address 에 대한 ldrex는 해당 메모리의 상태를 exclusive access state 로 변경한다. 
+		이후, 그 주소에 대한 strex는 해당 메모리의 상태가 
+			- exclusive 이면, str를 수행하고 0(정상)을 리턴한다.  
+			- open 이면, 1(실패)을 리턴한다. 아래 atomic_add 등에서는 이 경우, 다시 ldrex 부터 수행한다. 
+		
+		만약, 
+			context1 				context2 		 
+		  1 atomic_add(a, 1)  |  1 atomic_add(a, 2) |
+		  2                   |  2                  |
+		  3                   |  3                  |
+		  4                   |  4                  |
+		  5 ldrex             |  5                  |
+		  6                   |  6 ldrex            |
+		  7                   |  7 strex            |
+		  8 strex             |~                    | open state이므로 fail, reload시, a = 1 + 2 = 3이 저장됨.
+			두 개의 thread(process)에서 atomic_add의 접근시에 원자성이 보장된다.
+
+	clrex(exclusive -> open) 의 필요성.
+			context1 				context2 			context3
+		  1 atomic_add(a, 1)  |  1 atomic_add(a, 2) |  1 atomic_add(a, 3)|
+		  2                   |  2                  |  2                 |
+		  3                   |  3                  |  3                 |
+		  4                   |  4                  |  4                 |
+		  5 ldrex             |  5                  |  5 				 |  exclusive state 
+		  6                   |  6 ldrex            |  6                 |	exclusive state
+		  7                   |  7 strex            |  7                 |	open state			a = 2
+		  8                   |~                    |  8 ldrex           |	exclusive state
+		  9 strex             |~                    |  9                 |	open state			a = 1
+		~                     |~                    | 10 strex           |	open state 이므로 fail, reload 시, a = 1 + 3 = 4가 저장됨.
+	
+		이런 문제를 방지하기 위해서 context switching시에 clrex(exclusive -> open)를 수행하여, 데이터의 원자성이 깨지지 않도록 한다. 
+
+ * 참고.
+	TRM: 7.4 About the L1 data side memory system
+	ARM: A3.4.1 Exclusive access instructions and Non-shareable memory regions
+	http://www.iamroot.org/xe/66152
+ */
 /*
  * On ARM, ordinary assignment (str instruction) doesn't clear the local
  * strex/ldrex monitor on some implementations. The reason we can use it for

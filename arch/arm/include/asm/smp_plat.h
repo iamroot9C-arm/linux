@@ -16,6 +16,9 @@ static inline bool is_smp(void)
 	return false;
 #elif defined(CONFIG_SMP_ON_UP)
 	extern unsigned int smp_on_up;
+/** 20121103
+ * 0 or 1, False or True 중 하나의 값으로 리턴하기 위한 코드. !!
+ **/
 	return !!smp_on_up;
 #else
 	return true;

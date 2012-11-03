@@ -438,6 +438,9 @@ static void __init boot_cpu_init(void)
 	set_cpu_possible(cpu, true);
 }
 
+/** 20121103
+ * smp_setup_processor_id()는 arch/arm/kernel/setup.c에 있는 함수가 호출됨. 
+ **/
 void __init __weak smp_setup_processor_id(void)
 {
 }
@@ -467,6 +470,12 @@ static void __init mm_init(void)
 #endif
 }
 
+/** 20121103
+	#define __init		__section(.init.text) __cold notrace
+	__init
+		. 초기화 이후, unload 됨. 
+		. cold section 으로 들어가게 됨. 
+ **/
 asmlinkage void __init start_kernel(void)
 {
 	char * command_line;
@@ -476,15 +485,34 @@ asmlinkage void __init start_kernel(void)
 	 * Need to run as early as possible, to initialize the
 	 * lockdep hash:
 	 */
+	/** 20121103
+	 * lockdep_init() 
+	 * 	lock dependency check를 위한 debug에서 사용하는 기능. 
+	 * 	기본 옵션에서는 빠져있음. 
+	 * 	참고: http://studyfoss.egloos.com/5342153
+	 **/
 	lockdep_init();
+	/** 20121103
+	 * processor id를 설정한다.
+	 * cpu_logical_map을 설정한다. booting된 cpu 번호를 cpu_logical_map의 첫 항목으로 넣는다. 
+	 */
 	smp_setup_processor_id();
+	/** 20121103
+	 * CONFIG_DEBUG_OBJECTS 이 정의된 경우, early boot 단계에서 디버깅을 위한 자료구조 초기화인 듯. 
+	 */
 	debug_objects_early_init();
 
 	/*
 	 * Set up the the initial canary ASAP:
 	 */
+	/** 20121103
+	 * http://www.iamroot.org/xe/66002#comment_66008
+	 * CONFIG_CC_STACKPROTECTOR 이 정의된 경우, stack overflow를 감지할 수 있음. 
+	 */
 	boot_init_stack_canary();
 
+	/** 20121103
+	 */
 	cgroup_init_early();
 
 	local_irq_disable();
