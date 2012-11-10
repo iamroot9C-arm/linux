@@ -86,6 +86,33 @@
  * store exclusive to ensure that these are atomic.  We may loop
  * to ensure that the update happens.
  */
+/**20121110
+참조 사이트 
+http://www.ethernut.de/en/documents/arm-inline-asm.html
+http://ibiblio.org/gferg/ldp/GCC-Inline-Assembly-HOWTO.html#ss5.3
+
+아래 코드를 풀어보면..
+ldrex result, &v->counter
+add result, result, i
+strex tmp, result, &v->counter
+
+Constraints
+= : 쓰기전용
+& : ??? 
++ : read / write 속성
+Q :  (arm specific) ???
+o : 오프셋화 가능한 주소를 나타난다???
+r : general register ( r0 ~ r15)
+I : Immediate value in data processing instructions(Arm state)
+	e.g. ORR R0, R0, #operand
+	Ir 같이 쓰이고 있는데 어떤 의미일까???
+
+cc : 명령어가 condition 코드 레지스터를 변경할 경우에 사용한다.
+	eg) teq,subs 
+
++Qo : 만들어놓고 안쓰고 있다 어떤 의미가 있을까???
+
+**/
 static inline void atomic_add(int i, atomic_t *v)
 {
 	unsigned long tmp;

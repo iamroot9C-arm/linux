@@ -46,6 +46,9 @@ extern const struct file_operations proc_cgroup_operations;
 /* Define the enumeration of all builtin cgroup subsystems */
 #define SUBSYS(_x) _x ## _subsys_id,
 enum cgroup_subsys_id {
+/**20121110
+cpuset_subsys_id = 0,
+**/
 #include <linux/cgroup_subsys.h>
 	CGROUP_BUILTIN_SUBSYS_COUNT
 };

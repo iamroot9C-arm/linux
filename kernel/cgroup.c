@@ -94,6 +94,9 @@ static DEFINE_MUTEX(cgroup_root_mutex);
  */
 #define SUBSYS(_x) &_x ## _subsys,
 static struct cgroup_subsys *subsys[CGROUP_SUBSYS_COUNT] = {
+/**20121110
+&cpuset_subsys
+**/
 #include <linux/cgroup_subsys.h>
 };
 
@@ -1402,7 +1405,9 @@ static void init_cgroup_housekeeping(struct cgroup *cgrp)
 	INIT_LIST_HEAD(&cgrp->event_list);
 	spin_lock_init(&cgrp->event_list_lock);
 }
-
+/**20121110
+parameter로 들어온 cgroupfs_root 초기화
+**/
 static void init_cgroup_root(struct cgroupfs_root *root)
 {
 	struct cgroup *cgrp = &root->top_cgroup;
@@ -1414,6 +1419,9 @@ static void init_cgroup_root(struct cgroupfs_root *root)
 	cgrp->root = root;
 	cgrp->top_cgroup = cgrp;
 	list_add_tail(&cgrp->allcg_node, &root->allcg_list);
+/**20121110
+cgroup의 모든 필드 초기화
+**/
 	init_cgroup_housekeeping(cgrp);
 }
 
@@ -4483,16 +4491,20 @@ EXPORT_SYMBOL_GPL(cgroup_unload_subsys);
 int __init cgroup_init_early(void)
 {
 	int i;
-	/** 20121103
-	 * 여기까지...
-	 */
 	atomic_set(&init_css_set.refcount, 1);
 	INIT_LIST_HEAD(&init_css_set.cg_links);
 	INIT_LIST_HEAD(&init_css_set.tasks);
 	INIT_HLIST_NODE(&init_css_set.hlist);
 	css_set_count = 1;
 	init_cgroup_root(&rootnode);
+/**20121110
+	cgroupfs_root 를 추가할때마가 root_count를 하나씩 증가
+	현재 시스템 초기화 단계이므로 cgroupfs_root의 갯수는 1로 설정한다.
+**/	
 	root_count = 1;
+/**20121110
+ task_struct의 cgroup필드를 초기화 해준다
+**/
 	init_task.cgroups = &init_css_set;
 
 	init_css_set_link.cg = &init_css_set;
@@ -4518,7 +4530,9 @@ int __init cgroup_init_early(void)
 			       ss->name, ss->subsys_id);
 			BUG();
 		}
-
+/**20121110
+여기까지 했음...
+**/
 		if (ss->early_init)
 			cgroup_init_subsys(ss);
 	}
