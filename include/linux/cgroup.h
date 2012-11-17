@@ -58,6 +58,9 @@ cpuset_subsys_id = 0,
  * at once. We limit to this many since cgroupfs_root has subsys_bits to keep
  * track of all of them.
  */
+/** 20121117
+ * cgroupfs_root type이 관리할 수 있는 subsystem의 갯수. 32
+ */
 #define CGROUP_SUBSYS_COUNT (BITS_PER_BYTE*sizeof(unsigned long))
 
 /* Per-subsystem/per-cgroup state maintained by the system. */
@@ -204,11 +207,17 @@ struct cgroup {
 	 * potentially be reaped by the release agent. Protected by
 	 * release_list_lock
 	 */
+	/** 20121117
+	 * release agent 가 뭐냐 ???
+	 */
 	struct list_head release_list;
 
 	/*
 	 * list of pidlists, up to two for each namespace (one for procs, one
 	 * for tasks); created on demand.
+	 */
+	/** 20121117
+	 * procs ??? process ?
 	 */
 	struct list_head pidlists;
 	struct mutex pidlist_mutex;
@@ -217,6 +226,9 @@ struct cgroup {
 	struct rcu_head rcu_head;
 
 	/* List of events which userspace want to receive */
+	/** 20121117
+	 * userspace 와의 인터페이스 ??? 
+	 */
 	struct list_head event_list;
 	spinlock_t event_list_lock;
 };
@@ -512,11 +524,25 @@ struct cgroup_subsys {
 	struct idr idr;
 	spinlock_t id_lock;
 
+	/** 20121117
+	 * cftsets는 cftype_set의 리스트 헤드.
+	 */
 	/* list of cftype_sets */
 	struct list_head cftsets;
 
 	/* base cftypes, automatically [de]registered with subsys itself */
+	/** 20121117
+	 * base_cftypes는 기본 cftype data.
+	 * ss가 cpuset_subsys 인 경우, base_cftypes가 kernel/cpuset.c의 (struct cftype files[]) 를 가리키는 상태임.
+	 */
 	struct cftype *base_cftypes;
+	/** 20121117
+	 * cftsets의 첫 번째 노드. 
+	 * cftsets.cfts는 base_ctfypes.
+	 * cftsets.node는 cftsets 리스트를 구성하기 위한 필드.
+	 *
+	 * cftype 이 뭔지... 알 수 없음.  ??? 
+	 */
 	struct cftype_set base_cftset;
 
 	/* should be defined only by modular subsystems */

@@ -135,6 +135,10 @@ struct cgroupfs_root {
 	struct list_head root_list;
 
 	/* All cgroups on this root, cgroup_mutex protected */
+	/** 20121117
+	 * cgroupfs_root에 있는 모든 cgroup 집합의 head. 
+	 * top_cgroup을 통하여 모든 cgroup에 접근할 수 있는데, 이게 왜 필요한지 ???
+	 */
 	struct list_head allcg_list;
 
 	/* Hierarchy-specific flags */
@@ -1393,6 +1397,9 @@ static const struct super_operations cgroup_ops = {
 	.remount_fs = cgroup_remount,
 };
 
+/** 20121117
+ * cgroup을 생성하거나 top_cgroup을 초기화할 때, 사용. 
+ */
 static void init_cgroup_housekeeping(struct cgroup *cgrp)
 {
 	INIT_LIST_HEAD(&cgrp->sibling);
@@ -4245,6 +4252,11 @@ again:
 	return 0;
 }
 
+/** 20121117
+ * __init_or_module CONFIG_MODULE이 꺼져 있는 경우, __init 이 되어 init이후에 unload됨.
+ *
+ * cgroup_subsys 의 cftype 관련 데이터 초기화.
+ */
 static void __init_or_module cgroup_init_cftsets(struct cgroup_subsys *ss)
 {
 	INIT_LIST_HEAD(&ss->cftsets);
@@ -4252,6 +4264,11 @@ static void __init_or_module cgroup_init_cftsets(struct cgroup_subsys *ss)
 	/*
 	 * base_cftset is embedded in subsys itself, no need to worry about
 	 * deregistration.
+	 */
+	/** 20121117
+	 * base_cftypes가 정의되어 있다면, 
+	 * 	base_cftset를 base_cftypes로 초기화하고,
+	 * 	cftsets리스트에 그 node(base_cftset)를 추가한다. 
 	 */
 	if (ss->base_cftypes) {
 		ss->base_cftset.cfts = ss->base_cftypes;
@@ -4266,11 +4283,18 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
 	printk(KERN_INFO "Initializing cgroup subsys %s\n", ss->name);
 
 	/* init base cftset */
+	/** 20121117
+	 * cftype ???
+	 */
 	cgroup_init_cftsets(ss);
 
 	/* Create the top cgroup state for this subsystem */
 	list_add(&ss->sibling, &rootnode.subsys_list);
 	ss->root = &rootnode;
+	/** 20121117
+	 * ss가 cpuset_subsys인 경우, cpuset_create를 호출하게 됨. 
+	 * cpuset_create(dummytop) 은 비어있는 top_cpuset.css 를 리턴함.
+	 */
 	css = ss->create(dummytop);
 	/* We don't handle early failures gracefully */
 	BUG_ON(IS_ERR(css));
@@ -4508,7 +4532,13 @@ int __init cgroup_init_early(void)
 	init_task.cgroups = &init_css_set;
 
 	init_css_set_link.cg = &init_css_set;
+/** 20121117
+	#define dummytop (&rootnode.top_cgroup)
+ */
 	init_css_set_link.cgrp = dummytop;
+/** 20121117
+	rootnode.top_cgroup.css_sets 에 init_css_set_link.cgrp_link_list(cgroup list의 head) 를 추가한다.
+ */
 	list_add(&init_css_set_link.cgrp_link_list,
 		 &rootnode.top_cgroup.css_sets);
 	list_add(&init_css_set_link.cg_link_list,
@@ -4533,6 +4563,9 @@ int __init cgroup_init_early(void)
 /**20121110
 여기까지 했음...
 **/
+/** 20121117
+ * cpuset_subsys는 .early_init 이 켜져있음. 하드코딩됨.  
+ */
 		if (ss->early_init)
 			cgroup_init_subsys(ss);
 	}

@@ -268,18 +268,37 @@ static inline void do_raw_spin_unlock(raw_spinlock_t *lock) __releases(lock)
 /*
  * Map the spin_lock functions to the raw variants for PREEMPT_RT=n
  */
-
+/** 20121117
+ * Map the spin_lock ??? 
+ */
 static inline raw_spinlock_t *spinlock_check(spinlock_t *lock)
 {
 	return &lock->rlock;
 }
 
+/** 20121117
+ * spinlock_check(_lock) ???
+ * 이건 무엇을 위한걸까요
+ */
 #define spin_lock_init(_lock)				\
 do {							\
 	spinlock_check(_lock);				\
 	raw_spin_lock_init(&(_lock)->rlock);		\
 } while (0)
+/** 20121117
+raw_spin_lock_init(&(_lock)->rlock);		
 
+ *(lock) = __RAW_SPIN_LOCK_UNLOCKED(lock);
+
+ *(lock) = (raw_spinlock_t) __RAW_SPIN_LOCK_INITIALIZER(lock)
+ 
+ *(lock) = (raw_spinlock_t) { .raw_lock = __ARCH_SPIN_LOCK_UNLOCKED;}
+
+ (_lock)->rlock = (raw_spinlock_t) { .raw_lock = __ARCH_SPIN_LOCK_UNLOCKED;}
+ 
+ (_lock)->rlock = (raw_spinlock_t) { .raw_lock = { { 0 } };}
+
+ */
 static inline void spin_lock(spinlock_t *lock)
 {
 	raw_spin_lock(&lock->rlock);

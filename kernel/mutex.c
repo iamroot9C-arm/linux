@@ -36,6 +36,10 @@
 # include <asm/mutex.h>
 #endif
 
+/** 20121117
+ * struct mutex 자료구조를 초기화 한다. 
+ * 	mutex가 spin_lock을 통해 구현되는듯. ???
+ */
 void
 __mutex_init(struct mutex *lock, const char *name, struct lock_class_key *key)
 {

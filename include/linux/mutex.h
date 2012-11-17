@@ -86,6 +86,14 @@ struct mutex_waiter {
  *
  * It is not allowed to initialize an already locked mutex.
  */
+/** 20121117
+ *	struct lock_class_key { };
+ *	이렇게 선언 되어있는데.., lock_class_key __key 라고 선언하면 어떻게 될런지.. ???
+ * 아래 코드에서 결과 값으로 0이 나옴. 
+struct test {}; 
+struct test x;
+printf("%d\n", sizeof(x));
+ */
 # define mutex_init(mutex) \
 do {							\
 	static struct lock_class_key __key;		\

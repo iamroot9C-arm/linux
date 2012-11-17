@@ -1824,7 +1824,11 @@ static void cpuset_post_clone(struct cgroup *cgroup)
  *	cpuset_create - create a cpuset
  *	cont:	control group that the new cpuset will be part of
  */
-
+/** 20121117
+ * cgroup = dummytop으로 호출된 경우, parent가 없으므로 top_cpuset.css를 리턴한다.
+ *
+ * parent가 있는 경우에 대해서는 분석하지 않았음. 
+ */
 static struct cgroup_subsys_state *cpuset_create(struct cgroup *cont)
 {
 	struct cpuset *cs;

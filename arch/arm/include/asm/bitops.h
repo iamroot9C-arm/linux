@@ -187,6 +187,12 @@ extern int _find_next_bit_be(const unsigned long *p, int size, int offset);
 /*
  * Native endian atomic definitions.
  */
+/** 20121117
+ * _set_bit(nr, p)의 정의가 어딘가 있어야 함. 
+ * 	arch/arm/lib/setbit.S에 bitop macro를 통해 _set_bit(nr, p)가 정의됨. 
+ *
+ * 	20121117 오늘 여기까지 분석함. bitop macro는 보지 않음. 
+ */
 #define set_bit(nr,p)			ATOMIC_BITOP(set_bit,nr,p)
 #define clear_bit(nr,p)			ATOMIC_BITOP(clear_bit,nr,p)
 #define change_bit(nr,p)		ATOMIC_BITOP(change_bit,nr,p)
