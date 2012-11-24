@@ -77,6 +77,16 @@ static inline void arch_spin_lock(arch_spinlock_t *lock)
 	u32 newval;
 	arch_spinlock_t lockval;
 
+	/** 20121124
+	 *  ldrex/strex 쌍을 이용해 구현
+	 *  %0: lockval
+	 *  %1: newval
+	 *  %2: tmp				// 원자적 실행을 확인하는 리턴값
+	 *  %3: &lock->slock	// lock은 __ARCH_SPIN_LOCK_UNLOCKED   { { 0 } }
+	 *  %4: 1 << TICKER_SHIFT
+	 *
+	 *  newval = lockval + (1 << TICKET_SHIFT)
+	 **/
 	__asm__ __volatile__(
 "1:	ldrex	%0, [%3]\n"
 "	add	%1, %0, %4\n"
@@ -87,6 +97,10 @@ static inline void arch_spin_lock(arch_spinlock_t *lock)
 	: "r" (&lock->slock), "I" (1 << TICKET_SHIFT)
 	: "cc");
 
+	/** 20121124
+	 * lockval... wfe ??? 여기 보던 중 종료.
+	 * next와 owner가 같다면 while 문 수행 안 할듯???
+	 **/
 	while (lockval.tickets.next != lockval.tickets.owner) {
 		wfe();
 		lockval.tickets.owner = ACCESS_ONCE(lock->tickets.owner);

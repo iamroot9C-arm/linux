@@ -246,6 +246,15 @@ static DEFINE_SPINLOCK(hierarchy_id_lock);
  * extra work in the fork/exit path if none of the subsystems need to
  * be called.
  */
+/** 20121124
+ * fork나 exit시에 호출해야 하는 동작이 있음을 지정하는 flag.
+ *
+ * __read_mostly는 cache의 효과를 보기 위해 섹션을 지정해주는 macro
+ *   #define __read_mostly __attribute__((__section__(".data..read_mostly")))
+ *
+ * 읽기 위주의 데이터를 모아두면 cache bouncing 을 줄이는 효과를 얻을 수 있다.
+ * cache bouncing 참고 http://barriosstory.blogspot.kr/2008/03/cache.html
+ **/
 static int need_forkexit_callback __read_mostly;
 
 #ifdef CONFIG_PROVE_LOCKING
@@ -3902,17 +3911,37 @@ static void css_dput_fn(struct work_struct *work)
 	deactivate_super(sb);
 }
 
+/** 20121124
+ * 전달받은 css를 초기화 하고, subsys 배열의 해당 위치에 저장
+ * 즉, cgroup의 subsys를 참조하면 cgroup_subsys_state 정보를 얻을 수 있다
+ **/
 static void init_cgroup_css(struct cgroup_subsys_state *css,
 			       struct cgroup_subsys *ss,
 			       struct cgroup *cgrp)
 {
+	/** 20121124
+	 * 인자로 받은 cgrp을 css->cgroup으로 지정
+	 **/
 	css->cgroup = cgrp;
+	/** 20121124
+	 * css의 reference count 1로 초기화
+	 **/
 	atomic_set(&css->refcnt, 1);
 	css->flags = 0;
 	css->id = NULL;
+	/** 20121124
+	 * cgrp이 dummytop인 경우로 분석
+	 **/
 	if (cgrp == dummytop)
 		set_bit(CSS_ROOT, &css->flags);
 	BUG_ON(cgrp->subsys[ss->subsys_id]);
+	/** 20121124
+	 *  각 cpuset_subsys의 subsys_id 를 참고한다.
+	 *  include/linux/cgroup.h
+	 *
+	 *	cpuset의 subsys_id = 0
+	 *	cgroup의 subsys 배열의 subsystem의 해당 위치에 매개변수로 받은 css를 저장
+	 **/
 	cgrp->subsys[ss->subsys_id] = css;
 
 	/*
@@ -3921,7 +3950,13 @@ static void init_cgroup_css(struct cgroup_subsys_state *css,
 	 * context, which css_put() may be called without.  @css->dput_work
 	 * will be used to invoke dput() asynchronously from css_put().
 	 */
+	/** 20121124
+	 * work queue 관련??? INIT_WORK 내용은 다음에 보기로 함
+	 **/
 	INIT_WORK(&css->dput_work, css_dput_fn);
+	/** 20121124
+	 * ???
+	 **/
 	if (ss->__DEPRECATED_clear_css_refs)
 		set_bit(CSS_CLEAR_CSS_REFS, &css->flags);
 }
@@ -4276,6 +4311,15 @@ static void __init_or_module cgroup_init_cftsets(struct cgroup_subsys *ss)
 	}
 }
 
+/** 20121124
+ * cgroup과 subsys 관련한 자료구조를 초기화 한다.
+ *
+ * 1. rootnode와 cgroup subsys 연결한다.
+ * 2. ss의 create로 css를 생성하고 dummytop과 연결한다.
+ * 3. init_css_set의 subsys[subsys_id]에 css를 연결한다.
+ *    이로써 dummytop의 subsys와 init_css_set의 subsys는 같은 css를 가리키게 된다.
+ * 4. active 필드를 1로 설정한다.
+ **/
 static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
 {
 	struct cgroup_subsys_state *css;
@@ -4289,7 +4333,14 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
 	cgroup_init_cftsets(ss);
 
 	/* Create the top cgroup state for this subsystem */
+	/** 20121124
+	 * rootnode의 subsys_list에 ss->sibling을 anchor로 삼아 추가
+	 **/
 	list_add(&ss->sibling, &rootnode.subsys_list);
+	/** 20121124
+	 * subsys의 root를 rootnode로 지정
+	 * 왜 rootnode를 root로 지정한 것인가???
+	 **/
 	ss->root = &rootnode;
 	/** 20121117
 	 * ss가 cpuset_subsys인 경우, cpuset_create를 호출하게 됨. 
@@ -4298,14 +4349,27 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
 	css = ss->create(dummytop);
 	/* We don't handle early failures gracefully */
 	BUG_ON(IS_ERR(css));
+	/** 20121124
+	 * 여기부터 시작
+	 *
+	 * dummytop의
+	 * subsys(여기서는 cpuset)의 subsys_id번째 배열 위치(0)에 create로 생성한 css 저장
+	 **/
 	init_cgroup_css(css, ss, dummytop);
 
 	/* Update the init_css_set to contain a subsys
 	 * pointer to this state - since the subsystem is
 	 * newly registered, all tasks and hence the
 	 * init_css_set is in the subsystem's top cgroup. */
+	/** 20121124
+	 * 아래와 같은 표현이 더 간단하지 않을까?
+	 * init_css_set.subsys[ss->subsys_id] = css;
+	 **/
 	init_css_set.subsys[ss->subsys_id] = dummytop->subsys[ss->subsys_id];
 
+	/** 20121124
+	 *	cpuset_subsys 에는 fork, exit 함수 포인터가 지정되어 있지 않다.
+	 **/
 	need_forkexit_callback |= ss->fork || ss->exit;
 
 	/* At system boot, before all subsystems have been
@@ -4313,6 +4377,9 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
 	 * need to invoke fork callbacks here. */
 	BUG_ON(!list_empty(&init_task.tasks));
 
+	/** 20121124
+	 * 해당 subsys의 active를 설정함
+	 **/
 	ss->active = 1;
 
 	/* this function shouldn't be used with modular subsystems, since they
@@ -4566,6 +4633,9 @@ int __init cgroup_init_early(void)
 /** 20121117
  * cpuset_subsys는 .early_init 이 켜져있음. 하드코딩됨.  
  */
+		/** 20121124
+		 * subsys(cpuset_subsys)에 대한 자료구조(css 등)를 초기화 한다.
+		 **/
 		if (ss->early_init)
 			cgroup_init_subsys(ss);
 	}

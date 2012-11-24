@@ -14,6 +14,10 @@ static inline unsigned long arch_local_irq_save(void)
 {
 	unsigned long flags;
 
+	/** 20121124
+	 * cpsid에 의해 flags가 바뀌기 때문에 clobber list에 "cc" 기록
+	 * flags에는 i 플래그를 꺼주기 전 상태를 저장해 리턴한다.
+	 **/
 	asm volatile(
 		"	mrs	%0, cpsr	@ arch_local_irq_save\n"
 		"	cpsid	i"

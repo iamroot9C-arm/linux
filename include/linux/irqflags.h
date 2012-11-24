@@ -58,6 +58,10 @@
  */
 #define raw_local_irq_disable()		arch_local_irq_disable()
 #define raw_local_irq_enable()		arch_local_irq_enable()
+/** 20121124
+ * typecheck - flags의 type 검사
+ * arch_local_irq_save - 
+ **/
 #define raw_local_irq_save(flags)			\
 	do {						\
 		typecheck(unsigned long, flags);	\
@@ -90,6 +94,9 @@
 	do { trace_hardirqs_on(); raw_local_irq_enable(); } while (0)
 #define local_irq_disable() \
 	do { raw_local_irq_disable(); trace_hardirqs_off(); } while (0)
+ /** 20121124
+  * local_irq_save 보고감.
+  **/
 #define local_irq_save(flags)				\
 	do {						\
 		raw_local_irq_save(flags);		\

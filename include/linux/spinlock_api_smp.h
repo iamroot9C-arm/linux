@@ -105,8 +105,18 @@ static inline unsigned long __raw_spin_lock_irqsave(raw_spinlock_t *lock)
 {
 	unsigned long flags;
 
+	/** 20121124
+	 * flags에 cpsr 저장
+	 **/
 	local_irq_save(flags);
+	/** 20121124
+	 * 현재의 autoconf.h에는 CONFIG_PREEMPT_NONE 1임.
+	 * CONFIG_PREEMPT_COUNT 역시 define 되어 있지 않아 실행하지 않음
+	 **/
 	preempt_disable();
+	/** 20121124
+	 * NULL 함수
+	 **/
 	spin_acquire(&lock->dep_map, 0, 0, _RET_IP_);
 	/*
 	 * On lockdep we dont want the hand-coded irq-enable of
@@ -116,6 +126,9 @@ static inline unsigned long __raw_spin_lock_irqsave(raw_spinlock_t *lock)
 #ifdef CONFIG_LOCKDEP
 	LOCK_CONTENDED(lock, do_raw_spin_trylock, do_raw_spin_lock);
 #else
+	/** 20121124
+	 * 현재 config로 아래 함수 수행
+	 **/
 	do_raw_spin_lock_flags(lock, &flags);
 #endif
 	return flags;

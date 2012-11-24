@@ -513,9 +513,25 @@ asmlinkage void __init start_kernel(void)
 
 	/** 20121103
 	 */
+	/** 20121124
+	 * init 과정에서 먼저 초기화가 이루어져야 하는 자료구조를 초기화 한다.
+	 *   (init task에 대한 cgroup 자료구조)
+	 **/
 	cgroup_init_early();
 
+	/** 20121124
+	 * arch_local_irq_disable
+	 *   #if __LINUX_ARM_ARCH__ >= 6 일 때
+	 *		CPSID i instruction으로 호출
+	 *   #else
+	 *		cpsr 읽어 orr로 변경
+	 *
+	 *  왜 irq disable을 cgroup 등의 다음에 하는 걸까???
+	 **/
 	local_irq_disable();
+	/** 20121124
+	 * 전역 함수에 disable 처리를 기록한다. __read_mostly로 선언됨
+	 **/
 	early_boot_irqs_disabled = true;
 
 /*

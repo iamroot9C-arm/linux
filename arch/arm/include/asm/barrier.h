@@ -9,6 +9,10 @@
 #if __LINUX_ARM_ARCH__ >= 7 ||		\
 	(__LINUX_ARM_ARCH__ == 6 && defined(CONFIG_CPU_32v6K))
 #define sev()	__asm__ __volatile__ ("sev" : : : "memory")
+/** 20121124
+ *  ARM B1.8.13 Wait For Event and Send Event
+ *  어떤 이벤트를 기다리는지??? 특히 spinlock에서는?
+ **/
 #define wfe()	__asm__ __volatile__ ("wfe" : : : "memory")
 #define wfi()	__asm__ __volatile__ ("wfi" : : : "memory")
 #endif

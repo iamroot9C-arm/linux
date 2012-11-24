@@ -143,6 +143,9 @@ static inline void do_raw_spin_lock(raw_spinlock_t *lock) __acquires(lock)
 static inline void
 do_raw_spin_lock_flags(raw_spinlock_t *lock, unsigned long *flags) __acquires(lock)
 {
+	/** 20121124
+	 * 우리는 sparse를 사용하지 않기 때문에 __CHECKER__가 정의되어 있지 않음.
+	 **/
 	__acquire(lock);
 	arch_spin_lock_flags(&lock->raw_lock, *flags);
 }
