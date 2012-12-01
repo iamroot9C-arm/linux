@@ -155,6 +155,9 @@ static inline int do_raw_spin_trylock(raw_spinlock_t *lock)
 	return arch_spin_trylock(&(lock)->raw_lock);
 }
 
+/** 20121201
+ * raw_spin_lock을 해제해준다
+ **/ 
 static inline void do_raw_spin_unlock(raw_spinlock_t *lock) __releases(lock)
 {
 	arch_spin_unlock(&lock->raw_lock);

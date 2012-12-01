@@ -141,6 +141,9 @@ static inline unsigned long arch_local_save_flags(void)
 /*
  * restore saved IRQ & FIQ state
  */
+/** 20121201
+ * 저장된 flag값을 cpsr_c에 저장한다
+ **/
 static inline void arch_local_irq_restore(unsigned long flags)
 {
 	asm volatile(
@@ -149,7 +152,9 @@ static inline void arch_local_irq_restore(unsigned long flags)
 		: "r" (flags)
 		: "memory", "cc");
 }
-
+/** 20121201
+ *  IRQ mask bit가 검출되면 disable을 리턴
+ **/
 static inline int arch_irqs_disabled_flags(unsigned long flags)
 {
 	return flags & PSR_I_BIT;

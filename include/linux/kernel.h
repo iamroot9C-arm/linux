@@ -101,7 +101,11 @@
 }							\
 )
 
-
+/** 20121201
+ * void *__builtin_return_address(unsigned int LEVEL)
+ * 현재 함수의 반환 위치 주소를 돌려 줌
+ * http://forum.falinux.com/zbxe/?document_srl=550242
+ **/
 #define _RET_IP_		(unsigned long)__builtin_return_address(0)
 #define _THIS_IP_  ({ __label__ __here; __here: (unsigned long)&&__here; })
 

@@ -62,6 +62,9 @@
  * typecheck - flags의 type 검사
  * arch_local_irq_save - 
  **/
+/** 20121201
+ * 
+ */
 #define raw_local_irq_save(flags)			\
 	do {						\
 		typecheck(unsigned long, flags);	\

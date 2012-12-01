@@ -404,6 +404,12 @@ static int tick_notify(struct notifier_block *nb, unsigned long reason,
 	return NOTIFY_OK;
 }
 
+/** 20121201
+ * tick_notifier 생성
+ * notifier_call = tick_notify으로 초기화
+ * struct notifier_block __rcu *next = NULL 으로 초기화
+ * int priority = 0 으로 초기화
+ **/
 static struct notifier_block tick_notifier = {
 	.notifier_call = tick_notify,
 };

@@ -142,6 +142,9 @@ EXPORT_SYMBOL(_raw_spin_lock);
 #ifndef CONFIG_INLINE_SPIN_LOCK_IRQSAVE
 unsigned long __lockfunc _raw_spin_lock_irqsave(raw_spinlock_t *lock)
 {
+/** 20121201
+ * cpsid에의해interrupt를 꺼주기전의 cpsr을 리턴한다
+ **/
 	return __raw_spin_lock_irqsave(lock);
 }
 EXPORT_SYMBOL(_raw_spin_lock_irqsave);

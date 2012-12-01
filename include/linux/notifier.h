@@ -106,6 +106,9 @@ extern void srcu_init_notifier_head(struct srcu_notifier_head *nh);
 #define BLOCKING_NOTIFIER_HEAD(name)				\
 	struct blocking_notifier_head name =			\
 		BLOCKING_NOTIFIER_INIT(name)
+/** 20121201
+ * name으로 RAW_NOTIFIER 생성 및 초기화
+ **/
 #define RAW_NOTIFIER_HEAD(name)					\
 	struct raw_notifier_head name =				\
 		RAW_NOTIFIER_INIT(name)

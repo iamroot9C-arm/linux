@@ -45,6 +45,11 @@
 static inline void dsb_sev(void)
 {
 #if __LINUX_ARM_ARCH__ >= 7
+/** 20121201
+ * Data Synchronization Barrier
+ * The DSB instruction is a special memory barrier,
+ * that synchronizes the execution stream with memory accesses.
+**/
 	__asm__ __volatile__ (
 		"dsb\n"
 		SEV
@@ -71,6 +76,25 @@ static inline void dsb_sev(void)
 
 #define arch_spin_lock_flags(lock, flags) arch_spin_lock(lock)
 
+/** 20121201
+ *  
+ * +--------------+
+ * | NEXT | OWNER |
+ * +--------------+
+ * OWNER : lock을 획득한 core의 ticket값
+ * NEXT : 다음의 lock을 획득하려는 core에게 발급되는 ticket값
+ * 참고 http://lwn.net/Articles/267968/
+ * 
+ * Case 1 : core1이 처음 lock을 획득하려는 상황
+ *   core1(OWNER=0, NEXT=0) MEORY(OWNER=0, NEXT=0) -> lock 획득 전
+ *   OWNER == NEXT값이 같아서 lock을 획득
+ *   core1(OWNER=0, NEXT=0) MEORY(OWNER=0, NEXT=1) -> lock을 획득
+ * 
+ * Case 2 : core1이 lock을  획득한 상황에서 core2가 lock을 획득하려는 상황
+ *   core2(OWNER=0, NEXT=1) MEORY(OWNER=0, NEXT=1) -> wfe() 대기
+ *   spin unlock에서 Send Event를 보냄
+ *   core2(OWNER=1, NEXT=1) MEORY(OWNER=1, NEXT=1) -> lock을 획득
+ **/ 
 static inline void arch_spin_lock(arch_spinlock_t *lock)
 {
 	unsigned long tmp;
@@ -131,11 +155,24 @@ static inline int arch_spin_trylock(arch_spinlock_t *lock)
 	}
 }
 
+/** 20121201
+ * arch_spin_lock()에서 걸어준 lock을 해제해준다.
+ **/
 static inline void arch_spin_unlock(arch_spinlock_t *lock)
 {
+/** 20121201
+ *  %0: slock
+ *  %1: tmp
+ *  %2: &lock->slock
+ * 
+ * &lock->slock의 값을 slock으로 가져와서
+ * owner값에 1을 증가시키고&lock->slock에 저장한다. 
+**/
 	unsigned long tmp;
 	u32 slock;
-
+/** 20121201
+ * dmb()를 사용하였는데 왜???
+**/
 	smp_mb();
 
 	__asm__ __volatile__(
@@ -148,7 +185,11 @@ static inline void arch_spin_unlock(arch_spinlock_t *lock)
 	: "=&r" (slock), "=&r" (tmp)
 	: "r" (&lock->slock)
 	: "cc");
-
+/** 20121201
+ * dsb와 sev를 연속으로 호출하는 함수(dsb를 사용하였는데왜???)
+ * ARM문서 B1.8.13 Wait For Event and Send Event
+ * 멀티프로세서 시스템에서 모든 프로세스에게 이벤트를 전달해준다
+**/
 	dsb_sev();
 }
 
