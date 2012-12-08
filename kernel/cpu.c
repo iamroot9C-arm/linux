@@ -693,6 +693,10 @@ void set_cpu_present(unsigned int cpu, bool present)
 		cpumask_clear_cpu(cpu, to_cpumask(cpu_present_bits));
 }
 
+/** 20121208
+ online=true이면 cpu_online_bits변수에 cpu bit를 1로 세팅한다
+ online=false이면 cpu_online_bits변수에 cpu bit를 0으로 클리어한다
+ **/
 void set_cpu_online(unsigned int cpu, bool online)
 {
 	if (online)

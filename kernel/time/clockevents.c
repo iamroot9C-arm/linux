@@ -235,18 +235,21 @@ int clockevents_program_event(struct clock_event_device *dev, ktime_t expires,
 /**
  * clockevents_register_notifier - register a clock events change listener
  */
+/** 20121208
+ * clockevents_chain에 새로운 struct notifier_block nb를 등록해준다
+ **/
 int clockevents_register_notifier(struct notifier_block *nb)
 {
 	unsigned long flags;
 	int ret;
-/** 20121201
- * irq를 save하고 spin lock을 획득한다
- **/
-	raw_spin_lock_irqsave(&clockevents_lock, flags);
-/** 20121201
- * clockevents_chain에 새로운 struct notifier_block nb를 등록해준다
- **/
-	ret = raw_notifier_chain_register(&clockevents_chain, nb);
+    /** 20121201
+     * irq를 save하고 spin lock을 획득한다
+     **/
+    raw_spin_lock_irqsave(&clockevents_lock, flags);
+    ret = raw_notifier_chain_register(&clockevents_chain, nb);
+    /** 20121208
+     * Irq를 restore하고 spin lock을 해제한다
+     **/
 	raw_spin_unlock_irqrestore(&clockevents_lock, flags);
 
 	return ret;

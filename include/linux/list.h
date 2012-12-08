@@ -20,7 +20,9 @@
 
 #define LIST_HEAD(name) \
 	struct list_head name = LIST_HEAD_INIT(name)
-
+/** 20121208
+ list_head를 초기화 한다
+ **/
 static inline void INIT_LIST_HEAD(struct list_head *list)
 {
 	list->next = list;

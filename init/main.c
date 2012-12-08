@@ -430,9 +430,16 @@ void __init parse_early_param(void)
 
 static void __init boot_cpu_init(void)
 {
+  /** 20121208
+   현재 Processor의 번호를 얻어온다
+   **/
 	int cpu = smp_processor_id();
 	/* Mark the boot cpu "present", "online" etc for SMP and UP case */
-	set_cpu_online(cpu, true);
+	
+    /** 20121208
+    cpu_online, cpu_active, cpu_present, cpu_possible 비트맵에 해당 비트를 1로 세팅한다.
+     **/
+    set_cpu_online(cpu, true);
 	set_cpu_active(cpu, true);
 	set_cpu_present(cpu, true);
 	set_cpu_possible(cpu, true);
@@ -538,9 +545,19 @@ asmlinkage void __init start_kernel(void)
  * Interrupts are still disabled. Do necessary setups, then
  * enable them
  */
+    /** 20121208
+    TICK 초기화 함수
+     **/
 	tick_init();
+    /** 20121208
+    boot시 사용된 cpu 비트맵 변수들을 초기화
+     **/
 	boot_cpu_init();
+    /** 20121208
+    vexpress에서는 NULL함수임
+     **/
 	page_address_init();
+
 	printk(KERN_NOTICE "%s", linux_banner);
 	setup_arch(&command_line);
 	mm_init_owner(&init_mm, &init_task);

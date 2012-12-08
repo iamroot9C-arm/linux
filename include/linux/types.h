@@ -6,6 +6,10 @@
 #ifndef __ASSEMBLY__
 #ifdef	__KERNEL__
 
+/**1201208 
+  static DECLARE_BITMAP(cpu_online_bits, CONFIG_NR_CPUS) __read_mostly;
+  -> static unsigned long cpu_online_bits[1]
+ **/
 #define DECLARE_BITMAP(name,bits) \
 	unsigned long name[BITS_TO_LONGS(bits)]
 #else

@@ -11,6 +11,10 @@
 #include <linux/bitmap.h>
 #include <linux/bug.h>
 
+/** 20121208
+DECLARE_BITMAP(bits, NR_CPUS)
+=> unsigned long bits[1]   (NR_CPUS=4일경우)
+ **/
 typedef struct cpumask { DECLARE_BITMAP(bits, NR_CPUS); } cpumask_t;
 
 /**
@@ -726,6 +730,9 @@ void init_cpu_online(const struct cpumask *src);
  *
  * This does the conversion, and can be used as a constant initializer.
  */
+/** 20121208
+  이항 연산자가 필요한 이유 ???
+ **/
 #define to_cpumask(bitmap)						\
 	((struct cpumask *)(1 ? (bitmap)				\
 			    : (void *)sizeof(__check_is_bitmap(bitmap))))

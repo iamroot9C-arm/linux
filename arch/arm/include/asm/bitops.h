@@ -193,6 +193,9 @@ extern int _find_next_bit_be(const unsigned long *p, int size, int offset);
  *
  * 	20121117 오늘 여기까지 분석함. bitop macro는 보지 않음. 
  */
+/** 20121208
+ set_bit 분석함
+ **/
 #define set_bit(nr,p)			ATOMIC_BITOP(set_bit,nr,p)
 #define clear_bit(nr,p)			ATOMIC_BITOP(clear_bit,nr,p)
 #define change_bit(nr,p)		ATOMIC_BITOP(change_bit,nr,p)

@@ -5,7 +5,9 @@
  * macro itself.  For example, compile with -DFOO=bar, __stringify(FOO)
  * converts to "bar".
  */
+/** 20121208
 
+ **/
 #define __stringify_1(x...)	#x
 #define __stringify(x...)	__stringify_1(x)
 

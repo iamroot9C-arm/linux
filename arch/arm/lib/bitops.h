@@ -1,8 +1,21 @@
 #include <asm/unwind.h>
 
 #if __LINUX_ARM_ARCH__ >= 6
+/** 20121208
+_set_bit일 경우 r0 : nr, r1 : p, instr : orr 
+  #define ATOMIC_BITOP(name,nr,p)		_##name(nr,p)
+ **/
 	.macro	bitop, name, instr
 ENTRY(	\name		)
+  /** 20121208
+  UNWIND : unwind table에 등록해서 exeption이 발생했을 때 backtrace할 수 있는 정보를 제공하는 듯 ???
+   **/
+  /** 20121208
+  1. word-aligned를 체크하여 data abort를 발생 시키는 듯 ???
+  2. 32비트 word 단위연산을 위해 and r3, r0, #31을 수행한다
+  3. r1에서 해당되는 비트를 찾는다
+  4. 비트 연산을 atomic하게 수행한다
+   **/
 UNWIND(	.fnstart	)
 	ands	ip, r1, #3
 	strneb	r1, [ip]		@ assert word-aligned

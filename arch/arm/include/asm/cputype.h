@@ -58,6 +58,10 @@ extern unsigned int processor_id;
  */
 static inline unsigned int __attribute_const__ read_cpuid_id(void)
 {
+  /** 20121208
+		asm("mrc	p15, 0, %0, c0, c0, 0" : "=r" (_val) : : "cc"); 
+        위와 같은 명령어로 cpuid를 읽어옴
+   **/
 	return read_cpuid(CPUID_ID);
 }
 

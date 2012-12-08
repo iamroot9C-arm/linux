@@ -67,7 +67,9 @@ struct thread_info {
 #endif
 	struct restart_block	restart_block;
 };
-
+/** 20121208
+왜 cpu번호는 정의되지 않고, flags=0으로 정의되어 있는지 ???
+ **/
 #define INIT_THREAD_INFO(tsk)						\
 {									\
 	.task		= &tsk,						\
@@ -89,11 +91,22 @@ struct thread_info {
 /*
  * how to get the thread information struct from C
  */
+
+/** 20121208
+__attribute_const__ : 컴파일러에게 전역 변수를 access 하지 않는다고 알려줌 
+ **/
 static inline struct thread_info *current_thread_info(void) __attribute_const__;
 
+/** 20121208
+Kernel stack(8KB)의 thread_info의 첫 주소를 추출한다
+ **/
 static inline struct thread_info *current_thread_info(void)
 {
-	register unsigned long sp asm ("sp");
+	/** 20121208
+      5.37.1 Defining Global Register Variables 
+      => http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Global-Reg-Vars.html
+    **/
+    register unsigned long sp asm ("sp");
 	return (struct thread_info *)(sp & ~(THREAD_SIZE - 1));
 }
 

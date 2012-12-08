@@ -121,10 +121,10 @@ static inline void arch_spin_lock(arch_spinlock_t *lock)
 	: "r" (&lock->slock), "I" (1 << TICKET_SHIFT)
 	: "cc");
 
-	/** 20121124
-	 * lockval... wfe ??? 여기 보던 중 종료.
-	 * next와 owner가 같다면 while 문 수행 안 할듯???
+	 /** 20121208 
+     next와 owner가 같다면 while 문 수행 안함(20121124문서가  갱신됨)
 	 **/
+
 	while (lockval.tickets.next != lockval.tickets.owner) {
 		wfe();
 		lockval.tickets.owner = ACCESS_ONCE(lock->tickets.owner);
