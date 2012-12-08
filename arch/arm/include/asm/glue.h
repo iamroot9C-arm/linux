@@ -16,8 +16,14 @@
 #ifdef __KERNEL__
 
 #ifdef __STDC__
+/** 20121208
+ * gcc에서 내장되어 있음. 
+ */
 #define ____glue(name,fn)	name##fn
 #else
+/** 20121208
+ * " / ** / " 는 pre process 순서에 따라 name과 fn이 하나로 합쳐지지 않도록 방지하는 역할.
+ **/
 #define ____glue(name,fn)	name/**/fn
 #endif
 #define __glue(name,fn)		____glue(name,fn)

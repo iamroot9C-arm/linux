@@ -140,6 +140,10 @@ __mmap_switched_data:
 /*
  * This provides a C-API version of __lookup_processor_type
  */
+/** 20121208
+ r0 : cpuid
+ 해당되는 proc_info_list 의 위치를 리턴한다.
+ */
 ENTRY(lookup_processor_type)
 	stmfd	sp!, {r4 - r6, r9, lr}
 	mov	r9, r0

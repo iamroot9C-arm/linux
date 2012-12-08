@@ -147,6 +147,11 @@ struct machine_desc *machine_desc __initdata;
 
 static char default_command_line[COMMAND_LINE_SIZE] __initdata = CONFIG_CMDLINE;
 static union { char c[4]; unsigned long l; } endian_test __initdata = { { 'l', '?', '?', 'b' } };
+/** 20121208
+ * endian 확인 코드. 
+ * 	big endian 이면, 'b' return
+ * 	litten endian 이면, 'l' return
+ * */
 #define ENDIANNESS ((char)endian_test.l)
 
 DEFINE_PER_CPU(struct cpuinfo_arm, cpu_data);
@@ -224,6 +229,9 @@ static const char *proc_arch[] = {
 	"?(17)",
 };
 
+/** 20121208
+ * CPU ARCH 를 리턴.
+ * */
 static int __get_cpu_architecture(void)
 {
 	int cpu_arch;
@@ -241,6 +249,9 @@ static int __get_cpu_architecture(void)
 
 		/* Revised CPUID format. Read the Memory Model Feature
 		 * Register 0 and check for VMSAv7 or PMSAv7 */
+		/** 20121208
+		 * B4.1.89 ID_MMFR0, Memory Model Feature Register 0, VMSA
+		 * */
 		asm("mrc	p15, 0, %0, c0, c1, 4"
 		    : "=r" (mmfr0));
 		if ((mmfr0 & 0x0000000f) >= 0x00000003 ||
@@ -297,8 +308,16 @@ static int cpu_has_aliasing_icache(unsigned int arch)
 	return aliasing_icache;
 }
 
+/** 20121208
+ * 여기 보는 중... 
+ * */
 static void __init cacheid_init(void)
 {
+	/** 20121208
+	 * B4.1.42 CTR, Cache Type Register, VMSA
+	 *  cachetype: 0x83338003 
+	 *
+	 * */
 	unsigned int cachetype = read_cpuid_cachetype();
 	unsigned int arch = cpu_architecture();
 
@@ -307,6 +326,9 @@ static void __init cacheid_init(void)
 			/* ARMv7 register format */
 			arch = CPU_ARCH_ARMv7;
 			cacheid = CACHEID_VIPT_NONALIASING;
+			/** 20121208
+			 * cachetype에서 (3 << 14) : L1Ip, bits[15:14]
+			 * */
 			switch (cachetype & (3 << 14)) {
 			case (1 << 14):
 				cacheid |= CACHEID_ASID_TAGGED;
@@ -365,6 +387,10 @@ static void __init feat_v6_fixup(void)
 {
 	int id = read_cpuid_id();
 
+	/** 20121208
+	 * MIDR에서 0x41070000 의 의미는 ARM v6 임.
+	 * ARMv6 가 아닌 경우에 바로 리턴.
+	 * */
 	if ((id & 0xff0f0000) != 0x41070000)
 		return;
 
@@ -467,25 +493,47 @@ static void __init setup_processor(void)
 	}
 
 	cpu_name = list->cpu_name;
+	/** 20121208
+	 * CPU_ARCH_ARMv7 (9)
+	 * */
 	__cpu_architecture = __get_cpu_architecture();
 
 #ifdef MULTI_CPU
+	/** 20121208
+	 * 수행안됨.
+	 * */
 	processor = *list->proc;
 #endif
 #ifdef MULTI_TLB
+	/** 20121208
+	 * 수행됨.
+	 * */
 	cpu_tlb = *list->tlb;
 #endif
 #ifdef MULTI_USER
+	/** 20121208
+	 * 수행됨.
+	 * */
 	cpu_user = *list->user;
 #endif
 #ifdef MULTI_CACHE
+	/** 20121208
+	 * 수행됨.
+	 * */
 	cpu_cache = *list->cache;
 #endif
 
+	/** 20121208
+	 * cr_alignment는 head-common.S 에 __mmap_switched에서 설정함. 
+	 * */
 	printk("CPU: %s [%08x] revision %d (ARMv%s), cr=%08lx\n",
 	       cpu_name, read_cpuid_id(), read_cpuid_id() & 15,
 	       proc_arch[cpu_architecture()], cr_alignment);
 
+	/** 20121208
+	 * init_utsname()->machine에 이미 설정되어 있는 값을 
+	 * 		lookup_processor_type에서 읽어온 값으로 갱신.
+	 * */
 	snprintf(init_utsname()->machine, __NEW_UTS_LEN + 1, "%s%c",
 		 list->arch_name, ENDIANNESS);
 	snprintf(elf_platform, ELF_PLATFORM_SIZE, "%s%c",
@@ -497,6 +545,8 @@ static void __init setup_processor(void)
 
 	feat_v6_fixup();
 
+	/** 20121208
+	 * */
 	cacheid_init();
 	cpu_init();
 }

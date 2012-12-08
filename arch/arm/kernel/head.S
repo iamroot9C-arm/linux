@@ -250,6 +250,9 @@ __create_page_tables:
 	str	r3, [r0], #4
 	teq	r0, r6
 	bne	1b
+/** 20121028
+	
+**/
 
 #ifdef CONFIG_ARM_LPAE
 	/*
