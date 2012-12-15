@@ -59,6 +59,9 @@ extern struct machine_desc *machine_desc;
  * Machine type table - also only accessible during boot
  */
 extern struct machine_desc __arch_info_begin[], __arch_info_end[];
+/** 20121215
+ * vmlinux.lds를 보면 __arch_info_begin ~ __arch_info_end이 정의되어 있음
+ **/
 #define for_each_machine_desc(p)			\
 	for (p = __arch_info_begin; p < __arch_info_end; p++)
 

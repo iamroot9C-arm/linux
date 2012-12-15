@@ -11,6 +11,10 @@
 
 #define __used			__attribute__((__used__))
 #define __must_check 		__attribute__((warn_unused_result))
+/** 20121215
+ * gcc에서 builtin_offsetof 지원여부를 확인하지 못하겠음 ???
+ *   (예제코드에서는 없는 것으로 나옴)
+ **/
 #define __compiler_offsetof(a,b) __builtin_offsetof(a,b)
 
 #if __GNUC_MINOR__ >= 3

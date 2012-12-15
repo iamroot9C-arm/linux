@@ -130,9 +130,16 @@ EXPORT_SYMBOL(outer_cache);
 int __cpu_architecture __read_mostly = CPU_ARCH_UNKNOWN;
 
 struct stack {
+	/** 20121215
+	 * 왜 3개씩 가지고 있는 것일까???
+	 **/
 	u32 irq[3];
 	u32 abt[3];
 	u32 und[3];
+	/** 20121215
+	 * cacheline 단위로 align.
+	 * __aligned__(1 << CONFIG_ARM_L1_CACHE_SHIFT(6))
+	 **/
 } ____cacheline_aligned;
 
 static struct stack stacks[NR_CPUS];
@@ -287,14 +294,34 @@ static int cpu_has_aliasing_icache(unsigned int arch)
 	/* arch specifies the register format */
 	switch (arch) {
 	case CPU_ARCH_ARMv7:
+		/** 20121215
+		 * Cache Size Selection Register
+		 *   0: Data or unified cache
+		 *   1: Instruction cache
+		 **/
 		asm("mcr	p15, 2, %0, c0, c0, 0 @ set CSSELR"
 		    : /* No output operands */
 		    : "r" (1));
 		isb();
+		/** 20121215
+		 * Cache Size ID Registers
+		 **/
 		asm("mrc	p15, 1, %0, c0, c0, 0 @ read CCSIDR"
 		    : "=r" (id_reg));
 		line_size = 4 << ((id_reg & 0x7) + 2);
 		num_sets = ((id_reg >> 13) & 0x7fff) + 1;
+		/** 20121215
+		 * TRM에 따르면
+		 * line_size : 4 << (1 + 2)
+		 * num_sets  : 32KB라 가정하면, (0xFF) + 1
+		 *	0x7F	16KB cache size
+		 *	0xFF	32KB cache size
+		 *	0x1FF	64KB cache size
+		 *
+		 *	PAGE_SIZE: 4KB
+		 *
+		 *	((4 << 3) * (0x100)) > 4 KB       : TRUE
+		 **/
 		aliasing_icache = (line_size * num_sets) > PAGE_SIZE;
 		break;
 	case CPU_ARCH_ARMv6:
@@ -308,14 +335,14 @@ static int cpu_has_aliasing_icache(unsigned int arch)
 	return aliasing_icache;
 }
 
-/** 20121208
- * 여기 보는 중... 
- * */
+/** 20121215
+ * cachetype과 architecture를 읽어와 전역변수 cacheid를 설정하고, printk로 출력
+ **/
 static void __init cacheid_init(void)
 {
 	/** 20121208
-	 * B4.1.42 CTR, Cache Type Register, VMSA
-	 *  cachetype: 0x83338003 
+	 * B4.1.42 CTR, Cache Type Register, VMSA (from ARM)
+	 *  cachetype: 0x83338003                 (from TRM)
 	 *
 	 * */
 	unsigned int cachetype = read_cpuid_cachetype();
@@ -325,6 +352,9 @@ static void __init cacheid_init(void)
 		if ((cachetype & (7 << 29)) == 4 << 29) {
 			/* ARMv7 register format */
 			arch = CPU_ARCH_ARMv7;
+			/** 20121215
+			 *  NONALIASING ??? 하드웨어적인 설계인가?
+			 **/
 			cacheid = CACHEID_VIPT_NONALIASING;
 			/** 20121208
 			 * cachetype에서 (3 << 14) : L1Ip, bits[15:14]
@@ -344,12 +374,19 @@ static void __init cacheid_init(void)
 			else
 				cacheid = CACHEID_VIPT_NONALIASING;
 		}
+		/** 20121215
+		 * vexpress의 경우 아래 조건 만족
+		 **/
 		if (cpu_has_aliasing_icache(arch))
 			cacheid |= CACHEID_VIPT_I_ALIASING;
 	} else {
 		cacheid = CACHEID_VIVT;
 	}
 
+	/** 20121215
+	 * vexpress qemu에서 수행시 출력결과
+	 *	CPU: PIPT / VIPT nonaliasing data cache, VIPT aliasing instruction cache
+	 **/
 	printk("CPU: %s data cache, %s instruction cache\n",
 		cache_is_vivt() ? "VIVT" :
 		cache_is_vipt_aliasing() ? "VIPT aliasing" :
@@ -407,9 +444,19 @@ static void __init feat_v6_fixup(void)
  *
  * cpu_init sets up the per-CPU stacks.
  */
+/** 20121215
+ * CPU 0번에 대해 irq, abt, und 모드의 stack pointer를 설정한다.
+ **/
 void cpu_init(void)
 {
+	/** 20121215
+	 * current_thread_info()->cpu는 0.
+	 * 부트 프로세스에서 실행되는 cpu를 의미함
+	 **/
 	unsigned int cpu = smp_processor_id();
+	/** 20121215
+	 * cpu 0의 stack 주소를 가져옴
+	 **/
 	struct stack *stk = &stacks[cpu];
 
 	if (cpu >= NR_CPUS) {
@@ -417,6 +464,9 @@ void cpu_init(void)
 		BUG();
 	}
 
+	/** 20121215
+	 * cpu_v7_proc_init
+	 **/
 	cpu_proc_init();
 
 	/*
@@ -432,6 +482,21 @@ void cpu_init(void)
 	/*
 	 * setup stacks for re-entrant exception handlers
 	 */
+	/** 20121215
+	 * 0 : stk
+	 * 1 : "I" (PSR_F_BIT | PSR_I_BIT | IRQ_MODE),
+	 * 2 : "I" (offsetof(struct stack, irq[0])),
+	 * 3 : "I" (PSR_F_BIT | PSR_I_BIT | ABT_MODE),
+	 * 4 : "I" (offsetof(struct stack, abt[0])),
+	 * 5 : "I" (PSR_F_BIT | PSR_I_BIT | UND_MODE),
+	 * 6 : "I" (offsetof(struct stack, und[0])),
+	 * 7 : "I" (PSR_F_BIT | PSR_I_BIT | SVC_MODE)
+	 *
+	 *  1. IRQ, ABT, UND 모드로 각각 전환
+	 *  2. 각 모드에서 사용하는 stack의 주소를 계산 (stk + offset)
+	 *  3. 해당 모드의 sp 레지스터에 저장
+	 *  4. 위 세 가지 모드의 설정이 끝난 뒤 SVC로 돌아옴
+	 **/
 	__asm__ (
 	"msr	cpsr_c, %1\n\t"
 	"add	r14, %0, %2\n\t"
@@ -476,6 +541,10 @@ void __init smp_setup_processor_id(void)
 	printk(KERN_INFO "Booting Linux on physical CPU %d\n", cpu);
 }
 
+/** 20121215
+ * cpuid를 읽어 architecture 관련 전역변수를 초기화
+ *   - cacheid 및 cpu stack 등 프로세서 관련 변수 초기화
+ **/
 static void __init setup_processor(void)
 {
 	struct proc_info_list *list;
@@ -494,7 +563,7 @@ static void __init setup_processor(void)
 
 	cpu_name = list->cpu_name;
 	/** 20121208
-	 * CPU_ARCH_ARMv7 (9)
+	 * __cpu_architecture = CPU_ARCH_ARMv7 (9)
 	 * */
 	__cpu_architecture = __get_cpu_architecture();
 
@@ -545,9 +614,15 @@ static void __init setup_processor(void)
 
 	feat_v6_fixup();
 
-	/** 20121208
-	 * */
+	/** 20121215
+	 * cachetype에 따라 전역변수 cacheid를 init 해주는 함수
+	 *   CACHEID_VIPT_NONALIASING | CACHEID_VIPT_I_ALIASING
+	 **/
 	cacheid_init();
+	/** 20121215
+	 * architecture specific한 초기화 작업이 있다면 호출
+	 * cpu에 대한 모드별 stack pointer 초기화
+	 **/
 	cpu_init();
 }
 
@@ -807,9 +882,17 @@ __tagtable(ATAG_CMDLINE, parse_tag_cmdline);
  */
 static int __init parse_tag(const struct tag *tag)
 {
+	/** 20121215
+	 * vmlinux.lds에 __tagtable_begin, __tagtable_end 사이에 .taglist.init이 저장됨.
+	 * __tag 속성이 붙은 구조체 변수가 .taglist.init에 저장됨.
+	 * 이 함수 여기저기서 __tagtable(tag, fn) 매크로를 호출하고 있다.
+	 **/
 	extern struct tagtable __tagtable_begin, __tagtable_end;
 	struct tagtable *t;
 
+	/** 20121215
+	 * 여기까지 20121222
+	 **/
 	for (t = &__tagtable_begin; t < &__tagtable_end; t++)
 		if (tag->hdr.tag == t->tag) {
 			t->parse(tag);
@@ -928,11 +1011,18 @@ static struct machine_desc * __init setup_machine_tags(unsigned int nr)
 	struct machine_desc *mdesc = NULL, *p;
 	char *from = default_command_line;
 
+	/** 20121215
+	 * PHYS_OFFSET은 head.S에서 지정한 __pv_phys_offset값
+	 **/
 	init_tags.mem.start = PHYS_OFFSET;
 
 	/*
 	 * locate machine in the list of supported machines.
 	 */
+	/** 20121215
+	 * machine_desc는 .arch.info.init에 저장됨.
+	 * .arch.info.init의 값은 arch/arm/mach-vexpress/v2m.c 에서 MACHINE_START에 의해 .arch.info.init 섹션에 채워짐
+	 **/
 	for_each_machine_desc(p)
 		if (nr == p->nr) {
 			printk("Machine: %s\n", p->name);
@@ -946,6 +1036,9 @@ static struct machine_desc * __init setup_machine_tags(unsigned int nr)
 		dump_machine_table(); /* does not return */
 	}
 
+	/** 20121215
+	 * head-common.S 에서 부트로더에서 넘어온 atags 시작 주소(PA)를 저장.
+	 **/
 	if (__atags_pointer)
 		tags = phys_to_virt(__atags_pointer);
 	else if (mdesc->atag_offset)
@@ -960,6 +1053,10 @@ static struct machine_desc * __init setup_machine_tags(unsigned int nr)
 		convert_to_tag_list(tags);
 #endif
 
+	/** 20121215
+	 * 넘어온 tags의 첫번째 tag가 ATAG_CORE가 아니라면,
+	 * 즉 정상적인 설정값이 아니라면 init_tags로 대체
+	 **/
 	if (tags->hdr.tag != ATAG_CORE) {
 #if defined(CONFIG_OF)
 		/*
@@ -971,12 +1068,18 @@ static struct machine_desc * __init setup_machine_tags(unsigned int nr)
 		tags = (struct tag *)&init_tags;
 	}
 
+	/** 20121215
+	 * function pointer가 지정되어 있지 않으면 실행 안 함
+	 **/
 	if (mdesc->fixup)
 		mdesc->fixup(tags, &from, &meminfo);
 
 	if (tags->hdr.tag == ATAG_CORE) {
 		if (meminfo.nr_banks != 0)
 			squash_mem_tags(tags);
+		/** 20121215
+		 * NULL 함수
+		 **/
 		save_atags(tags);
 		parse_tags(tags);
 	}
@@ -998,8 +1101,20 @@ void __init setup_arch(char **cmdline_p)
 {
 	struct machine_desc *mdesc;
 
+	/** 20121215
+	 * processor 관련 자료구조 초기화
+	 **/
 	setup_processor();
+	/** 20121215
+	 * NULL 리턴
+	 **/
 	mdesc = setup_machine_fdt(__atags_pointer);
+	/** 20121215
+	 * mdesc가 NULL이므로 실행
+	 *
+	 * machine_arch_type은 CONFIG_MACH_XXX가 정의되어 있지 않은 경우
+	 * decompress_kernel()의 argument로 넘어온 값을 사용
+	 **/
 	if (!mdesc)
 		mdesc = setup_machine_tags(machine_arch_type);
 	machine_desc = mdesc;

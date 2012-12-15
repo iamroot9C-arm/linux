@@ -25,6 +25,9 @@
 #include "proc-v7-2level.S"
 #endif
 
+/** 20121215
+ * 바로 return하는 것인데, 아무런 동작이 필요 없다는 의미인가???
+ **/
 ENTRY(cpu_v7_proc_init)
 	mov	pc, lr
 ENDPROC(cpu_v7_proc_init)

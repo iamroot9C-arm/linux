@@ -107,6 +107,9 @@ __mmap_switched:
 	strcc	fp, [r6],#4
 	bcc	1b
 
+/** 20121215
+    위에서 r3에 load하면서 update 했으므로 그 다음 값들(processor_id부터)을 읽는다.
+**/
  ARM(	ldmia	r3, {r4, r5, r6, r7, sp})
  THUMB(	ldmia	r3, {r4, r5, r6, r7}	)
  THUMB(	ldr	sp, [r3, #16]		)

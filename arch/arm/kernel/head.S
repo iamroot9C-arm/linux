@@ -784,10 +784,15 @@ __fixup_pv_table:
 	add	r4, r4, r3	@ adjust table start address
 	add	r5, r5, r3	@ adjust table end address
 	add	r7, r7, r3	@ adjust __pv_phys_offset address
+	/** 20121215
+	  이곳에서 __pv_phys_offset을 처음 저장.
+	  r8 값은 __fixup_pv_table 호출 전에 PAGE_OFFSET(VA)를 PA로 변환한 값
+	**/
 	str	r8, [r7]	@ save computed PHYS_OFFSET to __pv_phys_offset
 	mov	r6, r3, lsr #24	@ constant for add/sub instructions
 /**20121006
 	어떻게 16MB 정렬이 되어 있나??? 그리고 왜???
+	instruction format을 보면 8비트가 immediate 값으로 사용
 **/
 	teq	r3, r6, lsl #24 @ must be 16MiB aligned
 THUMB(	it	ne		@ cross section branch )

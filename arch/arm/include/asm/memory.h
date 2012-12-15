@@ -181,6 +181,15 @@ extern unsigned long __pv_phys_offset;
 		5755431 8043debc:   ea000003    b   8043ded0 <setup_arch+0x388>
 
 **/
+/** 20121215
+	__PV_BITS_31_24 는 __fixup_pv_table 에서 계산된 offset으로 변경됨.
+	1. inline assembly 함수로 선언했기 때문에
+		virt_to_phys(), phys_to_virt()를 호출한 부분마다 다음 코드가 삽입된다.
+	2. instruction은 함수를 호출한 부분마다 들어가고, 각 instruction의 주소는
+		.pv_table section에 일괄 저장된다.
+	3. 이렇게 하는 이유는 offset 값을 memory에 넣고 add, sub를 하기 위해서는 load 과정이 필요한데,
+		부팅시에 이 과정을 한 번에 수정해 수행속도의 향상을 얻기 위함이다.
+ **/
 #define __pv_stub(from,to,instr,type)			\
 	__asm__("@ __pv_stub\n"				\
 	"1:	" instr "	%0, %1, %2\n"		\
