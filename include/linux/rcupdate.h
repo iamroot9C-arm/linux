@@ -507,13 +507,13 @@ static inline void rcu_preempt_sleep_check(void)
 		smp_read_barrier_depends(); \
 		(_________p1); \
 	})
-#define __rcu_assign_pointer(p, v, space) \
-	do { \
 /** 20121201
  * CONFIG SMP일 경우 #define smp_wmb()	dmb()
  * dmb()를 통해서 명령어 reordering을 방지함으로써
  * 새로운 값 참조를 보장해 준다.
  **/
+#define __rcu_assign_pointer(p, v, space) \
+	do { \
 		smp_wmb(); \
 		(p) = (typeof(*v) __force space *)(v); \
 	} while (0)
