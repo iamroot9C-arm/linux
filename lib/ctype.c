@@ -8,6 +8,9 @@
 #include <linux/compiler.h>
 #include <linux/export.h>
 
+/** 20121222
+ * ascii 값의 type 표시.
+ * */
 const unsigned char _ctype[] = {
 _C,_C,_C,_C,_C,_C,_C,_C,				/* 0-7 */
 _C,_C|_S,_C|_S,_C|_S,_C|_S,_C|_S,_C,_C,			/* 8-15 */

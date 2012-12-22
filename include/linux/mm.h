@@ -47,6 +47,9 @@ extern int sysctl_legacy_va_layout;
 #define nth_page(page,n) pfn_to_page(page_to_pfn((page)) + (n))
 
 /* to align the pointer to the (next) page boundary */
+/** 20121222
+ * addr을 다음 페이지로 align한다.
+ * */
 #define PAGE_ALIGN(addr) ALIGN(addr, PAGE_SIZE)
 
 /*

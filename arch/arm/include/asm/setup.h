@@ -177,6 +177,10 @@ struct tagtable {
 	((unsigned long)(&((struct tag *)0L)->member + 1)	\
 		<= (tag)->hdr.size * 4)
 
+/** 20121222
+ * struct tag t에 t의 크기를 더하고 4byte 로 캐스팅 한다. 
+ * 결과적으로 t는 다음 ATAG의 주소를 가르키게 된다. 
+ * */
 #define tag_next(t)	((struct tag *)((__u32 *)(t) + (t)->hdr.size))
 #define tag_size(type)	((sizeof(struct tag_header) + sizeof(struct type)) >> 2)
 

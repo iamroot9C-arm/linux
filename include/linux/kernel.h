@@ -6,6 +6,9 @@
 /*
  * 'kernel.h' contains some often-used function prototypes etc
  */
+/** 20121222
+ * x를 a단위로 round up 한다. 
+ * */
 #define __ALIGN_KERNEL(x, a)		__ALIGN_KERNEL_MASK(x, (typeof(x))(a) - 1)
 #define __ALIGN_KERNEL_MASK(x, mask)	(((x) + (mask)) & ~(mask))
 

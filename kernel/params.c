@@ -126,6 +126,15 @@ static int parse_one(char *param,
 
 /* You can use " around spaces, but can't escape ". */
 /* Hyphens and underscores equivalent in parameter names. */
+/** 20121222
+ * CONFIG_CMDLINE을 기준으로 분석해보자..
+ * CONFIG_CMDLINE "root=/dev/nfs nfsroot=10.1.69.3:/work/nfsroot ip=dhcp console=ttyAMA0 mem=128M"
+ *
+ * 첫 번째 next_arg 수행 시에.. 
+ * 	param 은 "root" 를 가르킴
+ * 	val 는 "/dev/nfs" 를 가르킴
+ * 	return 되는 값은 "nfsroot~~~ bla bla" 를 가르킴.
+ * */
 static char *next_arg(char *args, char **param, char **val)
 {
 	unsigned int i, equals = 0;
@@ -157,15 +166,28 @@ static char *next_arg(char *args, char **param, char **val)
 		*val = args + equals + 1;
 
 		/* Don't include quotes in value. */
+		/** 20121222
+		 * value위치에 아래와 같이 "가 포함되어 있는 경우.
+		 * CONFIG_CMDLINE "root="/dev/nfs" nfsroot=10.1.69.3:/work/nfsroot ip=dhcp console=ttyAMA0 mem=128M"
+		 * val 가 /dev/nfs를 가르키도록 한다. 
+		 * */
 		if (**val == '"') {
 			(*val)++;
 			if (args[i-1] == '"')
 				args[i-1] = '\0';
 		}
+		/** 20121222
+		 * value위치에 아래와 같이 (param, value)가 "로 쌓여 있는 경우. 이 "를 무시한다.
+		 * CONFIG_CMDLINE ""root=/dev/nfs" nfsroot=10.1.69.3:/work/nfsroot ip=dhcp console=ttyAMA0 mem=128M"
+		 * */
 		if (quoted && args[i-1] == '"')
 			args[i-1] = '\0';
 	}
 
+	/** 20121222
+	 * next가 다음 arg(param, value)를 가르키도록 한다. 
+	 * 마지막 arg의 경우, NULL을 리턴한다.
+	 * */
 	if (args[i]) {
 		args[i] = '\0';
 		next = args + i + 1;
@@ -198,6 +220,9 @@ int parse_args(const char *doing,
 		int irq_was_disabled;
 
 		args = next_arg(args, &param, &val);
+		/** 20130105
+		 * 여기부터 시작.. 
+		 * */
 		irq_was_disabled = irqs_disabled();
 		ret = parse_one(param, val, doing, params, num,
 				min_level, max_level, unknown);

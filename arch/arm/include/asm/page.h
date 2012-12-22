@@ -12,6 +12,10 @@
 
 /* PAGE_SHIFT determines the page size */
 #define PAGE_SHIFT		12
+/** 20121222
+ * PAGE_SIZE : 0x1000
+ * PAGE_MASK : 0xFFFFF000
+ * */
 #define PAGE_SIZE		(_AC(1,UL) << PAGE_SHIFT)
 #define PAGE_MASK		(~(PAGE_SIZE-1))
 

@@ -227,6 +227,10 @@ void cpu_idle(void)
 	}
 }
 
+/** 20121222
+ * vexpress 에서 reboot_mode는 'h'로 남아있음. 
+ * 어떻게 사용되는지 확인안함. 
+ * */
 static char reboot_mode = 'h';
 
 int __init reboot_setup(char *str)

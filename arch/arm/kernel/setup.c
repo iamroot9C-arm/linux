@@ -640,10 +640,15 @@ void __init dump_machine_table(void)
 		/* can't use cpu_relax() here as it may require MMU setup */;
 }
 
+/** 20121222
+ * physical memory에 대한 start, size 를 align한다. 
+ * */
 int __init arm_add_memory(phys_addr_t start, phys_addr_t size)
 {
+	/** 20121222
+	 * meminfo.nr_banks : 0
+	 * */
 	struct membank *bank = &meminfo.bank[meminfo.nr_banks];
-
 	if (meminfo.nr_banks >= NR_BANKS) {
 		printk(KERN_CRIT "NR_BANKS too low, "
 			"ignoring memory at 0x%08llx\n", (long long)start);
@@ -654,10 +659,18 @@ int __init arm_add_memory(phys_addr_t start, phys_addr_t size)
 	 * Ensure that start/size are aligned to a page boundary.
 	 * Size is appropriately rounded down, start is rounded up.
 	 */
+	/** 20121222
+	 * 예를 들어, start : 0x200, size : 0x5000 이라고 가정하자. 
+	 * 	size 는 0x5000 - (0x200 & (0xFFF) = 0x4E00
+	 * 	start 는 (0x200 + 0xFFF) & (0xFFFFF000) = 0x1000 
+	 * */
 	size -= start & ~PAGE_MASK;
 	bank->start = PAGE_ALIGN(start);
 
 #ifndef CONFIG_LPAE
+	/** 20121222
+	 * size가 32bit을 넘어가는 경우, size를 unsigned long - start으로 제한한다.
+	 * */
 	if (bank->start + size < bank->start) {
 		printk(KERN_CRIT "Truncating memory at 0x%08llx to fit in "
 			"32-bit physical address space\n", (long long)start);
@@ -670,6 +683,11 @@ int __init arm_add_memory(phys_addr_t start, phys_addr_t size)
 	}
 #endif
 
+	/** 20121222
+	 * size도 PAGE_SIZE로 round down 해준다. 
+	 * 위에서 가정한 예에서..
+	 *  bank->size = 0x4E00 & (~(0x1000-1)) = 0x4000
+	 * */
 	bank->size = size & ~(phys_addr_t)(PAGE_SIZE - 1);
 
 	/*
@@ -679,6 +697,9 @@ int __init arm_add_memory(phys_addr_t start, phys_addr_t size)
 	if (bank->size == 0)
 		return -EINVAL;
 
+	/** 20121222
+	 * bank->size 가 0보다 큰 경우, meminfo.nr_banks를 증가시켜준다. 
+	 * */
 	meminfo.nr_banks++;
 	return 0;
 }
@@ -787,9 +808,17 @@ static void __init request_standard_resources(struct machine_desc *mdesc)
  */
 static int __init parse_tag_core(const struct tag *tag)
 {
+	/** 20121222
+	 * hdr 크기는 4바이트 단위를 1로 표현하는 듯.. 이유는 모름 ???
+	 * hdr.size > 2 라는 것은 tag header 외의 정보가 있다는 의미임.
+	 * */
 	if (tag->hdr.size > 2) {
 		if ((tag->u.core.flags & 1) == 0)
 			root_mountflags &= ~MS_RDONLY;
+		/** 20121222
+		 * CORE의 rootdev값에 따라 device number를 만든다. 
+		 * ROOT_DEV는 root file system이 마운트될 device number인 듯 ???
+		 * */
 		ROOT_DEV = old_decode_dev(tag->u.core.rootdev);
 	}
 	return 0;
@@ -867,6 +896,9 @@ static int __init parse_tag_cmdline(const struct tag *tag)
 #elif defined(CONFIG_CMDLINE_FORCE)
 	pr_warning("Ignoring tag cmdline (using the default kernel command line)\n");
 #else
+	/** 20121222
+	 * ATAG로 넘어온 cmdline을 default_command_line으로 복사. 
+	 * */
 	strlcpy(default_command_line, tag->u.cmdline.cmdline,
 		COMMAND_LINE_SIZE);
 #endif
@@ -890,8 +922,12 @@ static int __init parse_tag(const struct tag *tag)
 	extern struct tagtable __tagtable_begin, __tagtable_end;
 	struct tagtable *t;
 
-	/** 20121215
-	 * 여기까지 20121222
+	/** 20121222
+	 * 아래와 같이 .taglist.init 섹션에 tag type, parse function pointer 가 채워짐.
+		__tagtable(ATAG_CMDLINE, parse_tag_cmdline);
+		__tagtable(ATAG_MEM, parse_tag_mem32);
+		...
+	 * tag table에서 tag->hdr.tag에 해당하는 항목을 찾아서 등록되어 있는 parse 함수를 실행시킨다. 
 	 **/
 	for (t = &__tagtable_begin; t < &__tagtable_end; t++)
 		if (tag->hdr.tag == t->tag) {
@@ -899,6 +935,10 @@ static int __init parse_tag(const struct tag *tag)
 			break;
 		}
 
+	/** 20121222
+	 * tagtable에 해당하는 tag->hdr.tag가 없는 경우, FALSE 을 리턴. 
+	 * FALSE 리턴시, parse_tags에서는 에러 코드 출력. 
+	 * */
 	return t < &__tagtable_end;
 }
 
@@ -906,6 +946,9 @@ static int __init parse_tag(const struct tag *tag)
  * Parse all tags in the list, checking both the global and architecture
  * specific tag tables.
  */
+/** 20121222
+ * 각 ATAG 정보를 kernel 의 해당 자료구조에 넣는다. 
+ * */
 static void __init parse_tags(const struct tag *t)
 {
 	for (; t->hdr.size; t = tag_next(t))
@@ -1005,6 +1048,10 @@ static void __init squash_mem_tags(struct tag *tag)
 			tag->hdr.tag = ATAG_NONE;
 }
 
+/** 20121222
+ * machine type을 찾아서 return 하고,
+ * ATAG 정보를 읽는다. 
+ * */
 static struct machine_desc * __init setup_machine_tags(unsigned int nr)
 {
 	struct tag *tags = (struct tag *)&init_tags;
@@ -1022,6 +1069,7 @@ static struct machine_desc * __init setup_machine_tags(unsigned int nr)
 	/** 20121215
 	 * machine_desc는 .arch.info.init에 저장됨.
 	 * .arch.info.init의 값은 arch/arm/mach-vexpress/v2m.c 에서 MACHINE_START에 의해 .arch.info.init 섹션에 채워짐
+	 *
 	 **/
 	for_each_machine_desc(p)
 		if (nr == p->nr) {
@@ -1085,6 +1133,10 @@ static struct machine_desc * __init setup_machine_tags(unsigned int nr)
 	}
 
 	/* parse_early_param needs a boot_command_line */
+	/** 20121222
+	 * from
+	 *	- ATAG에서 command line 정보를 받는 경우: ATAG에서 넘어온 cmd line
+	 * */
 	strlcpy(boot_command_line, from, COMMAND_LINE_SIZE);
 
 	return mdesc;
@@ -1117,17 +1169,35 @@ void __init setup_arch(char **cmdline_p)
 	 **/
 	if (!mdesc)
 		mdesc = setup_machine_tags(machine_arch_type);
+	/** 20121222
+	 * machine_name : "ARM-Versatile Express"
+	 * */
 	machine_desc = mdesc;
 	machine_name = mdesc->name;
 
+	/** 20121222
+	 * vexpress에서는 empty function.
+	 * */
 	setup_dma_zone(mdesc);
 
+	/** 20121222
+	 * vexpress에서는 restart_mode는 정의되지 않음.
+	 * */
 	if (mdesc->restart_mode)
 		reboot_setup(&mdesc->restart_mode);
 
 	init_mm.start_code = (unsigned long) _text;
 	init_mm.end_code   = (unsigned long) _etext;
 	init_mm.end_data   = (unsigned long) _edata;
+	/** 20121222
+	 * brk 는 break 를 의미하는 듯. 
+	 * man brk에서.. 
+	 * 		brk() and sbrk() change  the  location  of  the  program  break,  which
+	 *      defines  the end of the process's data segment (i.e., the program break
+	 *      is the first location after the end of the uninitialized data segment).
+	 *      Increasing the program break has the effect of allocating memory to the
+	 *      process; decreasing the break deallocates memory.
+	 * */
 	init_mm.brk	   = (unsigned long) _end;
 
 	/* populate cmd_line too for later use, preserving boot_command_line */

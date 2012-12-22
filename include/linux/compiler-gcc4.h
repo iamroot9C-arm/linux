@@ -9,6 +9,12 @@
 # endif
 #endif
 
+/** 20121222
+ * used
+ *     This attribute, attached to a function, means that code must be emitted for the function 
+ *     even if it appears that the function is not referenced. 
+ *     This is useful, for example, when the function is referenced only in inline assembly. 
+ * */
 #define __used			__attribute__((__used__))
 #define __must_check 		__attribute__((warn_unused_result))
 /** 20121215
