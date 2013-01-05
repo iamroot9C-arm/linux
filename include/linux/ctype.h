@@ -16,7 +16,9 @@
 #define _SP	0x80	/* hard space (0x20) */
 
 extern const unsigned char _ctype[];
-
+/** 20130105
+ * ascii 속성값을 기준으로 특징을 검사. 
+ * */
 #define __ismask(x) (_ctype[(int)(unsigned char)(x)])
 
 #define isalnum(c)	((__ismask(c)&(_U|_L|_D)) != 0)

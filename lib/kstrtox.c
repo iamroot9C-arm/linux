@@ -20,6 +20,13 @@
 #include <asm/uaccess.h>
 #include "kstrtox.h"
 
+/** 20130105
+ * 8, 10, 16 진수 각각에 대해 숫자가 시작되는 위치를 리턴해준다. *base에는 8,10,16 이 들어간다. 
+ *
+ * 0x9	(16진수)	: 9
+ * 9	(10진수)	: 9
+ * 011	(8진수)		: 9
+ * */
 const char *_parse_integer_fixup_radix(const char *s, unsigned int *base)
 {
 	if (*base == 0) {
@@ -44,6 +51,9 @@ const char *_parse_integer_fixup_radix(const char *s, unsigned int *base)
  *
  * Don't you dare use this function.
  */
+/** 20130105
+ * 8,10,16 진수로 표현된 문자열을 숫자로 바꾼다. 
+ * */
 unsigned int _parse_integer(const char *s, unsigned int base, unsigned long long *p)
 {
 	unsigned long long res;

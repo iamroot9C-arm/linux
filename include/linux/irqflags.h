@@ -127,6 +127,10 @@
 		raw_irqs_disabled_flags(flags);		\
 	})
 
+ /** 20130105
+  * 1. status register의 flag를 백업
+  * 2. interrupt flag가 켜져 있는지 확인. 켜져 있으면 0, 꺼져 있으면 PSR_I_BIT 리턴.
+  * */
 #define irqs_disabled()					\
 	({						\
 		unsigned long _flags;			\

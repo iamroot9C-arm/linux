@@ -708,8 +708,15 @@ int __init arm_add_memory(phys_addr_t start, phys_addr_t size)
  * Pick out the memory size.  We look for mem=size@start,
  * where start and size are "size[KkMm]"
  */
+/** 20130105
+ * parse_early 단계에서 cmdline의 mem을 분석하여 mem bank를 설정한다.  
+ **/
 static int __init early_mem(char *p)
 {
+	/** 20130105
+	 * cmdline에서 mem= 이 여러번 지정되는 경우, 
+	 * 	nr_banks 를 늘려가며 meminfo.bank[nr_banks]의 값을 설정한다. 
+	 * */
 	static int usermem __initdata = 0;
 	phys_addr_t size;
 	phys_addr_t start;
@@ -727,6 +734,10 @@ static int __init early_mem(char *p)
 
 	start = PHYS_OFFSET;
 	size  = memparse(p, &endp);
+	/** 20130105
+	 * "mem=128M@0x10000" 이 들어온 경우, 
+	 * 	start로 0x10000 이 됨.
+	 * */
 	if (*endp == '@')
 		start = memparse(endp + 1, NULL);
 

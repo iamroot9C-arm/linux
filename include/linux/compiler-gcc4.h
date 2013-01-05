@@ -14,6 +14,8 @@
  *     This attribute, attached to a function, means that code must be emitted for the function 
  *     even if it appears that the function is not referenced. 
  *     This is useful, for example, when the function is referenced only in inline assembly. 
+ *
+ *     이 함수가 사용되는 부분이 없더라도 컴파일러 최적화 과정에서 제거하지 말아라..
  * */
 #define __used			__attribute__((__used__))
 #define __must_check 		__attribute__((warn_unused_result))

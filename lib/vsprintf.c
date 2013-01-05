@@ -49,6 +49,10 @@ unsigned long long simple_strtoull(const char *cp, char **endp, unsigned int bas
 	/* FIXME */
 	cp += (rv & ~KSTRTOX_OVERFLOW);
 
+	/** 20130105
+	 * overflow 의 경우, overflow가 발생한 곳의 문자열 주소를 endp에 넣는듯 ???
+	 * 0x23456789111111에서 overflow가 첫번째 1에서 발생했다고 하면, endp 에는 "111111" 의 첫 번째 주소가 들어감.
+	 * */
 	if (endp)
 		*endp = (char *)cp;
 

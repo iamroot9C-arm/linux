@@ -342,6 +342,9 @@ EXPORT_SYMBOL(strnchr);
  *
  * Returns a pointer to the first non-whitespace character in @str.
  */
+/** 20130105
+ * 제일 앞에 있는 space 제거..
+ * */
 char *skip_spaces(const char *str)
 {
 	while (isspace(*str))

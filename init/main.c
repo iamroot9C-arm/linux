@@ -386,10 +386,23 @@ static noinline void __init_refok rest_init(void)
 }
 
 /* Check for early params. */
+/** 20130105
+ * early param 처리.
+ **/
 static int __init do_early_param(char *param, char *val, const char *unused)
 {
 	const struct obs_kernel_param *p;
 
+	/** 20130105
+	 * __setup_start, __setup_end 는 early_param marco를 통해 .init.setup section에 들어간다.
+	 * vexpress에서 earlycon 정의되어 있는 부분은 없음. early 단계에서 console 옵션이 활성화되지 않음.
+	 *
+ 	 * param와 .init.setup section에 있는 early bit == 1 인 경우, 또는.. 
+	 * 	param에 "console"이 지정되어 있고, .init.setup section에 "earlycon"이 포함된 경우,
+	 * 	==> 해당 section에서 setup_func 핸들러를 수행한다. 
+	 *
+	 * .init.setup section을 확인하기 위해서는 objdump -t vmlinux.o 
+	 **/
 	for (p = __setup_start; p < __setup_end; p++) {
 		if ((p->early && parameq(param, p->str)) ||
 		    (strcmp(param, "console") == 0 &&
@@ -404,12 +417,18 @@ static int __init do_early_param(char *param, char *val, const char *unused)
 	return 0;
 }
 
+/** 20130105
+ * cmdline을 조사하여 early field가 정의되어 있는 파라미터만 처리한다.
+ **/
 void __init parse_early_options(char *cmdline)
 {
 	parse_args("early options", cmdline, NULL, 0, 0, 0, do_early_param);
 }
 
 /* Arch code calls this early on, or if not, just before other parsing. */
+/** 20130105
+ * boot_command_line 을 parsing 하여, early 관련 함수 실행.
+ * */
 void __init parse_early_param(void)
 {
 	static __initdata int done = 0;

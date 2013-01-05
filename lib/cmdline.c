@@ -125,13 +125,18 @@ char *get_options(const char *str, int nints, int *ints)
  *	the return value is the number multiplied by one kilobyte, one
  *	megabyte, or one gigabyte, respectively.
  */
-
+/** 20130105
+ * 스트링으로 넘어온 메모리 사이즈를 unsigned long long type으로 변환. 
+ * */
 unsigned long long memparse(const char *ptr, char **retptr)
 {
 	char *endptr;	/* local pointer to end of parsed string */
 
 	unsigned long long ret = simple_strtoull(ptr, &endptr, 0);
 
+	/** 20130105
+	 * switch 내부에 break가 없음.
+	 * */
 	switch (*endptr) {
 	case 'G':
 	case 'g':

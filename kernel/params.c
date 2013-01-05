@@ -67,6 +67,9 @@ static char dash2underscore(char c)
 	return c;
 }
 
+/** 20130105
+ * "-"를  "_"로 바꿔서 비교. 
+ * */
 bool parameqn(const char *a, const char *b, size_t n)
 {
 	size_t i;
@@ -83,6 +86,17 @@ bool parameq(const char *a, const char *b)
 	return parameqn(a, b, strlen(a)+1);
 }
 
+/** 20130105
+ * 예를 들어...
+ * param 		: root
+ * val			: /dev/nfs 
+ * doing		: early_options
+ * params		: NULL
+ * num_params	: 0
+ * min_level	: 0
+ * max_level	: 0
+ * handle_unknown : do_early_param
+ * */
 static int parse_one(char *param,
 		     char *val,
 		     const char *doing,
@@ -96,6 +110,9 @@ static int parse_one(char *param,
 	unsigned int i;
 	int err;
 
+	/** 20130105
+	 * parse_early에서는 num_params가 0이기 때문에 아래 코드는 분석하지 않음. 추후 분석.
+	 * */
 	/* Find parameter */
 	for (i = 0; i < num_params; i++) {
 		if (parameq(param, params[i].name)) {
@@ -198,6 +215,9 @@ static char *next_arg(char *args, char **param, char **val)
 	return skip_spaces(next);
 }
 
+/** 20130105
+ * CONFIG_CMDLINE "root=/dev/nfs nfsroot=10.1.69.3:/work/nfsroot ip=dhcp console=ttyAMA0 mem=128M"
+ * */
 /* Args looks like "foo=bar,bar2 baz=fuz wiz". */
 int parse_args(const char *doing,
 	       char *args,
