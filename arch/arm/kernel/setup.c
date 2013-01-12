@@ -1217,6 +1217,10 @@ void __init setup_arch(char **cmdline_p)
 
 	parse_early_param();
 
+/** 20130112
+	meminfo 의 각bank의 start주소를 페이지프레임 인덱스로 변환해 비교하는
+	meminfo_cmp 결과를 기준으로 정렬한다. 	
+**/
 	sort(&meminfo.bank, meminfo.nr_banks, sizeof(meminfo.bank[0]), meminfo_cmp, NULL);
 	sanity_check_meminfo();
 	arm_memblock_init(&meminfo, mdesc);

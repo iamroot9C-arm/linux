@@ -898,11 +898,27 @@ void __init sanity_check_meminfo(void)
 	for (i = 0, j = 0; i < meminfo.nr_banks; i++) {
 		struct membank *bank = &meminfo.bank[j];
 		*bank = meminfo.bank[i];
-
+/** 20130112
+	bank의 start가 4기가 이상이면 highmemory를 설정한다.
+**/
 		if (bank->start > ULONG_MAX)
 			highmem = 1;
 
 #ifdef CONFIG_HIGHMEM
+/** 20130112
+	static void * __initdata vmalloc_min =
+	(void *)(VMALLOC_END - (240 << 20) - VMALLOC_OFFSET);
+	그런데 왜 240 일까???
+	
+	bank의 start가 vamalloc_min보다 같거나 크면
+	PAGE_OFFSET(0x8000000)이 bank의 start보다 크다면 
+	highmem 설정한다.
+ 	
+	커널은 PAGE_OFFSET을 시작으로 1기가바이트까지의 메모리만 접근가능하다
+	커널 입장에서는 이 영역을 제외한 영역은 High Memory로 인식하다.
+	__va(bank->start) < (void *)PAGE_OFFSET)
+	이 조건문은 뱅크의 Start가 PAGE_OFFSET보다 작을 경우 High Memory로 설정된다.
+**/
 		if (__va(bank->start) >= vmalloc_min ||
 		    __va(bank->start) < (void *)PAGE_OFFSET)
 			highmem = 1;
@@ -913,12 +929,25 @@ void __init sanity_check_meminfo(void)
 		 * Split those memory banks which are partially overlapping
 		 * the vmalloc area greatly simplifying things later.
 		 */
+/** 20130112
+		bank의 address range와 vmalloc의 영역이 겹치는지 확인
+**/	
 		if (!highmem && __va(bank->start) < vmalloc_min &&
-		    bank->size > vmalloc_min - __va(bank->start)) {
+		    bank->size > (vmalloc_min - __va(bank->start))) {
+/** 20130112
+		사용 가능한 메모리를 나누어서 뱅크로 추가할수 없으면 에러를 출력하고 커널패닉에 빠진다. 
+**/
+		
 			if (meminfo.nr_banks >= NR_BANKS) {
 				printk(KERN_CRIT "NR_BANKS too low, "
 						 "ignoring high memory\n");
 			} else {
+/** 20130112
+	1. 현재 뱅크에서 vmalloc영역과 겹치는 부분이 있는지 조사
+	2. 겹치는 부분이 있으면 뱅크를 추가하기 위해 뒤의 뱅크를 하나씩 미룬다.
+	3. 겹치는 부분의 데이터(물리 주소 start, 사이즈 size) 를 계산해서 신규뱅크(bank[1])에 저장한다.
+	4. 현재 뱅크의 사이즈를 크기를 조정한다. 
+**/
 				memmove(bank + 1, bank,
 					(meminfo.nr_banks - i) * sizeof(*bank));
 				meminfo.nr_banks++;
@@ -936,6 +965,10 @@ void __init sanity_check_meminfo(void)
 		/*
 		 * Highmem banks not allowed with !CONFIG_HIGHMEM.
 		 */
+/** 20130112
+		CONFIG_HIGHMEM이 꺼져있고 highmem 변수 1인 경우 현 뱅크의 시작주소가 4기가를 
+		넘어서면  다음 뱅크로 진행한다.
+**/
 		if (highmem) {
 			printk(KERN_NOTICE "Ignoring RAM at %.8llx-%.8llx "
 			       "(!CONFIG_HIGHMEM).\n",
@@ -948,6 +981,12 @@ void __init sanity_check_meminfo(void)
 		 * Check whether this memory bank would entirely overlap
 		 * the vmalloc area.
 		 */
+/** 20130112
+		CONFIG_HIGHMEM꺼져 있는 상태에서
+		현 뱅크의 address영역이 vmalloc영역 안에 있는 경우
+		또는 커널의 1기가 영역외에 현재 뱅크가 있는 경우
+		다음 뱅크로 진행하다.
+**/
 		if (__va(bank->start) >= vmalloc_min ||
 		    __va(bank->start) < (void *)PAGE_OFFSET) {
 			printk(KERN_NOTICE "Ignoring RAM at %.8llx-%.8llx "
@@ -961,7 +1000,12 @@ void __init sanity_check_meminfo(void)
 		 * Check whether this memory bank would partially overlap
 		 * the vmalloc area.
 		 */
-		if (__va(bank->start + bank->size) > vmalloc_min ||
+/** 20130112
+		CONFIG_HIGHMEM꺼져 있는 상태에서
+		현 뱅크의 address영역이 vmalloc 영역과 겹치는 경우 
+		현 뱅크의 사이즈를 조정한다.
+**/
+	if (__va(bank->start + bank->size) > vmalloc_min ||
 		    __va(bank->start + bank->size) < __va(bank->start)) {
 			unsigned long newsize = vmalloc_min - __va(bank->start);
 			printk(KERN_NOTICE "Truncating RAM at %.8llx-%.8llx "
@@ -972,9 +1016,16 @@ void __init sanity_check_meminfo(void)
 			bank->size = newsize;
 		}
 #endif
-		if (!bank->highmem && bank->start + bank->size > arm_lowmem_limit)
+/** 20130112
+	high memory 가 설정되어 있을 경우 low memory limit을 의미가 없고
+		- 커널이 4기가의 모든 영역을 쓸수 있으므로...
+	high memory 가 설정이 안되어 있으면 커널이 사용하는 최상위 주소(arm_lowmem_limit)를 지정해줘야 한다. 
+**/
+		if ((!bank->highmem) && (bank->start + bank->size > arm_lowmem_limit))
 			arm_lowmem_limit = bank->start + bank->size;
-
+/** 20130119
+	다음주 부터는 여기서부터
+**/
 		j++;
 	}
 #ifdef CONFIG_HIGHMEM

@@ -43,7 +43,11 @@ static void generic_swap(void *a, void *b, int size)
  * O(n*n) worst-case behavior and extra memory requirements that make
  * it less suitable for kernel use.
  */
-
+/** 20130112
+	base에 있는 array를 cmp_func의 결과를 기준으로 정렬한다. 
+	heap 정렬을 사용한다.
+	- 속도는 느릴수 있지만, 메모리 사용량이 적은 이점이 있다.
+**/
 void sort(void *base, size_t num, size_t size,
 	  int (*cmp_func)(const void *, const void *),
 	  void (*swap_func)(void *, void *, int size))

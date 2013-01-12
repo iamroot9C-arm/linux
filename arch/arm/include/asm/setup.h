@@ -203,7 +203,6 @@ struct membank {
 	phys_addr_t size;
 	unsigned int highmem;
 };
-
 struct meminfo {
 	int nr_banks;
 	struct membank bank[NR_BANKS];

@@ -132,6 +132,11 @@
 /*
  * Convert a physical address to a Page Frame Number and back
  */
+/** 20130112
+	pfn : page frame number
+	__phys_to_pfn 물리주소에 대한 페이지 프레임 인덱스를 구한다.
+	__pfn_to_phys 페이지 프레임 인덱스에 대한 물리 주소를 구한다.
+**/
 #define	__phys_to_pfn(paddr)	((unsigned long)((paddr) >> PAGE_SHIFT))
 #define	__pfn_to_phys(pfn)	((phys_addr_t)(pfn) << PAGE_SHIFT)
 

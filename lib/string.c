@@ -620,6 +620,9 @@ EXPORT_SYMBOL(memcpy);
  *
  * Unlike memcpy(), memmove() copes with overlapping areas.
  */
+/** 20130112
+	src 에서 부터 count만큼 dest로 이동한다.
+**/
 void *memmove(void *dest, const void *src, size_t count)
 {
 	char *tmp;
