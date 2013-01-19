@@ -39,6 +39,12 @@ extern unsigned int cacheid;
 /*
  * Mask out support which isn't configured
  */
+/** 20130119
+        Cortex A9 기준으로 현재 CONFIG에는 
+        CONFIG_CPU_CACHE_VIVT가 정의되어 있지 않고
+        CONFIG_CPU_CACHE_VIPT는 정의되어 있다.
+        따라서 __CACHEID_ALWAYS : 0, __CACHEID_NEVER는 CACHEID_VIVT
+ **/
 #if defined(CONFIG_CPU_CACHE_VIVT) && !defined(CONFIG_CPU_CACHE_VIPT)
 #define __CACHEID_ALWAYS	(CACHEID_VIVT)
 #define __CACHEID_NEVER		(~CACHEID_VIVT)
@@ -50,6 +56,9 @@ extern unsigned int cacheid;
 #define __CACHEID_NEVER		(0)
 #endif
 
+/** 20130119
+  cacheid 값과 mask값을 비교하여 같으면 1, 다르면 0을 리턴한다
+ **/
 static inline unsigned int __attribute__((pure)) cacheid_is(unsigned int mask)
 {
 	return (__CACHEID_ALWAYS & mask) |

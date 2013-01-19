@@ -1222,7 +1222,10 @@ void __init setup_arch(char **cmdline_p)
 	meminfo_cmp 결과를 기준으로 정렬한다. 	
 **/
 	sort(&meminfo.bank, meminfo.nr_banks, sizeof(meminfo.bank[0]), meminfo_cmp, NULL);
-	sanity_check_meminfo();
+/** 20130119
+  메모리 뱅크들에 대한 적정한 설정이 되어 있는지 조사하고 수정한다
+**/
+    sanity_check_meminfo();
 	arm_memblock_init(&meminfo, mdesc);
 
 	paging_init(mdesc);

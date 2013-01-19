@@ -28,6 +28,9 @@ void __init arm_mm_memblock_reserve(void)
 	memblock_reserve(CONFIG_VECTORS_BASE, PAGE_SIZE);
 }
 
+/** 20130119
+  high_memory(가상 주소)전역 변수에 VA(물리 메모리의 마지막 주소)지정
+ **/
 void __init sanity_check_meminfo(void)
 {
 	phys_addr_t end = bank_phys_end(&meminfo.bank[meminfo.nr_banks - 1]);

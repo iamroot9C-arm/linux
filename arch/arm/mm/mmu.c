@@ -891,10 +891,22 @@ early_param("vmalloc", early_vmalloc);
 
 phys_addr_t arm_lowmem_limit __initdata = 0;
 
+/** 20130119
+  메모리 뱅크들에 대한 적정한 설정이 되어 있는지 조사하고 수정한다
+  1. highmem세팅
+  2. memory bank에 대한 재조정
+  3. highmem세팅시 캐쉬 aliasing을 검사하고
+  4. high_memory(가상주소)를 세팅하고, ZONE_NORMAL에서의 memblock.current_limit를 세팅
+ **/
 void __init sanity_check_meminfo(void)
 {
 	int i, j, highmem = 0;
-
+/** 20130119
+ * meminfo.nr_banks 값은 8까지 가능.
+ * CONFIG_HIGHMEM이 꺼져 있을 때, highmem이 1일 경우 해당 뱅크를 삭제한다.
+ * j : 앞으로 설정이 될 뱅크의 인덱스
+ * i : 앞으로 처리할 뱅크의 인덱스
+ **/
 	for (i = 0, j = 0; i < meminfo.nr_banks; i++) {
 		struct membank *bank = &meminfo.bank[j];
 		*bank = meminfo.bank[i];
@@ -908,13 +920,14 @@ void __init sanity_check_meminfo(void)
 /** 20130112
 	static void * __initdata vmalloc_min =
 	(void *)(VMALLOC_END - (240 << 20) - VMALLOC_OFFSET);
-	그런데 왜 240 일까???
+    early_vmalloc이 실행되지 않으면 default값으로 240M가 세팅된다.
 	
 	bank의 start가 vamalloc_min보다 같거나 크면
 	PAGE_OFFSET(0x8000000)이 bank의 start보다 크다면 
 	highmem 설정한다.
  	
-	커널은 PAGE_OFFSET을 시작으로 1기가바이트까지의 메모리만 접근가능하다
+	커널은 vexpress의 경우 PAGE_OFFSET(0x80000000)을 시작으로
+    VMALLOC_END (0xff000000)까지의 메모리만 접근가능하다
 	커널 입장에서는 이 영역을 제외한 영역은 High Memory로 인식하다.
 	__va(bank->start) < (void *)PAGE_OFFSET)
 	이 조건문은 뱅크의 Start가 PAGE_OFFSET보다 작을 경우 High Memory로 설정된다.
@@ -1005,7 +1018,7 @@ void __init sanity_check_meminfo(void)
 		현 뱅크의 address영역이 vmalloc 영역과 겹치는 경우 
 		현 뱅크의 사이즈를 조정한다.
 **/
-	if (__va(bank->start + bank->size) > vmalloc_min ||
+        if (__va(bank->start + bank->size) > vmalloc_min ||
 		    __va(bank->start + bank->size) < __va(bank->start)) {
 			unsigned long newsize = vmalloc_min - __va(bank->start);
 			printk(KERN_NOTICE "Truncating RAM at %.8llx-%.8llx "
@@ -1023,16 +1036,20 @@ void __init sanity_check_meminfo(void)
 **/
 		if ((!bank->highmem) && (bank->start + bank->size > arm_lowmem_limit))
 			arm_lowmem_limit = bank->start + bank->size;
-/** 20130119
-	다음주 부터는 여기서부터
-**/
-		j++;
+		/** 20130119
+         각각의 뱅크에 대해서 arm_lowmem_limit를 설정한다
+         **/
+        j++;
 	}
 #ifdef CONFIG_HIGHMEM
 	if (highmem) {
 		const char *reason = NULL;
-
-		if (cache_is_vipt_aliasing()) {
+		/** 20130119
+        cacheid는 CACHEID_VIPT_NONALIASING, 
+        mask는 CACHEID_VIPT_ALIASING으로 설정 되어 있으므로 
+        cache_is_vipt_aliasing()의 값은 0이 된다
+         **/
+        if (cache_is_vipt_aliasing()) {
 			/*
 			 * Interactions between kmap and other mappings
 			 * make highmem support with aliasing VIPT caches
@@ -1043,6 +1060,17 @@ void __init sanity_check_meminfo(void)
 		if (reason) {
 			printk(KERN_CRIT "HIGHMEM is not supported %s, ignoring high memory\n",
 				reason);
+            /** 20130119
+            ZONE_NORMAL인 경우 물리주소와 가상주소가 1대1 매핑되므로 
+            ALIASING이 발생하지 않는다고 가정한다.
+            ZONE_HIGHMEM인 경우에는 ALIASING이 발생할 수 있고 
+            ALIASING_CACHE면 HIGHMEM을 지원하지 않으려고 하는 듯 ???
+             **/
+
+            /** 20130119
+            highmem이 셋팅되고, 캐쉬 정책이 VIPT_ALIASING이면 
+            캐쉬 ALIASING문제로 highmem을 지원하는 뱅크를 카운트에서 제외한다.
+             **/
 			while (j > 0 && meminfo.bank[j - 1].highmem)
 				j--;
 		}
@@ -1050,7 +1078,11 @@ void __init sanity_check_meminfo(void)
 #endif
 	meminfo.nr_banks = j;
 	high_memory = __va(arm_lowmem_limit - 1) + 1;
-	memblock_set_current_limit(arm_lowmem_limit);
+    /** 20130119
+    arm_lowmem_limit을 memblock.current_limit값으로 지정
+    (arm_lowmem_limit은 ZONE_NORMAL에서의 physical memory 마지막 주소)
+     **/
+    memblock_set_current_limit(arm_lowmem_limit);
 }
 
 static inline void prepare_page_table(void)

@@ -26,7 +26,7 @@ struct memblock_region {
 	int nid;
 #endif
 };
-
+      
 struct memblock_type {
 	unsigned long cnt;	/* number of regions */
 	unsigned long max;	/* size of the allocated array */

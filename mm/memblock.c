@@ -52,6 +52,9 @@ static inline const char *memblock_type_name(struct memblock_type *type)
 }
 
 /* adjust *@size so that (@base + *@size) doesn't overflow, return new size */
+/** 20130119
+실제 사용할수 있는 사이즈를 다시 한번 조사해서 리턴한다
+ **/
 static inline phys_addr_t memblock_cap_size(phys_addr_t base, phys_addr_t *size)
 {
 	return *size = min(*size, (phys_addr_t)ULLONG_MAX - base);
@@ -358,6 +361,32 @@ static void __init_memblock memblock_insert_region(struct memblock_type *type,
  * RETURNS:
  * 0 on success, -errno on failure.
  */
+
+/** 20130119
+
+  <처리전>
+              rbase  rend     rbase   rend
+                +------+        +-------+
+  memblock      |   0  |        |  1    |
+                +------+        +-------+                      
+          base            end
+            +---------------+
+  meminfo   |               |
+            +---------------+
+
+            
+  <merge처리전>
+            +---------------+   +-------+
+  memblock  | 0 |   1   | 2 |   |  3    |
+            +---------------+   +-------+
+
+  <merge처리후>
+            +---------------+   +-------+
+  memblock  |       0       |   |   1   |
+            +---------------+   +-------+ 
+ **/
+
+
 static int __init_memblock memblock_add_region(struct memblock_type *type,
 				phys_addr_t base, phys_addr_t size, int nid)
 {
@@ -371,6 +400,10 @@ static int __init_memblock memblock_add_region(struct memblock_type *type,
 
 	/* special case for empty array */
 	if (type->regions[0].size == 0) {
+        /** 20130119
+          type->regions가 memblock_memory_init_regions[128]로 초기화 되어 있음
+          최초에는 이 블록으로 들어옴
+        **/
 		WARN_ON(type->cnt != 1 || type->total_size);
 		type->regions[0].base = base;
 		type->regions[0].size = size;
@@ -387,11 +420,17 @@ repeat:
 	base = obase;
 	nr_new = 0;
 
+
 	for (i = 0; i < type->cnt; i++) {
 		struct memblock_region *rgn = &type->regions[i];
 		phys_addr_t rbase = rgn->base;
 		phys_addr_t rend = rbase + rgn->size;
-
+/** 20130119
+  rbase : memblock region의 base 값
+  rend  : memblock region의 end 값
+  base  : 추가할 meminfo의 base 값 
+  end   : 추가할 meminfo의 end 값
+ **/
 		if (rbase >= end)
 			break;
 		if (rend <= base)
@@ -403,12 +442,25 @@ repeat:
 		if (rbase > base) {
 			nr_new++;
 			if (insert)
+                /** 20130119
+                  memblock의 region을 새롭게 추가한다. 
+                  type->cnt, type->total_size값을 갱신한다 
+                 **/
 				memblock_insert_region(type, i++, base,
 						       rbase - base, nid);
 		}
 		/* area below @rend is dealt with, forget about it */
-		base = min(rend, end);
+
+		/** 20130119
+         만약 새로 추가할 meminfo의 end값이 기존memblock의 rend값보다 크다면
+         meminfo의 나머지 메모리 영역을 insert하기 위해 rend값을 base 값으로 설정한다
+         **/
+        base = min(rend, end);
 	}
+    
+    /** 20130126
+    다음주에 memblock_insert_region, memblock_double_array, memblock_merge_regions를 볼 차례임...
+    **/
 
 	/* insert the remaining portion */
 	if (base < end) {
@@ -929,7 +981,9 @@ int __init_memblock memblock_is_region_reserved(phys_addr_t base, phys_addr_t si
 	return memblock_overlaps_region(&memblock.reserved, base, size) >= 0;
 }
 
-
+/** 20130119
+memblock.current_limit값을 인자로 넘어온 limit값으로 세팅
+ **/
 void __init_memblock memblock_set_current_limit(phys_addr_t limit)
 {
 	memblock.current_limit = limit;
@@ -1031,3 +1085,45 @@ static int __init memblock_init_debugfs(void)
 __initcall(memblock_init_debugfs);
 
 #endif /* CONFIG_DEBUG_FS */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
