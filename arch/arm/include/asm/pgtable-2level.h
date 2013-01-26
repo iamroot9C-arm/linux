@@ -68,6 +68,10 @@
  * until either the TLB entry is evicted under pressure, or a context
  * switch which changes the user space mapping occurs.
  */
+/** 20130126    
+ * 계속 봐야함 ???
+ * http://studyfoss.egloos.com/5008142
+ **/
 #define PTRS_PER_PTE		512
 #define PTRS_PER_PMD		1
 #define PTRS_PER_PGD		2048

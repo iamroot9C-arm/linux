@@ -194,6 +194,9 @@ extern unsigned long __pv_phys_offset;
 		.pv_table section에 일괄 저장된다.
 	3. 이렇게 하는 이유는 offset 값을 memory에 넣고 add, sub를 하기 위해서는 load 과정이 필요한데,
 		부팅시에 이 과정을 한 번에 수정해 수행속도의 향상을 얻기 위함이다.
+	20130126
+	4. P <-> V간 address 변환을 한 사이클로 수행해 속도 향상 뿐만 아니라 atomic 연산의 효과도 얻을 수 있을듯 ???
+	5. add, sub의 instruction encoding을 보면 8비트만 immediate 로 사용해야 하나의 instruction으로 처리된다.
  **/
 #define __pv_stub(from,to,instr,type)			\
 	__asm__("@ __pv_stub\n"				\

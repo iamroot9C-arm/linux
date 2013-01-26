@@ -889,6 +889,9 @@ static int __init early_vmalloc(char *arg)
 }
 early_param("vmalloc", early_vmalloc);
 
+/** 20130126    
+ * arm_lowmem_limit은 ZONE_NORMAL에서의 physical memory 마지막 주소
+ **/
 phys_addr_t arm_lowmem_limit __initdata = 0;
 
 /** 20130119
@@ -1119,6 +1122,9 @@ static inline void prepare_page_table(void)
 		pmd_clear(pmd_off_k(addr));
 }
 
+/** 20130126    
+ * vexpress는 LPAE 사용 안 함
+ **/
 #ifdef CONFIG_ARM_LPAE
 /* the first page is reserved for pgd */
 #define SWAPPER_PG_DIR_SIZE	(PAGE_SIZE + \
@@ -1130,12 +1136,19 @@ static inline void prepare_page_table(void)
 /*
  * Reserve the special regions of memory
  */
+/** 20130126    
+ * memory management 관련된 영역을 memblock.reserved에 등록
+ **/
 void __init arm_mm_memblock_reserve(void)
 {
 	/*
 	 * Reserve the page tables.  These are already in use,
 	 * and can only be in node 0.
 	 */
+	/** 20130126    
+	 * swapper_pg_dir 이름의 의미는???
+	 * swapper_pg_dir 메모리 공간을 memblock.reserved에 등록
+	 **/
 	memblock_reserve(__pa(swapper_pg_dir), SWAPPER_PG_DIR_SIZE);
 
 #ifdef CONFIG_SA1111

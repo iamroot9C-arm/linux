@@ -165,8 +165,14 @@ int memblock_is_region_reserved(phys_addr_t base, phys_addr_t size);
 
 extern void __memblock_dump_all(void);
 
+/** 20130126    
+ * memblock의 모든 내용을 출력해준다.
+ **/
 static inline void memblock_dump_all(void)
 {
+	/** 20130126    
+	 * memblock_debug는 early_memblock이 호출된 경우 1
+	 **/
 	if (memblock_debug)
 		__memblock_dump_all();
 }
@@ -230,6 +236,9 @@ static inline unsigned long memblock_region_reserved_end_pfn(const struct memblo
 	     region++)
 
 
+/** 20130126    
+ * vexpress config에서는 정의되어 있지 않음
+ **/
 #ifdef CONFIG_ARCH_DISCARD_MEMBLOCK
 #define __init_memblock __meminit
 #define __initdata_memblock __meminitdata

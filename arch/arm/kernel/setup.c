@@ -1226,8 +1226,13 @@ void __init setup_arch(char **cmdline_p)
   메모리 뱅크들에 대한 적정한 설정이 되어 있는지 조사하고 수정한다
 **/
     sanity_check_meminfo();
+/** 20130126    
+ * memblock 자료구조 초기화
+**/
 	arm_memblock_init(&meminfo, mdesc);
 
+/** 20130202 볼 차례
+ **/
 	paging_init(mdesc);
 	request_standard_resources(mdesc);
 

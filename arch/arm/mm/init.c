@@ -331,9 +331,20 @@ phys_addr_t __init arm_memblock_steal(phys_addr_t size, phys_addr_t align)
 	return phys;
 }
 
+/** 20130126    
+ * meminfo  : cmdline에서 전달받은 물리적 메모리 구성 정보
+ * memblock : kernel이 관리하는 logical memory blocks
+ *
+ * 1. meminfo의 정보를 memblock.memory에 등록
+ * 2. 커널 실행코드 영역, initrd, swapper_pg_dir, machine specific 한 영역을 memblock.reserved에 등록
+ * 3. 전역변수 arm_memblock_steal_permitted, memblock_can_resize 를 설정
+ **/
 void __init arm_memblock_init(struct meminfo *mi, struct machine_desc *mdesc)
 {
 	int i;
+	/** 20130126    
+	 * meminfo의 bank 정보를 memblock에 채워넣음
+	 **/
 	for (i = 0; i < mi->nr_banks; i++)
 		memblock_add(mi->bank[i].start, mi->bank[i].size);
 
@@ -341,15 +352,24 @@ void __init arm_memblock_init(struct meminfo *mi, struct machine_desc *mdesc)
 #ifdef CONFIG_XIP_KERNEL
 	memblock_reserve(__pa(_sdata), _end - _sdata);
 #else
+	/** 20130126    
+	 * kernel의 실행코드 (text~bss까지)를 memblock의 reserved 영역에 등록
+	 **/
 	memblock_reserve(__pa(_stext), _end - _stext);
 #endif
 #ifdef CONFIG_BLK_DEV_INITRD
+	/** 20130126    
+	 * initrd로 주어진 메모리 공간이 memblock.memory 영역 안에 없다면 initrd를 무시
+	 **/
 	if (phys_initrd_size &&
 	    !memblock_is_region_memory(phys_initrd_start, phys_initrd_size)) {
 		pr_err("INITRD: 0x%08lx+0x%08lx is not a memory region - disabling initrd\n",
 		       phys_initrd_start, phys_initrd_size);
 		phys_initrd_start = phys_initrd_size = 0;
 	}
+	/** 20130126    
+	 * initrd로 주어진 메모리 공간이 memblock.reserved 영역과 겹쳐진다면 initrd를 무시
+	 **/
 	if (phys_initrd_size &&
 	    memblock_is_region_reserved(phys_initrd_start, phys_initrd_size)) {
 		pr_err("INITRD: 0x%08lx+0x%08lx overlaps in-use memory region - disabling initrd\n",
@@ -357,6 +377,9 @@ void __init arm_memblock_init(struct meminfo *mi, struct machine_desc *mdesc)
 		phys_initrd_start = phys_initrd_size = 0;
 	}
 	if (phys_initrd_size) {
+		/** 20130126    
+		 * initrd 메모리 영역을 memblock.reserved에 등록
+		 **/
 		memblock_reserve(phys_initrd_start, phys_initrd_size);
 
 		/* Now convert initrd to virtual addresses */
@@ -365,10 +388,28 @@ void __init arm_memblock_init(struct meminfo *mi, struct machine_desc *mdesc)
 	}
 #endif
 
+	/** 20130126    
+	 * swapper_pg_dir 영역을 memblock.reseved에 추가
+	 **/
 	arm_mm_memblock_reserve();
+	/** 20130126    
+	 * device tree를 memblock.reserved에 추가하는 듯.
+	 * vexpress에서는 NULL 함수
+	 **/
 	arm_dt_memblock_reserve();
 
 	/* reserve any platform specific memblock areas */
+	/** 20130126
+	 * vexpress는 지정되어 있지 않지만,
+	 * machine에 따라 각각 따로 처리해야 할 메모리 영역을 예약하는 함수를 호출한다.
+	 *
+	 * 예를 들어 exynos 코어를 사용하는 ORIGEN 머신의 경우
+	 * MACHINE_START(ORIGEN, "ORIGEN")
+	 * .reserve    = &origen_reserve,
+	 *
+	 * s5p_mfc_reserve_mem(0x43000000, 8 << 20, 0x51000000, 8 << 20);
+	 * mfc (영상 코덱 ip)용으로 사용되는 버퍼 영역을 reserve 함수로 처리한다.
+	 **/
 	if (mdesc->reserve)
 		mdesc->reserve();
 
@@ -378,7 +419,13 @@ void __init arm_memblock_init(struct meminfo *mi, struct machine_desc *mdesc)
 	 */
 	dma_contiguous_reserve(min(arm_dma_limit, arm_lowmem_limit));
 
+	/** 20130126    
+	 * memblock steal을 불가능하게 처리
+	 **/
 	arm_memblock_steal_permitted = false;
+	/** 20130126    
+	 * memblock resize 허용
+	 **/
 	memblock_allow_resize();
 	memblock_dump_all();
 }
