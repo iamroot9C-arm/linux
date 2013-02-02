@@ -45,6 +45,10 @@
 extern unsigned long cr_no_alignment;	/* defined in entry-armv.S */
 extern unsigned long cr_alignment;	/* defined in entry-armv.S */
 
+/** 20130202 
+* cr : system cortol register
+* ARM Doc 1687 page,  B4.1.130 SCTLR, System Control Register, VMSA
+*/
 static inline unsigned int get_cr(void)
 {
 	unsigned int val;

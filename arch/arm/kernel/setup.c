@@ -1231,7 +1231,7 @@ void __init setup_arch(char **cmdline_p)
 **/
 	arm_memblock_init(&meminfo, mdesc);
 
-/** 20130202 볼 차례
+/** 
  **/
 	paging_init(mdesc);
 	request_standard_resources(mdesc);

@@ -197,6 +197,14 @@ void adjust_cr(unsigned long mask, unsigned long set)
 #define PROT_PTE_DEVICE		L_PTE_PRESENT|L_PTE_YOUNG|L_PTE_DIRTY|L_PTE_XN
 #define PROT_SECT_DEVICE	PMD_TYPE_SECT|PMD_SECT_AP_WRITE
 
+/** 20130202
+* arm linux page table 은 2개로 관리되는데, Hardware용과 Linux용 2가지이다.
+* L_PTE_xxx 매크로의 경우 리눅스용 페이지 테이블의 설정값이다.
+* PMD_xxx 매크로의 경우 하드웨어용 페이지 테이블의 설정값이다.
+* .prot_pte 필드는 리눅스용 pte값을 저장하는 곳이다.
+* .prot_l1, .prot_sect 는 하드웨어용 pte값을 저장하는 곳이다.
+* ???
+*/
 static struct mem_type mem_types[] = {
 	[MT_DEVICE] = {		  /* Strongly ordered / ARMv6 shared device */
 		.prot_pte	= PROT_PTE_DEVICE | L_PTE_MT_DEV_SHARED |
@@ -251,6 +259,18 @@ static struct mem_type mem_types[] = {
 		.prot_l1   = PMD_TYPE_TABLE,
 		.domain    = DOMAIN_USER,
 	},
+/** 20130202
+* prot_pte = 0x43 
+* #define L_PTE_PRESENT		(_AT(pteval_t, 1) << 0)
+* #define L_PTE_YOUNG		(_AT(pteval_t, 1) << 1)
+* #define L_PTE_DIRTY		(_AT(pteval_t, 1) << 6)
+* prot_l1 = 0x1
+* #define PMD_TYPE_TABLE		(_AT(pmdval_t, 1) << 0)
+* prot_sect = 0x402
+* #define PMD_TYPE_SECT		(_AT(pmdval_t, 2) << 0)
+* #define PMD_SECT_AP_WRITE	(_AT(pmdval_t, 1) << 10)
+* domain = 0
+*/
 	[MT_MEMORY] = {
 		.prot_pte  = L_PTE_PRESENT | L_PTE_YOUNG | L_PTE_DIRTY,
 		.prot_l1   = PMD_TYPE_TABLE,
@@ -307,11 +327,23 @@ EXPORT_SYMBOL(get_mem_type);
 static void __init build_mem_type_table(void)
 {
 	struct cachepolicy *cp;
+/** 20130202
+* cr in vexpers  = 0x10c53c7d
+*/  
 	unsigned int cr = get_cr();
+/**
+*
+*/
 	pteval_t user_pgprot, kern_pgprot, vecs_pgprot;
+/** 20130202  
+* CPU_ARCH_ARMv7
+*/
 	int cpu_arch = cpu_architecture();
 	int i;
 
+/** 20130202  
+* cachepolicy : default is  CPOLICY_WRITEBACK
+*/
 	if (cpu_arch < CPU_ARCH_ARMv6) {
 #if defined(CONFIG_CPU_DCACHE_DISABLE)
 		if (cachepolicy > CPOLICY_BUFFERED)
@@ -326,6 +358,9 @@ static void __init build_mem_type_table(void)
 			cachepolicy = CPOLICY_WRITEBACK;
 		ecc_mask = 0;
 	}
+/** 20130202  
+* cachepolicy : smp이므로   CPOLICY_WRITEBACK -> CPOLICY_WRITEALLOC
+*/
 	if (is_smp())
 		cachepolicy = CPOLICY_WRITEALLOC;
 
@@ -337,15 +372,17 @@ static void __init build_mem_type_table(void)
 	if (cpu_arch < CPU_ARCH_ARMv5)
 		for (i = 0; i < ARRAY_SIZE(mem_types); i++)
 			mem_types[i].prot_sect &= ~PMD_SECT_TEX(7);
+/** 20130202
+*  해당사항 없음
+*/ 
 	if ((cpu_arch < CPU_ARCH_ARMv6 || !(cr & CR_XP)) && !cpu_is_xsc3())
 		for (i = 0; i < ARRAY_SIZE(mem_types); i++)
 			mem_types[i].prot_sect &= ~PMD_SECT_S;
-
 	/*
 	 * ARMv5 and lower, bit 4 must be set for page tables (was: cache
 	 * "update-able on write" bit on ARM610).  However, Xscale and
 	 * Xscale3 require this bit to be cleared.
-	 */
+	*/
 	if (cpu_is_xscale() || cpu_is_xsc3()) {
 		for (i = 0; i < ARRAY_SIZE(mem_types); i++) {
 			mem_types[i].prot_sect &= ~PMD_BIT4;
@@ -356,24 +393,35 @@ static void __init build_mem_type_table(void)
 			if (mem_types[i].prot_l1)
 				mem_types[i].prot_l1 |= PMD_BIT4;
 			if (mem_types[i].prot_sect)
-				mem_types[i].prot_sect |= PMD_BIT4;
+				mem_types[i].prot_sec     PMD_BIT4;
 		}
 	}
 
 	/*
 	 * Mark the device areas according to the CPU/architecture.
 	 */
+/** 20130202
+* XP : Extended page tables, default 1	
+*/ 
 	if (cpu_is_xsc3() || (cpu_arch >= CPU_ARCH_ARMv6 && (cr & CR_XP))) {
 		if (!cpu_is_xsc3()) {
 			/*
 			 * Mark device regions on ARMv6+ as execute-never
 			 * to prevent speculative instruction fetches.
 			 */
+/** 20130202
+* XN : Excecute Never , determines if the region is Executable (0) or Not-executable (1)
+* MT_DEVICE 영역은 instruction이 fetch되지 않게 Not-executable 영역으로 선언.
+*/ 
 			mem_types[MT_DEVICE].prot_sect |= PMD_SECT_XN;
 			mem_types[MT_DEVICE_NONSHARED].prot_sect |= PMD_SECT_XN;
 			mem_types[MT_DEVICE_CACHED].prot_sect |= PMD_SECT_XN;
 			mem_types[MT_DEVICE_WC].prot_sect |= PMD_SECT_XN;
 		}
+/** 20130202 ??? CR_TRE가 어디서 설정되었는지 확인 필요..
+* #define CR_TRE	(1 << 28)	 TEX remap enable		
+* TEX : Type extension, refer to ARM Doc page 1688
+*/
 		if (cpu_arch >= CPU_ARCH_ARMv7 && (cr & CR_TRE)) {
 			/*
 			 * For ARMv7 with TEX remapping,
@@ -382,6 +430,12 @@ static void __init build_mem_type_table(void)
 			 * - write combine device mem is SXCB=0001
 			 * (Uncached Normal memory)
 			 */
+/** 20130202 ??? 이 부분은 다시 정리 필요..
+* PMD_SECT_TEX(1) ->
+*   #define PMD_SECT_TEX(x)		(_AT(pmdval_t, (x)) << 12)	// v5 
+*   TEX 14.13.12 -> 001
+* PMD_SECT_BUFFERABLE -> B bit
+*/
 			mem_types[MT_DEVICE].prot_sect |= PMD_SECT_TEX(1);
 			mem_types[MT_DEVICE_NONSHARED].prot_sect |= PMD_SECT_TEX(1);
 			mem_types[MT_DEVICE_WC].prot_sect |= PMD_SECT_BUFFERABLE;
@@ -397,6 +451,9 @@ static void __init build_mem_type_table(void)
 			mem_types[MT_DEVICE_NONSHARED].prot_sect |= PMD_SECT_TEX(2);
 			mem_types[MT_DEVICE_WC].prot_sect |= PMD_SECT_TEX(1);
 		} else {
+/* 20130202
+* 여기들어오지 않음...
+*/
 			/*
 			 * For ARMv6 and ARMv7 without TEX remapping,
 			 * - shared device is TEXCB=00001
@@ -418,6 +475,13 @@ static void __init build_mem_type_table(void)
 	/*
 	 * Now deal with the memory-type mappings
 	 */
+/** 20130202
+*	cachepolicy =  WRITEALLOC, 4
+		.policy		= "writealloc",
+		.cr_mask	= 0,
+		.pmd		= PMD_SECT_WBWA,
+		.pte		= L_PTE_MT_WRITEALLOC, (0x1C) -> XCB = 111
+*/
 	cp = &cache_policies[cachepolicy];
 	vecs_pgprot = kern_pgprot = user_pgprot = cp->pte;
 
@@ -436,11 +500,20 @@ static void __init build_mem_type_table(void)
 	 * ARMv6 and above have extended page tables.
 	 */
 	if (cpu_arch >= CPU_ARCH_ARMv6 && (cr & CR_XP)) {
+/** 20130202
+* Large Page Table Entry is not set.
+*/
 #ifndef CONFIG_ARM_LPAE
 		/*
 		 * Mark cache clean areas and XIP ROM read only
 		 * from SVC mode and no access from userspace.
 		 */
+/** 20130202
+* PMD_SECT_APX 15 bit
+* PMD_SECT_AP_WRITE 10 bit
+* L1 page table entry format 에서 APX, AP(o1) 를 설정.
+* Kernel mode에서만 접근가능하게 설정. 
+*/
 		mem_types[MT_ROM].prot_sect |= PMD_SECT_APX|PMD_SECT_AP_WRITE;
 		mem_types[MT_MINICLEAN].prot_sect |= PMD_SECT_APX|PMD_SECT_AP_WRITE;
 		mem_types[MT_CACHECLEAN].prot_sect |= PMD_SECT_APX|PMD_SECT_AP_WRITE;
@@ -451,6 +524,11 @@ static void __init build_mem_type_table(void)
 			 * Mark memory with the "shared" attribute
 			 * for SMP systems
 			 */
+/** 20130202
+* XXX_SHARED 의미는 프로세서(core)간에 공유로 해석되고,
+* 따라서 SMP 에서는 관련된 메모리를 모두 XXX_SHARED로 선언 하는 듯 ???
+* #define L_PTE_SHARED		(_AT(pteval_t, 1) << 10)	// shared(v6), coherent(xsc3)/
+*/
 			user_pgprot |= L_PTE_SHARED;
 			kern_pgprot |= L_PTE_SHARED;
 			vecs_pgprot |= L_PTE_SHARED;
@@ -473,6 +551,10 @@ static void __init build_mem_type_table(void)
 	if (cpu_arch >= CPU_ARCH_ARMv6) {
 		if (cpu_arch >= CPU_ARCH_ARMv7 && (cr & CR_TRE)) {
 			/* Non-cacheable Normal is XCB = 001 */
+/** 20130202
+* cache 사용하지 않지만 write 시 cpu -> buffer -> physical memmory 순으로 동작하도록 설정.
+* 실제 sram 영역이 해당 됨. ???
+*/
 			mem_types[MT_MEMORY_NONCACHED].prot_sect |=
 				PMD_SECT_BUFFERED;
 		} else {
@@ -499,12 +581,19 @@ static void __init build_mem_type_table(void)
 
 	for (i = 0; i < 16; i++) {
 		unsigned long v = pgprot_val(protection_map[i]);
+/** 20130202
+* user_pgprot는 현재 = L_PTE_MT_WRITEALLOC | L_PTE_SHARED
+* vecs_pgprot는 현재 = L_PTE_MT_WRITEALLOC | L_PTE_SHARED
+* protection_map에 user_pgprot값을 추가
+*/
 		protection_map[i] = __pgprot(v | user_pgprot);
 	}
 
 	mem_types[MT_LOW_VECTORS].prot_pte |= vecs_pgprot;
 	mem_types[MT_HIGH_VECTORS].prot_pte |= vecs_pgprot;
 
+/** 20130216 여기서부터
+*/
 	pgprot_user   = __pgprot(L_PTE_PRESENT | L_PTE_YOUNG | user_pgprot);
 	pgprot_kernel = __pgprot(L_PTE_PRESENT | L_PTE_YOUNG |
 				 L_PTE_DIRTY | kern_pgprot);
