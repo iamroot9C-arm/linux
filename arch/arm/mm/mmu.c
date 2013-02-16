@@ -203,6 +203,10 @@ void adjust_cr(unsigned long mask, unsigned long set)
 * PMD_xxx 매크로의 경우 하드웨어용 페이지 테이블의 설정값이다.
 * .prot_pte 필드는 리눅스용 pte값을 저장하는 곳이다.
 * .prot_l1, .prot_sect 는 하드웨어용 pte값을 저장하는 곳이다.
+* 	20130216
+* 		ARM CortexA PG. Figure 10-3 Level 1 page table entry format
+* 		.prot_l1 : Pointer to 2nd level page table
+* 		.prot_sect : Section
 * ???
 */
 static struct mem_type mem_types[] = {
@@ -324,6 +328,9 @@ EXPORT_SYMBOL(get_mem_type);
 /*
  * Adjust the PMD section entries according to the CPU in use.
  */
+/** 20130216
+ * mem_types 에 architecture에 따른 기본 속성을 추가. 
+ * */
 static void __init build_mem_type_table(void)
 {
 	struct cachepolicy *cp;
@@ -598,6 +605,11 @@ static void __init build_mem_type_table(void)
 	pgprot_kernel = __pgprot(L_PTE_PRESENT | L_PTE_YOUNG |
 				 L_PTE_DIRTY | kern_pgprot);
 
+	/** 20130216
+	 * ecc_mask		= 0
+	 * cp->pmd		= PMD_SECT_WBWA,
+	 * kern_pgprot	= L_PTE_MT_WRITEALLOC | L_PTE_SHARED
+	 * */
 	mem_types[MT_LOW_VECTORS].prot_l1 |= ecc_mask;
 	mem_types[MT_HIGH_VECTORS].prot_l1 |= ecc_mask;
 	mem_types[MT_MEMORY].prot_sect |= ecc_mask | cp->pmd;
@@ -640,6 +652,10 @@ pgprot_t phys_mem_access_prot(struct file *file, unsigned long pfn,
 EXPORT_SYMBOL(phys_mem_access_prot);
 #endif
 
+/** 20130216
+ * cr in vexpress  = 0x10c53c7d
+ * vexpress에서는 high vector로 default 세팅되어 있어서 0xffff0000 
+ **/
 #define vectors_base()	(vectors_high() ? 0xffff0000 : 0)
 
 static void __init *early_alloc_aligned(unsigned long sz, unsigned long align)
@@ -799,6 +815,8 @@ static void __init create_mapping(struct map_desc *md)
 	const struct mem_type *type;
 	pgd_t *pgd;
 
+	/** 20130223 여기서 부터.. TASK_SIZE
+	 **/
 	if (md->virtual != vectors_base() && md->virtual < TASK_SIZE) {
 		printk(KERN_WARNING "BUG: not creating mapping for 0x%08llx"
 		       " at 0x%08lx in user region\n",
@@ -1177,6 +1195,9 @@ void __init sanity_check_meminfo(void)
     memblock_set_current_limit(arm_lowmem_limit);
 }
 
+/** 20130216
+ * VMALLOC_START 이전에서 커널이 실행되고 있는 메모리를 제외한 영역의 pmd를 clear
+ **/
 static inline void prepare_page_table(void)
 {
 	unsigned long addr;
@@ -1185,6 +1206,10 @@ static inline void prepare_page_table(void)
 	/*
 	 * Clear out all the mappings below the kernel image.
 	 */
+	/** 20130216
+	 * MODULES_VADDR : PAGE_OFFSET - 16MB : 0x8000_0000 - 16MB(vexpress)
+	 * PMD_SIZE : 2MB
+	 * */
 	for (addr = 0; addr < MODULES_VADDR; addr += PMD_SIZE)
 		pmd_clear(pmd_off_k(addr));
 
@@ -1198,6 +1223,9 @@ static inline void prepare_page_table(void)
 	/*
 	 * Find the end of the first block of lowmem.
 	 */
+	/** 20130216
+	 * memblock의 첫 번째 region에는 커널이 로딩되어 수행중이므로, pmd_clear에서 제외하기 위함.
+	 **/
 	end = memblock.memory.regions[0].base + memblock.memory.regions[0].size;
 	if (end >= arm_lowmem_limit)
 		end = arm_lowmem_limit;
@@ -1206,6 +1234,11 @@ static inline void prepare_page_table(void)
 	 * Clear out all the kernel space mappings, except for the first
 	 * memory bank, up to the vmalloc region.
 	 */
+	/** 20130216
+	 * memblock의 첫 번째 region의 마지막부터 VMALLOC_START까지 pmd_clear
+	 * VMALLOC_START는 마지막 VA(물리메모리 주소) + 8MB 
+		#define VMALLOC_START		(((unsigned long)high_memory + VMALLOC_OFFSET) & ~(VMALLOC_OFFSET-1))
+	 **/
 	for (addr = __phys_to_virt(end);
 	     addr < VMALLOC_START; addr += PMD_SIZE)
 		pmd_clear(pmd_off_k(addr));

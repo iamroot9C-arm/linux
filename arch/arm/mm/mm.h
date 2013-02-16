@@ -29,8 +29,15 @@ static inline pte_t get_top_pte(unsigned long va)
 	return *ptep;
 }
 
+/** 20130216
+ * 해당 pmd entry의 주소. (2 level 사용시에는 pgd=pmd)
+ **/
 static inline pmd_t *pmd_off_k(unsigned long virt)
 {
+	/** 20130216
+	 * pmd_offset, pud_offset 은 무슨 역할을 할까요 ??? 
+	 * 아래 코드는 return pgd_offset_k(virt); 로 대체될 수 있는듯..
+	 * */
 	return pmd_offset(pud_offset(pgd_offset_k(virt), virt), virt);
 }
 

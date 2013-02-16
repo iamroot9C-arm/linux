@@ -173,6 +173,12 @@
 #ifdef CONFIG_CPU_TLB_V7
 
 # ifdef CONFIG_SMP_ON_UP
+/** 20130216
+ * v7wbi_always_flags	:	TLB_WB | TLB_DCLEAN | TLB_BARRIER
+ * v7wbi_possible_flags	:	TLB_WB | TLB_DCLEAN | TLB_BARRIER | 
+ * 							TLB_V7_UIS_FULL | TLB_V7_UIS_PAGE | TLB_V7_UIS_ASID |
+ * 							TLB_V6_U_FULL | TLB_V6_U_PAGE | TLB_V6_U_ASID
+ **/
 #  define v7wbi_possible_flags	(v7wbi_tlb_flags_smp | v7wbi_tlb_flags_up)
 #  define v7wbi_always_flags	(v7wbi_tlb_flags_smp & v7wbi_tlb_flags_up)
 # elif defined(CONFIG_SMP)
@@ -283,6 +289,9 @@ extern struct cpu_tlb_fns cpu_tlb;
  * implemented the "%?" method, but this has been discontinued due to too
  * many people getting it wrong.
  */
+/** 20130216
+ * vexpress에서는 v7wbi_possible_flags 를 제외한 나머지 flags는 0 임.
+ * */
 #define possible_tlb_flags	(v4_possible_flags | \
 				 v4wbi_possible_flags | \
 				 fr_possible_flags | \
@@ -291,6 +300,9 @@ extern struct cpu_tlb_fns cpu_tlb;
 				 v6wbi_possible_flags | \
 				 v7wbi_possible_flags)
 
+/** 20130216
+ * vexpress에서는 v7wbi_always_flags 를 제외한 나머지 flags는 -1 (0xFFFFFFFF) 임.
+ * */
 #define always_tlb_flags	(v4_always_flags & \
 				 v4wbi_always_flags & \
 				 fr_always_flags & \
@@ -454,11 +466,36 @@ static inline void flush_pmd_entry(void *pmd)
 		dsb();
 }
 
+/** 20130216
+ * pmd 에 해당하는 데이터 캐시 플러시(linux), 클린(Arm reference manual)
+ **/
 static inline void clean_pmd_entry(void *pmd)
 {
 	const unsigned int __tlb_flag = __cpu_tlb_flags;
 
+	/** 20130216
+	 * #define tlb_op(f, regs, arg)	__tlb_op(f, "p15, 0, %0, " regs, arg)
+	 * 	==>	__tlb_op(TLB_DCLEAN, "p15, 0, %0, c7, c10, 1 @ flush_pmd", pmd)
+	 * 	always_tlb_flags : v7wbi_always_flags : TLB_WB | TLB_DCLEAN | TLB_BARRIER
+	 * 	==> mcr p15, 0, pmd, c7, c10, 1 @ flush_pmd
+	 *
+	 * 	ARM. B4.1.46 DCCMVAC, Data Cache Clean by MVA to PoC, VMSA
+	 * 		DCCMVAC WO Clean data or unified cache line by MVA to PoC. 
+	 * 		MVA : modified virtual address 
+	 * 		PoC : point of coherency 
+	 *		주소에 해당하는 데이터 캐시 클린.
+	 **/
 	tlb_op(TLB_DCLEAN, "c7, c10, 1	@ flush_pmd", pmd);
+	/** 20130216 
+	 * #define tlb_l2_op(f, regs, arg)	__tlb_op(f, "p15, 1, %0, " regs, arg)
+	 * ==> __tlb_op(TLB_L2CLEAN_FR, "p15, 1, %0, c15, c9, 1 @L2 flush_pmd", pmd)
+	 * 	always_tlb_flags : v7wbi_always_flags : TLB_WB | TLB_DCLEAN | TLB_BARRIER
+	 * 	possible_tlb_flags : v7wbi_possible_flags	:	TLB_WB | TLB_DCLEAN | TLB_BARRIER | 
+ 	 * 														TLB_V7_UIS_FULL | TLB_V7_UIS_PAGE | TLB_V7_UIS_ASID |
+     * 														TLB_V6_U_FULL | TLB_V6_U_PAGE | TLB_V6_U_ASID
+	 *
+	 * no operation
+	 **/
 	tlb_l2_op(TLB_L2CLEAN_FR, "c15, c9, 1  @ L2 flush_pmd", pmd);
 }
 

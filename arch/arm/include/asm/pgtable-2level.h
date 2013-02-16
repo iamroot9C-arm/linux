@@ -171,6 +171,10 @@ static inline pmd_t *pmd_offset(pud_t *pud, unsigned long addr)
 		flush_pmd_entry(pmdpd);	\
 	} while (0)
 
+/** 20130216
+ * 2 level page table에서는 2MB단위로 인덱싱이 이루어진다. 
+ * arm에서는 1MB단위로 인덱싱이 이루어진다. 
+ **/
 #define pmd_clear(pmdp)			\
 	do {				\
 		pmdp[0] = __pmd(0);	\

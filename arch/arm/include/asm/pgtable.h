@@ -156,8 +156,14 @@ extern struct page *empty_zero_page;
 extern pgd_t swapper_pg_dir[PTRS_PER_PGD];
 
 /* to find an entry in a page-table-directory */
+/** 20130216
+ * 2MB(PGDIR_SHIFT) 단위의 인덱스를 구한다.
+ * */
 #define pgd_index(addr)		((addr) >> PGDIR_SHIFT)
 
+/** 20130216
+ * addr에 해당하는 page table entry의 주소를 구한다. 
+ * */
 #define pgd_offset(mm, addr)	((mm)->pgd + pgd_index(addr))
 
 /* to find an entry in a kernel page-table-directory */

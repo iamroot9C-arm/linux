@@ -15,6 +15,9 @@
 
 struct mm_struct init_mm = {
 	.mm_rb		= RB_ROOT,
+	/** 20130216
+	 * swapper_pg_dir : 0x8000_4000
+	 * */
 	.pgd		= swapper_pg_dir,
 	.mm_users	= ATOMIC_INIT(2),
 	.mm_count	= ATOMIC_INIT(1),
