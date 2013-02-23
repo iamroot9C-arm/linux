@@ -116,10 +116,16 @@ phys_addr_t __init_memblock memblock_find_in_range_node(phys_addr_t start,
 	u64 i;
 
 	/* pump up @end */
+	/** 20130223    
+	 * end가 0으로 넘어왔다면 end를 memblock의 current_limit으로 잡음
+	 **/
 	if (end == MEMBLOCK_ALLOC_ACCESSIBLE)
 		end = memblock.current_limit;
 
 	/* avoid allocating the first page */
+	/** 20130223    
+	 * start와 PAGE_SIZE 중 큰 값을 취해 첫번째 page를 할당하는 것을 피한다. 왜???
+	 **/
 	start = max_t(phys_addr_t, start, PAGE_SIZE);
 	end = max(start, end);
 
@@ -768,12 +774,26 @@ void __init_memblock __next_free_mem_range_rev(u64 *idx, int nid,
 					   phys_addr_t *out_start,
 					   phys_addr_t *out_end, int *out_nid)
 {
+	/** 20130223    
+	 * memblock.memory와 memblock.reserved 각각을 mem, rsv로 가리킴
+	 **/
 	struct memblock_type *mem = &memblock.memory;
 	struct memblock_type *rsv = &memblock.reserved;
+	/** 20130223    
+	 * mi: *idx의 하위 32bit 값
+	 * ri: *idx의 상위 32bit 값
+	 */
 	int mi = *idx & 0xffffffff;
 	int ri = *idx >> 32;
 
+	/** 20130223
+	 * 최초 값에는 UULONG_MAX로 같음
+	 **/
 	if (*idx == (u64)ULLONG_MAX) {
+		/** 20130223    
+		 * mi를 memblock.memory region의 count - 1,
+		 * ri를 memblock.reserved region의 count로 설정
+		 **/
 		mi = mem->cnt - 1;
 		ri = rsv->cnt;
 	}
@@ -784,15 +804,29 @@ void __init_memblock __next_free_mem_range_rev(u64 *idx, int nid,
 		phys_addr_t m_end = m->base + m->size;
 
 		/* only memory regions are associated with nodes, check it */
+		/** 20130223    
+		 * nid가 1로 넘어오면 MAX_NUMNODES와 같으므로 flase 
+		 **/
 		if (nid != MAX_NUMNODES && nid != memblock_get_region_node(m))
 			continue;
 
 		/* scan areas before each reservation for intersection */
 		for ( ; ri >= 0; ri--) {
 			struct memblock_region *r = &rsv->regions[ri];
+			/** 20130223    
+			 * memblock.reserved의 개수가 1 이상이면 마지막 region의 base + size
+			 **/
 			phys_addr_t r_start = ri ? r[-1].base + r[-1].size : 0;
+			/** 20130223
+			 * for문 최초 수행시에는 ri와 rsv->cnt 같음
+			 *  r_end <- ULLONG_MAX
+			 * 다음 수행시에는 ri가 감소되므로 true
+			 *  r_end <- r->base
+			 **/
 			phys_addr_t r_end = ri < rsv->cnt ? r->base : ULLONG_MAX;
 
+			/** 20130302 여기부터
+			 **/
 			/* if ri advanced past mi, break out to advance mi */
 			if (r_end <= m_start)
 				break;
@@ -920,6 +954,9 @@ phys_addr_t __init memblock_alloc_base(phys_addr_t size, phys_addr_t align, phys
 	return alloc;
 }
 
+/** 20130223    
+ * vexpress에서 이 함수 호출
+ **/
 phys_addr_t __init memblock_alloc(phys_addr_t size, phys_addr_t align)
 {
 	return memblock_alloc_base(size, align, MEMBLOCK_ALLOC_ACCESSIBLE);

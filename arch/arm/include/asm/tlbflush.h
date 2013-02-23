@@ -313,6 +313,24 @@ extern struct cpu_tlb_fns cpu_tlb;
 
 #define tlb_flag(f)	((always_tlb_flags & (f)) || (__tlb_flag & possible_tlb_flags & (f)))
 
+/** 20130223    
+ * always_tlb_flags : 꼭 필요한 동작들
+ *   해당 architecture 의 wbi_always_flags의 값을 가져옴
+ * possible_tlb_flags : 선택적으로 실행할 수 있는 동작들
+ *   해당 architecture의 wbi_possible_flags의 값을 가져옴
+ *  
+ *  f가 (c.g. TLB_DCLEAN)
+ *  always_tlb_flags에 해당하면 flags 리스트를 전달 받아 always_tlb_flags에 해당하면 바로 수행,
+ *  possible_tlb_flags에 해당하면 __tlb_flag (v7wbi_tlb_flags_smp)와 비교해 지원된다면 수행
+ *
+ * __tlb_flag : armv7에서는 head-common.S의 루틴에 의해 다음 값이 들어감.
+ *              tlb_op 매크로를 호출하는 함수에서 미리 넣어줌.
+ * D0380000 각 필드의 의미는
+ * #define v7wbi_tlb_flags_smp (TLB_WB | TLB_DCLEAN | TLB_BARRIER | \
+ *              TLB_V7_UIS_FULL | TLB_V7_UIS_PAGE | TLB_V7_UIS_ASID)
+ *
+ *  (참고) tst는 and. %1, %2이 둘 다 1이면 z가 0으로 ne을 충족함
+ **/
 #define __tlb_op(f, insnarg, arg)					\
 	do {								\
 		if (always_tlb_flags & (f))				\
@@ -459,9 +477,17 @@ static inline void flush_pmd_entry(void *pmd)
 {
 	const unsigned int __tlb_flag = __cpu_tlb_flags;
 
+	/** 20130223    
+	 * TLB_DCLEAN 을 해당 architecture에서 지원한다면 flush 수행
+	 * v7에서는 always flags에 해당
+	 **/
 	tlb_op(TLB_DCLEAN, "c7, c10, 1	@ flush_pmd", pmd);
 	tlb_l2_op(TLB_L2CLEAN_FR, "c15, c9, 1  @ L2 flush_pmd", pmd);
 
+	/** 20130223
+	 * v7에서는 always flags에 해당하므로 수행
+	 * flush 명령이 실제 반영되도록 barrier 동작을 수행
+	 **/
 	if (tlb_flag(TLB_WB))
 		dsb();
 }

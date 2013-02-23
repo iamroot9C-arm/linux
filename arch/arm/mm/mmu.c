@@ -695,6 +695,9 @@ static void __init alloc_init_section(pud_t *pud, unsigned long addr,
 				      unsigned long end, phys_addr_t phys,
 				      const struct mem_type *type)
 {
+	/** 20130223    
+	 * pgtable-2level에서는 pud이 그대로 나옴
+	 **/
 	pmd_t *pmd = pmd_offset(pud, addr);
 
 	/*
@@ -703,25 +706,41 @@ static void __init alloc_init_section(pud_t *pud, unsigned long addr,
 	 * L1 entries, whereas PGDs refer to a group of L1 entries making
 	 * up one logical pointer to an L2 table.
 	 */
+	/** 20130223    
+	 * prot_sect 가 0이 아니고, addr, end, phys 모두 SECTION 단위로 정렬되어 있으면 true
+	 **/
 	if (type->prot_sect && ((addr | end | phys) & ~SECTION_MASK) == 0) {
 		pmd_t *p = pmd;
 
 #ifndef CONFIG_ARM_LPAE
+		/** 20130223    
+		 * addr이 1MB보다 크고 2MB보다 작을 경우 다음 pmd부터 page table에 entry를 생성하기 위해
+		 * 경계를 검사하는 부분. (pgd = pud 는 2MB 단위의 주소. pgd_t는 2개의 pmd_t로 이루어짐)
+		 **/
 		if (addr & SECTION_SIZE)
 			pmd++;
 #endif
 
+		/** 20130223    
+		 * addr부터 end까지 pmd entry를 채운다.
+		 **/
 		do {
 			*pmd = __pmd(phys | type->prot_sect);
 			phys += SECTION_SIZE;
 		} while (pmd++, addr += SECTION_SIZE, addr != end);
 
+		/** 20130223    
+		 * 최초 pmd 값을 기준으로 flush 수행
+		 **/
 		flush_pmd_entry(p);
 	} else {
 		/*
 		 * No need to loop; pte's aren't interested in the
 		 * individual L1 entries.
 		 */
+		/** 20130223    
+		 * type->proc_sect가 0이거나, proc_sect여도 정렬되어 있지 않다면 수행
+		 **/
 		alloc_init_pte(pmd, addr, end, __phys_to_pfn(phys), type);
 	}
 }
@@ -729,10 +748,16 @@ static void __init alloc_init_section(pud_t *pud, unsigned long addr,
 static void __init alloc_init_pud(pgd_t *pgd, unsigned long addr,
 	unsigned long end, unsigned long phys, const struct mem_type *type)
 {
+	/** 20130223    
+	 * pgtable-nopud에서는 pgd이 그대로 나옴
+	 **/
 	pud_t *pud = pud_offset(pgd, addr);
 	unsigned long next;
 
 	do {
+		/** 20130223    
+		 * pgtable-nopud에서는 end가 그대로 나옴
+		 **/
 		next = pud_addr_end(addr, end);
 		alloc_init_section(pud, addr, next, phys, type);
 		phys += next - addr;
@@ -815,7 +840,13 @@ static void __init create_mapping(struct map_desc *md)
 	const struct mem_type *type;
 	pgd_t *pgd;
 
-	/** 20130223 여기서 부터.. TASK_SIZE
+	/** 20130223
+	 * md->virtual이 low vector가 아니면서 TASK_SIZE보다 작은 영역으로 변환된 virtual 주소일 경우
+	 * md->virtual이 high vector가 아니면서 TASK_SIZE보다 작은 영역으로 변환된 virtual 주소일 경우
+	 * mapping table을 생성하지 않음. ???
+	 *
+	 * vectors_base() : vector tables의 시작 주소
+	 * TASK_SIZE : user space task의 최대 크기 (0x80000000 - 0x01000000 in vexpress)
 	 **/
 	if (md->virtual != vectors_base() && md->virtual < TASK_SIZE) {
 		printk(KERN_WARNING "BUG: not creating mapping for 0x%08llx"
@@ -824,6 +855,9 @@ static void __init create_mapping(struct map_desc *md)
 		return;
 	}
 
+	/** 20130223    
+	 * map_lowmem에서 넘어온 경우는 MT_MEMORY로 들어와 false
+	 **/
 	if ((md->type == MT_DEVICE || md->type == MT_ROM) &&
 	    md->virtual >= PAGE_OFFSET &&
 	    (md->virtual < VMALLOC_START || md->virtual >= VMALLOC_END)) {
@@ -838,16 +872,32 @@ static void __init create_mapping(struct map_desc *md)
 	/*
 	 * Catch 36-bit addresses
 	 */
+	/** 20130223    
+	 * LPAE가 아닌 경우 pfn은 0x100000 보다 작음 (4G / 4K)
+	 **/
 	if (md->pfn >= 0x100000) {
 		create_36bit_mapping(md, type);
 		return;
 	}
 #endif
 
+	/** 20130223
+	 * md->virtual을 PAGE 단위로 align. (round down)
+	 **/
 	addr = md->virtual & PAGE_MASK;
 	phys = __pfn_to_phys(md->pfn);
+	/** 20130223
+	 * 'md->length (size) + md->virtual의 하위 12비트'의 주소를 PAGE_ALIGN(round up) 시킴
+	 **/
 	length = PAGE_ALIGN(md->length + (md->virtual & ~PAGE_MASK));
 
+	/** 20130223
+	 * map_lowmem에서 넘어온 경우는 MT_MEMORY로 false
+	 *	prot_l1이 0 -> fault의 의미
+	 *	~SECTION_MASK는 0xfffff
+	 *
+	 * (addr | phys | length) 을 해서 1MB 단위로 안 떨어지면 ignore ???
+	 **/
 	if (type->prot_l1 == 0 && ((addr | phys | length) & ~SECTION_MASK)) {
 		printk(KERN_WARNING "BUG: map for 0x%08llx at 0x%08lx can not "
 		       "be mapped using pages, ignoring.\n",
@@ -855,9 +905,16 @@ static void __init create_mapping(struct map_desc *md)
 		return;
 	}
 
+	/** 20130223    
+	 * addr를 포함하는 page table entry의 주소
+	 **/
 	pgd = pgd_offset_k(addr);
 	end = addr + length;
 	do {
+		/** 20130223    
+		 * addr을 PGDIR_SIZE로 round-up 한 값과 end 값 중에 작은 값을 next에 저장
+		 * 즉 next는 2MB 단위
+		 **/
 		unsigned long next = pgd_addr_end(addr, end);
 
 		alloc_init_pud(pgd, addr, next, phys, type);
@@ -1209,6 +1266,8 @@ static inline void prepare_page_table(void)
 	/** 20130216
 	 * MODULES_VADDR : PAGE_OFFSET - 16MB : 0x8000_0000 - 16MB(vexpress)
 	 * PMD_SIZE : 2MB
+	 *
+	 * 왜 16MB를 뺐는지???
 	 * */
 	for (addr = 0; addr < MODULES_VADDR; addr += PMD_SIZE)
 		pmd_clear(pmd_off_k(addr));
@@ -1382,13 +1441,26 @@ static void __init map_lowmem(void)
 	struct memblock_region *reg;
 
 	/* Map all the lowmem memory banks. */
+	/** 20130223    
+	 * for_each_memblock은 memblock의 memory type의 region의 개수만큼 순회하는 매크로
+	 * #define for_each_memblock(memblock_type, region)					\
+			for (region = memblock.memblock_type.regions;				\
+				 region < (memblock.memblock_type.regions + memblock.memblock_type.cnt);	\
+				 region++)
+	 **/
 	for_each_memblock(memory, reg) {
 		phys_addr_t start = reg->base;
 		phys_addr_t end = start + reg->size;
 		struct map_desc map;
 
+		/** 20130223
+		 * end가 arm_lowmem_limit 보다 크면 end를 arm_lowmem_limit으로 조정
+		 **/
 		if (end > arm_lowmem_limit)
 			end = arm_lowmem_limit;
+		/** 20130223    
+		 * 비정상인 경우 for 종료
+		 **/
 		if (start >= end)
 			break;
 
