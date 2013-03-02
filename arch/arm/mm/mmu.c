@@ -657,14 +657,18 @@ EXPORT_SYMBOL(phys_mem_access_prot);
  * vexpress에서는 high vector로 default 세팅되어 있어서 0xffff0000 
  **/
 #define vectors_base()	(vectors_high() ? 0xffff0000 : 0)
-
+/** 20130302 
+ 	memblock_alloc된 영역의 시작주소를 align된 가상주소로 변환하여 초기화 하고 리턴한다.
+ **/	
 static void __init *early_alloc_aligned(unsigned long sz, unsigned long align)
 {
 	void *ptr = __va(memblock_alloc(sz, align));
 	memset(ptr, 0, sz);
 	return ptr;
 }
-
+/** 20130302 
+ 	size만큼 메모리를 alloc한다.
+ **/	
 static void __init *early_alloc(unsigned long sz)
 {
 	return early_alloc_aligned(sz, sz);
@@ -672,7 +676,26 @@ static void __init *early_alloc(unsigned long sz)
 
 static pte_t * __init early_pte_alloc(pmd_t *pmd, unsigned long addr, unsigned long prot)
 {
+	/** 20130302 
+	 (*pmd)가 NULL일 경우
+	 **/	
 	if (pmd_none(*pmd)) {
+	/** 20130302 	 
+ 	*
+ 	*    pgd             pte
+ 	* |        |
+ 	* +--------+
+ 	* |        |       +------------+ +0
+ 	* +- - - - +       | Linux pt 0 |
+ 	* |        |       +------------+ +1024
+ 	* +--------+ +0    | Linux pt 1 |
+ 	* |        |-----> +------------+ +2048
+ 	* +- - - - + +4    |  h/w pt 0  |
+ 	* |        |-----> +------------+ +3072
+ 	* +--------+ +8    |  h/w pt 1  |
+ 	* |        |       +------------+ +4096
+ 	*
+	**/	
 		pte_t *pte = early_alloc(PTE_HWTABLE_OFF + PTE_HWTABLE_SIZE);
 		__pmd_populate(pmd, __pa(pte), prot);
 	}
@@ -686,7 +709,7 @@ static void __init alloc_init_pte(pmd_t *pmd, unsigned long addr,
 {
 	pte_t *pte = early_pte_alloc(pmd, addr, type->prot_l1);
 	do {
-		set_pte_ext(pte, pfn_pte(pfn, __pgprot(type->prot_pte)), 0);
+			set_pte_ext(pte, pfn_pte(pfn, __pgprot(type->prot_pte)), 0);
 		pfn++;
 	} while (pte++, addr += PAGE_SIZE, addr != end);
 }

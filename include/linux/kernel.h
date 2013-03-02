@@ -617,6 +617,11 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
  * This macro does strict typechecking of min/max to make sure they are of the
  * same type as val.  See the unnecessary pointer comparisons.
  */
+ /** 20130302 
+  val 가 min 보다 작으면 min
+  val 가 max 보다 크면 max
+  val 가 min 보다 크거나 같고 max보다 작거나 같으면 val
+  **/	
 #define clamp(val, min, max) ({			\
 	typeof(val) __val = (val);		\
 	typeof(min) __min = (min);		\

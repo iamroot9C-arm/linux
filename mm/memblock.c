@@ -108,6 +108,9 @@ static long __init_memblock memblock_overlaps_region(struct memblock_type *type,
  * RETURNS:
  * Found address on success, %0 on failure.
  */
+ /** 20130302 
+  	주어진 범위와 노드에서 alloc 가능한 메모리 영역(aligned)을 찾는다.
+  **/	
 phys_addr_t __init_memblock memblock_find_in_range_node(phys_addr_t start,
 					phys_addr_t end, phys_addr_t size,
 					phys_addr_t align, int nid)
@@ -128,15 +131,35 @@ phys_addr_t __init_memblock memblock_find_in_range_node(phys_addr_t start,
 	 **/
 	start = max_t(phys_addr_t, start, PAGE_SIZE);
 	end = max(start, end);
-
+/** 20130302 
+ 
+#define for_each_free_mem_range_reverse(i, nid, p_start, p_end, p_nid)	\
+	for (i = (u64)ULLONG_MAX,					\
+	     __next_free_mem_range_rev(&i, nid, p_start, p_end, p_nid);	\
+	     i != (u64)ULLONG_MAX;					\
+	     __next_free_mem_range_rev(&i, nid, p_start, p_end, p_nid))
+ **/	
 	for_each_free_mem_range_reverse(i, nid, &this_start, &this_end, NULL) {
+		/** 20130302 
+			사용가능한 메모리영역이 start 와 end사이의 주소로 보장됨
+	 	**/	
 		this_start = clamp(this_start, start, end);
 		this_end = clamp(this_end, start, end);
-
+		/** 20130302 
+			size : 요구 사이즈
+			요구한 사이즈보다 실제 사용가능한 메모리 region의 끝주소가 작을 경우 다시 찾음
+ 		**/	
 		if (this_end < size)
 			continue;
 
+		/** 20130302 
+		 	메모리 최소 요구 사이즈를 충족시키기는 align된 메모리시작주소 candidate(...???)에 저장한다.
+			
+		 **/	
 		cand = round_down(this_end - size, align);
+		/** 20130302 
+		 	현재 사용가능한 memblock memory region에 메모리 공간을 잡을 수 있다면 candidate를 리턴한다.
+		 **/	
 		if (cand >= this_start)
 			return cand;
 	}
@@ -770,6 +793,16 @@ void __init_memblock __next_free_mem_range(u64 *idx, int nid,
  *
  * Reverse of __next_free_mem_range().
  */
+ /** 20130302 
+   idx : &i(ULLONG_MAX)
+   nid : 1
+   out_start : &this_start 
+   end_start : &this_end
+   out_nid   : null
+
+	memblock memory region과 reserved region을 역순으로 돌면서 memory region영역에서 사용가능한 reserved region영역을 찾아서 리턴한다.
+	
+  **/	
 void __init_memblock __next_free_mem_range_rev(u64 *idx, int nid,
 					   phys_addr_t *out_start,
 					   phys_addr_t *out_end, int *out_nid)
@@ -797,7 +830,33 @@ void __init_memblock __next_free_mem_range_rev(u64 *idx, int nid,
 		mi = mem->cnt - 1;
 		ri = rsv->cnt;
 	}
+/** 20130302 
 
+memblock memory region이 여러개인 상황을 테스트
+
+qemu-system-arm -M vexpress-a9    -kernel ./arch/arm/boot/zImage  -serial stdio -append "root=/dev/ram rdinit=/sbin/init console=ttyAMA0 debug mem=64M@0x60000000 mem=32M@0x66000000 memblock=debug"
+
+Machine: ARM-Versatile Express
+memblock_reserve: [0x000000600081c0-0x000000608e66d0] arm_memblock_init+0xd8/0x318
+memblock_reserve: [0x00000060004000-0x00000060008000] arm_mm_memblock_reserve+0x30/0x38
+MEMBLOCK configuration:
+ memory size = 0x6000000 reserved size = 0x8e2510
+ memory.cnt  = 0x2
+ memory[0x0]    [0x00000060000000-0x00000063ffffff], 0x4000000 bytes
+ memory[0x1]    [0x00000066000000-0x00000067ffffff], 0x2000000 bytes
+ reserved.cnt  = 0x2
+ reserved[0x0]  [0x00000060004000-0x00000060007fff], 0x4000 bytes
+ reserved[0x1]  [0x000000600081c0-0x000000608e66cf], 0x8de510 bytes
+Memory policy: ECC disabled, Data cache writealloc
+memblock_reserve: [0x00000067fff000-0x00000068000000] memblock_alloc_base_nid+0x6c/0x90
+memblock_reserve: [0x00000067ffe000-0x00000067fff000] memblock_alloc_base_nid+0x6c/0x90
+memblock_reserve: [0x00000067ffdfe0-0x00000067ffe000] memblock_alloc_base_nid+0x6c/0x90
+memblock_reserve: [0x00000067ffc000-0x00000067ffd000] memblock_alloc_base_nid+0x6c/0x90
+memblock_reserve: [0x00000067ffdfc0-0x00000067ffdfe0] memblock_alloc_base_nid+0x6c/0x90
+memblock_reserve: [0x00000067ffb000-0x00000067ffc000] memblock_alloc_base_nid+0x6c/0x90
+memblock_reserve: [0x00000067ffa000-0x00000067ffb000] memblock_alloc_base_nid+0x6c/0x90
+memblock_reserve: [0x00000067ff9000-0x00000067ffa000] memblock_alloc_base_nid+0x6c/0x90
+ **/	
 	for ( ; mi >= 0; mi--) {
 		struct memblock_region *m = &mem->regions[mi];
 		phys_addr_t m_start = m->base;
@@ -809,7 +868,9 @@ void __init_memblock __next_free_mem_range_rev(u64 *idx, int nid,
 		 **/
 		if (nid != MAX_NUMNODES && nid != memblock_get_region_node(m))
 			continue;
-
+		/** 20130302 
+ 		vexpress 에서 reserved 영역은 text~bss영역, initrd가 있을경우 initrd, swapper_pg_dir영역이 존재한다.
+ 		**/	
 		/* scan areas before each reservation for intersection */
 		for ( ; ri >= 0; ri--) {
 			struct memblock_region *r = &rsv->regions[ri];
@@ -825,23 +886,36 @@ void __init_memblock __next_free_mem_range_rev(u64 *idx, int nid,
 			 **/
 			phys_addr_t r_end = ri < rsv->cnt ? r->base : ULLONG_MAX;
 
-			/** 20130302 여기부터
-			 **/
+			/** 20130302 
+			 현재 memory region 이 현재reserved region과 겹치지 않으면 break 
+			 **/ 
 			/* if ri advanced past mi, break out to advance mi */
 			if (r_end <= m_start)
 				break;
 			/* if the two regions intersect, we're done */
+			/** 20130302 
+			 현재 memory region에서 reserved region으로 사용될 수 있는 영역을 찾아서 리턴한다
+			 **/	
 			if (m_end > r_start) {
 				if (out_start)
 					*out_start = max(m_start, r_start);
 				if (out_end)
 					*out_end = min(m_end, r_end);
+					/** 20130302 
+					 	vexpress일경우 memblock_get_region_node 는 empty function
+					 **/ 
 				if (out_nid)
 					*out_nid = memblock_get_region_node(m);
 
-				if (m_start >= r_start)
+				if (m_start >= r_start)	
+					/** 20130302 
+					 현제 reserved영역이 물리메모리 영역이 아닐 경우 mi를 감소한다
+					 **/	
 					mi--;
 				else
+					/** 20130302 
+					 현제 물리메모리에서 다른 reserved영역을 가리키게함
+					 **/ 
 					ri--;
 				*idx = (u32)mi | (u64)ri << 32;
 				return;
@@ -922,9 +996,18 @@ static phys_addr_t __init memblock_alloc_base_nid(phys_addr_t size,
 	phys_addr_t found;
 
 	/* align @size to avoid excessive fragmentation on reserved array */
+	/** 20130302 
+	 	요구 사이즈가 align된 사이즈보다 작을 경우 최소 align된 사이즈로 맞추기 위해 round_up을 한다.
+	 **/	
 	size = round_up(size, align);
 
+	/** 20130302 
+ 		max_addr 보다 작은 범위에서 memblock alloc 가능한 영역을 찾는다.
+ 	**/	
 	found = memblock_find_in_range_node(0, max_addr, size, align, nid);
+	/** 20130302 
+	 	alloc 가능한 영역을 찾으면 memblock reserved에 등록한다.
+	 **/	
 	if (found && !memblock_reserve(found, size))
 		return found;
 
@@ -936,11 +1019,19 @@ phys_addr_t __init memblock_alloc_nid(phys_addr_t size, phys_addr_t align, int n
 	return memblock_alloc_base_nid(size, align, MEMBLOCK_ALLOC_ACCESSIBLE, nid);
 }
 
+/** 20130302 
+	max_addr보다 작은 범위에서만 alloc을 수행함. 
+ **/	
 phys_addr_t __init __memblock_alloc_base(phys_addr_t size, phys_addr_t align, phys_addr_t max_addr)
 {
+/** 20130302 
+ 	vexpress의 경우에는 MAX_NUMNODES 가 1이다.
+ **/	
 	return memblock_alloc_base_nid(size, align, max_addr, MAX_NUMNODES);
 }
-
+/** 20130302 
+ 	memblock의 memory alloc이 실패했을 경우 패닉정보 출력
+ **/	
 phys_addr_t __init memblock_alloc_base(phys_addr_t size, phys_addr_t align, phys_addr_t max_addr)
 {
 	phys_addr_t alloc;
@@ -957,8 +1048,14 @@ phys_addr_t __init memblock_alloc_base(phys_addr_t size, phys_addr_t align, phys
 /** 20130223    
  * vexpress에서 이 함수 호출
  **/
+/** 20130302 
+	memblock 영역에서 사용가능한 align된 공간을 확보하는 함수
+**/	
 phys_addr_t __init memblock_alloc(phys_addr_t size, phys_addr_t align)
 {
+/** 20130302 
+ 	alloc가능한 memblock의 최대 주소를 MEMBLOCK_ALLOC_ACCESSIBLE 로 지정함
+ **/	
 	return memblock_alloc_base(size, align, MEMBLOCK_ALLOC_ACCESSIBLE);
 }
 

@@ -114,8 +114,11 @@ void __next_free_mem_range_rev(u64 *idx, int nid, phys_addr_t *out_start,
  */
 /** 20130223    
  *  주석의 의미로 보아 memblock의 free areas를 역순으로 탐색하는 것이지만,
- *  __next_free_mem_range_rev을 아직 보진 않았음. ???
+ *  __next_free_mem_range_rev을 아직 보진 않았음.
  **/
+ /** 20130302 
+  	분석완료
+  **/	
 #define for_each_free_mem_range_reverse(i, nid, p_start, p_end, p_nid)	\
 	for (i = (u64)ULLONG_MAX,					\
 	     __next_free_mem_range_rev(&i, nid, p_start, p_end, p_nid);	\

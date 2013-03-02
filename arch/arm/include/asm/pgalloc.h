@@ -129,6 +129,14 @@ static inline void pte_free(struct mm_struct *mm, pgtable_t pte)
 static inline void __pmd_populate(pmd_t *pmdp, phys_addr_t pte,
 				  pmdval_t prot)
 {
+/** 20130302 
+	prot : 0x01 
+ 	HW 1단계 PAGE table entry를 사용하겠다는 의미
+	build_mem_type_table 함수 에서 prot속성에 domain 이 세팅 되어있음 
+ **/	
+ /** 20130309
+    여기서 부터 시작
+  **/	
 	pmdval_t pmdval = (pte + PTE_HWTABLE_OFF) | prot;
 	pmdp[0] = __pmd(pmdval);
 #ifndef CONFIG_ARM_LPAE
