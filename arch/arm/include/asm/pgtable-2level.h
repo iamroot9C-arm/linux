@@ -162,6 +162,9 @@ static inline pmd_t *pmd_offset(pud_t *pud, unsigned long addr)
 	return (pmd_t *)pud;
 }
 
+/** 20130309    
+ * pmd 값이 section이나 supersection에 해당하는 경우를 체크
+ **/
 #define pmd_bad(pmd)		(pmd_val(pmd) & 2)
 
 #define copy_pmd(pmdpd,pmdps)		\
@@ -185,6 +188,10 @@ static inline pmd_t *pmd_offset(pud_t *pud, unsigned long addr)
 /* we don't need complex calculations here as the pmd is folded into the pgd */
 #define pmd_addr_end(addr,end) (end)
 
+/** 20130309    
+ * cpu_v7_set_pte_ext가 호출됨.
+ * ptep의 linux 속성 및  h/w 속성 부분을 각각 채움
+ **/
 #define set_pte_ext(ptep,pte,ext) cpu_set_pte_ext(ptep,pte,ext)
 
 #endif /* __ASSEMBLY__ */

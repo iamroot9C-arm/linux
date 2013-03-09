@@ -126,6 +126,9 @@ static inline void pte_free(struct mm_struct *mm, pgtable_t pte)
 	__free_page(pte);
 }
 
+/** 20130309    
+ * pmd에 pte 주소를 포함한 value를 채운다.
+ **/
 static inline void __pmd_populate(pmd_t *pmdp, phys_addr_t pte,
 				  pmdval_t prot)
 {
@@ -135,13 +138,19 @@ static inline void __pmd_populate(pmd_t *pmdp, phys_addr_t pte,
 	build_mem_type_table 함수 에서 prot속성에 domain 이 세팅 되어있음 
  **/	
  /** 20130309
-    여기서 부터 시작
+  * 할당받은 pte 주소(PA)에 HWTABLE offset을 더하고 prot (0x1)를 더해 pdmval을 구한다.
   **/	
 	pmdval_t pmdval = (pte + PTE_HWTABLE_OFF) | prot;
+	/** 20130309    
+	 * pmd에 h/w  pt 0 값을 넣어주고, LPAE가 아닐 경우 다음 pmd에 h/w pt 1의 값을 채운다.
+	 **/
 	pmdp[0] = __pmd(pmdval);
 #ifndef CONFIG_ARM_LPAE
 	pmdp[1] = __pmd(pmdval + 256 * sizeof(pte_t));
 #endif
+	/** 20130309    
+	 * pmd 내용이 변경되었으므로 flush를 수행한다.
+	 **/
 	flush_pmd_entry(pmdp);
 }
 

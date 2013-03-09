@@ -346,6 +346,10 @@ void __init dma_contiguous_early_fixup(phys_addr_t base, unsigned long size)
 	dma_mmu_remap_num++;
 }
 
+/** 20130309    
+ * vexpress 에서 CONFIG_CMA가 정의되어 있지 않아 dma_mmu_remap_num이 0.
+ * for 문을 수행하지 않음.
+ **/
 void __init dma_contiguous_remap(void)
 {
 	int i;

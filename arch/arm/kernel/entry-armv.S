@@ -784,6 +784,9 @@ ENDPROC(__switch_to)
 #endif
 	.endm
 
+/** 20130309    
+	cache line align
+**/
 	.align	5
 	.globl	__kuser_helper_start
 __kuser_helper_start:
@@ -896,6 +899,10 @@ __kuser_cmpxchg:				@ 0xffff0fc0
 	 * The kernel itself must perform the operation.
 	 * A special ghost syscall is used for that (see traps.c).
 	 */
+	/** 20130309    
+		이전 버전 architecture 에서는 memory barrier instruction이 지원되지 않으므로
+		software interrupt를 발생시켜 처리한다.
+	**/
 	stmfd	sp!, {r7, lr}
 	ldr	r7, 1f			@ it's 20 bits
 	swi	__ARM_NR_cmpxchg
@@ -945,6 +952,13 @@ kuser_cmpxchg32_fixup:
 
 #else
 
+	/** 20130309    
+		__kuser_cmpxchg 에 대해
+		CONFIG_NEEDS_SYSCALL_FOR_CMPXCHG 도 아니고, 
+		v6 이상일 경우 실행
+
+		20130316 여기부터...
+	 **/
 	smp_dmb	arm
 1:	ldrex	r3, [r2]
 	subs	r3, r3, r0
@@ -989,11 +1003,20 @@ __kuser_helper_end:
  * SP points to a minimal amount of processor-private memory, the address
  * of which is copied into r0 for the mode specific abort handler.
  */
+/** 20130309    
+	각 vector mode에 대한 공통 코드
+**/
 	.macro	vector_stub, name, mode, correction=0
+	/** 20130309    
+	2^5 (cache line 단위) align
+	**/
 	.align	5
 
 vector_\name:
 	.if \correction
+	/** 20130309    
+		복귀 주소에 대한 correction 보상
+	**/
 	sub	lr, lr, #\correction
 	.endif
 
@@ -1001,7 +1024,21 @@ vector_\name:
 	@ Save r0, lr_<exception> (parent PC) and spsr_<exception>
 	@ (parent CPSR)
 	@
+	/** 20130309    
+		r0와 lr을 해당 모드의 stack에 저장 (sp는 증가하지 않은 상태)
+	**/
 	stmia	sp, {r0, lr}		@ save r0, lr
+	/** 20130309    
+		이전 모드의 cpsr을 sp+8 위치에 저장
+		|     |   
+		+-----+    <- sp
+		| r0  |
+		+-----+
+		| lr  |
+		+-----+    <- sp + 8
+		| spsr|
+		+-----+
+	**/
 	mrs	lr, spsr
 	str	lr, [sp, #8]		@ save spsr
 
@@ -1009,17 +1046,34 @@ vector_\name:
 	@ Prepare for SVC32 mode.  IRQs remain disabled.
 	@
 	mrs	r0, cpsr
+	/** 20130309    
+		해당 \mode를 clear하고, SVC_MODE로 전환
+		spsr_cxsr에 저장하는 이유는 movs pc, lr시에 cpsr로 채우기 위함
+	**/
 	eor	r0, r0, #(\mode ^ SVC_MODE | PSR_ISETSTATE)
 	msr	spsr_cxsf, r0
 
 	@
 	@ the branch table must immediately follow this code
 	@
+	/** 20130309    
+		spsr로부터 이전 모드를 추출한다.
+	 **/
 	and	lr, lr, #0x0f
  THUMB(	adr	r0, 1f			)
  THUMB(	ldr	lr, [r0, lr, lsl #2]	)
+	/** 20130309    
+		sp를 r0에 복사
+	 **/
 	mov	r0, sp
+	/** 20130309    
+		lr <- pc + (mode * 4)	; pc는 vector_stub 아래 instruction을 가리키고 있다.
+		실행할 instruction을 lr에 저장
+	 **/
  ARM(	ldr	lr, [pc, lr, lsl #2]	)
+	/** 20130309    
+		pc로 찾은 instruction으로 이동하면서 spsr이 cpsr로 복사됨.
+	**/
 	movs	pc, lr			@ branch to handler in SVC mode
 ENDPROC(vector_\name)
 
@@ -1033,6 +1087,12 @@ __stubs_start:
 /*
  * Interrupt dispatcher
  */
+ /** 20130309    
+	각 interrupt handler를 정의하는 부분.
+	각 모드에 대한 공통 부분은 vector_stub macro로 작성해준다.
+
+	entry가 16개인 이유는 4비트로 16개의 mode가 가능하기 때문이다.
+  **/
 	vector_stub	irq, IRQ_MODE, 4
 
 	.long	__irq_usr			@  0  (USR_26 / USR_32)
@@ -1160,6 +1220,9 @@ __stubs_end:
 
 	.equ	stubs_offset, __vectors_start + 0x200 - __stubs_start
 
+/** 20130309    
+	vector table 선언 
+**/
 	.globl	__vectors_start
 __vectors_start:
  ARM(	swi	SYS_ERROR0	)
@@ -1170,6 +1233,10 @@ __vectors_start:
 	W(b)	vector_pabt + stubs_offset
 	W(b)	vector_dabt + stubs_offset
 	W(b)	vector_addrexcptn + stubs_offset
+	/** 20130309    
+	       (stubs_start + 0) + (__vectors_start + 0x200 - __stubs_start)
+		   => _vectors_start + 0x200 + 0
+	 **/	
 	W(b)	vector_irq + stubs_offset
 	W(b)	vector_fiq + stubs_offset
 

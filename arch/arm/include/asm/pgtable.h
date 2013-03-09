@@ -172,8 +172,19 @@ extern pgd_t swapper_pg_dir[PTRS_PER_PGD];
 #define pmd_none(pmd)		(!pmd_val(pmd))
 #define pmd_present(pmd)	(pmd_val(pmd))
 
+/** 20130309    
+ * pmd entry에 들어있는 pte의 주소(PA)에 대한 VA를 리턴하는 함수
+ **/
 static inline pte_t *pmd_page_vaddr(pmd_t pmd)
 {
+	/** 20130309    
+	 * pmd_val를 mask한 값을 취한다.
+	 *   PHYS_MASK 0xffffffff
+	 *   PAGE_MASK 0xffff0000
+	 * pte를 할당할 때 PAGE_SIZE 단위로 align된 주소를 받아왔으므로
+	 *   PAGE_MASK를 씌워도 pte 주소값이 손상되지 않음
+	 *   (PTE_HWTABLE_OFF + PTE_HWTABLE_SIZE)
+	 **/
 	return __va(pmd_val(pmd) & PHYS_MASK & (s32)PAGE_MASK);
 }
 
@@ -187,14 +198,28 @@ static inline pte_t *pmd_page_vaddr(pmd_t pmd)
 #define __pte_unmap(pte)	kunmap_atomic(pte)
 #endif
 
+/** 20130309    
+ * addr을 가리키는  pte의 index를 구한다.
+ **/
 #define pte_index(addr)		(((addr) >> PAGE_SHIFT) & (PTRS_PER_PTE - 1))
 
+/** 20130309    
+ * addr에 대한 해당 pte entry 주소를 리턴
+ *   pmd_page_vaddr(*(pmd) : pte table의 주소
+ *   pte_index             : pte table에서의 index
+ **/
 #define pte_offset_kernel(pmd,addr)	(pmd_page_vaddr(*(pmd)) + pte_index(addr))
 
 #define pte_offset_map(pmd,addr)	(__pte_map(pmd) + pte_index(addr))
 #define pte_unmap(pte)			__pte_unmap(pte)
 
+/** 20130309    
+ * pte entry의 값의 물리주소로부터 pfn을 구한다.
+ **/
 #define pte_pfn(pte)		((pte_val(pte) & PHYS_MASK) >> PAGE_SHIFT)
+/** 20130309    
+ * 'pfn에 해당하는 물리주소 | 속성'으로 pte 데이터를 구한다.
+ **/
 #define pfn_pte(pfn,prot)	__pte(__pfn_to_phys(pfn) | pgprot_val(prot))
 
 #define pte_page(pte)		pfn_to_page(pte_pfn(pte))

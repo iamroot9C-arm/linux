@@ -417,6 +417,9 @@ void __init arm_memblock_init(struct meminfo *mi, struct machine_desc *mdesc)
 	 * reserve memory for DMA contigouos allocations,
 	 * must come from DMA area inside low memory
 	 */
+	/** 20130309    
+	 * CONFIG_CMA가 not defined이므로 NULL을 리턴
+	 **/
 	dma_contiguous_reserve(min(arm_dma_limit, arm_lowmem_limit));
 
 	/** 20130126    

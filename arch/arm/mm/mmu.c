@@ -674,6 +674,10 @@ static void __init *early_alloc(unsigned long sz)
 	return early_alloc_aligned(sz, sz);
 }
 
+/** 20130309    
+ * pte table을 위한 공간을 생성하고 해당 pmd에 속성과 함께 저장.
+ * 할당한 pte 중 addr에 해당하는 index의 주소를 리턴.
+ **/
 static pte_t * __init early_pte_alloc(pmd_t *pmd, unsigned long addr, unsigned long prot)
 {
 	/** 20130302 
@@ -699,21 +703,41 @@ static pte_t * __init early_pte_alloc(pmd_t *pmd, unsigned long addr, unsigned l
 		pte_t *pte = early_alloc(PTE_HWTABLE_OFF + PTE_HWTABLE_SIZE);
 		__pmd_populate(pmd, __pa(pte), prot);
 	}
+	/** 20130309    
+	 * 방금 채운 pmd의 값이 정상인지 검사하는 함수
+	 **/
 	BUG_ON(pmd_bad(*pmd));
+	/** 20130309    
+	 * alloc한 pte에서 addr에 해당하는 pte entry의 주소를 리턴
+	 **/
 	return pte_offset_kernel(pmd, addr);
 }
 
+/** 20130309    
+ * pte table을 할당하고 초기화
+ **/
 static void __init alloc_init_pte(pmd_t *pmd, unsigned long addr,
 				  unsigned long end, unsigned long pfn,
 				  const struct mem_type *type)
 {
+	/** 20130309    
+	 * pte를 alloc 하고, addr에 해당하는 pte entry의 주소가 리턴됨
+	 **/
 	pte_t *pte = early_pte_alloc(pmd, addr, type->prot_l1);
+	/** 20130309    
+	 * PAGE_SIZE 단위로 pte table의 각 entry (pte 속성이 적용)를 채움.
+	 *   early_pte_alloc이 리턴한 주소부터 end까지 순회하며 값을 채운다.
+	 **/
 	do {
 			set_pte_ext(pte, pfn_pte(pfn, __pgprot(type->prot_pte)), 0);
 		pfn++;
 	} while (pte++, addr += PAGE_SIZE, addr != end);
 }
 
+/** 20130309    
+ * section 단위로 pmd entry를 채운다.
+ * 정렬되지 않은 영역에 대해 pmd에 l2 table을 저장하고, pte entry를 생성하고 채움
+ **/
 static void __init alloc_init_section(pud_t *pud, unsigned long addr,
 				      unsigned long end, phys_addr_t phys,
 				      const struct mem_type *type)
@@ -762,12 +786,15 @@ static void __init alloc_init_section(pud_t *pud, unsigned long addr,
 		 * individual L1 entries.
 		 */
 		/** 20130223    
-		 * type->proc_sect가 0이거나, proc_sect여도 정렬되어 있지 않다면 수행
+		 * type->prot_sect가 0이거나, prot_sect여도 정렬되어 있지 않다면 수행
 		 **/
 		alloc_init_pte(pmd, addr, end, __phys_to_pfn(phys), type);
 	}
 }
 
+/** 20130309    
+ * addr에서 end까지 pud entry를 초기화
+ **/
 static void __init alloc_init_pud(pgd_t *pgd, unsigned long addr,
 	unsigned long end, unsigned long phys, const struct mem_type *type)
 {
@@ -781,7 +808,14 @@ static void __init alloc_init_pud(pgd_t *pgd, unsigned long addr,
 		/** 20130223    
 		 * pgtable-nopud에서는 end가 그대로 나옴
 		 **/
+		 /** 20130309    
+		  * addr과 end 사이에 작은 값을 취해 next로 삼는다.
+		  **/
 		next = pud_addr_end(addr, end);
+		/** 20130309    
+		 * section 단위로 pud(pmd)를 채운다.
+		 *   (section 크기보다 작은 단위는 pte를 생성)
+		 **/
 		alloc_init_section(pud, addr, next, phys, type);
 		phys += next - addr;
 	} while (pud++, addr = next, addr != end);
@@ -856,6 +890,9 @@ static void __init create_36bit_mapping(struct map_desc *md,
  * offsets, and we take full advantage of sections and
  * supersections.
  */
+/** 20130309    
+ * map_desc 영역에 대한 page table을 채우는 함수
+ **/
 static void __init create_mapping(struct map_desc *md)
 {
 	unsigned long addr, length, end;
@@ -940,6 +977,9 @@ static void __init create_mapping(struct map_desc *md)
 		 **/
 		unsigned long next = pgd_addr_end(addr, end);
 
+		/** 20130309    
+		 * addr, next 영역에 대한 pud entry를 채움
+		 **/
 		alloc_init_pud(pgd, addr, next, phys, type);
 
 		phys += next - addr;
@@ -1380,6 +1420,9 @@ static void __init devicemaps_init(struct machine_desc *mdesc)
 	/*
 	 * Allocate the vector page early.
 	 */
+	/** 20130309    
+	 * PAGE_SIZE만큼 메모리 공간을 할당 받아 vectors에 저장
+	 **/
 	vectors = early_alloc(PAGE_SIZE);
 
 	early_trap_init(vectors);
@@ -1459,6 +1502,10 @@ static void __init kmap_init(void)
 #endif
 }
 
+/** 20130309    
+ * lowmem 영역에 대해 mapping table (page table)을 생성하는 함수
+ *   (lowmem : 물리적으로 존재하는 메모리의 끝주소)
+ **/
 static void __init map_lowmem(void)
 {
 	struct memblock_region *reg;
@@ -1492,6 +1539,9 @@ static void __init map_lowmem(void)
 		map.length = end - start;
 		map.type = MT_MEMORY;
 
+		/** 20130309    
+		 * 해당 memblock 영역에 대한 page table을 채운다.
+		 **/
 		create_mapping(&map);
 	}
 }

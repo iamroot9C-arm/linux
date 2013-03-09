@@ -77,38 +77,95 @@ ENDPROC(cpu_v7_switch_mm)
  */
 ENTRY(cpu_v7_set_pte_ext)
 #ifdef CONFIG_MMU
+	/** 20130309    
+		pte의 linux pt에 linux 속성을 가진 pte value 저장
+	 **/
 	str	r1, [r0]			@ linux version
 
+	/** 20130309    
+		pte의 값 중 b4 ~ b9까지 클리어 (Linux용 attribute의 일부)
+	**/
 	bic	r3, r1, #0x000003f0
+	/** 20130309
+		pte의 값 중 b0 ~ b1까지 클리어 
+	**/
 	bic	r3, r3, #PTE_TYPE_MASK
+	/** 20130309    
+		r2는 ext
+	**/
 	orr	r3, r3, r2
+	/** 20130309    
+		b1, b4를 set
+	**/
 	orr	r3, r3, #PTE_EXT_AP0 | 2
 
+	/** 20130309    
+		r1의 b4가 세팅되어 있는지 체크(bit and)
+	**/
 	tst	r1, #1 << 4
+	/** 20130309    
+		같으면(set되어 있으면) z flag가 0으로 ne 수행
+		(v5에 해당)
+	**/
 	orrne	r3, r3, #PTE_EXT_TEX(1)
 
+	/** 20130309    
+		DIRTY 비트를 반전
+	**/
 	eor	r1, r1, #L_PTE_DIRTY
+	/** 20130309    
+		r1의 두 비트 중 하나라도 켜져 있는지 검사
+		(v6에 해당)
+	**/
 	tst	r1, #L_PTE_RDONLY | L_PTE_DIRTY
 	orrne	r3, r3, #PTE_EXT_APX
 
+	/** 20130309    
+		PTE_USER가 set되어 있으면 PTE_EXT_AP1을 켜줌
+	**/
 	tst	r1, #L_PTE_USER
 	orrne	r3, r3, #PTE_EXT_AP1
 #ifdef CONFIG_CPU_USE_DOMAINS
+	/** 20130309    
+	Cortex-A Series PG 10.7.3 Domain
+	  The use of domains is deprecated in the ARMv7 architecture, 
+	**/
 	@ allow kernel read/write access to read-only user pages
 	tstne	r3, #PTE_EXT_APX
 	bicne	r3, r3, #PTE_EXT_APX | PTE_EXT_AP0
 #endif
 
+	/** 20130309    
+		PTE_XN 비트를 검사해 설정되어 있다면 PTE_EXT_NX을 켜줌
+	 **/
 	tst	r1, #L_PTE_XN
 	orrne	r3, r3, #PTE_EXT_XN
 
+	/** 20130309    
+		L_PTE_YOUNG이 켜져 있을 때
+			L_PTE_PRESENT가 켜져 있을 때
+				r3 유지
+			L_PTE_PRESENT가 꺼져 있을 때
+				r3 <- 0
+		L_PTE_YOUNG이 꺼져 있을 때
+				r3 <- 0
+	**/
 	tst	r1, #L_PTE_YOUNG
 	tstne	r1, #L_PTE_PRESENT
 	moveq	r3, #0
 
+/** 20130309    
+	pte의 h/w pt에 설정한 r3값을 저장. r0의 값이 +2048로 업데이트
+**/
  ARM(	str	r3, [r0, #2048]! )
  THUMB(	add	r0, r0, #2048 )
  THUMB(	str	r3, [r0] )
+ /** 20130309    
+   DCCMVAC, Data Cache Clean by MVA to PoC
+	  Clean and Invalidate data or unified cache line by MVA to PoC.
+
+	h/w를 가리키는 r0 주소를 전달해 cache를 clear 하는 명령
+**/
 	mcr	p15, 0, r0, c7, c10, 1		@ flush_pte
 #endif
 	mov	pc, lr

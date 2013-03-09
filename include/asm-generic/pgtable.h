@@ -233,6 +233,10 @@ static inline int pmd_same(pmd_t pmd_a, pmd_t pmd_b)
 	(__boundary - 1 < (end) - 1)? __boundary: (end);		\
 })
 
+/** 20130309    
+ * __boundary는 addr을 PUD_SIZE (2MB)로 round-up
+ * __boundary와 end 중 작은 값을 취한다.
+ **/
 #ifndef pud_addr_end
 #define pud_addr_end(addr, end)						\
 ({	unsigned long __boundary = ((addr) + PUD_SIZE) & PUD_MASK;	\
