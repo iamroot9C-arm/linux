@@ -293,6 +293,10 @@ ENTRY(\name\()_processor_functions)
 	.size	\name\()_processor_functions, . - \name\()_processor_functions
 .endm
 
+/** 20130316
+	 architecture 이름을 매개변수로 받아 캐시 함수를
+	선언하는 매크로 
+**/
 .macro define_cache_functions name:req
 	.align 2
 	.type	\name\()_cache_fns, #object

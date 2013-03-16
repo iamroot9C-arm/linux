@@ -13,6 +13,9 @@
 #ifndef __ASM_ARM_UNISTD_H
 #define __ASM_ARM_UNISTD_H
 
+/** 20130316
+	OABI = Old Application Binary Interface
+**/
 #define __NR_OABI_SYSCALL_BASE	0x900000
 
 #if defined(__thumb__) || defined(__ARM_EABI__)

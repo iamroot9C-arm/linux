@@ -400,7 +400,7 @@ static void __init build_mem_type_table(void)
 			if (mem_types[i].prot_l1)
 				mem_types[i].prot_l1 |= PMD_BIT4;
 			if (mem_types[i].prot_sect)
-				mem_types[i].prot_sec     PMD_BIT4;
+				mem_types[i].prot_sect |= PMD_BIT4;
 		}
 	}
 

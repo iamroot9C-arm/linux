@@ -25,12 +25,18 @@
 /*
  * For ARM syscalls, we encode the syscall number into the instruction.
  */
+/** 20130316
+	 SWI_SYS_SIGRETURN = 0xef000000 | 0x77(119) | 0x900000 = 0xef900077
+**/
 #define SWI_SYS_SIGRETURN	(0xef000000|(__NR_sigreturn)|(__NR_OABI_SYSCALL_BASE))
 #define SWI_SYS_RT_SIGRETURN	(0xef000000|(__NR_rt_sigreturn)|(__NR_OABI_SYSCALL_BASE))
 
 /*
  * With EABI, the syscall number has to be loaded into r7.
  */
+/** 20130316 
+	MOV_R7_NR_SIGRETURN = 0xe3a07000 | 0x77 = 0xe3a07077
+**/
 #define MOV_R7_NR_SIGRETURN	(0xe3a07000 | (__NR_sigreturn - __NR_SYSCALL_BASE))
 #define MOV_R7_NR_RT_SIGRETURN	(0xe3a07000 | (__NR_rt_sigreturn - __NR_SYSCALL_BASE))
 
@@ -40,12 +46,17 @@
  */
 #define SWI_THUMB_SIGRETURN	(0xdf00 << 16 | 0x2700 | (__NR_sigreturn - __NR_SYSCALL_BASE))
 #define SWI_THUMB_RT_SIGRETURN	(0xdf00 << 16 | 0x2700 | (__NR_rt_sigreturn - __NR_SYSCALL_BASE))
+/** 20130316
+ 
+	 sigreturn_codes 변수에 SIGRETURN, RT_SIGRETURN의 swi 호출 및 
+	intrrupt number를 가져오는 binary code를 바로 저장
 
+**/
 const unsigned long sigreturn_codes[7] = {
 	MOV_R7_NR_SIGRETURN,    SWI_SYS_SIGRETURN,    SWI_THUMB_SIGRETURN,
 	MOV_R7_NR_RT_SIGRETURN, SWI_SYS_RT_SIGRETURN, SWI_THUMB_RT_SIGRETURN,
 };
-
+						
 /*
  * atomically swap in the new signal mask, and wait for a signal.
  */

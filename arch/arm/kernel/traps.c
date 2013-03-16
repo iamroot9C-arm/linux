@@ -810,6 +810,11 @@ static void __init kuser_get_tls_init(unsigned long vectors)
 	 * vectors + 0xfe0 = __kuser_get_tls
 	 * vectors + 0xfe8 = hardware TLS instruction at 0xffff0fe8
 	 */
+	/** 20130316
+		vexpress경우 tls_emu는 0, has_tls_reg는 1
+		tls는 thread local storage		
+		참고 - http://studyfoss.egloos.com/5259841
+	**/
 	if (tls_emu || has_tls_reg)
 		memcpy((void *)vectors + 0xfe0, (void *)vectors + 0xfe8, 4);
 }
@@ -829,6 +834,18 @@ void __init early_trap_init(void *vectors_base)
 	 * into the vector page, mapped at 0xffff0000, and ensure these
 	 * are visible to the instruction stream.
 	 */
+	/** 20130316
+		- vectors는 early_alloc을 통해 PAGE_SIZE만큼 할당받은 메모리의 시작주소.
+		- __vectors_start 커널의 exception vector의 시작주소(0x00000000 또는 0x
+		 ffff0000)
+		- stubs 영역은 각 모드에서의 exception service를 호출하게 하는 영역으로 ve
+		 ctors 영역에서 이곳으로 호출됨.
+		- kuser_helper는 cpu에서 지원해주지 않는 명령을 커널에서 지원해주는 함수 
+		
+		- vectors에 처음 주소에 커널의 exception vector를 복사 
+		- vectors + 0x200주소에 exception dispatcher영역을 복사.
+		- vectors에 마지막 영역에 kuser_helper 함수들을 복사.	
+	**/
 	memcpy((void *)vectors, __vectors_start, __vectors_end - __vectors_start);
 	memcpy((void *)vectors + 0x200, __stubs_start, __stubs_end - __stubs_start);
 	memcpy((void *)vectors + 0x1000 - kuser_sz, __kuser_helper_start, kuser_sz);
@@ -842,6 +859,14 @@ void __init early_trap_init(void *vectors_base)
 	 * Copy signal return handlers into the vector page, and
 	 * set sigreturn to be a pointer to these.
 	 */
+	/** 20130316 
+			
+		 vectors + 0x500 주소에 sigreturn_code에 있는 sigreturn 관련 binary code를
+		복사
+		 signal return handler ???
+
+	**/
+
 	memcpy((void *)(vectors + KERN_SIGRETURN_CODE - CONFIG_VECTORS_BASE),
 	       sigreturn_codes, sizeof(sigreturn_codes));
 

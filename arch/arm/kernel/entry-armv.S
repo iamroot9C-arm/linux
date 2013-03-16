@@ -774,6 +774,9 @@ ENDPROC(__switch_to)
  *
  * See Documentation/arm/kernel_user_helpers.txt for formal definitions.
  */
+/** 20130316
+	kuser_helper 동작을 끝내고 user_space로 return	
+**/
  THUMB(	.arm	)
 
 	.macro	usr_ret, reg
@@ -957,8 +960,13 @@ kuser_cmpxchg32_fixup:
 		CONFIG_NEEDS_SYSCALL_FOR_CMPXCHG 도 아니고, 
 		v6 이상일 경우 실행
 
-		20130316 여기부터...
+	20130316
+		 r2 메모리 값과 r0 레지스터 값이 같을 때까지 비교하고 같을 때 r1 메모리
+                값을 r2 메모리 값에 저장.		 
+		
+		 ldrex, strex 는 atomic 동작을 보장하기 위한 명령어.		
 	 **/
+
 	smp_dmb	arm
 1:	ldrex	r3, [r2]
 	subs	r3, r3, r0
@@ -967,13 +975,31 @@ kuser_cmpxchg32_fixup:
 	beq	1b
 	rsbs	r0, r3, #0
 	/* beware -- each __kuser slot must be 8 instructions max */
+	/** 20130316 
+		memory_barrier 함수 호출하고 user_space로 복귀.
+	**/
 	ALT_SMP(b	__kuser_memory_barrier)
 	ALT_UP(usr_ret	lr)
 
 #endif
 
 	.align	5
+	/** 20130316 
 
+		get_tls의 return value (r0)는 tls value가 된다. 
+	
+	 	ldr	r0, [pc, #(16 - 8)]	@ read TLS, set in kuser_get_tls_init
+		usr_ret	lr
+		mrc	p15, 0, r0, c13, c0, 3	@ 0xffff0fe8 hardware TLS code
+		.word	0
+		.word	0  <- ldr r0, ... 실행시 pc+8 위치.
+		.word	0
+		.word	0
+		
+		hardware TLS code는
+ 		ARM 참조 - B4.1.151 TPIDRURO, User Read-Only Thread ID Register, VMSA
+	
+	**/
 __kuser_get_tls:				@ 0xffff0fe0
 	ldr	r0, [pc, #(16 - 8)]	@ read TLS, set in kuser_get_tls_init
 	usr_ret	lr
