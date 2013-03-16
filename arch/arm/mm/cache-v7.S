@@ -222,6 +222,14 @@ ENTRY(v7_coherent_kern_range)
  *	It is assumed that:
  *	- the Icache does not read data from the write buffer
  */
+/** 20130316
+	r0 = start address 
+	r1 = end address + 1
+	r2 = 0x20 cache size, r3 은 템프변수로 여기서는  의미없음.
+	r3 = r2 - 1 = 0x1f
+	r12 = vectors(r0) & ~r3 => cache align 를 맞춤.   
+	r0 ~ r1까지 cache line size 단위로 invalidate (무효화) 시킴. 
+**/
 ENTRY(v7_coherent_user_range)
  UNWIND(.fnstart		)
 	dcache_line_size r2, r3

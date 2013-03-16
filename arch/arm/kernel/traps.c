@@ -804,6 +804,9 @@ void __init trap_init(void)
 	return;
 }
 
+/** 20130316
+	vexpress 경우 HW TLS 코드를 __kuser_get_tls 코드 영역에 복사
+**/
 static void __init kuser_get_tls_init(unsigned long vectors)
 {
 	/*
@@ -814,11 +817,15 @@ static void __init kuser_get_tls_init(unsigned long vectors)
 		vexpress경우 tls_emu는 0, has_tls_reg는 1
 		tls는 thread local storage		
 		참고 - http://studyfoss.egloos.com/5259841
+		arch/arm/include/asm/tls.h 에 선언
 	**/
 	if (tls_emu || has_tls_reg)
 		memcpy((void *)vectors + 0xfe0, (void *)vectors + 0xfe8, 4);
 }
 
+/** 20130316
+	할당받은 한개 페이지에 exception vector table, kuser_helper, sigreturn 관련 call 함수들을 적재한다. 
+**/
 void __init early_trap_init(void *vectors_base)
 {
 	unsigned long vectors = (unsigned long)vectors_base;
@@ -853,6 +860,9 @@ void __init early_trap_init(void *vectors_base)
 	/*
 	 * Do processor specific fixups for the kuser helpers
 	 */
+	/** 20130316
+		vexpress 경우 HW TLS 코드를 __kuser_get_tls 코드 영역에 복사
+	**/
 	kuser_get_tls_init(vectors);
 
 	/*
@@ -866,10 +876,16 @@ void __init early_trap_init(void *vectors_base)
 		 signal return handler ???
 
 	**/
-
 	memcpy((void *)(vectors + KERN_SIGRETURN_CODE - CONFIG_VECTORS_BASE),
 	       sigreturn_codes, sizeof(sigreturn_codes));
 
+	/** 20130316
+		define_cache_functions 매크로에서 v7_coherent_user_range 로 링크
+		arch/arm/mm/cache-v7.S file v7_coherent_user_range 함수에서 실행.
+	**/
 	flush_icache_range(vectors, vectors + PAGE_SIZE);
+	/** 20130316
+		도메인 타입을 재지정하는 함수,vexpress에서는 Null function.	
+	**/
 	modify_domain(DOMAIN_USER, DOMAIN_CLIENT);
 }

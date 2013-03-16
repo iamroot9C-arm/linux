@@ -157,7 +157,12 @@
 	asm_trace_hardirqs_on_cond eq
 	restore_irqs_notrace \oldcpsr
 	.endm
-
+/** 20130316
+	__ex_table(exception table) 로 섹션을 변경. "a" allocatable attribute
+	align 3 주소값 2개 들어가서 ???
+	9999b -> 호출한 곳의 주소
+	9001f -> fault handler label.(label 위치는 USER매크로 호출한 곳 아래에 있음)
+**/
 #define USER(x...)				\
 9999:	x;					\
 	.pushsection __ex_table,"a";		\

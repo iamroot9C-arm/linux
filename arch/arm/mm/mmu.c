@@ -1425,8 +1425,14 @@ static void __init devicemaps_init(struct machine_desc *mdesc)
 	 **/
 	vectors = early_alloc(PAGE_SIZE);
 
+	/** 20130316
+		vectors 영역을 채움.	
+	**/
 	early_trap_init(vectors);
 
+	/** 20130316
+		VMALLOC_START ~ 0Xffff ffff (가상주소의 끝)까지 pmd clear 시킴.
+	**/
 	for (addr = VMALLOC_START; addr; addr += PMD_SIZE)
 		pmd_clear(pmd_off_k(addr));
 
@@ -1460,6 +1466,8 @@ static void __init devicemaps_init(struct machine_desc *mdesc)
 	create_mapping(&map);
 #endif
 
+/** 20130323 여기부터..
+**/
 	/*
 	 * Create a mapping for the machine vectors at the high-vectors
 	 * location (0xffff0000).  If we aren't using high-vectors, also

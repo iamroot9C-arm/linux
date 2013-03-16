@@ -59,6 +59,9 @@
 
 #ifndef __ASSEMBLY__
 
+/** 20130316
+	CPU_USE_DOMAINS is not set in vexpress
+**/
 #ifdef CONFIG_CPU_USE_DOMAINS
 static inline void set_domain(unsigned val)
 {
@@ -68,6 +71,9 @@ static inline void set_domain(unsigned val)
 	isb();
 }
 
+/** 20130316
+	현재 쓰레드의 도메인 타입을 새로 지정
+**/
 #define modify_domain(dom,type)					\
 	do {							\
 	struct thread_info *thread = current_thread_info();	\
