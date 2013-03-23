@@ -145,8 +145,18 @@ static inline int __raw_write_trylock(rwlock_t *lock)
 
 static inline void __raw_read_lock(rwlock_t *lock)
 {
+	/** 20130323
+	*	PREMPT is not defined in vexperss
+	*/
 	preempt_disable();
+	/** 20130323
+	*	empty function 
+	*/
 	rwlock_acquire_read(&lock->dep_map, 0, 0, _RET_IP_);
+	/** 20130323
+	* define LOCK_CONTENDED(_lock, try, lock) \
+	*	lock(_lock)
+	*/
 	LOCK_CONTENDED(lock, do_raw_read_trylock, do_raw_read_lock);
 }
 
@@ -224,6 +234,9 @@ static inline void __raw_write_unlock(rwlock_t *lock)
 
 static inline void __raw_read_unlock(rwlock_t *lock)
 {
+	/** 20130323
+	*	vexpress 에서 rwlock_release / preempt_enable 는 널 함수
+	*/
 	rwlock_release(&lock->dep_map, 1, _RET_IP_);
 	do_raw_read_unlock(lock);
 	preempt_enable();

@@ -1135,6 +1135,9 @@ EXPORT_SYMBOL(vm_map_ram);
  *
  * DO NOT USE THIS FUNCTION UNLESS YOU KNOW WHAT YOU'RE DOING.
  */
+/** 20130323
+*	vmlist = vm, vm->next = NULL
+*/
 void __init vm_area_add_early(struct vm_struct *vm)
 {
 	struct vm_struct *tmp, **p;
@@ -1319,7 +1322,11 @@ static void insert_vmalloc_vm(struct vm_struct *vm, struct vmap_area *va,
 	setup_vmalloc_vm(vm, va, flags, caller);
 	insert_vmalloc_vmlist(vm);
 }
-
+/**
+* flags : VM_IOREMAP
+	return __get_vm_area_node(size, 1, flags, VMALLOC_START, VMALLOC_END,
+						-1, GFP_KERNEL, caller);
+*/
 static struct vm_struct *__get_vm_area_node(unsigned long size,
 		unsigned long align, unsigned long flags, unsigned long start,
 		unsigned long end, int node, gfp_t gfp_mask, const void *caller)
@@ -1330,7 +1337,10 @@ static struct vm_struct *__get_vm_area_node(unsigned long size,
 	BUG_ON(in_interrupt());
 	if (flags & VM_IOREMAP) {
 		int bit = fls(size);
-
+		/** 20130323
+		* IOREMAP_MAX_ORDER = 24
+		* 12 (4K) <= bit <= 24 (16M)
+		*/
 		if (bit > IOREMAP_MAX_ORDER)
 			bit = IOREMAP_MAX_ORDER;
 		else if (bit < PAGE_SHIFT)

@@ -990,6 +990,9 @@ static void __init create_mapping(struct map_desc *md)
 /*
  * Create the architecture specific mappings
  */
+/** 20130323
+*	nr 개수 만큼 vm_struct 메모리를 할당 받아 페이지테이블에 등록하고 vmlist 에 추가함. 
+*/
 void __init iotable_init(struct map_desc *io_desc, int nr)
 {
 	struct map_desc *md;
@@ -1488,6 +1491,9 @@ static void __init devicemaps_init(struct machine_desc *mdesc)
 	/*
 	 * Ask the machine support to map in the statically mapped devices.
 	 */
+/** 20130323
+* In the case of vexpress, map_io = v2m_map_io from v2m.c
+*/
 	if (mdesc->map_io)
 		mdesc->map_io();
 	fill_pmd_gaps();

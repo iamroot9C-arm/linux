@@ -473,7 +473,9 @@ static struct ct_desc *ct_descs[] __initdata = {
 	&ct_ca9x4_desc,
 #endif
 };
-
+/** 20130323
+*	v2m processor ID를 읽어와서 해당하는 device descriptor 를 찾아 ct_desc 에 저장한다.
+*/
 static void __init v2m_populate_ct_desc(void)
 {
 	int i;
@@ -493,11 +495,22 @@ static void __init v2m_populate_ct_desc(void)
 		      current_tile_id);
 }
 
+/** 20130323
+*
+*/
 static void __init v2m_map_io(void)
 {
+	/** 20130323
+	*	ARRAY_SIZE 는 1이 리턴 됨. 
+	*/
 	iotable_init(v2m_io_desc, ARRAY_SIZE(v2m_io_desc));
+	/** 20130323
+	* v2m_sysreg_base = VA 0xF800 0000
+	*/
 	v2m_sysreg_base = ioremap(V2M_SYSREGS, SZ_4K);
 	v2m_populate_ct_desc();
+/** 20130330 여기서 부터
+*/
 	ct_desc->map_io();
 }
 

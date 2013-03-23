@@ -266,14 +266,23 @@ static inline int constant_fls(int x)
  * On ARMv5 and above those functions can be implemented around
  * the clz instruction for much better code efficiency.
  */
-
+/** 20130323
+*	MSB 부터 0이 아닌 첫번째 위치를 구함.
+*/
 static inline int fls(int x)
 {
 	int ret;
 
+	/** 20130323
+	* 상수면 compiler time 에 fls가 계산됨.
+	**/
 	if (__builtin_constant_p(x))
 	       return constant_fls(x);
 
+	/** 20130323
+	*	clz : count leading zero (from MSB)
+	*   ret : 32 - clz 
+	*/
 	asm("clz\t%0, %1" : "=r" (ret) : "r" (x));
        	ret = 32 - ret;
 	return ret;

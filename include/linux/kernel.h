@@ -49,6 +49,9 @@
 #define PTR_ALIGN(p, a)		((typeof(p))ALIGN((unsigned long)(p), (a)))
 #define IS_ALIGNED(x, a)		(((x) & ((typeof(x))(a) - 1)) == 0)
 
+/** 20130323
+* __must_be_array 는 배열이 아니면, 컴파일 시 에러가 발생. 배열이면 0 이 리턴.
+*/
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]) + __must_be_array(arr))
 
 /*

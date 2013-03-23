@@ -11,6 +11,9 @@
  * sev and wfe are ARMv6K extensions.  Uniprocessor ARMv6 may not have the K
  * extensions, so when running on UP, we have to patch these instructions away.
  */
+/** 20130323
+* sev: Set Event, wfe: Wait For Event
+*/
 #define ALT_SMP(smp, up)					\
 	"9998:	" smp "\n"					\
 	"	.pushsection \".alt.smp.init\", \"a\"\n"	\
@@ -39,6 +42,10 @@
 )
 #else
 #define SEV		ALT_SMP("sev", "nop")
+/** 20130323
+* SMP 경우 "wfe" cond 수행
+* UP 경우 "nop" 수행
+*/
 #define WFE(cond)	ALT_SMP("wfe" cond, "nop")
 #endif
 
@@ -217,7 +224,15 @@ static inline int arch_spin_is_contended(arch_spinlock_t *lock)
 static inline void arch_write_lock(arch_rwlock_t *rw)
 {
 	unsigned long tmp;
-
+/** 20130323
+*1: ldrex temp, [rw->lock] : temp = *rw->lock
+*	teq temp, #0 : temp = temp ^ 0
+*	wfene        : if temp != 0, wait for event
+*	strexeq temp 0x80000000, *rw->lock : *rw->lock = -INT_MAX, 
+*                                        다른프로세스가 접근했으면 temp = 1, 그외는  temp = 0;
+*	teq temp, 0  : temp = temp ^ 0;
+* 	bne 1b       : if temp != 0, go 1b 
+*/
 	__asm__ __volatile__(
 "1:	ldrex	%0, [%1]\n"
 "	teq	%0, #0\n"
@@ -255,7 +270,9 @@ static inline int arch_write_trylock(arch_rwlock_t *rw)
 static inline void arch_write_unlock(arch_rwlock_t *rw)
 {
 	smp_mb();
-
+/** 20130323
+* 	*rw->lock = 0
+*/
 	__asm__ __volatile__(
 	"str	%1, [%0]\n"
 	:
@@ -284,6 +301,18 @@ static inline void arch_read_lock(arch_rwlock_t *rw)
 {
 	unsigned long tmp, tmp2;
 
+/** 20130323
+*		loadex ~ strexpl 사이 명령을 아토믹하게 수행.
+*		:wfemi 를 수행. wait for event on minus condition (negative	
+*1:	ldrex temp, [rw->lock]  : temp = *rw->lock  
+*	adds  temp, temp, #1    : temp = temp + 1; 
+*	strexpl temp2, temp, [rw->lock]  : if temp >= 0, *rw->lock = temp.  
+* 									   temp2 = 1 다른 프로세서가 rw->lock 주소를 접근 시, 그외 0
+*								       store on pl condition (plus or zero)
+*	WFE("mi")  wfemi       :  temp < 0 이면, 대기상태로 진입. ( sev가 올때까지 대기)
+*	rsbpls temp, temp2, #0 :  if temp >= 0, temp = 0 - temp2, update cpsr_f 
+*	bmi 1b
+*/
 	__asm__ __volatile__(
 "1:	ldrex	%0, [%2]\n"
 "	adds	%0, %0, #1\n"
@@ -303,7 +332,13 @@ static inline void arch_read_unlock(arch_rwlock_t *rw)
 	unsigned long tmp, tmp2;
 
 	smp_mb();
-
+/** 201303223
+*1:	ldrex tmp, rw->lock : tmp = *rw->lock
+*	sub tmp, tmp, 1     : tmp = tmp - 1;
+*	strex tmp2, tmp, rw->lock : *rw->lock = tmp, tmp2 =1 다른프로세서가 접근했으면, 그외 tmp2 = 0;
+*	teq tmp2, #0              : tmp2 ^ 0
+* 	bne 1b                    : tmp2 != 0 이면 go 1b
+*/
 	__asm__ __volatile__(
 "1:	ldrex	%0, [%2]\n"
 "	sub	%0, %0, #1\n"
@@ -314,6 +349,9 @@ static inline void arch_read_unlock(arch_rwlock_t *rw)
 	: "r" (&rw->lock)
 	: "cc");
 
+/** 20130323
+*	dsb / sev asm 명령 실행.
+*/
 	if (tmp == 0)
 		dsb_sev();
 }

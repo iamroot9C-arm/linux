@@ -27,6 +27,10 @@ struct pt_regs;
    result (of value 0 and type size_t), so the expression can be used
    e.g. in a structure initializer (or where-ever else comma expressions
    aren't permitted). */
+/** 20130323
+	0 이외의 경우 아래 컴파일 에러가 발생.
+	test.c:4:39: error: negative width in bit-field ‘<anonymous>
+*/
 #define BUILD_BUG_ON_ZERO(e) (sizeof(struct { int:-!!(e); }))
 #define BUILD_BUG_ON_NULL(e) ((void *)sizeof(struct { int:-!!(e); }))
 

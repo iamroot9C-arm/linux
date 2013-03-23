@@ -202,10 +202,15 @@ void __iomem * __arm_ioremap_pfn_caller(unsigned long pfn,
 	/*
 	 * High mappings must be supersection aligned
 	 */
+	/** 20130323
+	*	pfn이 1M 보다 크고(4G 이상이고),물리주소가 16M 단위로 정렬되어 있지 않으면 널로 리턴.
+	*/
 	if (pfn >= 0x100000 && (__pfn_to_phys(pfn) & ~SUPERSECTION_MASK))
 		return NULL;
 #endif
-
+	/** 20130323
+	*	MT_DEVICE mem_type을 리턴
+	*/
 	type = get_mem_type(mtype);
 	if (!type)
 		return NULL;
@@ -236,6 +241,10 @@ void __iomem * __arm_ioremap_pfn_caller(unsigned long pfn,
 		return (void __iomem *) (offset + addr);
 	}
 	read_unlock(&vmlist_lock);
+
+/** 20130323
+*	이하는 다음 진입 시 분석 (SLUB ....)
+*/
 
 	/*
 	 * Don't allow RAM to be mapped - this causes problems with ARMv6+
