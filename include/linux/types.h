@@ -230,6 +230,9 @@ typedef struct {
 } atomic64_t;
 #endif
 
+/** 20130330    
+ * list_head 구조체
+ **/
 struct list_head {
 	struct list_head *next, *prev;
 };

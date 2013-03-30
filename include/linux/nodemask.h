@@ -433,6 +433,9 @@ static inline void node_set_offline(int nid)
 	nr_online_nodes = num_node_state(N_ONLINE);
 }
 
+/** 20130330    
+ * vexpress 에서는 MAX_NUMNODES 가 1이므로 null.
+ **/
 #else
 
 static inline int node_state(int node, enum node_states state)

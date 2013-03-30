@@ -171,6 +171,12 @@ extern pgd_t swapper_pg_dir[PTRS_PER_PGD];
 /* to find an entry in a kernel page-table-directory */
 #define pgd_offset_k(addr)	pgd_offset(&init_mm, addr)
 
+/** 20130330    
+ * pmd_val은 pmd값을 리턴.
+ *
+ * pmd_none은 pmd entry가 NULL일 때,
+ * pmd_present는 pmd entry가 NULL이 아닐 때
+ **/
 #define pmd_none(pmd)		(!pmd_val(pmd))
 #define pmd_present(pmd)	(pmd_val(pmd))
 

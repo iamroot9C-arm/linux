@@ -329,6 +329,8 @@ static inline void mminit_verify_zonelist(void)
 extern void mminit_validate_memmodel_limits(unsigned long *start_pfn,
 				unsigned long *end_pfn);
 #else
+/** 20130330    
+ **/
 static inline void mminit_validate_memmodel_limits(unsigned long *start_pfn,
 				unsigned long *end_pfn)
 {

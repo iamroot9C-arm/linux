@@ -134,6 +134,10 @@ void show_mem(unsigned int filter)
 	printk("%d pages swap cached\n", cached);
 }
 
+/** 20130330    
+ * meminfo의 entry 중 가장 낮은 pfn을 min에,
+ * 가장 높은 pfn을 max_low, max_high에 저장한다.
+ **/
 static void __init find_limits(unsigned long *min, unsigned long *max_low,
 			       unsigned long *max_high)
 {
@@ -141,10 +145,22 @@ static void __init find_limits(unsigned long *min, unsigned long *max_low,
 	int i;
 
 	/* This assumes the meminfo array is properly sorted */
+	/** 20130330    
+	 * 첫번째 bank의 start 주소에 대한 pfn.
+	 **/
 	*min = bank_pfn_start(&mi->bank[0]);
+	/** 20130330    
+	 * for (i = 0; i < (mi)->nr_banks; i++)
+	 **/
 	for_each_bank (i, mi)
 		if (mi->bank[i].highmem)
 				break;
+	/** 20130330    
+	 * highmem이 true로 되어 break될 경우
+	 *     max_low는 highmem bank 이전의 bank의 마지막 주소에 대한 pfn
+	 *     max_high는 마지막 bank의 마지막 주소에 대한 pfn
+	 * 그렇지 않을 경우 max_low와 max_high는 같음
+	 **/
 	*max_low = bank_pfn_end(&mi->bank[i - 1]);
 	*max_high = bank_pfn_end(&mi->bank[mi->nr_banks - 1]);
 }
@@ -161,7 +177,17 @@ static void __init arm_bootmem_init(unsigned long start_pfn,
 	 * Allocate the bootmem bitmap page.  This must be in a region
 	 * of memory which has already been mapped.
 	 */
+	/** 20130330    
+	 * boot_pages는 pfn을 비트맵으로 표현하기 위해 필요한 페이지 수
+	 **/
 	boot_pages = bootmem_bootmap_pages(end_pfn - start_pfn);
+	/** 20130330    
+	 * 필요한 물리메모리의 크기 : boot_pages << PAGE_SHIFT
+	 * 정렬 단위                : L1_CACHE_BYTES
+	 * 할당 가능한 최대 물리 메모리 주소: __pfn_to_phys(end_pfn)
+	 *
+	 * bootmem을 비트맵으로 표현하기 위해 필요한 메모리를 할당 받아 저장
+	 **/
 	bitmap = memblock_alloc_base(boot_pages << PAGE_SHIFT, L1_CACHE_BYTES,
 				__pfn_to_phys(end_pfn));
 
@@ -169,20 +195,34 @@ static void __init arm_bootmem_init(unsigned long start_pfn,
 	 * Initialise the bootmem allocator, handing the
 	 * memory banks over to bootmem.
 	 */
+	/** 20130330    
+	 * vexpress는 null function
+	 **/
 	node_set_online(0);
+	/** 20130330    
+	 * pgdata <- &contig_page_data
+	 **/
 	pgdat = NODE_DATA(0);
 	init_bootmem_node(pgdat, __phys_to_pfn(bitmap), start_pfn, end_pfn);
 
 	/* Free the lowmem regions from memblock into bootmem. */
 	for_each_memblock(memory, reg) {
+		/** 20130330    
+		 * start는 round up한 pfn, end는 round down한 pfn.
+		 **/
 		unsigned long start = memblock_region_memory_base_pfn(reg);
 		unsigned long end = memblock_region_memory_end_pfn(reg);
 
+		/** 20130330    
+		 * 경계값 검사
+		 **/
 		if (end >= end_pfn)
 			end = end_pfn;
 		if (start >= end)
 			break;
 
+		/** 20130406 여기부터...
+		 **/
 		free_bootmem(__pfn_to_phys(start), (end - start) << PAGE_SHIFT);
 	}
 
@@ -439,6 +479,9 @@ void __init bootmem_init(void)
 
 	max_low = max_high = 0;
 
+	/** 20130330    
+	 * meminfo로부터 min (첫 pfn), max_low (마지막 pfn), max_high를 채움
+	 **/
 	find_limits(&min, &max_low, &max_high);
 
 	arm_bootmem_init(min, max_low);

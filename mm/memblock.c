@@ -1031,6 +1031,7 @@ phys_addr_t __init __memblock_alloc_base(phys_addr_t size, phys_addr_t align, ph
 }
 /** 20130302 
  	memblock의 memory alloc이 실패했을 경우 패닉정보 출력
+	max_addr : alloc 가능한 memblock의 최대 주소. memblock_alloc에서 호출했을 경우는 0.
  **/	
 phys_addr_t __init memblock_alloc_base(phys_addr_t size, phys_addr_t align, phys_addr_t max_addr)
 {

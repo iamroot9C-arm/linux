@@ -321,6 +321,9 @@ void __iomem * (*arch_ioremap_caller)(unsigned long, size_t,
 				      unsigned int, void *) =
 	__arm_ioremap_caller;
 
+/** 20130323
+ *  arch_ioremap_caller 일부 분석
+ */
 void __iomem *
 __arm_ioremap(unsigned long phys_addr, size_t size, unsigned int mtype)
 {

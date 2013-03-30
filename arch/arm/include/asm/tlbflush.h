@@ -311,6 +311,9 @@ extern struct cpu_tlb_fns cpu_tlb;
 				 v6wbi_always_flags & \
 				 v7wbi_always_flags)
 
+/** 20130330    
+ * 매개변수로 주어진 flag가 always_tlb_flags 또는 possible_tlb_flags에 포함되는지 검사
+ **/
 #define tlb_flag(f)	((always_tlb_flags & (f)) || (__tlb_flag & possible_tlb_flags & (f)))
 
 /** 20130223    
@@ -346,11 +349,17 @@ extern struct cpu_tlb_fns cpu_tlb;
 #define tlb_op(f, regs, arg)	__tlb_op(f, "p15, 0, %0, " regs, arg)
 #define tlb_l2_op(f, regs, arg)	__tlb_op(f, "p15, 1, %0, " regs, arg)
 
+/** 20130330    
+ * 모든 tlb를 flush하고 barrier를 동작시키는 함수
+ **/
 static inline void local_flush_tlb_all(void)
 {
 	const int zero = 0;
 	const unsigned int __tlb_flag = __cpu_tlb_flags;
 
+	/** 20130330    
+	 * WB를 사용할 경우 data 동기화 barrier를 세움
+	 **/
 	if (tlb_flag(TLB_WB))
 		dsb();
 
@@ -358,8 +367,17 @@ static inline void local_flush_tlb_all(void)
 	tlb_op(TLB_V4_U_FULL | TLB_V6_U_FULL, "c8, c7, 0", zero);
 	tlb_op(TLB_V4_D_FULL | TLB_V6_D_FULL, "c8, c6, 0", zero);
 	tlb_op(TLB_V4_I_FULL | TLB_V6_I_FULL, "c8, c5, 0", zero);
+	/** 20130330    
+	 * mcr p15, 0, %0(zero), c8, c3, 0
+	 * from DDI0406C
+	 * B4.1.138 TLBIALLIS, TLB Invalidate All, Inner Shareable, VMSA only
+	 **/
 	tlb_op(TLB_V7_UIS_FULL, "c8, c3, 0", zero);
 
+	/** 20130330    
+	 * flush를 한 뒤,
+	 * TLB_BARRIER를 지원할 경우 data와 instruction barrier를 세움
+	 **/
 	if (tlb_flag(TLB_BARRIER)) {
 		dsb();
 		isb();

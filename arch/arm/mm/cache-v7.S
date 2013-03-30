@@ -154,6 +154,9 @@ ENDPROC(v7_flush_dcache_all)
  *  unification in a single instruction.
  *
  */
+/** 20130330    
+ *  data cache를 flush 시키고, i-cache를 invalidate 시킴
+ **/
 ENTRY(v7_flush_kern_cache_all)
  ARM(	stmfd	sp!, {r4-r5, r7, r9-r11, lr}	)
  THUMB(	stmfd	sp!, {r4-r7, r9-r11, lr}	)

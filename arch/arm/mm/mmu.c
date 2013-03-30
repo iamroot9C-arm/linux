@@ -1004,13 +1004,23 @@ void __init iotable_init(struct map_desc *io_desc, int nr)
 	vm = early_alloc_aligned(sizeof(*vm) * nr, __alignof__(*vm));
 
 	for (md = io_desc; nr; md++, nr--) {
+		/** 20130330    
+		 * md 영역에 대한 page table entry를 등록
+		 **/
 		create_mapping(md);
+		/** 20130330    
+		 * 정렬되지 않은 경우 addr은 PAGE_MASK로 정렬시키고(round down),
+		 * 그 크기를 length에 더해 size에 저장
+		 **/
 		vm->addr = (void *)(md->virtual & PAGE_MASK);
 		vm->size = PAGE_ALIGN(md->length + (md->virtual & ~PAGE_MASK));
 		vm->phys_addr = __pfn_to_phys(md->pfn); 
 		vm->flags = VM_IOREMAP | VM_ARM_STATIC_MAPPING; 
 		vm->flags |= VM_ARM_MTYPE(md->type);
 		vm->caller = iotable_init;
+		/** 20130330    
+		 * vm_area를 추가하고, 여러 개일 경우 vm++로 다음 entry를 가리킴
+		 **/
 		vm_area_add_early(vm++);
 	}
 }
@@ -1030,6 +1040,9 @@ void __init iotable_init(struct map_desc *io_desc, int nr)
  * PMD halves once the static mappings are in place.
  */
 
+/** 20130330    
+ * 홀수 section인 경우 create_mapping 없이 vmlist에 추가
+ **/
 static void __init pmd_empty_section_gap(unsigned long addr)
 {
 	struct vm_struct *vm;
@@ -1042,6 +1055,10 @@ static void __init pmd_empty_section_gap(unsigned long addr)
 	vm_area_add_early(vm);
 }
 
+/** 20130330    
+ * vmlist를 순회하며 각 node에서 odd section 단위로 할당되어 있고,
+ * pmd가 free인 경우 ioremap()이나 vmalloc()에서 사용하지 못하게 vmlist에 추가
+ **/
 static void __init fill_pmd_gaps(void)
 {
 	struct vm_struct *vm;
@@ -1053,6 +1070,9 @@ static void __init fill_pmd_gaps(void)
 		if (!(vm->flags & VM_ARM_STATIC_MAPPING))
 			continue;
 		addr = (unsigned long)vm->addr;
+		/** 20130330    
+		 * addr이 이전에 구한 pmd 단위 내에 속하면 continue
+		 **/
 		if (addr < next)
 			continue;
 
@@ -1061,8 +1081,19 @@ static void __init fill_pmd_gaps(void)
 		 * If so and the first section entry for this PMD is free
 		 * then we block the corresponding virtual address.
 		 */
+		/** 20130330    
+		 * 하위 21비트를 추출해 SECTION_SIZE인지 검사 (홀수번째 섹션)
+		 **/
 		if ((addr & ~PMD_MASK) == SECTION_SIZE) {
+			/** 20130330    
+			 * addr에 해당하는 pmd entry를 구함
+			 **/
 			pmd = pmd_off_k(addr);
+			/** 20130330    
+			 * pmd가 NULL일 때.
+			 * 즉 create_mapping이 안 되어 있을 경우 vm_list에 추가.
+			 * vm_list에 추가하는 것이 block의 의미를 가지는지???
+			 **/
 			if (pmd_none(*pmd))
 				pmd_empty_section_gap(addr & PMD_MASK);
 		}
@@ -1080,6 +1111,10 @@ static void __init fill_pmd_gaps(void)
 		}
 
 		/* no need to look at any vm entry until we hit the next PMD */
+		/** 20130330    
+		 * next는 'addr += vm->size'의 다음 PMD 단위의 주소
+		 * (PMD_SIZE - 1을 더해 MASK로 상위 주소만 추출)
+		 **/
 		next = (addr + PMD_SIZE - 1) & PMD_MASK;
 	}
 }
@@ -1414,6 +1449,10 @@ void __init arm_mm_memblock_reserve(void)
  * called function.  This means you can't use any function or debugging
  * method which may touch any device, otherwise the kernel _will_ crash.
  */
+/** 20130330    
+ * vector table, mdesc->map_io (peripheral) 영역 등에 대한 mapping 생성 후,
+ * tlb와 cache를 flush 함.
+ **/
 static void __init devicemaps_init(struct machine_desc *mdesc)
 {
 	struct map_desc map;
@@ -1505,12 +1544,22 @@ static void __init devicemaps_init(struct machine_desc *mdesc)
 	 * back.  After this point, we can start to touch devices again.
 	 */
 	local_flush_tlb_all();
+	/** 20130330    
+	 * cpu_cache.flush_kern_all => v7_flush_kern_cache_all
+	 **/
 	flush_cache_all();
 }
 
+/** 20130330    
+ *  PKMAP_BASE 영역에 대한 pte table을 생성하고, 전역변수 초기화
+ **/
 static void __init kmap_init(void)
 {
 #ifdef CONFIG_HIGHMEM
+	/** 20130330    
+	 * pmd_off_k(PKMAP_BASE)
+	 *	-> PAGE_OFFSET - PMD_SIZE (0x80000000 - 0x200000)에 대한 pmd entry의 주소
+	 **/
 	pkmap_page_table = early_pte_alloc(pmd_off_k(PKMAP_BASE),
 		PKMAP_BASE, _PAGE_KERNEL_TABLE);
 #endif
@@ -1577,9 +1626,15 @@ void __init paging_init(struct machine_desc *mdesc)
 	devicemaps_init(mdesc);
 	kmap_init();
 
+	/** 20130330    
+	 * high vector 영역에 대한 pmd entry의 주소
+	 **/
 	top_pmd = pmd_off_k(0xffff0000);
 
 	/* allocate the zero page. */
+	/** 20130330    
+	 * 한 페이지를 할당 받아 zero_page에 저장
+	 **/
 	zero_page = early_alloc(PAGE_SIZE);
 
 	bootmem_init();

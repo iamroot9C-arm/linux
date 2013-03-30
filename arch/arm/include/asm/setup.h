@@ -214,6 +214,9 @@ extern struct meminfo meminfo;
 	for (iter = 0; iter < (mi)->nr_banks; iter++)
 
 #define bank_pfn_start(bank)	__phys_to_pfn((bank)->start)
+/** 20130330    
+ * band 의 시작주소와 크기를 더해 끝 물리주소를 구하고, 그에 대한 pfn을 리턴
+ **/
 #define bank_pfn_end(bank)	__phys_to_pfn((bank)->start + (bank)->size)
 #define bank_pfn_size(bank)	((bank)->size >> PAGE_SHIFT)
 #define bank_phys_start(bank)	(bank)->start

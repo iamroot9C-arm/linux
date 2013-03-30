@@ -8,6 +8,7 @@
  */
 /** 20121222
  * x를 a단위로 round up 한다. 
+ *    mask의 역할을 하는 부분 : (typeof(x))(a) - 1
  * */
 #define __ALIGN_KERNEL(x, a)		__ALIGN_KERNEL_MASK(x, (typeof(x))(a) - 1)
 #define __ALIGN_KERNEL_MASK(x, mask)	(((x) + (mask)) & ~(mask))
@@ -50,6 +51,7 @@
 #define IS_ALIGNED(x, a)		(((x) & ((typeof(x))(a) - 1)) == 0)
 
 /** 20130323
+ * 배열의 element 개수를 리턴하는 매크로
 * __must_be_array 는 배열이 아니면, 컴파일 시 에러가 발생. 배열이면 0 이 리턴.
 */
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]) + __must_be_array(arr))
@@ -66,8 +68,10 @@
 
 #define FIELD_SIZEOF(t, f) (sizeof(((t*)0)->f))
 /** 20121208
-  n:필요한 비트 수 
-  d:n을 표현하기 위한 기본 자료형 크기(int=32)
+ * n을 d 단위로 round up 한 뒤, d로 나눠 리턴
+ *
+ * n:필요한 비트(or 바이트) 수 
+ * d:n을 표현하기 위한 기본 자료형 크기(int=32)
  **/
 #define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
 #define DIV_ROUND_UP_ULL(ll,d) \
@@ -699,6 +703,14 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
  * @member:	the name of the member within the struct.
  *
  */
+/** 20130330    
+ * ptr : 구조체에 포함된 list_head
+ * type : 구조체 자료형
+ * member : 구조체 내에서 멤버변수 이름(struct list_head 변수명)
+ * 
+ * member의 주소에서 member의 offset 크기를 빼 구조체의 시작위치를 구한다.
+ * 주로 list_head를 포함하고 있는 구조체의 시작 주소를 얻기 위해 사용된다.
+ **/
 #define container_of(ptr, type, member) ({			\
 	const typeof( ((type *)0)->member ) *__mptr = (ptr);	\
 	(type *)( (char *)__mptr - offsetof(type,member) );})

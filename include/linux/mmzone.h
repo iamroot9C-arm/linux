@@ -870,6 +870,9 @@ extern char numa_zonelist_order[];
 #ifndef CONFIG_NEED_MULTIPLE_NODES
 
 extern struct pglist_data contig_page_data;
+/** 20130330    
+ * NODE가 1개라면 항상 contig_page_data 구조체의 시작 주소를 리턴
+ **/
 #define NODE_DATA(nid)		(&contig_page_data)
 #define NODE_MEM_MAP(nid)	mem_map
 

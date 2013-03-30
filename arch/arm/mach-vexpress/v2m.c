@@ -497,6 +497,7 @@ static void __init v2m_populate_ct_desc(void)
 
 /** 20130323
 *
+* vm_list에 v2m_io_desc와 ct_desc를 단일 링크로 연결시킴
 */
 static void __init v2m_map_io(void)
 {
@@ -509,8 +510,9 @@ static void __init v2m_map_io(void)
 	*/
 	v2m_sysreg_base = ioremap(V2M_SYSREGS, SZ_4K);
 	v2m_populate_ct_desc();
-/** 20130330 여기서 부터
-*/
+	/** 20130330
+	 *  ct_desc는 v2m_populate_ct_desc에서 찾아 채워넣은 구조체
+	 */
 	ct_desc->map_io();
 }
 

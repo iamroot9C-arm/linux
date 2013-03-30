@@ -87,6 +87,9 @@
 #define PMD_SHIFT		21
 #define PGDIR_SHIFT		21
 
+/** 20130330    
+ * PMD_SIZE는 2MB 단위
+ **/
 #define PMD_SIZE		(1UL << PMD_SHIFT)
 #define PMD_MASK		(~(PMD_SIZE-1))
 #define PGDIR_SIZE		(1UL << PGDIR_SHIFT)

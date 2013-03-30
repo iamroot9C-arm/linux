@@ -205,6 +205,9 @@ void memblock_set_current_limit(phys_addr_t limit);
  * memblock_region_memory_base_pfn - Return the lowest pfn intersecting with the memory region
  * @reg: memblock_region structure
  */
+/** 20130330    
+ * memblock region의 시작 주소를 round up한 pfn을 리턴
+ **/
 static inline unsigned long memblock_region_memory_base_pfn(const struct memblock_region *reg)
 {
 	return PFN_UP(reg->base);
@@ -214,6 +217,9 @@ static inline unsigned long memblock_region_memory_base_pfn(const struct membloc
  * memblock_region_memory_end_pfn - Return the end_pfn this region
  * @reg: memblock_region structure
  */
+/** 20130330    
+ * memblock region의 끝 주소를 round down한 pfn을 리턴
+ **/
 static inline unsigned long memblock_region_memory_end_pfn(const struct memblock_region *reg)
 {
 	return PFN_DOWN(reg->base + reg->size);
@@ -237,6 +243,10 @@ static inline unsigned long memblock_region_reserved_end_pfn(const struct memblo
 	return PFN_UP(reg->base + reg->size);
 }
 
+/** 20130330    
+ * memblock_type은 memory, reserved 2가지 존재
+ * 지정된 memblock_type의 regions를 순회.
+ **/
 #define for_each_memblock(memblock_type, region)					\
 	for (region = memblock.memblock_type.regions;				\
 	     region < (memblock.memblock_type.regions + memblock.memblock_type.cnt);	\

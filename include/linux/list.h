@@ -16,6 +16,9 @@
  * using the generic single-entry routines.
  */
 
+/** 20130330    
+ * list_head가 prev, next로 자기 자신을 가리키도록 초기화함
+ **/
 #define LIST_HEAD_INIT(name) { &(name), &(name) }
 
 #define LIST_HEAD(name) \
@@ -36,6 +39,9 @@ static inline void INIT_LIST_HEAD(struct list_head *list)
  * the prev/next entries already!
  */
 #ifndef CONFIG_DEBUG_LIST
+/** 20130330    
+ * prev와 next 사이에 new entry를 삽입
+ **/
 static inline void __list_add(struct list_head *new,
 			      struct list_head *prev,
 			      struct list_head *next)
@@ -73,8 +79,14 @@ static inline void list_add(struct list_head *new, struct list_head *head)
  * Insert a new entry before the specified head.
  * This is useful for implementing queues.
  */
+/** 20130330    
+ * 가장 끝에 새로운 entry를 삽입.
+ **/
 static inline void list_add_tail(struct list_head *new, struct list_head *head)
 {
+	/** 20130330    
+	 * head->prev는 자기 자신으로 초기화 되어 있어야 함
+	 **/
 	__list_add(new, head->prev, head);
 }
 
@@ -417,6 +429,13 @@ static inline void list_splice_tail_init(struct list_head *list,
  * @head:	the head for your list.
  * @member:	the name of the list_struct within the struct.
  */
+/** 20130330    
+ * list를 전체 순회
+ *
+ * for ( head->next, 즉 리스트의 첫 entry 주소를 pos에 저장 ;
+ *       다음 entry가 head가 아닐 때까지 ;
+ *       다음 entry의 시작 주소를 pos에 저장 )
+ **/
 #define list_for_each_entry(pos, head, member)				\
 	for (pos = list_entry((head)->next, typeof(*pos), member);	\
 	     &pos->member != (head); 	\

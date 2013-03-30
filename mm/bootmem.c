@@ -23,6 +23,10 @@
 
 #include "internal.h"
 
+/** 20130330    
+ * vexpress에서는 not defined.
+ * contig_page_data의 .bdata는 bootmem_node_data[0]의 시작 주소
+ **/
 #ifndef CONFIG_NEED_MULTIPLE_NODES
 struct pglist_data __refdata contig_page_data = {
 	.bdata = &bootmem_node_data[0]
@@ -36,6 +40,9 @@ unsigned long max_pfn;
 
 bootmem_data_t bootmem_node_data[MAX_NUMNODES] __initdata;
 
+/** 20130330    
+ * 초기화한 bdata_list를 static 전역 변수로 선언
+ **/
 static struct list_head bdata_list __initdata = LIST_HEAD_INIT(bdata_list);
 
 static int bootmem_debug;
@@ -54,10 +61,23 @@ early_param("bootmem_debug", bootmem_debug_setup);
 			__func__, ## args);		\
 })
 
+/** 20130330    
+ * pages를 비트맵으로 표현하기 위한 바이트 수를 구한 뒤,
+ * sizeof (long) 단위로 round up 해서 리턴.
+ **/
 static unsigned long __init bootmap_bytes(unsigned long pages)
 {
+	/** 20130330    
+	 * pages를 표현하기 위해 몇 바이트가 필요한지 구함.
+	 *   bitmap 표현방식
+	 **/
 	unsigned long bytes = DIV_ROUND_UP(pages, 8);
 
+	/** 20130330    
+	 * (((x) + (mask)) & ~(mask))
+	 * mask: (typeof(x))(a) - 1
+	 *       (unsigned long)(sizeof(long)) - 1   ==> 3
+	 **/
 	return ALIGN(bytes, sizeof(long));
 }
 
@@ -65,6 +85,10 @@ static unsigned long __init bootmap_bytes(unsigned long pages)
  * bootmem_bootmap_pages - calculate bitmap size in pages
  * @pages: number of pages the bitmap has to represent
  */
+/** 20130330    
+ * pages를 표현하기 위해 필요한 bytes의 수를 구한 뒤 정렬하고,
+ * 이를 표현하는데 필요한 page의 수를 리턴.
+ **/
 unsigned long __init bootmem_bootmap_pages(unsigned long pages)
 {
 	unsigned long bytes = bootmap_bytes(pages);
@@ -75,11 +99,37 @@ unsigned long __init bootmem_bootmap_pages(unsigned long pages)
 /*
  * link bdata in order
  */
+/** 20130330    
+ * bdata_list에 bdata를 삽입 (오름차순)
+ **/
 static void __init link_bootmem(bootmem_data_t *bdata)
 {
 	bootmem_data_t *ent;
 
+	/** 20130330    
+	#define container_of(ptr, type, member) ({			\
+	const typeof( ((type *)0)->member ) *__mptr = (ptr);	\
+	(type *)( (char *)__mptr - offsetof(type,member) );})
+
+	#define list_entry(ptr, type, member) \
+    container_of(ptr, type, member)
+
+	#define list_for_each_entry(pos, head, member)				\
+	for (pos = list_entry((head)->next, typeof(*pos), member);	\
+	     &pos->member != (head); 	\
+	     pos = list_entry(pos->member.next, typeof(*pos), member))
+
+		__mptr ==> (bdata_list)->next, 자기 자신
+	     &pos->member : &((__mptr - offsetof(ent, list))->list), 결국 자기 자신
+		 head         : &bdata_list
+
+		 초기 수행시 첫번째 test에서 fail로 빠져나간다.
+	 **/
 	list_for_each_entry(ent, &bdata_list, list) {
+		/** 20130330    
+		 * 추가할 bdata의 min_pfn(start)이 더 작다면 
+		 * ent 이전에 삽입시킨다.
+		 **/
 		if (bdata->node_min_pfn < ent->node_min_pfn) {
 			list_add_tail(&bdata->list, &ent->list);
 			return;
@@ -92,12 +142,26 @@ static void __init link_bootmem(bootmem_data_t *bdata)
 /*
  * Called once to set up the allocator itself.
  */
+/** 20130330    
+ * bootmem data를 bdata_list에 추가하고, bdata->node_bootmem_map를 초기화
+ **/
 static unsigned long __init init_bootmem_core(bootmem_data_t *bdata,
 	unsigned long mapstart, unsigned long start, unsigned long end)
 {
 	unsigned long mapsize;
 
+	/** 20130330    
+	 * vexpress에서 null function
+	 **/
 	mminit_validate_memmodel_limits(&start, &end);
+	/** 20130330    
+	 * bdata는 include/linux/bootmem.h에 선언된 struct bootmem_data
+	 * node_bootmem_map : 할당받은 mapstart 영역에 대한 VA를 저장
+	 * node_min_pfn     : 물리 메모리의 시작 주소에 대한 pfn
+	 * node_low_pfn     : 물리 메모리의 끝 주소에 대한 pfn
+	 *
+	 * bdata를 bdata_list에 추가
+	 **/
 	bdata->node_bootmem_map = phys_to_virt(PFN_PHYS(mapstart));
 	bdata->node_min_pfn = start;
 	bdata->node_low_pfn = end;
@@ -107,7 +171,13 @@ static unsigned long __init init_bootmem_core(bootmem_data_t *bdata,
 	 * Initially all pages are reserved - setup_arch() has to
 	 * register free RAM areas explicitly.
 	 */
+	/** 20130330    
+	 * start ~ end까지 표현 가능한 비트맵의 메모리 크기를 저장
+	 **/
 	mapsize = bootmap_bytes(end - start);
+	/** 20130330    
+	 * bdata->node_bootmem_map 영역을 0xff로 초기화
+	 **/
 	memset(bdata->node_bootmem_map, 0xff, mapsize);
 
 	bdebug("nid=%td start=%lx map=%lx end=%lx mapsize=%lx\n",
@@ -125,6 +195,9 @@ static unsigned long __init init_bootmem_core(bootmem_data_t *bdata,
  *
  * Returns the number of bytes needed to hold the bitmap for this node.
  */
+/** 20130330    
+ * 특정 노드에 대한 bootmem을 초기화
+ **/
 unsigned long __init init_bootmem_node(pg_data_t *pgdat, unsigned long freepfn,
 				unsigned long startpfn, unsigned long endpfn)
 {

@@ -1136,7 +1136,11 @@ EXPORT_SYMBOL(vm_map_ram);
  * DO NOT USE THIS FUNCTION UNLESS YOU KNOW WHAT YOU'RE DOING.
  */
 /** 20130323
-*	vmlist = vm, vm->next = NULL
+*	최초 vmlist = vm, vm->next = NULL
+*	vmalloc_init이 호출되기 전에 vm 구조체를 vmlist에 추가하는 함수
+*
+*	20130330
+*   vmlist에 새로운 vm_struct을 오름차순으로 삽입
 */
 void __init vm_area_add_early(struct vm_struct *vm)
 {
@@ -1144,10 +1148,19 @@ void __init vm_area_add_early(struct vm_struct *vm)
 
 	BUG_ON(vmap_initialized);
 	for (p = &vmlist; (tmp = *p) != NULL; p = &tmp->next) {
+		/** 20130330    
+		 * 기존 tmp의 주소와 추가할 vm의 주소를 비교
+		 **/
 		if (tmp->addr >= vm->addr) {
+			/** 20130330    
+			 * 만약 주소가 겹치면(시작주소+size와 주소 비교) BUG_ON.
+			 */
 			BUG_ON(tmp->addr < vm->addr + vm->size);
 			break;
 		} else
+		/** 20130330    
+		 *
+		 **/
 			BUG_ON(tmp->addr + tmp->size > vm->addr);
 	}
 	vm->next = *p;
