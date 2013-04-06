@@ -80,6 +80,11 @@
  * Enable and disable interrupts
  */
 #if __LINUX_ARM_ARCH__ >= 6
+/** 20130406    
+ * interrupt disable.
+ * cpsid 에 따라올 수 있는 iflags는 i, a, f임.
+ * DDI0406C C4.1.2 참고.
+ **/
 	.macro	disable_irq_notrace
 	cpsid	i
 	.endm
@@ -98,6 +103,9 @@
 #endif
 
 	.macro asm_trace_hardirqs_off
+/** 20130406    
+ * 현재 config에서는 CONFIG_TRACE_IRQFLAGS가 설정되어 있지 않음
+ **/
 #if defined(CONFIG_TRACE_IRQFLAGS)
 	stmdb   sp!, {r0-r3, ip, lr}
 	bl	trace_hardirqs_off
@@ -121,6 +129,9 @@
 	asm_trace_hardirqs_on_cond al
 	.endm
 
+	/** 20130406    
+	 * irq를 끄는 macro.
+	 **/
 	.macro disable_irq
 	disable_irq_notrace
 	asm_trace_hardirqs_off
@@ -139,6 +150,9 @@
 	disable_irq
 	.endm
 
+	/** 20130406    
+	 * oldcpsr에 현재 cpsr을 저장하고, irq와 trace를 끄는 매크로를 호출
+	 **/
 	.macro	save_and_disable_irqs_notrace, oldcpsr
 	mrs	\oldcpsr, cpsr
 	disable_irq_notrace

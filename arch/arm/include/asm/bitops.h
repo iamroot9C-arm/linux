@@ -181,6 +181,9 @@ extern int _find_next_bit_be(const unsigned long *p, int size, int offset);
 #define ATOMIC_BITOP(name,nr,p)			\
 	(__builtin_constant_p(nr) ? ____atomic_##name(nr, p) : _##name(nr,p))
 #else
+/** 20130406    
+ * _를 name과 붙인 symbol을 호출
+ **/
 #define ATOMIC_BITOP(name,nr,p)		_##name(nr,p)
 #endif
 
@@ -199,6 +202,9 @@ extern int _find_next_bit_be(const unsigned long *p, int size, int offset);
 #define set_bit(nr,p)			ATOMIC_BITOP(set_bit,nr,p)
 #define clear_bit(nr,p)			ATOMIC_BITOP(clear_bit,nr,p)
 #define change_bit(nr,p)		ATOMIC_BITOP(change_bit,nr,p)
+/** 20130406    
+ * 현재 설정값을 리턴하고, 각 비트를 설정하는 macro 호출
+ **/
 #define test_and_set_bit(nr,p)		ATOMIC_BITOP(test_and_set_bit,nr,p)
 #define test_and_clear_bit(nr,p)	ATOMIC_BITOP(test_and_clear_bit,nr,p)
 #define test_and_change_bit(nr,p)	ATOMIC_BITOP(test_and_change_bit,nr,p)

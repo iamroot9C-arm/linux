@@ -575,6 +575,10 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
  * strict type-checking.. See the
  * "unnecessary" pointer comparison.
  */
+/** 20130406    
+ * 작은 값을 취하는 macro.
+ * 주소값을 비교하는 이유는 비교할 대상의 타입 체킹을 하기 위함임.
+ **/
 #define min(x, y) ({				\
 	typeof(x) _min1 = (x);			\
 	typeof(y) _min2 = (y);			\

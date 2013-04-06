@@ -19,6 +19,9 @@
 #endif
 
 
+/** 20130406    
+ * 호출된 파일명과 라인 번호, INSTR (0xe7f001f2)와 함께 호출
+ **/
 #define BUG() _BUG(__FILE__, __LINE__, BUG_INSTR_VALUE)
 #define _BUG(file, line, value) __BUG(file, line, value)
 
@@ -33,6 +36,27 @@
 
 #define __BUG(__file, __line, __value)				\
 do {								\
+	/** 20130406    
+	 * .pushsection name, "flags", @type, flag_specific_arguments
+	 *
+	 * flags
+	 *  a section is allocatable
+	 *  M section is mergeable
+	 *  S section contains zero terminated strings
+	 *
+	 * option
+	 *  @progbits   section contains data
+	 *
+	 *  .asciz is just like .ascii, but each string is followed by a zero byte.
+	 *    The “z” in ‘.asciz’ stands for “zero”.
+	 *
+	 *  .rodata.str으로 section을 변경하고, __file을 섹션에 저장
+	 *
+	 *  1: .word 0xe7f001f2
+	 *
+	 *  unreachable()은 include/linux/compiler-gcc4.h
+	 *  #define unreachable() __builtin_unreachable()
+	 **/
 	asm volatile("1:\t" BUG_INSTR_TYPE #__value "\n"	\
 		".pushsection .rodata.str, \"aMS\", %progbits, 1\n" \
 		"2:\t.asciz " #__file "\n" 			\

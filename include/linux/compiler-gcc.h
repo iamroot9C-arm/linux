@@ -98,6 +98,12 @@
 #define __maybe_unused			__attribute__((unused))
 #define __always_unused			__attribute__((unused))
 
+/** 20130406    
+ * arm-linux-gnueabihf-gcc -dM -E - < /dev/null > arm-gcc-dump
+ * #include gcc_header(__GNUC__)     <- dump를 확인해 보면 4
+ * macro를 매개변수로 받는 macro가 확장되기 위해서 indirect로 한 번 더 macro 호출.
+ * 최종적으로 linux/compiler-gcc4.h가 include 됨
+ **/
 #define __gcc_header(x) #x
 #define _gcc_header(x) __gcc_header(linux/compiler-gcc##x.h)
 #define gcc_header(x) _gcc_header(x)

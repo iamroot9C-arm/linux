@@ -165,6 +165,9 @@ static void __init find_limits(unsigned long *min, unsigned long *max_low,
 	*max_high = bank_pfn_end(&mi->bank[mi->nr_banks - 1]);
 }
 
+/** 20130406    
+ * 해당 노드에 대한 bootmem을 초기화 하고, memblock의 memory와 reserved에 해당하는 비트를 설정한다.
+ **/
 static void __init arm_bootmem_init(unsigned long start_pfn,
 	unsigned long end_pfn)
 {
@@ -206,9 +209,13 @@ static void __init arm_bootmem_init(unsigned long start_pfn,
 	init_bootmem_node(pgdat, __phys_to_pfn(bitmap), start_pfn, end_pfn);
 
 	/* Free the lowmem regions from memblock into bootmem. */
+	/** 20130406    
+	 * memblock 중 memory의 region을 순회
+	 **/
 	for_each_memblock(memory, reg) {
 		/** 20130330    
-		 * start는 round up한 pfn, end는 round down한 pfn.
+		 * start는 round up한 시작 pfn, end는 round down한 끝 pfn.
+		 * (정렬되지 않은 주소는 버려지는듯???)
 		 **/
 		unsigned long start = memblock_region_memory_base_pfn(reg);
 		unsigned long end = memblock_region_memory_end_pfn(reg);
@@ -221,12 +228,17 @@ static void __init arm_bootmem_init(unsigned long start_pfn,
 		if (start >= end)
 			break;
 
-		/** 20130406 여기부터...
+		/** 20130406
+		 * 시작 주소와 크기(byte)를 전달.
+		 * 해당 영역을 bootmem에서 usable 하게 설정
 		 **/
 		free_bootmem(__pfn_to_phys(start), (end - start) << PAGE_SHIFT);
 	}
 
 	/* Reserve the lowmem memblock reserved regions in bootmem. */
+	/** 20130406    
+	 * memblock 중 reserved의 region을 순회
+	 **/
 	for_each_memblock(reserved, reg) {
 		unsigned long start = memblock_region_reserved_base_pfn(reg);
 		unsigned long end = memblock_region_reserved_end_pfn(reg);
@@ -236,6 +248,9 @@ static void __init arm_bootmem_init(unsigned long start_pfn,
 		if (start >= end)
 			break;
 
+		/** 20130406    
+		 * 해당 영역을 bootmem에서 reserve로 설정
+		 **/
 		reserve_bootmem(__pfn_to_phys(start),
 			        (end - start) << PAGE_SHIFT, BOOTMEM_DEFAULT);
 	}
@@ -484,17 +499,26 @@ void __init bootmem_init(void)
 	 **/
 	find_limits(&min, &max_low, &max_high);
 
+	/** 20130406    
+	 * find_limits에서 가져온 물리 영역에 대해 bootmem bitmap을 초기화하고 설정.
+	 **/
 	arm_bootmem_init(min, max_low);
 
 	/*
 	 * Sparsemem tries to allocate bootmem in memory_present(),
 	 * so must be done after the fixed reservations
 	 */
+	/** 20130406    
+	 * SPARSEMEM이 설정되지 않았을 경우 NULL 함수
+	 **/
 	arm_memory_present();
 
 	/*
 	 * sparse_init() needs the bootmem allocator up and running.
 	 */
+	/** 20130406    
+	 * SPARSEMEM이 설정되지 않았을 경우 NULL 함수
+	 **/
 	sparse_init();
 
 	/*
@@ -502,6 +526,8 @@ void __init bootmem_init(void)
 	 * the sparse mem_map arrays initialized by sparse_init()
 	 * for memmap_init_zone(), otherwise all PFNs are invalid.
 	 */
+	/** 20130413 여기부터...
+	 **/
 	arm_bootmem_free(min, max_low, max_high);
 
 	/*

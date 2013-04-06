@@ -47,6 +47,9 @@ static struct list_head bdata_list __initdata = LIST_HEAD_INIT(bdata_list);
 
 static int bootmem_debug;
 
+/** 20130406    
+ * "bootmem_debug"가 command line으로 설정되었을 경우 호출.
+ **/
 static int __init bootmem_debug_setup(char *buf)
 {
 	bootmem_debug = 1;
@@ -177,6 +180,7 @@ static unsigned long __init init_bootmem_core(bootmem_data_t *bdata,
 	mapsize = bootmap_bytes(end - start);
 	/** 20130330    
 	 * bdata->node_bootmem_map 영역을 0xff로 초기화
+	 * (사용 가능하다는 의미로 각 pfn에 해당하는 비트를 1로 설정하는듯???)
 	 **/
 	memset(bdata->node_bootmem_map, 0xff, mapsize);
 
@@ -330,6 +334,9 @@ unsigned long __init free_all_bootmem(void)
 	return total_pages;
 }
 
+/** 20130406    
+ * sidx~eidx에 해당하는 비트를 bootmem bitmap에서 클리어시킴
+ **/
 static void __init __free(bootmem_data_t *bdata,
 			unsigned long sidx, unsigned long eidx)
 {
@@ -339,14 +346,26 @@ static void __init __free(bootmem_data_t *bdata,
 		sidx + bdata->node_min_pfn,
 		eidx + bdata->node_min_pfn);
 
+	/** 20130406    
+	 * 초기화 하지 않은 전역 구조체의 멤버이므로 초기값은 0
+	 * hint_idx의 역할은???
+	 **/
 	if (bdata->hint_idx > sidx)
 		bdata->hint_idx = sidx;
 
 	for (idx = sidx; idx < eidx; idx++)
+		/** 20130406    
+		 * sidx ~ eidx 영역에 해당하는 bit를 clear.
+		 * 이전 비트값이 0일 때 BUG() 호출
+		 **/
 		if (!test_and_clear_bit(idx, bdata->node_bootmem_map))
 			BUG();
 }
 
+/** 20130406    
+ * sidx ~ eidx 사이의 pfn에 대해 1로 설정하는 함수
+ * (어떤 의미에서 __reserve인지???)
+ **/
 static int __init __reserve(bootmem_data_t *bdata, unsigned long sidx,
 			unsigned long eidx, int flags)
 {
@@ -360,7 +379,14 @@ static int __init __reserve(bootmem_data_t *bdata, unsigned long sidx,
 		flags);
 
 	for (idx = sidx; idx < eidx; idx++)
+		/** 20130406    
+		 * idx에 해당하는 bit를 1로 설정하고, 이전 상태를 리턴
+		 **/
 		if (test_and_set_bit(idx, bdata->node_bootmem_map)) {
+			/** 20130406
+			 * 이전 상태가 1이고, exclusive가 flags에 의해 설정되었다면
+			 * __free 호출
+			 **/
 			if (exclusive) {
 				__free(bdata, sidx, idx);
 				return -EBUSY;
@@ -371,21 +397,38 @@ static int __init __reserve(bootmem_data_t *bdata, unsigned long sidx,
 	return 0;
 }
 
+/** 20130406    
+ * reserve에 따라 start와 end 사이에 해당하는 영역을 bdata bitmap에서 변경함
+ **/
 static int __init mark_bootmem_node(bootmem_data_t *bdata,
 				unsigned long start, unsigned long end,
 				int reserve, int flags)
 {
 	unsigned long sidx, eidx;
 
+	/** 20130406    
+	 * bootmem debug 용 출력 함수
+	 **/
 	bdebug("nid=%td start=%lx end=%lx reserve=%d flags=%x\n",
 		bdata - bootmem_node_data, start, end, reserve, flags);
 
+	/** 20130406    
+	 * 매개변수에 대한 sanity check.
+	 **/
 	BUG_ON(start < bdata->node_min_pfn);
 	BUG_ON(end > bdata->node_low_pfn);
 
+	/** 20130406    
+	 * 물리 메모리의 시작 주소에 대한 offset 개념으로 sidx와 eidx를 구함
+	 **/
 	sidx = start - bdata->node_min_pfn;
 	eidx = end - bdata->node_min_pfn;
 
+	/** 20130406    
+	 * reserve 값에 따라
+	 * true면 __reserve (set)
+	 * false면 __free   (clear)
+	 **/
 	if (reserve)
 		return __reserve(bdata, sidx, eidx, flags);
 	else
@@ -393,6 +436,9 @@ static int __init mark_bootmem_node(bootmem_data_t *bdata,
 	return 0;
 }
 
+/** 20130406    
+ * start ~ end 영역에 대해 reserve 값에 따라 bootmem을 설정하는 함수
+ **/
 static int __init mark_bootmem(unsigned long start, unsigned long end,
 				int reserve, int flags)
 {
@@ -400,28 +446,52 @@ static int __init mark_bootmem(unsigned long start, unsigned long end,
 	bootmem_data_t *bdata;
 
 	pos = start;
+	/** 20130406    
+	 * bdata_list를 순회. UMA의 경우 하나의 entry만 존재한다.
+	 **/
 	list_for_each_entry(bdata, &bdata_list, list) {
 		int err;
 		unsigned long max;
 
+		/** 20130406    
+		 * bdata에 저장된 값과 비교해 사용 가능 영역인지 검사
+		 **/
 		if (pos < bdata->node_min_pfn ||
 		    pos >= bdata->node_low_pfn) {
 			BUG_ON(pos != start);
 			continue;
 		}
 
+		/** 20130406    
+		 * bootmem data의 node_low_pfn와 end 중 작은 값을 취함
+		 * NUMA일 경우, 각 노드의 끝(node_low_pfn)과 전체 메모리 영역의 끝(end) 중에 작은 값
+		 **/
 		max = min(bdata->node_low_pfn, end);
 
+		/** 20130406    
+		 * free_bootmem에서 호출될 때 reserve와 flags는 0, 0
+		 * reserve_bootmem에서 호출될 때 reserve와 flags는 1, 0
+		 **/
 		err = mark_bootmem_node(bdata, pos, max, reserve, flags);
 		if (reserve && err) {
+			/** 20130406    
+			 * reserve가 실패했을 경우 start ~ pos가지 수행 후
+			 * err 리턴
+			 **/
 			mark_bootmem(start, pos, 0, 0);
 			return err;
 		}
 
+		/** 20130406    
+		 * 끝까지 수행했을 경우 정상 리턴
+		 **/
 		if (max == end)
 			return 0;
 		pos = bdata->node_low_pfn;
 	}
+	/** 20130406    
+	 * 비정상적으로 list를 모두 순회했을 경우 BUG()
+	 **/
 	BUG();
 }
 
@@ -457,15 +527,27 @@ void __init free_bootmem_node(pg_data_t *pgdat, unsigned long physaddr,
  *
  * The range must be contiguous but may span node boundaries.
  */
+/** 20130406    
+ * addr와 size에 해당하는 pfn을 bootmem bitmap 영역에서 free (clear) 시킴
+ **/
 void __init free_bootmem(unsigned long addr, unsigned long size)
 {
 	unsigned long start, end;
 
+	/** 20130406    
+	 * vexpress에서는 NULL 함수
+	 **/
 	kmemleak_free_part(__va(addr), size);
 
+	/** 20130406    
+	 * 시작 주소에 대해 round up 한 PFN, 끝 주소에 대해 round down한 PFN을 저장
+	 **/
 	start = PFN_UP(addr);
 	end = PFN_DOWN(addr + size);
 
+	/** 20130406    
+	 * free 함수이므로 reserve에 0을 전달
+	 **/
 	mark_bootmem(start, end, 0, 0);
 }
 
@@ -501,6 +583,9 @@ int __init reserve_bootmem_node(pg_data_t *pgdat, unsigned long physaddr,
  *
  * The range must be contiguous but may span node boundaries.
  */
+/** 20130406    
+ * addr와 size에 해당하는 pfn을 bootmem bitmap 영역에서 reserve (set) 시킴
+ **/
 int __init reserve_bootmem(unsigned long addr, unsigned long size,
 			    int flags)
 {
@@ -509,6 +594,9 @@ int __init reserve_bootmem(unsigned long addr, unsigned long size,
 	start = PFN_DOWN(addr);
 	end = PFN_UP(addr + size);
 
+	/** 20130406    
+	 * reserve 를 1로 전달
+	 **/
 	return mark_bootmem(start, end, 1, flags);
 }
 
