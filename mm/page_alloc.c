@@ -4261,6 +4261,9 @@ static unsigned long __meminit zone_absent_pages_in_node(int nid,
 }
 
 #else /* CONFIG_HAVE_MEMBLOCK_NODE_MAP */
+/** 20130413
+ * zone_type에 해당하는 zone 의 size를 리턴.
+ */
 static inline unsigned long __meminit zone_spanned_pages_in_node(int nid,
 					unsigned long zone_type,
 					unsigned long *zones_size)
@@ -4268,6 +4271,9 @@ static inline unsigned long __meminit zone_spanned_pages_in_node(int nid,
 	return zones_size[zone_type];
 }
 
+/** 20130413
+ * zone_type에 해당하는 hole size를 리턴.
+ */
 static inline unsigned long __meminit zone_absent_pages_in_node(int nid,
 						unsigned long zone_type,
 						unsigned long *zholes_size)
@@ -4280,15 +4286,25 @@ static inline unsigned long __meminit zone_absent_pages_in_node(int nid,
 
 #endif /* CONFIG_HAVE_MEMBLOCK_NODE_MAP */
 
+/** 20130413
+ * totalpages (*pgdat->node_spanned_pages), realtotalpages ( pgdat->node_present_pages) 를 구한다. 
+ */
 static void __meminit calculate_node_totalpages(struct pglist_data *pgdat,
 		unsigned long *zones_size, unsigned long *zholes_size)
 {
+	/** 20130413
+	 * totalpages 는 zone size를 합친 것.
+	 * realtotalpages 는 hole size를 뺀 것.  
+	 */
 	unsigned long realtotalpages, totalpages = 0;
 	enum zone_type i;
 
 	for (i = 0; i < MAX_NR_ZONES; i++)
 		totalpages += zone_spanned_pages_in_node(pgdat->node_id, i,
 								zones_size);
+	/** 20130413
+	 * total size of physical page range, including holes
+	 */
 	pgdat->node_spanned_pages = totalpages;
 
 	realtotalpages = totalpages;
@@ -4296,6 +4312,9 @@ static void __meminit calculate_node_totalpages(struct pglist_data *pgdat,
 		realtotalpages -=
 			zone_absent_pages_in_node(pgdat->node_id, i,
 								zholes_size);
+	/** 20130413
+	 * total number of physical pages (hole을 뺀 것)
+	 */
 	pgdat->node_present_pages = realtotalpages;
 	printk(KERN_DEBUG "On node %d totalpages: %lu\n", pgdat->node_id,
 							realtotalpages);
@@ -4481,10 +4500,17 @@ static void __init_refok alloc_node_mem_map(struct pglist_data *pgdat)
 		 * aligned but the node_mem_map endpoints must be in order
 		 * for the buddy allocator to function correctly.
 		 */
+		/** 20130413 
+		 * start 는 1KB	단위로 align
+		 * end 는 round up 하여 1 KB 단위로 align
+		 */
 		start = pgdat->node_start_pfn & ~(MAX_ORDER_NR_PAGES - 1);
 		end = pgdat->node_start_pfn + pgdat->node_spanned_pages;
 		end = ALIGN(end, MAX_ORDER_NR_PAGES);
 		size =  (end - start) * sizeof(struct page);
+		/** 20130413
+		 * alloc_remap 은 널 리턴.
+		 */
 		map = alloc_remap(pgdat->node_id, size);
 		if (!map)
 			map = alloc_bootmem_node_nopanic(pgdat, size);
@@ -4508,13 +4534,27 @@ static void __init_refok alloc_node_mem_map(struct pglist_data *pgdat)
 void __paginginit free_area_init_node(int nid, unsigned long *zones_size,
 		unsigned long node_start_pfn, unsigned long *zholes_size)
 {
+	/** 20130413
+	 *  *pgdat 는 contig_page_data의 주소
+	 */
 	pg_data_t *pgdat = NODE_DATA(nid);
 
 	/* pg_data_t should be reset to zero when it's allocated */
+	/** 20130413
+	 * nr_zones, classzone_idx 는 아직 설정되지 않은 상태로 초기값 0 으로 추측. ???
+	 */
 	WARN_ON(pgdat->nr_zones || pgdat->classzone_idx);
 
+	/** 20130413
+	 * nid = 0
+	 */
 	pgdat->node_id = nid;
 	pgdat->node_start_pfn = node_start_pfn;
+
+	
+	/** 20130413
+	 * totalpages (*pgdat->node_spanned_pages), realtotalpages ( pgdat->node_present_pages) 를 구한다. 
+	 */
 	calculate_node_totalpages(pgdat, zones_size, zholes_size);
 
 	alloc_node_mem_map(pgdat);

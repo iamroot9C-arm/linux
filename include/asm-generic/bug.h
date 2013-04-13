@@ -86,6 +86,10 @@ extern void warn_slowpath_null(const char *file, const int line);
 #endif
 
 #ifndef WARN_ON
+
+/** 20130413
+ * 
+ */
 #define WARN_ON(condition) ({						\
 	int __ret_warn_on = !!(condition);				\
 	if (unlikely(__ret_warn_on))					\
@@ -137,6 +141,10 @@ extern void warn_slowpath_null(const char *file, const int line);
 
 #endif
 
+/** 20130413
+ * 조건에 따라 경고를 한번만 출력해주는 매크로
+ * __warned 는 static 변수로 경고를 한번만 출력하기 위해 사용됨.
+ */
 #define WARN_ON_ONCE(condition)	({				\
 	static bool __section(.data.unlikely) __warned;		\
 	int __ret_warn_once = !!(condition);			\

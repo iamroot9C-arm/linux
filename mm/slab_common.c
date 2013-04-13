@@ -114,6 +114,9 @@ out:
 }
 EXPORT_SYMBOL(kmem_cache_create);
 
+/** 20130413
+ * slab 이 사용 가능한 상태인지 확인하는 함수 
+ */
 int slab_is_available(void)
 {
 	return slab_state >= UP;

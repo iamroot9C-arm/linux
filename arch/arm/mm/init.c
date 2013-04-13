@@ -269,6 +269,9 @@ EXPORT_SYMBOL(arm_dma_zone_size);
  */
 phys_addr_t arm_dma_limit;
 
+/** 20130413
+ * DMA 있는 경우, zone_size, zhole_size 를 조정한다.
+ */
 static void __init arm_adjust_dma_zone(unsigned long *size, unsigned long *hole,
 	unsigned long dma_size)
 {
@@ -309,6 +312,10 @@ static void __init arm_bootmem_free(unsigned long min, unsigned long max_low,
 	 * to do anything fancy with the allocation of this memory
 	 * to the zones, now is the time to do it.
 	 */
+	/** 20130413
+	 * ZONE_NORMAL (0) 에 size를 저장.
+	 * vexperss 에서는 2개 ZONE 존재 (ZONE_NORMAL, ZONE_MOVABLE)
+	 */
 	zone_size[0] = max_low - min;
 #ifdef CONFIG_HIGHMEM
 	zone_size[ZONE_HIGHMEM] = max_high - max_low;
@@ -323,6 +330,9 @@ static void __init arm_bootmem_free(unsigned long min, unsigned long max_low,
 		unsigned long start = memblock_region_memory_base_pfn(reg);
 		unsigned long end = memblock_region_memory_end_pfn(reg);
 
+		/** 20130413
+		 * zhole_zie 는 zone_normal size 에서 memory region 의 size를 뺀 것.
+		 */
 		if (start < max_low) {
 			unsigned long low_end = min(end, max_low);
 			zhole_size[0] -= low_end - start;

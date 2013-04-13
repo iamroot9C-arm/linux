@@ -64,6 +64,12 @@
  *
  * The markers follow same syntax rules as __init / __initdata.
  */
+/** 20130413
+ * modpost 는 vmlinux에서 export된 심볼정보를 찾아 Module.symvers 을 구성.
+ *   참조 : http://studyfoss.egloos.com/5226996
+ * __ref* 는 init section 의 code 나 data를 경고 없이  참조할 수 있도록 해 준다.
+ */
+
 #define __ref            __section(.ref.text) noinline
 #define __refdata        __section(.ref.data)
 #define __refconst       __section(.ref.rodata)

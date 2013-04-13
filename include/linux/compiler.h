@@ -143,6 +143,10 @@ void ftrace_likely_update(struct ftrace_branch_data *f, int val, int expect);
 #endif /* CONFIG_PROFILE_ALL_BRANCHES */
 
 #else
+/** 20130413
+ * 컴파일러 키워드로 성능향상으로 위한 분기예측에 대한 힌트를 줌. 
+ * minjang.egloos.com/561972
+ */
 # define likely(x)	__builtin_expect(!!(x), 1)
 # define unlikely(x)	__builtin_expect(!!(x), 0)
 #endif
@@ -307,6 +311,11 @@ void ftrace_likely_update(struct ftrace_branch_data *f, int val, int expect);
  * merging, or refetching absolutely anything at any time.  Its main intended
  * use is to mediate communication between process-level code and irq/NMI
  * handlers, all running on the same CPU.
+ */
+/** 20130413
+ * 변수가 volatile 특성을 가지면 컴파일러는 해당 변수에 대한 메모리 접근이
+ *  side-effect를 가진다고 가정하여, 접근 순서 및 횟수 등을 변경하지 않도록 주의를 기울인다.
+ *  from : http://studyfoss.egloos.com/5682616
  */
 #define ACCESS_ONCE(x) (*(volatile typeof(x) *)&(x))
 

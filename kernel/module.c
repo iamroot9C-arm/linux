@@ -563,6 +563,9 @@ static struct module_attribute modinfo_##field = {                    \
 MODINFO_ATTR(version);
 MODINFO_ATTR(srcversion);
 
+/** 20130413
+ * delete_module 함수에서 module->name 을 복사해 놓는 버퍼.
+ */
 static char last_unloaded_module[MODULE_NAME_LEN+1];
 
 #ifdef CONFIG_MODULE_UNLOAD
@@ -3509,6 +3512,9 @@ struct module *__module_text_address(unsigned long addr)
 EXPORT_SYMBOL_GPL(__module_text_address);
 
 /* Don't grab lock, we're oopsing. */
+/** 20130413
+ * module 정보를 출력
+ */
 void print_modules(void)
 {
 	struct module *mod;
@@ -3517,6 +3523,9 @@ void print_modules(void)
 	printk(KERN_DEFAULT "Modules linked in:");
 	/* Most callers should already have preempt disabled, but make sure */
 	preempt_disable();
+	/** 20130413
+	 * modules list를 순회하면서 module 정보를 출력한다.
+	 */
 	list_for_each_entry_rcu(mod, &modules, list)
 		printk(" %s%s", mod->name, module_flags(mod, buf));
 	preempt_enable();

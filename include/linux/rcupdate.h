@@ -475,6 +475,9 @@ static inline void rcu_preempt_sleep_check(void)
 		rcu_dereference_sparse(p, space); \
 		((typeof(*p) __force __kernel *)(_________p1)); \
 	})
+/** 20130413 
+ * rcu_xxx, smp_read... null .... ???
+ */
 #define __rcu_dereference_check(p, c, space) \
 	({ \
 		typeof(*p) *_________p1 = (typeof(*p)*__force )ACCESS_ONCE(p); \

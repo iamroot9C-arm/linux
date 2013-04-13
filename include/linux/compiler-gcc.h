@@ -9,6 +9,9 @@
 
 /* Optimization barrier */
 /* The "volatile" is due to gcc bugs */
+/** 20130413
+ * compiler가 optimization 을 위해 asm code 의 reordering 하는 것을 방지 한다.
+ */
 #define barrier() __asm__ __volatile__("": : :"memory")
 
 /*

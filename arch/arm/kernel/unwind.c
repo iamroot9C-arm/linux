@@ -340,6 +340,9 @@ int unwind_frame(struct stackframe *frame)
 	pr_debug("%s(pc = %08lx lr = %08lx sp = %08lx)\n", __func__,
 		 frame->pc, frame->lr, frame->sp);
 
+	/** 20130413
+	 *
+	 */
 	if (!kernel_text_address(frame->pc))
 		return -URC_FAILURE;
 
@@ -443,6 +446,9 @@ void unwind_backtrace(struct pt_regs *regs, struct task_struct *tsk)
 		int urc;
 		unsigned long where = frame.pc;
 
+		/** 20130413
+		 *
+		 */
 		urc = unwind_frame(&frame);
 		if (urc < 0)
 			break;

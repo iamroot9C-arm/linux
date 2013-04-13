@@ -14,6 +14,9 @@
   extern void add_preempt_count(int val);
   extern void sub_preempt_count(int val);
 #else
+/** 20130413
+ * preempt count 를 증가 시킨다.
+ */
 # define add_preempt_count(val)	do { preempt_count() += (val); } while (0)
 # define sub_preempt_count(val)	do { preempt_count() -= (val); } while (0)
 #endif
@@ -42,6 +45,9 @@ do { \
 
 #ifdef CONFIG_PREEMPT_COUNT
 
+/** 20130413
+ * preempt 방지
+ */
 #define preempt_disable() \
 do { \
 	inc_preempt_count(); \

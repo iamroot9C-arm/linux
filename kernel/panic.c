@@ -411,6 +411,9 @@ static void warn_slowpath_common(const char *file, int line, void *caller,
 
 	printk(KERN_WARNING "------------[ cut here ]------------\n");
 	printk(KERN_WARNING "WARNING: at %s:%d %pS()\n", file, line, caller);
+	/** 20130413
+	 * null 리턴
+	 */
 	board = dmi_get_system_info(DMI_PRODUCT_NAME);
 	if (board)
 		printk(KERN_WARNING "Hardware name: %s\n", board);
@@ -449,6 +452,10 @@ void warn_slowpath_fmt_taint(const char *file, int line,
 }
 EXPORT_SYMBOL(warn_slowpath_fmt_taint);
 
+/** 20130413
+ * __builtin_return_address(0) 는 이전 caller 의 주소, 1 이면 caller의 caller 주소 
+ *   http://forum.falinux.com/zbxe/index.php?document_srl=550242&mid=lecture_tip
+ */
 void warn_slowpath_null(const char *file, int line)
 {
 	warn_slowpath_common(file, line, __builtin_return_address(0),

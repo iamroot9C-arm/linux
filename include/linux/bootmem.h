@@ -108,6 +108,9 @@ extern void *__alloc_bootmem_low_node(pg_data_t *pgdat,
 /* We are using top down, so it is safe to use 0 here */
 #define BOOTMEM_LOW_LIMIT 0
 #else
+/** 20130413
+ * MAX_DMAP_ADDRESS 는 0xffff ffff, pa 변환값이 어떻게 되는지 모르겠음. ???
+ */
 #define BOOTMEM_LOW_LIMIT __pa(MAX_DMA_ADDRESS)
 #endif
 

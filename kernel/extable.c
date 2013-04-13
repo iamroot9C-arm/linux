@@ -58,6 +58,9 @@ const struct exception_table_entry *search_exception_tables(unsigned long addr)
 	return e;
 }
 
+/** 20130413
+ * init section 의 text 영역에 속하는 주소인지 검사.
+ */
 static inline int init_kernel_text(unsigned long addr)
 {
 	if (addr >= (unsigned long)_sinittext &&
@@ -66,12 +69,18 @@ static inline int init_kernel_text(unsigned long addr)
 	return 0;
 }
 
+/** 20130413 
+ * 커널 text 영역에 속하는 주소인지 검사.
+ */
 int core_kernel_text(unsigned long addr)
 {
 	if (addr >= (unsigned long)_stext &&
 	    addr <= (unsigned long)_etext)
 		return 1;
 
+	/** 20130413
+	 * system_state 가 부팅 단계이고 주소가 init section 의 text 인 경우 1 리턴.
+	 */
 	if (system_state == SYSTEM_BOOTING &&
 	    init_kernel_text(addr))
 		return 1;
@@ -115,10 +124,16 @@ int __kernel_text_address(unsigned long addr)
 	return 0;
 }
 
+/** 20130413 
+ * 주소가 커널 텍스트(코드) 영역에 속하는지 검사.
+ */
 int kernel_text_address(unsigned long addr)
 {
 	if (core_kernel_text(addr))
 		return 1;
+	/** 20130420
+	 * 여기서 부터...
+	 */
 	return is_module_text_address(addr);
 }
 
