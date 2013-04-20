@@ -25,6 +25,9 @@
 #else
 #define MAX_ORDER CONFIG_FORCE_MAX_ZONEORDER
 #endif
+/** 20130420    
+ * MAX_ORDER_NR_PAGES의 의미는???
+ **/
 #define MAX_ORDER_NR_PAGES (1 << (MAX_ORDER - 1))
 
 /*
@@ -681,6 +684,9 @@ typedef struct pglist_data {
 	struct zonelist node_zonelists[MAX_ZONELISTS];
 	int nr_zones;
 #ifdef CONFIG_FLAT_NODE_MEM_MAP	/* means !SPARSEMEM */
+	/** 20130420    
+	 * alloc_node_mem_map에서 할당
+	 **/
 	struct page *node_mem_map;
 #ifdef CONFIG_MEMCG
 	struct page_cgroup *node_page_cgroup;

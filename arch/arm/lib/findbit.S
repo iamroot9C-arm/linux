@@ -25,15 +25,36 @@ ENTRY(_find_first_zero_bit_le)
 		teq	r1, #0	
 		beq	3f
 		mov	r2, #0
+/** 20130420    
+	_find_first_zero_bit_le, _find_next_zero_bit_le 에서 공통으로 사용.
+	_find_first_zero_bit_le에서 올 경우 r2에 0을 넣어줌
+ **/
 1:
+/** 20130420
+  _find_next_zero_bit_le에서 하위 3비트가 0일 경우 넘어옴
+   r3 = *(char *)(addr + (offset >> 3))
+ **/
  ARM(		ldrb	r3, [r0, r2, lsr #3]	)
  THUMB(		lsr	r3, r2, #3		)
  THUMB(		ldrb	r3, [r0, r3]		)
+/** 20130420
+  r3 ~= r3
+ **/
 		eors	r3, r3, #0xff		@ invert bits
+/** 20130420
+  LSB부터 처음 0이 아닌 위치를 찾아 리턴.
+  찾지 못했을 경우 다음 바이트부터 검색
+ **/
 		bne	.L_found		@ any now set - found zero bit
 		add	r2, r2, #8		@ next bit pointer
+/** 20130420
+  maxbit보다 작으면 계속 반복.
+ **/
 2:		cmp	r2, r1			@ any more?
 		blo	1b
+/** 20130420    
+  찾지 못하고 max까지 도달한 경우 maxbit를 리턴
+ **/
 3:		mov	r0, r1			@ no free bits
 		mov	pc, lr
 ENDPROC(_find_first_zero_bit_le)
@@ -43,16 +64,31 @@ ENDPROC(_find_first_zero_bit_le)
  * Prototype: int find_next_zero_bit(void *addr, unsigned int maxbit, int offset)
  */
 ENTRY(_find_next_zero_bit_le)
+/** 20130420    
+ *      maxbit가 0으로 넘어오면 _find_first_zero_bit_le의 3:의 리턴 코드를 수행
+ **/
 		teq	r1, #0
 		beq	3b
+/** 20130420    
+		maxbit가 0이 아닌 경우, offset의 하위 3비트를 ip에 저장
+		하위 3비트가 0인 경우 _find_first_zero_bit_le의 1:부터 수행
+ **/
 		ands	ip, r2, #7
 		beq	1b			@ If new byte, goto old routine
  ARM(		ldrb	r3, [r0, r2, lsr #3]	)
  THUMB(		lsr	r3, r2, #3		)
  THUMB(		ldrb	r3, [r0, r3]		)
 		eor	r3, r3, #0xff		@ now looking for a 1 bit
+/** 20130420
+		r2의 하위 3비트 값으로 shift를 해서 버림.
+ **/
 		movs	r3, r3, lsr ip		@ shift off unused bits
 		bne	.L_found
+/** 20130420    
+		해당 바이트에서 0을 찾지 못하면
+		다음 바이트부터 정렬된 상태에서 찾기 위해 r2 값을 조정.
+		정렬을 맞춘 뒤 2b부터 수행
+ **/
 		orr	r2, r2, #7		@ if zero, then no bits here
 		add	r2, r2, #1		@ align bit pointer
 		b	2b			@ loop for next bit
@@ -174,6 +210,18 @@ ENDPROC(_find_next_bit_be)
  */
 .L_found:
 #if __LINUX_ARM_ARCH__ >= 5
+/** 20130420    
+		ex) r3 : 0x18
+		rsb r0, r3, #0  ->  r3의  2의 보수를 취한다.
+		    r3 : 0xE8
+		and	r3, r3, r0  ->  (0-r3) & r3로 가장 오른쪽 1을 취한다.
+			r3 : 0xE8 & 0x18 = 0x08
+		clz	r3, r3		->  r3에서 MSB부터 0의 개수를 센다.
+			r3 : 28
+		rsb	r3, r3, #31	->  LSB 기준으로 변경한다.
+			r3 : 3
+		add	r0, r2, r3	->  offset(기준점)에서부터의 위치로 리턴한다.
+**/
 		rsb	r0, r3, #0
 		and	r3, r3, r0
 		clz	r3, r3
@@ -190,6 +238,9 @@ ENDPROC(_find_next_bit_be)
 		addeq	r2, r2, #1
 		mov	r0, r2
 #endif
+/** 20130420    
+		찾은 값이 max보다 크다면 max를 리턴
+ **/
 		cmp	r1, r0			@ Clamp to maxbit
 		movlo	r0, r1
 		mov	pc, lr

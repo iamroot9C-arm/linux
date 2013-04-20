@@ -25,6 +25,14 @@ extern unsigned long max_pfn;
  * memory pages (including holes) on the node.
  */
 typedef struct bootmem_data {
+	/** 20130420    
+	 * node_min_pfn  : 노드의 물리 메모리의 시작 주소에 대한 pfn
+	 * node_low_pfn  : 노드의 물리 메모리의(lowmem) 끝 주소에 대한 pfn
+	 * node_bootmem_map : bitmap이 위치한 virtual memory 주소
+	 * last_end_off  : page frame 관리를 위한 struct page 들이 사용 중인 공간의
+	 *                 마지막 physical offset. (from node_min_pfn)
+	 * hint_idx      : PFN_UP(last_end_off)
+	 **/
 	unsigned long node_min_pfn;
 	unsigned long node_low_pfn;
 	void *node_bootmem_map;
@@ -110,6 +118,7 @@ extern void *__alloc_bootmem_low_node(pg_data_t *pgdat,
 #else
 /** 20130413
  * MAX_DMAP_ADDRESS 는 0xffff ffff, pa 변환값이 어떻게 되는지 모르겠음. ???
+ *   ddd 실행시 0xdfff ffff임.
  */
 #define BOOTMEM_LOW_LIMIT __pa(MAX_DMA_ADDRESS)
 #endif
@@ -126,6 +135,11 @@ extern void *__alloc_bootmem_low_node(pg_data_t *pgdat,
 	__alloc_bootmem_nopanic(x, PAGE_SIZE, BOOTMEM_LOW_LIMIT)
 #define alloc_bootmem_node(pgdat, x) \
 	__alloc_bootmem_node(pgdat, x, SMP_CACHE_BYTES, BOOTMEM_LOW_LIMIT)
+/** 20130420    
+ * __alloc_bootmem_node_nopanic 호출
+ * SMP_CACHE_BYTES   : L1 cache size
+ * BOOTMEM_LOW_LIMIT : __pa(MAX_DMA_ADDRESS)
+ **/
 #define alloc_bootmem_node_nopanic(pgdat, x) \
 	__alloc_bootmem_node_nopanic(pgdat, x, SMP_CACHE_BYTES, BOOTMEM_LOW_LIMIT)
 #define alloc_bootmem_pages_node(pgdat, x) \

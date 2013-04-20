@@ -88,7 +88,9 @@ extern void warn_slowpath_null(const char *file, const int line);
 #ifndef WARN_ON
 
 /** 20130413
- * 
+ *   __WARN 아래 분석 시작
+ * 20130420
+ *  __WARN 부분에 대한 분석 보류.
  */
 #define WARN_ON(condition) ({						\
 	int __ret_warn_on = !!(condition);				\

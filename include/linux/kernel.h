@@ -9,6 +9,8 @@
 /** 20121222
  * x를 a단위로 round up 한다. 
  *    mask의 역할을 하는 부분 : (typeof(x))(a) - 1
+ * 20130420
+ *    a가 1일 경우 (x) + 0 & ~0으로 x가 그대로 나온다.
  * */
 #define __ALIGN_KERNEL(x, a)		__ALIGN_KERNEL_MASK(x, (typeof(x))(a) - 1)
 #define __ALIGN_KERNEL_MASK(x, mask)	(((x) + (mask)) & ~(mask))

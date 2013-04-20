@@ -5,6 +5,9 @@
 #ifdef	__KERNEL__
 #define BIT(nr)			(1UL << (nr))
 #define BIT_MASK(nr)		(1UL << ((nr) % BITS_PER_LONG))
+/** 20130420    
+ * 해당 비트가 위치한 word의 index를 리턴 (0 base)
+ **/
 #define BIT_WORD(nr)		((nr) / BITS_PER_LONG)
 #define BITS_PER_BYTE		8
 /** 20121208

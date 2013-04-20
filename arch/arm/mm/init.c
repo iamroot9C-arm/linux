@@ -331,7 +331,7 @@ static void __init arm_bootmem_free(unsigned long min, unsigned long max_low,
 		unsigned long end = memblock_region_memory_end_pfn(reg);
 
 		/** 20130413
-		 * zhole_zie 는 zone_normal size 에서 memory region 의 size를 뺀 것.
+		 * zhole_size 는 zone_normal size 에서 memory region 의 size를 뺀 것.
 		 */
 		if (start < max_low) {
 			unsigned long low_end = min(end, max_low);

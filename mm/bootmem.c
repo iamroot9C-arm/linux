@@ -364,7 +364,6 @@ static void __init __free(bootmem_data_t *bdata,
 
 /** 20130406    
  * sidx ~ eidx 사이의 pfn에 대해 1로 설정하는 함수
- * (어떤 의미에서 __reserve인지???)
  **/
 static int __init __reserve(bootmem_data_t *bdata, unsigned long sidx,
 			unsigned long eidx, int flags)
@@ -606,6 +605,9 @@ int __weak __init reserve_bootmem_generic(unsigned long phys, unsigned long len,
 	return reserve_bootmem(phys, len, flags);
 }
 
+/** 20130420    
+ * idx를 step 단위로 ALIGN 시켜 리턴
+ **/
 static unsigned long __init align_idx(struct bootmem_data *bdata,
 				      unsigned long idx, unsigned long step)
 {
@@ -616,6 +618,9 @@ static unsigned long __init align_idx(struct bootmem_data *bdata,
 	 * combination of both satisfies the requested alignment.
 	 */
 
+/** 20130420    
+ * base+idx를 step 단위로 ALIGN 시켜 base와의 offset을 리턴.
+ **/
 	return ALIGN(base + idx, step) - base;
 }
 
@@ -629,6 +634,10 @@ static unsigned long __init align_off(struct bootmem_data *bdata,
 	return ALIGN(base + off, align) - base;
 }
 
+/** 20130420    
+ * page frame을 관리하는 struct page 들을 저장하는 영역을
+ * binary map 부분에서 할당
+ **/
 static void * __init alloc_bootmem_bdata(struct bootmem_data *bdata,
 					unsigned long size, unsigned long align,
 					unsigned long goal, unsigned long limit)
@@ -640,6 +649,9 @@ static void * __init alloc_bootmem_bdata(struct bootmem_data *bdata,
 		bdata - bootmem_node_data, size, PAGE_ALIGN(size) >> PAGE_SHIFT,
 		align, goal, limit);
 
+	/** 20130420    
+	 * argument sanity check.
+	 **/
 	BUG_ON(!size);
 	BUG_ON(align & (align - 1));
 	BUG_ON(limit && goal + size > limit);
@@ -650,24 +662,44 @@ static void * __init alloc_bootmem_bdata(struct bootmem_data *bdata,
 	min = bdata->node_min_pfn;
 	max = bdata->node_low_pfn;
 
+	/** 20130420    
+	 * goal과 limit을 pfn 으로 변환
+	 **/
 	goal >>= PAGE_SHIFT;
 	limit >>= PAGE_SHIFT;
 
+	/** 20130420    
+	 * 변수값 재조정
+	 **/
 	if (limit && max > limit)
 		max = limit;
 	if (max <= min)
 		return NULL;
 
+	/** 20130420    
+	 * 현재 align이 L1_CACHE_SIZE로 넘어왔으므로 >> PAGE_SHIFT를 하면 0이 됨.
+	 * step의 최소값은 1. 
+	 **/
 	step = max(align >> PAGE_SHIFT, 1UL);
 
+	/** 20130420    
+	 * min < goal < max 일 경우 goal을 step 단위로 정렬해 start에 저장.
+	 * 그렇지 않을 경우 min을 step  단위로 정렬해 start에 저장.
+	 **/
 	if (goal && min < goal && goal < max)
 		start = ALIGN(goal, step);
 	else
 		start = ALIGN(min, step);
 
+	/** 20130420    
+	 * start와 max의 node_min_pfn에 대한 offset (index)을 구한다.
+	 **/
 	sidx = start - bdata->node_min_pfn;
 	midx = max - bdata->node_min_pfn;
 
+	/** 20130420    
+	 * hint_idx가 0이면 수행되지 않음.
+	 **/
 	if (bdata->hint_idx > sidx) {
 		/*
 		 * Handle the valid case of sidx being zero and still
@@ -683,39 +715,86 @@ static void * __init alloc_bootmem_bdata(struct bootmem_data *bdata,
 		unsigned long eidx, i, start_off, end_off;
 find_block:
 		sidx = find_next_zero_bit(bdata->node_bootmem_map, midx, sidx);
+		/** 20130420    
+		 * sidx는 위에서 찾은 sidx를 step 단위로 round up한 결과.
+		 *    step이 1일 경우 sidx가 그대로 리턴
+		 * eidx는 page frame을 관리하기 위한 메모리의 마지막 page frame index.
+		 **/
 		sidx = align_idx(bdata, sidx, step);
 		eidx = sidx + PFN_UP(size);
 
+		/** 20130420    
+		 * zero bit를 못 찾았을 경우 sidx == midx이므로 break
+		 * eidx가 midx보다 크면 break
+		 **/
 		if (sidx >= midx || eidx > midx)
 			break;
 
+		/** 20130420    
+		 * 사용할 sidx ~ eidx까지 사용 중인 page frame이 있다면 find_block으로 이동
+		 **/
 		for (i = sidx; i < eidx; i++)
 			if (test_bit(i, bdata->node_bootmem_map)) {
+				/** 20130420    
+				 * sidx를 사용 중인 page frame idx의 다음 step으로 변경.
+				 * step이 1인 경우 sidx == i, sidx를 step만큼 증가
+				 * step이 1이 아닌 경우 align_idx에서 이미 다음 step으로 변경되어 있음.
+				 **/
 				sidx = align_idx(bdata, i, step);
 				if (sidx == i)
 					sidx += step;
 				goto find_block;
 			}
 
+		/** 20130420    
+		 * 사용하지 않는 sidx ~ edix를 찾은 경우
+		 **/
+
+		/** 20130420    
+		 * 처음 실행시 last_end_off는 설정되지 않은 상태이므로 0
+		 * 따라서 else 실행
+		 **/
 		if (bdata->last_end_off & (PAGE_SIZE - 1) &&
 				PFN_DOWN(bdata->last_end_off) + 1 == sidx)
 			start_off = align_off(bdata, bdata->last_end_off, align);
 		else
+			/** 20130420    
+			 * sidx(offset)에 해당하는 물리 주소를 저장
+			 **/
 			start_off = PFN_PHYS(sidx);
 
+		/** 20130420    
+		 * start_off에 대한 PFN을 구해 sidx와 비교.
+		 * else에서 왔을 경우 merge는 false
+		 **/
 		merge = PFN_DOWN(start_off) < sidx;
+		/** 20130420    
+		 * page frame을 관리하기 위해 사용되는 공간의 마지막 물리 offset
+		 * (from node_min_pfn)
+		 **/
 		end_off = start_off + size;
 
+		/** 20130420    
+		 * bdata의 last_end_off과 hint_idx에 저장
+		 **/
 		bdata->last_end_off = end_off;
 		bdata->hint_idx = PFN_UP(end_off);
 
 		/*
 		 * Reserve the area now:
 		 */
+		/** 20130420    
+		 * pfn (start_off) ~ pfn (end_off) 영역에 대해 사용 중임을 설정.
+		 * BOOTMEM_EXCLUSIVE 옵션에 의해 해당 영역이 이미 사용 중일 경우 BUG.
+		 **/
 		if (__reserve(bdata, PFN_DOWN(start_off) + merge,
 				PFN_UP(end_off), BOOTMEM_EXCLUSIVE))
 			BUG();
 
+		/** 20130420    
+		 * region은 page frame을 관리하는 (struct page) 배열 시작 주소 (va)
+		 * 해당 영역을 0으로 초기화
+		 **/
 		region = phys_to_virt(PFN_PHYS(bdata->node_min_pfn) +
 				start_off);
 		memset(region, 0, size);
@@ -723,10 +802,17 @@ find_block:
 		 * The min_count is set to 0 so that bootmem allocated blocks
 		 * are never reported as leaks.
 		 */
+		/** 20130420    
+		 * vexpress에서는 NULL. (memory leak을 관리하기 위한 debug용 옵션인듯)
+		 **/
 		kmemleak_alloc(region, size, 0, 0);
 		return region;
 	}
 
+	/** 20130420    
+	 * fallback이 존재하는 경우 sidx를 다음 step(fallback-1)으로 조정한 뒤
+	 * 다시 find_block을 호출
+	 **/
 	if (fallback) {
 		sidx = align_idx(bdata, fallback - 1, step);
 		fallback = 0;
@@ -736,13 +822,22 @@ find_block:
 	return NULL;
 }
 
+/** 20130420    
+ **/
 static void * __init alloc_arch_preferred_bootmem(bootmem_data_t *bdata,
 					unsigned long size, unsigned long align,
 					unsigned long goal, unsigned long limit)
 {
+	/** 20130420    
+	 * 초기화 하지 않은 상태이므로 slab이 사용 가능하다면 비정상임.
+	 * 그럴 경우 경고를 출력
+	 **/
 	if (WARN_ON_ONCE(slab_is_available()))
 		return kzalloc(size, GFP_NOWAIT);
 
+/** 20130420    
+ * vexpress 에서 정의되어 있지 않음
+ **/
 #ifdef CONFIG_HAVE_ARCH_BOOTMEM
 	{
 		bootmem_data_t *p_bdata;
@@ -757,6 +852,9 @@ static void * __init alloc_arch_preferred_bootmem(bootmem_data_t *bdata,
 	return NULL;
 }
 
+/** 20130420    
+ * bdata_list를 순회하며 alloc_bootmem_bdata를 수행하는 함수
+ **/
 static void * __init alloc_bootmem_core(unsigned long size,
 					unsigned long align,
 					unsigned long goal,
@@ -765,13 +863,25 @@ static void * __init alloc_bootmem_core(unsigned long size,
 	bootmem_data_t *bdata;
 	void *region;
 
+	/** 20130420    
+	 * vexpress 에서 NULL을 리턴
+	 **/
 	region = alloc_arch_preferred_bootmem(NULL, size, align, goal, limit);
 	if (region)
 		return region;
 
+	/** 20130420    
+	 * NUMA인 경우 bdata_list를 순회하며 alloc_bootmem_bdata를 시도
+	 **/
 	list_for_each_entry(bdata, &bdata_list, list) {
+		/** 20130420    
+		 * goal이 node_low_pfn보다 클 경우 continue
+		 **/
 		if (goal && bdata->node_low_pfn <= PFN_DOWN(goal))
 			continue;
+		/** 20130420    
+		 * limit이 node_min_pfn보다 작을 경우 break
+		 **/
 		if (limit && bdata->node_min_pfn >= PFN_DOWN(limit))
 			break;
 
@@ -859,6 +969,9 @@ void * __init __alloc_bootmem(unsigned long size, unsigned long align,
 	return ___alloc_bootmem(size, align, goal, limit);
 }
 
+/** 20130420    
+ * node 상에 존재하는 page frame 들만큼을 관리하기 위한 page영역을 할당하는 함수
+ **/
 void * __init ___alloc_bootmem_node_nopanic(pg_data_t *pgdat,
 				unsigned long size, unsigned long align,
 				unsigned long goal, unsigned long limit)
@@ -872,9 +985,16 @@ again:
 		return ptr;
 
 	/* do not panic in alloc_bootmem_bdata() */
+	/** 20130420    
+	 * 현재 limit은 0으로 호출.
+	 * 만약 limit 이 있지만 goal + size보다 작다면 limit을 무효화시킴
+	 **/
 	if (limit && goal + size > limit)
 		limit = 0;
 
+	/** 20130420    
+	 * 영역을 성공적으로 할당했다면 ptr을 리턴
+	 **/
 	ptr = alloc_bootmem_bdata(pgdat->bdata, size, align, goal, limit);
 	if (ptr)
 		return ptr;
@@ -883,6 +1003,9 @@ again:
 	if (ptr)
 		return ptr;
 
+	/** 20130420    
+	 * alloc_bootmem_core에서도 실패했을 경우 goal을 0으로 변경해 다시 시도
+	 **/
 	if (goal) {
 		goal = 0;
 		goto again;
@@ -891,6 +1014,9 @@ again:
 	return NULL;
 }
 
+/** 20130420    
+ * bdata_list를 순회하며 alloc_bootmem_bdata를 수행하는 함수
+ **/
 void * __init __alloc_bootmem_node_nopanic(pg_data_t *pgdat, unsigned long size,
 				   unsigned long align, unsigned long goal)
 {

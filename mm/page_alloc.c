@@ -4491,6 +4491,9 @@ static void __init_refok alloc_node_mem_map(struct pglist_data *pgdat)
 
 #ifdef CONFIG_FLAT_NODE_MEM_MAP
 	/* ia64 gets its own node_mem_map, before this, without bootmem */
+	/** 20130420    
+	 * node_mem_map은 초기에 0이므로 수행
+	 **/
 	if (!pgdat->node_mem_map) {
 		unsigned long size, start, end;
 		struct page *map;
@@ -4507,6 +4510,9 @@ static void __init_refok alloc_node_mem_map(struct pglist_data *pgdat)
 		start = pgdat->node_start_pfn & ~(MAX_ORDER_NR_PAGES - 1);
 		end = pgdat->node_start_pfn + pgdat->node_spanned_pages;
 		end = ALIGN(end, MAX_ORDER_NR_PAGES);
+		/** 20130420    
+		 * size는 page frame을 관리하기 위한 struct page의 전체 공간
+		 **/
 		size =  (end - start) * sizeof(struct page);
 		/** 20130413
 		 * alloc_remap 은 널 리턴.
@@ -4514,14 +4520,25 @@ static void __init_refok alloc_node_mem_map(struct pglist_data *pgdat)
 		map = alloc_remap(pgdat->node_id, size);
 		if (!map)
 			map = alloc_bootmem_node_nopanic(pgdat, size);
+		/** 20130420    
+		 * map은 page frame을 관리하기 위한 page 구조체의 시작 위치.
+		 * 정렬시킨 위치에서 정렬되지 않은 영역까지는 실제 사용 가능한
+		 * page frame들이 존재하지 않으므로 node_mem_map에 저장되는 주소를 조정.
+		 **/
 		pgdat->node_mem_map = map + (pgdat->node_start_pfn - start);
 	}
 #ifndef CONFIG_NEED_MULTIPLE_NODES
 	/*
 	 * With no DISCONTIG, the global mem_map is just set as node 0's
 	 */
+	/** 20130427 여기부터
+	 * 
+	 **/
 	if (pgdat == NODE_DATA(0)) {
 		mem_map = NODE_DATA(0)->node_mem_map;
+		/** 20130420    
+		 * vexpress에서 정의되어 있지 않음
+		 **/
 #ifdef CONFIG_HAVE_MEMBLOCK_NODE_MAP
 		if (page_to_pfn(mem_map) != pgdat->node_start_pfn)
 			mem_map -= (pgdat->node_start_pfn - ARCH_PFN_OFFSET);

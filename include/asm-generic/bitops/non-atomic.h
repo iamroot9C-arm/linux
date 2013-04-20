@@ -100,8 +100,17 @@ static inline int __test_and_change_bit(int nr,
  * @nr: bit number to test
  * @addr: Address to start counting from
  */
+/** 20130420    
+ * addr의 nr번째 bit 값을 리턴
+ **/
 static inline int test_bit(int nr, const volatile unsigned long *addr)
 {
+	/** 20130420    
+	 * ex) nr : 0x28 일 경우
+	 *    BIT_WORD(nr) -> 1
+	 *    addr[1]을 가져와 하위 32비트값(8)으로 shift를 해 LSB에 위치시킨다.
+	 *    1과 & 해 해당 비트의 상태만 리턴
+	 **/
 	return 1UL & (addr[BIT_WORD(nr)] >> (nr & (BITS_PER_LONG-1)));
 }
 
