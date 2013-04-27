@@ -87,15 +87,27 @@ int memmap_valid_within(unsigned long pfn,
 }
 #endif /* CONFIG_ARCH_HAS_HOLES_MEMORYMODEL */
 
+/** 20130427    
+ * lruvec 자료구조 초기화
+ **/
 void lruvec_init(struct lruvec *lruvec, struct zone *zone)
 {
 	enum lru_list lru;
 
+	/** 20130427    
+	 * lruvec 자료구조 초기화
+	 **/
 	memset(lruvec, 0, sizeof(struct lruvec));
 
+	/** 20130427    
+	 * 각 list head를 초기화
+	 **/
 	for_each_lru(lru)
 		INIT_LIST_HEAD(&lruvec->lists[lru]);
 
+	/** 20130427    
+	 * vexpress 에서는 0
+	 **/
 #ifdef CONFIG_MEMCG
 	lruvec->zone = zone;
 #endif

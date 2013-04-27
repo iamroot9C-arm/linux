@@ -100,6 +100,9 @@ do {								\
 } while (0)
 
 #else
+/** 20130427    
+ * lock 구조체 초기화
+ **/
 # define raw_spin_lock_init(lock)				\
 	do { *(lock) = __RAW_SPIN_LOCK_UNLOCKED(lock); } while (0)
 #endif

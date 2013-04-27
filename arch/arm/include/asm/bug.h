@@ -34,8 +34,6 @@
  * avoid multiple copies of the string appearing in the kernel image.
  */
 
-#define __BUG(__file, __line, __value)				\
-do {								\
 	/** 20130406    
 	 * .pushsection name, "flags", @type, flag_specific_arguments
 	 *
@@ -57,6 +55,8 @@ do {								\
 	 *  unreachable()은 include/linux/compiler-gcc4.h
 	 *  #define unreachable() __builtin_unreachable()
 	 **/
+#define __BUG(__file, __line, __value)				\
+do {								\
 	asm volatile("1:\t" BUG_INSTR_TYPE #__value "\n"	\
 		".pushsection .rodata.str, \"aMS\", %progbits, 1\n" \
 		"2:\t.asciz " #__file "\n" 			\

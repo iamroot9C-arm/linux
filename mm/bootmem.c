@@ -636,7 +636,7 @@ static unsigned long __init align_off(struct bootmem_data *bdata,
 
 /** 20130420    
  * page frame을 관리하는 struct page 들을 저장하는 영역을
- * binary map 부분에서 할당
+ * binary map 부분에서 할당 (bitmap에 사용 중으로 표시하고, 해당 영역은 초기화)
  **/
 static void * __init alloc_bootmem_bdata(struct bootmem_data *bdata,
 					unsigned long size, unsigned long align,
@@ -1015,7 +1015,7 @@ again:
 }
 
 /** 20130420    
- * bdata_list를 순회하며 alloc_bootmem_bdata를 수행하는 함수
+ * slab이 초기화 되지 않은 상태에서 memory를 할당하는 함수
  **/
 void * __init __alloc_bootmem_node_nopanic(pg_data_t *pgdat, unsigned long size,
 				   unsigned long align, unsigned long goal)

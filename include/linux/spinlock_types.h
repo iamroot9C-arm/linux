@@ -17,6 +17,9 @@
 
 #include <linux/lockdep.h>
 
+/** 20130427    
+ * raw_lock 외의 다른 구조체 멤버변수는 CONFIG되어 있지 않음
+ **/
 typedef struct raw_spinlock {
 	arch_spinlock_t raw_lock;
 #ifdef CONFIG_GENERIC_LOCKBREAK
@@ -50,6 +53,10 @@ typedef struct raw_spinlock {
 # define SPIN_DEBUG_INIT(lockname)
 #endif
 
+/** 20130427    
+ * .raw_lock을 UNLOCKED (0)으로 초기화
+ * 나머지 구조체는 DEBUG용 CONFIG 속성에 따라 호출됨.
+ **/
 #define __RAW_SPIN_LOCK_INITIALIZER(lockname)	\
 	{					\
 	.raw_lock = __ARCH_SPIN_LOCK_UNLOCKED,	\

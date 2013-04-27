@@ -11,6 +11,10 @@
  * linkage errors occur due the compiler generating the wrong code to access
  * that section.
  */
+/** 20130427    
+ * __percpu : __CHECKER__를 사용하지 않으면 전처리 과정에서 생략됨
+ * CONFIG_SMP이므로 PER_CPU_BASE_SECTION는 ".data..percpu"
+ **/
 #define __PCPU_ATTRS(sec)						\
 	__percpu __attribute__((section(PER_CPU_BASE_SECTION sec)))	\
 	PER_CPU_ATTRIBUTES
@@ -75,6 +79,10 @@
 #define DECLARE_PER_CPU_SECTION(type, name, sec)			\
 	extern __PCPU_ATTRS(sec) __typeof__(type) name
 
+/** 20130427    
+ * PER_CPU_DEF_ATTRIBUTES는 전처리 과정에서 생략
+ * __PCPU_ATTRS => __attribute__((section(".data..percpu" sec)))	
+ **/
 #define DEFINE_PER_CPU_SECTION(type, name, sec)				\
 	__PCPU_ATTRS(sec) PER_CPU_DEF_ATTRIBUTES			\
 	__typeof__(type) name

@@ -10,10 +10,22 @@
 #include <linux/wait.h>
 #include <linux/hash.h>
 
+/** 20130427    
+ * wait_queue를 사용하기 위한 자료구조 초기화
+ **/
 void __init_waitqueue_head(wait_queue_head_t *q, const char *name, struct lock_class_key *key)
 {
+	/** 20130427    
+	 * spin_lock 초기화
+	 **/
 	spin_lock_init(&q->lock);
+	/** 20130427    
+	 * CONFIG_LOCKDEP이 정의되어 있지 않아 key와 name만 나열됨
+	 **/
 	lockdep_set_class_and_name(&q->lock, key, name);
+	/** 20130427    
+	 * task_list 초기화
+	 **/
 	INIT_LIST_HEAD(&q->task_list);
 }
 

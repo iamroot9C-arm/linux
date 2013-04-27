@@ -242,6 +242,10 @@ extern int _find_next_bit_be(const unsigned long *p, int size, int offset);
 
 #else
 
+/** 20130427    
+ * MSB 부터 0이 아닌 첫번째 위치를 구함.
+ *	(index는 32 ... 1)
+ **/
 static inline int constant_fls(int x)
 {
 	int r = 32;
@@ -276,7 +280,8 @@ static inline int constant_fls(int x)
  * the clz instruction for much better code efficiency.
  */
 /** 20130323
-*	MSB 부터 0이 아닌 첫번째 위치를 구함.
+*	MSB 부터 0이 아닌 첫번째 위치를 구함. (find last set)
+*	(index는 32 ... 1)
 */
 static inline int fls(int x)
 {
@@ -297,6 +302,33 @@ static inline int fls(int x)
 	return ret;
 }
 
+/** 20130427    
+ * __t & -__t : 2의 보수와 비트 and.
+ *   -> LSB부터 0이 아닌 첫번째 비트만 남겨두고 나머지 비트는 0.
+ *   ex) 0x00000080
+ *     & 0xffffff80
+ *     ------------
+ *       0x00000080
+ *
+ *   ex) 0x00000180
+ *     & 0xfffffe80
+ *     ------------
+ *       0x00000080
+ *
+ *  fls는 MSB부터 첫번째 1이 나오는 zero base offset + 1.
+ *  __ffs는 fls를 다시 zero base로 만듦.
+ *
+ *  ex) ffz(0xffffff7f)           __ffs(0x80)
+ *      __ffs(0x80)               (ffs(0x80) - 1)
+ *      (ffs(0x80) - 1)           (fls(0x00000080 & 0xffffff80) - 1)
+ *                                (fls(0x80) - 1)
+ *                                (8 - 1) = 7
+ *
+ * find first zero (ffz)
+ *   from: http://en.wikipedia.org/wiki/Find_first_set
+ *
+ * ffz(x), fls(x)의 매개변수는 2의 지수승으로 넘어온 값이어야 함
+ **/
 #define __fls(x) (fls(x) - 1)
 #define ffs(x) ({ unsigned long __t = (x); fls(__t & -__t); })
 #define __ffs(x) (ffs(x) - 1)

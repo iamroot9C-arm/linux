@@ -48,6 +48,10 @@ extern void __chk_io_ptr(const volatile void __iomem *);
 #include <linux/compiler-gcc.h>
 #endif
 
+/** 20130427    
+ * no_instrument_function은 함수 애트리뷰트는 프로파일링 함수에 제공되어 프로파일링 함수가 루프가 되지 않도록하여 필요없는 추가 데이터를 생기지 않도록 한다.
+ * -- from: http://ospace.tistory.com/86
+ **/
 #define notrace __attribute__((no_instrument_function))
 
 /* Intel compiler defines __GNUC__. So we will overwrite implementations

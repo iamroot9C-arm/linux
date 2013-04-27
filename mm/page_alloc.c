@@ -177,6 +177,10 @@ int sysctl_lowmem_reserve_ratio[MAX_NR_ZONES-1] = {
 
 EXPORT_SYMBOL(totalram_pages);
 
+/** 20130427    
+ * zone index에 따른 이름을 리턴하기 위한 자료구조.
+ * (vexpress에서는 "Normal", "Movable")
+ **/
 static char * const zone_names[MAX_NR_ZONES] = {
 #ifdef CONFIG_ZONE_DMA
 	 "DMA",
@@ -3455,6 +3459,9 @@ static void build_zonelist_cache(pg_data_t *pgdat)
  * Other parts of the kernel may not check if the zone is available.
  */
 static void setup_pageset(struct per_cpu_pageset *p, unsigned long batch);
+/** 20130427    
+ * static __attribute__((section(".data..percpu"))) __typeof__(struct per_cpu_pageset) boot_pageset;
+ **/
 static DEFINE_PER_CPU(struct per_cpu_pageset, boot_pageset);
 static void setup_zone_pageset(struct zone *zone);
 
@@ -3580,12 +3587,25 @@ void __ref build_all_zonelists(pg_data_t *pgdat, struct zone *zone)
 #define PAGES_PER_WAITQUEUE	256
 
 #ifndef CONFIG_MEMORY_HOTPLUG
+
+/** 20130427    
+ * wait table에서 hash bucket으로 사용할 queue의 entry 개수를 구한다.
+ **/
 static inline unsigned long wait_table_hash_nr_entries(unsigned long pages)
 {
 	unsigned long size = 1;
 
+	/** 20130427    
+	 * 전체 pages(spanned)를 WAITQUEUE 당 pages 수의 ratio로 나눈다.
+	 *
+	 * ex) pages가 약 32500개일 경우 /= 256으로 126.
+	 **/
 	pages /= PAGES_PER_WAITQUEUE;
 
+	/** 20130427    
+	 * size를 pages 보다 큰 최소 2의 지수승으로 만든다.
+	 * ex) size = 128
+	 **/
 	while (size < pages)
 		size <<= 1;
 
@@ -3594,8 +3614,14 @@ static inline unsigned long wait_table_hash_nr_entries(unsigned long pages)
 	 * on IO we've got bigger problems than wait queue collision.
 	 * Limit the size of the wait table to a reasonable size.
 	 */
+	/** 20130427    
+	 * size의 최대값은 4096
+	 **/
 	size = min(size, 4096UL);
 
+	/** 20130427    
+	 * size의 최소값은 4
+	 **/
 	return max(size, 4UL);
 }
 #else
@@ -3627,8 +3653,17 @@ static inline unsigned long wait_table_hash_nr_entries(unsigned long pages)
  * to extract the more random high bits from the multiplicative
  * hash function before the remainder is taken.
  */
+/** 20130427    
+ * size 개수를 표현하기 위해 필요한 비트수를 구함
+ **/
 static inline unsigned long wait_table_bits(unsigned long size)
 {
+	/** 20130427    
+	 * ffz: find first zero
+	 * ex)  size : 128 (0x80)
+	 *     ~size :     (0xffffff7f)
+	 * ffz(~size):   7
+	 **/
 	return ffz(~size);
 }
 
@@ -3921,6 +3956,9 @@ void __init setup_per_cpu_pageset(void)
 		setup_zone_pageset(zone);
 }
 
+/** 20130427    
+ * zone_size_pages 만큼의 page들을 관리하는 zone wait queue의 hash table 초기화
+ **/
 static noinline __init_refok
 int zone_wait_table_init(struct zone *zone, unsigned long zone_size_pages)
 {
@@ -3932,14 +3970,26 @@ int zone_wait_table_init(struct zone *zone, unsigned long zone_size_pages)
 	 * The per-page waitqueue mechanism uses hashed waitqueues
 	 * per zone.
 	 */
+	/** 20130427    
+	 * wait queue hash table 관련 설정값 초기화
+	 **/
 	zone->wait_table_hash_nr_entries =
 		 wait_table_hash_nr_entries(zone_size_pages);
 	zone->wait_table_bits =
 		wait_table_bits(zone->wait_table_hash_nr_entries);
+	/** 20130427    
+	 * wait queue table에 필요한 메모리의 크기를 구한다.
+	 **/
 	alloc_size = zone->wait_table_hash_nr_entries
 					* sizeof(wait_queue_head_t);
 
+	/** 20130427    
+	 * 초기화 과정에서 slab은 아직 unavailable.
+	 **/
 	if (!slab_is_available()) {
+		/** 20130427    
+		 * 실제 메모리를 할당해 wait_table로 가리킴
+		 **/
 		zone->wait_table = (wait_queue_head_t *)
 			alloc_bootmem_node_nopanic(pgdat, alloc_size);
 	} else {
@@ -3953,17 +4003,29 @@ int zone_wait_table_init(struct zone *zone, unsigned long zone_size_pages)
 		 * To use this new node's memory, further consideration will be
 		 * necessary.
 		 */
+		/** 20130427    
+		 * slab이 사용 가능하면 vmalloc
+		 **/
 		zone->wait_table = vmalloc(alloc_size);
 	}
+	/** 20130427    
+	 * 설정이 안 되었다면 에러
+	 **/
 	if (!zone->wait_table)
 		return -ENOMEM;
 
+	/** 20130427    
+	 * waitqueue head 초기화
+	 **/
 	for(i = 0; i < zone->wait_table_hash_nr_entries; ++i)
 		init_waitqueue_head(zone->wait_table + i);
 
 	return 0;
 }
 
+/** 20130427    
+ * zone의 pageset 에 boot_pageset 변수의 주소를 저장한다.
+ **/
 static __meminit void zone_pcp_init(struct zone *zone)
 {
 	/*
@@ -3971,6 +4033,10 @@ static __meminit void zone_pcp_init(struct zone *zone)
 	 * relies on the ability of the linker to provide the
 	 * offset of a (static) per cpu variable into the per cpu area.
 	 */
+	/** 20130427    
+	 * static 전역변수 boot_pageset의 주소를 pageset에 저장.
+	 * (boot_pageset은 .data..percpu 섹션에 존재)
+	 **/
 	zone->pageset = &boot_pageset;
 
 	if (zone->present_pages)
@@ -3986,9 +4052,14 @@ int __meminit init_currently_empty_zone(struct zone *zone,
 {
 	struct pglist_data *pgdat = zone->zone_pgdat;
 	int ret;
+	/** 20130427    
+	 * zone wait table init()이 성공하면 0 리턴
+	 **/
 	ret = zone_wait_table_init(zone, size);
 	if (ret)
 		return ret;
+	/** 20130504 여기부터...
+	 **/
 	pgdat->nr_zones = zone_idx(zone) + 1;
 
 	zone->zone_start_pfn = zone_start_pfn;
@@ -4407,16 +4478,32 @@ static void __paginginit free_area_init_core(struct pglist_data *pgdat,
 	unsigned long zone_start_pfn = pgdat->node_start_pfn;
 	int ret;
 
+	/** 20130427    
+	 * CONFIG_MEMORY_HOTPLUG 가 정의되어 있지 않아 NULL 함수
+	 **/
 	pgdat_resize_init(pgdat);
+	/** 20130427    
+	 * pgdat의 wait_queue_head_t 자료구조 초기화
+	 **/
 	init_waitqueue_head(&pgdat->kswapd_wait);
 	init_waitqueue_head(&pgdat->pfmemalloc_wait);
+	/** 20130427    
+	 * vexpress에서는 NULL 함수
+	 **/
 	pgdat_page_cgroup_init(pgdat);
 
 	for (j = 0; j < MAX_NR_ZONES; j++) {
 		struct zone *zone = pgdat->node_zones + j;
 		unsigned long size, realsize, memmap_pages;
 
+		/** 20130427    
+		 * zones_size는 매개변수로 받은 zone들의 size 배열.
+		 *   ZONE_NORMAL은 max_low - min (단위 pfn)
+		 **/
 		size = zone_spanned_pages_in_node(nid, j, zones_size);
+		/** 20130427    
+		 * spanned_pages - absent_pages로 실제 크기를 구한다.
+		 **/
 		realsize = size - zone_absent_pages_in_node(nid, j,
 								zholes_size);
 
@@ -4425,9 +4512,19 @@ static void __paginginit free_area_init_core(struct pglist_data *pgdat,
 		 * is used by this zone for memmap. This affects the watermark
 		 * and per-cpu initialisations
 		 */
+		/** 20130427    
+		 * 전체 (spanned) 메모리 관리에 필요한 struct page의 메모리 크기를 구해,
+		 * 필요한 PAGE FRAME의 개수를 구한다.
+		 **/	
 		memmap_pages =
 			PAGE_ALIGN(size * sizeof(struct page)) >> PAGE_SHIFT;
+		/** 20130427    
+		 * 실제 사용가능한 page frame의 개수가 메모리 관리를 위해 사용되는 page frame 보다 커야함 
+		 **/
 		if (realsize >= memmap_pages) {
+			/** 20130427    
+			 * realsize를 줄임
+			 **/
 			realsize -= memmap_pages;
 			if (memmap_pages)
 				printk(KERN_DEBUG
@@ -4439,23 +4536,42 @@ static void __paginginit free_area_init_core(struct pglist_data *pgdat,
 				zone_names[j], memmap_pages, realsize);
 
 		/* Account for reserved pages */
+		/** 20130427    
+		 * 첫번째 zone에 대해 realsize가 dma_reserve보다 크면 realsize에서 뺀다.
+		 * (ZONE_DMA로 사용해야 할 공간을 realsize에서 뺀다)
+		 **/
 		if (j == 0 && realsize > dma_reserve) {
 			realsize -= dma_reserve;
 			printk(KERN_DEBUG "  %s zone: %lu pages reserved\n",
 					zone_names[0], dma_reserve);
 		}
 
+		/** 20130427    
+		 * j가 highmem index가 아닐 경우 nr_kernel_pages에 realsize를 더함
+		 **/
 		if (!is_highmem_idx(j))
 			nr_kernel_pages += realsize;
+		/** 20130427    
+		 * nr_all_pages에 realsize를 더함 
+		 **/
 		nr_all_pages += realsize;
 
+		/** 20130427    
+		 * spanned_pages와 presend_pages 에 구한 크기를 저장
+		 **/
 		zone->spanned_pages = size;
 		zone->present_pages = realsize;
+		/** 20130427    
+		 * vexpress 에서는 정의되어 있지 않음
+		 **/
 #if defined CONFIG_COMPACTION || defined CONFIG_CMA
 		zone->compact_cached_free_pfn = zone->zone_start_pfn +
 						zone->spanned_pages;
 		zone->compact_cached_free_pfn &= ~(pageblock_nr_pages-1);
 #endif
+		/** 20130427    
+		 * vexpress 에서는 CONFIG_NUMA가 정의되어 있지 않음
+		 **/
 #ifdef CONFIG_NUMA
 		zone->node = nid;
 		zone->min_unmapped_pages = (realsize*sysctl_min_unmapped_ratio)
@@ -4463,17 +4579,32 @@ static void __paginginit free_area_init_core(struct pglist_data *pgdat,
 		zone->min_slab_pages = (realsize * sysctl_min_slab_ratio) / 100;
 #endif
 		zone->name = zone_names[j];
+		/** 20130427    
+		 * spin_lock 변수 초기화
+		 **/
 		spin_lock_init(&zone->lock);
 		spin_lock_init(&zone->lru_lock);
+		/** 20130427    
+		 * vepxress 에서는 NULL 함수
+		 **/
 		zone_seqlock_init(zone);
 		zone->zone_pgdat = pgdat;
 
+		/** 20130427    
+		 * zone_pcp, lruvec 자료구조 초기화
+		 **/
 		zone_pcp_init(zone);
 		lruvec_init(&zone->lruvec, zone);
 		if (!size)
 			continue;
 
+		/** 20130427    
+		 * vexpress에서는 CONFIG_HUGETLB_PAGE_SIZE_VARIABLE 가 정의되어 있지 않아 NULL 함수
+		 **/
 		set_pageblock_order();
+		/** 20130427    
+		 * vexpress에서는 CONFIG_SPARSEMEM 가 정의되어 있지 않아 NULL 함수
+		 **/
 		setup_usemap(pgdat, zone, size);
 		ret = init_currently_empty_zone(zone, zone_start_pfn,
 						size, MEMMAP_EARLY);
@@ -4483,6 +4614,10 @@ static void __paginginit free_area_init_core(struct pglist_data *pgdat,
 	}
 }
 
+/** 20130427    
+ * 전체 메모리를 struct page로 관리하기 위한 공간을 할당하고,
+ * 할당된 영역에 대한 비트맵에 사용 중임을 표시. (전역변수 mem_map을 NODE_DATA(0)->node_mem_map로 설정)
+ **/
 static void __init_refok alloc_node_mem_map(struct pglist_data *pgdat)
 {
 	/* Skip empty nodes */
@@ -4574,6 +4709,9 @@ void __paginginit free_area_init_node(int nid, unsigned long *zones_size,
 	 */
 	calculate_node_totalpages(pgdat, zones_size, zholes_size);
 
+	/** 20130427    
+	 * mem_map 전역변수 설정
+	 **/
 	alloc_node_mem_map(pgdat);
 #ifdef CONFIG_FLAT_NODE_MEM_MAP
 	printk(KERN_DEBUG "free_area_init_node: node %d, pgdat %08lx, node_mem_map %08lx\n",

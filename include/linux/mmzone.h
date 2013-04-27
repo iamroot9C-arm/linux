@@ -160,6 +160,9 @@ enum zone_stat_item {
 #define LRU_ACTIVE 1
 #define LRU_FILE 2
 
+/** 20130427    
+ * 순서대로 0, 1, 2, 3, 4, 5
+ **/
 enum lru_list {
 	LRU_INACTIVE_ANON = LRU_BASE,
 	LRU_ACTIVE_ANON = LRU_BASE + LRU_ACTIVE,
@@ -197,11 +200,20 @@ struct zone_reclaim_stat {
 	 *
 	 * The anon LRU stats live in [0], file LRU stats in [1]
 	 */
+	/** 20130427    
+	 * enum lru_list의 
+	 * 각각의 0은 LRU_INACTIVE_ANON, LRU_ACTIVE_ANON
+	 * 각각의 1은 LRU_INACTIVE_FILE, LRU_ACTIVE_FILE 인듯하고,
+	 * 각 변수는 각 리스트에 접근한 수를 저장한듯???
+	 **/
 	unsigned long		recent_rotated[2];
 	unsigned long		recent_scanned[2];
 };
 
 struct lruvec {
+	/** 20130427    
+	 * list_head 배열 (NR_LRU_LISTS : 5)
+	 **/
 	struct list_head lists[NR_LRU_LISTS];
 	struct zone_reclaim_stat reclaim_stat;
 #ifdef CONFIG_MEMCG
@@ -365,6 +377,9 @@ struct zone {
 	unsigned long		min_unmapped_pages;
 	unsigned long		min_slab_pages;
 #endif
+	/** 20130427    
+	 * zone_pcp_init 에서 할당
+	 **/
 	struct per_cpu_pageset __percpu *pageset;
 	/*
 	 * free areas of different sizes
@@ -460,6 +475,9 @@ struct zone {
 	/*
 	 * Discontig memory support fields.
 	 */
+	/** 20130427    
+	 * free_area_init_core 에서 초기화
+	 **/
 	struct pglist_data	*zone_pgdat;
 	/* zone_start_pfn == zone_start_paddr >> PAGE_SHIFT */
 	unsigned long		zone_start_pfn;
@@ -680,6 +698,9 @@ extern struct page *mem_map;
  */
 struct bootmem_data;
 typedef struct pglist_data {
+	/** 20130427    
+	 * free_area_init_core 에서 채워줌
+	 **/
 	struct zone node_zones[MAX_NR_ZONES];
 	struct zonelist node_zonelists[MAX_ZONELISTS];
 	int nr_zones;
@@ -705,11 +726,17 @@ typedef struct pglist_data {
 	 */
 	spinlock_t node_size_lock;
 #endif
+	/** 20130427    
+	 * free_area_init_node에서 할당. meminfo의 첫번째 pfn
+	 **/
 	unsigned long node_start_pfn;
 	unsigned long node_present_pages; /* total number of physical pages */
 	unsigned long node_spanned_pages; /* total size of physical page
 					     range, including holes */
 	int node_id;
+	/** 20130427    
+	 * free_area_init_core에서 초기화
+	 **/
 	wait_queue_head_t kswapd_wait;
 	wait_queue_head_t pfmemalloc_wait;
 	struct task_struct *kswapd;	/* Protected by lock_memory_hotplug() */
@@ -798,6 +825,9 @@ static inline int zone_movable_is_highmem(void)
 #endif
 }
 
+/** 20130427    
+ * vexpress에서는 CONFIG_HIGHMEM이 정의되어 있지 않아 0 리턴
+ **/
 static inline int is_highmem_idx(enum zone_type idx)
 {
 #ifdef CONFIG_HIGHMEM

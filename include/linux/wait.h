@@ -78,6 +78,9 @@ struct task_struct;
 
 extern void __init_waitqueue_head(wait_queue_head_t *q, const char *name, struct lock_class_key *);
 
+/** 20130427    
+ * CONFIG_LOCKDEP가 정의되어 있지 않아 lock_class_key는 빈 구조체
+ **/
 #define init_waitqueue_head(q)				\
 	do {						\
 		static struct lock_class_key __key;	\
