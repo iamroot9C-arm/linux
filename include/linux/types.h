@@ -219,7 +219,10 @@ typedef phys_addr_t resource_size_t;
  * big enough to enclose whatever representation is used by a given platform.
  */
 typedef unsigned long irq_hw_number_t;
-
+/** 20130504
+counter를 원자적으로 처리할 필요가 있을때 사용
+:공유자원이 간단한 정수 값인 경우 사용
+**/
 typedef struct {
 	int counter;
 } atomic_t;

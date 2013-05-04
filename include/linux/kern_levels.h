@@ -1,6 +1,8 @@
 #ifndef __KERN_LEVELS_H__
 #define __KERN_LEVELS_H__
-
+/** 20130504
+The start of heading (SOH) character was to mark a non-data section of a data stream—the part of a stream containing addresses and other housekeeping data
+**/
 #define KERN_SOH	"\001"		/* ASCII Start Of Header */
 #define KERN_SOH_ASCII	'\001'
 

@@ -329,7 +329,10 @@ enum zone_type {
  * are used to select a priority ordered list of memory zones which
  * match the requested limits. See gfp_zone() in include/linux/gfp.h
  */
-
+/** 20130504
+MAX_NR_ZONES가 2이므로 
+ZONE_SHIFT는 1
+**/
 #if MAX_NR_ZONES < 2
 #define ZONES_SHIFT 0
 #elif MAX_NR_ZONES <= 2
@@ -480,6 +483,9 @@ struct zone {
 	 **/
 	struct pglist_data	*zone_pgdat;
 	/* zone_start_pfn == zone_start_paddr >> PAGE_SHIFT */
+	/** 20130504
+	init_currently_empty_zone(...) 에서 초기화 해준다
+	**/
 	unsigned long		zone_start_pfn;
 
 	/*
@@ -807,6 +813,9 @@ unsigned long __init node_memmap_size_bytes(int, unsigned long, unsigned long);
 /*
  * zone_idx() returns 0 for the ZONE_DMA zone, 1 for the ZONE_NORMAL zone, etc.
  */
+/** 20130504
+zone 의 인덱스를 구함
+**/
 #define zone_idx(zone)		((zone) - (zone)->zone_pgdat->node_zones)
 
 static inline int populated_zone(struct zone *zone)
@@ -1222,9 +1231,14 @@ void sparse_init(void);
 #ifdef CONFIG_NODES_SPAN_OTHER_NODES
 bool early_pfn_in_nid(unsigned long pfn, int nid);
 #else
+/** 20130504
+CONFIG_NODES_SPAN_OTHER_NODES define 안되어 있으므로 1
+**/
 #define early_pfn_in_nid(pfn, nid)	(1)
 #endif
-
+/** 20130504
+CONFIG_SPARSME 이 define 안되어 있으므로 1
+**/
 #ifndef early_pfn_valid
 #define early_pfn_valid(pfn)	(1)
 #endif

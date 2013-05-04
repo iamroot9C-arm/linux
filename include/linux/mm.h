@@ -368,6 +368,9 @@ static inline struct page *compound_head(struct page *page)
  * both from it and to it can be tracked, using atomic_inc_and_test
  * and atomic_add_negative(-1).
  */
+/** 20130504
+page struct의 _mapcount(atomic_t.counter)를 -1로 설정
+**/
 static inline void reset_page_mapcount(struct page *page)
 {
 	atomic_set(&(page)->_mapcount, -1);
@@ -419,6 +422,9 @@ static inline struct page *virt_to_head_page(const void *x)
  * Setup the page count before being freed into the page allocator for
  * the first time (boot or memory hotplug)
  */
+/** 20130504
+page struct의 _count(atomic_t.counter)를 1로 설정
+**/
 static inline void init_page_count(struct page *page)
 {
 	atomic_set(&page->_count, 1);
@@ -582,7 +588,10 @@ static inline pte_t maybe_mkwrite(pte_t pte, struct vm_area_struct *vma)
  * sets it, so none of the operations on it need to be atomic.
  */
 
-
+/** 20130504
+page struct의 flags 의 bit layout
+Sparse mem을 사용안하므로 첫번째 layout인 normal case
+**/
 /*
  * page->flags layout:
  *
@@ -615,8 +624,18 @@ static inline pte_t maybe_mkwrite(pte_t pte, struct vm_area_struct *vma)
 #endif
 
 /* Page flags: | [SECTION] | [NODE] | ZONE | ... | FLAGS | */
+/** 20130504
+SECTION_WIDTH : 0
+그러므로 SECTIONS_PGOFF는 32
+**/
 #define SECTIONS_PGOFF		((sizeof(unsigned long)*8) - SECTIONS_WIDTH)
+/** 20130504
+NODES_WIDTH 0이므로 32
+**/
 #define NODES_PGOFF		(SECTIONS_PGOFF - NODES_WIDTH)
+/** 20130504
+NODES_PGOFF(32) - ZONES_WIDTH(1) -> 31
+**/
 #define ZONES_PGOFF		(NODES_PGOFF - ZONES_WIDTH)
 
 /*
@@ -653,11 +672,17 @@ static inline pte_t maybe_mkwrite(pte_t pte, struct vm_area_struct *vma)
 #error SECTIONS_WIDTH+NODES_WIDTH+ZONES_WIDTH > BITS_PER_LONG - NR_PAGEFLAGS
 #endif
 
+/** 20130504
+ZONES_MASK : ZONES_WIDTH가 1이므로 1
+NODES_MASK : NODES_WIDTH 0이므로 0
+**/
 #define ZONES_MASK		((1UL << ZONES_WIDTH) - 1)
 #define NODES_MASK		((1UL << NODES_WIDTH) - 1)
 #define SECTIONS_MASK		((1UL << SECTIONS_WIDTH) - 1)
 #define ZONEID_MASK		((1UL << ZONEID_SHIFT) - 1)
-
+/** 20130504
+page struct의 flags의 ZONES값을 추출
+**/
 static inline enum zone_type page_zonenum(const struct page *page)
 {
 	return (page->flags >> ZONES_PGSHIFT) & ZONES_MASK;
@@ -671,6 +696,9 @@ static inline enum zone_type page_zonenum(const struct page *page)
  * We guarantee only that it will return the same value for two
  * combinable pages in a zone.
  */
+/** 20130504
+page struct의 flags의 ZONEID값을 추출
+**/
 static inline int page_zone_id(struct page *page)
 {
 	return (page->flags >> ZONEID_PGSHIFT) & ZONEID_MASK;
@@ -711,19 +739,37 @@ static inline unsigned long page_to_section(const struct page *page)
 	return (page->flags >> SECTIONS_PGSHIFT) & SECTIONS_MASK;
 }
 #endif
-
+/** 20130504
+page struct의 flag에 zone type을 설정
+**/
 static inline void set_page_zone(struct page *page, enum zone_type zone)
 {
+	/** 20130504
+	ZONES_MASK : 1
+	ZONES_PGSHIFT : 31
+	page->flags &= (~(1<<31) -> 0x7fffffff)
+	
+	**/
 	page->flags &= ~(ZONES_MASK << ZONES_PGSHIFT);
 	page->flags |= (zone & ZONES_MASK) << ZONES_PGSHIFT;
 }
-
+/** 20130504
+page struct의flags의node id을 설정
+**/
 static inline void set_page_node(struct page *page, unsigned long node)
 {
+	/** 20130504
+	NODES_MASK : 0
+	NODES_PGSHIFT : 0
+	page->flags &= ~(0<<0) : 0xffffffff
+	**/
 	page->flags &= ~(NODES_MASK << NODES_PGSHIFT);
 	page->flags |= (node & NODES_MASK) << NODES_PGSHIFT;
 }
-
+/** 20130504
+page struct 의 flags에 해당 zone과 node 세팅
+page->flags layout 참고 : ~/linux/include/linux/mm.h 
+**/
 static inline void set_page_links(struct page *page, enum zone_type zone,
 	unsigned long node, unsigned long pfn)
 {

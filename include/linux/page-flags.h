@@ -71,6 +71,9 @@
  * SPARSEMEM section (for variants of SPARSEMEM that require section ids like
  * SPARSEMEM_EXTREME with !SPARSEMEM_VMEMMAP).
  */
+/** 20130504
+page struct flags의 값 리스트
+**/
 enum pageflags {
 	PG_locked,		/* Page is locked. Don't touch. */
 	PG_error,
@@ -137,6 +140,9 @@ enum pageflags {
 static inline int Page##uname(const struct page *page)			\
 			{ return test_bit(PG_##lname, &page->flags); }
 
+/** 20130504
+	page struct의 flags 중에 PG_##lname번째 비트를 셋한다.
+**/
 #define SETPAGEFLAG(uname, lname)					\
 static inline void SetPage##uname(struct page *page)			\
 			{ set_bit(PG_##lname, &page->flags); }
@@ -206,6 +212,34 @@ __PAGEFLAG(Slab, slab)
 PAGEFLAG(Checked, checked)		/* Used by some filesystems */
 PAGEFLAG(Pinned, pinned) TESTSCFLAG(Pinned, pinned)	/* Xen */
 PAGEFLAG(SavePinned, savepinned);			/* Xen */
+/** 20130504
+  PAGEFLAG(Reserved, reserved) __CLEARPAGEFLAG(Reserved, reserved) 내용
+
+  static inline __attribute__((always_inline)) __attribute__((no_instrument_function)) 
+  int PageReserved(const struct page *page) 
+  {
+	return test_bit(PG_reserved, &page->flags);
+  }
+
+  static inline __attribute__((always_inline)) __attribute__((no_instrument_function)) 
+  void SetPageReserved(struct page *page) 
+  {
+	_set_bit(PG_reserved,&page->flags); 
+  }
+
+  static inline __attribute__((always_inline)) __attribute__((no_instrument_function)) 
+  void ClearPageReserved(struct page *page) 
+  {
+  _clear_bit(PG_reserved,&page->flags); 
+  }
+
+  static inline __attribute__((always_inline)) __attribute__((no_instrument_function)) 
+  void __ClearPageReserved(struct page *page) 
+  {
+  __clear_bit(PG_reserved, &page->flags); 
+  }
+
+**/
 PAGEFLAG(Reserved, reserved) __CLEARPAGEFLAG(Reserved, reserved)
 PAGEFLAG(SwapBacked, swapbacked) __CLEARPAGEFLAG(SwapBacked, swapbacked)
 

@@ -227,6 +227,9 @@ int page_group_by_mobility_disabled __read_mostly;
  * Don't use set_pageblock_migratetype(page, MIGRATE_ISOLATE) directly.
  * Instead, use {un}set_pageblock_isolate.
  */
+/** 20130504
+해당 page에 대한 pageblock의 migratetype을 설정
+**/
 void set_pageblock_migratetype(struct page *page, int migratetype)
 {
 
@@ -3772,6 +3775,12 @@ static void setup_zone_migrate_reserve(struct zone *zone)
  * up by free_all_bootmem() once the early boot process is
  * done. Non-atomic initialization, single-pass.
  */
+/** 20130504
+		1. 각 page에 대한 flags 설정
+		2. 모든 page(pfn 단위)에 PG_reserved  비트를 설정 
+		3. PFN이 1024의 배수인 page에 대해서 migrate type을 MIGRATE_MOVABLE 설정
+
+	**/
 void __meminit memmap_init_zone(unsigned long size, int nid, unsigned long zone,
 		unsigned long start_pfn, enum memmap_context context)
 {
@@ -3780,27 +3789,49 @@ void __meminit memmap_init_zone(unsigned long size, int nid, unsigned long zone,
 	unsigned long pfn;
 	struct zone *z;
 
+	/** 20130504
+	highest_memmap_pfn 전역 변수 초기화
+	**/
 	if (highest_memmap_pfn < end_pfn - 1)
 		highest_memmap_pfn = end_pfn - 1;
-
+	/** 20130504
+	zone에 해당하는 struct zone을 가져와서 z에 저장
+	**/
 	z = &NODE_DATA(nid)->node_zones[zone];
+
+	/** 20130504
+		1. 각 page에 대한 flags 설정
+		2. 모든 page(pfn 단위)에 PG_reserved  비트를 설정 
+		3. PFN이 1024의 배수인 page에 대해서 migrate type을 MIGRATE_MOVABLE 설정
+
+	**/
 	for (pfn = start_pfn; pfn < end_pfn; pfn++) {
 		/*
 		 * There can be holes in boot-time mem_map[]s
 		 * handed to this function.  They do not
 		 * exist on hotplugged memory.
 		 */
+		 
 		if (context == MEMMAP_EARLY) {
+		/** 20130504
+		 early_pfn_valid,early_pfn_in_nid  모두 1 로 define 되어 있어 있음
+		 **/
 			if (!early_pfn_valid(pfn))
 				continue;
 			if (!early_pfn_in_nid(pfn, nid))
 				continue;
 		}
 		page = pfn_to_page(pfn);
+		/** 20130504
+			page struct 의 flags에 해당 zone과 node 세팅
+		**/
 		set_page_links(page, zone, nid, pfn);
 		mminit_verify_page_links(page, zone, nid, pfn);
 		init_page_count(page);
 		reset_page_mapcount(page);
+		/** 20130504
+		 page struct 의 flags에서 PG_reserved 번째 비트를 셋한다. 	
+		**/
 		SetPageReserved(page);
 		/*
 		 * Mark the block movable so that blocks are reserved for
@@ -3816,6 +3847,9 @@ void __meminit memmap_init_zone(unsigned long size, int nid, unsigned long zone,
 		 * check here not to call set_pageblock_migratetype() against
 		 * pfn out of zone.
 		 */
+		 /** 20130504
+			PFN이 1024의 배수인 page에 대해서 migrate type을 MIGRATE_MOVABLE 설정
+		 **/
 		if ((z->zone_start_pfn <= pfn)
 		    && (pfn < z->zone_start_pfn + z->spanned_pages)
 		    && !(pfn & (pageblock_nr_pages - 1)))
@@ -3829,16 +3863,28 @@ void __meminit memmap_init_zone(unsigned long size, int nid, unsigned long zone,
 #endif
 	}
 }
-
+/** 20130504
+free area 를 MAX_ORDER만큼 돌면서 list를 초기화 
+**/
 static void __meminit zone_init_free_lists(struct zone *zone)
 {
 	int order, t;
+	/** 20130504
+	#define for_each_migratetype_order(order, type) \
+	for (order = 0; order < MAX_ORDER; order++) \
+		for (type = 0; type < MIGRATE_TYPES; type++)
+	MAX_ORDER : 11
+	MIGRATE_TYPE : enum MIGRATE_TYPE의 마지막(총갯수)
+	
+	free list 초기화 
+	**/
 	for_each_migratetype_order(order, t) {
 		INIT_LIST_HEAD(&zone->free_area[order].free_list[t]);
 		zone->free_area[order].nr_free = 0;
 	}
 }
-
+/** 20130504
+**/
 #ifndef __HAVE_ARCH_MEMMAP_INIT
 #define memmap_init(size, nid, zone, start_pfn) \
 	memmap_init_zone((size), (nid), (zone), (start_pfn), MEMMAP_EARLY)
@@ -4044,7 +4090,11 @@ static __meminit void zone_pcp_init(struct zone *zone)
 			zone->name, zone->present_pages,
 					 zone_batchsize(zone));
 }
-
+/** 20130504
+1. zone wait hash table 초기화
+2. zone 전역 변수의 free_area 필드 초기화
+왜 이름이 currently_empty_zone인지???
+**/
 int __meminit init_currently_empty_zone(struct zone *zone,
 					unsigned long zone_start_pfn,
 					unsigned long size,
@@ -4058,10 +4108,10 @@ int __meminit init_currently_empty_zone(struct zone *zone,
 	ret = zone_wait_table_init(zone, size);
 	if (ret)
 		return ret;
-	/** 20130504 여기부터...
-	 **/
+	/** 20130504
+	zone 의 총 갯수를 저장
+	**/
 	pgdat->nr_zones = zone_idx(zone) + 1;
-
 	zone->zone_start_pfn = zone_start_pfn;
 
 	mminit_dprintk(MMINIT_TRACE, "memmap_init",
@@ -4399,18 +4449,43 @@ static void __meminit calculate_node_totalpages(struct pglist_data *pgdat,
  * round what is now in bits to nearest long in bits, then return it in
  * bytes.
  */
+/** 20130504
+	zonesize에 해당하는 메모리를 비트맵으로 표현할때
+	필요한 바이트단위 크기
+**/
 static unsigned long __init usemap_size(unsigned long zonesize)
 {
 	unsigned long usemapsize;
-
+	
+	/** 20130504
+	zonesize를 pageblock_nr_pages(1024)단위로 올림
+	**/
 	usemapsize = roundup(zonesize, pageblock_nr_pages);
+	/**
+	pageblock_order로 나눈다.
+	**/
 	usemapsize = usemapsize >> pageblock_order;
+	/** 20130504
+	3으로 곱한다.
+	pageblock 을 나타내기 위한 비트수가 3개 인듯???
+	그래서pageblock를 표현하기위해서 필요한 총 비트수를 구한다???
+	**/
 	usemapsize *= NR_PAGEBLOCK_BITS;
+	/** 20130504
+	32단위로 올림한다.
+	unsigned long단위로 정렬한다.
+	**/
 	usemapsize = roundup(usemapsize, 8 * sizeof(unsigned long));
 
+	/** 20130504
+	8로 나눠서 바이트 단위로 usemap size를 리턴
+	**/
 	return usemapsize / 8;
 }
-
+/** 20130504
+zonesize에 해당하는 크기를 비트맵메모리로(bootmem) 할당하여
+pageblock_flags에 저장한다.
+**/
 static void __init setup_usemap(struct pglist_data *pgdat,
 				struct zone *zone, unsigned long zonesize)
 {
@@ -4601,16 +4676,27 @@ static void __paginginit free_area_init_core(struct pglist_data *pgdat,
 		/** 20130427    
 		 * vexpress에서는 CONFIG_HUGETLB_PAGE_SIZE_VARIABLE 가 정의되어 있지 않아 NULL 함수
 		 **/
-		set_pageblock_order();
-		/** 20130427    
-		 * vexpress에서는 CONFIG_SPARSEMEM 가 정의되어 있지 않아 NULL 함수
-		 **/
+		set_pageblock_order();	
+		/** 20130504
+		zonesize에 해당하는 크기를 비트맵메모리로(bootmem) 할당하여
+		pageblock_flags에 저장한다.
+		**/
 		setup_usemap(pgdat, zone, size);
 		ret = init_currently_empty_zone(zone, zone_start_pfn,
 						size, MEMMAP_EARLY);
 		BUG_ON(ret);
+		/** 20130504
+		해당 zone에 속한 PFN속성을 설정한다.
+		**/
 		memmap_init(size, nid, j, zone_start_pfn);
+		/** 20130504
+		각 zone size 를 zone_start_pfn에 누적한다
+		**/
 		zone_start_pfn += size;
+
+		/** 20130511
+		위의 for 으로 가서 다음 zone 인 MOVABLE을 보자!!
+		**/
 	}
 }
 
@@ -5628,6 +5714,9 @@ void *__init alloc_large_system_hash(const char *tablename,
 }
 
 /* Return a pointer to the bitmap storing bits affecting a block of pages */
+/** 20130504
+zone 구조체의 pageblock_flags를 반환 
+**/
 static inline unsigned long *get_pageblock_bitmap(struct zone *zone,
 							unsigned long pfn)
 {
@@ -5637,7 +5726,9 @@ static inline unsigned long *get_pageblock_bitmap(struct zone *zone,
 	return zone->pageblock_flags;
 #endif /* CONFIG_SPARSEMEM */
 }
-
+/** 20130504
+	pfn이 속한 pageblock_flags의 인덱스를 반환 
+**/
 static inline int pfn_to_bitidx(struct zone *zone, unsigned long pfn)
 {
 #ifdef CONFIG_SPARSEMEM
@@ -5684,6 +5775,9 @@ unsigned long get_pageblock_flags_group(struct page *page,
  * @end_bitidx: The last bit of interest
  * @flags: The flags to set
  */
+/** 20130504
+pageblock bitmap의 속성을 설정한다.
+**/
 void set_pageblock_flags_group(struct page *page, unsigned long flags,
 					int start_bitidx, int end_bitidx)
 {
@@ -5694,11 +5788,29 @@ void set_pageblock_flags_group(struct page *page, unsigned long flags,
 
 	zone = page_zone(page);
 	pfn = page_to_pfn(page);
+	/** 20130504
+	zone의 pageblock_flags(zonesize) 를 bitmap에 저장
+	**/
 	bitmap = get_pageblock_bitmap(zone, pfn);
+	/** 20130504
+	pfn이 속한 pageblock_flags의 인덱스를 bitidx를 저장
+	**/
 	bitidx = pfn_to_bitidx(zone, pfn);
 	VM_BUG_ON(pfn < zone->zone_start_pfn);
 	VM_BUG_ON(pfn >= zone->zone_start_pfn + zone->spanned_pages);
-
+	/** 20130504
+	flag에 해당하는 영역을 1로 세팅을 하고 나머지는 0으로 clear한다.
+	/linux/include/linux/mmzone.h 참조
+	MIGRATE_UNMOVABLE = 0,
+	MIGRATE_RECLAIMABLE = 1,
+	MIGRATE_MOVABLE = 2,
+	MIGRATE_CMA = 4
+	
+	value에 값에 따라
+	MIGRATE_UNMOVABLE을 제외한 다른 MIGRATE들은
+	flags의 값에 따라 set_bit이 된다.
+	모든 비트가 clear되었을 경우 MIGRATE_UNMOVABLE로 판단하는듯??? 
+	**/
 	for (; start_bitidx <= end_bitidx; start_bitidx++, value <<= 1)
 		if (flags & value)
 			__set_bit(bitidx + start_bitidx, bitmap);

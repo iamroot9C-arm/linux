@@ -120,7 +120,9 @@ void __init mminit_verify_pageflags_layout(void)
 			(SECTIONS_MASK << SECTIONS_PGSHIFT);
 	BUG_ON(or_mask != add_mask);
 }
-
+/** 20130504
+	page link정보 확인
+**/
 void __meminit mminit_verify_page_links(struct page *page, enum zone_type zone,
 			unsigned long nid, unsigned long pfn)
 {

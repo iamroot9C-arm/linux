@@ -26,8 +26,12 @@
  * supports 3 memory models.
  */
 #if defined(CONFIG_FLATMEM)
-
+/** 20130504
+__pfn_to_page : pfn 에 해당하는 struct page의 주소를 반환
+__page_to_pfn : struct page에 해당하는 pfn값을 반환
+**/
 #define __pfn_to_page(pfn)	(mem_map + ((pfn) - ARCH_PFN_OFFSET))
+
 #define __page_to_pfn(page)	((unsigned long)((page) - mem_map) + \
 				 ARCH_PFN_OFFSET)
 #elif defined(CONFIG_DISCONTIGMEM)

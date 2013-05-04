@@ -53,7 +53,10 @@ extern int pageblock_order;
 #define pageblock_order		(MAX_ORDER-1)
 
 #endif /* CONFIG_HUGETLB_PAGE */
-
+/** 20130504
+pageblock_order : 10
+2^10 = 1024
+**/
 #define pageblock_nr_pages	(1UL << pageblock_order)
 
 /* Forward declaration */

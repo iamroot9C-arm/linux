@@ -39,6 +39,9 @@ struct pt_regs;
  * expression but avoids the generation of any code, even if that expression
  * has side-effects.
  */
+/** 20130504
+expression의 유효성을 검사하지만 실제 바이너리코드로는 들어가지 않는다.
+**/
 #define BUILD_BUG_ON_INVALID(e) ((void)(sizeof((__force long)(e))))
 
 /**
