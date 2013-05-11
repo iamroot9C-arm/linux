@@ -17,6 +17,9 @@
 #include <asm/cachetype.h>
 #include <asm/outercache.h>
 
+/** 20130511
+SHMLBA 마스킹한 하위 주소를 가져와서 pfn으로 변환. 
+**/
 #define CACHE_COLOUR(vaddr)	((vaddr & (SHMLBA - 1)) >> PAGE_SHIFT)
 
 /*

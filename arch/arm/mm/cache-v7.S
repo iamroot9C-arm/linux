@@ -283,6 +283,13 @@ ENDPROC(v7_coherent_user_range)
  *	- addr	- kernel address
  *	- size	- region size
  */
+/** 20130511 
+__cpuc_flush_dcache_area(page_address(page), PAGE_SIZE);
+	r0 : page_address(page) 
+	r1 : PAGE_SIZE
+	주어진 주소에서 주어진 크기만큼 데이타 캐쉬를 캐쉬라인 단위로 
+	clean 후 flush를 한다.	
+**/
 ENTRY(v7_flush_kern_dcache_area)
 	dcache_line_size r2, r3
 	add	r1, r0, r1
@@ -293,6 +300,10 @@ ENTRY(v7_flush_kern_dcache_area)
 	ALT_UP(W(nop))
 #endif
 1:
+/** 20130511
+데이타 캐쉬라인을 메모리에 쓴다.
+참고 - http://www.iamroot.org/xe/5705 
+**/
 	mcr	p15, 0, r0, c7, c14, 1		@ clean & invalidate D line / unified line
 	add	r0, r0, r2
 	cmp	r0, r1

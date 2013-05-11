@@ -4450,7 +4450,7 @@ static void __meminit calculate_node_totalpages(struct pglist_data *pgdat,
  * bytes.
  */
 /** 20130504
-	zonesize에 해당하는 메모리를 비트맵으로 표현할때
+	zonesize에 해당하는 pageblock을 비트맵으로 표현할때
 	필요한 바이트단위 크기
 **/
 static unsigned long __init usemap_size(unsigned long zonesize)
@@ -4483,7 +4483,7 @@ static unsigned long __init usemap_size(unsigned long zonesize)
 	return usemapsize / 8;
 }
 /** 20130504
-zonesize에 해당하는 크기를 비트맵메모리로(bootmem) 할당하여
+zonesize에 해당하는 pageblock의 크기를 비트맵메모리로(bootmem) 할당하여
 pageblock_flags에 저장한다.
 **/
 static void __init setup_usemap(struct pglist_data *pgdat,
@@ -4545,6 +4545,13 @@ void __init set_pageblock_order(void)
  *
  * NOTE: pgdat should get zeroed by caller.
  */
+
+/** 20130511 
+ 각 zone 별 구조체를 초기화한다.
+- 모든 페이지들을 reserved로 설정한다.
+- waitqueue 초기화???
+- 메모리 비트맵을 클리어한다.???	
+**/
 static void __paginginit free_area_init_core(struct pglist_data *pgdat,
 		unsigned long *zones_size, unsigned long *zholes_size)
 {
@@ -4567,6 +4574,9 @@ static void __paginginit free_area_init_core(struct pglist_data *pgdat,
 	 **/
 	pgdat_page_cgroup_init(pgdat);
 
+	/** 20130511 
+	zone의 모든 영역을 순회하면서 zone 구조체의 내용을 채운다. 
+	**/
 	for (j = 0; j < MAX_NR_ZONES; j++) {
 		struct zone *zone = pgdat->node_zones + j;
 		unsigned long size, realsize, memmap_pages;
@@ -4678,8 +4688,12 @@ static void __paginginit free_area_init_core(struct pglist_data *pgdat,
 		 **/
 		set_pageblock_order();	
 		/** 20130504
-		zonesize에 해당하는 크기를 비트맵메모리로(bootmem) 할당하여
+		zone에 해당하는 크기를 비트맵메모리로(bootmem) 할당하여
 		pageblock_flags에 저장한다.
+		**/
+		/** 20130511 
+		해당 zone을 페이지블록 단위로 표현하기 위한 byte를 구하고 시작 주소를
+		pageblock_flags에 저장한다.	
 		**/
 		setup_usemap(pgdat, zone, size);
 		ret = init_currently_empty_zone(zone, zone_start_pfn,
@@ -4696,6 +4710,10 @@ static void __paginginit free_area_init_core(struct pglist_data *pgdat,
 
 		/** 20130511
 		위의 for 으로 가서 다음 zone 인 MOVABLE을 보자!!
+		**/
+
+		/** 20130511 
+		zones_size의 MOVABLE 영역은 size가 0이므로 초기화하거나 할당되어지는 부분이 없다.
 		**/
 	}
 }
@@ -4769,6 +4787,11 @@ static void __init_refok alloc_node_mem_map(struct pglist_data *pgdat)
 #endif /* CONFIG_FLAT_NODE_MEM_MAP */
 }
 
+/** 20130511
+1. nid해당하는 pgdat를 가져와서 해당 node에 필요한 총 페이지수를 구한다.
+2. 그 페이지를 관리하기 위한 구조체페이지에 공간(bitmap)을 할당하고 그 시작주소를 저장한다.
+3. 각 node에 해당되는 zone을 초기화한다. 
+**/
 void __paginginit free_area_init_node(int nid, unsigned long *zones_size,
 		unsigned long node_start_pfn, unsigned long *zholes_size)
 {
@@ -4805,6 +4828,9 @@ void __paginginit free_area_init_node(int nid, unsigned long *zones_size,
 		(unsigned long)pgdat->node_mem_map);
 #endif
 
+/** 20130511 
+각 zone을 초기화 시켜준다.
+**/
 	free_area_init_core(pgdat, zones_size, zholes_size);
 }
 
@@ -5810,6 +5836,12 @@ void set_pageblock_flags_group(struct page *page, unsigned long flags,
 	MIGRATE_UNMOVABLE을 제외한 다른 MIGRATE들은
 	flags의 값에 따라 set_bit이 된다.
 	모든 비트가 clear되었을 경우 MIGRATE_UNMOVABLE로 판단하는듯??? 
+	**/
+	/** 20130511 
+	init_page_count에서 page 구조체의 _count를 1로 set했기 때문에 
+	not-atomic 버전의 set_bit, clear_bit 사용한듯 ???
+	같은 페이지 구조체 안에 있는 필드내의 값에 대한 동시성을 지키기 위해
+	not-atomic으로 충분하다는 판단하에 사용됨???
 	**/
 	for (; start_bitidx <= end_bitidx; start_bitidx++, value <<= 1)
 		if (flags & value)

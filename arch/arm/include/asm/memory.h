@@ -242,6 +242,11 @@ static inline unsigned long __phys_to_virt(unsigned long x)
  * direct-mapped view.  We assume this is the first page
  * of RAM in the mem_map as well.
  */
+/** 20130511 
+PHYS_OFFSET : (__pv_phys_offset) = 0x6000 0000 (vexpress에서 커널 페이지의 offset)
+PAGE_SHIFT  : 12 
+커널 시작 주소에 대한 PFN
+**/
 #define PHYS_PFN_OFFSET	(PHYS_OFFSET >> PAGE_SHIFT)
 
 /*
@@ -307,6 +312,9 @@ static inline __deprecated void *bus_to_virt(unsigned long x)
  */
 #define ARCH_PFN_OFFSET		PHYS_PFN_OFFSET
 
+/** 20130511
+kaddr을 해당하는 물리주소를 구해서 pfn로 변환한 다음 pfn_to_page로 페이지의 위치를 반환하는 매크로  
+**/
 #define virt_to_page(kaddr)	pfn_to_page(__pa(kaddr) >> PAGE_SHIFT)
 #define virt_addr_valid(kaddr)	((unsigned long)(kaddr) >= PAGE_OFFSET && (unsigned long)(kaddr) < (unsigned long)high_memory)
 

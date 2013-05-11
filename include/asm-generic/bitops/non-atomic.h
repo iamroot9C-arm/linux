@@ -12,6 +12,9 @@
  * If it's called on the same region of memory simultaneously, the effect
  * may be that only one operation succeeds.
  */
+/** 20130511 
+ * addr에서부터 nr번째 비트를 셋해준다. set_bit non-atomic 버전.
+**/
 static inline void __set_bit(int nr, volatile unsigned long *addr)
 {
 	unsigned long mask = BIT_MASK(nr);
@@ -19,7 +22,9 @@ static inline void __set_bit(int nr, volatile unsigned long *addr)
 
 	*p  |= mask;
 }
-
+/** 20130511 
+ * addr에서부터 nr번째 비트를 클리어해준다. clear_bit non-atomic 버전.
+**/
 static inline void __clear_bit(int nr, volatile unsigned long *addr)
 {
 	unsigned long mask = BIT_MASK(nr);

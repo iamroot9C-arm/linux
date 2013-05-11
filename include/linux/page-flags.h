@@ -177,6 +177,9 @@ static inline int __TestClearPage##uname(struct page *page)		\
 #define __PAGEFLAG(uname, lname) TESTPAGEFLAG(uname, lname)		\
 	__SETPAGEFLAG(uname, lname)  __CLEARPAGEFLAG(uname, lname)
 
+/** 20130511 
+uname에 해당하는 page flag를 0으로 리턴해주는 매크로.
+**/
 #define PAGEFLAG_FALSE(uname) 						\
 static inline int Page##uname(const struct page *page)			\
 			{ return 0; }

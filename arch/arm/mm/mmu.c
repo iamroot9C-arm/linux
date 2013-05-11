@@ -1636,9 +1636,14 @@ void __init paging_init(struct machine_desc *mdesc)
 	 * 한 페이지를 할당 받아 zero_page에 저장
 	 **/
 	zero_page = early_alloc(PAGE_SIZE);
-
+	/** 20130511 
+	부팅시 사용할 메모리 초기화
+	**/
 	bootmem_init();
 
+	/** 20130511 
+	위에서 할당한 zero_page를 관리하는 struct page의 위치를 가져온다.
+	**/	
 	empty_zero_page = virt_to_page(zero_page);
 	__flush_dcache_page(NULL, empty_zero_page);
 }

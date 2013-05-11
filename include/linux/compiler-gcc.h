@@ -122,4 +122,7 @@
  */
 #define uninitialized_var(x) x = x
 
+/** 20130511 
+항상 inline함수로 만들어주는 매크로
+**/
 #define __always_inline		inline __attribute__((always_inline))

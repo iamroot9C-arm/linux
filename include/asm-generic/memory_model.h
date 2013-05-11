@@ -73,6 +73,9 @@ __page_to_pfn : struct page에 해당하는 pfn값을 반환
 })
 #endif /* CONFIG_FLATMEM/DISCONTIGMEM/SPARSEMEM */
 
+/** 20130511 
+pfn을 struct page로, struct page를 pfn으로 변환하는 매크로 
+**/
 #define page_to_pfn __page_to_pfn
 #define pfn_to_page __pfn_to_page
 

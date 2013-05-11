@@ -18,8 +18,19 @@ extern pmd_t *top_pmd;
 
 static inline void set_top_pte(unsigned long va, pte_t pte)
 {
+/** 20130511
+	high vector에 해당하는 pmd의 주소 
+	top_pmd = pmd_off_k(0xffff0000) 
+	pte_offset_kernel로 va에 대한 pte 주소를 가져옴.
+**/
 	pte_t *ptep = pte_offset_kernel(top_pmd, va);
+/** 20130511
+	ptep에 넘어온 pte 값을 써준다. 
+**/
 	set_pte_ext(ptep, pte, 0);
+/** 20130518
+	여기부터...
+**/
 	local_flush_tlb_kernel_page(va);
 }
 

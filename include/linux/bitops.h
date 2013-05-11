@@ -4,6 +4,9 @@
 
 #ifdef	__KERNEL__
 #define BIT(nr)			(1UL << (nr))
+/** 20130511 
+ *  word내의 Mask 위치를 찾아준다.
+**/
 #define BIT_MASK(nr)		(1UL << ((nr) % BITS_PER_LONG))
 /** 20130420    
  * 해당 비트가 위치한 word의 index를 리턴 (0 base)

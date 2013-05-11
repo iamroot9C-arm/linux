@@ -24,9 +24,16 @@
 
 static void flush_pfn_alias(unsigned long pfn, unsigned long vaddr)
 {
+	/** 20130511 
+	SHMLBA 마스킹한 하위 주소를 가져와서 pfn으로 변환. 
+	FLUSH_ALIAS_START : 0xffff4000
+	**/
 	unsigned long to = FLUSH_ALIAS_START + (CACHE_COLOUR(vaddr) << PAGE_SHIFT);
 	const int zero = 0;
-
+	/** 20130511
+	pfn_pte: pfn에 해당하는 paddr와 page_kernel속성을 더해 pte 값을 구한다.
+	set_top_pte
+	**/
 	set_top_pte(to, pfn_pte(pfn, PAGE_KERNEL));
 
 	asm(	"mcrr	p15, 0, %1, %0, c14\n"
@@ -159,6 +166,8 @@ void copy_to_user_page(struct vm_area_struct *vma, struct page *page,
 	preempt_enable();
 #endif
 }
+/** 20130511 
+**/
 
 void __flush_dcache_page(struct address_space *mapping, struct page *page)
 {
@@ -168,6 +177,9 @@ void __flush_dcache_page(struct address_space *mapping, struct page *page)
 	 * coherent with the kernels mapping.
 	 */
 	if (!PageHighMem(page)) {
+		/** 20130511 
+		v7_flush_kern_dcache_area
+		**/
 		__cpuc_flush_dcache_area(page_address(page), PAGE_SIZE);
 	} else {
 		void *addr = kmap_high_get(page);
@@ -187,6 +199,7 @@ void __flush_dcache_page(struct address_space *mapping, struct page *page)
 	 * we only need to do one flush - which would be at the relevant
 	 * userspace colour, which is congruent with page->index.
 	 */
+
 	if (mapping && cache_is_vipt_aliasing())
 		flush_pfn_alias(page_to_pfn(page),
 				page->index << PAGE_CACHE_SHIFT);

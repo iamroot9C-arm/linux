@@ -296,6 +296,9 @@ void __init setup_dma_zone(struct machine_desc *mdesc)
 #endif
 }
 
+/** 20130511 
+zone size 계산하고 저장한 후 0번 node에 대해서 초기화 작업을 수행한다.
+**/
 static void __init arm_bootmem_free(unsigned long min, unsigned long max_low,
 	unsigned long max_high)
 {
@@ -498,6 +501,11 @@ void __init arm_memblock_init(struct meminfo *mi, struct machine_desc *mdesc)
 	memblock_dump_all();
 }
 
+/** 20130511 
+1. meminfo로부터 pfn 구간을 구한다.
+2. 물리 영역에 대해 bootmem bitmap을 초기화하고 설정한다.
+ 페이징이 시작되기 전에 boot time에서 메모리를 사용하기 위한 초기화 작업.
+**/
 void __init bootmem_init(void)
 {
 	unsigned long min, max_low, max_high;
@@ -536,8 +544,9 @@ void __init bootmem_init(void)
 	 * the sparse mem_map arrays initialized by sparse_init()
 	 * for memmap_init_zone(), otherwise all PFNs are invalid.
 	 */
-	/** 20130413 여기부터...
-	 **/
+	/** 20130511
+	zone size 계산하고 저장한 후 0번 node에 대해서 초기화 작업을 수행한다.
+	**/
 	arm_bootmem_free(min, max_low, max_high);
 
 	/*
@@ -548,6 +557,13 @@ void __init bootmem_init(void)
 	 * Note: max_low_pfn and max_pfn reflect the number of _pages_ in
 	 * the system, not the maximum PFN.
 	 */
+
+	/** 20130511 
+	커널이 사용하는 물리 주소의 pfn 수
+	max_low_pfn : 커널이 사용하는 (low memory 내에서의)pfn의 수
+	max_pfn : max_low_pfn+highmem pfn의 수(	만약 highmem이 없을 경우는 max_low_pfn
+	과 max_pfn는 같다. )
+	**/	
 	max_low_pfn = max_low - PHYS_PFN_OFFSET;
 	max_pfn = max_high - PHYS_PFN_OFFSET;
 }

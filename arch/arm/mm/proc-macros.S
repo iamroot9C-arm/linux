@@ -69,6 +69,10 @@
     \tmp = 0x3  ( CTR >> 16 && 0xf )
 	\reg = 0x20 ( 0x4 << 0x3 ) ==> 캐쉬라인 사이즈..
 **/
+/** 20130511
+	 dcache의 라인 사이즈를 구하는 매크로
+	vexpress = 32값을 가져온다.
+**/
 	.macro	dcache_line_size, reg, tmp
 	mrc	p15, 0, \tmp, c0, c0, 1		@ read ctr
 	lsr	\tmp, \tmp, #16

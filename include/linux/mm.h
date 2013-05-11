@@ -425,6 +425,10 @@ static inline struct page *virt_to_head_page(const void *x)
 /** 20130504
 page struct의 _count(atomic_t.counter)를 1로 설정
 **/
+/** 20130511 
+
+커널내에서만 사용하는 lock 방식. 
+**/
 static inline void init_page_count(struct page *page)
 {
 	atomic_set(&page->_count, 1);
@@ -785,6 +789,9 @@ static inline void set_page_links(struct page *page, enum zone_type zone,
  */
 #include <linux/vmstat.h>
 
+/** 20130511 
+struct page에 대한 가상 주소를 가져오는 함수.
+**/
 static __always_inline void *lowmem_page_address(const struct page *page)
 {
 	return __va(PFN_PHYS(page_to_pfn(page)));
@@ -808,7 +815,8 @@ void *page_address(const struct page *page);
 void set_page_address(struct page *page, void *virtual);
 void page_address_init(void);
 #endif
-
+/** 20130511 
+**/
 #if !defined(HASHED_PAGE_VIRTUAL) && !defined(WANT_PAGE_VIRTUAL)
 #define page_address(page) lowmem_page_address(page)
 #define set_page_address(page, address)  do { } while(0)

@@ -83,6 +83,12 @@ extern pgprot_t		pgprot_kernel;
 #define PAGE_COPY_EXEC		_MOD_PROT(pgprot_user, L_PTE_USER | L_PTE_RDONLY)
 #define PAGE_READONLY		_MOD_PROT(pgprot_user, L_PTE_USER | L_PTE_RDONLY | L_PTE_XN)
 #define PAGE_READONLY_EXEC	_MOD_PROT(pgprot_user, L_PTE_USER | L_PTE_RDONLY)
+/** 20130511 
+pgprot_kernel = __pgprot(L_PTE_PRESENT | L_PTE_YOUNG |
+				 L_PTE_DIRTY | kern_pgprot);
+#define L_PTE_XN		(_AT(pteval_t, 1) << 9)
+이러한 속성으로 페이지 속성을 설정.
+**/
 #define PAGE_KERNEL		_MOD_PROT(pgprot_kernel, L_PTE_XN)
 #define PAGE_KERNEL_EXEC	pgprot_kernel
 
@@ -216,6 +222,7 @@ static inline pte_t *pmd_page_vaddr(pmd_t pmd)
  *   pmd_page_vaddr(*(pmd) : pte table의 주소
  *   pte_index             : pte table에서의 index
  **/
+
 #define pte_offset_kernel(pmd,addr)	(pmd_page_vaddr(*(pmd)) + pte_index(addr))
 
 #define pte_offset_map(pmd,addr)	(__pte_map(pmd) + pte_index(addr))
