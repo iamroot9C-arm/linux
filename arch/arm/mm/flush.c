@@ -22,6 +22,10 @@
 
 #ifdef CONFIG_CPU_CACHE_VIPT
 
+/** 20130518    
+ * 캐시가 VIPT ALIAS 정책을 사용하는 경우 flush 해주는 함수.
+ * 그러나 이것이 어떤 의미를 갖는지 모르겠음???
+ **/
 static void flush_pfn_alias(unsigned long pfn, unsigned long vaddr)
 {
 	/** 20130511 
@@ -36,6 +40,14 @@ static void flush_pfn_alias(unsigned long pfn, unsigned long vaddr)
 	**/
 	set_top_pte(to, pfn_pte(pfn, PAGE_KERNEL));
 
+	/** 20130518    
+	 * r0 : to
+	 * r1 : to + PAGE_SIZE - L1_CACHE_BYTES
+	 * r2 : zero
+	 *
+	 * 첫번째 instruction은 CNTPCT에 register의 값을 쓰는 동작. 어떤 의미인지???
+	 * 두번째 instruction은 DSB operation.
+	 **/
 	asm(	"mcrr	p15, 0, %1, %0, c14\n"
 	"	mcr	p15, 0, %2, c7, c10, 4"
 	    :
@@ -169,6 +181,9 @@ void copy_to_user_page(struct vm_area_struct *vma, struct page *page,
 /** 20130511 
 **/
 
+/** 20130518    
+ * page를 받아 해당 페이지가 가리키는 메모리 영역에 대해 flush를 수행하는 함수
+ **/
 void __flush_dcache_page(struct address_space *mapping, struct page *page)
 {
 	/*

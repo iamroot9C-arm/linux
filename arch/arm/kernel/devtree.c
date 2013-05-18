@@ -86,6 +86,10 @@ struct machine_desc * __init setup_machine_fdt(unsigned int dt_phys)
 		return NULL;
 
 	/* Search the mdescs for the 'best' compatible value match */
+	/** 20130518    
+	 * __atags_pointer (PA) -> devtree (VA)
+	 * initial_boot_params에 저장.
+	 **/
 	initial_boot_params = devtree;
 	dt_root = of_get_flat_dt_root();
 	for_each_machine_desc(mdesc) {

@@ -231,10 +231,19 @@ void __iomem * __arm_ioremap_pfn_caller(unsigned long pfn,
 			continue;
 		if ((area->flags & VM_ARM_MTYPE_MASK) != VM_ARM_MTYPE(mtype))
 			continue;
+		/** 20130518    
+		 * vmlist에서 가져온 entry의 phys_addr (start) 보다 작거나
+		 *                                     (end)보다 크면
+		 * vmlist에서 다음 entry를 찾음 (continue)
+		 **/
 		if (__phys_to_pfn(area->phys_addr) > pfn ||
 		    __pfn_to_phys(pfn) + size-1 > area->phys_addr + area->size-1)
 			continue;
 		/* we can drop the lock here as we know *area is static */
+		/** 20130518    
+		 * 새로운 pfn이 vmlist에 등록한 entry의 주소 범위 내에 있으면
+		 * offset을 map_desc의 .virtual에 더해 리턴. (vexpress의 경우 V2T_PERIPH)
+		 **/
 		read_unlock(&vmlist_lock);
 		addr = (unsigned long)area->addr;
 		addr += __pfn_to_phys(pfn) - area->phys_addr;
@@ -244,11 +253,16 @@ void __iomem * __arm_ioremap_pfn_caller(unsigned long pfn,
 
 /** 20130323
 *	이하는 다음 진입 시 분석 (SLUB ....)
+*	20130518
+*	vmlist에 등록한 entry의 주소 범위 밖에 있는 경우 아래 루틴 수행.
 */
 
 	/*
 	 * Don't allow RAM to be mapped - this causes problems with ARMv6+
 	 */
+	/** 20130518    
+	 * pfn이 물리 메모리 영역에 속한다면 WARN()을 호출하고 NULL을 리턴.
+	 **/
 	if (WARN_ON(pfn_valid(pfn)))
 		return NULL;
 

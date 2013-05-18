@@ -1613,6 +1613,11 @@ static void __init map_lowmem(void)
  * paging_init() sets up the page tables, initialises the zone memory
  * maps, and sets up the zero page, bad page and bad page tables.
  */
+/** 20130518    
+ * 1. page table을 생성 (물리메모리, vector table, device io 등)하고,
+ * 2. 부팅시 사용할 메모리 할당자 (bootmem bitmap)를 생성하고 초기화.
+ * 3. zero page 생성 및 cache flush
+ **/
 void __init paging_init(struct machine_desc *mdesc)
 {
 	void *zero_page;
@@ -1645,5 +1650,8 @@ void __init paging_init(struct machine_desc *mdesc)
 	위에서 할당한 zero_page를 관리하는 struct page의 위치를 가져온다.
 	**/	
 	empty_zero_page = virt_to_page(zero_page);
+	/** 20130518    
+	 * empty_zero_page 영역에 대해 flush를 수행한다.
+	 **/
 	__flush_dcache_page(NULL, empty_zero_page);
 }

@@ -90,6 +90,9 @@ EXPORT_SYMBOL(__machine_arch_type);
 unsigned int cacheid __read_mostly;
 EXPORT_SYMBOL(cacheid);
 
+/** 20130518    
+ * head-common.S
+ **/
 unsigned int __atags_pointer __initdata;
 
 unsigned int system_rev;
@@ -166,6 +169,8 @@ DEFINE_PER_CPU(struct cpuinfo_arm, cpu_data);
 /*
  * Standard memory resources
  */
+/** 20130518    
+ **/
 static struct resource mem_res[] = {
 	{
 		.name = "Video RAM",
@@ -762,16 +767,28 @@ setup_ramdisk(int doload, int prompt, int image_start, unsigned int rd_sz)
 #endif
 }
 
+/** 20130518    
+ * resource 구조체를 이용한 메모리 계층 생성. (root는 iomem_resource)
+ **/
 static void __init request_standard_resources(struct machine_desc *mdesc)
 {
 	struct memblock_region *region;
 	struct resource *res;
 
+	/** 20130518    
+	 * arch/arm/kernel/vmlinux.lds 정의된 가상주소.
+	 *
+	 * struct resource mem_res[1], [2]의 주소 값을 채움.
+	 **/
 	kernel_code.start   = virt_to_phys(_text);
 	kernel_code.end     = virt_to_phys(_etext - 1);
 	kernel_data.start   = virt_to_phys(_sdata);
 	kernel_data.end     = virt_to_phys(_end - 1);
 
+	/** 20130518    
+	 * memblock의 memory의 각 region을 resource 구조체로 만들어
+	 * iomem_resource에 등록.
+	 **/
 	for_each_memblock(memory, region) {
 		res = alloc_bootmem_low(sizeof(*res));
 		res->name  = "System RAM";
@@ -779,8 +796,16 @@ static void __init request_standard_resources(struct machine_desc *mdesc)
 		res->end = __pfn_to_phys(memblock_region_memory_end_pfn(region)) - 1;
 		res->flags = IORESOURCE_MEM | IORESOURCE_BUSY;
 
+		/** 20130518    
+		 * "System RAM"이라는 이름으로 새로운 resource를 등록.
+		 **/
 		request_resource(&iomem_resource, res);
 
+		/** 20130518    
+		 * kernel_code 영역이 새로운 res 영역에 포함될 경우
+		 *   kernel_code를 child로 등록함.
+		 *   kernel_data를 child로 등록함.
+		 **/
 		if (kernel_code.start >= res->start &&
 		    kernel_code.end <= res->end)
 			request_resource(res, &kernel_code);
@@ -789,6 +814,10 @@ static void __init request_standard_resources(struct machine_desc *mdesc)
 			request_resource(res, &kernel_data);
 	}
 
+	/** 20130518    
+	 * video_start가 지정되어 있다면 iomem_resource에 video_ram으로 등록한다.
+	 * vexpress의 경우 정의되어 있지 않음.
+	 **/
 	if (mdesc->video_start) {
 		video_ram.start = mdesc->video_start;
 		video_ram.end   = mdesc->video_end;
@@ -799,6 +828,9 @@ static void __init request_standard_resources(struct machine_desc *mdesc)
 	 * Some machines don't have the possibility of ever
 	 * possessing lp0, lp1 or lp2
 	 */
+	/** 20130518    
+	 * 예약된 lp가 존재한다면 resource로 등록한다.
+	 **/
 	if (mdesc->reserve_lp0)
 		request_resource(&ioport_resource, &lp0);
 	if (mdesc->reserve_lp1)
@@ -1231,36 +1263,68 @@ void __init setup_arch(char **cmdline_p)
 **/
 	arm_memblock_init(&meminfo, mdesc);
 
-/** 
+/** 20130518    
+ * page table 생성 및 bootmem_init
  **/
 	paging_init(mdesc);
+/** 20130518    
+ * machine에 대한 resource 계층도 생성
+ **/
 	request_standard_resources(mdesc);
 
+/** 20130518    
+ * restart 함수 포인터가 정의되어 있으면 arm_pm_restart 전역변수에 저장
+ * vexpress의 경우 v2m_restart 함수.
+ **/
 	if (mdesc->restart)
 		arm_pm_restart = mdesc->restart;
 
+/** 20130518    
+ * vexpress의 경우 NULL 함수.
+ **/
 	unflatten_device_tree();
 
 #ifdef CONFIG_SMP
 	if (is_smp())
 		smp_init_cpus();
 #endif
+/** 20130518    
+ * vepress에서 NULL 함수.
+ **/
 	reserve_crashkernel();
 
+/** 20130518    
+ * vexpress에서 NULL 함수.
+ **/
 	tcm_init();
 
 #ifdef CONFIG_MULTI_IRQ_HANDLER
+/** 20130518    
+ * vexpress의 경우 .handle_irq = gic_handle_irq 가 등록
+ **/
 	handle_arch_irq = mdesc->handle_irq;
 #endif
 
+/** 20130518    
+ * VIRTUAL TERMINAL 함수 등록
+ **/
 #ifdef CONFIG_VT
 #if defined(CONFIG_VGA_CONSOLE)
 	conswitchp = &vga_con;
 #elif defined(CONFIG_DUMMY_CONSOLE)
+/** 20130518    
+ * console switcher 지정.
+ * vexpress의 경우 dummy_con.
+ **/
 	conswitchp = &dummy_con;
 #endif
 #endif
 
+/** 20130518    
+ * vexpress의 경우
+ * .init_early = v2m_init_early,
+ * 함수 실행
+ **/
 	if (mdesc->init_early)
 		mdesc->init_early();
 }

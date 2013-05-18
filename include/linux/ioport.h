@@ -15,6 +15,9 @@
  * Resources are tree-like, allowing
  * nesting etc..
  */
+/** 20130518    
+ * tree 형태로 관리되는 resource 구조체
+ **/
 struct resource {
 	resource_size_t start;
 	resource_size_t end;

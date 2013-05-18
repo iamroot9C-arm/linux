@@ -8,6 +8,9 @@
 #define L1_CACHE_ALIGN(x) ALIGN(x, L1_CACHE_BYTES)
 #endif
 
+/** 20130518    
+ * SMP cache 크기는 L1_CACHE_BYTES
+ **/
 #ifndef SMP_CACHE_BYTES
 #define SMP_CACHE_BYTES L1_CACHE_BYTES
 #endif

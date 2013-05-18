@@ -435,6 +435,9 @@ do {								\
 #define lock_contended(lockdep_map, ip) do {} while (0)
 #define lock_acquired(lockdep_map, ip) do {} while (0)
 
+/** 20130518    
+ * try 없이 바로 lock을 수행.
+ **/
 #define LOCK_CONTENDED(_lock, try, lock) \
 	lock(_lock)
 

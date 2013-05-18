@@ -1146,8 +1146,15 @@ int __init memblock_is_reserved(phys_addr_t addr)
 	return memblock_search(&memblock.reserved, addr) != -1;
 }
 
+/** 20130518    
+ * addr이 memblock.memory에 포함된다면 1을 리턴.
+ * 그렇지 않다면 0을 리턴.
+ **/
 int __init_memblock memblock_is_memory(phys_addr_t addr)
 {
+	/** 20130518    
+	 * addr가 memblock.memory의 region에 속하는지 검사
+	 **/
 	return memblock_search(&memblock.memory, addr) != -1;
 }
 

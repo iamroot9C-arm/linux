@@ -893,6 +893,9 @@ static void * __init alloc_bootmem_core(unsigned long size,
 	return NULL;
 }
 
+/** 20130518    
+ * alloc_bootmem_core를 사용해 size만큼(page 단위)의 영역을 할당받음
+ **/
 static void * __init ___alloc_bootmem_nopanic(unsigned long size,
 					      unsigned long align,
 					      unsigned long goal,
@@ -933,9 +936,15 @@ void * __init __alloc_bootmem_nopanic(unsigned long size, unsigned long align,
 	return ___alloc_bootmem_nopanic(size, align, goal, limit);
 }
 
+/** 20130518    
+ * bootmem으로 메모리 공간을 할당 받아 리턴.
+ **/
 static void * __init ___alloc_bootmem(unsigned long size, unsigned long align,
 					unsigned long goal, unsigned long limit)
 {
+	/** 20130518    
+	 * size만큼 메모리 공간을 할당 받음
+	 **/
 	void *mem = ___alloc_bootmem_nopanic(size, align, goal, limit);
 
 	if (mem)
@@ -1114,6 +1123,9 @@ void * __init __alloc_bootmem_node_high(pg_data_t *pgdat, unsigned long size,
  *
  * The function panics if the request can not be satisfied.
  */
+/** 20130518    
+ * low address 영역 내에서 메모리 공간을 할당받아 리턴
+ **/
 void * __init __alloc_bootmem_low(unsigned long size, unsigned long align,
 				  unsigned long goal)
 {

@@ -449,6 +449,10 @@ static struct sys_timer v2m_timer = {
 
 static void __init v2m_init_early(void)
 {
+	/** 20130518    
+	 * vexpress의 경우 ct_desc에 해당하는 ct_ca9x4_desc.
+	 *   init_early 함수는 지정되어 있지 않음. 
+	 **/
 	if (ct_desc->init_early)
 		ct_desc->init_early();
 	versatile_sched_clock_init(v2m_sysreg_base + V2M_SYS_24MHZ, 24000000);

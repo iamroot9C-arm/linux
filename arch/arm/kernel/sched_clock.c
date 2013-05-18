@@ -34,9 +34,16 @@ static u32 __read_mostly sched_clock_mask = 0xffffffff;
 
 static u32 notrace jiffy_sched_clock_read(void)
 {
+	/** 20130518    
+	 * vmlinux.lds에서
+	 * jiffies = jiffies_64
+	 **/
 	return (u32)(jiffies - INITIAL_JIFFIES);
 }
 
+/** 20130518    
+ * read_sched_clock 함수 포인터 초기화
+ **/
 static u32 __read_mostly (*read_sched_clock)(void) = jiffy_sched_clock_read;
 
 static inline u64 cyc_to_ns(u64 cyc, u32 mult, u32 shift)
@@ -105,11 +112,26 @@ void __init setup_sched_clock(u32 (*read)(void), int bits, unsigned long rate)
 	char r_unit;
 
 	BUG_ON(bits > 32);
+	/** 20130518    
+	 * irq가 disabled 되어 있지 않을 경우 WARN()
+	 **/
 	WARN_ON(!irqs_disabled());
+	/** 20130518    
+	 * 함수 포인터 초기값이 변경되었다면 WARN()
+	 **/
 	WARN_ON(read_sched_clock != jiffy_sched_clock_read);
+	/** 20130518    
+	 * read 함수로 함수 포인터 변경.
+	 *   vexpress의 경우 versatile_read_sched_clock
+	 **/
 	read_sched_clock = read;
+	/** 20130518    
+	 * bits가 32로 넘어온 경우: 0 - 1
+	 **/
 	sched_clock_mask = (1 << bits) - 1;
 
+	/** 20130601 여기부터...
+	 **/
 	/* calculate the mult/shift to convert counter ticks to ns. */
 	clocks_calc_mult_shift(&cd.mult, &cd.shift, rate, NSEC_PER_SEC, 0);
 

@@ -725,6 +725,9 @@ ENDPROC(__fixup_smp)
 	.word	__smpalt_begin
 	.word	__smpalt_end
 
+/** 20130518
+	smp_on_up
+**/
 	.pushsection .data
 	.globl	smp_on_up
 smp_on_up:

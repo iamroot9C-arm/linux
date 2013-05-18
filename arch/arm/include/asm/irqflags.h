@@ -129,6 +129,9 @@ static inline void arch_local_irq_disable(void)
 /*
  * Save the current interrupt enable state.
  */
+/** 20130518    
+ * cpsr 레지스터의 값을 읽어 flags에 저장해 리턴.
+ **/
 static inline unsigned long arch_local_save_flags(void)
 {
 	unsigned long flags;

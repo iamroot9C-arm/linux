@@ -75,11 +75,17 @@
 		typecheck(unsigned long, flags);	\
 		arch_local_irq_restore(flags);		\
 	} while (0)
+/** 20130518    
+ * flags에 cpsr 레지스터의 값을 저장해 리턴
+ **/
 #define raw_local_save_flags(flags)			\
 	do {						\
 		typecheck(unsigned long, flags);	\
 		flags = arch_local_save_flags();	\
 	} while (0)
+/** 20130518    
+ * flags에 irq가 disabled 되어 있는지 검사하는 함수
+ **/
 #define raw_irqs_disabled_flags(flags)			\
 	({						\
 		typecheck(unsigned long, flags);	\

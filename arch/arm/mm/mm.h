@@ -16,6 +16,10 @@ extern pmd_t *top_pmd;
 /* PFN alias flushing, for VIPT caches */
 #define FLUSH_ALIAS_START	0xffff4000
 
+/** 20130518    
+ * va에 해당하는 top_pte 주소에 pte를 써주고,
+ * tlb flush 하는 함수
+ **/
 static inline void set_top_pte(unsigned long va, pte_t pte)
 {
 /** 20130511
@@ -29,7 +33,7 @@ static inline void set_top_pte(unsigned long va, pte_t pte)
 **/
 	set_pte_ext(ptep, pte, 0);
 /** 20130518
-	여기부터...
+ *  pte를 새로 써주었으므로 tlb를 flush하고, barrier 를 수행한다.
 **/
 	local_flush_tlb_kernel_page(va);
 }

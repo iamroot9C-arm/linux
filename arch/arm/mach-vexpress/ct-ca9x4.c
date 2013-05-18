@@ -180,25 +180,45 @@ static void __init ct_ca9x4_init(void)
 #ifdef CONFIG_SMP
 static void *ct_ca9x4_scu_base __initdata;
 
+/** 20130518    
+ * 초기화할 cpu의 개수를 mapping 하는 함수
+ **/
 static void __init ct_ca9x4_init_cpu_map(void)
 {
 	int i, ncores;
 
+	/** 20130518    
+	 * ioremap으로 가상 주소를 리턴. vm_area_add_early에서 vmlist에 등록했음.
+	 *   NULL인 경우 WARN을 출력하고 리턴.
+	 **/
 	ct_ca9x4_scu_base = ioremap(A9_MPCORE_SCU, SZ_128);
 	if (WARN_ON(!ct_ca9x4_scu_base))
 		return;
 
+	/** 20130518    
+	 * ncores는 SCU CONFIG register에서 읽어온 값 + 1
+	 * (Number of CPUs present in the Cortex-A9 MPCore processor)
+	 **/
 	ncores = scu_get_core_count(ct_ca9x4_scu_base);
 
+	/** 20130518    
+	 * 커널 설정값보다 ncores가 크면 최대값을 커널 설정값인 nr_cpu_ids로 잡아줌.
+	 **/
 	if (ncores > nr_cpu_ids) {
 		pr_warn("SMP: %u cores greater than maximum (%u), clipping\n",
 			ncores, nr_cpu_ids);
 		ncores = nr_cpu_ids;
 	}
 
+	/** 20130518    
+	 * ncores 개수를 순회하며 cpu에 해당하는 비트를 possible로 설정.
+	 **/
 	for (i = 0; i < ncores; ++i)
 		set_cpu_possible(i, true);
 
+	/** 20130518    
+	 * gic_raise_softirq 를 smp_cross_call로 등록
+	 **/
 	set_smp_cross_call(gic_raise_softirq);
 }
 
@@ -215,6 +235,9 @@ struct ct_desc ct_ca9x4_desc __initdata = {
 	.init_irq	= ct_ca9x4_init_irq,
 	.init_tile	= ct_ca9x4_init,
 #ifdef CONFIG_SMP
+	/** 20130518    
+	 * smp_init_cpus 에서 호출
+	 **/
 	.init_cpu_map	= ct_ca9x4_init_cpu_map,
 	.smp_enable	= ct_ca9x4_smp_enable,
 #endif

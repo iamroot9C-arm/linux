@@ -10,6 +10,9 @@
 /*
  * Return true if we are running on a SMP platform
  */
+/** 20130518    
+ * smp 사용 여부를 리턴하는 함수
+ **/
 static inline bool is_smp(void)
 {
 #ifndef CONFIG_SMP

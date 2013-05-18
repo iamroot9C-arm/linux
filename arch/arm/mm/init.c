@@ -362,6 +362,9 @@ static void __init arm_bootmem_free(unsigned long min, unsigned long max_low,
 }
 
 #ifdef CONFIG_HAVE_ARCH_PFN_VALID
+/** 20130518    
+ * pfn이 물리 메모리 내에 속하는지 검사하는 루틴
+ **/
 int pfn_valid(unsigned long pfn)
 {
 	return memblock_is_memory(__pfn_to_phys(pfn));

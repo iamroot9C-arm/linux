@@ -26,6 +26,10 @@
 /*
  * Get the number of CPU cores from the SCU configuration
  */
+/** 20130518    
+ * SCU_CONFIG 레지스터의 값을 읽어와 하위 2비트의 값에 1을 더해 리턴한다.
+ * SCU_CONFIG의 내용은 TRM 을 참조.
+ **/
 unsigned int __init scu_get_core_count(void __iomem *scu_base)
 {
 	unsigned int ncores = __raw_readl(scu_base + SCU_CONFIG);

@@ -346,7 +346,7 @@ extern struct cpu_tlb_fns cpu_tlb;
 			    : "cc");					\
 	} while (0)
 
-#define tlb_op(f, regs, arg)	__tlb_op(f, "p15, 0, %0, " regs, arg)
+#define tlb_op(f, regs, arg)	__tlb_op(f, "p15, 0, %0, c8, c3, 1"" regs, arg)
 #define tlb_l2_op(f, regs, arg)	__tlb_op(f, "p15, 1, %0, " regs, arg)
 
 /** 20130330    
@@ -453,6 +453,9 @@ local_flush_tlb_page(struct vm_area_struct *vma, unsigned long uaddr)
 static inline void local_flush_tlb_kernel_page(unsigned long kaddr)
 {
 	const int zero = 0;
+	/** 20130518    
+	 * arch/arm/mm/tlb-v7.S 하단 매크로로 선언
+	 **/
 	const unsigned int __tlb_flag = __cpu_tlb_flags;
 
 	kaddr &= PAGE_MASK;
@@ -460,6 +463,13 @@ static inline void local_flush_tlb_kernel_page(unsigned long kaddr)
 	if (tlb_flag(TLB_WB))
 		dsb();
 
+	/** 20130518    
+	 * 아래 tlb operation의 수행을 시도한다.
+	 * vexpress에서 가장 아래 TLB_V7_UIS_PAGE를 수행한다.
+	 *
+	 * TLB Invalidate 수행.
+	 * B4.1.148 TLBIMVAIS, TLB Invalidate by MVA, Inner Shareable, VMSA only
+	 **/
 	tlb_op(TLB_V3_PAGE, "c6, c0, 0", kaddr);
 	tlb_op(TLB_V4_U_PAGE, "c8, c7, 1", kaddr);
 	tlb_op(TLB_V4_D_PAGE, "c8, c6, 1", kaddr);
@@ -472,6 +482,10 @@ static inline void local_flush_tlb_kernel_page(unsigned long kaddr)
 	tlb_op(TLB_V6_I_PAGE, "c8, c5, 1", kaddr);
 	tlb_op(TLB_V7_UIS_PAGE, "c8, c3, 1", kaddr);
 
+	/** 20130518    
+	 * 현재 사용하는 architecture의 flag 중 TLB_BARRIER가 있을 경우 수행
+	 * vexpress의 경우 포함되어 있음.
+	 **/
 	if (tlb_flag(TLB_BARRIER)) {
 		dsb();
 		isb();

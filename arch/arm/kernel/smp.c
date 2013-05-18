@@ -329,8 +329,15 @@ void __init smp_prepare_cpus(unsigned int max_cpus)
 	}
 }
 
+/** 20130518    
+ * vexpress의 경우 ct_ca9x4_init_cpu_map 에서 등록
+ **/
 static void (*smp_cross_call)(const struct cpumask *, unsigned int);
 
+/** 20130518    
+ * smp_cross_call 에 함수 포인터 등록
+ *   vexpress의 경우 gic_raise_softirq
+ **/
 void __init set_smp_cross_call(void (*fn)(const struct cpumask *, unsigned int))
 {
 	smp_cross_call = fn;

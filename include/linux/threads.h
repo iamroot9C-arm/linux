@@ -17,6 +17,9 @@
 #endif
 
 /* Places which use this should consider cpumask_var_t. */
+/** 20130518    
+ * vexpress의 경우 4
+ **/
 #define NR_CPUS		CONFIG_NR_CPUS
 
 #define MIN_THREADS_LEFT_FOR_ROOT 4

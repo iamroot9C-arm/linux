@@ -24,6 +24,9 @@ typedef struct cpumask { DECLARE_BITMAP(bits, NR_CPUS); } cpumask_t;
  * You should only assume nr_cpu_ids bits of this mask are valid.  This is
  * a macro so it's const-correct.
  */
+/** 20130518    
+ * struct cpumask 선언시 bits라는 멤버를 macro로 정의
+ **/
 #define cpumask_bits(maskp) ((maskp)->bits)
 
 #if NR_CPUS == 1
@@ -106,6 +109,9 @@ extern const struct cpumask *const cpu_active_mask;
 #endif
 
 /* verify cpu argument to cpumask_* operators */
+/** 20130518    
+ * argument cpu에 대한 DEBUG용 함수
+ **/
 static inline unsigned int cpumask_check(unsigned int cpu)
 {
 #ifdef CONFIG_DEBUG_PER_CPU_MAPS
@@ -256,6 +262,9 @@ int cpumask_any_but(const struct cpumask *mask, unsigned int cpu);
  * @cpu: cpu number (< nr_cpu_ids)
  * @dstp: the cpumask pointer
  */
+/** 20130518    
+ * unsigned long 배열 dstp 의 cpu 번째 bit를 set 하는 함수.
+ **/
 static inline void cpumask_set_cpu(unsigned int cpu, struct cpumask *dstp)
 {
 	set_bit(cpumask_check(cpu), cpumask_bits(dstp));
@@ -731,7 +740,9 @@ void init_cpu_online(const struct cpumask *src);
  * This does the conversion, and can be used as a constant initializer.
  */
 /** 20121208
-  이항 연산자가 필요한 이유 ???
+  삼항 연산자가 필요한 이유 ???
+  20130518
+    syntax 검사용인듯...
  **/
 #define to_cpumask(bitmap)						\
 	((struct cpumask *)(1 ? (bitmap)				\

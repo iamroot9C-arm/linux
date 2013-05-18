@@ -660,6 +660,10 @@ EXPORT_SYMBOL(cpu_all_bits);
 static DECLARE_BITMAP(cpu_possible_bits, CONFIG_NR_CPUS) __read_mostly
 	= CPU_BITS_ALL;
 #else
+/** 20130518    
+ * unsigned long cpu_possible_bits[BITS_TO_LONGS(CONFIG_NR_CPUS)]
+ *   -> unsigned long cpu_possible_bits[1]
+ **/
 static DECLARE_BITMAP(cpu_possible_bits, CONFIG_NR_CPUS) __read_mostly;
 #endif
 const struct cpumask *const cpu_possible_mask = to_cpumask(cpu_possible_bits);
@@ -677,6 +681,9 @@ static DECLARE_BITMAP(cpu_active_bits, CONFIG_NR_CPUS) __read_mostly;
 const struct cpumask *const cpu_active_mask = to_cpumask(cpu_active_bits);
 EXPORT_SYMBOL(cpu_active_mask);
 
+/** 20130518    
+ * cpu번째 bit cpu에 대해 possible에 따라 set 또는 clear 하는 함수
+ **/
 void set_cpu_possible(unsigned int cpu, bool possible)
 {
 	if (possible)

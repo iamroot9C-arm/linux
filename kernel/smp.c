@@ -637,6 +637,9 @@ static int __init maxcpus(char *str)
 early_param("maxcpus", maxcpus);
 
 /* Setup number of possible processor ids */
+/** 20130518    
+ * 가능한 cpu id의 개수 nr_cpu_ids는 NR_CPUS
+ **/
 int nr_cpu_ids __read_mostly = NR_CPUS;
 EXPORT_SYMBOL(nr_cpu_ids);
 
