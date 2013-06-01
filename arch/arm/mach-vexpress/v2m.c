@@ -447,6 +447,9 @@ static struct sys_timer v2m_timer = {
 	.init	= v2m_timer_init,
 };
 
+/** 20130601
+machine specific 한 sched clock 초기화 함수 호출
+**/
 static void __init v2m_init_early(void)
 {
 	/** 20130518    
@@ -455,6 +458,9 @@ static void __init v2m_init_early(void)
 	 **/
 	if (ct_desc->init_early)
 		ct_desc->init_early();
+	/** 20130601
+		timer counter register의 주소와 cpu의 기준 clock을 인자로 호출
+	**/
 	versatile_sched_clock_init(v2m_sysreg_base + V2M_SYS_24MHZ, 24000000);
 }
 

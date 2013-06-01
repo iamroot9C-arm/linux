@@ -130,6 +130,11 @@ EXPORT_SYMBOL_GPL(timecounter_cyc2time);
  * reduce the conversion accuracy by chosing smaller mult and shift
  * factors.
  */
+
+/** 20130601
+from을 기반으로 주파수 to를 만들어주기 위해 필요한 변수인
+mult,shift를 구한다.
+**/
 void
 clocks_calc_mult_shift(u32 *mult, u32 *shift, u32 from, u32 to, u32 maxsec)
 {

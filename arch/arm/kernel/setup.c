@@ -1192,6 +1192,10 @@ static int __init meminfo_cmp(const void *_a, const void *_b)
 	return cmp < 0 ? -1 : cmp > 0 ? 1 : 0;
 }
 
+/** 20130601
+	20130608 여기서 부터(함수 정리 필요)
+
+**/
 void __init setup_arch(char **cmdline_p)
 {
 	struct machine_desc *mdesc;

@@ -26,6 +26,9 @@
 
 static void __iomem *ctr;
 
+/** 20130601
+timer count 레지스터를 읽어온다.
+**/
 static u32 notrace versatile_read_sched_clock(void)
 {
 	if (ctr)
@@ -33,7 +36,10 @@ static u32 notrace versatile_read_sched_clock(void)
 
 	return 0;
 }
-
+/** 20130601
+1. reg을 ctr에 저장
+2. 리눅스에서 사용할 스캐쥴링 clock 기준값을 설정???
+**/
 void __init versatile_sched_clock_init(void __iomem *reg, unsigned long rate)
 {
 	ctr = reg;

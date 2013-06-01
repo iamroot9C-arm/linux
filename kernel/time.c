@@ -425,6 +425,10 @@ EXPORT_SYMBOL(ns_to_timeval);
  *
  * We must also be careful about 32-bit overflows.
  */
+
+/** 20130601
+return의 계산을 사용해서 msec를 라운드업해서 jiffies 값을 젼환후 반환
+**/
 unsigned long msecs_to_jiffies(const unsigned int m)
 {
 	/*
@@ -439,6 +443,9 @@ unsigned long msecs_to_jiffies(const unsigned int m)
 	 * round multiple of HZ, divide with the factor between them,
 	 * but round upwards:
 	 */
+	 /** 20130601
+	 이 계산을 사용 
+	 **/
 	return (m + (MSEC_PER_SEC / HZ) - 1) / (MSEC_PER_SEC / HZ);
 #elif HZ > MSEC_PER_SEC && !(HZ % MSEC_PER_SEC)
 	/*
