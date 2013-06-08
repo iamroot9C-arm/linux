@@ -5,6 +5,10 @@
 #include <linux/types.h>
 #endif
 
+/** 20130608    
+ * PAGE_SIZE 단위로 정렬되어 있으면 그대로 리턴.
+ * 정렬되어 있지 않으면 다음 PAGE_SIZE 단위로 정렬해 리턴.
+ **/
 #define PFN_ALIGN(x)	(((unsigned long)(x) + (PAGE_SIZE - 1)) & PAGE_MASK)
 /** 20130330    
  * PFN_UP  : address x의 다음 pfn을 가리킴. round up

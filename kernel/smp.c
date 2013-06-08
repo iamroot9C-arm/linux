@@ -644,8 +644,14 @@ int nr_cpu_ids __read_mostly = NR_CPUS;
 EXPORT_SYMBOL(nr_cpu_ids);
 
 /* An arch may set nr_cpu_ids earlier if needed, so this would be redundant */
+/** 20130608    
+ * nr_cpu_ids에 cpu_possible_mask에 설정해 둔 내용을 바탕으로 값을 채움.
+ **/
 void __init setup_nr_cpu_ids(void)
 {
+	/** 20130608    
+	 * NR_CPUS : 4 일 때 find_last_bit에서 3이 리턴 + 1
+	 **/
 	nr_cpu_ids = find_last_bit(cpumask_bits(cpu_possible_mask),NR_CPUS) + 1;
 }
 

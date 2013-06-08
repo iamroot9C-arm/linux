@@ -338,8 +338,16 @@ static inline void smp_prepare_cpus(unsigned int maxcpus) { }
  * parsing is performed in place, and we should allow a component to
  * store reference of name/value for future reference.
  */
+/** 20130608    
+ * static_command_line, saved_command_line에 각각 복사.
+ * saved_command_line은 추후 /proc/cmdline에 보여주는 용도 등으로 저장.
+ **/
 static void __init setup_command_line(char *command_line)
 {
+	/** 20130608    
+	 * boot_command_line은 ATAG에서 넘어온 command line.
+	 * command_line은 setup_arch에서 동일한 내용을 copy.
+	 **/
 	saved_command_line = alloc_bootmem(strlen (boot_command_line)+1);
 	static_command_line = alloc_bootmem(strlen (command_line)+1);
 	strcpy (saved_command_line, boot_command_line);
@@ -394,7 +402,7 @@ static int __init do_early_param(char *param, char *val, const char *unused)
 	const struct obs_kernel_param *p;
 
 	/** 20130105
-	 * __setup_start, __setup_end 는 early_param marco를 통해 .init.setup section에 들어간다.
+	 * __setup_start, __setup_end 는 early_param macro를 통해 .init.setup section에 들어간다.
 	 * vexpress에서 earlycon 정의되어 있는 부분은 없음. early 단계에서 console 옵션이 활성화되지 않음.
 	 *
  	 * param와 .init.setup section에 있는 early bit == 1 인 경우, 또는.. 
@@ -579,7 +587,13 @@ asmlinkage void __init start_kernel(void)
 
 	printk(KERN_NOTICE "%s", linux_banner);
 	setup_arch(&command_line);
+	/** 20130608    
+	 * vexpress에서 NULL 함수
+	 **/
 	mm_init_owner(&init_mm, &init_task);
+	/** 20130608    
+	 * vexpress에서 NULL 함수
+	 **/
 	mm_init_cpumask(&init_mm);
 	setup_command_line(command_line);
 	setup_nr_cpu_ids();

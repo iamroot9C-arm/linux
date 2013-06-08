@@ -559,6 +559,10 @@ static void __init setup_processor(void)
 	 * types.  The linker builds this table for us from the
 	 * entries in arch/arm/mm/proc-*.S
 	 */
+	/** 20130608    
+	 * arch/arm/mm/proc-v7.S
+	 * __v7_proc_info:
+	 **/
 	list = lookup_processor_type(read_cpuid_id());
 	if (!list) {
 		printk("CPU configuration botched (ID %08x), unable "
@@ -1192,9 +1196,16 @@ static int __init meminfo_cmp(const void *_a, const void *_b)
 	return cmp < 0 ? -1 : cmp > 0 ? 1 : 0;
 }
 
-/** 20130601
-	20130608 여기서 부터(함수 정리 필요)
-
+/** 20130608 
+	1. processor 관련 자료구조 초기화 (함수 포인터 등)
+	2. MACHINE에 대한 machine descriptor 를 채워준다.
+	3. boot command line 파싱해 early 함수 실행
+	4. meminfo와 mdesc를 바탕으로 memblock 정보를 채움
+	5. page table 생성 및 부팅시 사용할 메모리 할당자 생성
+	6. iomem_resource를 root로 하는 resources 메모리 계층 생성 (kernel code 등)
+	7. smp에서 사용하는 cpu를 bitmap에 사용함을 셋업
+	8. machine에 따른 init_early 함수 실행
+	   (vexpress의 경우 sched clock 초기화)
 **/
 void __init setup_arch(char **cmdline_p)
 {

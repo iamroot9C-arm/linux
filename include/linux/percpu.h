@@ -88,6 +88,10 @@ struct pcpu_group_info {
 						 * entries contain NR_CPUS */
 };
 
+/** 20130608    
+ * pcpu_alloc_alloc_info 에서 nr_groups, __ai_size,
+ *      groups[0].cpu_map[unit] 초기화
+ **/
 struct pcpu_alloc_info {
 	size_t			static_size;
 	size_t			reserved_size;

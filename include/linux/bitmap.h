@@ -147,12 +147,19 @@ extern void bitmap_copy_le(void *dst, const unsigned long *src, int nbits);
 extern int bitmap_ord_to_pos(const unsigned long *bitmap, int n, int bits);
 
 #define BITMAP_FIRST_WORD_MASK(start) (~0UL << ((start) % BITS_PER_LONG))
+/** 20130608    
+ * nbits만큼의 mask를 취함.
+ * nbits가 4일 경우 0b1111
+ **/
 #define BITMAP_LAST_WORD_MASK(nbits)					\
 (									\
 	((nbits) % BITS_PER_LONG) ?					\
 		(1UL<<((nbits) % BITS_PER_LONG))-1 : ~0UL		\
 )
 
+/** 20130608    
+ * nbits 컴파일시에 연산할 수 있는 값이고, BITS_PER_LONG 보다 작은지 검사
+ **/
 #define small_const_nbits(nbits) \
 	(__builtin_constant_p(nbits) && (nbits) <= BITS_PER_LONG)
 
@@ -273,6 +280,9 @@ static inline int bitmap_full(const unsigned long *src, int nbits)
 		return __bitmap_full(src, nbits);
 }
 
+/** 20130608    
+ * bitmap에서 1로 설정된 bits의 수를 리턴.
+ **/
 static inline int bitmap_weight(const unsigned long *src, int nbits)
 {
 	if (small_const_nbits(nbits))

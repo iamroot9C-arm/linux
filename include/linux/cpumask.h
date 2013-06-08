@@ -40,6 +40,9 @@ extern int nr_cpu_ids;
  * not all bits may be allocated. */
 #define nr_cpumask_bits	nr_cpu_ids
 #else
+/** 20130608    
+ * nr_cpumask_bits = 4
+ **/
 #define nr_cpumask_bits	NR_CPUS
 #endif
 
@@ -88,6 +91,10 @@ extern const struct cpumask *const cpu_online_mask;
 extern const struct cpumask *const cpu_present_mask;
 extern const struct cpumask *const cpu_active_mask;
 
+/** 20130608    
+ * cpumask_weight(...)
+ * 각각의 bitmap에 대해 weight (1로 설정된 비트의 수)를 구함
+ **/
 #if NR_CPUS > 1
 #define num_online_cpus()	cpumask_weight(cpu_online_mask)
 #define num_possible_cpus()	cpumask_weight(cpu_possible_mask)
@@ -177,11 +184,17 @@ static inline unsigned int cpumask_first(const struct cpumask *srcp)
  *
  * Returns >= nr_cpu_ids if no further cpus set.
  */
+/** 20130608    
+ * NR_CPUS = 4 이므로 이 부분 수행
+ **/
 static inline unsigned int cpumask_next(int n, const struct cpumask *srcp)
 {
 	/* -1 is a legal arg here. */
 	if (n != -1)
 		cpumask_check(n);
+	/** 20130608    
+	 * _find_next_bit_le : lsb부터 처음 1이 나오는 bit index 리턴.
+	 **/
 	return find_next_bit(cpumask_bits(srcp), nr_cpumask_bits, n+1);
 }
 
@@ -210,6 +223,10 @@ int cpumask_any_but(const struct cpumask *mask, unsigned int cpu);
  *
  * After the loop, cpu is >= nr_cpu_ids.
  */
+/** 20130608    
+ * NR_CPUS = 4이므로 이 부분이 수행됨
+ * 0, 1, 2, 3 까지 반복
+ **/
 #define for_each_cpu(cpu, mask)				\
 	for ((cpu) = -1;				\
 		(cpu) = cpumask_next((cpu), (mask)),	\
@@ -469,6 +486,9 @@ static inline bool cpumask_full(const struct cpumask *srcp)
  * cpumask_weight - Count of bits in *srcp
  * @srcp: the cpumask to count bits (< nr_cpu_ids) in.
  */
+/** 20130608    
+ * mask영역에 대해 1로 설정된 bit의 수를 구함.
+ **/
 static inline unsigned int cpumask_weight(const struct cpumask *srcp)
 {
 	return bitmap_weight(cpumask_bits(srcp), nr_cpumask_bits);
@@ -716,6 +736,9 @@ extern const DECLARE_BITMAP(cpu_all_bits, NR_CPUS);
 /* First bits of cpu_bit_bitmap are in fact unset. */
 #define cpu_none_mask to_cpumask(cpu_bit_bitmap[0])
 
+/** 20130608    
+ * cpu_possible_mask에 설정된 각 cpu에 대해 루프 수행
+ **/
 #define for_each_possible_cpu(cpu) for_each_cpu((cpu), cpu_possible_mask)
 #define for_each_online_cpu(cpu)   for_each_cpu((cpu), cpu_online_mask)
 #define for_each_present_cpu(cpu)  for_each_cpu((cpu), cpu_present_mask)

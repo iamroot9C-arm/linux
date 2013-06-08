@@ -219,6 +219,8 @@ void __init setup_sched_clock(u32 (*read)(void), int bits, unsigned long rate)
 	 */
 	/** 20130601
 	update_sched_clock 에서 cd.epoch_ns = ns 를 해주는데 바로 다시 0를 세팅해주는 이유는???
+		-> update_schec_clock은 sched_clock값을 변경할 때마다 호출하는 함수.
+		   초기값을 0으로 잡아 기준점으로 함.
 	**/
 	cd.epoch_ns = 0;
 

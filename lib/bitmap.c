@@ -259,6 +259,9 @@ int __bitmap_subset(const unsigned long *bitmap1,
 }
 EXPORT_SYMBOL(__bitmap_subset);
 
+/** 20130608    
+ * 각 word를 돌며 hweight (hamming weight)를 구해 합산해 리턴.
+ **/
 int __bitmap_weight(const unsigned long *bitmap, int bits)
 {
 	int k, w = 0, lim = bits/BITS_PER_LONG;
