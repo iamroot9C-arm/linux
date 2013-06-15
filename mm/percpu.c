@@ -1051,7 +1051,10 @@ phys_addr_t per_cpu_ptr_to_phys(void *addr)
  * Pointer to the allocated pcpu_alloc_info on success, NULL on
  * failure.
  */
-/** 20130615 여기부터..
+
+/** 20130615
+1. pcpu_alloc_info+groups+units 의 사이즈 구해서 bootmem으로 할당한다.
+2. pcpu_alloc_info의 몇몇 값을 설정하고 리턴.
  **/
 struct pcpu_alloc_info * __init pcpu_alloc_alloc_info(int nr_groups,
 						      int nr_units)
@@ -1240,7 +1243,9 @@ int __init pcpu_setup_first_chunk(const struct pcpu_alloc_info *ai,
 	unsigned int cpu;
 	int *unit_map;
 	int group, unit, i;
-
+	/** 20130615
+	cpu_possible_mask를 문자열로 나타내주기 위한 문자열 버퍼 생성
+	**/
 	cpumask_scnprintf(cpus_buf, sizeof(cpus_buf), cpu_possible_mask);
 
 #define PCPU_SETUP_BUG_ON(cond)	do {					\
@@ -1251,7 +1256,7 @@ int __init pcpu_setup_first_chunk(const struct pcpu_alloc_info *ai,
 		BUG();							\
 	}								\
 } while (0)
-
+		
 	/* sanity checks */
 	PCPU_SETUP_BUG_ON(ai->nr_groups <= 0);
 #ifdef CONFIG_SMP
@@ -1265,7 +1270,10 @@ int __init pcpu_setup_first_chunk(const struct pcpu_alloc_info *ai,
 	PCPU_SETUP_BUG_ON(ai->unit_size < PCPU_MIN_UNIT_SIZE);
 	PCPU_SETUP_BUG_ON(ai->dyn_size < PERCPU_DYNAMIC_EARLY_SIZE);
 	PCPU_SETUP_BUG_ON(pcpu_verify_alloc_info(ai) < 0);
-
+	
+	/** 20130615
+	메모리 세팅및 초기화 해준다.
+	**/
 	/* process group information and build config tables accordingly */
 	group_offsets = alloc_bootmem(ai->nr_groups * sizeof(group_offsets[0]));
 	group_sizes = alloc_bootmem(ai->nr_groups * sizeof(group_sizes[0]));
@@ -1278,12 +1286,21 @@ int __init pcpu_setup_first_chunk(const struct pcpu_alloc_info *ai,
 	pcpu_low_unit_cpu = NR_CPUS;
 	pcpu_high_unit_cpu = NR_CPUS;
 
+	/** 20130615
+	group를 순회 하며 할당 받은 메모리에 값을 아래와같이 세팅해준다.
+	**/
 	for (group = 0, unit = 0; group < ai->nr_groups; group++, unit += i) {
 		const struct pcpu_group_info *gi = &ai->groups[group];
-
+		
+		/** 20130615
+		각 group의 offset과 size 를 세팅
+		**/
 		group_offsets[group] = gi->base_offset;
 		group_sizes[group] = gi->nr_units * ai->unit_size;
-
+		
+		/** 20130615
+		group의 unit을 순회하며..	
+		**/
 		for (i = 0; i < gi->nr_units; i++) {
 			cpu = gi->cpu_map[i];
 			if (cpu == NR_CPUS)
@@ -1292,10 +1309,16 @@ int __init pcpu_setup_first_chunk(const struct pcpu_alloc_info *ai,
 			PCPU_SETUP_BUG_ON(cpu > nr_cpu_ids);
 			PCPU_SETUP_BUG_ON(!cpu_possible(cpu));
 			PCPU_SETUP_BUG_ON(unit_map[cpu] != UINT_MAX);
-
+			
+			/** 20130615
+				unit_map,unit_off 배열의 cpu인덱스에 해당하는 위치에 값 세팅
+			**/
 			unit_map[cpu] = unit + i;
 			unit_off[cpu] = gi->base_offset + i * ai->unit_size;
-
+			
+			/** 20130615
+			전체 unit에서 가장 작은,가장 큰 unit_off을 가진 cpu를 저장한다.
+			**/
 			/* determine low/high unit_cpu */
 			if (pcpu_low_unit_cpu == NR_CPUS ||
 			    unit_off[cpu] < unit_off[pcpu_low_unit_cpu])
@@ -1305,15 +1328,29 @@ int __init pcpu_setup_first_chunk(const struct pcpu_alloc_info *ai,
 				pcpu_high_unit_cpu = cpu;
 		}
 	}
+	/** 20130615
+	전체 unit값을 저장
+	**/
 	pcpu_nr_units = unit;
 
+	/** 20130615
+	위 for에서 설정 안된 unit_map인경우 Bug on!!!
+	**/
 	for_each_possible_cpu(cpu)
 		PCPU_SETUP_BUG_ON(unit_map[cpu] == UINT_MAX);
 
 	/* we're done parsing the input, undefine BUG macro and dump config */
 #undef PCPU_SETUP_BUG_ON
+	/** 20130615
+	다음과 같이 설정된 정보 출력
+	pcpu-alloc: s6592 r8192 d13888 u32768 alloc=8*4096
+	pcpu-alloc: [0] 0 [0] 1 [0] 2 [0] 3
+	**/
 	pcpu_dump_alloc_info(KERN_DEBUG, ai);
 
+	/** 20130622
+	여기서부터...
+	**/
 	pcpu_nr_groups = ai->nr_groups;
 	pcpu_group_offsets = group_offsets;
 	pcpu_group_sizes = group_sizes;
@@ -1456,6 +1493,12 @@ early_param("percpu_alloc", percpu_alloc_setup);
  * On success, pointer to the new allocation_info is returned.  On
  * failure, ERR_PTR value is returned.
  */
+
+/** 20130615
+1. 모든 cpu를 순회 하면서 근접한 cpu를 그룹핑한다.
+2. upa (unit per alloc)을 구한다.
+3. pcpu_alloc_info를 할당하고 초기화 한다.
+**/
 static struct pcpu_alloc_info * __init pcpu_build_alloc_info(
 				size_t reserved_size, size_t dyn_size,
 				size_t atom_size,
@@ -1640,13 +1683,21 @@ static struct pcpu_alloc_info * __init pcpu_build_alloc_info(
 	ai = pcpu_alloc_alloc_info(nr_groups, nr_units);
 	if (!ai)
 		return ERR_PTR(-ENOMEM);
+	/** 20130615
+	pcpu_alloc_info 의 첫번째 그룹의 cpu_map을 cpu_map에 저장
+	**/
 	cpu_map = ai->groups[0].cpu_map;
-
+	/** 20130615
+	nr_groups만큼을 돌면서 각 그룹의 cpu_map을 세팅해준다. 
+	**/
 	for (group = 0; group < nr_groups; group++) {
 		ai->groups[group].cpu_map = cpu_map;
 		cpu_map += roundup(group_cnt[group], upa);
 	}
 
+	/** 20130615
+	pcpu_alloc_info 의 값을 채운다.
+	**/
 	ai->static_size = static_size;
 	ai->reserved_size = reserved_size;
 	ai->dyn_size = dyn_size;
@@ -1654,6 +1705,9 @@ static struct pcpu_alloc_info * __init pcpu_build_alloc_info(
 	ai->atom_size = atom_size;
 	ai->alloc_size = alloc_size;
 
+	/** 20130615
+	각 group를 순회하면서
+	pcpu_group_info을설정한다.**/	
 	for (group = 0, unit = 0; group_cnt[group]; group++) {
 		struct pcpu_group_info *gi = &ai->groups[group];
 
@@ -1662,12 +1716,27 @@ static struct pcpu_alloc_info * __init pcpu_build_alloc_info(
 		 * back-to-back.  The caller should update this to
 		 * reflect actual allocation.
 		 */
+		/** 20130615
+		각 그룹의 base_offset을 설정해준다.
+		**/
 		gi->base_offset = unit * ai->unit_size;
 
+		/** 20130615
+		각 possible cpu를 순회하면서 같은 group일경우
+		pcpu_group_info의 cpu_map의 nr_units 인덱스에
+		cpu 번호를 넣어준다
+		**/
 		for_each_possible_cpu(cpu)
 			if (group_map[cpu] == group)
 				gi->cpu_map[gi->nr_units++] = cpu;
+
+		/** 20130615
+		nr_units을 upa 단위로 올림한다.
+		**/
 		gi->nr_units = roundup(gi->nr_units, upa);
+		/** 20130615
+		다음 base_offset을 계산하기 위해서nr_units만큰 unit 업데이트
+		**/
 		unit += gi->nr_units;
 	}
 	BUG_ON(unit != nr_units);
@@ -1720,15 +1789,28 @@ int __init pcpu_embed_first_chunk(size_t reserved_size, size_t dyn_size,
 	struct pcpu_alloc_info *ai;
 	size_t size_sum, areas_size, max_distance;
 	int group, i, rc;
-
+	
+	/** 20130615
+	pcpu_alloc_info 구조체 할당하고 초기화
+	**/
 	ai = pcpu_build_alloc_info(reserved_size, dyn_size, atom_size,
 				   cpu_distance_fn);
 	if (IS_ERR(ai))
 		return PTR_ERR(ai);
 
+	/** 20130615
+	총 사이즈를 구한다.
+	**/
 	size_sum = ai->static_size + ai->reserved_size + ai->dyn_size;
+	
+	/** 20130615
+	각 그룹을 가르키기위한 포인터의 총 사이즈를 구함.
+	**/
 	areas_size = PFN_ALIGN(ai->nr_groups * sizeof(void *));
 
+	/** 20130615
+	areas_size 만큼 메모리 할당
+	**/
 	areas = alloc_bootmem_nopanic(areas_size);
 	if (!areas) {
 		rc = -ENOMEM;
@@ -1740,11 +1822,22 @@ int __init pcpu_embed_first_chunk(size_t reserved_size, size_t dyn_size,
 		struct pcpu_group_info *gi = &ai->groups[group];
 		unsigned int cpu = NR_CPUS;
 		void *ptr;
-
+	
+		/** 20130615
+			각 pcpu_group_info의 nr_units 만큼 돌면서 cpu_map의
+			cpu번호 가져온다. 
+			단, cpu번호가 for이 돌때마다 바뀔텐데 그럼 항상 두번째 for문 에서
+			false로 나갈듯???
+		**/
 		for (i = 0; i < gi->nr_units && cpu == NR_CPUS; i++)
 			cpu = gi->cpu_map[i];
 		BUG_ON(cpu == NR_CPUS);
-
+		
+		/** 20130615
+			atomic_size단위로 해당 group의 총 unit사이즈를
+			할당한다.
+			cpu :: ???	
+		**/
 		/* allocate space for the whole group */
 		ptr = alloc_fn(cpu, gi->nr_units * ai->unit_size, atom_size);
 		if (!ptr) {
@@ -1753,8 +1846,15 @@ int __init pcpu_embed_first_chunk(size_t reserved_size, size_t dyn_size,
 		}
 		/* kmemleak tracks the percpu allocations separately */
 		kmemleak_free(ptr);
+	
+		/** 20130615
+		각 그룹 포인터 설정
+		**/
 		areas[group] = ptr;
 
+		/** 20130615
+		ptr과 base중 작은 값을 다시base에 대입		
+		**/
 		base = min(ptr, base);
 	}
 
@@ -1763,6 +1863,12 @@ int __init pcpu_embed_first_chunk(size_t reserved_size, size_t dyn_size,
 	 * allocations are complete; otherwise, we may end up with
 	 * overlapping groups.
 	 */
+	/** 20130615
+	모든 group를 순회
+		각 group의 cpu를 순회
+			1.areas[group] 내에서 해당 cpu의 공간에 static size만큼의 데이타를 ptr로 복사
+			2.size_sum영역을 제외한 나머지 영역을 free
+	**/
 	for (group = 0; group < ai->nr_groups; group++) {
 		struct pcpu_group_info *gi = &ai->groups[group];
 		void *ptr = areas[group];
@@ -1780,14 +1886,24 @@ int __init pcpu_embed_first_chunk(size_t reserved_size, size_t dyn_size,
 	}
 
 	/* base address is now known, determine group base offsets */
+	/** 20130615
+	group를 순회 하면서 base offset을 구해서 그중 가장 큰 값을
+	max_distance에 넣는다.
+	**/
 	max_distance = 0;
 	for (group = 0; group < ai->nr_groups; group++) {
 		ai->groups[group].base_offset = areas[group] - base;
 		max_distance = max_t(size_t, max_distance,
 				     ai->groups[group].base_offset);
 	}
+	/** 20130615
+	max_distance에 unit_size만큼을 더한다.
+	**/	
 	max_distance += ai->unit_size;
 
+	/** 20130615
+		max_distance가 vmalloc space의 75%보다 크다면 warning!!
+	**/
 	/* warn if maximum distance is further than 75% of vmalloc space */
 	if (max_distance > (VMALLOC_END - VMALLOC_START) * 3 / 4) {
 		pr_warning("PERCPU: max_distance=0x%zx too large for vmalloc "
@@ -1949,6 +2065,9 @@ EXPORT_SYMBOL(__per_cpu_offset);
 
 /** 20130608    
  * pcpu_dfl_fc_alloc, pcpu_dfl_fc_free는 pcpu_embed_first_chunk에 Callback 함수로 전달
+ **/
+ /** 20130615
+ PA(MAX_DMA_ADDRESS)이후의 공간에서 align단위의 size만큼 할당. 
  **/
 static void * __init pcpu_dfl_fc_alloc(unsigned int cpu, size_t size,
 				       size_t align)
