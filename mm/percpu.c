@@ -197,13 +197,26 @@ static bool pcpu_addr_in_reserved_chunk(void *addr)
 	return addr >= first_start &&
 		addr < first_start + pcpu_reserved_chunk_limit;
 }
-
+/** 20130622
+사이즈에 해당하는 slot index반환???
+1. size의 값에서 0이 아닌 첫번째 위치를 구해서 highbit에 저장 (지수승을 구하는듯)
+	0b10001001 -> 8 
+2. highbit 에 PCPU_SLOT_BASE_SHIFT를 빼서 2를 더한다.
+	- PCPU_SLOT_BASE_SHIFT는 unit 32(2^5)개가 하나의 slot이므로 비트 단위로 그룹 표현할때 필요한 SHIFT 인듯??? 
+	- 여기서 2를 더하는 이유는??? 
+- 그런데 어떻게,왜 slot의 인덱스가 구해지는지 모르겠음.....???
+max로 인해 slot사이즈는 최소 1이상여야함.
+**/
 static int __pcpu_size_to_slot(int size)
 {
 	int highbit = fls(size);	/* size is in bytes */
 	return max(highbit - PCPU_SLOT_BASE_SHIFT + 2, 1);
 }
 
+/** 20130622
+	size와 pcpu_unit_size와 같다면 slot의 마지막 인덱스 반환
+	아니면 __pcpu_size_to_slot으로 인덱스 계산
+**/
 static int pcpu_size_to_slot(int size)
 {
 	if (size == pcpu_unit_size)
@@ -211,6 +224,9 @@ static int pcpu_size_to_slot(int size)
 	return __pcpu_size_to_slot(size);
 }
 
+/** 20130622
+	chunk의 free_size(chunk내의 가용 여유 공간의 합)으로 slot index를 구하는 함수 call
+**/
 static int pcpu_chunk_slot(const struct pcpu_chunk *chunk)
 {
 	if (chunk->free_size < sizeof(int) || chunk->contig_hint < sizeof(int))
@@ -326,6 +342,12 @@ static void pcpu_mem_free(void *ptr, size_t size)
  * CONTEXT:
  * pcpu_lock.
  */
+ /** 20130622
+	1. chunk의 slot index를 구한다.
+	2. 인자의 oslot와 구한 nslot를 비교하여
+		oslot이 작으면 chunk를 head의 첫번째 노드에 추가
+		아니면 Tail에 추가
+ **/
 static void pcpu_chunk_relocate(struct pcpu_chunk *chunk, int oslot)
 {
 	int nslot = pcpu_chunk_slot(chunk);
@@ -1349,7 +1371,7 @@ int __init pcpu_setup_first_chunk(const struct pcpu_alloc_info *ai,
 	pcpu_dump_alloc_info(KERN_DEBUG, ai);
 
 	/** 20130622
-	여기서부터...
+	설정한 값들을 static 변수(전역)들에 넣어준다. 
 	**/
 	pcpu_nr_groups = ai->nr_groups;
 	pcpu_group_offsets = group_offsets;
@@ -1358,9 +1380,18 @@ int __init pcpu_setup_first_chunk(const struct pcpu_alloc_info *ai,
 	pcpu_unit_offsets = unit_off;
 
 	/* determine basic parameters */
+	/** 20130622	
+	unit_size 를 page단위로 변환후 pcpu_unit_pages에 저장
+	**/
 	pcpu_unit_pages = ai->unit_size >> PAGE_SHIFT;
+	/** 20130622
+	unit_size를 PAGE 사이즈 단위로 정렬된 값을 저장 
+	**/
 	pcpu_unit_size = pcpu_unit_pages << PAGE_SHIFT;
 	pcpu_atom_size = ai->atom_size;
+	/** 20130622
+	chuck struct사이즈를 저장.
+	**/
 	pcpu_chunk_struct_size = sizeof(struct pcpu_chunk) +
 		BITS_TO_LONGS(pcpu_unit_pages) * sizeof(unsigned long);
 
@@ -1368,7 +1399,15 @@ int __init pcpu_setup_first_chunk(const struct pcpu_alloc_info *ai,
 	 * Allocate chunk slots.  The additional last slot is for
 	 * empty chunks.
 	 */
-	pcpu_nr_slots = __pcpu_size_to_slot(pcpu_unit_size) + 2;
+	 /** 20130622
+		slot 갯수를 구해서 저장. (여기서 empty chuck 2를 추가적으로 더한다..? 이유는???)
+	  **/
+		pcpu_nr_slots = __pcpu_size_to_slot(pcpu_unit_size) + 2;
+	
+	/** 20130622
+		총 slot의 리스트의 사이즈를 bootmem에 할당하여 
+		각 리스트를 초기화
+	**/
 	pcpu_slot = alloc_bootmem(pcpu_nr_slots * sizeof(pcpu_slot[0]));
 	for (i = 0; i < pcpu_nr_slots; i++)
 		INIT_LIST_HEAD(&pcpu_slot[i]);
@@ -1380,8 +1419,28 @@ int __init pcpu_setup_first_chunk(const struct pcpu_alloc_info *ai,
 	 * covers static area + reserved area (mostly used for module
 	 * static percpu allocation).
 	 */
+
+	/** 20130622
+	- http://studyfoss.egloos.com/5377666
+	- 본 소스 앞쪽 주석 참조.
+
+	static or dynamic chunk를 bootmem에 할당하여 각 변수 초기화
+	1. static chunk 할당 및 초기화
+		point
+		1) 여기서 reserved_size가 있을 경우 
+		reserved_size를 static chunk의 free_size(여유 공간)에 저장
+		2) 없을 경우
+		dyn_size를 free_size 에 저장
+	
+	2. dynamic chunk 할당 및 초기화
+		- 1번 static chunk에서 dyn_size가 free_size로 할당되었거나 dyn_size가 0일 경우에는 
+		dynamic chunk를 할당 안한다.
+	**/
 	schunk = alloc_bootmem(pcpu_chunk_struct_size);
 	INIT_LIST_HEAD(&schunk->list);
+	/** 20130622	
+	할당 모든 unit들중 첫번째 주소를 저장		
+	**/
 	schunk->base_addr = base_addr;
 	schunk->map = smap;
 	schunk->map_alloc = ARRAY_SIZE(smap);
@@ -1406,6 +1465,9 @@ int __init pcpu_setup_first_chunk(const struct pcpu_alloc_info *ai,
 	if (dyn_size) {
 		dchunk = alloc_bootmem(pcpu_chunk_struct_size);
 		INIT_LIST_HEAD(&dchunk->list);
+	/** 20130622	
+	할당 모든 unit들중 첫번째 주소를 저장		
+	**/
 		dchunk->base_addr = base_addr;
 		dchunk->map = dmap;
 		dchunk->map_alloc = ARRAY_SIZE(dmap);
@@ -1413,12 +1475,24 @@ int __init pcpu_setup_first_chunk(const struct pcpu_alloc_info *ai,
 		bitmap_fill(dchunk->populated, pcpu_unit_pages);
 
 		dchunk->contig_hint = dchunk->free_size = dyn_size;
+		/** 20130622
+		dynamic_chunk가 사용하는 사이즈가 pcpu_reserved_chunk_limit인 이유???
+		**/
 		dchunk->map[dchunk->map_used++] = -pcpu_reserved_chunk_limit;
 		dchunk->map[dchunk->map_used++] = dchunk->free_size;
 	}
 
 	/* link the first chunk in */
+	/** 20130622
+	dchunk가 있는 경우는 dchunk가 pcpu_first_chunk에 들어간다. 
+	**/
 	pcpu_first_chunk = dchunk ?: schunk;
+
+	/** 20130622
+	할당 첫번째 chunk를
+	pcpu_slot 배열의 선택된 slot 자료구조(circular doubly linked list)에
+	추가해준다.
+	**/
 	pcpu_chunk_relocate(pcpu_first_chunk, -1);
 
 	/* we're done */
