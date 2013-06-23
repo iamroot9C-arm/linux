@@ -346,7 +346,7 @@ extern struct cpu_tlb_fns cpu_tlb;
 			    : "cc");					\
 	} while (0)
 
-#define tlb_op(f, regs, arg)	__tlb_op(f, "p15, 0, %0, c8, c3, 1"" regs, arg)
+#define tlb_op(f, regs, arg)	__tlb_op(f, "p15, 0, %0, " regs, arg)
 #define tlb_l2_op(f, regs, arg)	__tlb_op(f, "p15, 1, %0, " regs, arg)
 
 /** 20130330    
