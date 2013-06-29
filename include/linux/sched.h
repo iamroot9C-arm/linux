@@ -2133,6 +2133,9 @@ void yield(void);
  */
 extern struct exec_domain	default_exec_domain;
 
+/** 20130629    
+ * thread_info와 stack은 union으로 같은 메모리 공간을 공유함.
+ **/
 union thread_union {
 	struct thread_info thread_info;
 	unsigned long stack[THREAD_SIZE/sizeof(long)];

@@ -19,10 +19,16 @@ int mminit_loglevel;
 #endif
 
 /* The zonelists are simply reported, validation is manual. */
+/** 20130629    
+ * zonelist를 순회하며 populate된 zone 정보를 출력한다.
+ **/
 void mminit_verify_zonelist(void)
 {
 	int nid;
 
+	/** 20130629    
+	 * early_param이 설정되지 않았을 경우 바로 return.
+	 **/
 	if (mminit_loglevel < MMINIT_VERIFY)
 		return;
 

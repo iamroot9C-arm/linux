@@ -561,6 +561,11 @@ static inline int zone_is_oom_locked(const struct zone *zone)
 #define DEF_PRIORITY 12
 
 /* Maximum number of zones on a zonelist */
+/** 20130629    
+ * ZONELIST당 최대 포함될 수 있는 ZONES의 수를 계산.
+ *   최대 NODE의 개수 * 최대 ZONES의 개수
+ *   vexpress에서는 1 * 2
+ **/
 #define MAX_ZONES_PER_ZONELIST (MAX_NUMNODES * MAX_NR_ZONES)
 
 #ifdef CONFIG_NUMA
@@ -672,6 +677,9 @@ struct zoneref {
  */
 struct zonelist {
 	struct zonelist_cache *zlcache_ptr;		     // NULL or &zlcache
+	/** 20130629    
+	 * zoneref 구조체의 배열을 선언
+	 **/
 	struct zoneref _zonerefs[MAX_ZONES_PER_ZONELIST + 1];
 #ifdef CONFIG_NUMA
 	struct zonelist_cache zlcache;			     // optional ...
@@ -708,6 +716,9 @@ typedef struct pglist_data {
 	 * free_area_init_core 에서 채워줌
 	 **/
 	struct zone node_zones[MAX_NR_ZONES];
+	/** 20130629    
+	 * node_zonelists 배열 선언. build_zonelists()에서 초기화.
+	 **/
 	struct zonelist node_zonelists[MAX_ZONELISTS];
 	int nr_zones;
 #ifdef CONFIG_FLAT_NODE_MEM_MAP	/* means !SPARSEMEM */
@@ -818,6 +829,9 @@ zone 의 인덱스를 구함
 **/
 #define zone_idx(zone)		((zone) - (zone)->zone_pgdat->node_zones)
 
+/** 20130629    
+ * zone의 present_pages의 값이 설정되었는지 검사
+ **/
 static inline int populated_zone(struct zone *zone)
 {
 	return (!!zone->present_pages);

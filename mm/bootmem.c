@@ -26,6 +26,8 @@
 /** 20130330    
  * vexpress에서는 not defined.
  * contig_page_data의 .bdata는 bootmem_node_data[0]의 시작 주소
+ *
+ * contig_page_data는 물리 메모리에 대한 정보를 저장하는 구조체.
  **/
 #ifndef CONFIG_NEED_MULTIPLE_NODES
 struct pglist_data __refdata contig_page_data = {

@@ -32,6 +32,9 @@
  * the inline assembly constraint from =g to =r, in this particular
  * case either is valid.
  */
+/** 20130629    
+ * ptr + off을 해주는 매크로. 왜 이렇게 복잡하게 하는지???
+ **/
 #define RELOC_HIDE(ptr, off)					\
   ({ unsigned long __ptr;					\
     __asm__ ("" : "=r"(__ptr) : "0"(ptr));		\

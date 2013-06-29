@@ -2965,8 +2965,16 @@ void show_free_areas(unsigned int filter)
 	show_swap_cache_info();
 }
 
+/** 20130629    
+ * 매개변수로 전달받은 zoneref 위치에 zoneref 자료구조 설정
+ **/
 static void zoneref_set_zone(struct zone *zone, struct zoneref *zoneref)
 {
+	/** 20130629    
+	 * zoneref자료구조 설정
+	 *   - zone의 위치를 저장
+	 *   - node에서의 zone의 index를 저장
+	 **/
 	zoneref->zone = zone;
 	zoneref->zone_idx = zone_idx(zone);
 }
@@ -2976,24 +2984,52 @@ static void zoneref_set_zone(struct zone *zone, struct zoneref *zoneref)
  *
  * Add all populated zones of a node to the zonelist.
  */
+/** 20130629    
+ *  pgdat를 참조해 설정된 zone들을 zonelist의 zone_refs에 추가한다.
+ *    : pgdat->node_zones 에서 zone을 가져와 zonelist에 추가한다.
+ **/
 static int build_zonelists_node(pg_data_t *pgdat, struct zonelist *zonelist,
 				int nr_zones, enum zone_type zone_type)
 {
 	struct zone *zone;
 
+	/** 20130629    
+	 * parameter zone_type의 sanity check.
+	 **/
 	BUG_ON(zone_type >= MAX_NR_ZONES);
+	/** 20130629    
+	 * zone_type을 하나 증가. ZONE_MOVABLE이 넘어왔을 경우 __MAX_NR_ZONES.
+	 **/
 	zone_type++;
 
 	do {
+		/** 20130629    
+		 * zone_type을 하나 감소.
+		 **/
 		zone_type--;
+		/** 20130629    
+		 * 해당 node의 zone을 뒤에서부터 하나 가져온다.
+		 **/
 		zone = pgdat->node_zones + zone_type;
+		/** 20130629    
+		 * zone->present_pages가 설정된 zone에 대해서 다음 동작 수행
+		 **/
 		if (populated_zone(zone)) {
+			/** 20130629
+			 *  nr_zones에 해당하는 zonelist의 _zonerefs에 zone 정보를 설정
+			 **/
 			zoneref_set_zone(zone,
 				&zonelist->_zonerefs[nr_zones++]);
+			/** 20130629    
+			 * UMA에서는 NULL 함수
+			 **/
 			check_highest_zone(zone_type);
 		}
 
 	} while (zone_type);
+	/** 20130629    
+	 * 설정한 nr_zones의 개수를 리턴 (매개변수로 0이 넘어왔을 경우)
+	 **/
 	return nr_zones;
 }
 
@@ -3397,20 +3433,39 @@ int local_memory_node(int node)
 
 #else	/* CONFIG_NUMA */
 
+/** 20130629    
+ * current_zonelist_order에 zonelist_order를 지정
+ **/
 static void set_zonelist_order(void)
 {
+	/** 20130629    
+	 * zonelist의 order를 ZONE을 기준으로 한다.
+	 **/
 	current_zonelist_order = ZONELIST_ORDER_ZONE;
 }
 
+/** 20130629    
+ * pgdat의 zonelists 의 값을 초기화함.
+ **/
 static void build_zonelists(pg_data_t *pgdat)
 {
 	int node, local_node;
 	enum zone_type j;
 	struct zonelist *zonelist;
 
+	/** 20130629    
+	 * pgdat의 node_id 는 0
+	 **/
 	local_node = pgdat->node_id;
 
 	zonelist = &pgdat->node_zonelists[0];
+	/** 20130629    
+	 * nr_zones : 0
+	 * zone_type: ZONE_MOVABLE
+	 *
+	 * 첫번째 node의 zonelists 를 설정한다.
+	 * zonelist에 _zone_ref 멤버를 설정.
+	 **/
 	j = build_zonelists_node(pgdat, zonelist, 0, MAX_NR_ZONES - 1);
 
 	/*
@@ -3421,12 +3476,24 @@ static void build_zonelists(pg_data_t *pgdat)
 	 * zones coming right after the local ones are those from
 	 * node N+1 (modulo N)
 	 */
+	/** 20130629    
+	 * 이후의 node들에 대해 zonelists를 설정한다.
+	 * vexpress에서 node가 1개이므로 수행되지 않는다.
+	 *   NUMA에 해당하는 부분인데 왜 이후 NODE에 대한 내용도 들어가 있을까???
+	 **/
 	for (node = local_node + 1; node < MAX_NUMNODES; node++) {
+		/** 20130629    
+		 * online인 node에 대해서만 수행한다.
+		 **/
 		if (!node_online(node))
 			continue;
 		j = build_zonelists_node(NODE_DATA(node), zonelist, j,
 							MAX_NR_ZONES - 1);
 	}
+	/** 20130629    
+	 * local_node가 0이므로 수행되지 않음. 
+	 * non-NUMA 에 포함된 함수인데 왜 이 for가 필요한 것일까???
+	 **/
 	for (node = 0; node < local_node; node++) {
 		if (!node_online(node))
 			continue;
@@ -3434,11 +3501,18 @@ static void build_zonelists(pg_data_t *pgdat)
 							MAX_NR_ZONES - 1);
 	}
 
+	/** 20130629    
+	 * 마지막 _zonerefs를 NULL로 설정함.
+	 * j는 build_zonelists_node 에서 _zonerefs를 설정하고 ++ 해 리턴한 값.
+	 **/
 	zonelist->_zonerefs[j].zone = NULL;
 	zonelist->_zonerefs[j].zone_idx = 0;
 }
 
 /* non-NUMA variant of zonelist performance cache - just NULL zlcache_ptr */
+/** 20130629    
+ * NUMA에서는 cache를 사용할 이유가 없으므로 NULL로 설정.
+ **/
 static void build_zonelist_cache(pg_data_t *pgdat)
 {
 	pgdat->node_zonelists[0].zlcache_ptr = NULL;
@@ -3475,24 +3549,41 @@ static void setup_zone_pageset(struct zone *zone);
 DEFINE_MUTEX(zonelists_mutex);
 
 /* return values int ....just for stop_machine() */
+/** 20130629    
+ * 1. node마다 존재하는 zonelist를 생성.
+ * 2. percpu로 setup_pageset 함수 호출해 자료구조 초기화.
+ **/
 static int __build_all_zonelists(void *data)
 {
 	int nid;
 	int cpu;
+	/** 20130629    
+	 * build_all_zonelists 에서 호출 될 때
+	 * SYSTEM_BOOTING 상태에서 data가 NULL로 넘어옴.
+	 **/
 	pg_data_t *self = data;
 
 #ifdef CONFIG_NUMA
 	memset(node_load, 0, sizeof(node_load));
 #endif
 
+	/** 20130629    
+	 * self가 NULL일 경우 실행 안 됨
+	 **/
 	if (self && !node_online(self->node_id)) {
 		build_zonelists(self);
 		build_zonelist_cache(self);
 	}
 
 	for_each_online_node(nid) {
+		/** 20130629    
+		 * contig_page_data의 주소를 얻어옴
+		 **/
 		pg_data_t *pgdat = NODE_DATA(nid);
 
+		/** 20130629    
+		 * pgdat의 zonelist 를 생성함.
+		 **/
 		build_zonelists(pgdat);
 		build_zonelist_cache(pgdat);
 	}
@@ -3511,8 +3602,17 @@ static int __build_all_zonelists(void *data)
 	 * (a chicken-egg dilemma).
 	 */
 	for_each_possible_cpu(cpu) {
+		/** 20130629    
+		 * boot_pageset은 PERCPU 변수
+		 * static DEFINE_PER_CPU(struct per_cpu_pageset, boot_pageset);
+		 *
+		 * 각 cpu마다 boot_pageset을 생성한다.
+		 **/
 		setup_pageset(&per_cpu(boot_pageset, cpu), 0);
 
+/** 20130629    
+ * vexpress에서 정의되지 않음
+ **/
 #ifdef CONFIG_HAVE_MEMORYLESS_NODES
 		/*
 		 * We now know the "local memory node" for each node--
@@ -3539,7 +3639,13 @@ void __ref build_all_zonelists(pg_data_t *pgdat, struct zone *zone)
 	set_zonelist_order();
 
 	if (system_state == SYSTEM_BOOTING) {
+		/** 20130629    
+		 * SYSTEM_BOOTING 중일 경우 zonelists를 setup한다.
+		 **/
 		__build_all_zonelists(NULL);
+		/** 20130629    
+		 * 정의되어 있음. 하지만 early_param이 설정되어 있지 않아 출력되지 않음.
+		 **/
 		mminit_verify_zonelist();
 		cpuset_init_current_mems_allowed();
 	} else {
@@ -3549,6 +3655,9 @@ void __ref build_all_zonelists(pg_data_t *pgdat, struct zone *zone)
 		if (zone)
 			setup_zone_pageset(zone);
 #endif
+		/** 20130629    
+		 * stop_machine은 다음에... (20130706)
+		 **/
 		stop_machine(__build_all_zonelists, pgdat, NULL);
 		/* cpuset refresh routine should be here */
 	}
@@ -3940,6 +4049,9 @@ static int __meminit zone_batchsize(struct zone *zone)
 #endif
 }
 
+/** 20130629    
+ * per_cpu_pageset 구조체의 주소를 받아 pageset 을 초기화 하는 함수
+ **/
 static void setup_pageset(struct per_cpu_pageset *p, unsigned long batch)
 {
 	struct per_cpu_pages *pcp;
@@ -3947,10 +4059,20 @@ static void setup_pageset(struct per_cpu_pageset *p, unsigned long batch)
 
 	memset(p, 0, sizeof(*p));
 
+	/** 20130629    
+	 * 매개변수로 받은 p의 element인 per_cpu_pages 구조체의 위치를 pcp에 저장
+	 **/
 	pcp = &p->pcp;
+	/** 20130629    
+	 * 초기화
+	 **/
 	pcp->count = 0;
 	pcp->high = 6 * batch;
 	pcp->batch = max(1UL, 1 * batch);
+	/** 20130629    
+	 * MIGRATE_PCPTYPES 이전까지 loop을 돌면서 list초기화
+	 *   type별로 list가 구성되는 것으로 보임
+	 **/
 	for (migratetype = 0; migratetype < MIGRATE_PCPTYPES; migratetype++)
 		INIT_LIST_HEAD(&pcp->lists[migratetype]);
 }

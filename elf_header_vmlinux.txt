@@ -1,0 +1,81 @@
+# arm-linux-gnueabihf-readelf -e vmlinux > vmlinux_sec.txt
+
+
+
+
+
+ELF Header:
+  Magic:   7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00 
+  Class:                             ELF32
+  Data:                              2's complement, little endian
+  Version:                           1 (current)
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       0
+  Type:                              EXEC (Executable file)
+  Machine:                           ARM
+  Version:                           0x1
+  Entry point address:               0x80008000
+  Start of program headers:          52 (bytes into file)
+  Start of section headers:          53600496 (bytes into file)
+  Flags:                             0x5000002, has entry point, Version5 EABI
+  Size of this header:               52 (bytes)
+  Size of program headers:           32 (bytes)
+  Number of program headers:         3
+  Size of section headers:           40 (bytes)
+  Number of section headers:         36
+  Section header string table index: 33
+
+Section Headers:
+  [Nr] Name              Type            Addr     Off    Size   ES Flg Lk Inf Al
+  [ 0]                   NULL            00000000 000000 000000 00      0   0  0
+  [ 1] .head.text        PROGBITS        80008000 008000 0001b8 00  AX  0   0  4
+  [ 2] .text             PROGBITS        800081c0 0081c0 3393f0 00  AX  0   0 64
+  [ 3] .rodata           PROGBITS        80342000 342000 0c3a10 00   A  0   0 64
+  [ 4] __bug_table       PROGBITS        80405a10 405a10 005088 00   A  0   0  1
+  [ 5] __ksymtab         PROGBITS        8040aa98 40aa98 005b50 00   A  0   0  4
+  [ 6] __ksymtab_gpl     PROGBITS        804105e8 4105e8 0037f8 00   A  0   0  4
+  [ 7] __ksymtab_strings PROGBITS        80413de0 413de0 0144a1 00   A  0   0  1
+  [ 8] __param           PROGBITS        80428284 428284 000850 00   A  0   0  4
+  [ 9] __modver          PROGBITS        80428ad4 428ad4 00052c 00   A  0   0  4
+  [10] .ARM.unwind_idx   ARM_EXIDX       80429000 429000 019648 00  AL 12   0  4
+  [11] .ARM.unwind_tab   PROGBITS        80442648 442648 002aa8 00   A  0   0  4
+  [12] .init.text        PROGBITS        80446000 446000 01c580 00  AX  0   0 32
+  [13] .exit.text        PROGBITS        80462580 462580 000ccc 00  AX  0   0  4
+  [14] .init.arch.info   PROGBITS        8046324c 46324c 000048 00   A  0   0  4
+  [15] .init.tagtable    PROGBITS        80463294 463294 000048 00   A  0   0  4
+  [16] .init.smpalt      PROGBITS        804632dc 4632dc 005000 00   A  0   0  4
+  [17] .init.pv_table    PROGBITS        804682dc 4682dc 0005d0 00   A  0   0  1
+  [18] .init.data        PROGBITS        804688b0 4688b0 007fac 00  WA  0   0  8
+  [19] .data..percpu     PROGBITS        80471000 471000 0019c0 00  WA  0   0 64
+  [20] .data             PROGBITS        80474000 474000 02ebe0 00  WA  0   0 64
+  [21] .notes            NOTE            804a2be0 4a2be0 000024 00  AX  0   0  4
+  [22] .bss              NOBITS          804a2c40 4a2c04 01e778 00  WA  0   0 64
+  [23] .comment          PROGBITS        00000000 4a2c04 000068 01  MS  0   0  1
+  [24] .ARM.attributes   ARM_ATTRIBUTES  00000000 4a2c6c 00002d 00      0   0  1
+  [25] .debug_line       PROGBITS        00000000 4a2c99 27886e 00      0   0  1
+  [26] .debug_info       PROGBITS        00000000 71b507 22f205e 00      0   0  1
+  [27] .debug_abbrev     PROGBITS        00000000 2a0d565 1480c9 00      0   0  1
+  [28] .debug_aranges    PROGBITS        00000000 2b55630 009a50 00      0   0  8
+  [29] .debug_ranges     PROGBITS        00000000 2b5f080 0e75d0 00      0   0  8
+  [30] .debug_frame      PROGBITS        00000000 2c46650 07fe00 00      0   0  4
+  [31] .debug_str        PROGBITS        00000000 2cc6450 0ea26c 01  MS  0   0  1
+  [32] .debug_loc        PROGBITS        00000000 2db06bc 56d8a7 00      0   0  1
+  [33] .shstrtab         STRTAB          00000000 331df63 00018a 00      0   0  1
+  [34] .symtab           SYMTAB          00000000 331e690 0e1300 10     35 48375  4
+  [35] .strtab           STRTAB          00000000 33ff990 0a23a8 00      0   0  1
+Key to Flags:
+  W (write), A (alloc), X (execute), M (merge), S (strings)
+  I (info), L (link order), G (group), T (TLS), E (exclude), x (unknown)
+  O (extra OS processing required) o (OS specific), p (processor specific)
+
+Program Headers:
+  Type           Offset   VirtAddr   PhysAddr   FileSiz MemSiz  Flg Align
+  LOAD           0x008000 0x80008000 0x80008000 0x49ac04 0x4b93b8 RWE 0x8000
+  NOTE           0x4a2be0 0x804a2be0 0x804a2be0 0x00024 0x00024 R E 0x4
+  GNU_STACK      0x000000 0x00000000 0x00000000 0x00000 0x00000 RWE 0x4
+
+ Section to Segment mapping:
+  Segment Sections...
+   00     .head.text .text .rodata __bug_table __ksymtab __ksymtab_gpl __ksymtab_strings __param __modver .ARM.unwind_idx .ARM.unwind_tab .init.text .exit.text .init.arch.info .init.tagtable .init.smpalt .init.pv_table .init.data .data..percpu .data .notes .bss 
+   01     .notes 
+   02     

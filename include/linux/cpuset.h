@@ -14,6 +14,9 @@
 #include <linux/cgroup.h>
 #include <linux/mm.h>
 
+/** 20130629    
+ * vexpress에서 정의되어 있음.
+ **/
 #ifdef CONFIG_CPUSETS
 
 extern int number_of_cpusets;	/* How many cpusets are defined in system? */

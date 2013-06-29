@@ -6,9 +6,12 @@
 #ifndef __ASSEMBLY__
 #ifdef	__KERNEL__
 
-/**1201208 
+/**20121208 
   static DECLARE_BITMAP(cpu_online_bits, CONFIG_NR_CPUS) __read_mostly;
   -> static unsigned long cpu_online_bits[1]
+
+  20130629    
+     주어진 이름으로 bits만큼을 표현할 수 있는 long array를 선언한다.
  **/
 #define DECLARE_BITMAP(name,bits) \
 	unsigned long name[BITS_TO_LONGS(bits)]

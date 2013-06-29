@@ -17,6 +17,9 @@
 #ifndef __per_cpu_offset
 extern unsigned long __per_cpu_offset[NR_CPUS];
 
+/** 20130629    
+ * __per_cpu_offset 배열에서 값을 리턴하는 macro 함수
+ **/
 #define per_cpu_offset(x) (__per_cpu_offset[x])
 #endif
 
@@ -42,6 +45,10 @@ extern unsigned long __per_cpu_offset[NR_CPUS];
  */
 #ifndef SHIFT_PERCPU_PTR
 /* Weird cast keeps both GCC and sparse happy. */
+/** 20130629    
+ * 1. __p에 대한 type check. sparse를 사용했을 때 검출된다.
+ * 2. __p에서 __offset만큼 떨어진 위치를 가져온다.
+ **/
 #define SHIFT_PERCPU_PTR(__p, __offset)	({				\
 	__verify_pcpu_ptr((__p));					\
 	RELOC_HIDE((typeof(*(__p)) __kernel __force *)(__p), (__offset)); \
@@ -53,6 +60,10 @@ extern unsigned long __per_cpu_offset[NR_CPUS];
  * established ways to produce a usable pointer from the percpu variable
  * offset.
  */
+/** 20130629    
+ * cpu에 해당하는 percpu 데이터를 참조하기 위한 macro
+ *     per_cpu_offset는 각 cpu 당 offset값을 가져오는 함수.
+ **/
 #define per_cpu(var, cpu) \
 	(*SHIFT_PERCPU_PTR(&(var), per_cpu_offset(cpu)))
 

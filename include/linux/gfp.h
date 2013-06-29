@@ -52,6 +52,9 @@ struct vm_area_struct;
 #define __GFP_HIGHMEM	((__force gfp_t)___GFP_HIGHMEM)
 #define __GFP_DMA32	((__force gfp_t)___GFP_DMA32)
 #define __GFP_MOVABLE	((__force gfp_t)___GFP_MOVABLE)  /* Page is movable */
+/** 20130629    
+ * ZONE에 대한 GFP MASK 속성을 정의
+ **/
 #define GFP_ZONEMASK	(__GFP_DMA|__GFP_HIGHMEM|__GFP_DMA32|__GFP_MOVABLE)
 /*
  * Action modifiers - doesn't change the zoning
@@ -250,11 +253,39 @@ static inline int allocflags_to_migratetype(gfp_t gfp_flags)
 	| 1 << (___GFP_MOVABLE | ___GFP_DMA32 | ___GFP_DMA | ___GFP_HIGHMEM)  \
 )
 
+/** 20130629    
+ * nr_free_pagecache_pages 에서 호출된 경우 flags는 다음과 같다.
+ #define GFP_HIGHUSER_MOVABLE	(__GFP_WAIT | __GFP_IO | __GFP_FS | \
+				 __GFP_HARDWALL | __GFP_HIGHMEM | \
+				 __GFP_MOVABLE)
+
+
+#define GFP_ZONEMASK	(__GFP_DMA|__GFP_HIGHMEM|__GFP_DMA32|__GFP_MOVABLE)
+ **/
 static inline enum zone_type gfp_zone(gfp_t flags)
 {
 	enum zone_type z;
+	/** 20130629    
+	 * 위 경우에서  bit는 __GFP_HIGHMEM, __GFP_MOVABLE
+	 **/
 	int bit = (__force int) (flags & GFP_ZONEMASK);
 
+	/** 20130629    
+	 * ZONES_SHIFT는 1.
+	 *
+#define GFP_ZONE_TABLE ( \
+		(ZONE_NORMAL << 0 * ZONES_SHIFT)				      \
+		| (OPT_ZONE_DMA << ___GFP_DMA * ZONES_SHIFT)			      \
+		| (OPT_ZONE_HIGHMEM << ___GFP_HIGHMEM * ZONES_SHIFT)		      \
+		| (OPT_ZONE_DMA32 << ___GFP_DMA32 * ZONES_SHIFT)		      \
+		| (ZONE_NORMAL << ___GFP_MOVABLE * ZONES_SHIFT)			      \
+		| (OPT_ZONE_DMA << (___GFP_MOVABLE | ___GFP_DMA) * ZONES_SHIFT)	      \
+		| (ZONE_MOVABLE << (___GFP_MOVABLE | ___GFP_HIGHMEM) * ZONES_SHIFT)   \
+		| (OPT_ZONE_DMA32 << (___GFP_MOVABLE | ___GFP_DMA32) * ZONES_SHIFT)   \
+	)
+
+	20130706 여기부터...
+	 **/
 	z = (GFP_ZONE_TABLE >> (bit * ZONES_SHIFT)) &
 					 ((1 << ZONES_SHIFT) - 1);
 	VM_BUG_ON((GFP_ZONE_BAD >> bit) & 1);

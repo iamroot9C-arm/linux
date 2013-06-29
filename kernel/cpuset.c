@@ -2238,8 +2238,14 @@ void cpuset_cpus_allowed_fallback(struct task_struct *tsk)
 	 */
 }
 
+/** 20130629    
+ * 현재 task의 mems_allowed bitmap을 node의 수만큼 설정한다.
+ **/
 void cpuset_init_current_mems_allowed(void)
 {
+	/** 20130629    
+	 * 현재 task (init_task)의 mems_allowed 변수를 node 개수만큼 1로 설정한다.
+	 **/
 	nodes_setall(current->mems_allowed);
 }
 

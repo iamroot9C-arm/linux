@@ -105,6 +105,9 @@ extern void tc_init(void);
  */
 bool early_boot_irqs_disabled __read_mostly;
 
+/** 20130629    
+ * system_state : 전역 변수이므로 초기값 0 (SYSTEM_BOOTING)
+ **/
 enum system_states system_state __read_mostly;
 EXPORT_SYMBOL(system_state);
 
@@ -597,7 +600,13 @@ asmlinkage void __init start_kernel(void)
 	mm_init_cpumask(&init_mm);
 	setup_command_line(command_line);
 	setup_nr_cpu_ids();
+	/** 20130629    
+	 * percpu를 사용하기 위한 자료구조 초기화
+	 **/
 	setup_per_cpu_areas();
+	/** 20130629    
+	 * vexpress 에서 NULL 함수
+	 **/
 	smp_prepare_boot_cpu();	/* arch-specific boot-cpu hooks */
 
 	build_all_zonelists(NULL, NULL);

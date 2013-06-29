@@ -27,6 +27,13 @@
  * @ptr.  This is to be used in percpu accessors to verify that the
  * input parameter is a percpu pointer.
  */
+/** 20130629    
+ * ptr이 __percpu로 선언되어 있는지 type check를 하기 위한 macro.
+ * __percpu는 __CHECKER__ 일 때만 사용되어 type check.
+ *
+ * 다음 라인은 gcc에서 unused 경고를 발생하지 않도록 하기 위해 사용됨
+ *  (void)__vpp_verify;						\
+ **/
 #define __verify_pcpu_ptr(ptr)	do {					\
 	const void __percpu *__vpp_verify = (typeof(ptr))NULL;		\
 	(void)__vpp_verify;						\

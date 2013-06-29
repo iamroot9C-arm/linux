@@ -122,10 +122,17 @@ static unsigned int pcpu_low_unit_cpu __read_mostly;
 static unsigned int pcpu_high_unit_cpu __read_mostly;
 
 /* the address of the first chunk which starts with the kernel static area */
+/** 20130629    
+ * pcpu_setup_first_chunk에서 초기값 설정
+ **/
 void *pcpu_base_addr __read_mostly;
 EXPORT_SYMBOL_GPL(pcpu_base_addr);
 
 static const int *pcpu_unit_map __read_mostly;		/* cpu -> unit */
+/** 20130629    
+ * cpu를 index 했을 때 unit의 위치를 저장한 배열 주소
+ * pcpu_setup_first_chunk 에서 설정
+ **/
 const unsigned long *pcpu_unit_offsets __read_mostly;	/* cpu -> unit offset */
 
 /* group information, used for vm allocation */
@@ -138,6 +145,9 @@ static const size_t *pcpu_group_sizes __read_mostly;
  * chunks, this one can be allocated and mapped in several different
  * ways and thus often doesn't live in the vmalloc area.
  */
+/** 20130629    
+ * pcpu_setup_first_chunk 에서 first chunk를 bootmem에서 할당받아 설정.
+ **/
 static struct pcpu_chunk *pcpu_first_chunk;
 
 /*
@@ -1132,8 +1142,14 @@ struct pcpu_alloc_info * __init pcpu_alloc_alloc_info(int nr_groups,
  *
  * Free @ai which was allocated by pcpu_alloc_alloc_info().
  */
+/** 20130629    
+ * alloc info 자료구조가 사용한 영역 bitmap 해제
+ **/
 void __init pcpu_free_alloc_info(struct pcpu_alloc_info *ai)
 {
+	/** 20130629    
+	 * ai가 사용한 영역 초기화 (page bitmap 설정)
+	 **/
 	free_bootmem(__pa(ai), ai->__ai_size);
 }
 
@@ -1250,6 +1266,12 @@ static void pcpu_dump_alloc_info(const char *lvl,
  * RETURNS:
  * 0 on success, -errno on failure.
  */
+/** 20130629    
+ * percpu first chunk를 설정한다.
+ * chunk 자료구조를 할당하고 초기화 한다.
+ *
+ * first chunk: kernel에서 사용하는 static percpu area를 표현하는 chunk
+ **/
 int __init pcpu_setup_first_chunk(const struct pcpu_alloc_info *ai,
 				  void *base_addr)
 {
@@ -1334,8 +1356,13 @@ int __init pcpu_setup_first_chunk(const struct pcpu_alloc_info *ai,
 			
 			/** 20130615
 				unit_map,unit_off 배열의 cpu인덱스에 해당하는 위치에 값 세팅
+				unit은 하나씩 증가된 값.
 			**/
 			unit_map[cpu] = unit + i;
+			/** 20130629    
+			 * group의 base_offset + index * unit 크기를 더해
+			 * cpu를 index로 했을 때 참조할 unit의 위치를 저장한다.
+			 **/
 			unit_off[cpu] = gi->base_offset + i * ai->unit_size;
 			
 			/** 20130615
@@ -1496,6 +1523,9 @@ int __init pcpu_setup_first_chunk(const struct pcpu_alloc_info *ai,
 	pcpu_chunk_relocate(pcpu_first_chunk, -1);
 
 	/* we're done */
+	/** 20130629    
+	 * base_addr (할당된 모든 유닛들의 첫번째 주소)를 전역 변수에 저장
+	 **/
 	pcpu_base_addr = base_addr;
 	return 0;
 }
@@ -1852,6 +1882,10 @@ static struct pcpu_alloc_info * __init pcpu_build_alloc_info(
  * RETURNS:
  * 0 on success, -errno on failure.
  */
+/** 20130629    
+ * reserved_size, dynamic_size, atom_size를 받아와
+ * first_chunk 자료구조를 bootmem에 할당하고 초기화
+ **/
 int __init pcpu_embed_first_chunk(size_t reserved_size, size_t dyn_size,
 				  size_t atom_size,
 				  pcpu_fc_cpu_distance_fn_t cpu_distance_fn,
@@ -1859,6 +1893,9 @@ int __init pcpu_embed_first_chunk(size_t reserved_size, size_t dyn_size,
 				  pcpu_fc_free_fn_t free_fn)
 {
 	void *base = (void *)ULONG_MAX;
+	/** 20130629    
+	 * group의 위치를 가리키는 포인터 배열을 나타냄
+	 **/
 	void **areas = NULL;
 	struct pcpu_alloc_info *ai;
 	size_t size_sum, areas_size, max_distance;
@@ -1911,6 +1948,8 @@ int __init pcpu_embed_first_chunk(size_t reserved_size, size_t dyn_size,
 			atomic_size단위로 해당 group의 총 unit사이즈를
 			할당한다.
 			cpu :: ???	
+
+			unit을 할당한다.
 		**/
 		/* allocate space for the whole group */
 		ptr = alloc_fn(cpu, gi->nr_units * ai->unit_size, atom_size);
@@ -1942,6 +1981,10 @@ int __init pcpu_embed_first_chunk(size_t reserved_size, size_t dyn_size,
 		각 group의 cpu를 순회
 			1.areas[group] 내에서 해당 cpu의 공간에 static size만큼의 데이타를 ptr로 복사
 			2.size_sum영역을 제외한 나머지 영역을 free
+
+	20130629
+		--> vmlinux.lds에서 지정된 .data..percpu 영역을 각 group의 unit 공간에 복사해 percpu용 데이터로 만드는 함수.
+		    이후 각 group마다의 offset 값을 저장해 둔 다음, 그 offset을 percpu 변수 주소에 더해 실제 위치를 구한다.
 	**/
 	for (group = 0; group < ai->nr_groups; group++) {
 		struct pcpu_group_info *gi = &ai->groups[group];
@@ -1994,15 +2037,27 @@ int __init pcpu_embed_first_chunk(size_t reserved_size, size_t dyn_size,
 		PFN_DOWN(size_sum), base, ai->static_size, ai->reserved_size,
 		ai->dyn_size, ai->unit_size);
 
+	/** 20130629    
+	 * first chuck 자료구조 초기화.
+	 **/
 	rc = pcpu_setup_first_chunk(ai, base);
 	goto out_free;
 
+/** 20130629    
+ * ai alloc이 실패하면 이동
+ **/
 out_free_areas:
 	for (group = 0; group < ai->nr_groups; group++)
 		free_fn(areas[group],
 			ai->groups[group].nr_units * ai->unit_size);
 out_free:
+	/** 20130629    
+	 * ai 자료구조 해제
+	 **/
 	pcpu_free_alloc_info(ai);
+	/** 20130629    
+	 * area 자료구조 해제
+	 **/
 	if (areas)
 		free_bootmem(__pa(areas), areas_size);
 	return rc;
@@ -2154,6 +2209,10 @@ static void __init pcpu_dfl_fc_free(void *ptr, size_t size)
 	free_bootmem(__pa(ptr), size);
 }
 
+/** 20130629    
+ * first chunk를 생성하고,
+ * 각 cpu들이 percpu내의 자원을 사용할 수 있도록 시작 위치 및 offset을 구해준다.
+ **/
 void __init setup_per_cpu_areas(void)
 {
 	unsigned long delta;
@@ -2175,7 +2234,22 @@ void __init setup_per_cpu_areas(void)
 	if (rc < 0)
 		panic("Failed to initialize percpu areas.");
 
+	/** 20130629    
+	 * pcpu_base_addr  : group이 할당받은 bootmem에서 할당 받은 공간 중 가장 작은 값
+	 * __per_cpu_start : .data..percpu 영역의 시작 주소.
+	 *
+	 * delta는 둘 사이의 offset 값.
+	 **/
 	delta = (unsigned long)pcpu_base_addr - (unsigned long)__per_cpu_start;
+	/** 20130629    
+	 * cpu들의 unit offset 주소를 가져와 delta와 더해 __per_cpu_offset에 저장
+	 *     -> 이것은 __per_cpu_start 에서부터 offset 값이다.
+	 *
+	 * 아래 MACRO에서 사용
+	 * #define per_cpu_offset(x) (__per_cpu_offset[x])
+	 * #define per_cpu(var, cpu) \
+	 *    (*SHIFT_PERCPU_PTR(&(var), per_cpu_offset(cpu)))
+	 **/
 	for_each_possible_cpu(cpu)
 		__per_cpu_offset[cpu] = delta + pcpu_unit_offsets[cpu];
 }
