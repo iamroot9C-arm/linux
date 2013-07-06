@@ -86,8 +86,14 @@ static inline int test_and_clear_ti_thread_flag(struct thread_info *ti, int flag
 	return test_and_clear_bit(flag, (unsigned long *)&ti->flags);
 }
 
+/** 20130706    
+ * thread_info의 flags의 flag 비트를 검사
+ **/
 static inline int test_ti_thread_flag(struct thread_info *ti, int flag)
 {
+	/** 20130706    
+	 * &ti->flags에서 flag 비트의 상태를 리턴
+	 **/
 	return test_bit(flag, (unsigned long *)&ti->flags);
 }
 
@@ -99,6 +105,11 @@ static inline int test_ti_thread_flag(struct thread_info *ti, int flag)
 	test_and_set_ti_thread_flag(current_thread_info(), flag)
 #define test_and_clear_thread_flag(flag) \
 	test_and_clear_ti_thread_flag(current_thread_info(), flag)
+/** 20130706    
+ * 현재 thread_info에 flag가 설정되어 있는지 검사하는 매크로 함수
+ * flag의 종류는 아래 파일에 있음
+ *   arch/arm/include/asm/thread_info.h
+ **/
 #define test_thread_flag(flag) \
 	test_ti_thread_flag(current_thread_info(), flag)
 

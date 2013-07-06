@@ -162,10 +162,20 @@ struct completion;
 struct pt_regs;
 struct user;
 
+/** 20130706    
+ *  "explicit preepption points"를 더 많이 두어 latency를 줄이고자 할 때 사용.
+ *  vexpress config에서 설정되어 있지 않음.
+ *
+ *  might_resched는 might_sleep에서 호출.
+ *  시간이 많이 걸리는 작업 전에 자발적으로 스케쥴링을 실행하는 것으로 보임
+ **/
 #ifdef CONFIG_PREEMPT_VOLUNTARY
 extern int _cond_resched(void);
 # define might_resched() _cond_resched()
 #else
+/** 20130706    
+ * 옵션이 꺼져 있어 NULL.
+ **/
 # define might_resched() do { } while (0)
 #endif
 
@@ -186,6 +196,9 @@ extern int _cond_resched(void);
 #else
   static inline void __might_sleep(const char *file, int line,
 				   int preempt_offset) { }
+/** 20130706    
+ * CONFIG_DEBUG_ATOMIC_SLEEP config가 꺼져 있어 아래 함수 실행
+ **/
 # define might_sleep() do { might_resched(); } while (0)
 #endif
 

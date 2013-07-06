@@ -17,6 +17,9 @@
 #include <asm/barrier.h>
 #include <asm/cmpxchg.h>
 
+/** 20130706    
+ * 단순히 i를 리턴.
+ **/
 #define ATOMIC_INIT(i)	{ (i) }
 
 #ifdef __KERNEL__
@@ -71,6 +74,16 @@
 	ARM: A3.4.1 Exclusive access instructions and Non-shareable memory regions
 	http://www.iamroot.org/xe/66152
  */
+/** 20130706    
+ * 코드에서 clrex가 실제 호출되는 곳은 arch/arm/kernel/entry-header.S의
+ * svc_exit, restore_user_regs이다.
+ *     -> context switching이 발생하는 시점은 scheduler가 불리는 시점이므로 svc_exit를 호출할 것이므로 svc_exit 안에 clrex를 넣어준다.
+ **/
+ /** 20130706    
+  * ARM에서 일반적인 str 명령은 local exclusive monitor를 clear하지 않는다.
+  * ldr/str 명령은 그 자체로 atomic 하다.
+  * 모든 exception return시에 clrex나 dummy strex (ARMv6 이전)가 수행된다.
+  **/
 /*
  * On ARM, ordinary assignment (str instruction) doesn't clear the local
  * strex/ldrex monitor on some implementations. The reason we can use it for
@@ -111,6 +124,8 @@ cc : 명령어가 condition 코드 레지스터를 변경할 경우에 사용한
 	eg) teq,subs 
 
 +Qo : 만들어놓고 안쓰고 있다 어떤 의미가 있을까???
+
+ http://gcc.gnu.org/onlinedocs/gcc/Machine-Constraints.html#Machine-Constraints
 
 **/
 static inline void atomic_add(int i, atomic_t *v)
@@ -189,12 +204,46 @@ static inline int atomic_sub_return(int i, atomic_t *v)
 	return result;
 }
 
+/** 20130706    
+ * vexpress는 __LINUX_ARM_ARCH__가 7.
+ * old->new 변경을 원자적으로 실행하고, ptr->counter를 리턴.
+ **/
 static inline int atomic_cmpxchg(atomic_t *ptr, int old, int new)
 {
 	unsigned long oldval, res;
 
+	/** 20130706    
+	 * memory barrier를 수행
+	 **/
 	smp_mb();
 
+	/** 20130706    
+	 * http://gcc.gnu.org/onlinedocs/gcc/Machine-Constraints.html#Machine-Constraints
+	 * %0 : res
+	 * %1 : oldval
+	 * %2 : ptr->counter
+	 * %3 : &ptr->counter
+	 * %4 : old
+	 * %5 : new
+	 * do  {
+	 *		oldval = *(&ptr->counter);
+	 *		res = 0;
+	 *		if (oldval == old) {			// compare
+	 *			*(&ptr->counter) = new;
+	 *			res = (is_touched);
+	 *		}
+	 *	} while (res);
+	 *
+	 * do {
+	 *		"ldrex	oldval, [&ptr->counter]\n"
+	 *		"mov	res, #0\n"
+	 *		"teq	oldval, old\n"
+	 *		"strexeq res, new, [&ptr->counter]\n"
+	 * } while (res);
+	 *
+	 * 만약 첫번째 수행에서 oldval이 old와 다르다면,
+	 * res는 0이므로 loop을 돌지 않고 빠져나간다.
+	 **/
 	do {
 		__asm__ __volatile__("@ atomic_cmpxchg\n"
 		"ldrex	%1, [%3]\n"
@@ -206,8 +255,14 @@ static inline int atomic_cmpxchg(atomic_t *ptr, int old, int new)
 		    : "cc");
 	} while (res);
 
+	/** 20130706    
+	 * memory barrier를 수행
+	 **/
 	smp_mb();
 
+	/** 20130706    
+	 * 이전 값 리턴
+	 **/
 	return oldval;
 }
 

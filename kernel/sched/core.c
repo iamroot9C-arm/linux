@@ -3476,8 +3476,15 @@ void __sched schedule_preempt_disabled(void)
 
 #ifdef CONFIG_MUTEX_SPIN_ON_OWNER
 
+/** 20130706    
+ * owner가 mutex의 owner와 일치할 때 on_cpu의 상태를 리턴하는 inline 함수.
+ **/
 static inline bool owner_running(struct mutex *lock, struct task_struct *owner)
 {
+	/** 20130706    
+	 * lock->owner와 owner (앞에서 ACCESS_ONCE로 읽어온 값일 때)
+	 * 일치하지 않으면 바로 false 리턴.
+	 **/
 	if (lock->owner != owner)
 		return false;
 
@@ -3487,8 +3494,15 @@ static inline bool owner_running(struct mutex *lock, struct task_struct *owner)
 	 * point to free()d memory, if it still matches, the rcu_read_lock()
 	 * ensures the memory stays valid.
 	 */
+	/** 20130706    
+	 * compiler level의 opitmization barrier.
+	 *   위 영문 주석의 의미는???
+	 **/
 	barrier();
 
+	/** 20130706    
+	 * owner task의 on_cpu 변수를 리턴
+	 **/
 	return owner->on_cpu;
 }
 
@@ -3496,16 +3510,38 @@ static inline bool owner_running(struct mutex *lock, struct task_struct *owner)
  * Look out! "owner" is an entirely speculative pointer
  * access and not reliable.
  */
+/** 20130706    
+ * lock의 owner가 변경될 때까지 spin을 수행
+ *   (need_resched 상황일 때는 false return)
+ **/
 int mutex_spin_on_owner(struct mutex *lock, struct task_struct *owner)
 {
+	/** 20130706    
+	 * sysctl_sched_features & (1UL << __SCHED_FEAT_OWNER_SPIN)
+	 *
+	 * kernel/sched/features.h
+	 *   SCHED_FEAT(OWNER_SPIN, true)
+	 *
+	 *  feature가 설정되어 있지 않다면 바로 리턴.
+	 **/
 	if (!sched_feat(OWNER_SPIN))
 		return 0;
 
 	rcu_read_lock();
+	/** 20130706    
+	 * lock의 owner인 task_struct의 on_cpu가 true인동안 loop을 수행
+	 * lock의 owner가 바뀌었다면 (주로 unlock일듯???) owner_running이 false를 리턴하고 loop을 벗어남.
+	 **/
 	while (owner_running(lock, owner)) {
+		/** 20130706    
+		 * resched 가 필요하다면 spin을 종료한다.
+		 **/
 		if (need_resched())
 			break;
 
+		/** 20130706    
+		 * barrier() 호출. loop의 끝에 위치해서 compiler 최적화로 인한 오작동을 방지.
+		 **/
 		arch_mutex_cpu_relax();
 	}
 	rcu_read_unlock();
@@ -3515,6 +3551,11 @@ int mutex_spin_on_owner(struct mutex *lock, struct task_struct *owner)
 	 * owner changed, which is a sign for heavy contention. Return
 	 * success only when lock->owner is NULL.
 	 */
+	/** 20130706    
+	 * 위 루프를 벗어났다는 것은 scheduling이 필요하거나 owner가 변경되었음을 의미한다.
+	 * 이는 lock의 소유권 주장이 발생할 것을 의미한다.
+	 * lock->owner가 NULL인 상태일 때만 true.
+	 **/
 	return lock->owner == NULL;
 }
 #endif

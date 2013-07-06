@@ -432,6 +432,9 @@ do {								\
 
 #else /* CONFIG_LOCK_STAT */
 
+/** 20130706    
+ * CONFIG_LOCK_STAT가 설정되어 있지 않아 NULL.
+ **/
 #define lock_contended(lockdep_map, ip) do {} while (0)
 #define lock_acquired(lockdep_map, ip) do {} while (0)
 
@@ -490,6 +493,9 @@ static inline void print_irqtrace_events(struct task_struct *curr)
 # endif
 # define spin_release(l, n, i)			lock_release(l, n, i)
 #else
+/** 20130706    
+ * CONFIG_DEBUG_LOCK_ALLOC 설정되어 있지 않은 경우 acquire, release 부분은 NULL 함수.
+ **/
 # define spin_acquire(l, s, t, i)		do { } while (0)
 # define spin_release(l, n, i)			do { } while (0)
 #endif
@@ -519,6 +525,9 @@ static inline void print_irqtrace_events(struct task_struct *curr)
 # endif
 # define mutex_release(l, n, i)			lock_release(l, n, i)
 #else
+/** 20130706    
+ * mutex debugging을 사용하지 않으면 nest 관련 code는 NULL.
+ **/
 # define mutex_acquire(l, s, t, i)		do { } while (0)
 # define mutex_acquire_nest(l, s, t, n, i)	do { } while (0)
 # define mutex_release(l, n, i)			do { } while (0)

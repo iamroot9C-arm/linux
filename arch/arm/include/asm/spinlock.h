@@ -81,6 +81,9 @@ static inline void dsb_sev(void)
 #define arch_spin_unlock_wait(lock) \
 	do { while (arch_spin_is_locked(lock)) cpu_relax(); } while (0)
 
+/** 20130706    
+ * do_raw_spin_lock_flags 에서 온 경우
+ **/
 #define arch_spin_lock_flags(lock, flags) arch_spin_lock(lock)
 
 /** 20121201

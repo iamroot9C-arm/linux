@@ -59,6 +59,9 @@
 #define smp_rmb()	barrier()
 #define smp_wmb()	barrier()
 #else
+/** 20130706    
+ * SMP일 때는 dmb() 호출.
+ **/
 #define smp_mb()	dmb()
 #define smp_rmb()	dmb()
 #define smp_wmb()	dmb()

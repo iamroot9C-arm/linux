@@ -9,6 +9,9 @@
  * !CONFIG_DEBUG_MUTEXES case. Most of them are NOPs:
  */
 
+/** 20130706    
+ * spin_lock으로 mutex의 lock을 
+ **/
 #define spin_lock_mutex(lock, flags) \
 		do { spin_lock(lock); (void)(flags); } while (0)
 #define spin_unlock_mutex(lock, flags) \
@@ -17,6 +20,9 @@
 		__list_del((waiter)->list.prev, (waiter)->list.next)
 
 #ifdef CONFIG_SMP
+/** 20130706    
+ * current task로 owner를 설정.
+ **/
 static inline void mutex_set_owner(struct mutex *lock)
 {
 	lock->owner = current;

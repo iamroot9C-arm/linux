@@ -3655,8 +3655,7 @@ void __ref build_all_zonelists(pg_data_t *pgdat, struct zone *zone)
 		if (zone)
 			setup_zone_pageset(zone);
 #endif
-		/** 20130629    
-		 * stop_machine은 다음에... (20130706)
+		/** 20130706    
 		 **/
 		stop_machine(__build_all_zonelists, pgdat, NULL);
 		/* cpuset refresh routine should be here */

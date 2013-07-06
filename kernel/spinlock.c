@@ -132,6 +132,9 @@ EXPORT_SYMBOL(_raw_spin_trylock_bh);
 #endif
 
 #ifndef CONFIG_INLINE_SPIN_LOCK
+/** 20130706    
+ * CONFIG_INLINE_SPIN_LOCK  이 설정되어 있지 않아 __raw_spin_lock 함수 호출
+ **/
 void __lockfunc _raw_spin_lock(raw_spinlock_t *lock)
 {
 	__raw_spin_lock(lock);

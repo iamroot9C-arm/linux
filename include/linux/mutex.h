@@ -45,6 +45,12 @@
  * - detects multi-task circular deadlocks and prints out all affected
  *   locks and tasks (and only those tasks)
  */
+/** 20130706    
+ * count     -> 초기값 1로 설정. 첫번째 lock을 잡으면 0, 이후 lock을 시도하는 thread는 대기열로 진입
+ * wait_lock -> spinlock
+ * wait_list -> 대기열
+ * owner     -> debugging이나 SMP 시에 사용. (UP에서는 왜 사용 안 되나???)
+ **/
 struct mutex {
 	/* 1: unlocked, 0: locked, negative: locked, possible waiters */
 	atomic_t		count;
@@ -110,6 +116,15 @@ static inline void mutex_destroy(struct mutex *lock) {}
 # define __DEP_MAP_MUTEX_INITIALIZER(lockname)
 #endif
 
+/** 20130706    
+ * mutex lock init 함수.
+ * include/linux/mutex.h
+ *   struct mutex
+ *
+ * .count     : 초기값 1
+ * .wait_lock : spinlock은 unlock 상태
+ * .wait_list : list head 초기화
+ **/
 #define __MUTEX_INITIALIZER(lockname) \
 		{ .count = ATOMIC_INIT(1) \
 		, .wait_lock = __SPIN_LOCK_UNLOCKED(lockname.wait_lock) \
@@ -177,6 +192,9 @@ extern int mutex_trylock(struct mutex *lock);
 extern void mutex_unlock(struct mutex *lock);
 extern int atomic_dec_and_mutex_lock(atomic_t *cnt, struct mutex *lock);
 
+/** 20130706    
+ * CONFIG_HAVE_ARCH_MUTEX_CPU_RELAX 설정되어 있지 않아 not defined로 수행
+ **/
 #ifndef CONFIG_HAVE_ARCH_MUTEX_CPU_RELAX
 #define arch_mutex_cpu_relax()	cpu_relax()
 #endif

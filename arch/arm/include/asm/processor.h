@@ -82,6 +82,9 @@ unsigned long get_wchan(struct task_struct *p);
 #if __LINUX_ARM_ARCH__ == 6 || defined(CONFIG_ARM_ERRATA_754327)
 #define cpu_relax()			smp_mb()
 #else
+/** 20130706    
+ *__LINUX_ARM_ARCH__가 7이므로 barrier()가 수행
+ **/
 #define cpu_relax()			barrier()
 #endif
 

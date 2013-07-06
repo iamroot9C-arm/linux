@@ -1249,6 +1249,12 @@ struct task_struct {
 
 #ifdef CONFIG_SMP
 	struct llist_node wake_entry;
+	/** 20130706    
+	 * task가 cpu에서 수행 중인지 나타내는 속성.
+	 * try_to_wake_up에서 검사하는데 어떤 용도인지???
+	 * 0일 때는 task가 다른 cpu로 migrate 될 수 있다는 의미.
+	 * 1은 반대의 의미로 lock처럼 사용된다.
+	 **/
 	int on_cpu;
 #endif
 	int on_rq;
@@ -1622,13 +1628,23 @@ struct task_struct {
 #define MAX_PRIO		(MAX_RT_PRIO + 40)
 #define DEFAULT_PRIO		(MAX_RT_PRIO + 20)
 
+/** 20130706    
+ * rt_prio인지 검사하는 함수
+ **/
 static inline int rt_prio(int prio)
 {
+	/** 20130706    
+	 * 매개변수로 전달받은 priority가 MAX_RT_PRIO (100) 보다 작으면 1
+	 * RT task.
+	 **/
 	if (unlikely(prio < MAX_RT_PRIO))
 		return 1;
 	return 0;
 }
 
+/** 20130706    
+ * task가 rt priority를 가졌는지 검사해 리턴하는 함수 
+ **/
 static inline int rt_task(struct task_struct *p)
 {
 	return rt_prio(p->prio);
@@ -2623,8 +2639,15 @@ static inline int signal_pending_state(long state, struct task_struct *p)
 	return (state & TASK_INTERRUPTIBLE) || __fatal_signal_pending(p);
 }
 
+/** 20130706    
+ * resched flag를 검사해 scheduling이 필요한지 검사하는 함수
+ **/
 static inline int need_resched(void)
 {
+	/** 20130706    
+	 * flags에서 TIF_NEED_RESCHED flag를 검사해 리턴.
+	 * unlikely로 설정
+	 **/
 	return unlikely(test_thread_flag(TIF_NEED_RESCHED));
 }
 

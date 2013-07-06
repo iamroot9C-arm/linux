@@ -19,6 +19,9 @@ int in_lock_functions(unsigned long addr);
 
 #define assert_raw_spin_locked(x)	BUG_ON(!raw_spin_is_locked(x))
 
+/** 20130706    
+ * __acquires는 attribute
+ **/
 void __lockfunc _raw_spin_lock(raw_spinlock_t *lock)		__acquires(lock);
 void __lockfunc _raw_spin_lock_nested(raw_spinlock_t *lock, int subclass)
 								__acquires(lock);
@@ -150,10 +153,22 @@ static inline void __raw_spin_lock_bh(raw_spinlock_t *lock)
 	LOCK_CONTENDED(lock, do_raw_spin_trylock, do_raw_spin_lock);
 }
 
+/** 20130706    
+ * spin_lock을 실행하는 부분.
+ **/
 static inline void __raw_spin_lock(raw_spinlock_t *lock)
 {
+	/** 20130706    
+	 * 선점불가로 지정
+	 **/
 	preempt_disable();
+	/** 20130706    
+	 * LOCK DEBUG를 사용하지 않으면 NULL 함수
+	 **/
 	spin_acquire(&lock->dep_map, 0, 0, _RET_IP_);
+	/** 20130706    
+	 * LOCK DEBUG를 사용하지 않으면 do_raw_spin_lock 실행
+	 **/
 	LOCK_CONTENDED(lock, do_raw_spin_trylock, do_raw_spin_lock);
 }
 

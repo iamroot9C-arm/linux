@@ -517,6 +517,9 @@ int stop_machine(int (*fn)(void *), void *data, const struct cpumask *cpus)
 	int ret;
 
 	/* No CPUs can come up or down during this. */
+	/** 20130706    
+	 * kernel/cpu.c 에 있는 함수 호출
+	 **/
 	get_online_cpus();
 	ret = __stop_machine(fn, data, cpus);
 	put_online_cpus();

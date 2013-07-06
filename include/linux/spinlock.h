@@ -137,6 +137,9 @@ static inline void smp_mb__after_lock(void) { smp_mb(); }
  extern int do_raw_spin_trylock(raw_spinlock_t *lock);
  extern void do_raw_spin_unlock(raw_spinlock_t *lock) __releases(lock);
 #else
+ /** 20130706    
+  * 실제 lock을 획득하는 함수.
+  **/
 static inline void do_raw_spin_lock(raw_spinlock_t *lock) __acquires(lock)
 {
 	__acquire(lock);
@@ -176,6 +179,9 @@ static inline void do_raw_spin_unlock(raw_spinlock_t *lock) __releases(lock)
  */
 #define raw_spin_trylock(lock)	__cond_lock(lock, _raw_spin_trylock(lock))
 
+/** 20130706    
+ * _raw_spin_lock 호출
+ **/
 #define raw_spin_lock(lock)	_raw_spin_lock(lock)
 
 #ifdef CONFIG_DEBUG_LOCK_ALLOC
@@ -308,6 +314,9 @@ raw_spin_lock_init(&(_lock)->rlock);
  (_lock)->rlock = (raw_spinlock_t) { .raw_lock = { { 0 } };}
 
  */
+/** 20130706    
+ * spin_lock 실행 함수
+ **/
 static inline void spin_lock(spinlock_t *lock)
 {
 	raw_spin_lock(&lock->rlock);

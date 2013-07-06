@@ -63,9 +63,15 @@ static struct {
 	.refcount = 0,
 };
 
+/** 20130706    
+ * CONFIG_HOTPLUG_CPU 옵션이 켜 있어 이 함수 실행
+ **/
 void get_online_cpus(void)
 {
 	might_sleep();
+	/** 20130706    
+	 * cpu_hotplug_begin 전에는 초기값 NULL.
+	 **/
 	if (cpu_hotplug.active_writer == current)
 		return;
 	mutex_lock(&cpu_hotplug.lock);

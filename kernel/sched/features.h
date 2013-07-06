@@ -53,6 +53,10 @@ SCHED_FEAT(LB_BIAS, true)
  * another cpu -- assumes that when the owner is running, it will soon
  * release the lock. Decreases scheduling overhead.
  */
+/** 20130706    
+ * mutex owner가 다른 cpu에서 수행되고 있을 때,
+ *  mutex 획득을 위해 spin을 하면서 기다리는 속성을 지정.
+ **/
 SCHED_FEAT(OWNER_SPIN, true)
 
 /*

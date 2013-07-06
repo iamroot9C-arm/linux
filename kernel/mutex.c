@@ -84,8 +84,13 @@ __mutex_lock_slowpath(atomic_t *lock_count);
  *
  * This function is similar to (but not equivalent to) down().
  */
+/** 20130706    
+ **/
 void __sched mutex_lock(struct mutex *lock)
 {
+	/** 20130706    
+	 * preemption point를 둔다.
+	 **/
 	might_sleep();
 	/*
 	 * The locking fastpath is the 1->0 transition from
@@ -133,6 +138,10 @@ EXPORT_SYMBOL(mutex_unlock);
 /*
  * Lock a mutex (possibly interruptible), slowpath:
  */
+/** 20130706    
+ * case: __mutex_lock_slowpath
+	__mutex_lock_common(lock, TASK_UNINTERRUPTIBLE, 0, NULL, _RET_IP_);
+ **/
 static inline int __sched
 __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 		    struct lockdep_map *nest_lock, unsigned long ip)
@@ -141,10 +150,27 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 	struct mutex_waiter waiter;
 	unsigned long flags;
 
+	/** 20130706    
+	 * 선점 불가로 설정. 비선점일 경우에는 의미 없음.
+	 **/
 	preempt_disable();
+	/** 20130706    
+	 * mutex debugging을 위해 호출.
+	 **/
 	mutex_acquire_nest(&lock->dep_map, subclass, 0, nest_lock, ip);
 
 #ifdef CONFIG_MUTEX_SPIN_ON_OWNER
+/** 20130706    
+ *   긍정적인 spinning.
+ *
+ *   pending된 대기자가 없고, lock owner가 다른 CPU에서 수행되고 있다면,
+ *   lock을 획득하기 위해 spin을 시도한다.
+ *
+ *   이렇게 하는 이유는 lock owner가 돌고 있다면(running) 아마도 lock을 금방 해제할 것이라 기대하기 때문이다.
+ *
+ *   이런 방식으로 사용하기 위해서는 lock owner가 필요하고,
+ *   이 뮤텍스 구현 방식은 lock field에서 owner를 원자적으로 추적하지 않는다.
+ **/
 	/*
 	 * Optimistic spinning.
 	 *
@@ -170,13 +196,38 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 		 * If there's an owner, wait for it to either
 		 * release the lock or go to sleep.
 		 */
+		/** 20130706    
+		 * 메모리에 접근해 lock->owner의 값을 가져온다.
+		 **/
 		owner = ACCESS_ONCE(lock->owner);
+		/** 20130706    
+		 * 위에서 가져온 owner 정보가 변경되었는지 검사한다.
+		 * lock->owner가 NULL인 경우에만 true 리턴.
+		 *
+		 * case 1. owner가 변경(다른 task)되었다면 if문이 참이 되어 for(;;)에서 벗어남
+		 * case 2. 이전에 lock을 소유했던 owner 을 변경했다면 mutex_spin_on_owner가 true를 리턴해 if문이 거짓이 됨
+		 **/
 		if (owner && !mutex_spin_on_owner(lock, owner))
 			break;
 
+		/** 20130706    
+		 * atomic_cmpxchg에서 검사한 이전값이 1이라면 아래 문장 수행.
+		 * 1->0을 원자적으로 수행하는데 이전 값이 1이라면 수행
+		 *   -> 자신을 owner로 지정 하고 리턴.
+		 **/
 		if (atomic_cmpxchg(&lock->count, 1, 0) == 1) {
+			/** 20130706    
+			 * LOCK DEBUG를 사용하지 않아 NULL 함수
+			 **/
 			lock_acquired(&lock->dep_map, ip);
+			/** 20130706    
+			 * mutex의 owner를 현재 task로 설정
+			 **/
 			mutex_set_owner(lock);
+			/** 20130706    
+			 * preempt를 사용한다면 enable로 돌려놓고 return.
+			 * vexpress 기본 설정에서는 사용하지 않음.
+			 **/
 			preempt_enable();
 			return 0;
 		}
@@ -187,6 +238,15 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 		 * we're an RT task that will live-lock because we won't let
 		 * the owner complete.
 		 */
+		/** 20130706    
+		 * 처음 owner가 NULL이거나, spin으로 대기 후 NULL로 변경되었을 때와
+		 * atomic_cmpxchg로 count를 감소시키기 전에 선점이 되었다면,
+		 * 이곳까지 진행되었을 것이다.
+		 *
+		 * owner가 NULL이고
+		 * need_resched()가 참이거나, 즉 rescheduling이 필요하거나
+		 * 현재 task가 rt task라면 for문을 빠져나간다.
+		 **/
 		if (!owner && (need_resched() || rt_task(task)))
 			break;
 
@@ -402,6 +462,9 @@ EXPORT_SYMBOL(mutex_lock_killable);
 static __used noinline void __sched
 __mutex_lock_slowpath(atomic_t *lock_count)
 {
+	/** 20130706    
+	 * lock_count를 가지고 있는 mutex 자료구조를 lock으로 가리킴
+	 **/
 	struct mutex *lock = container_of(lock_count, struct mutex, count);
 
 	__mutex_lock_common(lock, TASK_UNINTERRUPTIBLE, 0, NULL, _RET_IP_);

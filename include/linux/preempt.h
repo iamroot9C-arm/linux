@@ -99,6 +99,9 @@ do { \
 
 #else /* !CONFIG_PREEMPT_COUNT */
 
+/** 20130706    
+ * CONFIG_PREEMPT_COUNT가 정의되어 있지 않아 관련 함수들은 NULL.
+ **/
 #define preempt_disable()		do { } while (0)
 #define sched_preempt_enable_no_resched()	do { } while (0)
 #define preempt_enable_no_resched()	do { } while (0)
