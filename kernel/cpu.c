@@ -75,6 +75,9 @@ void get_online_cpus(void)
 	if (cpu_hotplug.active_writer == current)
 		return;
 	mutex_lock(&cpu_hotplug.lock);
+	/** 20130713    
+	 * refcount를 증가.
+	 **/
 	cpu_hotplug.refcount++;
 	mutex_unlock(&cpu_hotplug.lock);
 

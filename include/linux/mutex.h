@@ -194,6 +194,9 @@ extern int atomic_dec_and_mutex_lock(atomic_t *cnt, struct mutex *lock);
 
 /** 20130706    
  * CONFIG_HAVE_ARCH_MUTEX_CPU_RELAX 설정되어 있지 않아 not defined로 수행
+ *
+ * loop의 끝에 architecture specific한 cpu_relax 를 넣어줌.
+ * [참고] http://www.makelinux.net/ldd3/chp-7-sect-3
  **/
 #ifndef CONFIG_HAVE_ARCH_MUTEX_CPU_RELAX
 #define arch_mutex_cpu_relax()	cpu_relax()

@@ -17,6 +17,9 @@
 
 int in_lock_functions(unsigned long addr);
 
+/** 20130713    
+ * spinlock이 잠겨 있지 않다면 BUG.
+ **/
 #define assert_raw_spin_locked(x)	BUG_ON(!raw_spin_is_locked(x))
 
 /** 20130706    
@@ -71,6 +74,8 @@ _raw_spin_unlock_irqrestore(raw_spinlock_t *lock, unsigned long flags)
 #endif
 
 #ifndef CONFIG_UNINLINE_SPIN_UNLOCK
+/** 20130713    
+ **/
 #define _raw_spin_unlock(lock) __raw_spin_unlock(lock)
 #endif
 
@@ -174,10 +179,22 @@ static inline void __raw_spin_lock(raw_spinlock_t *lock)
 
 #endif /* CONFIG_PREEMPT */
 
+/** 20130713    
+ * spin unlock.
+ **/
 static inline void __raw_spin_unlock(raw_spinlock_t *lock)
 {
+	/** 20130713    
+	 * DEBUG용. NULL 함수
+	 **/
 	spin_release(&lock->dep_map, 1, _RET_IP_);
+	/** 20130713    
+	 * 실제 lock 해제.
+	 **/
 	do_raw_spin_unlock(lock);
+	/** 20130713    
+	 * non preempt로 NULL 함수.
+	 **/
 	preempt_enable();
 }
 

@@ -223,6 +223,9 @@ extern char ___assert_task_state[1 - 2*!!(
 				((task->state & TASK_UNINTERRUPTIBLE) != 0 && \
 				 (task->flags & PF_FROZEN) == 0)
 
+/** 20130713    
+ * task의 state를 변경.
+ **/
 #define __set_task_state(tsk, state_value)		\
 	do { (tsk)->state = (state_value); } while (0)
 #define set_task_state(tsk, state_value)		\
@@ -356,6 +359,9 @@ enum { sysctl_hung_task_timeout_secs = 0 };
 #endif
 
 /* Attach to any functions which should be ignored in wchan output. */
+/** 20130713    
+ * .sched.text 섹션에 저장
+ **/
 #define __sched		__attribute__((__section__(".sched.text")))
 
 /* Linker adds these: start and end of __sched functions */
@@ -1445,8 +1451,14 @@ struct task_struct {
 	spinlock_t alloc_lock;
 
 	/* Protection of the PI data structures: */
+	/** 20130713    
+	 * Priority Inheritance
+	 **/
 	raw_spinlock_t pi_lock;
 
+	/** 20130713    
+	 * CONFIG_RT_MUTEXES defined되어 있음
+	 **/
 #ifdef CONFIG_RT_MUTEXES
 	/* PI waiters blocked on a rt_mutex held by this task */
 	struct plist_head pi_waiters;
@@ -2527,6 +2539,9 @@ static inline void threadgroup_unlock(struct task_struct *tsk) {}
 
 #ifndef __HAVE_THREAD_FUNCTIONS
 
+/** 20130713    
+ * task의 stack에 저장된 주소 (thread_info와 union)를 리턴
+ **/
 #define task_thread_info(task)	((struct thread_info *)(task)->stack)
 #define task_stack_page(task)	((task)->stack)
 
@@ -2568,6 +2583,9 @@ static inline unsigned long stack_not_used(struct task_struct *p)
 /* set thread flags in other task's structures
  * - see asm/thread_info.h for TIF_xxxx flags available
  */
+/** 20130713    
+ * task의 thread_info 구조체의 flags 중 flag를 켜주는 함수
+ **/
 static inline void set_tsk_thread_flag(struct task_struct *tsk, int flag)
 {
 	set_ti_thread_flag(task_thread_info(tsk), flag);
@@ -2588,11 +2606,17 @@ static inline int test_and_clear_tsk_thread_flag(struct task_struct *tsk, int fl
 	return test_and_clear_ti_thread_flag(task_thread_info(tsk), flag);
 }
 
+/** 20130713    
+ * task의 thread_info 구조체의 flags 중 flag가 켜져 있는지 검사하는 함수
+ **/
 static inline int test_tsk_thread_flag(struct task_struct *tsk, int flag)
 {
 	return test_ti_thread_flag(task_thread_info(tsk), flag);
 }
 
+/** 20130713    
+ * task의 thread_info 구조체의 flags 중 TIF_NEED_RESCHED flas를 켜주는 함수
+ **/
 static inline void set_tsk_need_resched(struct task_struct *tsk)
 {
 	set_tsk_thread_flag(tsk,TIF_NEED_RESCHED);
@@ -2603,8 +2627,14 @@ static inline void clear_tsk_need_resched(struct task_struct *tsk)
 	clear_tsk_thread_flag(tsk,TIF_NEED_RESCHED);
 }
 
+/** 20130713    
+ * task가 need_resched 상태인지 검사
+ **/
 static inline int test_tsk_need_resched(struct task_struct *tsk)
 {
+	/** 20130713    
+	 * task tsk의 thread_info flag 중 TIF_NEED_RESCHED가 설정되어 있는지 검사 
+	 **/
 	return unlikely(test_tsk_thread_flag(tsk,TIF_NEED_RESCHED));
 }
 
@@ -2619,6 +2649,9 @@ static inline int signal_pending(struct task_struct *p)
 	return unlikely(test_tsk_thread_flag(p,TIF_SIGPENDING));
 }
 
+/** 20130713    
+ * task에 SIGKILL signal이 pending되어 있는지 여부를 리턴하는 함수
+ **/
 static inline int __fatal_signal_pending(struct task_struct *p)
 {
 	return unlikely(sigismember(&p->pending.signal, SIGKILL));
@@ -2629,6 +2662,15 @@ static inline int fatal_signal_pending(struct task_struct *p)
 	return signal_pending(p) && __fatal_signal_pending(p);
 }
 
+/** 20130713    
+ * state를 검사해 pending에 대한 처리 여부를 리턴.
+ *
+ * 1. TASK_INTERRUPTIBLE | TASK_WAKEKILL이 아닐 경우 0을 리턴
+ *    TASK_UNINTERRUPTIBLE이 대표적인 예.
+ * 2. signal이 pending되어 있지 않을 경우 0을 리턴
+ *    signal을 처리할 필요가 없음을 의미
+ * 3. TASK_INTERRUPTIBLE이거나 SIGKILL이 pending되어 있다면 1을 리턴
+ **/
 static inline int signal_pending_state(long state, struct task_struct *p)
 {
 	if (!(state & (TASK_INTERRUPTIBLE | TASK_WAKEKILL)))
@@ -2726,6 +2768,9 @@ extern void signal_wake_up(struct task_struct *t, int resume_stopped);
  */
 #ifdef CONFIG_SMP
 
+/** 20130713    
+ * task로 thread_info 구조체를 찾아 cpu값을 리턴.
+ **/
 static inline unsigned int task_cpu(const struct task_struct *p)
 {
 	return task_thread_info(p)->cpu;

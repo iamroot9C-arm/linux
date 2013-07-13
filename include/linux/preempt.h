@@ -15,12 +15,16 @@
   extern void sub_preempt_count(int val);
 #else
 /** 20130413
- * preempt count 를 증가 시킨다.
+ * preempt count 를 val만큼 증가/감소 시킨다.
  */
 # define add_preempt_count(val)	do { preempt_count() += (val); } while (0)
 # define sub_preempt_count(val)	do { preempt_count() -= (val); } while (0)
 #endif
 
+/** 20130713    
+ * preempt_count++;
+ * preempt_count--;
+ **/
 #define inc_preempt_count() add_preempt_count(1)
 #define dec_preempt_count() sub_preempt_count(1)
 
@@ -46,7 +50,10 @@ do { \
 #ifdef CONFIG_PREEMPT_COUNT
 
 /** 20130413
- * preempt 방지
+ * preempt count를 증가시켜 preempt 방지.
+ * 0이 preemptable.
+ * barrier를 preempt_count 변경 뒤에 둠.
+ *   -> preemption이 불가능해진 뒤에 작업이 이뤄져야 하므로.
  */
 #define preempt_disable() \
 do { \
@@ -54,6 +61,11 @@ do { \
 	barrier(); \
 } while (0)
 
+/** 20130713    
+ * preempt count를 감소.
+ * barrier를 preempt_count 변경 전에 둠.
+ *   -> 현재 작업 내용이 메모리에 반영된 뒤에 preemption이 가능해야 하므로.
+ **/
 #define sched_preempt_enable_no_resched() \
 do { \
 	barrier(); \

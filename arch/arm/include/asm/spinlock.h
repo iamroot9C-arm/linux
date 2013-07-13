@@ -203,9 +203,18 @@ static inline void arch_spin_unlock(arch_spinlock_t *lock)
 	dsb_sev();
 }
 
+/** 20130713    
+ * lock의 tickets의 owner와 next가 같지 않다면 lock 상태
+ **/
 static inline int arch_spin_is_locked(arch_spinlock_t *lock)
 {
+	/** 20130713    
+	 * lock의 tickets 값을 얻어온다.
+	 **/
 	struct __raw_tickets tickets = ACCESS_ONCE(lock->tickets);
+	/** 20130713    
+	 * tickets의 owner과 tickets의 next가 같지 않은지 결과를 리턴
+	 **/
 	return tickets.owner != tickets.next;
 }
 

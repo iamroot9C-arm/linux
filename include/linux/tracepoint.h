@@ -84,6 +84,9 @@ static inline void tracepoint_synchronize_unregister(void)
 	synchronize_sched();
 }
 
+/** 20130713    
+ * args
+ **/
 #define PARAMS(args...) args
 
 #endif /* _LINUX_TRACEPOINT_H */
@@ -202,6 +205,10 @@ static inline void tracepoint_synchronize_unregister(void)
 	EXPORT_SYMBOL(__tracepoint_##name)
 
 #else /* !CONFIG_TRACEPOINTS */
+/** 20130713    
+ * CONFIG_TRACEPOINTS NOT DEFINED.
+ * api 함수들이 대부분 NULL 함수
+ **/
 #define __DECLARE_TRACE(name, proto, args, cond, data_proto, data_args) \
 	static inline void trace_##name(proto)				\
 	{ }								\
@@ -247,6 +254,9 @@ static inline void tracepoint_synchronize_unregister(void)
 #define DECLARE_TRACE_NOARGS(name)					\
 		__DECLARE_TRACE(name, void, , 1, void *__data, __data)
 
+/** 20130713    
+ * name으로 trace 관련 함수를 매크로로 생성
+ **/
 #define DECLARE_TRACE(name, proto, args)				\
 		__DECLARE_TRACE(name, PARAMS(proto), PARAMS(args), 1,	\
 				PARAMS(void *__data, proto),		\
@@ -368,6 +378,9 @@ static inline void tracepoint_synchronize_unregister(void)
  */
 
 #define DECLARE_EVENT_CLASS(name, proto, args, tstruct, assign, print)
+/** 20130713    
+ * DECLARE_TRACE 매크로 함수 호출
+ **/
 #define DEFINE_EVENT(template, name, proto, args)		\
 	DECLARE_TRACE(name, PARAMS(proto), PARAMS(args))
 #define DEFINE_EVENT_PRINT(template, name, proto, args, print)	\

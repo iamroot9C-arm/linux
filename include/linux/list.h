@@ -97,6 +97,9 @@ static inline void list_add_tail(struct list_head *new, struct list_head *head)
  * This is only for internal list manipulation where we know
  * the prev/next entries already!
  */
+/** 20130713    
+ * prev와 next를 서로 연결. 자신을 list에서 제거할 때 사용
+ **/
 static inline void __list_del(struct list_head * prev, struct list_head * next)
 {
 	next->prev = prev;
@@ -197,6 +200,9 @@ static inline int list_is_last(const struct list_head *list,
  * list_empty - tests whether a list is empty
  * @head: the list to test.
  */
+/** 20130713    
+ * head의 next가 head를 가리키면 list가 비어 있다.
+ **/
 static inline int list_empty(const struct list_head *head)
 {
 	return head->next == head;
@@ -361,6 +367,9 @@ static inline void list_splice_tail_init(struct list_head *list,
  * @type:	the type of the struct this is embedded in.
  * @member:	the name of the list_struct within the struct.
  */
+/** 20130713    
+ * ptr이 가리키는 member를 포함하는 구조체를 리턴
+ **/
 #define list_entry(ptr, type, member) \
 	container_of(ptr, type, member)
 

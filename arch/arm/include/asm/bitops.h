@@ -327,7 +327,6 @@ static inline int fls(int x)
  * find first zero (ffz)
  *   from: http://en.wikipedia.org/wiki/Find_first_set
  *
- * ffz(x), fls(x)의 매개변수는 2의 지수승으로 넘어온 값이어야 함
  **/
 #define __fls(x) (fls(x) - 1)
 #define ffs(x) ({ unsigned long __t = (x); fls(__t & -__t); })

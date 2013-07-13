@@ -23,6 +23,13 @@
 #define swp_is_buggy
 #endif
 
+/** 20130713    
+ * ptr를 x로 변경하고 이전 값을 return.
+ *
+ * x   : 변경할 값
+ * ptr : 변경될 메모리 주소
+ * size: ptr의 크기
+ **/
 static inline unsigned long __xchg(unsigned long x, volatile void *ptr, int size)
 {
 	extern void __bad_xchg(volatile void *, int);
@@ -34,6 +41,9 @@ static inline unsigned long __xchg(unsigned long x, volatile void *ptr, int size
 	unsigned int tmp;
 #endif
 
+	/** 20130713    
+	 * dmb();
+	 **/
 	smp_mb();
 
 	switch (size) {
@@ -48,6 +58,14 @@ static inline unsigned long __xchg(unsigned long x, volatile void *ptr, int size
 			: "r" (x), "r" (ptr)
 			: "memory", "cc");
 		break;
+	/** 20130713    
+	 * ex) atomic_t 
+	 *
+	 * %0  : ret   - ptr에서 읽어온 값(이전값)
+	 * %1  : tmp   - exclusive 상태값
+	 * %2  : x     - *ptr에 저장할 값(새로운 값)
+	 * %3  : ptr
+	 **/
 	case 4:
 		asm volatile("@	__xchg4\n"
 		"1:	ldrex	%0, [%3]\n"
@@ -95,11 +113,17 @@ static inline unsigned long __xchg(unsigned long x, volatile void *ptr, int size
 		__bad_xchg(ptr, size), ret = 0;
 		break;
 	}
+	/** 20130713    
+	 * dmb()
+	 **/
 	smp_mb();
 
 	return ret;
 }
 
+/** 20130713    
+ * __xchg()를 수행하고, 이전 값을 *ptr의 자료형으로 리턴.
+ **/
 #define xchg(ptr,x) \
 	((__typeof__(*(ptr)))__xchg((unsigned long)(x),(ptr),sizeof(*(ptr))))
 

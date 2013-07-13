@@ -476,9 +476,18 @@ static inline int cpu_of(struct rq *rq)
 
 DECLARE_PER_CPU(struct rq, runqueues);
 
+/** 20130713    
+ * cpu에 해당하는 runqueues의 위치
+ **/
 #define cpu_rq(cpu)		(&per_cpu(runqueues, (cpu)))
 #define this_rq()		(&__get_cpu_var(runqueues))
+/** 20130713    
+ * task_cpu로 task p의 cpu 번호를 가져와 per_cpu 메모리의 runqueues의 주소를 취함
+**/
 #define task_rq(p)		cpu_rq(task_cpu(p))
+/** 20130713    
+ * cpu runqueue의 curr가 가리키는 task_struct
+ **/
 #define cpu_curr(cpu)		(cpu_rq(cpu)->curr)
 #define raw_rq()		(&__raw_get_cpu_var(runqueues))
 
@@ -602,6 +611,9 @@ static inline void __set_task_cpu(struct task_struct *p, unsigned int cpu)
 # include <linux/static_key.h>
 # define const_debug __read_mostly
 #else
+/** 20130713    
+ * DEBUG를 하지 않을 경우 const
+ **/
 # define const_debug const
 #endif
 
@@ -841,7 +853,14 @@ enum cpuacct_stat_index {
 };
 
 
+/** 20130713    
+ * stop_sched_class가 sched_class_highest로 지정
+ **/
 #define sched_class_highest (&stop_sched_class)
+/** 20130713    
+ * sched_class_highest부터 loop을 수행
+ *   아래 명시된 stop_sched_class -> rt_sched_class -> fair_sched_class -> idle_sched_class
+ **/
 #define for_each_class(class) \
    for (class = sched_class_highest; class; class = class->next)
 

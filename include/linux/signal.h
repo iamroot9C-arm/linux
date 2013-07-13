@@ -57,12 +57,21 @@ static inline void sigdelset(sigset_t *set, int _sig)
 		set->sig[sig / _NSIG_BPW] &= ~(1UL << (sig % _NSIG_BPW));
 }
 
+/** 20130713    
+ * _sig라는 시그널이 set 중에 포함되어 있는지 검사
+ **/
 static inline int sigismember(sigset_t *set, int _sig)
 {
+	/** 20130713    
+	 * signal 변호를 배열 index로 변환
+	 **/
 	unsigned long sig = _sig - 1;
 	if (_NSIG_WORDS == 1)
 		return 1 & (set->sig[0] >> sig);
 	else
+		/** 20130713    
+		 * sigset_t에서 해당 bit의 위치를 찾아 1인지 검사
+		 **/
 		return 1 & (set->sig[sig / _NSIG_BPW] >> (sig % _NSIG_BPW));
 }
 

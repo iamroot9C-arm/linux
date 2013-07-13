@@ -13,6 +13,9 @@
 #ifdef CONFIG_FUNCTION_GRAPH_TRACER
 #define __exception_irq_entry	__irq_entry
 #else
+/** 20130713    
+ * CONFIG_FUNCTION_GRAPH_TRACER 정의되어 있지 않음
+ **/
 #define __exception_irq_entry	__exception
 #endif
 

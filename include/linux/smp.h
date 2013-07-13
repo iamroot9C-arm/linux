@@ -212,6 +212,9 @@ static inline void kick_all_cpus_sync(void) {  }
   extern unsigned int debug_smp_processor_id(void);
 # define smp_processor_id() debug_smp_processor_id()
 #else
+/** 20130713    
+ * CONFIG_DEBUG_PREEMPT 정의되어 있지 않음
+ **/
 # define smp_processor_id() raw_smp_processor_id()
 #endif
 

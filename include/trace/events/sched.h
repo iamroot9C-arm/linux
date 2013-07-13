@@ -80,6 +80,9 @@ DECLARE_EVENT_CLASS(sched_wakeup_template,
 		  __entry->success, __entry->target_cpu)
 );
 
+/** 20130713    
+ * trace_sched_wakeup 생성
+ **/
 DEFINE_EVENT(sched_wakeup_template, sched_wakeup,
 	     TP_PROTO(struct task_struct *p, int success),
 	     TP_ARGS(p, success));

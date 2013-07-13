@@ -410,6 +410,9 @@ struct lock_class_key { };
 
 #define lockdep_depth(tsk)	(0)
 
+/** 20130713    
+ * NULL 함수
+ **/
 #define lockdep_assert_held(l)			do { } while (0)
 
 #define lockdep_recursing(tsk)			(0)

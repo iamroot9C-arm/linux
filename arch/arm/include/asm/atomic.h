@@ -340,6 +340,8 @@ static inline void atomic_clear_mask(unsigned long mask, unsigned long *addr)
 
 #endif /* __LINUX_ARM_ARCH__ */
 
+/** 20130713    
+ **/
 #define atomic_xchg(v, new) (xchg(&((v)->counter), new))
 
 static inline int __atomic_add_unless(atomic_t *v, int a, int u)

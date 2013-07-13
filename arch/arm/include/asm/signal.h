@@ -10,6 +10,9 @@ struct siginfo;
 /* Most things should be clean enough to redefine this at will, if care
    is taken to make libc match.  */
 
+/** 20130713    
+ * signal을 표현하기 위한 bit map의 크기
+ **/
 #define _NSIG		64
 #define _NSIG_BPW	32
 #define _NSIG_WORDS	(_NSIG / _NSIG_BPW)

@@ -730,6 +730,9 @@ void __cpuinit gic_secondary_init(unsigned int gic_nr)
 }
 
 #ifdef CONFIG_SMP
+/** 20130713    
+ * smp_cross_call 로 등록된 cb으로 호출
+ **/
 void gic_raise_softirq(const struct cpumask *mask, unsigned int irq)
 {
 	int cpu;

@@ -66,6 +66,9 @@ extern long do_no_restart_syscall(struct restart_block *parm);
  * - pass TIF_xxxx constants to these functions
  */
 
+/** 20130713    
+ * ti->flags에 flag에 해당하는 bit를 켜주는 함수
+ **/
 static inline void set_ti_thread_flag(struct thread_info *ti, int flag)
 {
 	set_bit(flag, (unsigned long *)&ti->flags);

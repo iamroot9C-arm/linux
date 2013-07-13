@@ -292,18 +292,36 @@ int sysctl_sched_rt_runtime = 950000;
 /*
  * __task_rq_lock - lock the rq @p resides on.
  */
+/** 20130713    
+ * task가 실행 중인 cpu의 runqueue에 lock을 거는 함수
+ **/
 static inline struct rq *__task_rq_lock(struct task_struct *p)
 	__acquires(rq->lock)
 {
 	struct rq *rq;
 
+	/** 20130713    
+	 * DEBUG용 함수
+	 **/
 	lockdep_assert_held(&p->pi_lock);
 
 	for (;;) {
+		/** 20130713    
+		 * p가 실행될 cpu의 per_cpu 변수인 runqueue의 위치를 가져옴
+		 **/
 		rq = task_rq(p);
+		/** 20130713    
+		 * rq에 대한 lock을 건다.
+		 **/
 		raw_spin_lock(&rq->lock);
+		/** 20130713    
+		 * lock을 건 뒤에 다시 runqueue값을 가져와 일치할 경우 rq를 리턴.
+		 **/
 		if (likely(rq == task_rq(p)))
 			return rq;
+		/** 20130713    
+		 * rq가 다를 경우 rq를 unlock 후 반복.
+		 **/
 		raw_spin_unlock(&rq->lock);
 	}
 }
@@ -328,6 +346,9 @@ static struct rq *task_rq_lock(struct task_struct *p, unsigned long *flags)
 	}
 }
 
+/** 20130713    
+ * runqueue의 spinlock을 unlock
+ **/
 static void __task_rq_unlock(struct rq *rq)
 	__releases(rq->lock)
 {
@@ -505,27 +526,64 @@ static inline void init_hrtick(void)
 #ifdef CONFIG_SMP
 
 #ifndef tsk_is_polling
+/** 20130713    
+ * task t의 thread_info의 flags 중 TIF_POLLING_NRFLAG가 켜져 있는지 검사
+ **/
 #define tsk_is_polling(t) test_tsk_thread_flag(t, TIF_POLLING_NRFLAG)
 #endif
 
+/** 20130713    
+ * task p의 thread_info flags 변수에
+ *    1. 이미 need_resched가 되어 있다면 return.
+ *    2. 없으면 need_resched를 set.
+ *	  3. 이 함수를 수행하는 task와 같은 cpu에서 수행된다면 바로 return.
+ *	  3-1. 다른 cpu에서 수행된다면 IPI로 reschedule 신호를 전달
+ **/
 void resched_task(struct task_struct *p)
 {
 	int cpu;
 
+	/** 20130713    
+	 * rq에 spinlock이 잡혀 있지 않다면 BUG_ON.
+	 *   ex) ttwu_remote 에서 lock을 걸고 들어옴
+	 **/
 	assert_raw_spin_locked(&task_rq(p)->lock);
 
+	/** 20130713    
+	 * 이미 need_resched일 경우 return.
+	 **/
 	if (test_tsk_need_resched(p))
 		return;
 
+	/** 20130713    
+	 * need_resched를 set.
+	 **/
 	set_tsk_need_resched(p);
 
+	/** 20130713    
+	 * p가 수행될 cpu를 얻어온다.
+	 **/
 	cpu = task_cpu(p);
+	/** 20130713    
+	 * 현재 이 함수가 실행되는 task의 cpu와 실행할 task가 수행될 cpu가 같다면 return.
+	 **/
 	if (cpu == smp_processor_id())
 		return;
 
 	/* NEED_RESCHED must be visible before we test polling */
+	/** 20130713    
+	 * dmb()
+	 **/
 	smp_mb();
+	/** 20130713    
+	 * task가 poll_idle()에서 polling 중이라면 false.
+	 * 그렇지 않다면 수행
+	 **/
 	if (!tsk_is_polling(p))
+		/** 20130713    
+		 * cpu는 p가 수행될 cpu.
+		 * IPI를 이용해 해당 cpu에게 reschedule 메시지를 전달
+		 **/
 		smp_send_reschedule(cpu);
 }
 
@@ -1037,8 +1095,14 @@ static int effective_prio(struct task_struct *p)
  * task_curr - is this task currently executing on a CPU?
  * @p: the task in question.
  */
+/** 20130713    
+ * p가 현재 runqueue의 curr가 가리키는 task인지 여부를 리턴
+ **/
 inline int task_curr(const struct task_struct *p)
 {
+	/** 20130713    
+	 * p가 실행될 cpu의 runqueue 구조체의 curr가 가리키는 task인지 여부를 리턴
+	 **/
 	return cpu_curr(task_cpu(p)) == p;
 }
 
@@ -1054,17 +1118,39 @@ static inline void check_class_changed(struct rq *rq, struct task_struct *p,
 		p->sched_class->prio_changed(rq, p, oldprio);
 }
 
+/** 20130713    
+ * rq->curr task를 need_resched로 표시
+ *   같은 cpu라면 리턴하고, 다른 cpu라면 IPI message를 전달
+ *
+ * sched_class에 대해 추후 분석 필요.
+ **/
 void check_preempt_curr(struct rq *rq, struct task_struct *p, int flags)
 {
 	const struct sched_class *class;
 
+	/** 20130713    
+	 * p의 sched_class 와 rq->curr->sched_class가 같을 때
+	 *  sched_class의check_preempt_curr에 등록되어 있는 함수 호출
+	 **/
 	if (p->sched_class == rq->curr->sched_class) {
 		rq->curr->sched_class->check_preempt_curr(rq, p, flags);
 	} else {
+		/** 20130713    
+		 * 모든 sched_class를 순회하며
+		 **/
 		for_each_class(class) {
+			/** 20130713    
+			 * rq->curr->sched_class가 같다면 빠져나감
+			 **/
 			if (class == rq->curr->sched_class)
 				break;
+			/** 20130713    
+			 * p->sched_class가 class와 같다면
+			 **/
 			if (class == p->sched_class) {
+				/** 20130713    
+				 * rq->curr task를 need_resched로 표시하고 빠져나감
+				 **/
 				resched_task(rq->curr);
 				break;
 			}
@@ -1075,6 +1161,11 @@ void check_preempt_curr(struct rq *rq, struct task_struct *p, int flags)
 	 * A queue event has occurred, and we're going to schedule.  In
 	 * this case, we can save a useless back to back clock update.
 	 */
+	/** 20130713    
+	 * rq->curr가 가리키는 task가 rq에 들어가 있고, need_resched라면
+	 *   skip_clock_update를 설정한다.
+	 * ???
+	 **/
 	if (rq->curr->on_rq && test_tsk_need_resched(rq->curr))
 		rq->skip_clock_update = 1;
 }
@@ -1353,6 +1444,10 @@ static void update_avg(u64 *avg, u64 sample)
 }
 #endif
 
+/** 20130713    
+ * CONFIG_SCHEDSTATS가 정의되어 있을 때 /proc/schedstat에 출력할 통계자료를 생성
+ *   -> 정의되어 있지 않아 분석하지 않음
+ **/
 static void
 ttwu_stat(struct task_struct *p, int cpu, int wake_flags)
 {
@@ -1360,9 +1455,19 @@ ttwu_stat(struct task_struct *p, int cpu, int wake_flags)
 	struct rq *rq = this_rq();
 
 #ifdef CONFIG_SMP
+	/** 20130713    
+	 * 현재 task가 수행 중인 cpu의 번호를 읽어온다.
+	 **/
 	int this_cpu = smp_processor_id();
 
+	/** 20130713    
+	 * 수행될 cpu가 현재 이 함수가 수행 중인 cpu와 같다면
+	 **/
 	if (cpu == this_cpu) {
+		/** 20130713    
+		 * schedstat 관련 자료구조 변경
+		 * 현재 config에서는 정의되어 있지 않음.
+		 **/
 		schedstat_inc(rq, ttwu_local);
 		schedstat_inc(p, se.statistics.nr_wakeups_local);
 	} else {
@@ -1406,21 +1511,51 @@ static void ttwu_activate(struct rq *rq, struct task_struct *p, int en_flags)
 /*
  * Mark the task runnable and perform wakeup-preemption.
  */
+/** 20130713    
+ * task p를 need_resched로 표시하고, state를 TASK_RUNNING으로 변경.
+ **/
 static void
 ttwu_do_wakeup(struct rq *rq, struct task_struct *p, int wake_flags)
 {
+	/** 20130713    
+	 * DECLARE_TRACE로 선언한 sched_wakeup 함수 호출
+	 **/
 	trace_sched_wakeup(p, true);
+	/** 20130713    
+	 * need_resched flag 설정
+	 **/
 	check_preempt_curr(rq, p, wake_flags);
 
+	/** 20130713    
+	 * task의 state를 TASK_RUNNING으로 변경
+	 **/
 	p->state = TASK_RUNNING;
 #ifdef CONFIG_SMP
+	/** 20130713    
+	 * sched_class에 task_woken가 등록되어 있으면 호출
+	 * (초기값은 rt.c에만 존재)
+	 **/
 	if (p->sched_class->task_woken)
 		p->sched_class->task_woken(rq, p);
 
+	/** 20130713    
+	 * idle_stamp는 idle_balance 함수가 호출될 때 rq->clock으로 저장됨.
+	 * 현재 rq->clock과 rq->idle_stamp의 차를 구해 rq->avg_idle에 저장.
+	 *   rq->avg_idle의 사용 용도는 schedule 관련 함수에서 분석해야 함???
+	 **/
 	if (rq->idle_stamp) {
+		/** 20130713
+		 * runqueue의 clock - idle_stamp를 해 delta로 저장
+		 **/
 		u64 delta = rq->clock - rq->idle_stamp;
+		/** 20130713    
+		 * migration 에 필요한 cost * 2를 max에 저장
+		 **/
 		u64 max = 2*sysctl_sched_migration_cost;
 
+		/** 20130713    
+		 * delta가 max 이상이면 
+		 **/
 		if (delta > max)
 			rq->avg_idle = max;
 		else
@@ -1448,14 +1583,28 @@ ttwu_do_activate(struct rq *rq, struct task_struct *p, int wake_flags)
  * since all we need to do is flip p->state to TASK_RUNNING, since
  * the task is still ->on_rq.
  */
+/** 20130713    
+ * task p가 runqueue에 들어 있다면 ttwu_do_wakeup을 호출하고 1을 리턴.
+ *   위의 경우 return 1.
+ **/
 static int ttwu_remote(struct task_struct *p, int wake_flags)
 {
 	struct rq *rq;
 	int ret = 0;
 
+	/** 20130713    
+	 * p가 실행될 cpu의 runqueue에 lock을 걸고 runqueue의 주소를 가져옴
+	 **/
 	rq = __task_rq_lock(p);
+	/** 20130713    
+	 * p가 runqueue 안에 있을 경우 ttwu_do_wakeup으로
+	 *	need_resched를 설정하고 RUNNING 상태로 변경.
+	 **/
 	if (p->on_rq) {
 		ttwu_do_wakeup(rq, p, wake_flags);
+		/** 20130713    
+		 * return값을 1로 지정
+		 **/
 		ret = 1;
 	}
 	__task_rq_unlock(rq);
@@ -1575,20 +1724,39 @@ static void ttwu_queue(struct task_struct *p, int cpu)
  * Returns %true if @p was woken up, %false if it was already running
  * or @state didn't match @p's state.
  */
+/** 20130713    
+ *  20130720 ttwu_remote 이후부터 볼차례.
+ **/
 static int
 try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
 {
 	unsigned long flags;
 	int cpu, success = 0;
 
+	/** 20130713    
+	 * dmb() 호출
+	 **/
 	smp_wmb();
+	/** 20130713    
+	 * task의pi_lock을 걸고, 현재 clsr을 flags에 저장한다.
+	 **/
 	raw_spin_lock_irqsave(&p->pi_lock, flags);
+	/** 20130713    
+	 * state가 TASK_ALL로 넘어온 경우 false.
+	 **/
 	if (!(p->state & state))
 		goto out;
 
 	success = 1; /* we're going to change ->state */
+	/** 20130713    
+	 * task가 수행중인 cpu를 얻어온다.
+	 **/
 	cpu = task_cpu(p);
 
+	/** 20130713    
+	 * on_rq : runqueue에 존재하는지 여부
+	 * runqueue에 들어 있고 ttwu_remote가 1을 리턴하면 stat으로 이동
+	 **/
 	if (p->on_rq && ttwu_remote(p, wake_flags))
 		goto stat;
 
@@ -1634,8 +1802,14 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
 stat:
 	ttwu_stat(p, cpu, wake_flags);
 out:
+	/** 20130713    
+	 * pi_lock을 unlock하고 flags에 저장된 cpsr을 복원.
+	 **/
 	raw_spin_unlock_irqrestore(&p->pi_lock, flags);
 
+	/** 20130713    
+	 * task의 stat를 변경했다는 의므로 success를 리턴. 
+	 **/
 	return success;
 }
 
@@ -1684,6 +1858,9 @@ out:
  * It may be assumed that this function implies a write memory barrier before
  * changing the task state if and only if any tasks are woken up.
  */
+/** 20130713    
+ * process를 깨운다 (need_resched를 체크하고, TASK_RUNNING으로 상태 변경)
+ **/
 int wake_up_process(struct task_struct *p)
 {
 	return try_to_wake_up(p, TASK_ALL, 0);
@@ -3453,6 +3630,9 @@ static inline void sched_submit_work(struct task_struct *tsk)
 		blk_schedule_flush_plug(tsk);
 }
 
+/** 20130713    
+ * schedule 함수는 나중에 보기로 함
+ **/
 asmlinkage void __sched schedule(void)
 {
 	struct task_struct *tsk = current;
@@ -3467,10 +3647,21 @@ EXPORT_SYMBOL(schedule);
  *
  * Returns with preemption disabled. Note: preempt_count must be 1
  */
+/** 20130713    
+ * 선점 불가 상태에서 호출되어
+ *   선점 가능 상태로 변경 후 schedule 함수를 호출하고, 깨어났을 때 다시 선점 불가로 리턴
+ **/
 void __sched schedule_preempt_disabled(void)
 {
+	/** 20130713    
+	 * preemption disable 상태에서 preemption count를 감소시켜 enable하도록 설정.
+	 *   schedule() 함수를 호출하기 전에 선점 가능하도록.
+	 **/
 	sched_preempt_enable_no_resched();
 	schedule();
+	/** 20130713    
+	 * 다시 선점 불가로 설정.
+	 **/
 	preempt_disable();
 }
 
@@ -3529,8 +3720,12 @@ int mutex_spin_on_owner(struct mutex *lock, struct task_struct *owner)
 
 	rcu_read_lock();
 	/** 20130706    
-	 * lock의 owner인 task_struct의 on_cpu가 true인동안 loop을 수행
-	 * lock의 owner가 바뀌었다면 (주로 unlock일듯???) owner_running이 false를 리턴하고 loop을 벗어남.
+	 * owner_running()이 false가 되는 경우
+	 *	1. lock->owner != owner    ; owner가 변경되었음을 의미
+	 *	2. owner->on_cpu가 0       ; task_switching이 발생하여 교체
+	 * 따라서 owner->on_cpu가 1인 동안 반복 수행.
+	 *
+	 * 루프의 끝에는 항상 cpu_relax를 넣어준다.
 	 **/
 	while (owner_running(lock, owner)) {
 		/** 20130706    

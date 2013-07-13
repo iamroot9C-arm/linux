@@ -50,6 +50,9 @@
  */
 struct secondary_data secondary_data;
 
+/** 20130713    
+ * [참고] http://en.wikipedia.org/wiki/Inter-processor_interrupt
+ **/
 enum ipi_msg_type {
 	IPI_TIMER = 2,
 	IPI_RESCHEDULE,
@@ -345,6 +348,9 @@ void __init set_smp_cross_call(void (*fn)(const struct cpumask *, unsigned int))
 
 void arch_send_call_function_ipi_mask(const struct cpumask *mask)
 {
+	/** 20130713    
+	 * vexpress의 경우 gic_raise_softirq 호출됨
+	 **/
 	smp_cross_call(mask, IPI_CALL_FUNC);
 }
 
@@ -497,6 +503,9 @@ static void ipi_cpu_stop(unsigned int cpu)
 /*
  * Main handler for inter-processor interrupts
  */
+/** 20130713    
+ * IPI Message handler 호출
+ **/
 asmlinkage void __exception_irq_entry do_IPI(int ipinr, struct pt_regs *regs)
 {
 	handle_IPI(ipinr, regs);
@@ -547,8 +556,14 @@ void handle_IPI(int ipinr, struct pt_regs *regs)
 	set_irq_regs(old_regs);
 }
 
+/** 20130713    
+ * 특정 cpu에 IPI_RESCHEDULE message를 전달.
+ **/
 void smp_send_reschedule(int cpu)
 {
+	/** 20130713    
+	 * smp 간의 인터럽트 통신 (IPI)을 호출
+	 **/
 	smp_cross_call(cpumask_of(cpu), IPI_RESCHEDULE);
 }
 
