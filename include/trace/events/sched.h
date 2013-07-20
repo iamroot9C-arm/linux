@@ -155,6 +155,9 @@ TRACE_EVENT(sched_switch,
 /*
  * Tracepoint for a task being migrated:
  */
+/** 20130720    
+ * sched_migrate_task EVENT에 대한 TRACE 생성
+ **/
 TRACE_EVENT(sched_migrate_task,
 
 	TP_PROTO(struct task_struct *p, int dest_cpu),

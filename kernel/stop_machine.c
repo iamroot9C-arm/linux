@@ -43,19 +43,40 @@ struct cpu_stopper {
 static DEFINE_PER_CPU(struct cpu_stopper, cpu_stopper);
 static bool stop_machine_initialized = false;
 
+/** 20130720    
+ * cpu_stop_done 자료구조 초기화
+ **/
 static void cpu_stop_init_done(struct cpu_stop_done *done, unsigned int nr_todo)
 {
+	/** 20130720    
+	 * 메모리 초기화한 뒤, done->nr_todo를 nr_todo로 설정
+	 *   __stop_cpus에서 호출된 경우 nr_todo는 cpumask_weight(cpumask).
+	 *     cpumask는 cpu_online_mask 등
+	 **/
 	memset(done, 0, sizeof(*done));
+	/** 20130720    
+	 * 완료해야 할 cpu의 수를 지정
+	 **/
 	atomic_set(&done->nr_todo, nr_todo);
 	init_completion(&done->completion);
 }
 
 /* signal completion unless @done is NULL */
+/** 20130720    
+ * done->nr_todo만큼 수행이 완료되면 complete 함수로 done->completion 수행
+ **/
 static void cpu_stop_signal_done(struct cpu_stop_done *done, bool executed)
 {
 	if (done) {
+		/** 20130720    
+		 * executed가 true이면 done->executed에 true 설정
+		 **/
 		if (executed)
 			done->executed = true;
+		/** 20130720    
+		 * done->nr_todo를 하나 감소시키고, 0일 경우 complete 함수 호출
+		 *   complete 함수는 추후 분석 ???
+		 **/
 		if (atomic_dec_and_test(&done->nr_todo))
 			complete(&done->completion);
 	}
@@ -137,6 +158,12 @@ void stop_one_cpu_nowait(unsigned int cpu, cpu_stop_fn_t fn, void *arg,
 static DEFINE_MUTEX(stop_cpus_mutex);
 static DEFINE_PER_CPU(struct cpu_stop_work, stop_cpus_work);
 
+/** 20130720    
+ * __stop_machine 에서 호출되었을 경우
+ *   cpumask : cpu_online_mask
+ *   fn      : stop_machine_cpu_stop
+ *   arp     : &smdata
+ **/
 static void queue_stop_cpus_work(const struct cpumask *cpumask,
 				 cpu_stop_fn_t fn, void *arg,
 				 struct cpu_stop_done *done)
@@ -145,7 +172,14 @@ static void queue_stop_cpus_work(const struct cpumask *cpumask,
 	unsigned int cpu;
 
 	/* initialize works and done */
+	/** 20130720    
+	 * cpumask의 cpu들을 순회하며
+	 * 자료구조를 등록한다.
+	 **/
 	for_each_cpu(cpu, cpumask) {
+		/** 20130720    
+		 * percpu 자료구조로 선언된 stop_cpus_work에서 해당 cpu의 주소를 가져온다.
+		 **/
 		work = &per_cpu(stop_cpus_work, cpu);
 		work->fn = fn;
 		work->arg = arg;
@@ -169,6 +203,10 @@ static int __stop_cpus(const struct cpumask *cpumask,
 {
 	struct cpu_stop_done done;
 
+	/** 20130720    
+	 * 지역변수로 선언한 자료구조와 cpumask의 개수를 인자로 호출.
+	 * done 자료구조 초기화
+	 **/
 	cpu_stop_init_done(&done, cpumask_weight(cpumask));
 	queue_stop_cpus_work(cpumask, fn, arg, &done);
 	wait_for_completion(&done.completion);
@@ -420,12 +458,25 @@ struct stop_machine_data {
 	atomic_t		thread_ack;
 };
 
+/** 20130720    
+ * smdata의 thread_ack에 online cpu의 수를 저장하고, state를 newstate로 저장.
+ *   추후 ack_state 에서 사용
+ **/
 static void set_state(struct stop_machine_data *smdata,
 		      enum stopmachine_state newstate)
 {
 	/* Reset ack counter. */
+	/** 20130720    
+	 * thread_ack에 online_cpu의 수를 저장한다.
+	 **/
 	atomic_set(&smdata->thread_ack, smdata->num_threads);
+	/** 20130720    
+	 * memory barrier
+	 **/
 	smp_wmb();
+	/** 20130720    
+	 * newstate를 smdata->state에 저장
+	 **/
 	smdata->state = newstate;
 }
 
@@ -484,10 +535,17 @@ static int stop_machine_cpu_stop(void *data)
 
 int __stop_machine(int (*fn)(void *), void *data, const struct cpumask *cpus)
 {
+	/** 20130720    
+	 * struct stop_machine_data를 전달받은 매개변수로 채워준다.
+	 **/
 	struct stop_machine_data smdata = { .fn = fn, .data = data,
 					    .num_threads = num_online_cpus(),
 					    .active_cpus = cpus };
 
+	/** 20130720    
+	 * stop_machine_initialized 이 초기화 되어 있지 않다면 수행
+	 * cpu_stop_init에서 true로 설정해줌
+	 **/
 	if (!stop_machine_initialized) {
 		/*
 		 * Handle the case where stop_machine() is called
@@ -497,16 +555,36 @@ int __stop_machine(int (*fn)(void *), void *data, const struct cpumask *cpus)
 		unsigned long flags;
 		int ret;
 
+		/** 20130720    
+		 * num_online_cpus()가 1이 아닐 경우 WARN
+		 **/
 		WARN_ON_ONCE(smdata.num_threads != 1);
 
+		/** 20130720    
+		 * local cpu의 irq를 막고 flags에 이전 상태를 저장해 둔다
+		 **/
 		local_irq_save(flags);
 		hard_irq_disable();
+		/** 20130720    
+		 * fn을 수행한다.
+		 **/
 		ret = (*fn)(data);
+		/** 20130720    
+		 * flags로 cpsr을 복원한다.
+		 **/
 		local_irq_restore(flags);
 
+		/** 20130720    
+		 * 함수 수행 결과를 바로 리턴한다.
+		 **/
 		return ret;
 	}
 
+	/** 20130720    
+	 * 초기화 된 후 호출되었다면 이 부분 수행됨.
+	 * 
+	 * smdata의 상태를 STOPMACHINE_PREPARE로 설정
+	 **/
 	/* Set the initial state and stop all online cpus. */
 	set_state(&smdata, STOPMACHINE_PREPARE);
 	return stop_cpus(cpu_online_mask, stop_machine_cpu_stop, &smdata);
@@ -519,6 +597,9 @@ int stop_machine(int (*fn)(void *), void *data, const struct cpumask *cpus)
 	/* No CPUs can come up or down during this. */
 	/** 20130706    
 	 * kernel/cpu.c 에 있는 함수 호출
+	 *
+	 * 20130720
+	 * cpu_hotplug.refcount를 증가해 hotplug begin을 하지 못하게 한다.
 	 **/
 	get_online_cpus();
 	ret = __stop_machine(fn, data, cpus);

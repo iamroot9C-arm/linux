@@ -157,6 +157,9 @@ extern void __bad_cmpxchg(volatile void *ptr, int size);
  * cmpxchg only support 32-bits operands on ARMv6.
  */
 
+/** 20130720    
+ * compare and exchange - 원자적 수행
+ **/
 static inline unsigned long __cmpxchg(volatile void *ptr, unsigned long old,
 				      unsigned long new, int size)
 {
@@ -190,6 +193,24 @@ static inline unsigned long __cmpxchg(volatile void *ptr, unsigned long old,
 		break;
 #endif
 	case 4:
+		/** 20130720    
+		 * %0  : res
+		 * %1  : oldval
+		 * %2  : ptr
+		 * %3  : old
+		 * %4  : new
+		 *
+		 *                    do {
+		 * ldrex	%1, [%2]      oldval = *ptr;
+		 * mov	%0, #0            res = 0;
+		 * teq	%1, %3            if (oldval == old)
+		 * strexeq %0, %4, [%2]     *ptr = new;
+		 *                    } while (res)
+		 * 1. *ptr의 값이 old와 같지 않을 경우, res = 0으로 저장하지 않고 리턴
+		 * 2. 같을 경우,
+		 *      exclusive가 보장될 경우 - new 값으로 *ptr에 저장
+		 *      보장되지 않을 경우      - 다시 시도 while(1)
+		 **/
 		do {
 			asm volatile("@ __cmpxchg4\n"
 			"	ldrex	%1, [%2]\n"
@@ -206,14 +227,24 @@ static inline unsigned long __cmpxchg(volatile void *ptr, unsigned long old,
 		oldval = 0;
 	}
 
+	/** 20130720    
+	 * *ptr에서 읽은 값 리턴
+	 **/
 	return oldval;
 }
 
+/** 20130720    
+ * __cmpxchg 전후에 memory barrier를 두는 함수.
+ * 리턴 값은 *ptr에 현재 저장된 값
+ **/
 static inline unsigned long __cmpxchg_mb(volatile void *ptr, unsigned long old,
 					 unsigned long new, int size)
 {
 	unsigned long ret;
 
+	/** 20130720    
+	 * __cmpxchg 전후에 dmb()
+	 **/
 	smp_mb();
 	ret = __cmpxchg(ptr, old, new, size);
 	smp_mb();
@@ -221,6 +252,9 @@ static inline unsigned long __cmpxchg_mb(volatile void *ptr, unsigned long old,
 	return ret;
 }
 
+/** 20130720    
+ * __cmpxchg_mb 호출.
+ **/
 #define cmpxchg(ptr,o,n)						\
 	((__typeof__(*(ptr)))__cmpxchg_mb((ptr),			\
 					  (unsigned long)(o),		\

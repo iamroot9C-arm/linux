@@ -120,6 +120,10 @@ static __used noinline void __sched __mutex_unlock_slowpath(atomic_t *lock_count
  *
  * This function is similar to (but not equivalent to) up().
  */
+/** 20130720    
+ * mutex unlock 함수.
+ * mutex lock과 다른 부분은 wait_list에 대기 중인 task가 있다면 가져와 실행시킨다.
+ **/
 void __sched mutex_unlock(struct mutex *lock)
 {
 	/*
@@ -137,6 +141,9 @@ void __sched mutex_unlock(struct mutex *lock)
 	 **/
 	mutex_clear_owner(lock);
 #endif
+	/** 20130720    
+	 * __mutex_fastpath_unlock는 __mutex_unlock_slowpath를 호출한다.
+	 **/
 	__mutex_fastpath_unlock(&lock->count, __mutex_unlock_slowpath);
 }
 
@@ -471,6 +478,9 @@ EXPORT_SYMBOL_GPL(mutex_lock_interruptible_nested);
 /*
  * Release the lock, slowpath:
  */
+/** 20130720    
+ * wait_list에서 waiter를 가져와 깨워준다
+ **/
 static inline void
 __mutex_unlock_common_slowpath(atomic_t *lock_count, int nested)
 {
@@ -519,15 +529,25 @@ __mutex_unlock_common_slowpath(atomic_t *lock_count, int nested)
 		 **/
 		debug_mutex_wake_waiter(lock, waiter);
 
+		/** 20130720    
+		 * wait_list에서 가져온 waiter를 깨운다.
+		 * (runqueue에 넣는다)
+		 **/
 		wake_up_process(waiter->task);
 	}
 
+	/** 20130720    
+	 * wait_lock을 해제하고 flags에 저장된 cpsr을 복원
+	 **/
 	spin_unlock_mutex(&lock->wait_lock, flags);
 }
 
 /*
  * Release the lock, slowpath:
  */
+/** 20130720    
+ * mutex unlock하고 wait_list에 entry가 있다면 깨운다.
+ **/
 static __used noinline void
 __mutex_unlock_slowpath(atomic_t *lock_count)
 {

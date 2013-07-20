@@ -132,6 +132,9 @@ void update_rq_clock(struct rq *rq)
 #define SCHED_FEAT(name, enabled)	\
 	(1UL << __SCHED_FEAT_##name) * enabled |
 
+/** 20130720    
+ * kernel/sched/features.h 의 내용
+ **/
 const_debug unsigned int sysctl_sched_features =
 #include "features.h"
 	0;
@@ -782,11 +785,21 @@ static void dequeue_task(struct rq *rq, struct task_struct *p, int flags)
 	p->sched_class->dequeue_task(rq, p, flags);
 }
 
+/** 20130720    
+ *
+ **/
 void activate_task(struct rq *rq, struct task_struct *p, int flags)
 {
+	/** 20130720    
+	 * task p의 상태가 TASK_UNINTERRUPTIBLE이고, flags가 PF_FROZEN이 아닐 경우
+	 *   rq의 nr_uninterruptible를 하나 감소
+	 **/
 	if (task_contributes_to_load(p))
 		rq->nr_uninterruptible--;
 
+	/** 20130720    
+	 * 분석하지 않음. ???
+	 **/
 	enqueue_task(rq, p, flags);
 }
 
@@ -1171,6 +1184,9 @@ void check_preempt_curr(struct rq *rq, struct task_struct *p, int flags)
 }
 
 #ifdef CONFIG_SMP
+/** 20130720    
+ * task의 cpu값을 새로 지정
+ **/
 void set_task_cpu(struct task_struct *p, unsigned int new_cpu)
 {
 #ifdef CONFIG_SCHED_DEBUG
@@ -1197,13 +1213,26 @@ void set_task_cpu(struct task_struct *p, unsigned int new_cpu)
 #endif
 #endif
 
+	/** 20130720    
+	 * trace 관련 코드. 분석 안 함.
+	 **/
 	trace_sched_migrate_task(p, new_cpu);
 
+	/** 20130720    
+	 * task p의 자료구조에 설정된 cpu와 new_cpu가 다른 경우
+	 **/
 	if (task_cpu(p) != new_cpu) {
+		/** 20130720    
+		 * se = sched entry
+		 * nr_migrations 증가
+		 **/
 		p->se.nr_migrations++;
 		perf_sw_event(PERF_COUNT_SW_CPU_MIGRATIONS, 1, NULL, 0);
 	}
 
+	/** 20130720    
+	 * task p에 해당하는 thread_info의 cpu 값을 new_cpu로 저장
+	 **/
 	__set_task_cpu(p, new_cpu);
 }
 
@@ -1415,6 +1444,10 @@ out:
 /*
  * The caller (fork, wakeup) owns p->pi_lock, ->cpus_allowed is stable.
  */
+/** 20130720    
+ * p의 sched_class에 따라 설정된 select_task_rq를 호출.
+ * 내용은 분석하지 않았음 ??? 
+ **/
 static inline
 int select_task_rq(struct task_struct *p, int sd_flags, int wake_flags)
 {
@@ -1500,10 +1533,19 @@ ttwu_stat(struct task_struct *p, int cpu, int wake_flags)
 
 static void ttwu_activate(struct rq *rq, struct task_struct *p, int en_flags)
 {
+	/** 20130720    
+	 **/
 	activate_task(rq, p, en_flags);
+	/** 20130720    
+	 * task p의 상태를 on runqueue로 설정.
+	 **/
 	p->on_rq = 1;
 
 	/* if a worker is waking up, notify workqueue */
+	/** 20130720    
+	 * 깨워야 할 task p가 workqueue worker일 경우 wq_worker_waking_up 수행
+	 *  cpu_of(rq) : rq를 가지고 있는 cpu
+	 **/
 	if (p->flags & PF_WQ_WORKER)
 		wq_worker_waking_up(p, cpu_of(rq));
 }
@@ -1565,14 +1607,29 @@ ttwu_do_wakeup(struct rq *rq, struct task_struct *p, int wake_flags)
 #endif
 }
 
+/** 20130720    
+ * task를 activate하고, wakeup 하는 함수
+ *   ttwu_activate 추가분석 필요.
+ **/
 static void
 ttwu_do_activate(struct rq *rq, struct task_struct *p, int wake_flags)
 {
 #ifdef CONFIG_SMP
+	/** 20130720    
+	 * sched_contributes_to_load가 true인 조건
+	 *   task의 상태가 TASK_UNINTERRUPTIBLE이고, flags가 PF_FROZEN이 아닐 경우
+	 *
+	 * rq의 nr_uninterruptible를 하나 감소. activate 할 것이므로.
+	 **/
 	if (p->sched_contributes_to_load)
 		rq->nr_uninterruptible--;
 #endif
 
+	/** 20130720    
+	 * ttwu_activate() 에서 activate_task를 호출하고, activate_task에서
+	 *   task_contributes_to_load(p)를 검사해 rq->nr_uninterruptible--; 하는데
+	 *   이렇게 되면 두 번 감소시키게 될텐데???
+	 **/
 	ttwu_activate(rq, p, ENQUEUE_WAKEUP | ENQUEUE_WAKING);
 	ttwu_do_wakeup(rq, p, wake_flags);
 }
@@ -1661,8 +1718,26 @@ void scheduler_ipi(void)
 	irq_exit();
 }
 
+/** 20130720    
+ * task p를 수행될 cpu의 wake_list에 넣어주고,
+ *   wake_list가 비어있는 상태에서 wake_list에 처음 추가한 것이라면
+ *   IPI_RESCHEDULE 메시지를 전달
+ **/
 static void ttwu_queue_remote(struct task_struct *p, int cpu)
 {
+	/** 20130720    
+	 * 수행될 cpu의 wake_list에 깨울 task p의 wake_entry를 추가.
+	 * lock-less add.
+	 *
+	 * llist_add를 호출할 당시 wake_list가 NULL이었을 경우 true.
+	 *   새로 수행될 cpu에 IPI_RESCHEDULE 메시지를 전달
+	 *
+	 * NULL일 경우에만 interrupt를 날리는 이유는
+	 *   NULL이 아닐 경우는 인터럽트가 전송된 상태이고,
+	 *   remote cpu가 interrupt를 해소하지 않은 상태이므로 wake_list에 추가해두면
+	 *   remote cpu가 interrupt 해소시 wake_list에 있는 모든 task를
+	 *   scheduling 할 것으로 추정 ???
+	 **/
 	if (llist_add(&p->wake_entry, &cpu_rq(cpu)->wake_list))
 		smp_send_reschedule(cpu);
 }
@@ -1686,25 +1761,64 @@ static int ttwu_activate_remote(struct task_struct *p, int wake_flags)
 }
 #endif /* __ARCH_WANT_INTERRUPTS_ON_CTXSW */
 
+/** 20130720    
+ * SMP일 경우 다음 함수 수행
+ *
+ * cache share 여부를 검사하는 함수.
+ * this_cpu의 llc_id와 that_cpu의 llc_id를 비교해 같다면 cache를 share한다.
+ **/
 bool cpus_share_cache(int this_cpu, int that_cpu)
 {
+	/** 20130720    
+	 * sd:  sched domain
+	 * llc: last level cache
+	 **/
 	return per_cpu(sd_llc_id, this_cpu) == per_cpu(sd_llc_id, that_cpu);
 }
 #endif /* CONFIG_SMP */
 
+/** 20130720    
+ * task p와 p가 수행될 cpu를 받아
+ *   TTWU_QUEUE를 사용하고, last level cache를 공유하지 않으면
+ *     remote cpu의 wake_list에 task를 추가하고 IPI_RESCHEDULE message를 보낸다.
+ *   그렇지 않다면
+ *     ttwu_do_activate를 호출하여 task를 실행 준비(schedule 가능) 상태로 만든다.
+ **/
 static void ttwu_queue(struct task_struct *p, int cpu)
 {
+	/** 20130720    
+	 * cpu에 해당하는 per_cpu 변수의 위치를 rq에 저장
+	 **/
 	struct rq *rq = cpu_rq(cpu);
 
 #if defined(CONFIG_SMP)
+	/** 20130720    
+	 * kernel/sched/features.h에 sched_feat(TTWU_QUEUE)가 정의되어 있음
+	 *
+	 * smp_process_id() : 현재 이 함수를 수행하는 cpu
+	 * cpu              : 앞으로 task p가 수행될 cpu
+	 * 위 두 cpu가 cache를 shared하지 않는다면 if문 블럭 수행
+	 **/
 	if (sched_feat(TTWU_QUEUE) && !cpus_share_cache(smp_processor_id(), cpu)) {
+		/** 20130720    
+		 * sched_clock_cpu 추후 분석
+		 **/
 		sched_clock_cpu(cpu); /* sync clocks x-cpu */
+		/** 20130720    
+		 * task p를 새로 수행될 cpu의 wake_list에 추가
+		 **/
 		ttwu_queue_remote(p, cpu);
 		return;
 	}
 #endif
 
+	/** 20130720    
+	 * TTWU_QUEUE feature가 없거나, cpu간의 last level cache를 share하는 경우
+	 **/
 	raw_spin_lock(&rq->lock);
+	/** 20130720    
+	 * task를 activate 시키고 wakeup 시킨다.
+	 **/
 	ttwu_do_activate(rq, p, 0);
 	raw_spin_unlock(&rq->lock);
 }
@@ -1725,7 +1839,8 @@ static void ttwu_queue(struct task_struct *p, int cpu)
  * or @state didn't match @p's state.
  */
 /** 20130713    
- *  20130720 ttwu_remote 이후부터 볼차례.
+ *  task p가 runqueue에 들어 있다면 reschedule message를 날리고,
+ *  그렇지 않다면 task p를 runqueue에 넣고 scheduling 대기 상태로 만든다.
  **/
 static int
 try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
@@ -1742,7 +1857,10 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
 	 **/
 	raw_spin_lock_irqsave(&p->pi_lock, flags);
 	/** 20130713    
-	 * state가 TASK_ALL로 넘어온 경우 false.
+	 * process의 현재 상태가 state에 해당하면 계속 진행하고,
+	 * 아닐 경우 out으로 이동.
+	 *
+	 * 예를 들어 state가 TASK_ALL로 넘어온 경우 false.
 	 **/
 	if (!(p->state & state))
 		goto out;
@@ -1765,6 +1883,12 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
 	 * If the owning (remote) cpu is still in the middle of schedule() with
 	 * this task as prev, wait until its done referencing the task.
 	 */
+	/** 20130720    
+	 * 이 부분부터는 task p가 run queue에 들어있지 않을 경우.
+	 *
+	 * 깨워야 할 task가 cpu에서 수행 중이라면 (schedule() 수행이 끝나지 않은 경우)
+	 * 대기한다.
+	 **/
 	while (p->on_cpu) {
 #ifdef __ARCH_WANT_INTERRUPTS_ON_CTXSW
 		/*
@@ -1777,27 +1901,65 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
 		if (ttwu_activate_remote(p, wake_flags))
 			goto stat;
 #else
+		/** 20130720    
+		 * memory barrier
+		 **/
 		cpu_relax();
 #endif
 	}
 	/*
 	 * Pairs with the smp_wmb() in finish_lock_switch().
 	 */
+	/** 20130720    
+	 * finish_lock_switch에서 
+	 *	 smp_wmb();
+	 *   prev->on_cpu = 0;
+	 *
+	 * SMP에서 smp_wmb(), smp_rmb() 모두 dmb
+	 **/
 	smp_rmb();
 
+	/** 20130720    
+	 * 깨울 task의 sched_contributes_to_load를 설정.
+	 *   사용되는 곳은 ttwu_do_activate에서 테스트.
+	 **/
 	p->sched_contributes_to_load = !!task_contributes_to_load(p);
+	/** 20130720    
+	 * task의 상태를 TASK_WAKING으로 변경
+	 **/
 	p->state = TASK_WAKING;
 
+	/** 20130720    
+	 * task의 sched_class에 task_waking가 정의되어 있다면 호출.
+	 *   task_waking은 현재 fair.c에서만 정의되어 있음.
+	 **/
 	if (p->sched_class->task_waking)
 		p->sched_class->task_waking(p);
 
+	/** 20130720    
+	 * 새로 할당한 cpu 번호 리턴.
+	 *   내용은 아직 분석하지 않음 ???
+	 **/
 	cpu = select_task_rq(p, SD_BALANCE_WAKE, wake_flags);
+	/** 20130720    
+	 * task p의 현재 자료구조에 설정된 cpu와 새로 수행할 cpu가 다르다면
+	 **/
 	if (task_cpu(p) != cpu) {
+		/** 20130720    
+		 * wake_flags를 migrated로 설정.
+		 **/
 		wake_flags |= WF_MIGRATED;
+		/** 20130720    
+		 * cpu 값을 변경
+		 **/
 		set_task_cpu(p, cpu);
 	}
 #endif /* CONFIG_SMP */
 
+	/** 20130720    
+	 * task p가 runqueue에 들어있지 않다면 cpu에 해당하는 runqueue에 넣어주고
+	 * reshedule을 위한 준비 작업을 해준다.
+	 **/
 	ttwu_queue(p, cpu);
 stat:
 	ttwu_stat(p, cpu, wake_flags);
@@ -3942,7 +4104,13 @@ void complete(struct completion *x)
 {
 	unsigned long flags;
 
+	/** 20130720    
+	 * interrupt disable 상태로 spinlock을 건다.
+	 **/
 	spin_lock_irqsave(&x->wait.lock, flags);
+	/** 20130720    
+	 * done을 증가
+	 **/
 	x->done++;
 	__wake_up_common(&x->wait, TASK_NORMAL, 1, 0, NULL);
 	spin_unlock_irqrestore(&x->wait.lock, flags);
@@ -6270,6 +6438,10 @@ static void destroy_sched_domains(struct sched_domain *sd, int cpu)
  * two cpus are in the same cache domain, see cpus_share_cache().
  */
 DEFINE_PER_CPU(struct sched_domain *, sd_llc);
+/** 20130720    
+ * sd_llc_id라는 이름으로 int 타입의 per cpu 변수 선언
+ * llc: last level cache
+ **/
 DEFINE_PER_CPU(int, sd_llc_id);
 
 static void update_top_cache_domain(int cpu)

@@ -3655,11 +3655,14 @@ void __ref build_all_zonelists(pg_data_t *pgdat, struct zone *zone)
 		if (zone)
 			setup_zone_pageset(zone);
 #endif
-		/** 20130706    
+		/** 20130720 stop_machine 추후 분석하기로 함 ???  
 		 **/
 		stop_machine(__build_all_zonelists, pgdat, NULL);
 		/* cpuset refresh routine should be here */
 	}
+	/** 20130727
+	 * 여기부터
+	 **/
 	vm_total_pages = nr_free_pagecache_pages();
 	/*
 	 * Disable grouping by mobility if the number of pages in the

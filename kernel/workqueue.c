@@ -481,8 +481,15 @@ static atomic_t unbound_pool_nr_running[NR_WORKER_POOLS] = {
 
 static int worker_thread(void *__worker);
 
+/** 20130720    
+ * struct worker_pool pools의 index를 얻어온다.
+ **/
 static int worker_pool_pri(struct worker_pool *pool)
 {
+	/** 20130720    
+	 * pool은 pool->gcwq->pools 배열 중 하나의 주소값.
+	 * 그 주소값에서 array의 시작 주소를 빼면 index가 나온다.
+	 **/
 	return pool - pool->gcwq->pools;
 }
 
@@ -496,9 +503,15 @@ static struct global_cwq *get_gcwq(unsigned int cpu)
 
 static atomic_t *get_pool_nr_running(struct worker_pool *pool)
 {
+	/** 20130720    
+	 * pool의 global per_cpu workqueue에 해당하는 cpu를 얻어온다.
+	 **/
 	int cpu = pool->gcwq->cpu;
 	int idx = worker_pool_pri(pool);
 
+	/** 20130720    
+	 * 분석하지 않음
+	 **/
 	if (cpu != WORK_CPU_UNBOUND)
 		return &per_cpu(pool_nr_running, cpu)[idx];
 	else
@@ -700,10 +713,23 @@ static void wake_up_worker(struct worker_pool *pool)
  * CONTEXT:
  * spin_lock_irq(rq->lock)
  */
+/** 20130720    
+ * task에 해당하는 worker 자료구조를 가져와 WORKER_NOT_RUNNING이 아닐 경우
+ * 자료구조를 하나 증가시켜 준다.
+ * 자료구조의 의미는 더 분석해야 함???
+ **/
 void wq_worker_waking_up(struct task_struct *task, unsigned int cpu)
 {
+	/** 20130720    
+	 * task가 kthread로 수행되므로
+	 * kthread_data로 struct kthread자료구조의 data를 가져와 worker에 저장한다.
+	 **/
 	struct worker *worker = kthread_data(task);
 
+	/** 20130720    
+	 * worker의 flags에서 WORKER_NOT_RUNNING 속성이 정의되어 있지 않을 때 수행
+	 * atomic_inc로 get_pool_nr_running가 리턴한 atomic_t *를 증가
+	 **/
 	if (!(worker->flags & WORKER_NOT_RUNNING))
 		atomic_inc(get_pool_nr_running(worker->pool));
 }

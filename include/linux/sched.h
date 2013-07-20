@@ -192,6 +192,9 @@ print_cfs_rq(struct seq_file *m, int cpu, struct cfs_rq *cfs_rq)
 /* in tsk->state again */
 #define TASK_DEAD		64
 #define TASK_WAKEKILL		128
+/** 20130720    
+ * try_to_wake_up
+ **/
 #define TASK_WAKING		256
 #define TASK_STATE_MAX		512
 
@@ -219,6 +222,10 @@ extern char ___assert_task_state[1 - 2*!!(
 #define task_is_dead(task)	((task)->exit_state != 0)
 #define task_is_stopped_or_traced(task)	\
 			((task->state & (__TASK_STOPPED | __TASK_TRACED)) != 0)
+/** 20130720    
+ * task의 상태가 TASK_UNINTERRUPTIBLE이고, flags가 PF_FROZEN이 아니라면 true
+ * PF : process flag
+ **/
 #define task_contributes_to_load(task)	\
 				((task->state & TASK_UNINTERRUPTIBLE) != 0 && \
 				 (task->flags & PF_FROZEN) == 0)
@@ -1201,6 +1208,9 @@ struct sched_entity {
 	u64			vruntime;
 	u64			prev_sum_exec_runtime;
 
+	/** 20130720    
+	 * set_task_cpu 분석 중 사용
+	 **/
 	u64			nr_migrations;
 
 #ifdef CONFIG_SCHEDSTATS
@@ -1826,6 +1836,8 @@ extern void thread_group_times(struct task_struct *p, cputime_t *ut, cputime_t *
 #define PF_NPROC_EXCEEDED 0x00001000	/* set_user noticed that RLIMIT_NPROC was exceeded */
 #define PF_USED_MATH	0x00002000	/* if unset the fpu must be initialized before use */
 #define PF_NOFREEZE	0x00008000	/* this thread should not be frozen */
+/** 20130720    
+ **/
 #define PF_FROZEN	0x00010000	/* frozen for system suspend */
 #define PF_FSTRANS	0x00020000	/* inside a filesystem transaction */
 #define PF_KSWAPD	0x00040000	/* I am kswapd */

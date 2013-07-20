@@ -42,6 +42,13 @@ struct kthread {
 	struct completion exited;
 };
 
+/** 20130720    
+ * task를 받아서 task의 vfork_done (struct completion *)에 저장된 포인터 주소를
+ * struct kthread exited 멤버의 주소로 해석해
+ * struct kthread 구조체의 시작 주소를 얻어 온다.
+ *
+ * 즉, task로 kthread 구조체의 시작 위치를 얻어 온다.
+ **/
 #define to_kthread(tsk)	\
 	container_of((tsk)->vfork_done, struct kthread, exited)
 
@@ -91,8 +98,14 @@ EXPORT_SYMBOL_GPL(kthread_freezable_should_stop);
  * The caller is responsible for ensuring the validity of @task when
  * calling this function.
  */
+/** 20130720    
+ * task를 받아와 task에 해당하는 kthread의 data를 리턴한다.
+ **/
 void *kthread_data(struct task_struct *task)
 {
+	/** 20130720    
+	 * task의 vfork_done이 가리키는 kthread를 가져와 data 포인터를 리턴한다.
+	 **/
 	return to_kthread(task)->data;
 }
 

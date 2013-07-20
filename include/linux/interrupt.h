@@ -404,6 +404,9 @@ extern bool force_irqthreads;
  * really been disabled in hardware. Such architectures need to
  * implement the following hook.
  */
+/** 20130720    
+ * arm은 NULL 함수
+ **/
 #ifndef hard_irq_disable
 #define hard_irq_disable()	do { } while(0)
 #endif

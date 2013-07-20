@@ -94,6 +94,9 @@ extern const struct cpumask *const cpu_active_mask;
 /** 20130608    
  * cpumask_weight(...)
  * 각각의 bitmap에 대해 weight (1로 설정된 비트의 수)를 구함
+ *
+ * 20130720
+ *   예를 들어 num_online_cpus는 cpu_online_mask에 설정된 1의 개수를 세서 리턴.
  **/
 #if NR_CPUS > 1
 #define num_online_cpus()	cpumask_weight(cpu_online_mask)

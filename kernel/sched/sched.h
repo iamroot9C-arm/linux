@@ -461,10 +461,15 @@ struct rq {
 #endif
 
 #ifdef CONFIG_SMP
+	/** 20130720    
+	 **/
 	struct llist_head wake_list;
 #endif
 };
 
+/** 20130720    
+ * runqueue의 cpu 값을 리턴.
+ **/
 static inline int cpu_of(struct rq *rq)
 {
 #ifdef CONFIG_SMP
@@ -478,6 +483,7 @@ DECLARE_PER_CPU(struct rq, runqueues);
 
 /** 20130713    
  * cpu에 해당하는 runqueues의 위치
+ * runqueue는 per_cpu 변수.
  **/
 #define cpu_rq(cpu)		(&per_cpu(runqueues, (cpu)))
 #define this_rq()		(&__get_cpu_var(runqueues))
@@ -582,6 +588,9 @@ static inline void set_task_rq(struct task_struct *p, unsigned int cpu)
 
 #else /* CONFIG_CGROUP_SCHED */
 
+/** 20130720    
+ * NULL 함수
+ **/
 static inline void set_task_rq(struct task_struct *p, unsigned int cpu) { }
 static inline struct task_group *task_group(struct task_struct *p)
 {
@@ -590,8 +599,14 @@ static inline struct task_group *task_group(struct task_struct *p)
 
 #endif /* CONFIG_CGROUP_SCHED */
 
+/** 20130720    
+ * task p의 cpu를 전달받은 cpu 값으로 지정
+ **/
 static inline void __set_task_cpu(struct task_struct *p, unsigned int cpu)
 {
+	/** 20130720    
+	 * CONFIG_CGROUP_SCHED이 정의되어 있지 않아 NULL
+	 **/
 	set_task_rq(p, cpu);
 #ifdef CONFIG_SMP
 	/*
@@ -599,7 +614,13 @@ static inline void __set_task_cpu(struct task_struct *p, unsigned int cpu)
 	 * successfuly executed on another CPU. We must ensure that updates of
 	 * per-task data have been completed by this moment.
 	 */
+	/** 20130720    
+	 * memory barrier
+	 **/
 	smp_wmb();
+	/** 20130720    
+	 * cpu를 새로 지정함
+	 **/
 	task_thread_info(p)->cpu = cpu;
 #endif
 }
@@ -655,6 +676,7 @@ extern struct static_key sched_feat_keys[__SCHED_FEAT_NR];
 #else /* !(SCHED_DEBUG && HAVE_JUMP_LABEL) */
 /** 20130706    
  * SCHED_DEBUG가 설정되어 있지 않아 아래 매크로.
+ * sysctl_sched_features에서 x에 해당하는 FEATURE가 정의되어 있는지 검사
  **/
 #define sched_feat(x) (sysctl_sched_features & (1UL << __SCHED_FEAT_##x))
 #endif /* SCHED_DEBUG && HAVE_JUMP_LABEL */

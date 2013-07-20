@@ -66,17 +66,31 @@ static struct {
 /** 20130706    
  * CONFIG_HOTPLUG_CPU 옵션이 켜 있어 이 함수 실행
  **/
+/** 20130720    
+ * cpu_hotplug를 참조하는 refcount를 증가시킨다.
+ *     cpu_hotplug_begin 에서 refcount가 0이 아닐 경우 수행하지 않고 리턴한다.
+ **/
 void get_online_cpus(void)
 {
+	/** 20130720    
+	 * schedule 포인트를 둔다
+	 **/
 	might_sleep();
 	/** 20130706    
 	 * cpu_hotplug_begin 전에는 초기값 NULL.
+	 * cpu_hotplug_begin에서 active_write를 current로 넣어 수행 중인 task를 기록한다.
+	 * activate_writer가 현재 함수를 수행 중인 task와 같다면
+	 * refcount를 증가하지 않고 리턴한다.
 	 **/
 	if (cpu_hotplug.active_writer == current)
 		return;
 	mutex_lock(&cpu_hotplug.lock);
 	/** 20130713    
 	 * refcount를 증가.
+	 *
+	 * from kernel/cpu.c
+	 *   This ensures that the hotplug operation can begin only when the
+	 *   refcount goes to zero.
 	 **/
 	cpu_hotplug.refcount++;
 	mutex_unlock(&cpu_hotplug.lock);

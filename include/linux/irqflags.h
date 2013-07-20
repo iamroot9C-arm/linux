@@ -29,6 +29,9 @@
 # define lockdep_softirq_exit()	do { current->softirq_context--; } while (0)
 # define INIT_TRACE_IRQFLAGS	.softirqs_enabled = 1,
 #else
+/** 20130720    
+ * CONFIG_TRACE_IRQFLAGS 가 정의되어 있지 않음
+ **/
 # define trace_hardirqs_on()		do { } while (0)
 # define trace_hardirqs_off()		do { } while (0)
 # define trace_softirqs_on(ip)		do { } while (0)
@@ -63,13 +66,16 @@
  * arch_local_irq_save - 
  **/
 /** 20121201
- * 
+ * local cpu의 interrupt 수행을 막고, 이전 상태를 flags로 저장
  */
 #define raw_local_irq_save(flags)			\
 	do {						\
 		typecheck(unsigned long, flags);	\
 		flags = arch_local_irq_save();		\
 	} while (0)
+/** 20130720    
+ * flags에 저장된 값을 cpsr_c에 저장
+ **/
 #define raw_local_irq_restore(flags)			\
 	do {						\
 		typecheck(unsigned long, flags);	\
@@ -115,8 +121,15 @@
 
 #define local_irq_restore(flags)			\
 	do {						\
+		/** 20130720    
+		 * flags에 irq가 disabled 되어 있다면 trace 하는 순서만 다르고
+		 * 공통으로 flags 값으로 restore 한다.
+		 **/
 		if (raw_irqs_disabled_flags(flags)) {	\
 			raw_local_irq_restore(flags);	\
+			/** 20130720    
+			 * NULL 함수
+			 **/
 			trace_hardirqs_off();		\
 		} else {				\
 			trace_hardirqs_on();		\

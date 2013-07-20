@@ -70,8 +70,14 @@ struct completion {
  * This inline function will initialize a dynamically created completion
  * structure.
  */
+/** 20130720    
+ * completion 자료구조 초기화
+ **/
 static inline void init_completion(struct completion *x)
 {
+	/** 20130720    
+	 * struct completion 자료구조 초기화
+	 **/
 	x->done = 0;
 	init_waitqueue_head(&x->wait);
 }

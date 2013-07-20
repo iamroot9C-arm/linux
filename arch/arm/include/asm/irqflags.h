@@ -10,6 +10,10 @@
  */
 #if __LINUX_ARM_ARCH__ >= 6
 
+/** 20130720    
+ * local cpu의 현재 cpsr을 가져오고,
+ * interrupt를 disable 한다.
+ **/
 static inline unsigned long arch_local_irq_save(void)
 {
 	unsigned long flags;
