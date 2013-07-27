@@ -541,16 +541,29 @@ struct pid *find_ge_pid(int nr, struct pid_namespace *ns)
  * machine.  From a minimum of 16 slots up to 4096 slots at one gigabyte or
  * more.
  */
+/** 20130727    
+ * pid hash table을 생성하고, hlist head를 초기화 한다.
+ **/
 void __init pidhash_init(void)
 {
 	unsigned int i, pidhash_size;
 
+	/** 20130727    
+	 * PID hash table을 생성한다. 
+	 **/
 	pid_hash = alloc_large_system_hash("PID", sizeof(*pid_hash), 0, 18,
 					   HASH_EARLY | HASH_SMALL,
 					   &pidhash_shift, NULL,
 					   0, 4096);
+	/** 20130727    
+	 * alloc_large_system_hash에서 table을 생성할 때 결정된
+	 * pidhash_size를 저장한다.
+	 **/
 	pidhash_size = 1U << pidhash_shift;
 
+	/** 20130727    
+	 * pidhash_size만큼 hashlist의 head를 초기화 한다.
+	 **/
 	for (i = 0; i < pidhash_size; i++)
 		INIT_HLIST_HEAD(&pid_hash[i]);
 }

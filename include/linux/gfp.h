@@ -261,12 +261,18 @@ static inline int allocflags_to_migratetype(gfp_t gfp_flags)
 
 
 #define GFP_ZONEMASK	(__GFP_DMA|__GFP_HIGHMEM|__GFP_DMA32|__GFP_MOVABLE)
+
+20130727
+flags에 해당하는 zone type을 리턴한다.
  **/
 static inline enum zone_type gfp_zone(gfp_t flags)
 {
 	enum zone_type z;
 	/** 20130629    
 	 * 위 경우에서  bit는 __GFP_HIGHMEM, __GFP_MOVABLE
+	 *
+	 * 20130727
+	 * flags 중 GFP_ZONEMASK에 해당하는 속성만 추출
 	 **/
 	int bit = (__force int) (flags & GFP_ZONEMASK);
 
@@ -284,7 +290,8 @@ static inline enum zone_type gfp_zone(gfp_t flags)
 		| (OPT_ZONE_DMA32 << (___GFP_MOVABLE | ___GFP_DMA32) * ZONES_SHIFT)   \
 	)
 
-	20130706 여기부터...
+	 * 20130727
+	 * GFP_ZONE_TABLE 에서 bit에 해당하는 zone type만 mask 해 추출함
 	 **/
 	z = (GFP_ZONE_TABLE >> (bit * ZONES_SHIFT)) &
 					 ((1 << ZONES_SHIFT) - 1);
@@ -299,6 +306,9 @@ static inline enum zone_type gfp_zone(gfp_t flags)
  * virtual kernel addresses to the allocated page(s).
  */
 
+/** 20130727    
+ * UMA에서 NUMA_BUILD가 0이므로 0을 리턴
+ **/
 static inline int gfp_zonelist(gfp_t flags)
 {
 	if (NUMA_BUILD && unlikely(flags & __GFP_THISNODE))
@@ -316,8 +326,15 @@ static inline int gfp_zonelist(gfp_t flags)
  * For the normal case of non-DISCONTIGMEM systems the NODE_DATA() gets
  * optimized to &contig_page_data at compile-time.
  */
+/** 20130727    
+ * node id에 해당하는 zonelists 중에 flags에 따른 특정 zonelist를 리턴
+ **/
 static inline struct zonelist *node_zonelist(int nid, gfp_t flags)
 {
+	/** 20130727    
+	 * UMA이므로 contig_page_data의 node_zonelists를 가져오고,
+	 * flags에 따라 zonelist에 대한 offset (0)으로 특정 zonelists를 리턴.
+	 **/
 	return NODE_DATA(nid)->node_zonelists + gfp_zonelist(flags);
 }
 

@@ -170,6 +170,10 @@ static inline __s32 sign_extend32(__u32 value, int index)
 	return (__s32)(value << shift) >> shift;
 }
 
+/** 20130727    
+ * long의 크기가 4일 경우 일반적인 fls 호출,
+ * 그렇지 않다면 (8) fls64 호출
+ **/
 static inline unsigned fls_long(unsigned long l)
 {
 	if (sizeof(l) == 4)

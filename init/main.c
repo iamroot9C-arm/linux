@@ -438,7 +438,12 @@ void __init parse_early_options(char *cmdline)
 
 /* Arch code calls this early on, or if not, just before other parsing. */
 /** 20130105
+ * setup_arch에서 호출
  * boot_command_line 을 parsing 하여, early 관련 함수 실행.
+ *
+ * 20130727
+ * start_kernel에서 직접 호출
+ *   done이 설정되어 있다면 바로 return
  * */
 void __init parse_early_param(void)
 {
@@ -609,21 +614,37 @@ asmlinkage void __init start_kernel(void)
 	 **/
 	smp_prepare_boot_cpu();	/* arch-specific boot-cpu hooks */
 
+	/** 20130727    
+	 * zonelists 자료구조 생성
+	 **/
 	build_all_zonelists(NULL, NULL);
 	page_alloc_init();
 
+	/** 20130727    
+	 * ATAG에서 넘어온 command line 문자열을 출력한다.
+	 **/
 	printk(KERN_NOTICE "Kernel command line: %s\n", boot_command_line);
 	parse_early_param();
+	/** 20130727    
+	 * setup_command_line에서 복사해둔 static_command_line 파라미터에서 
+	 **/
 	parse_args("Booting kernel", static_command_line, __start___param,
 		   __stop___param - __start___param,
 		   -1, -1, &unknown_bootoption);
 
+	/** 20130727    
+	 * vexpress에서는 NULL 함수
+	 **/
 	jump_label_init();
 
 	/*
 	 * These use large bootmem allocations and must precede
 	 * kmem_cache_init()
 	 */
+	/** 20130727    
+	 * early_param("log_buf_len", log_buf_len_setup)이 호출되지 않으면
+	 * new_log_buf_len이 0이 되어 바로 리턴됨.
+	 **/
 	setup_log_buf(0);
 	pidhash_init();
 	vfs_caches_init_early();

@@ -31,6 +31,10 @@
 
 /* Other architectures wishing to use this simple topology API should fill
    in the below functions as appropriate in their own <asm/topology.h> file. */
+/** 20130727    
+ * NUMA에서 cpu에 대응되는 node를 가져오기 위한 함수.
+ * NUMA가 설정되어 있지 않기 때문에 0을 리턴
+ **/
 #ifndef cpu_to_node
 #define cpu_to_node(cpu)	((void)(cpu),0)
 #endif

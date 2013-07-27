@@ -30,6 +30,10 @@ static DEFINE_MUTEX(cpu_add_remove_lock);
  * The following two API's must be used when attempting
  * to serialize the updates to cpu_online_mask, cpu_present_mask.
  */
+/** 20130727    
+ * cpu 관련 자료구조의 변경을 시작할 때 호출
+ *   - cpu_add_remove_lock을 mutex lock으로 건다
+ **/
 void cpu_maps_update_begin(void)
 {
 	mutex_lock(&cpu_add_remove_lock);
@@ -40,6 +44,9 @@ void cpu_maps_update_done(void)
 	mutex_unlock(&cpu_add_remove_lock);
 }
 
+/** 20130727    
+ * cpu_chain이라는 이름으로 notifier head를 선언한다.
+ **/
 static RAW_NOTIFIER_HEAD(cpu_chain);
 
 /* If set, cpu_up and cpu_down will return -EBUSY and do nothing.
@@ -158,10 +165,19 @@ static void cpu_hotplug_done(void) {}
 #endif	/* #else #if CONFIG_HOTPLUG_CPU */
 
 /* Need to know about CPUs going up/down? */
+/** 20130727    
+ * cpu_notifier를 등록한다.
+ **/
 int __ref register_cpu_notifier(struct notifier_block *nb)
 {
 	int ret;
+	/** 20130727    
+	 * cpu 관련 자료구조 전후에 mutex_lock을 걸고 푸는 함수들을 호출해 원자성을 보장한다.
+	 **/
 	cpu_maps_update_begin();
+	/** 20130727    
+	 * cpu_chain이라는 notifier chain에 notifier_block을 등록한다.
+	 **/
 	ret = raw_notifier_chain_register(&cpu_chain, nb);
 	cpu_maps_update_done();
 	return ret;

@@ -132,6 +132,9 @@ static inline void __nodes_clear(nodemask_t *dstp, int nbits)
 }
 
 /* No static inline type checking - see Subtlety (1) above. */
+/** 20130727    
+ * test_bit 함수로 nodemask.bits에 node에 해당하는 bit가 설정되어 있는지 검사하는 함수
+ **/
 #define node_isset(node, nodemask) test_bit((node), (nodemask).bits)
 
 #define node_test_and_set(node, nodemask) \

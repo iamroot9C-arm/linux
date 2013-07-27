@@ -2722,6 +2722,9 @@ void free_pages_exact(void *virt, size_t size)
 }
 EXPORT_SYMBOL(free_pages_exact);
 
+/** 20130727    
+ * zonelist를 순회하며 조건에 해당하는 free pages들의 개수를 리턴한다.
+ **/
 static unsigned int nr_free_zone_pages(int offset)
 {
 	struct zoneref *z;
@@ -2730,9 +2733,20 @@ static unsigned int nr_free_zone_pages(int offset)
 	/* Just pick one node, since fallback list is circular */
 	unsigned int sum = 0;
 
+	/** 20130727    
+	 * node id와 flags로 해당하는 zonelist를 가져온다.
+	 **/
 	struct zonelist *zonelist = node_zonelist(numa_node_id(), GFP_KERNEL);
 
+	/** 20130727    
+	 * zonelist를 순회 (offset은 허용되는 highest zone_type)
+	 *   sum에 사용가능한 page의 개수를 누적한다.
+	 **/
 	for_each_zone_zonelist(zone, z, zonelist, offset) {
+		/** 20130727    
+		 * 물리 메모리 상에서 제공되는 pages의 개수를 size에 저장
+		 * zone의 watermark에 대한 설정이 이루어지지 않았으므로 high는 0.
+		 **/
 		unsigned long size = zone->present_pages;
 		unsigned long high = high_wmark_pages(zone);
 		if (size > high)
@@ -2754,8 +2768,15 @@ EXPORT_SYMBOL_GPL(nr_free_buffer_pages);
 /*
  * Amount of free RAM allocatable within all zones
  */
+/** 20130727    
+ * zonelist를 돌며 gfp_zone(GFP_HIGHUSER_MOVABLE)을 만족하는 pages 들의 개수를
+ * 더해 리턴한다.
+ **/
 unsigned int nr_free_pagecache_pages(void)
 {
+	/** 20130727    
+	 * gfp_zone(GFP_HIGHUSER_MOVABLE)에 의해 ZONE_MOVABLE을 리턴
+	 **/
 	return nr_free_zone_pages(gfp_zone(GFP_HIGHUSER_MOVABLE));
 }
 
@@ -3634,6 +3655,10 @@ static int __build_all_zonelists(void *data)
  * Called with zonelists_mutex held always
  * unless system_state == SYSTEM_BOOTING.
  */
+/** 20130727    
+ * pgdat의 node마다 zonelists를 생성하고,
+ * free pages의 수를 더해 vm_total_pages에 저장하고 page_group_by_mobility_disabled 상태를 결정
+ **/
 void __ref build_all_zonelists(pg_data_t *pgdat, struct zone *zone)
 {
 	set_zonelist_order();
@@ -3661,7 +3686,7 @@ void __ref build_all_zonelists(pg_data_t *pgdat, struct zone *zone)
 		/* cpuset refresh routine should be here */
 	}
 	/** 20130727
-	 * 여기부터
+	 * 유효한 최대 page의 수를 저장
 	 **/
 	vm_total_pages = nr_free_pagecache_pages();
 	/*
@@ -3671,11 +3696,22 @@ void __ref build_all_zonelists(pg_data_t *pgdat, struct zone *zone)
 	 * made on memory-hotadd so a system can start with mobility
 	 * disabled and enable it later
 	 */
+	/** 20130727    
+	 * pageblock 단위의 migrate을 위해 필요한 갯수보다 작다면 
+	 * page_group_by_mobility_disabled을 1로 설정,
+	 * 그렇지 않다면 0d으로 설정.
+	 **/
 	if (vm_total_pages < (pageblock_nr_pages * MIGRATE_TYPES))
 		page_group_by_mobility_disabled = 1;
 	else
 		page_group_by_mobility_disabled = 0;
 
+	/** 20130727    
+	 * booting 시 information 메시지 출력
+	 *
+	 *  vexpress qemu에서 실행시
+	 *  Built 1 zonelists in Zone order, mobility grouping on.  Total pages: 32448
+	 **/
 	printk("Built %i zonelists in %s order, mobility grouping %s.  "
 		"Total pages: %ld\n",
 			nr_online_nodes,
@@ -3683,6 +3719,9 @@ void __ref build_all_zonelists(pg_data_t *pgdat, struct zone *zone)
 			page_group_by_mobility_disabled ? "off" : "on",
 			vm_total_pages);
 #ifdef CONFIG_NUMA
+	/** 20130727    
+	 * NUMA일 때만 출력
+	 **/
 	printk("Policy zone: %s\n", zone_names[policy_zone]);
 #endif
 }
@@ -5414,8 +5453,14 @@ static int page_alloc_cpu_notify(struct notifier_block *self,
 	return NOTIFY_OK;
 }
 
+/** 20130727    
+ * page alloc 을 사용하기 전에 초기화 해준다.
+ **/
 void __init page_alloc_init(void)
 {
+	/** 20130727    
+	 * page_alloc_cpu_notify를 cpu notifier chain에 priority 0으로  등록한다.
+	 **/
 	hotcpu_notifier(page_alloc_cpu_notify, 0);
 }
 
@@ -5753,6 +5798,9 @@ int percpu_pagelist_fraction_sysctl_handler(ctl_table *table, int write,
 	return 0;
 }
 
+/** 20130727    
+ * NUMA면 1, 아니면 0
+ **/
 int hashdist = HASHDIST_DEFAULT;
 
 #ifdef CONFIG_NUMA
@@ -5772,6 +5820,24 @@ __setup("hashdist=", set_hashdist);
  *   quantity of entries
  * - limit is the number of hash buckets, not the total allocation size
  */
+/** 20130727    
+   예를 들어 pidhash_init
+    tablename : "PID"
+	bucketsize : 4
+	numentries : 0
+	scale      : 18
+	flags      : HASH_EARLY | HASH_SMALL
+	_hash_shift : pidhash_shift
+	_hash_mask  : NULL
+	low_limit   : 0
+	high_limit  : 4096
+
+	1. nr_kernel_pages를 MB 단위로 올려 numentries에 저장한다.
+	2. 1 bucket이 2^scale 단위로 cover할 수 있도록 bucket의 수를 구한 뒤,
+	   그만큼 할당할 수 없다면 절반씩 줄인다.
+	3. bucketsize * bucket 수만큼 hash table을 할당한다.
+	4. hash table을 생성할 때 결정된 log2qty 값을 _hash_shift에 저장한다.
+ **/
 void *__init alloc_large_system_hash(const char *tablename,
 				     unsigned long bucketsize,
 				     unsigned long numentries,
@@ -5787,7 +5853,14 @@ void *__init alloc_large_system_hash(const char *tablename,
 	void *table = NULL;
 
 	/* allow the kernel cmdline to have a say */
+	/** 20130727    
+	 * numentries가 지정되어 있지 않으면
+	 **/
 	if (!numentries) {
+		/** 20130727    
+		 * nr_kernel_pages를 가져와 megabyte 단위로 만들어 준다.
+		 * (20 - PAGE_SHIFT)는 page 단위의 숫자를 megabyte 단위로 처리하기 위함
+		 **/
 		/* round applicable memory size up to nearest megabyte */
 		numentries = nr_kernel_pages;
 		numentries += (1UL << (20 - PAGE_SHIFT)) - 1;
@@ -5795,40 +5868,75 @@ void *__init alloc_large_system_hash(const char *tablename,
 		numentries <<= 20 - PAGE_SHIFT;
 
 		/* limit to 1 bucket per 2^scale bytes of low memory */
+		/** 20130727    
+		 * scale > PAGE_SHIFT 일 때
+		 *   numentries = numentries/scale/1024;
+		 **/
 		if (scale > PAGE_SHIFT)
 			numentries >>= (scale - PAGE_SHIFT);
 		else
 			numentries <<= (PAGE_SHIFT - scale);
 
 		/* Make sure we've got at least a 0-order allocation.. */
+		/** 20130727    
+		 * HASH_SMALL flag가 설정되어 있다면
+		 **/
 		if (unlikely(flags & HASH_SMALL)) {
 			/* Makes no sense without HASH_EARLY */
 			WARN_ON(!(flags & HASH_EARLY));
+			/** 20130727    
+			 * _hash_shift shift 해도 0이면,
+			 * 즉 16보다 작을 경우 최소 16으로 설정하고, 그래도 0일 경우 BUG.
+			 **/
 			if (!(numentries >> *_hash_shift)) {
 				numentries = 1UL << *_hash_shift;
 				BUG_ON(!numentries);
 			}
+		/** 20130727    
+		 * bucket의 수와 크기가 PAGE_SIZE보다 작다면 (최소값)
+		 * numentries를 PAGE_SIZE / bucketsize로 설정한다.
+		 **/
 		} else if (unlikely((numentries * bucketsize) < PAGE_SIZE))
 			numentries = PAGE_SIZE / bucketsize;
 	}
+	/** 20130727    
+	 * 2의 제곱수로 올림.
+	 **/
 	numentries = roundup_pow_of_two(numentries);
 
 	/* limit allocation size to 1/16 total memory by default */
+	/** 20130727    
+	 * max값이 0일 때 nr_all_pages에 해당하는 바이트 수를 16으로 나눠 max에 저장.
+	 * max = max / bucketsize;
+	 **/
 	if (max == 0) {
 		max = ((unsigned long long)nr_all_pages << PAGE_SHIFT) >> 4;
 		do_div(max, bucketsize);
 	}
+	/** 20130727    
+	 * max의 최대값은 0x80000000ULL.
+	 **/
 	max = min(max, 0x80000000ULL);
 
+	/** 20130727    
+	 * numentries이 최소, 최대값 사이에 위치하도록 보장
+	 **/
 	if (numentries < low_limit)
 		numentries = low_limit;
 	if (numentries > max)
 		numentries = max;
 
+	/** 20130727    
+	 * numentries <= 2의 제곱값이 되는 최소 2의 제곱값을 log2qty에 저장
+	 **/
 	log2qty = ilog2(numentries);
 
 	do {
 		size = bucketsize << log2qty;
+		/** 20130727    
+		 * flags에 HASH_EARLY가 설정되어 있으므로
+		 * bucketsize * ilog2(numentries) 개수만큼 할당받아 table 생성
+		 **/
 		if (flags & HASH_EARLY)
 			table = alloc_bootmem_nopanic(size);
 		else if (hashdist)
@@ -5844,19 +5952,36 @@ void *__init alloc_large_system_hash(const char *tablename,
 				kmemleak_alloc(table, size, 1, GFP_ATOMIC);
 			}
 		}
+	/** 20130727    
+	 * table이 생성되지 않았고, size가 PAGE_SIZE 보다 큰 동안 반복.
+	 * 반복할 때마다 --log2qty로 size를 감소시킨다.
+	 **/
 	} while (!table && size > PAGE_SIZE && --log2qty);
 
+	/** 20130727    
+	 * hash table을 결국 생성하지 못했을 경우 panic.
+	 **/
 	if (!table)
 		panic("Failed to allocate %s hash table\n", tablename);
 
+	/** 20130727    
+	 * kernel log 출력
+	 * 예) PID hash table entries: 4096 (order: 2, 16384 bytes)
+	 **/
 	printk(KERN_INFO "%s hash table entries: %ld (order: %d, %lu bytes)\n",
 	       tablename,
 	       (1UL << log2qty),
 	       ilog2(size) - PAGE_SHIFT,
 	       size);
 
+	/** 20130727    
+	 * _hash_shift 포인터가 존재하면 log2qty값을 저장
+	 **/
 	if (_hash_shift)
 		*_hash_shift = log2qty;
+	/** 20130727    
+	 * _hash_mask 포인터가 존재하면 log2qty 값으로 마스크를 만들어 저장
+	 **/
 	if (_hash_mask)
 		*_hash_mask = (1 << log2qty) - 1;
 

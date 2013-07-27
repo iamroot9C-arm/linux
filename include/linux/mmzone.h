@@ -973,16 +973,26 @@ extern struct zone *next_zone(struct zone *zone);
 			; /* do nothing */		\
 		else
 
+/** 20130727    
+ * zoneref에 해당하는 zone 자료구조의 주소를 리턴한다.
+ **/
 static inline struct zone *zonelist_zone(struct zoneref *zoneref)
 {
 	return zoneref->zone;
 }
 
+/** 20130727    
+ * zoneref가 가리키는 zone의 zone index를 리턴한다.
+ **/
 static inline int zonelist_zone_idx(struct zoneref *zoneref)
 {
 	return zoneref->zone_idx;
 }
 
+/** 20130727    
+ * NUMA일 경우 zone의 node를 리턴
+ * UMA일 경우 0을 리턴
+ **/
 static inline int zonelist_node_idx(struct zoneref *zoneref)
 {
 #ifdef CONFIG_NUMA
@@ -1023,11 +1033,19 @@ struct zoneref *next_zones_zonelist(struct zoneref *z,
  * used to iterate the zonelist with next_zones_zonelist by advancing it by
  * one before calling.
  */
+/** 20130727    
+ * zonelist에서 첫번째 zoneref가 가리키는 struct zone의 주소를 리턴한다.
+ **/
 static inline struct zoneref *first_zones_zonelist(struct zonelist *zonelist,
 					enum zone_type highest_zoneidx,
 					nodemask_t *nodes,
 					struct zone **zone)
 {
+	/** 20130727    
+	 * zonelist의 첫번째 zoneref의 값을 zoneref로 넘기고,
+	 * highest_zoneidx와 특정 nodemask에 해당하는 node에서 zone을 찾아
+	 * zone 자료구조의 주소를 zone에 저장해 리턴한다.
+	 **/
 	return next_zones_zonelist(zonelist->_zonerefs, highest_zoneidx, nodes,
 								zone);
 }
@@ -1043,6 +1061,11 @@ static inline struct zoneref *first_zones_zonelist(struct zonelist *zonelist,
  * This iterator iterates though all zones at or below a given zone index and
  * within a given nodemask
  */
+/** 20130727    
+ * zonelist를 순회하며 nodemask에 포함되는 node 중에서 (UMA일 경우 nodemask는 NULL)
+ * highidx를 넘지않는 zone_type인 zone들을 순회한다.
+ *  (first_zones_zonelist 역시 next_zones_zonelist 함수로 구현되어 있음)
+ **/
 #define for_each_zone_zonelist_nodemask(zone, z, zlist, highidx, nodemask) \
 	for (z = first_zones_zonelist(zlist, highidx, nodemask, &zone);	\
 		zone;							\
@@ -1057,6 +1080,9 @@ static inline struct zoneref *first_zones_zonelist(struct zonelist *zonelist,
  *
  * This iterator iterates though all zones at or below a given zone index.
  */
+/** 20130727    
+ * highidex를 넘지 않는 zlist (zonelist)의 각 zone을 순회하는 매크로
+ **/
 #define for_each_zone_zonelist(zone, z, zlist, highidx) \
 	for_each_zone_zonelist_nodemask(zone, z, zlist, highidx, NULL)
 

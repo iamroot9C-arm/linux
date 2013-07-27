@@ -348,6 +348,9 @@ EXPORT_SYMBOL_GPL(blocking_notifier_call_chain);
  *
  *	Currently always returns zero.
  */
+/** 20130727    
+ * notifier chain에 struct notifier_block를 등록한다.
+ **/
 int raw_notifier_chain_register(struct raw_notifier_head *nh,
 		struct notifier_block *n)
 {

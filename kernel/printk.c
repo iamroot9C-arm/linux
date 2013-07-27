@@ -702,6 +702,10 @@ static int __init log_buf_len_setup(char *str)
 }
 early_param("log_buf_len", log_buf_len_setup);
 
+/** 20130727    
+ * new_log_buf_len이 설정되어 있지 않으면 바로 리턴.
+ * 아래 내용은 log_buf를 새로 할당받아 교체하는 작업
+ **/
 void __init setup_log_buf(int early)
 {
 	unsigned long flags;

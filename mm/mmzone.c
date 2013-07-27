@@ -42,6 +42,10 @@ struct zone *next_zone(struct zone *zone)
 	return zone;
 }
 
+/** 20130727    
+ * UMA일 경우 항상 1리턴.
+ * NUMA일 경우 nodemask에 node index가 포함되는지 검사해 리턴
+ **/
 static inline int zref_in_nodemask(struct zoneref *zref, nodemask_t *nodes)
 {
 #ifdef CONFIG_NUMA
@@ -61,10 +65,24 @@ struct zoneref *next_zones_zonelist(struct zoneref *z,
 	 * Find the next suitable zone to use for the allocation.
 	 * Only filter based on nodemask if it's set
 	 */
+	/** 20130727    
+	 * nodemask가 지정되지 않았을 때
+	 **/
 	if (likely(nodes == NULL))
+		/** 20130727    
+		 * 지정된 highest_zoneidx (zone type)을 넘는다면 다음 zone으로 넘어간다.
+		 **/
 		while (zonelist_zone_idx(z) > highest_zoneidx)
 			z++;
+	/** 20130727    
+	 * nodemask가 지정되어 있을 때
+	 **/
 	else
+		/** 20130727    
+		 * 지정된 highest_zoneidx (zone type)을 넘거나
+		 * z에 해당하는 노드가 nodemask에 포함되어 있지 않다면
+		 *   다음 zone으로 넘어간다.
+		 **/
 		while (zonelist_zone_idx(z) > highest_zoneidx ||
 				(z->zone && !zref_in_nodemask(z, nodes)))
 			z++;

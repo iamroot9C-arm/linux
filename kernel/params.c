@@ -81,6 +81,9 @@ bool parameqn(const char *a, const char *b, size_t n)
 	return true;
 }
 
+/** 20130727    
+ * param 비교
+ **/
 bool parameq(const char *a, const char *b)
 {
 	return parameqn(a, b, strlen(a)+1);
@@ -96,7 +99,17 @@ bool parameq(const char *a, const char *b)
  * min_level	: 0
  * max_level	: 0
  * handle_unknown : do_early_param
- * */
+ * 
+ * 20130727
+ * param        : root
+ * val          : /dev/ram
+ * doing        : "Booting kernel"
+ * params       : __start___param
+ * num_param    : __stop___param - __start___param
+ * min_level    : -1
+ * max_level    : -1
+ * handle_unknown : unknown_bootoption
+ **/
 static int parse_one(char *param,
 		     char *val,
 		     const char *doing,
@@ -114,8 +127,17 @@ static int parse_one(char *param,
 	 * parse_early에서는 num_params가 0이기 때문에 아래 코드는 분석하지 않음. 추후 분석.
 	 * */
 	/* Find parameter */
+	/** 20130727    
+	 * num_params만큼 loop를 돌면서 __start___param ~ __stop___param 사이에
+	 * 저장된 parameter의 이름과 비교.
+	 *
+	 * 정상적으로 찾았으면 ops->set을 호출해 val를 구조체 arg에 채운다.
+	 **/
 	for (i = 0; i < num_params; i++) {
 		if (parameq(param, params[i].name)) {
+			/** 20130727    
+			 * range check
+			 **/
 			if (params[i].level < min_level
 			    || params[i].level > max_level)
 				return 0;
@@ -125,13 +147,25 @@ static int parse_one(char *param,
 				return -EINVAL;
 			pr_debug("handling %s with %p\n", param,
 				params[i].ops->set);
+			/** 20130727    
+			 * param_lock으로 보호한 상태에서
+			 * param에 저장된 
+			 **/
 			mutex_lock(&param_lock);
+			/** 20130727    
+			 * ops는 STANDARD_PARAM_DEF 매크로를 통해 선언.
+			 * ops->set 함수를 호출해 params의 val을 채운다.
+			 **/
 			err = params[i].ops->set(val, &params[i]);
 			mutex_unlock(&param_lock);
 			return err;
 		}
 	}
 
+	/** 20130727    
+	 * __param에 해당하는 이름이 없을 경우 이곳까지 도착.
+	 * handle_unknown이 지정되어 있다면 함수 호출
+	 **/
 	if (handle_unknown) {
 		pr_debug("doing %s: %s='%s'\n", doing, param, val);
 		return handle_unknown(param, val, doing);
@@ -217,7 +251,14 @@ static char *next_arg(char *args, char **param, char **val)
 
 /** 20130105
  * CONFIG_CMDLINE "root=/dev/nfs nfsroot=10.1.69.3:/work/nfsroot ip=dhcp console=ttyAMA0 mem=128M"
- * */
+ *
+ * 20130727
+ * core_param의 경우 이미 정의된 __param 영역에서 찾고,
+ * module_param의 경우 driver에서 정의된 param 영역에서 찾는다.
+ * param 이름을 찾으면 arg를 설정하고, 실패하면 unknown 함수를 실행한다.
+ *
+ * module의 경우 parameter 설정은 sys 파일시스템을 통해 perm이 허용하는 범위 내에서 가능하다.
+ **/
 /* Args looks like "foo=bar,bar2 baz=fuz wiz". */
 int parse_args(const char *doing,
 	       char *args,
@@ -240,9 +281,6 @@ int parse_args(const char *doing,
 		int irq_was_disabled;
 
 		args = next_arg(args, &param, &val);
-		/** 20130105
-		 * 여기부터 시작.. 
-		 * */
 		irq_was_disabled = irqs_disabled();
 		ret = parse_one(param, val, doing, params, num,
 				min_level, max_level, unknown);
