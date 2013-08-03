@@ -35,6 +35,10 @@
  * on our cache or tlb entries.
  */
 
+/** 20130803    
+ * insn  : exception이 발생했을 때 수행할 instruction의 주소
+ * fixup : exception handling이 끝난 뒤 계속 수행할 수 있도록 하는 instruction의 주소
+ **/
 struct exception_table_entry
 {
 	unsigned long insn, fixup;

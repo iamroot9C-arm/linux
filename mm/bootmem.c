@@ -253,9 +253,15 @@ static unsigned long __init free_all_bootmem_core(bootmem_data_t *bdata)
 	struct page *page;
 	unsigned long start, end, pages, count = 0;
 
+	/** 20130803    
+	 * bdata->node_bootmem_map이 존재하지 않는다면 return.
+	 **/
 	if (!bdata->node_bootmem_map)
 		return 0;
 
+	/** 20130803    
+	 * node의 시작 pfn과 마지막 pfn을 저장
+	 **/
 	start = bdata->node_min_pfn;
 	end = bdata->node_low_pfn;
 
@@ -265,15 +271,30 @@ static unsigned long __init free_all_bootmem_core(bootmem_data_t *bdata)
 	while (start < end) {
 		unsigned long *map, idx, vec;
 
+		/** 20130803    
+		 * bdata->node_bootmem_map을 map에 저장
+		 **/
 		map = bdata->node_bootmem_map;
+		/** 20130803    
+		 * 최초 idx는 0.
+		 **/
 		idx = start - bdata->node_min_pfn;
+		/** 20130803    
+		 * bitmap의 내용을 가져와 반전시켜 vec에 저장
+		 **/
 		vec = ~map[idx / BITS_PER_LONG];
 		/*
 		 * If we have a properly aligned and fully unreserved
 		 * BITS_PER_LONG block of pages in front of us, free
 		 * it in one go.
 		 */
+		/** 20130803    
+		 * start가 정렬된 주소이고, map이 모두 비어 있으면 
+		 **/
 		if (IS_ALIGNED(start, BITS_PER_LONG) && vec == ~0UL) {
+			/** 20130803    
+			 * order를 구해온다.
+			 **/
 			int order = ilog2(BITS_PER_LONG);
 
 			__free_pages_bootmem(pfn_to_page(start), order);
@@ -330,6 +351,9 @@ unsigned long __init free_all_bootmem(void)
 	unsigned long total_pages = 0;
 	bootmem_data_t *bdata;
 
+	/** 20130803    
+	 * list_head 인 bdata_list 부터 모든 bootmem_data를 순회하며
+	 **/
 	list_for_each_entry(bdata, &bdata_list, list)
 		total_pages += free_all_bootmem_core(bdata);
 

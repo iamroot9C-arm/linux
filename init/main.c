@@ -500,6 +500,9 @@ static void __init mm_init(void)
 	 * page_cgroup requires contiguous pages,
 	 * bigger than MAX_ORDER unless SPARSEMEM.
 	 */
+	/** 20130803    
+	 * CONFIG_MEMCG 가 define되지 않아 바로 return
+	 **/
 	page_cgroup_init_flatmem();
 	mem_init();
 	kmem_cache_init();
@@ -647,8 +650,14 @@ asmlinkage void __init start_kernel(void)
 	 **/
 	setup_log_buf(0);
 	pidhash_init();
+	/** 20130803    
+	 * vfs에서 cache로 사용할 hash table 초기화
+	 **/
 	vfs_caches_init_early();
 	sort_main_extable();
+	/** 20130803    
+	 * NULL 함수
+	 **/
 	trap_init();
 	mm_init();
 

@@ -268,6 +268,10 @@ static inline void *phys_to_virt(phys_addr_t x)
 /*
  * Drivers should NOT use these either.
  */
+/** 20130803    
+ * __pa : virtual 주소를 physical 주소로 변환
+ * __va : physical 주소를 virtual 주소로 변환
+ **/
 #define __pa(x)			__virt_to_phys((unsigned long)(x))
 #define __va(x)			((void *)__phys_to_virt((unsigned long)(x)))
 #define pfn_to_kaddr(pfn)	__va((pfn) << PAGE_SHIFT)
@@ -310,6 +314,9 @@ static inline __deprecated void *bus_to_virt(unsigned long x)
  *  virt_to_page(k)	convert a _valid_ virtual address to struct page *
  *  virt_addr_valid(k)	indicates whether a virtual address is valid
  */
+/** 20130803    
+ * ARCH_PFN_OFFSET은 Kernel 물리 시작 주소에 대한 PFN
+ **/
 #define ARCH_PFN_OFFSET		PHYS_PFN_OFFSET
 
 /** 20130511

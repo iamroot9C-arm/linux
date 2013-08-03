@@ -36,11 +36,22 @@ extern struct exception_table_entry __start___ex_table[];
 extern struct exception_table_entry __stop___ex_table[];
 
 /* Cleared by build time tools if the table is already sorted. */
+/** 20130803    
+ * exception table의 sort가 필요한지 나타내는 전역 변수
+ **/
 u32 __initdata main_extable_sort_needed = 1;
 
 /* Sort the kernel's built-in exception table */
+/** 20130803    
+ * built-in exception table을 sort한다.
+ **/
 void __init sort_main_extable(void)
 {
+	/** 20130803    
+	 * extable의 sort가 필요한지 검사해
+	 *   필요하다면 sort 함수 호출
+	 *   그렇지 않다면 notice 메시지만 출력
+	 **/
 	if (main_extable_sort_needed)
 		sort_extable(__start___ex_table, __stop___ex_table);
 	else

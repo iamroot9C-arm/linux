@@ -107,6 +107,12 @@ extern int kernel_thread(int (*fn)(void *), void *arg, unsigned long flags);
 #define ARCH_HAS_PREFETCH
 static inline void prefetch(const void *ptr)
 {
+	/** 20130803    
+	 * pld : pre-load data address. 
+	 *
+	 * from ARM site.
+	 * 프로세서는 주소에서 데이터나 명령어를 곧 로드할 것이라는 신호를 메모리 시스템에 보낼 수 있습니다.
+	 **/
 	__asm__ __volatile__(
 		"pld\t%a0"
 		:
@@ -115,6 +121,10 @@ static inline void prefetch(const void *ptr)
 }
 
 #define ARCH_HAS_PREFETCHW
+/** 20130803    
+ * ARM v5 이상에서는 instruction으로 지원.
+ * 해당 ptr에 대한 데이터를 pre load 시킨다.
+ **/
 #define prefetchw(ptr)	prefetch(ptr)
 
 #define ARCH_HAS_SPINLOCK_PREFETCH

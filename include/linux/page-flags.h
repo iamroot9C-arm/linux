@@ -290,6 +290,10 @@ PAGEFLAG(Unevictable, unevictable) __CLEARPAGEFLAG(Unevictable, unevictable)
 	TESTCLEARFLAG(Unevictable, unevictable)
 
 #ifdef CONFIG_MMU
+/** 20130803    
+ *#define TESTSCFLAG(uname, lname)					\
+	TESTSETFLAG(uname, lname) TESTCLEARFLAG(uname, lname)
+ **/
 PAGEFLAG(Mlocked, mlocked) __CLEARPAGEFLAG(Mlocked, mlocked)
 	TESTSCFLAG(Mlocked, mlocked) __TESTCLEARFLAG(Mlocked, mlocked)
 #else
@@ -411,10 +415,19 @@ __PAGEFLAG(Head, compound)
  * PG_compound & PG_reclaim	=> Tail page
  * PG_compound & ~PG_reclaim	=> Head page
  */
+/** 20130803    
+ * PG_compound와 PG_reclaim 비트로 PG_head_tail_mask 속성을 만들어 준다.
+ **/
 #define PG_head_tail_mask ((1L << PG_compound) | (1L << PG_reclaim))
 
+/** 20130803    
+ * page flags를 보고 page tail인지 확인한다.
+ **/
 static inline int PageTail(struct page *page)
 {
+	/** 20130803    
+	 * PG_head_tail_mask가 설정되어 있다면 page tail이다.
+	 **/
 	return ((page->flags & PG_head_tail_mask) == PG_head_tail_mask);
 }
 

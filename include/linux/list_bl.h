@@ -37,6 +37,9 @@ struct hlist_bl_head {
 struct hlist_bl_node {
 	struct hlist_bl_node *next, **pprev;
 };
+/** 20130803    
+ * hlist의 first를 NULL로 초기화 한다.
+ **/
 #define INIT_HLIST_BL_HEAD(ptr) \
 	((ptr)->first = NULL)
 
@@ -93,6 +96,12 @@ static inline void __hlist_bl_del(struct hlist_bl_node *n)
 	LIST_BL_BUG_ON((unsigned long)n & LIST_BL_LOCKMASK);
 
 	/* pprev may be `first`, so be careful not to lose the lock bit */
+	/** 20130803    
+	 * next의 LIST_BL_LOCKMASK 비트는 pprev의 LIST_BL_LOCKMASK의 속성을 계승받는다.
+	 * LIST_BL_LOCKMASK는 first 노드에 표시한다.
+	 * 만약 삭제할 노드가 first의 다음 노드라면, first의 *pprev를 갱신할 때
+	 *   LIST_BL_LOCKMASK 속성을 유지하도록 한다.
+	 **/
 	*pprev = (struct hlist_bl_node *)
 			((unsigned long)next |
 			 ((unsigned long)*pprev & LIST_BL_LOCKMASK));
@@ -100,6 +109,9 @@ static inline void __hlist_bl_del(struct hlist_bl_node *n)
 		next->pprev = pprev;
 }
 
+/** 20130803    
+ * hlist에서 노드를 삭제하고, 기존 노드의 n->next와 pprev를 POISON 처리한다.
+ **/
 static inline void hlist_bl_del(struct hlist_bl_node *n)
 {
 	__hlist_bl_del(n);

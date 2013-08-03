@@ -29,6 +29,9 @@
 /** 20130504
 __pfn_to_page : pfn 에 해당하는 struct page의 주소를 반환
 __page_to_pfn : struct page에 해당하는 pfn값을 반환
+
+20130803
+	UMA에서 mem_map = NODE_DATA(0)->node_mem_map;
 **/
 #define __pfn_to_page(pfn)	(mem_map + ((pfn) - ARCH_PFN_OFFSET))
 

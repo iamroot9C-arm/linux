@@ -95,6 +95,9 @@ nodemask_t node_states[NR_NODE_STATES] __read_mostly = {
 };
 EXPORT_SYMBOL(node_states);
 
+/** 20130803    
+ * mem_init 에서 초기화
+ **/
 unsigned long totalram_pages __read_mostly;
 unsigned long totalreserve_pages __read_mostly;
 /*
@@ -699,12 +702,21 @@ static void free_one_page(struct zone *zone, struct page *page, int order,
 	spin_unlock(&zone->lock);
 }
 
+/** 20130810
+ * 여기부터...
+ **/
 static bool free_pages_prepare(struct page *page, unsigned int order)
 {
 	int i;
 	int bad = 0;
 
+	/** 20130803    
+	 * Trace Point 생성
+	 **/
 	trace_mm_page_free(page, order);
+	/** 20130803    
+	 * CONFIG_KMEMCHECK가 정의되어 있지 않으므로 NULL 함수
+	 **/
 	kmemcheck_free_shadow(page, order);
 
 	if (PageAnon(page))
@@ -728,6 +740,10 @@ static bool free_pages_prepare(struct page *page, unsigned int order)
 static void __free_pages_ok(struct page *page, unsigned int order)
 {
 	unsigned long flags;
+	/** 20130803    
+	 * MACRO로 생성된 __TestClearPageMlocked 호출.
+	 *   Mlocked bit를 clear 해주고, 이전 상태를 wasMlocked에 저장
+	 **/
 	int wasMlocked = __TestClearPageMlocked(page);
 
 	if (!free_pages_prepare(page, order))
@@ -747,16 +763,37 @@ void __meminit __free_pages_bootmem(struct page *page, unsigned int order)
 	unsigned int nr_pages = 1 << order;
 	unsigned int loop;
 
+	/** 20130803    
+	 * page 영역의 데이터를 prefetch 시킨다.
+	 **/
 	prefetchw(page);
+	/** 20130803    
+	 * order에 해당하는 pages 개수만큼 순회하며
+	 **/
 	for (loop = 0; loop < nr_pages; loop++) {
+		/** 20130803    
+		 * 순회하는 page의 주소를 p에 저장
+		 **/
 		struct page *p = &page[loop];
 
+		/** 20130803    
+		 * 마지막 page가 아니라면 다음 page를 prefetch 시킨다.
+		 **/
 		if (loop + 1 < nr_pages)
 			prefetchw(p + 1);
+		/** 20130803    
+		 * p에 해당하는 struct page의 flags에서 PG_reserved 비트를 클리어.
+		 **/
 		__ClearPageReserved(p);
+		/** 20130803    
+		 * page의 _count를 0으로 설정함
+		 **/
 		set_page_count(p, 0);
 	}
 
+	/** 20130803    
+	 * page에 대해서만 _count를 1로 설정한다.
+	 **/
 	set_page_refcounted(page);
 	__free_pages(page, order);
 }
@@ -2623,6 +2660,9 @@ EXPORT_SYMBOL(get_zeroed_page);
 
 void __free_pages(struct page *page, unsigned int order)
 {
+	/** 20130803    
+	 * page의 _count를 하나 감소시키고, 이전값이 1이었다면
+	 **/
 	if (put_page_testzero(page)) {
 		if (order == 0)
 			free_hot_cold_page(page, 0);
@@ -5870,7 +5910,7 @@ void *__init alloc_large_system_hash(const char *tablename,
 		/* limit to 1 bucket per 2^scale bytes of low memory */
 		/** 20130727    
 		 * scale > PAGE_SHIFT 일 때
-		 *   numentries = numentries/scale/1024;
+		 *   numentries = numentries/scale/4096;
 		 **/
 		if (scale > PAGE_SHIFT)
 			numentries >>= (scale - PAGE_SHIFT);

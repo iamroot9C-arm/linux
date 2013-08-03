@@ -16,6 +16,9 @@
 void free_pgtables(struct mmu_gather *tlb, struct vm_area_struct *start_vma,
 		unsigned long floor, unsigned long ceiling);
 
+/** 20130803    
+ * page->_count를 v라는 값으로 설정함
+ **/
 static inline void set_page_count(struct page *page, int v)
 {
 	atomic_set(&page->_count, v);
@@ -25,6 +28,9 @@ static inline void set_page_count(struct page *page, int v)
  * Turn a non-refcounted page (->_count == 0) into refcounted with
  * a count of one.
  */
+/** 20130803    
+ * page의 _count를 1로 설정해 reference 상태로 만든다.
+ **/
 static inline void set_page_refcounted(struct page *page)
 {
 	VM_BUG_ON(PageTail(page));

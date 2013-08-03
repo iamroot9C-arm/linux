@@ -300,6 +300,9 @@ static inline void mem_cgroup_iter_break(struct mem_cgroup *root,
 {
 }
 
+/** 20130803    
+ * NULL 함수
+ **/
 static inline bool mem_cgroup_disabled(void)
 {
 	return true;

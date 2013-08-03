@@ -600,6 +600,9 @@ static inline void poison_init_mem(void *s, size_t count)
 		*p++ = 0xe7fddef0;
 }
 
+/** 20130803    
+ * start_pfn과 end_pfn 사이 물리 영역을 bootmem에서 초기화 한다.
+ **/
 static inline void
 free_memmap(unsigned long start_pfn, unsigned long end_pfn)
 {
@@ -609,6 +612,12 @@ free_memmap(unsigned long start_pfn, unsigned long end_pfn)
 	/*
 	 * Convert start_pfn/end_pfn to a struct page pointer.
 	 */
+	/** 20130803    
+	 * start_pfn, end_pfn에 대한 struct page *를 구한다.
+	 *
+	 * CONFIG_FLATMEM에서는 연속적이므로 -1을 해 구한 뒤 +1을 해줄 필요가 없지만,
+	 * 다른 메모리 타입일 경우 -1을 해 변환한 뒤 +1을 해야 정확한 위치를 찾는듯???
+	 **/
 	start_pg = pfn_to_page(start_pfn - 1) + 1;
 	end_pg = pfn_to_page(end_pfn - 1) + 1;
 
@@ -616,6 +625,10 @@ free_memmap(unsigned long start_pfn, unsigned long end_pfn)
 	 * Convert to physical addresses, and
 	 * round start upwards and end downwards.
 	 */
+	/** 20130803    
+	 * start_pg를 물리 주소로 변환하여 PAGE 단위로 ALIGN(올림)을 맞춘다.
+	 * end_pg를 물리 주소로 변환하여 PAGE 단위로 내림을 수행한다.
+	 **/
 	pg = (unsigned long)PAGE_ALIGN(__pa(start_pg));
 	pgend = (unsigned long)__pa(end_pg) & PAGE_MASK;
 
@@ -623,6 +636,10 @@ free_memmap(unsigned long start_pfn, unsigned long end_pfn)
 	 * If there are free pages between these,
 	 * free the section of the memmap array.
 	 */
+	/** 20130803    
+	 * 실제 physical address로 정렬해 비교했을 때도 pgend가 pg보다 크다면
+	 *   bootmem bitmap 영역에서 free시킨다.
+	 **/
 	if (pg < pgend)
 		free_bootmem(pg, pgend - pg);
 }
@@ -630,6 +647,9 @@ free_memmap(unsigned long start_pfn, unsigned long end_pfn)
 /*
  * The mem_map array can get very big.  Free the unused area of the memory map.
  */
+/** 20130803    
+ * meminfo 를 순회하며 각 bank 사이의 연속적이지 않은 공간에 대해 free.
+ **/
 static void __init free_unused_memmap(struct meminfo *mi)
 {
 	unsigned long bank_start, prev_bank_end = 0;
@@ -642,6 +662,9 @@ static void __init free_unused_memmap(struct meminfo *mi)
 	for_each_bank(i, mi) {
 		struct membank *bank = &mi->bank[i];
 
+		/** 20130803    
+		 * 각 bank의 시작주소에 해당하는 PFN를 구한다.
+		 **/
 		bank_start = bank_pfn_start(bank);
 
 #ifdef CONFIG_SPARSEMEM
@@ -657,12 +680,21 @@ static void __init free_unused_memmap(struct meminfo *mi)
 		 * memmap entries are valid from the bank start aligned to
 		 * MAX_ORDER_NR_PAGES.
 		 */
+		/** 20130803    
+		 * bank_start를 MAX_ORDER_NR_PAGES 단위로 내림한다.
+		 *   올림을 수행해야 하는 것이 아닐까???
+		 **/
 		bank_start = round_down(bank_start, MAX_ORDER_NR_PAGES);
 #endif
 		/*
 		 * If we had a previous bank, and there is a space
 		 * between the current bank and the previous, free it.
 		 */
+		/** 20130803    
+		 * 처음 loop 수행시 prev_bank_end는 0.
+		 * 다음 수행시 prev_bank_end가 현재 bank_start 보다 작으면
+		 *   해당 영역을 free로 표시(사용 가능) 한다.
+		 **/
 		if (prev_bank_end && prev_bank_end < bank_start)
 			free_memmap(prev_bank_end, bank_start);
 
@@ -671,6 +703,9 @@ static void __init free_unused_memmap(struct meminfo *mi)
 		 * memmap entries are valid from the bank end aligned to
 		 * MAX_ORDER_NR_PAGES.
 		 */
+		/** 20130803    
+		 * 현재 bank의 끝 pfn을 MAX_ORDER_NR_PAGES 단위로 정렬한다. 
+		 **/
 		prev_bank_end = ALIGN(bank_pfn_end(bank), MAX_ORDER_NR_PAGES);
 	}
 
@@ -741,12 +776,25 @@ void __init mem_init(void)
 	unsigned long reserved_pages, free_pages;
 	struct memblock_region *reg;
 	int i;
+	/** 20130803    
+	 * vexpress에서 정의되어 있지 않음
+	 **/
 #ifdef CONFIG_HAVE_TCM
 	/* These pointers are filled in on TCM detection */
 	extern u32 dtcm_end;
 	extern u32 itcm_end;
 #endif
 
+	/** 20130803    
+	 * PFN으로 해당하는 page 구조체를 찾는다.
+	 *   max_pfn         : 최대 pfn의 수
+	 *   PHYS_PFN_OFFSET : 커널 시작 주소에 대한 PFN
+	 *
+	 *   mem_map         : struct page 들의 시작 위치
+	 *
+	 * 시작 struct page *에서 마지막 struct page *를 빼서
+	 * page의 개수를 max_mapnr에 저장
+	 **/
 	max_mapnr   = pfn_to_page(max_pfn + PHYS_PFN_OFFSET) - mem_map;
 
 	/* this will put all unused low memory onto the freelists */

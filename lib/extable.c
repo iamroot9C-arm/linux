@@ -21,8 +21,16 @@
  * This is used both for the kernel exception table and for
  * the exception tables of modules that get loaded.
  */
+/** 20130803    
+ * exception table를 정렬해 두어야 binary search시에 빠르게 필요한 entry를 찾을 수 있다.
+ * sort시에 사용할 compare 함수를 선언한다.
+ *   - compare 기준은 insn (주소값)이 낮은 순이다.
+ **/
 static int cmp_ex(const void *a, const void *b)
 {
+	/** 20130803    
+	 * exception table
+	 **/
 	const struct exception_table_entry *x = a, *y = b;
 
 	/* avoid overflow */
@@ -33,9 +41,17 @@ static int cmp_ex(const void *a, const void *b)
 	return 0;
 }
 
+/** 20130803    
+ * start ~ finish까지 exception table을 insn (수행할 instruct의 주소)로 정렬한다
+ **/
 void sort_extable(struct exception_table_entry *start,
 		  struct exception_table_entry *finish)
 {
+	/** 20130803    
+	 * exception table의 start ~ finish까지에 대해
+	 * library sort 함수 호출.
+	 * cmp_func에 대한 CB으로 cmp_ex 지정
+	 **/
 	sort(start, finish - start, sizeof(struct exception_table_entry),
 	     cmp_ex, NULL);
 }

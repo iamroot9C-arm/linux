@@ -182,6 +182,22 @@ static inline void atomic_sub(int i, atomic_t *v)
 	: "cc");
 }
 
+/** 20130803    
+ * ARMv6 이상
+ *
+ * %0 : result
+ * %1 : tmp    (ex 검사용)
+ * %2 : v->counter
+ * %3 : &v->counter
+ * %4 : i
+ *
+ * LOCK();
+ * result = *(&v->counter);
+ * result = result - i;
+ * *(&v->counter) = result;
+ * UNLOCK();
+ *
+ **/
 static inline int atomic_sub_return(int i, atomic_t *v)
 {
 	unsigned long tmp;
@@ -358,6 +374,9 @@ static inline int __atomic_add_unless(atomic_t *v, int a, int u)
 #define atomic_dec(v)		atomic_sub(1, v)
 
 #define atomic_inc_and_test(v)	(atomic_add_return(1, v) == 0)
+/** 20130803    
+ * atomic_sub_result을 이용해 v를 1 감소시키고, 감소시킨 결과를 리턴
+ **/
 #define atomic_dec_and_test(v)	(atomic_sub_return(1, v) == 0)
 #define atomic_inc_return(v)    (atomic_add_return(1, v))
 #define atomic_dec_return(v)    (atomic_sub_return(1, v))

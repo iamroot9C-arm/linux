@@ -275,6 +275,9 @@ struct inode;
 /*
  * Drop a ref, return true if the refcount fell to zero (the page has no users)
  */
+/** 20130803    
+ * page의 _count를 하나 감소시키고, 결과가 0인지 여부를 리턴
+ **/
 static inline int put_page_testzero(struct page *page)
 {
 	VM_BUG_ON(atomic_read(&page->_count) == 0);

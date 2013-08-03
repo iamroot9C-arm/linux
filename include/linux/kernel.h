@@ -47,6 +47,9 @@
 
 #define REPEAT_BYTE(x)	((~0ul / 0xff) * (x))
 
+/** 20130803    
+ * x를 a단위로 ALIGN을 맞춘다 (__ALIGN_KERNEL에서 round up으로 구현)
+ **/
 #define ALIGN(x, a)		__ALIGN_KERNEL((x), (a))
 #define __ALIGN_MASK(x, mask)	__ALIGN_KERNEL_MASK((x), (mask))
 #define PTR_ALIGN(p, a)		((typeof(p))ALIGN((unsigned long)(p), (a)))
@@ -64,6 +67,11 @@
  * as wide as the result!), and we want to evaluate the macro
  * arguments just once each.
  */
+/** 20130803    
+ * __round_mask : (x)(y-1)
+ * round_up     : mask와 bit or를 해 모든 비트를 켜준 뒤 1을 더해 올림 수행
+ * round_down   : mask에 해당하는 비트들을 제거해 내림
+ **/
 #define __round_mask(x, y) ((__typeof__(x))((y)-1))
 #define round_up(x, y) ((((x)-1) | __round_mask(x, y))+1)
 #define round_down(x, y) ((x) & ~__round_mask(x, y))

@@ -6,6 +6,16 @@
 #include <linux/poison.h>
 #include <linux/const.h>
 
+/** 20130803    
+ * hlist의 특성
+ *   - 해당 bucket의 처음부터 entry를 찾아가면 된다.
+ *
+ * double linked list를 사용하면 __add, __before 등의 함수의 구현이 편리하다.
+ *
+ * 위 두 가지 특성을 결합해 hlist는 struct hlist_node **pprev 를 사용해
+ *   일반적인 doubly linked list 구현에 비해 전달할 argument와 비교문을 줄일 수 있다.
+ *   http://stackoverflow.com/questions/3058592/use-of-double-pointer-in-linux-kernel-hash-list-implementation
+ **/
 /*
  * Simple doubly linked list implementation.
  *
@@ -615,6 +625,11 @@ static inline int hlist_empty(const struct hlist_head *h)
 
 static inline void __hlist_del(struct hlist_node *n)
 {
+	/** 20130803    
+	 * 삭제할 노드의 next와 pprev를 지역변수로 저장한다.
+	 * 이전 노드의 next를 삭제할 노드가 가리키고 있던 next로 변경한다.
+	 * 삭제할 노드의 next가 있다면 다음 노드의 pprev를 삭제할 노드의 pprev로 변경한다.
+	 **/
 	struct hlist_node *next = n->next;
 	struct hlist_node **pprev = n->pprev;
 	*pprev = next;
@@ -637,13 +652,32 @@ static inline void hlist_del_init(struct hlist_node *n)
 	}
 }
 
+/** 20130803    
+ * hlist에 head를 새로 추가하는 함수
+ **/
 static inline void hlist_add_head(struct hlist_node *n, struct hlist_head *h)
 {
+	/** 20130803    
+	 * 첫번째 hlist_head가 현재 가리키고 있는 first를 저장
+	 **/
 	struct hlist_node *first = h->first;
+	/** 20130803    
+	 * 새로 추가할 노드의 next에 기존 first(가 가리키던) 노드를 저장
+	 **/
 	n->next = first;
+	/** 20130803    
+	 * first가 존재한다면
+	 *   기존 first 노드의 pprev를 새로 추가하는 노드의 next에 저장
+	 **/
 	if (first)
 		first->pprev = &n->next;
+	/** 20130803    
+	 * 새로 추가할 노드를 head의 first로 지정한다.
+	 **/
 	h->first = n;
+	/** 20130803    
+	 * 새로 추가할 노드의 pprev가 자신을 가리킨다.
+	 **/
 	n->pprev = &h->first;
 }
 

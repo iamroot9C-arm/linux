@@ -1730,6 +1730,9 @@ __setup("ihash_entries=", set_ihash_entries);
 /*
  * Initialize the waitqueues and inode hash table.
  */
+/** 20130803    
+ * inode가 사용할 hash table을 생성하고 초기화 한다.
+ **/
 void __init inode_init_early(void)
 {
 	unsigned int loop;
@@ -1737,9 +1740,18 @@ void __init inode_init_early(void)
 	/* If hashes are distributed across NUMA nodes, defer
 	 * hash allocation until vmalloc space is available.
 	 */
+	/** 20130803    
+	 * UMA이므로 0.
+	 **/
 	if (hashdist)
 		return;
 
+	/** 20130803    
+	 * ihash_entries가 kernel startup parameter로 지정되지 않았을 경우
+	 * 초기값 0을 갖고 있을 것이다.
+	 *
+	 * inode용 hash table을 생성한다.
+	 **/
 	inode_hashtable =
 		alloc_large_system_hash("Inode-cache",
 					sizeof(struct hlist_head),

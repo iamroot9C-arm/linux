@@ -102,6 +102,10 @@ static struct kmem_cache *dentry_cache __read_mostly;
 static unsigned int d_hash_mask __read_mostly;
 static unsigned int d_hash_shift __read_mostly;
 
+/** 20130803    
+ * 왜 dentry_hashtable은 hlist_bl_head를 사용할까???
+ *   BL : bit lock
+ **/
 static struct hlist_bl_head *dentry_hashtable __read_mostly;
 
 static inline struct hlist_bl_head *d_hash(const struct dentry *parent,
@@ -3079,6 +3083,9 @@ static int __init set_dhash_entries(char *str)
 }
 __setup("dhash_entries=", set_dhash_entries);
 
+/** 20130803    
+ * dcache가 사용할 hash table을 생성하고 초기화 한다.
+ **/
 static void __init dcache_init_early(void)
 {
 	unsigned int loop;
@@ -3086,20 +3093,30 @@ static void __init dcache_init_early(void)
 	/* If hashes are distributed across NUMA nodes, defer
 	 * hash allocation until vmalloc space is available.
 	 */
+	/** 20130803    
+	 * UMA이므로 0.
+	 **/
 	if (hashdist)
 		return;
 
+	/** 20130803    
+	 * dhash_entries가 kernel startup parameter로 지정되지 않았을 경우
+	 * 초기값 0을 갖고 있을 것이다.
+	 *
+	 * dentry용 hash table을 생성한다.
+	 **/
 	dentry_hashtable =
 		alloc_large_system_hash("Dentry cache",
 					sizeof(struct hlist_bl_head),
 					dhash_entries,
 					13,
-					HASH_EARLY,
-					&d_hash_shift,
 					&d_hash_mask,
 					0,
 					0);
 
+	/** 20130803    
+	 * LIST node를 초기화 한다.
+	 **/
 	for (loop = 0; loop < (1U << d_hash_shift); loop++)
 		INIT_HLIST_BL_HEAD(dentry_hashtable + loop);
 }
@@ -3141,6 +3158,11 @@ EXPORT_SYMBOL(names_cachep);
 
 EXPORT_SYMBOL(d_genocide);
 
+/** 20130803    
+ * vfs에서 사용하는 cache들을 초기화 한다.
+ *   - dentry cache
+ *   - inode cache
+ **/
 void __init vfs_caches_init_early(void)
 {
 	dcache_init_early();

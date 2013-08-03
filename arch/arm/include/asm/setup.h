@@ -210,9 +210,15 @@ struct meminfo {
 
 extern struct meminfo meminfo;
 
+/** 20130803    
+ * meminfo의 nr_banks 개 만큼 루프
+ **/
 #define for_each_bank(iter,mi)				\
 	for (iter = 0; iter < (mi)->nr_banks; iter++)
 
+/** 20130803    
+ * meminfo bank의 시작 주소에 대한 pfn을 구한다.
+ **/
 #define bank_pfn_start(bank)	__phys_to_pfn((bank)->start)
 /** 20130330    
  * band 의 시작주소와 크기를 더해 끝 물리주소를 구하고, 그에 대한 pfn을 리턴
