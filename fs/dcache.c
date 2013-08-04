@@ -3110,6 +3110,8 @@ static void __init dcache_init_early(void)
 					sizeof(struct hlist_bl_head),
 					dhash_entries,
 					13,
+					HASH_EARLY,
+					&d_hash_shift,
 					&d_hash_mask,
 					0,
 					0);
