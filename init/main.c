@@ -474,6 +474,9 @@ static void __init boot_cpu_init(void)
     /** 20121208
     cpu_online, cpu_active, cpu_present, cpu_possible 비트맵에 해당 비트를 1로 세팅한다.
      **/
+	/** 20130810
+	 http://studyfoss.egloos.com/5444259 참조
+	**/
     set_cpu_online(cpu, true);
 	set_cpu_active(cpu, true);
 	set_cpu_present(cpu, true);

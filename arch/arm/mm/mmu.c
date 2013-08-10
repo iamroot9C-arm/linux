@@ -366,8 +366,17 @@ static void __init build_mem_type_table(void)
 		ecc_mask = 0;
 	}
 /** 20130202  
-* cachepolicy : smp이므로   CPOLICY_WRITEBACK -> CPOLICY_WRITEALLOC
+* cachepolicy : smp이므로   CPOLICY_WRITEBACK(default) -> CPOLICY_WRITEALLOC
 */
+/** 20130810
+write-alloc : write 동작에 대해서 cache miss가 났을때, cacheline을 채워서
+쓴다.
+smp 에서 write-alloc을 하는 이유 : write cache miss시 바로 메모리에 쓰면
+다른 프로세서가 snooping protocol(MSI,MESI) 로 최신값을 알수 없기 때문에
+write-alloc를 사용해서 다른 프로세서가 write된 최신값을 snooping을
+통해서 가져올수 있다.
+참조 : 프로그래머가 몰랐던 멀티코어 CPU 저. 김민장 236쪽 참조.
+**/
 	if (is_smp())
 		cachepolicy = CPOLICY_WRITEALLOC;
 
@@ -637,6 +646,10 @@ static void __init build_mem_type_table(void)
 		if (t->prot_sect)
 			t->prot_sect |= PMD_DOMAIN(t->domain);
 	}
+
+/** 20130810
+runtime시 최종 값은 추후에 확인???
+**/
 }
 
 #ifdef CONFIG_ARM_DMA_MEM_BUFFERABLE
@@ -1122,7 +1135,10 @@ static void __init fill_pmd_gaps(void)
 #else
 #define fill_pmd_gaps() do { } while (0)
 #endif
-
+/** 20130810
+early_vmalloc으로 따로 설정 하지 않을 경우 vmalloc 사이즈는 240매가로 설정,
+vmalloc_min 는 최소값 설정인듯???
+**/
 static void * __initdata vmalloc_min =
 	(void *)(VMALLOC_END - (240 << 20) - VMALLOC_OFFSET);
 
@@ -1302,6 +1318,10 @@ void __init sanity_check_meminfo(void)
 		- 커널이 4기가의 모든 영역을 쓸수 있으므로...
 	high memory 가 설정이 안되어 있으면 커널이 사용하는 최상위 주소(arm_lowmem_limit)를 지정해줘야 한다. 
 **/
+/** 20130810
+arm_lowmem_limit은 커널이 사용하는 최상위 주소가 아니라
+ZONE_NORMAL에서 물리메모리의 마지막 주소를 가리킨다.
+**/
 		if ((!bank->highmem) && (bank->start + bank->size > arm_lowmem_limit))
 			arm_lowmem_limit = bank->start + bank->size;
 		/** 20130119
@@ -1354,7 +1374,7 @@ void __init sanity_check_meminfo(void)
 }
 
 /** 20130216
- * VMALLOC_START 이전에서 커널이 실행되고 있는 메모리를 제외한 영역의 pmd를 clear
+ * VMALLOC_START 이전에서 주소 중, 커널이 실행되고 있는 메모리 영역을 제외한 영역의 pmd를 clear
  **/
 static inline void prepare_page_table(void)
 {
@@ -1386,6 +1406,11 @@ static inline void prepare_page_table(void)
 	/** 20130216
 	 * memblock의 첫 번째 region에는 커널이 로딩되어 수행중이므로, pmd_clear에서 제외하기 위함.
 	 **/
+/** 20130810
+	커널이 로딩되어 실행중이 code 는 이미 reserved 메모리 영역에 등록이 되어 있음. 그러면 기존 주석의 근거는???
+
+	end가 첫번째 bank의 끝주소라면 arm_lowmem_limit(물리 메모리의 마지막 주소)보다 클 경우가 있나??? 	
+**/
 	end = memblock.memory.regions[0].base + memblock.memory.regions[0].size;
 	if (end >= arm_lowmem_limit)
 		end = arm_lowmem_limit;
@@ -1626,6 +1651,9 @@ void __init paging_init(struct machine_desc *mdesc)
 
 	build_mem_type_table();
 	prepare_page_table();
+	/** 20130817
+	다시보기중 : 다음주 이어서 시작
+	**/
 	map_lowmem();
 	dma_contiguous_remap();
 	devicemaps_init(mdesc);

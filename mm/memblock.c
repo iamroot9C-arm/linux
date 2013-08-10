@@ -464,6 +464,43 @@ static void __init_memblock memblock_insert_region(struct memblock_type *type,
  *  memblock에 새로운 region을 추가한다.
  *  logical memory block 을 관리하는 memblock 변수의 자료구조를 채운다.
  **/
+
+/** 20130810
+	type->cnt 1일 경우 
+
+ <처리전>
+              rbase  rend    
+                +------+    
+  memblock      |   0  |   
+                +------+                        
+				    base  end
+					+------+
+  meminfo			|      |
+					+------+
+
+	1. for문에서 첫번째 루프 수행
+		- base가 rend 위치로 조정
+
+              rbase  rend    
+                +------+    
+  memblock      |   0  |   
+                +------+                        
+				      base end
+					   +---+
+  meminfo			   |   |
+					   +---+
+
+	2. for문을 벗어나 base가 end보다 작기때문에 nr_new증가 
+	3. insert가 false에서 true로 세팅되고 goto repeat  
+	4. nr_new를 0으로 세팅하고, 다시 for문 실행
+	5. base가 end보다 작으므로 nr_new를 1 증가 시키고 insert가
+	true므로 memblock_insert_region으로 memblock추가.
+  <처리후>     rbase       end
+                +----------+   
+  memblock      |     0    |   
+                +- --------+   
+
+**/
 static int __init_memblock memblock_add_region(struct memblock_type *type,
 				phys_addr_t base, phys_addr_t size, int nid)
 {

@@ -41,6 +41,9 @@
 /** 20130316
 	VMALLOC_START : VA(마지막 물리주소)의 다음 8M 단위 주소 
 **/
+/** 20130810
+참고 : http://www.iamroot.org/xe/Kernel_7_ARM/25433	
+**/
 #define VMALLOC_OFFSET		(8*1024*1024)
 #define VMALLOC_START		(((unsigned long)high_memory + VMALLOC_OFFSET) & ~(VMALLOC_OFFSET-1))
 #define VMALLOC_END		0xff000000UL

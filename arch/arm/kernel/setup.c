@@ -136,6 +136,10 @@ struct stack {
 	/** 20121215
 	 * 왜 3개씩 가지고 있는 것일까???
 	 **/
+	 /** 20130810
+	 irq, abt, und 세가지 모드가 각각 12byte의 스택 크기를
+	 가지고 있는듯 한데 이정도로 충분할까???
+	 **/
 	u32 irq[3];
 	u32 abt[3];
 	u32 und[3];
@@ -736,6 +740,10 @@ static int __init early_mem(char *p)
 	 * blow away any automatically generated
 	 * size.
 	 */
+	/** 20130810
+	ATAG로 meminfo를 세팅을 해줘도 early_mem으로 
+	세팅을 하면 기존 ATAG meminfo는 오버라이드 된다.
+	**/
 	if (usermem == 0) {
 		usermem = 1;
 		meminfo.nr_banks = 0;
@@ -873,6 +881,9 @@ static int __init parse_tag_core(const struct tag *tag)
 
 __tagtable(ATAG_CORE, parse_tag_core);
 
+/** 20130810
+ATAG_MEM으로 meminfo가 넘어왔을때 파싱하는 부분
+**/
 static int __init parse_tag_mem32(const struct tag *tag)
 {
 	return arm_add_memory(tag->u.mem.start, tag->u.mem.size);
@@ -1226,6 +1237,7 @@ void __init setup_arch(char **cmdline_p)
 	 * decompress_kernel()의 argument로 넘어온 값을 사용
 	 **/
 	if (!mdesc)
+:q!
 		mdesc = setup_machine_tags(machine_arch_type);
 	/** 20121222
 	 * machine_name : "ARM-Versatile Express"

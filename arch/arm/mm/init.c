@@ -38,7 +38,9 @@
 
 static unsigned long phys_initrd_start __initdata = 0;
 static unsigned long phys_initrd_size __initdata = 0;
-
+/** 20130810
+kernel param으로 initrd start, size세팅 가능
+**/
 static int __init early_initrd(char *p)
 {
 	unsigned long start, size;
@@ -414,7 +416,7 @@ void __init arm_memblock_init(struct meminfo *mi, struct machine_desc *mdesc)
 {
 	int i;
 	/** 20130126    
-	 * meminfo의 bank 정보를 memblock에 채워넣음
+	 * meminfo의 bank 정보를 memblock의 memory 부분에 채워넣음
 	 **/
 	for (i = 0; i < mi->nr_banks; i++)
 		memblock_add(mi->bank[i].start, mi->bank[i].size);
@@ -432,6 +434,10 @@ void __init arm_memblock_init(struct meminfo *mi, struct machine_desc *mdesc)
 	/** 20130126    
 	 * initrd로 주어진 메모리 공간이 memblock.memory 영역 안에 없다면 initrd를 무시
 	 **/
+/** 20130810
+initrd지정된 영역이 region memory에 존재 하지 않을경우
+유효하지 않는 주소로 판단하고 무시
+**/
 	if (phys_initrd_size &&
 	    !memblock_is_region_memory(phys_initrd_start, phys_initrd_size)) {
 		pr_err("INITRD: 0x%08lx+0x%08lx is not a memory region - disabling initrd\n",
@@ -447,6 +453,9 @@ void __init arm_memblock_init(struct meminfo *mi, struct machine_desc *mdesc)
 		       phys_initrd_start, phys_initrd_size);
 		phys_initrd_start = phys_initrd_size = 0;
 	}
+	/** 20130810
+	그리고 initrd_size가 있다면.. 
+	**/
 	if (phys_initrd_size) {
 		/** 20130126    
 		 * initrd 메모리 영역을 memblock.reserved에 등록

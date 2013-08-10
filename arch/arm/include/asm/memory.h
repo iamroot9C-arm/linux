@@ -48,6 +48,10 @@
  * The module space lives between the addresses given by TASK_SIZE
  * and PAGE_OFFSET - it must be within 32MB of the kernel text.
  */
+/** 20130810
+vexpress 에서는 TASK_SIZE는 PAGE_OFFSET에서 16MB를 빼준값이므로  위치는 MODULES_VADDR과 같다.
+여기서 MODULES_VADDR이 의미하는 바는???
+**/
 #ifndef CONFIG_THUMB2_KERNEL
 #define MODULES_VADDR		(PAGE_OFFSET - 16*1024*1024)
 #else

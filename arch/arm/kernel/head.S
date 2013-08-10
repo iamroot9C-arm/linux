@@ -72,6 +72,13 @@ textofs-y       := 0x00008000
     swapper_pg_dir를 전역 변수로 선언
     KERNEL_RAM_VADDR에서 PG_DIR_SIZE를 뺀 값을 swapper_pg_dir에 입력 
 **/
+/** 20130810
++-------------+ 0x80008000   KERNEL_RAM_VADDR
+|             |
++-------------+ 0x80004000   swapper_pg_dir
+|             |
++-------------+ 0x80000000   PAGE_OFFSET       (TEXT_OFFSET 0x8000)
+**/
 	.globl	swapper_pg_dir
 	.equ	swapper_pg_dir, KERNEL_RAM_VADDR - PG_DIR_SIZE
 
