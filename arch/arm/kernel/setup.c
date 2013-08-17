@@ -1237,7 +1237,6 @@ void __init setup_arch(char **cmdline_p)
 	 * decompress_kernel()의 argument로 넘어온 값을 사용
 	 **/
 	if (!mdesc)
-:q!
 		mdesc = setup_machine_tags(machine_arch_type);
 	/** 20121222
 	 * machine_name : "ARM-Versatile Express"

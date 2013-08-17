@@ -1182,6 +1182,13 @@ phys_addr_t arm_lowmem_limit __initdata = 0;
   3. highmem세팅시 캐쉬 aliasing을 검사하고
   4. high_memory(가상주소)를 세팅하고, ZONE_NORMAL에서의 memblock.current_limit를 세팅
  **/
+/** 20130817
+meminfo의 채워져있는 내용을 확인하여, vmalloc_min을 기준으로 overlap 되었을 경우
+1. CONFIG_HIGHMEM defined
+	- 겹치는 부분만 신규 뱅크를 만들어주고 그 뱅크의 highmem을 set한다.
+2. not defined.
+	- vmalloc_min까지로 bank size를 줄인다.
+**/
 void __init sanity_check_meminfo(void)
 {
 	int i, j, highmem = 0;
@@ -1195,7 +1202,7 @@ void __init sanity_check_meminfo(void)
 		struct membank *bank = &meminfo.bank[j];
 		*bank = meminfo.bank[i];
 /** 20130112
-	bank의 start가 4기가 이상이면 highmemory를 설정한다.
+	bank의 start가 ULONG_MAX이상이면 highmemory를 설정한다.
 **/
 		if (bank->start > ULONG_MAX)
 			highmem = 1;
@@ -1388,7 +1395,9 @@ static inline void prepare_page_table(void)
 	 * MODULES_VADDR : PAGE_OFFSET - 16MB : 0x8000_0000 - 16MB(vexpress)
 	 * PMD_SIZE : 2MB
 	 *
-	 * 왜 16MB를 뺐는지???
+	 * 왜 16MB를 뺐는지??? 
+	 *	20130817:PAGE_OFFSET에서 -16MB는 모듈 영역
+	 *  user 영역을 초기화
 	 * */
 	for (addr = 0; addr < MODULES_VADDR; addr += PMD_SIZE)
 		pmd_clear(pmd_off_k(addr));
@@ -1397,6 +1406,9 @@ static inline void prepare_page_table(void)
 	/* The XIP kernel is mapped in the module area -- skip over it */
 	addr = ((unsigned long)_etext + PMD_SIZE - 1) & PMD_MASK;
 #endif
+	/** 20130817
+	모듈 영역에서 PAGE_OFFSET까지 초기화
+	**/
 	for ( ; addr < PAGE_OFFSET; addr += PMD_SIZE)
 		pmd_clear(pmd_off_k(addr));
 
@@ -1408,8 +1420,10 @@ static inline void prepare_page_table(void)
 	 **/
 /** 20130810
 	커널이 로딩되어 실행중이 code 는 이미 reserved 메모리 영역에 등록이 되어 있음. 그러면 기존 주석의 근거는???
+	-> 20130817 : meminfo를 오름차순으로 정렬해서 memblock을 만듦으로 첫번째 region에 커널 실행 코드가 등록된다.
 
-	end가 첫번째 bank의 끝주소라면 arm_lowmem_limit(물리 메모리의 마지막 주소)보다 클 경우가 있나??? 	
+	end가 첫번째 bank의 끝주소라면 arm_lowmem_limit(물리 메모리의 마지막 주소)보다 클 경우가 있나??? 
+	-> 20130817 : 첫번째 region이 highmem을 포함하고 있을경우 
 **/
 	end = memblock.memory.regions[0].base + memblock.memory.regions[0].size;
 	if (end >= arm_lowmem_limit)
@@ -1421,7 +1435,7 @@ static inline void prepare_page_table(void)
 	 */
 	/** 20130216
 	 * memblock의 첫 번째 region의 마지막부터 VMALLOC_START까지 pmd_clear
-	 * VMALLOC_START는 마지막 VA(물리메모리 주소) + 8MB 
+	 * VMALLOC_START는 마지막 VA(물리메모리 주소)의 8매가 올림 정렬된 값.
 		#define VMALLOC_START		(((unsigned long)high_memory + VMALLOC_OFFSET) & ~(VMALLOC_OFFSET-1))
 	 **/
 	for (addr = __phys_to_virt(end);
@@ -1629,6 +1643,9 @@ static void __init map_lowmem(void)
 
 		/** 20130309    
 		 * 해당 memblock 영역에 대한 page table을 채운다.
+		 **/
+		 /** 20130824
+		 다음주 create_mapping 정리 필요.
 		 **/
 		create_mapping(&map);
 	}
