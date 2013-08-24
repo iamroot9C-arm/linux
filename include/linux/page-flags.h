@@ -293,6 +293,93 @@ PAGEFLAG(Unevictable, unevictable) __CLEARPAGEFLAG(Unevictable, unevictable)
 /** 20130803    
  *#define TESTSCFLAG(uname, lname)					\
 	TESTSETFLAG(uname, lname) TESTCLEARFLAG(uname, lname)
+
+#define TESTCLEARFLAG(uname, lname)					\
+static inline int TestClearPage##uname(struct page *page)		\
+		{ return test_and_clear_bit(PG_##lname, &page->flags); }
+
+
+  20130824
+
+  page에 관련된 함수들을 생성하는 매크로.
+  PG_xxx는 이 파일 상단에 pagenum pageflags { ... }로 정의.
+
+  mlock
+    memory에 상주함을 보장한다.
+	http://www.mjmwired.net/kernel/Documentation/vm/unevictable-lru.txt
+
+#define PAGEFLAG(uname, lname) TESTPAGEFLAG(uname, lname)		\
+	SETPAGEFLAG(uname, lname) CLEARPAGEFLAG(uname, lname)
+
+	#define TESTPAGEFLAG(uname, lname)					\
+	static inline int Page##uname(const struct page *page)			\
+			{ return test_bit(PG_##lname, &page->flags); }
+
+	#define SETPAGEFLAG(uname, lname)					\
+	static inline void SetPage##uname(struct page *page)			\
+			{ set_bit(PG_##lname, &page->flags); }
+
+	#define CLEARPAGEFLAG(uname, lname)					\
+	static inline void ClearPage##uname(struct page *page)			\
+			{ clear_bit(PG_##lname, &page->flags); }
+
+#define __CLEARPAGEFLAG(uname, lname)					\
+static inline void __ClearPage##uname(struct page *page)		\
+			{ __clear_bit(PG_##lname, &page->flags); }
+
+#define TESTSCFLAG(uname, lname)					\
+	TESTSETFLAG(uname, lname) TESTCLEARFLAG(uname, lname)
+
+	#define TESTSETFLAG(uname, lname)					\
+	static inline int TestSetPage##uname(struct page *page)			\
+			{ return test_and_set_bit(PG_##lname, &page->flags); }
+
+	#define TESTCLEARFLAG(uname, lname)					\
+	static inline int TestClearPage##uname(struct page *page)		\
+			{ return test_and_clear_bit(PG_##lname, &page->flags); }
+
+#define __TESTCLEARFLAG(uname, lname)					\
+static inline int __TestClearPage##uname(struct page *page)		\
+		{ return __test_and_clear_bit(PG_##lname, &page->flags); }
+
+
+
+생성된 함수들은 다음과 같다.
+static inline __attribute__((always_inline)) __attribute__((no_instrument_function))
+int PageMlocked(const struct page *page) 
+{
+	   return test_bit(PG_mlocked, &page->flags); 
+}
+
+static inline __attribute__((always_inline)) __attribute__((no_instrument_function)) 
+void SetPageMlocked(struct page *page) { 
+	 _set_bit(PG_mlocked,&page->flags); 
+}
+
+static inline __attribute__((always_inline)) __attribute__((no_instrument_function)) 
+void ClearPageMlocked(struct page *page) {
+	 _clear_bit(PG_mlocked,&page->flags); 
+}
+
+static inline __attribute__((always_inline)) __attribute__((no_instrument_function)) 
+void __ClearPageMlocked(struct page *page) { 
+	 __clear_bit(PG_mlocked, &page->flags); 
+}
+
+static inline __attribute__((always_inline)) __attribute__((no_instrument_function)) 
+int TestSetPageMlocked(struct page *page) { 
+	 return _test_and_set_bit(PG_mlocked,&page->flags); 
+}
+
+static inline __attribute__((always_inline)) __attribute__((no_instrument_function)) 
+int TestClearPageMlocked(struct page *page) { 
+	 return _test_and_clear_bit(PG_mlocked,&page->flags); 
+}
+
+static inline __attribute__((always_inline)) __attribute__((no_instrument_function)) 
+int __TestClearPageMlocked(struct page *page) { 
+	 return __test_and_clear_bit(PG_mlocked, &page->flags); 
+}
  **/
 PAGEFLAG(Mlocked, mlocked) __CLEARPAGEFLAG(Mlocked, mlocked)
 	TESTSCFLAG(Mlocked, mlocked) __TESTCLEARFLAG(Mlocked, mlocked)

@@ -291,6 +291,10 @@ static inline int bad_range(struct zone *zone, struct page *page)
 }
 #endif
 
+/** 20130824    
+ * bad_page 정보를 출력한다.
+ *  add_taint는 분석 안 함
+ **/
 static void bad_page(struct page *page)
 {
 	static unsigned long resume;
@@ -298,6 +302,9 @@ static void bad_page(struct page *page)
 	static unsigned long nr_unshown;
 
 	/* Don't complain about poisoned pages */
+	/** 20130824    
+	 * HWPoison은 정의되어 있지 않아 NULL을 0을 리턴
+	 **/
 	if (PageHWPoison(page)) {
 		reset_page_mapcount(page); /* remove PageBuddy */
 		return;
@@ -307,11 +314,22 @@ static void bad_page(struct page *page)
 	 * Allow a burst of 60 reports, then keep quiet for that minute;
 	 * or allow a steady drip of one report per second.
 	 */
+	/** 20130824    
+	 * 
+	 **/
 	if (nr_shown == 60) {
+		/** 20130824    
+		 * jiffies가 resume보다 작으면, 즉 아직 resume에 도달하지 않았으면
+		 * nr_unshown을 증가시키고, out으로 빠진다.
+		 **/
 		if (time_before(jiffies, resume)) {
 			nr_unshown++;
 			goto out;
 		}
+		/** 20130824    
+		 * nr_unshown이 0보다 크면 
+		 * ALERT를 출력하고 un_unshown을 초기화.
+		 **/
 		if (nr_unshown) {
 			printk(KERN_ALERT
 			      "BUG: Bad page state: %lu messages suppressed\n",
@@ -320,9 +338,16 @@ static void bad_page(struct page *page)
 		}
 		nr_shown = 0;
 	}
+	/** 20130824    
+	 * nr_shown이 0인 경우
+	 *   resume에 현재 보다 (60 * HZ)인 값을 저장한다.
+	 **/
 	if (nr_shown++ == 0)
 		resume = jiffies + 60 * HZ;
 
+	/** 20130824    
+	 * 현재 prcoess의 commmand와 pfn을 출력
+	 **/
 	printk(KERN_ALERT "BUG: Bad page state in process %s  pfn:%05lx\n",
 		current->comm, page_to_pfn(page));
 	dump_page(page);
@@ -331,6 +356,9 @@ static void bad_page(struct page *page)
 	dump_stack();
 out:
 	/* Leave bad fields for debug, except PageBuddy could make trouble */
+	/** 20130824    
+	 * mapcount를 reset (-1) 한다.
+	 **/
 	reset_page_mapcount(page); /* remove PageBuddy */
 	add_taint(TAINT_BAD_PAGE);
 }
@@ -618,8 +646,15 @@ static inline void free_page_mlock(struct page *page)
 	__count_vm_event(UNEVICTABLE_MLOCKFREED);
 }
 
+/** 20130824    
+ * page가 사용 중이라면 1을 리턴, 사용 중이 아니라면 flags를 초기화 하고 0을 리턴.
+ **/
 static inline int free_pages_check(struct page *page)
 {
+	/** 20130824    
+	 * mapcount가 0이 아니거나 mapping되어 있는 등 사용 중이라면
+	 * bad_page로 처리하는듯 ???
+	 **/
 	if (unlikely(page_mapcount(page) |
 		(page->mapping != NULL)  |
 		(atomic_read(&page->_count) != 0) |
@@ -628,6 +663,10 @@ static inline int free_pages_check(struct page *page)
 		bad_page(page);
 		return 1;
 	}
+	/** 20130824    
+	 * page->flags에 어떤 비트라도 설정되어 있다면 flags를 모두 날려준다.
+	 * 항상 초기화 해주면 안 되나???
+	 **/
 	if (page->flags & PAGE_FLAGS_CHECK_AT_PREP)
 		page->flags &= ~PAGE_FLAGS_CHECK_AT_PREP;
 	return 0;
@@ -704,6 +743,9 @@ static void free_one_page(struct zone *zone, struct page *page, int order,
 
 /** 20130810
  * 여기부터...
+ *
+ * page부터 1 << order 개수의 pages들을 초기화 하기 전에
+ * free가 가능한지 검사하는 함수
  **/
 static bool free_pages_prepare(struct page *page, unsigned int order)
 {
@@ -719,18 +761,34 @@ static bool free_pages_prepare(struct page *page, unsigned int order)
 	 **/
 	kmemcheck_free_shadow(page, order);
 
+	/** 20130824    
+	 * page가 ANONYMOUS page인 경우 mapping을 NULL로 설정.
+	 **/
 	if (PageAnon(page))
 		page->mapping = NULL;
+	/** 20130824    
+	 * order 만큼 돌면서 free_pages_check이 실패한 개수만큼 bad에 누적한다
+	 **/
 	for (i = 0; i < (1 << order); i++)
 		bad += free_pages_check(page + i);
+	/** 20130824    
+	 * bad가 있다면 free 해줄 수 없다.
+	 **/
 	if (bad)
 		return false;
 
+	/** 20130824    
+	 * page가 HighMem이 아닌 경우라면 (CONFIG_HIGHMEM이 꺼진 경우 포함)
+	 * 
+	 **/
 	if (!PageHighMem(page)) {
 		debug_check_no_locks_freed(page_address(page),PAGE_SIZE<<order);
 		debug_check_no_obj_freed(page_address(page),
 					   PAGE_SIZE << order);
 	}
+	/** 20130824    
+	 * NULL 함수
+	 **/
 	arch_free_page(page, order);
 	kernel_map_pages(page, 1 << order, 0);
 
@@ -746,10 +804,16 @@ static void __free_pages_ok(struct page *page, unsigned int order)
 	 **/
 	int wasMlocked = __TestClearPageMlocked(page);
 
+	/** 20130824    
+	 * page부터  1<< order만큼 free를 위한 준비 과정에서 실패하면 바로 리턴.
+	 **/
 	if (!free_pages_prepare(page, order))
 		return;
 
 	local_irq_save(flags);
+	/** 20130824    
+	 * page의 속성이 mlocked인 경우 (mlock syscall 등으로 memory에 lock 된 경우)
+	 **/
 	if (unlikely(wasMlocked))
 		free_page_mlock(page);
 	__count_vm_events(PGFREE, 1 << order);
@@ -792,7 +856,7 @@ void __meminit __free_pages_bootmem(struct page *page, unsigned int order)
 	}
 
 	/** 20130803    
-	 * page에 대해서만 _count를 1로 설정한다.
+	 * 첫번째 page에 대해서만 _count를 1로 설정한다.
 	 **/
 	set_page_refcounted(page);
 	__free_pages(page, order);

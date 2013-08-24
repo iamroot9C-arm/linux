@@ -339,6 +339,9 @@ static inline struct zonelist *node_zonelist(int nid, gfp_t flags)
 }
 
 #ifndef HAVE_ARCH_FREE_PAGE
+/** 20130824    
+ * HAVE_ARCH_FREE_PAGE가 정의되어 있지 않으므로 NULL 함수
+ **/
 static inline void arch_free_page(struct page *page, int order) { }
 #endif
 #ifndef HAVE_ARCH_ALLOC_PAGE

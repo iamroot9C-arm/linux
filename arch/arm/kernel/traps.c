@@ -204,6 +204,9 @@ static void dump_backtrace(struct pt_regs *regs, struct task_struct *tsk)
 }
 #endif
 
+/** 20130824    
+ * dump_stack은 나중에 몰아서 보기로 함
+ **/
 void dump_stack(void)
 {
 	dump_backtrace(NULL, NULL);
@@ -886,6 +889,8 @@ void __init early_trap_init(void *vectors_base)
 	flush_icache_range(vectors, vectors + PAGE_SIZE);
 	/** 20130316
 		도메인 타입을 재지정하는 함수,vexpress에서는 Null function.	
+		20130824
+		DOMAIN이 CLIENT여야 각 page table entry의 AP값에 따라 protection이 설정된다.
 	**/
 	modify_domain(DOMAIN_USER, DOMAIN_CLIENT);
 }

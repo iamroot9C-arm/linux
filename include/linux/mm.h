@@ -379,6 +379,9 @@ static inline void reset_page_mapcount(struct page *page)
 	atomic_set(&(page)->_mapcount, -1);
 }
 
+/** 20130824    
+ * struct page 에서 _mapcount를 atomic으로 읽어 +1을 해 리턴한다.
+ **/
 static inline int page_mapcount(struct page *page)
 {
 	return atomic_read(&(page)->_mapcount) + 1;
@@ -876,6 +879,9 @@ struct address_space *page_file_mapping(struct page *page)
 	return page->mapping;
 }
 
+/** 20130824    
+ * page->mapping (struct address_space *)의 PAGE_MAPPING_ANON 비트가 설정되어 있는지 검사
+ **/
 static inline int PageAnon(struct page *page)
 {
 	return ((unsigned long)page->mapping & PAGE_MAPPING_ANON) != 0;
@@ -1623,6 +1629,9 @@ static inline void vm_stat_account(struct mm_struct *mm,
 }
 #endif /* CONFIG_PROC_FS */
 
+/** 20130824    
+ * 정의되어 있지 않음
+ **/
 #ifdef CONFIG_DEBUG_PAGEALLOC
 extern void kernel_map_pages(struct page *page, int numpages, int enable);
 #ifdef CONFIG_HIBERNATION

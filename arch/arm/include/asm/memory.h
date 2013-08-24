@@ -67,6 +67,9 @@ vexpress 에서는 TASK_SIZE는 PAGE_OFFSET에서 16MB를 빼준값이므로  �
  * The highmem pkmap virtual space shares the end of the module area.
  */
 #ifdef CONFIG_HIGHMEM
+/** 20130824    
+ * HIGHMEM일 경우 PKMAP_BASE 영역과 겹치지 않도록 하기 위해 PMD_SIZE를 빼준다
+ **/
 #define MODULES_END		(PAGE_OFFSET - PMD_SIZE)
 #else
 #define MODULES_END		(PAGE_OFFSET)

@@ -289,7 +289,7 @@ static unsigned long __init free_all_bootmem_core(bootmem_data_t *bdata)
 		 * it in one go.
 		 */
 		/** 20130803    
-		 * start가 정렬된 주소이고, map이 모두 비어 있으면 
+		 * start가 정렬된 pfn 값이고, map이 모두 비어 있으면 
 		 **/
 		if (IS_ALIGNED(start, BITS_PER_LONG) && vec == ~0UL) {
 			/** 20130803    

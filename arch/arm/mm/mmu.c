@@ -768,6 +768,10 @@ static void __init alloc_init_section(pud_t *pud, unsigned long addr,
 	 */
 	/** 20130223    
 	 * prot_sect 가 0이 아니고, addr, end, phys 모두 SECTION 단위로 정렬되어 있으면 true
+	 *
+	 * 20130824
+	 * end가 X.8MB처럼 SECTION 단위로 떨어지지 않는다면
+	 * 섹션에 해당하는 pmd 두 영역 모두 pte table이 생성됨.
 	 **/
 	if (type->prot_sect && ((addr | end | phys) & ~SECTION_MASK) == 0) {
 		pmd_t *p = pmd;

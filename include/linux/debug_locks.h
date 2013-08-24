@@ -53,6 +53,9 @@ extern void debug_show_held_locks(struct task_struct *task);
 extern void debug_check_no_locks_freed(const void *from, unsigned long len);
 extern void debug_check_no_locks_held(struct task_struct *task);
 #else
+/** 20130824    
+ * LOCKDEP을 CONFIG 하지 않았으므로 NULL 함수
+ **/
 static inline void debug_show_all_locks(void)
 {
 }

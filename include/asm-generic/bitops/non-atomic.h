@@ -78,13 +78,22 @@ static inline int __test_and_set_bit(int nr, volatile unsigned long *addr)
  * If two examples of this operation race, one can appear to succeed
  * but actually fail.  You must protect multiple accesses with a lock.
  */
+/** 20130824    
+ * non-atomic 버전의 test_and_clear_bit 함수
+ **/
 static inline int __test_and_clear_bit(int nr, volatile unsigned long *addr)
 {
 	unsigned long mask = BIT_MASK(nr);
 	unsigned long *p = ((unsigned long *)addr) + BIT_WORD(nr);
 	unsigned long old = *p;
 
+	/** 20130824    
+	 * word 내의 nr번에 bit에 대해서 clear 해준다.
+	 **/
 	*p = old & ~mask;
+	/** 20130824    
+	 * 해당 비트의 이전 값이 1이라면 참을 리턴
+	 **/
 	return (old & mask) != 0;
 }
 
