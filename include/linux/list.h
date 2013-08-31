@@ -128,8 +128,14 @@ static inline void __list_del_entry(struct list_head *entry)
 	__list_del(entry->prev, entry->next);
 }
 
+/** 20130831    
+ * entry를 list에서 제거한다.
+ **/
 static inline void list_del(struct list_head *entry)
 {
+	/** 20130831    
+	 * list에서 실제 entry를 제거하는 함수
+	 **/
 	__list_del(entry->prev, entry->next);
 	entry->next = LIST_POISON1;
 	entry->prev = LIST_POISON2;

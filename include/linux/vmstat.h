@@ -37,6 +37,9 @@ static inline void count_vm_event(enum vm_event_item item)
 	this_cpu_inc(vm_event_states.event[item]);
 }
 
+/** 20130831    
+ * percpu 변수인 vm_event_states 의 event 중 item에 해당하는 값에 delta 만큼을 더한다.
+ **/
 static inline void __count_vm_events(enum vm_event_item item, long delta)
 {
 	__this_cpu_add(vm_event_states.event[item], delta);
@@ -89,9 +92,15 @@ static inline void vm_events_fold_cpu(int cpu)
  */
 extern atomic_long_t vm_stat[NR_VM_ZONE_STAT_ITEMS];
 
+/** 20130831    
+ * item에 해당하는 vm_stat의 값을 x만큼 증가
+ **/
 static inline void zone_page_state_add(long x, struct zone *zone,
 				 enum zone_stat_item item)
 {
+	/** 20130831    
+	 * zone->vm_stat[item], vm_stat[item] 각각에 atomic연산으로 x를 더한다.
+	 **/
 	atomic_long_add(x, &zone->vm_stat[item]);
 	atomic_long_add(x, &vm_stat[item]);
 }

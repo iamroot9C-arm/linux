@@ -249,6 +249,9 @@ struct vm_operations_struct {
 struct mmu_gather;
 struct inode;
 
+/** 20130831    
+ * struct page 의 private 멤버를 get/set 한다.
+ **/
 #define page_private(page)		((page)->private)
 #define set_page_private(page, v)	((page)->private = (v))
 
@@ -661,6 +664,9 @@ NODES_PGOFF(32) - ZONES_WIDTH(1) -> 31
  * sections we define the shift as 0; that plus a 0 mask ensures
  * the compiler will optimise away reference to them.
  */
+/** 20130831    
+ * struct page의 flags의 section, nodes, zonez를 지정하기 위한 bit shift값.
+ **/
 #define SECTIONS_PGSHIFT	(SECTIONS_PGOFF * (SECTIONS_WIDTH != 0))
 #define NODES_PGSHIFT		(NODES_PGOFF * (NODES_WIDTH != 0))
 #define ZONES_PGSHIFT		(ZONES_PGOFF * (ZONES_WIDTH != 0))
@@ -726,14 +732,23 @@ static inline int zone_to_nid(struct zone *zone)
 #ifdef NODE_NOT_IN_PAGE_FLAGS
 extern int page_to_nid(const struct page *page);
 #else
+/** 20130831    
+ * struct page의 flags에 저장했던 node id값을 취한다.
+ **/
 static inline int page_to_nid(const struct page *page)
 {
 	return (page->flags >> NODES_PGSHIFT) & NODES_MASK;
 }
 #endif
 
+/** 20130831    
+ * page가 속해 있는 zone 정보를 리턴.
+ **/
 static inline struct zone *page_zone(const struct page *page)
 {
+	/** 20130831    
+	 * page로 node id를 가져오고, 해당 노드의 node_zones에서 page에 해당하는 zone을 가져온다.
+	 **/
 	return &NODE_DATA(page_to_nid(page))->node_zones[page_zonenum(page)];
 }
 

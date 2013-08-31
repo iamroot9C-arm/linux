@@ -40,6 +40,11 @@ struct address_space;
  */
 struct page {
 	/* First double word block */
+	/** 20130831    
+	 * set_page_section으로 flags에 section 정보를 기록,
+	 * set_page_zone으로 flags에 zone 정보를 기록,
+	 * set_page_node으로 flags에 node id를 기록
+	 **/
 	unsigned long flags;		/* Atomic flags, some possibly
 					 * updated asynchronously */
 	struct address_space *mapping;	/* If low bit clear, points to

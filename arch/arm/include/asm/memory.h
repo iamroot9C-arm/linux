@@ -327,7 +327,7 @@ static inline __deprecated void *bus_to_virt(unsigned long x)
 #define ARCH_PFN_OFFSET		PHYS_PFN_OFFSET
 
 /** 20130511
-kaddr을 해당하는 물리주소를 구해서 pfn로 변환한 다음 pfn_to_page로 페이지의 위치를 반환하는 매크로  
+kaddr에 해당하는 물리주소를 구해서 pfn로 변환한 다음 pfn_to_page로 페이지의 위치를 반환하는 매크로  
 **/
 #define virt_to_page(kaddr)	pfn_to_page(__pa(kaddr) >> PAGE_SHIFT)
 #define virt_addr_valid(kaddr)	((unsigned long)(kaddr) >= PAGE_OFFSET && (unsigned long)(kaddr) < (unsigned long)high_memory)

@@ -232,6 +232,11 @@ extern void __bad_size_call_parameter(void);
 	pdcrb_ret__;							\
 })
 
+/** 20130831    
+ * variable의 크기를 구해 각각 다른 stem을 호출한다.
+ * 예) stem이 __this_cpu_write_이고, variable이 s8이라면
+ *     __this_cpu_write_1
+ **/
 #define __pcpu_size_call(stem, variable, ...)				\
 do {									\
 	__verify_pcpu_ptr(&(variable));					\
@@ -549,9 +554,15 @@ do {									\
 # ifndef __this_cpu_read_8
 #  define __this_cpu_read_8(pcp)	(*__this_cpu_ptr(&(pcp)))
 # endif
+/** 20130831    
+ * pcp의 크기에 따라 각각 다른 __this_cpu_read_##n을 호출하는 매크
+ **/
 # define __this_cpu_read(pcp)	__pcpu_size_call_return(__this_cpu_read_, (pcp))
 #endif
 
+/** 20130831    
+ * 현재 cpu에 해당하는 percpu 변수에 val 값만큼을 op 연산 시킨다.
+ **/
 #define __this_cpu_generic_to_op(pcp, val, op)				\
 do {									\
 	*__this_cpu_ptr(&(pcp)) op val;					\
@@ -570,9 +581,15 @@ do {									\
 # ifndef __this_cpu_write_8
 #  define __this_cpu_write_8(pcp, val)	__this_cpu_generic_to_op((pcp), (val), =)
 # endif
+/** 20130831    
+ * percpu 변수의 size에 따라 다른 처리(__this_cpu_write_)하는 함수로 변환하는 매크로.
+ **/
 # define __this_cpu_write(pcp, val)	__pcpu_size_call(__this_cpu_write_, (pcp), (val))
 #endif
 
+/** 20130831    
+ * pcp 변수 중 현재 cpu에 해당하는 변수에 val를 더하는 매크로.
+ **/
 #ifndef __this_cpu_add
 # ifndef __this_cpu_add_1
 #  define __this_cpu_add_1(pcp, val)	__this_cpu_generic_to_op((pcp), (val), +=)

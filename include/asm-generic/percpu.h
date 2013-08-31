@@ -29,6 +29,9 @@ extern unsigned long __per_cpu_offset[NR_CPUS];
  * means of obtaining the offset to the per cpu variables of the
  * current processor.
  */
+/** 20130831    
+ * 현재 명령을 수행한 cpu로 __per_cpu_offset을 참고해 offset들을 저장한 array에서 해당 값을 가져온다.
+ **/
 #ifndef __my_cpu_offset
 #define __my_cpu_offset per_cpu_offset(raw_smp_processor_id())
 #endif
@@ -67,12 +70,17 @@ extern unsigned long __per_cpu_offset[NR_CPUS];
 #define per_cpu(var, cpu) \
 	(*SHIFT_PERCPU_PTR(&(var), per_cpu_offset(cpu)))
 
+/** 20130831    
+ * pcpu 변수 포인터 ptr에서 현재 명령을 수행한 cpu에 해당하는 메모리의 위치를 가져온다.
+ **/
 #ifndef __this_cpu_ptr
 #define __this_cpu_ptr(ptr) SHIFT_PERCPU_PTR(ptr, __my_cpu_offset)
 #endif
 #ifdef CONFIG_DEBUG_PREEMPT
 #define this_cpu_ptr(ptr) SHIFT_PERCPU_PTR(ptr, my_cpu_offset)
 #else
+/** 20130831    
+ **/
 #define this_cpu_ptr(ptr) __this_cpu_ptr(ptr)
 #endif
 

@@ -2189,6 +2189,9 @@ out_free_ar:
  * on the physical linear memory mapping which uses large page
  * mappings on applicable archs.
  */
+/** 20130831    
+ * 각 cpu가 setup_per_cpu_areas 에서 채워준다.
+ **/
 unsigned long __per_cpu_offset[NR_CPUS] __read_mostly;
 EXPORT_SYMBOL(__per_cpu_offset);
 

@@ -169,6 +169,10 @@ static inline void atomic_long_dec(atomic_long_t *l)
 	atomic_dec(v);
 }
 
+/** 20130831    
+ * BITS_PER_LONG이 32일 때
+ * i의 값을 l에 더한다.
+ **/
 static inline void atomic_long_add(long i, atomic_long_t *l)
 {
 	atomic_t *v = (atomic_t *)l;

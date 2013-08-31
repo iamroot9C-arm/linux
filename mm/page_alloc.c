@@ -564,6 +564,9 @@ static inline int page_is_buddy(struct page *page, struct page *buddy,
  * -- wli
  */
 
+/** 20130831    
+ * __free_pages_bootmem 에서 불렸지만, depth가 깊어 추후 다시 분석하기로 함 ???
+ **/
 static inline void __free_one_page(struct page *page,
 		struct zone *zone, unsigned int order,
 		int migratetype)
@@ -683,17 +686,30 @@ static inline int free_pages_check(struct page *page)
  * And clear the zone's pages_scanned counter, to hold off the "all pages are
  * pinned" detection logic.
  */
+/** 20130831    
+ * per_cpu_pages 리스트 중 하나를 가져와 count 만큼 free 시킨다.
+ *   - list에서 삭제
+ *   - __free_one_page에서 실제 free (현재 분석 안 함)
+ *   - states에 반영
+ **/
 static void free_pcppages_bulk(struct zone *zone, int count,
 					struct per_cpu_pages *pcp)
 {
 	int migratetype = 0;
 	int batch_free = 0;
+	/** 20130831    
+	 * free_hot_cold_page 에서 count는 pcp->batch 단위.
+	 **/
 	int to_free = count;
 
 	spin_lock(&zone->lock);
 	zone->all_unreclaimable = 0;
 	zone->pages_scanned = 0;
 
+	/** 20130831    
+	 * to_free 개만큼 수행할 때까지 반복.
+	 *   list가 empty이지만 to_free가 남았을 경우에 해당
+	 **/
 	while (to_free) {
 		struct page *page;
 		struct list_head *list;
@@ -705,6 +721,11 @@ static void free_pcppages_bulk(struct zone *zone, int count,
 		 * off fuller lists instead of spinning excessively around empty
 		 * lists
 		 */
+		/** 20130831    
+		 * pcp->lists에서 MIGRATE_UNMOVABLE부터 MIGRATE_PCPTYPES 전까지 돌며
+		 * lists를 성공적으로 가져올 때까지 반복한다.
+		 * batch_free는 반복하기 전마다 증가한다.
+		 **/
 		do {
 			batch_free++;
 			if (++migratetype == MIGRATE_PCPTYPES)
@@ -713,22 +734,46 @@ static void free_pcppages_bulk(struct zone *zone, int count,
 		} while (list_empty(list));
 
 		/* This is the only non-empty list. Free them all. */
+		/** 20130831    
+		 * batch_free가 MIGRATE_PCPTYPES이라면 
+		 * batch_free를 to_free로 지정
+		 **/
 		if (batch_free == MIGRATE_PCPTYPES)
 			batch_free = to_free;
 
 		do {
+			/** 20130831    
+			 * list의 prev가 가리키는 (cold page가 추가되는 tail에 해당) page를 가져온다.
+			 **/
 			page = list_entry(list->prev, struct page, lru);
 			/* must delete as __free_one_page list manipulates */
+			/** 20130831    
+			 * 해당 page를 list에서 제거.
+			 **/
 			list_del(&page->lru);
 			/* MIGRATE_MOVABLE list may include MIGRATE_RESERVEs */
+			/** 20130831    
+			 * 이 함수가 호출될 때 page_private에 page의 migratetype을 저장해 뒀음.
+			 **/
 			__free_one_page(page, zone, 0, page_private(page));
 			trace_mm_page_pcpu_drain(page, 0, page_private(page));
+		/** 20130831    
+		 * 하나의 page를 free 했으므로 감소시킬 page (to_free)를 감소시켜 0이 되거나,
+		 * free 할 단위인 batch_free 역시 감소시켜 0이 되거나,
+		 * list가 모두 빌 때까지 반복한다.
+		 **/
 		} while (--to_free && --batch_free && !list_empty(list));
 	}
+	/** 20130831    
+	 * zone의 NR_FREE_PAGES 동작에 관한 states에 count만큼 추가.
+	 **/
 	__mod_zone_page_state(zone, NR_FREE_PAGES, count);
 	spin_unlock(&zone->lock);
 }
 
+/** 20130831    
+ * __free_one_page는 buddy에 대한 내용이 있으므로 추후 다시 분석하기로 함 ???
+ **/
 static void free_one_page(struct zone *zone, struct page *page, int order,
 				int migratetype)
 {
@@ -744,7 +789,7 @@ static void free_one_page(struct zone *zone, struct page *page, int order,
 /** 20130810
  * 여기부터...
  *
- * page부터 1 << order 개수의 pages들을 초기화 하기 전에
+ * page부터 1 << order 개수의 pages들을 free 하기 전에
  * free가 가능한지 검사하는 함수
  **/
 static bool free_pages_prepare(struct page *page, unsigned int order)
@@ -763,6 +808,7 @@ static bool free_pages_prepare(struct page *page, unsigned int order)
 
 	/** 20130824    
 	 * page가 ANONYMOUS page인 경우 mapping을 NULL로 설정.
+	 *   file로부터 생성된 page인 경우 non anonymous page. 그 외 anonymous page.
 	 **/
 	if (PageAnon(page))
 		page->mapping = NULL;
@@ -787,7 +833,7 @@ static bool free_pages_prepare(struct page *page, unsigned int order)
 					   PAGE_SIZE << order);
 	}
 	/** 20130824    
-	 * NULL 함수
+	 * 두 함수 모두 NULL 함수
 	 **/
 	arch_free_page(page, order);
 	kernel_map_pages(page, 1 << order, 0);
@@ -795,6 +841,10 @@ static bool free_pages_prepare(struct page *page, unsigned int order)
 	return true;
 }
 
+/** 20130831    
+ * struct page * page 부터 order 개의 page들을 free 하는 함수.
+ * prepare가 실패하면 바로 리턴. 그 외 interrupt disable을 걸고 free를 수행.
+ **/
 static void __free_pages_ok(struct page *page, unsigned int order)
 {
 	unsigned long flags;
@@ -822,6 +872,13 @@ static void __free_pages_ok(struct page *page, unsigned int order)
 	local_irq_restore(flags);
 }
 
+/** 20130831    
+ * page부터 order만큼의 pages를 해제하는 함수
+ *   order 개의 pages에 대해
+ *   - struct page flags에서 reserved를 클리어
+ *   - page의 _count를 0으로 설정
+ *   첫번째 page의 _count를 1로 만들어 order와 함께 __free_pages 호출
+ **/
 void __meminit __free_pages_bootmem(struct page *page, unsigned int order)
 {
 	unsigned int nr_pages = 1 << order;
@@ -833,10 +890,11 @@ void __meminit __free_pages_bootmem(struct page *page, unsigned int order)
 	prefetchw(page);
 	/** 20130803    
 	 * order에 해당하는 pages 개수만큼 순회하며
+	 * 각 page에 해당하는 struct page의 flags에서 reserved를 클리어 해준다.
 	 **/
 	for (loop = 0; loop < nr_pages; loop++) {
 		/** 20130803    
-		 * 순회하는 page의 주소를 p에 저장
+		 * 순회하는 page의 (struct page *) 주소를 p에 저장
 		 **/
 		struct page *p = &page[loop];
 
@@ -857,8 +915,14 @@ void __meminit __free_pages_bootmem(struct page *page, unsigned int order)
 
 	/** 20130803    
 	 * 첫번째 page에 대해서만 _count를 1로 설정한다.
+	 *
+	 * 20130831
+	 * __free_pages에서 다시 감소시키므로. 이 안에서 이전 값이 0이라면 VM_BUG_ON.
 	 **/
 	set_page_refcounted(page);
+	/** 20130831    
+	 * 실제 page를 free 하는 함수
+	 **/
 	__free_pages(page, order);
 }
 
@@ -1398,20 +1462,47 @@ void mark_free_pages(struct zone *zone)
  * Free a 0-order page
  * cold == 1 ? free a cold page : free a hot page
  */
+/** 20130831    
+ * hot 또는 cold page인 경우에 호출되어 page를 free 한다.
+ *
+ * hot page : 최근 access된 page의 경우, cache에 남아 있다고 가정하고 hot page로 처리한다.
+ * page를 free 해줄 때 hot page는 hot-list에 넣어주고, 그렇지 않은 경우 cold-list에 넣어 관리한다.
+ * [참고] http://lwn.net/Articles/14768/
+ **/
 void free_hot_cold_page(struct page *page, int cold)
 {
+	/** 20130831    
+	 * page가 속한 zone 정보를 가져온다.
+	 **/
 	struct zone *zone = page_zone(page);
 	struct per_cpu_pages *pcp;
 	unsigned long flags;
 	int migratetype;
+	/** 20130831    
+	 *   MACRO로 생성된 __TestClearPageMlocked 호출.
+	 *   Mlocked bit를 clear 해주고, 이전 상태를 wasMlocked에 저장
+	 **/
+
 	int wasMlocked = __TestClearPageMlocked(page);
 
+	/** 20130831    
+	 * page부터  1<< order만큼 free를 위한 준비 과정에서 실패하면 바로 리턴.
+	 **/
 	if (!free_pages_prepare(page, 0))
 		return;
 
+	/** 20130831    
+	 * page가 속한 pageblock의 migratetype을 리턴한다.
+	 **/
 	migratetype = get_pageblock_migratetype(page);
+	/** 20130831    
+	 * struct page의 private에 migratetype을 저장한다.
+	 **/
 	set_page_private(page, migratetype);
 	local_irq_save(flags);
+	/** 20130831    
+	 * 아래 두 함수는 추후 보기로 함
+	 **/
 	if (unlikely(wasMlocked))
 		free_page_mlock(page);
 	__count_vm_event(PGFREE);
@@ -1423,6 +1514,10 @@ void free_hot_cold_page(struct page *page, int cold)
 	 * areas back if necessary. Otherwise, we may have to free
 	 * excessively into the page allocator
 	 */
+	/** 20130831    
+	 * migratetype이 MIGRATE_PCPTYPES 이상인 경우 MIGRATE_MOVABLE로 설정.
+	 * MIGRATE_ISOLATE인 경우 page만 free_one_page로 free 한 뒤 out.
+	 **/
 	if (migratetype >= MIGRATE_PCPTYPES) {
 		if (unlikely(migratetype == MIGRATE_ISOLATE)) {
 			free_one_page(zone, page, 0, migratetype);
@@ -1431,12 +1526,28 @@ void free_hot_cold_page(struct page *page, int cold)
 		migratetype = MIGRATE_MOVABLE;
 	}
 
+	/** 20130831    
+	 * pcpu 변수 zone->pageset에서 현재 cpu에 해당하는 메모리 주소를 가져오고,
+	 * 그 주소가 가리키는 구조체의 pcp 값을 가져온다.
+	 * zone->pageset은 zone_pcp_init에서 할당된다.
+	 **/
 	pcp = &this_cpu_ptr(zone->pageset)->pcp;
+	/** 20130831    
+	 * pcp의 lists 중 migratetype에 해당하는 list에 추가
+	 *     cold인 경우 tail에, hot인 경우 앞에 추가
+	 **/
 	if (cold)
 		list_add_tail(&page->lru, &pcp->lists[migratetype]);
 	else
 		list_add(&page->lru, &pcp->lists[migratetype]);
+	/** 20130831    
+	 * list에 추가했으므로 count를 증가.
+	 **/
 	pcp->count++;
+	/** 20130831    
+	 * count의 수가 high watermark 이상이라면
+	 *   pcp->batch 수만큼 free 하고, pcp->batch 단위만큼 count에 감소시킨다.
+	 **/
 	if (pcp->count >= pcp->high) {
 		free_pcppages_bulk(zone, pcp->batch, pcp);
 		pcp->count -= pcp->batch;
@@ -2722,10 +2833,14 @@ unsigned long get_zeroed_page(gfp_t gfp_mask)
 }
 EXPORT_SYMBOL(get_zeroed_page);
 
+/** 20130831    
+ * page의 reference count를 감소시키고, 0이 되면 order만큼 page들을 free 하는 함수
+ **/
 void __free_pages(struct page *page, unsigned int order)
 {
 	/** 20130803    
-	 * page의 _count를 하나 감소시키고, 이전값이 1이었다면
+	 * page의 _count를 하나 감소시키고, 그 결과 0이 되었다면
+	 * 더 이상 이 페이지를 참조하지 않으므로 free 한다.
 	 **/
 	if (put_page_testzero(page)) {
 		if (order == 0)
@@ -6126,6 +6241,9 @@ static inline int pfn_to_bitidx(struct zone *zone, unsigned long pfn)
  * @end_bitidx: The last bit of interest
  * returns pageblock_bits flags
  */
+/** 20130831    
+ * page가 속한 pageblock 에 대한 bitmap 속성을 검사해 flags 값을 리턴한다.
+ **/
 unsigned long get_pageblock_flags_group(struct page *page,
 					int start_bitidx, int end_bitidx)
 {
@@ -6138,8 +6256,16 @@ unsigned long get_pageblock_flags_group(struct page *page,
 	zone = page_zone(page);
 	pfn = page_to_pfn(page);
 	bitmap = get_pageblock_bitmap(zone, pfn);
+	/** 20130831    
+	 * pfn에 해당하는 bitmap에서의 index.
+	 **/
 	bitidx = pfn_to_bitidx(zone, pfn);
 
+	/** 20130831    
+	 * migrate type을 표시하기 위한 3개의 비트를 각각 검사한다.
+	 * 해당 bit가 set 되어 있다면 flags 에 value를 or-ing (누적) 한다.
+	 * isolate type 까지 가능하다.
+	 **/
 	for (; start_bitidx <= end_bitidx; start_bitidx++, value <<= 1)
 		if (test_bit(bitidx + start_bitidx, bitmap))
 			flags |= value;

@@ -78,6 +78,9 @@ enum {
 
 extern int page_group_by_mobility_disabled;
 
+/** 20130831    
+ * page가 속한 pageblock의 migratetype을 리턴한다.
+ **/
 static inline int get_pageblock_migratetype(struct page *page)
 {
 	return get_pageblock_flags_group(page, PB_migrate, PB_migrate_end);

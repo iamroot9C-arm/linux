@@ -809,6 +809,9 @@ void __init mem_init(void)
 	/* this will put all unused low memory onto the freelists */
 	free_unused_memmap(&meminfo);
 
+	/** 20130907
+	 * 여기부터. bitmap도 정리한 것인가 확인.
+	 **/
 	totalram_pages += free_all_bootmem();
 
 #ifdef CONFIG_SA1111

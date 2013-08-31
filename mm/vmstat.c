@@ -208,22 +208,42 @@ void set_pgdat_percpu_threshold(pg_data_t *pgdat,
 /*
  * For use when we know that interrupts are disabled.
  */
+/** 20130831    
+ * zone의 page state를 delta만큼 증감시키는 함수.
+ **/
 void __mod_zone_page_state(struct zone *zone, enum zone_stat_item item,
 				int delta)
 {
 	struct per_cpu_pageset __percpu *pcp = zone->pageset;
+	/** 20130831    
+	 * pcp->vm_stat_diff는 zone stat item들의 array.
+	 * item에 해당하는 멤버의 주소를 가져온다.
+	 **/
 	s8 __percpu *p = pcp->vm_stat_diff + item;
 	long x;
 	long t;
 
+	/** 20130831    
+	 * delta에 percpu 중 현재 cpu에 해당하는 값을 더해 x로 한다.
+	 **/
 	x = delta + __this_cpu_read(*p);
 
+	/** 20130831    
+	 * 현재 cpu에 해당하는 stat_threshold 값을 가져온다.
+	 **/
 	t = __this_cpu_read(pcp->stat_threshold);
 
+	/** 20130831    
+	 * x가 threshold를 넘어서면 zone, global page_state에 x를 더하고
+	 * x를 0으로 만든다.
+	 **/
 	if (unlikely(x > t || x < -t)) {
 		zone_page_state_add(x, zone, item);
 		x = 0;
 	}
+	/** 20130831    
+	 * *p = x;
+	 **/
 	__this_cpu_write(*p, x);
 }
 EXPORT_SYMBOL(__mod_zone_page_state);

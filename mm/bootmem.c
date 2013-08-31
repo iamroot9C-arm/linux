@@ -59,6 +59,9 @@ static int __init bootmem_debug_setup(char *buf)
 }
 early_param("bootmem_debug", bootmem_debug_setup);
 
+/** 20130831    
+ * bootmem_debug 가 켜 있을 경우 debug message 출력
+ **/
 #define bdebug(fmt, args...) ({				\
 	if (unlikely(bootmem_debug))			\
 		printk(KERN_INFO			\
@@ -91,7 +94,7 @@ static unsigned long __init bootmap_bytes(unsigned long pages)
  * @pages: number of pages the bitmap has to represent
  */
 /** 20130330    
- * pages를 표현하기 위해 필요한 bytes의 수를 구한 뒤 정렬하고,
+ * pages를 표현하기 위해 필요한 bytes의 수를 구한 뒤 PAGE 크기로 정렬하고,
  * 이를 표현하는데 필요한 page의 수를 리턴.
  **/
 unsigned long __init bootmem_bootmap_pages(unsigned long pages)
@@ -248,9 +251,16 @@ void __init free_bootmem_late(unsigned long addr, unsigned long size)
 	}
 }
 
+/** 20130831    
+ * bootmem 을 해제하기 위해 bootmem에서 사용 중이지 않은 struct page들을 해제(free)하고 free_list에 추가.
+ * bootmem이 사용하던 공간 역시 free.
+ **/
 static unsigned long __init free_all_bootmem_core(bootmem_data_t *bdata)
 {
 	struct page *page;
+	/** 20130831    
+	 * count :  free한 수만큼 누적.
+	 **/
 	unsigned long start, end, pages, count = 0;
 
 	/** 20130803    
@@ -268,6 +278,9 @@ static unsigned long __init free_all_bootmem_core(bootmem_data_t *bdata)
 	bdebug("nid=%td start=%lx end=%lx\n",
 		bdata - bootmem_node_data, start, end);
 
+	/** 20130831    
+	 * node의 모든 pfn에 대해 수행
+	 **/
 	while (start < end) {
 		unsigned long *map, idx, vec;
 
@@ -280,7 +293,8 @@ static unsigned long __init free_all_bootmem_core(bootmem_data_t *bdata)
 		 **/
 		idx = start - bdata->node_min_pfn;
 		/** 20130803    
-		 * bitmap의 내용을 가져와 반전시켜 vec에 저장
+		 * bitmap의 내용을 가져와 반전시켜 vec에 저장.
+		 *   bitmap에서 사용 중인 경우 bit가 1로 설정된다.
 		 **/
 		vec = ~map[idx / BITS_PER_LONG];
 		/*
@@ -289,7 +303,7 @@ static unsigned long __init free_all_bootmem_core(bootmem_data_t *bdata)
 		 * it in one go.
 		 */
 		/** 20130803    
-		 * start가 정렬된 pfn 값이고, map이 모두 비어 있으면 
+		 * start가 정렬된 pfn 값이고, map[idx / BITS_PER_LONG] 부분이 사용 중이지 않으면
 		 **/
 		if (IS_ALIGNED(start, BITS_PER_LONG) && vec == ~0UL) {
 			/** 20130803    
@@ -297,35 +311,93 @@ static unsigned long __init free_all_bootmem_core(bootmem_data_t *bdata)
 			 **/
 			int order = ilog2(BITS_PER_LONG);
 
+			/** 20130831    
+			 * start가 나타내는 struct page *부터 order 만큼 free 하고,
+			 * count와 start를 BITS_PER_LONG 만큼 증가
+			 **/
 			__free_pages_bootmem(pfn_to_page(start), order);
 			count += BITS_PER_LONG;
 			start += BITS_PER_LONG;
 		} else {
 			unsigned long off = 0;
 
+			/** 20130831    
+			 * start가 정렬되어 있지 않다면, start가 포함된 map 정보를 정렬되지 않은 크기만큼 이동시켜
+			 * 정렬되지 않은 개수만큼 bit를 지워준다. (free할 대상에서 제외)
+			 *
+			 * 정렬되지 않은 개수를 BITS_PER_LONG - 1과 &로 구해 왔음.
+			 * 
+			 * 예)      0 0 0 0  0 0 0 0  0 0 0 0  0 0 1 0 
+			 *
+			 * 변경전   1 1 1 1  1 1 1 1  1 1 1 1  1 1 1 1  ; vec
+			 *              ^
+			 *               start pfn에 해당하는 비트 
+			 *
+			 * 변경 후  0 0 1 1  1 1 1 1  1 1 1 1  1 1 1 1  ; vec
+			 *      
+			 **/
 			vec >>= start & (BITS_PER_LONG - 1);
+			/** 20130831    
+			 * vec에 세팅된 비트가 남아 있는 동안 반복
+			 **/
 			while (vec) {
+				/** 20130831    
+				 * LSB pfn에 해당하는 page부터 처리 시작
+				 **/
 				if (vec & 1) {
 					page = pfn_to_page(start + off);
+					/** 20130831    
+					 * order 0, 즉 page에 해당하는 struct page에 대해서만 free를 수행
+					 **/
 					__free_pages_bootmem(page, 0);
+					/** 20130831    
+					 * free 한 count 증가
+					 **/
 					count++;
 				}
 				vec >>= 1;
 				off++;
 			}
+			/** 20130831    
+			 * 다음 start를 BITS_PER_LONG 단위로 round up 시켜
+			 * 다음 반복시부터 정렬된 위치에서 수행되도록 한다.
+			 **/
 			start = ALIGN(start + 1, BITS_PER_LONG);
 		}
 	}
 
+	/** 20130831    
+	 * node_bootmem_map bitmap이 위치한 page 구조체 정보를 가져온다.
+	 **/
 	page = virt_to_page(bdata->node_bootmem_map);
+	/** 20130831    
+	 * node_min_pfn  : 노드의 물리 메모리의 시작 주소에 대한 pfn
+	 * node_low_pfn  : 노드의 물리 메모리의(lowmem) 끝 주소에 대한 pfn
+	 *
+	 * node의 pfn 수를 구해온다.
+	 **/
 	pages = bdata->node_low_pfn - bdata->node_min_pfn;
+	/** 20130831    
+	 * pages 개의 pfn을 비트맵으로 표현하기 위한 page 개수를 리턴.
+	 **/
 	pages = bootmem_bootmap_pages(pages);
 	count += pages;
+	/** 20130831    
+	 * bitmap으로 표현하는데 필요한 page의 수만큼 free 한다.
+	 * 즉, bitmap이 위치한 struct page 구조체를 해제한다.
+	 **/
 	while (pages--)
 		__free_pages_bootmem(page++, 0);
 
+	/** 20130831    
+	 * 출력 예)
+	 * bootmem::free_all_bootmem_core nid=0 released=3f05a
+	 **/
 	bdebug("nid=%td released=%lx\n", bdata - bootmem_node_data, count);
 
+	/** 20130831    
+	 * count 리턴
+	 **/
 	return count;
 }
 
@@ -346,6 +418,9 @@ unsigned long __init free_all_bootmem_node(pg_data_t *pgdat)
  *
  * Returns the number of pages actually released.
  */
+/** 20130831    
+ * bootmem으로 관리하던 pages 들을 free.
+ **/
 unsigned long __init free_all_bootmem(void)
 {
 	unsigned long total_pages = 0;
@@ -353,10 +428,14 @@ unsigned long __init free_all_bootmem(void)
 
 	/** 20130803    
 	 * list_head 인 bdata_list 부터 모든 bootmem_data를 순회하며
+	 *   free_all_bootmem_core로 해제하고, 해제한 개수를 total_pages에 누적.
 	 **/
 	list_for_each_entry(bdata, &bdata_list, list)
 		total_pages += free_all_bootmem_core(bdata);
 
+	/** 20130831    
+	 * total_pages 리턴
+	 **/
 	return total_pages;
 }
 
@@ -1006,6 +1085,10 @@ void * __init __alloc_bootmem(unsigned long size, unsigned long align,
 
 /** 20130420    
  * node 상에 존재하는 page frame 들만큼을 관리하기 위한 page영역을 할당하는 함수
+ *
+ * 20130831    
+ * bootmem에 의해 관리되는 메모리를 할당 받는 함수. 메모리 부족으로 실패시 panic을 발생시키지 않는다.
+ * 20130420 주석은 함수가 호출되는 특별한 경우에 대한 주석임.
  **/
 void * __init ___alloc_bootmem_node_nopanic(pg_data_t *pgdat,
 				unsigned long size, unsigned long align,
