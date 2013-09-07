@@ -364,7 +364,9 @@ extern void lockdep_trace_alloc(gfp_t mask);
 #define lockdep_recursing(tsk)	((tsk)->lockdep_recursion)
 
 #else /* !LOCKDEP */
-
+/** 20130907    
+ * CONFIG_LOCKDEP 이 정의되어 있지 않은 경우 관련 함수는 NULL 함수처리됨.
+ **/
 static inline void lockdep_off(void)
 {
 }

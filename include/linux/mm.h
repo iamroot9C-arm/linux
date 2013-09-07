@@ -362,8 +362,17 @@ static inline void compound_unlock_irqrestore(struct page *page,
 #endif
 }
 
+/** 20130907    
+ * compound page의 tail인 경우 first_page를 리턴하고,
+ * 그렇지 않은 경우 page를 그대로 리턴하는 함수.
+ *
+ * compound page의 중간에 속한 page인 경우에는???
+ **/
 static inline struct page *compound_head(struct page *page)
 {
+	/** 20130907    
+	 * page가 CompoundPage의 tail이면 첫번째 page의 주소를 가져온다.
+	 **/
 	if (unlikely(PageTail(page)))
 		return page->first_page;
 	return page;
@@ -390,6 +399,9 @@ static inline int page_mapcount(struct page *page)
 	return atomic_read(&(page)->_mapcount) + 1;
 }
 
+/** 20130907    
+ * page 구조체의 _count 값을 리턴한다.
+ **/
 static inline int page_count(struct page *page)
 {
 	return atomic_read(&compound_head(page)->_count);
@@ -1742,6 +1754,9 @@ static inline bool page_is_guard(struct page *page)
 	return test_bit(PAGE_DEBUG_FLAG_GUARD, &page->debug_flags);
 }
 #else
+/** 20130907    
+ * page memory allocator 에 대한 DEBUG 를 사용하지 않으면 그냥 0을 리턴
+ **/
 static inline unsigned int debug_guardpage_minorder(void) { return 0; }
 static inline bool page_is_guard(struct page *page) { return false; }
 #endif /* CONFIG_DEBUG_PAGEALLOC */

@@ -3713,10 +3713,19 @@ void __init kmem_cache_init(void)
 	if (debug_guardpage_minorder())
 		slub_max_order = 0;
 
+	/** 20130907    
+	 * kmem_cache의 마지막 멤버인 node는
+	 * MAX_NUMNODES 개수만큼의 struct kmem_cache_node *로 이뤄진 array.
+	 * node의 시작 주소에 nr_node_ids수만큼의 *를 건너뛰면 kmem_cache의 끝주소이다.
+	 * 즉 kmem_cache의 size.
+	 **/
 	kmem_size = offsetof(struct kmem_cache, node) +
 				nr_node_ids * sizeof(struct kmem_cache_node *);
 
 	/* Allocate two kmem_caches from the page allocator */
+	/** 20130907    
+	 * kmem_size를 cacheline 크기로 정렬시킨다.
+	 **/
 	kmalloc_size = ALIGN(kmem_size, cache_line_size());
 	order = get_order(2 * kmalloc_size);
 	kmem_cache = (void *)__get_free_pages(GFP_NOWAIT, order);

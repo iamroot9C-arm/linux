@@ -470,6 +470,9 @@ static inline void set_page_writeback(struct page *page)
 __PAGEFLAG(Head, head) CLEARPAGEFLAG(Head, head)
 __PAGEFLAG(Tail, tail)
 
+/** 20130907    
+ * Compound page를 검사하는 함수
+ **/
 static inline int PageCompound(struct page *page)
 {
 	return page->flags & ((1L << PG_head) | (1L << PG_tail));

@@ -63,6 +63,9 @@
 #endif
 #endif
 
+/** 20130907    
+ * cache line 크기는 L1 캐시 크기
+ **/
 #ifndef CONFIG_ARCH_HAS_CACHE_LINE_SIZE
 #define cache_line_size()	L1_CACHE_BYTES
 #endif

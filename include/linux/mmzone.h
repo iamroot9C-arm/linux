@@ -682,6 +682,9 @@ struct zonelist {
 	struct zonelist_cache *zlcache_ptr;		     // NULL or &zlcache
 	/** 20130629    
 	 * zoneref 구조체의 배열을 선언
+	 *
+	 * 20130907    
+	 * MAX_ZONES_PER_ZONELIST : 총 NODE 수 * zone 종류 개수
 	 **/
 	struct zoneref _zonerefs[MAX_ZONES_PER_ZONELIST + 1];
 #ifdef CONFIG_NUMA

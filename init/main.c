@@ -508,6 +508,9 @@ static void __init mm_init(void)
 	 **/
 	page_cgroup_init_flatmem();
 	mem_init();
+	/** 20130907    
+	 * CONFIG_SLUB이 정의되어 있으므로 mm/Makefile에서 slub.o가 생성된다.
+	 **/
 	kmem_cache_init();
 	percpu_init_late();
 	pgtable_cache_init();

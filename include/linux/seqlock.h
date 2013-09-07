@@ -136,19 +136,39 @@ typedef struct seqcount {
  * Use carefully, only in critical code, and comment how the barrier is
  * provided.
  */
+/** 20130907    
+ * seqcount_t를 읽어와 리턴한다.
+ * 만약 seqcount_t가 홀수라면, 즉 write_seqcount 중에 발생했다면 write가 끝날 때까지 대기한다.
+ **/
 static inline unsigned __read_seqcount_begin(const seqcount_t *s)
 {
 	unsigned ret;
 
 repeat:
 	ret = ACCESS_ONCE(s->sequence);
+	/** 20130907    
+	 * sequence가 홀수인 경우에만 memory barrier를 세우고 반복한다.
+	 * sequence가 홀수인 경우는 __read_seqcount_begin이
+	 * write_sequence_begin과 write_sequence_end 중에 발생했을 경우이다.
+	 **/
 	if (unlikely(ret & 1)) {
+		/** 20130907    
+		 * cpu_relax()는 memory barrier 역할을 한다.
+		 * 반복문에서 메모리의 값에 따라 조건결과가 달라지는 경우에 등에 주로 사용된다.
+		 **/
 		cpu_relax();
 		goto repeat;
 	}
 	return ret;
 }
 
+/** 20130907    
+ * seqlock
+ * [참고]
+ *   http://www.makelinux.net/ldd3/chp-5-sect-7
+ *   http://en.wikipedia.org/wiki/Seqlock
+ *   http://codebank.tistory.com/43
+ **/
 /**
  * read_seqcount_begin - begin a seq-read critical section
  * @s: pointer to seqcount_t
@@ -158,9 +178,16 @@ repeat:
  * Validity of the critical section is tested by checking read_seqcount_retry
  * function.
  */
+/** 20130907    
+ * __read_seqcount_begin로 seqcount_t 값을 읽어오고 read memory barrier를 세운다.
+ * read와 memory barrier는 항상 이 순서로 배치되어야 한다.
+ **/
 static inline unsigned read_seqcount_begin(const seqcount_t *s)
 {
 	unsigned ret = __read_seqcount_begin(s);
+	/** 20130907    
+	 * ARCH 7 이상에서는 dmb 인스트럭션이 들어온다.
+	 **/
 	smp_rmb();
 	return ret;
 }

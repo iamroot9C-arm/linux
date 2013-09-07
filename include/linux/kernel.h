@@ -210,6 +210,9 @@ extern int _cond_resched(void);
 # define might_sleep() do { might_resched(); } while (0)
 #endif
 
+/** 20130907    
+ * condition을 만족하면 might_sleep() 함수 호출.
+ **/
 #define might_sleep_if(cond) do { if (cond) might_sleep(); } while (0)
 
 /*

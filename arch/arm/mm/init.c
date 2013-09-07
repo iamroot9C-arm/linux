@@ -580,15 +580,33 @@ void __init bootmem_init(void)
 	max_pfn = max_high - PHYS_PFN_OFFSET;
 }
 
+/** 20130907    
+ * pfn부터 end 사이 영역을 free시키는 함수
+ **/
 static inline int free_area(unsigned long pfn, unsigned long end, char *s)
 {
+	/** 20130907    
+	 * PAGE_SHIFT - 10을 한 이유는 크기를 K 단위로 출력해 주기 위함
+	 **/
 	unsigned int pages = 0, size = (end - pfn) << (PAGE_SHIFT - 10);
 
 	for (; pfn < end; pfn++) {
+		/** 20130907    
+		 * pfn에 해당하는 struct page *를 가져옴
+		 **/
 		struct page *page = pfn_to_page(pfn);
+		/** 20130907    
+		 * page->flags에서 PG_reserved를 clear
+		 **/
 		ClearPageReserved(page);
+		/** 20130907    
+		 * reference count를 초기화
+		 **/
 		init_page_count(page);
 		__free_page(page);
+		/** 20130907    
+		 * 초기화한 page 수 counting
+		 **/
 		pages++;
 	}
 
@@ -725,34 +743,87 @@ static void __init free_unused_memmap(struct meminfo *mi)
 #endif
 }
 
+/** 20130907    
+ * memblock의 memory 영역을 돌면서 1:1 매핑이 되어 있지 않은 high memory 영역에 대해
+ * reserved 되어 있지 않은 영역에 대해 free_page를 호출.
+ **/
 static void __init free_highpages(void)
 {
 #ifdef CONFIG_HIGHMEM
+	/** 20130907    
+	 * max_low_pfn : 커널이 사용하는 pfn의 수
+	 * PHYS_PFN_OFFSET : 커널 영역 물리 메모리 시작 주소에 해당하는 pfn
+	 * highmem이 시작하는 pfn
+	 **/
 	unsigned long max_low = max_low_pfn + PHYS_PFN_OFFSET;
 	struct memblock_region *mem, *res;
 
 	/* set highmem page free */
+	/** 20130907    
+	 * memblock 의 memory 각 region에 대해 루프를 수행한다.
+	 **/
 	for_each_memblock(memory, mem) {
 		unsigned long start = memblock_region_memory_base_pfn(mem);
 		unsigned long end = memblock_region_memory_end_pfn(mem);
 
 		/* Ignore complete lowmem entries */
+		/** 20130907    
+		 * 1:1 매핑 영역 안에 속한 region은 지나감
+		 **/
 		if (end <= max_low)
 			continue;
 
 		/* Truncate partial highmem entries */
+		/** 20130907    
+		 * 1:1 매핑 된 영역을 제외한 부분부터 시작 주소로 설정
+		 **/
 		if (start < max_low)
 			start = max_low;
 
 		/* Find and exclude any reserved regions */
+		/** 20130907    
+		 * reserved 영역이 포함되어 있는 경우, 그것을 제외한 영역에 대해 free_area.
+		 *
+		 * 빗금친 부분 free
+		 *
+		 * case 1)
+		 * memblock.memory
+		 * start                                  end
+		 *  +---------------------------------------+
+		 *  |     res_start                         |  res_end
+		 *  |////////+-----------------------------------+
+		 *  |////////|          memblock.reserve         |
+		 *  |////////+-----------------------------------+
+		 *  |                                       |
+		 *  +---------------------------------------+
+		 *
+		 * case 2)
+		 * memblock.memory
+		 * start                                  end
+		 *  +---------------------------------------+
+		 *  |     res_start                         |
+		 *  |////////+----------+////+--------+/////|
+		 *  |////////|          |////|        +/////|
+		 *  |////////+----------+////+--------+/////|
+		 *  |                                       |
+		 *  +---------------------------------------+
+		 *
+		 * ...
+		 **/
 		for_each_memblock(reserved, res) {
 			unsigned long res_start, res_end;
 
 			res_start = memblock_region_reserved_base_pfn(res);
 			res_end = memblock_region_reserved_end_pfn(res);
 
+			/** 20130907    
+			 * reserved 영역이 모두 lowmem 영역에 속해 있다면 지나감
+			 **/
 			if (res_end < start)
 				continue;
+			/** 20130907    
+			 * 걸쳐 있는 경우 start 위치 조정
+			 **/
 			if (res_start < start)
 				res_start = start;
 			if (res_start > end)
@@ -767,10 +838,16 @@ static void __init free_highpages(void)
 				break;
 		}
 
+		/** 20130907    
+		 * reserved가 아닌 영역에 대해 free_area.
+		 **/
 		/* And now free anything which remains */
 		if (start < end)
 			totalhigh_pages += free_area(start, end, NULL);
 	}
+	/** 20130907    
+	 * highmem에서 free시킨 페이지 수를 totalram_pages에 누적시킨다.
+	 **/
 	totalram_pages += totalhigh_pages;
 #endif
 }
@@ -780,6 +857,11 @@ static void __init free_highpages(void)
  * memory is free.  This is done after various parts of the system have
  * claimed their memory after the kernel image.
  */
+/** 20130907    
+ * bootmem에서 사용 중이지 않은 공간과 bootmem 비트맵이 사용하던 공간을 free시키고, buddy에서 사용할 free_list에 추가한다.
+ * CONFIG_HIGHMEM이 정의되어 있는 경우 highmem 영역에 속한 영역 중 memblock 의 memory region 중 reserved 되지 않은 영역을 free.
+ * totalram_pages가 free한 pages를 저장한다.
+ **/
 void __init mem_init(void)
 {
 	unsigned long reserved_pages, free_pages;
@@ -810,7 +892,8 @@ void __init mem_init(void)
 	free_unused_memmap(&meminfo);
 
 	/** 20130907
-	 * 여기부터. bitmap도 정리한 것인가 확인.
+	 * bitmap이 위치한 struct page 구조체를 free.
+	 * bitmap 자체를 정리한 것은 아님.
 	 **/
 	totalram_pages += free_all_bootmem();
 
@@ -822,6 +905,9 @@ void __init mem_init(void)
 
 	free_highpages();
 
+	/** 20130907    
+	 * reserved_pages와 free_pages를 0으로 초기화 
+	 **/
 	reserved_pages = free_pages = 0;
 
 	for_each_bank(i, &meminfo) {
@@ -829,17 +915,36 @@ void __init mem_init(void)
 		unsigned int pfn1, pfn2;
 		struct page *page, *end;
 
+		/** 20130907    
+		 * bank의 시작 pfn과 마지막 pfn을 가져옴
+		 **/
 		pfn1 = bank_pfn_start(bank);
 		pfn2 = bank_pfn_end(bank);
 
+		/** 20130907    
+		 * pfn을 struct page * 주소값으로 변환
+		 * pfn2는 bank를 넘어선 주소이므로 마지막 bank에 대한 page 값을 가져와 1을 더한다.
+		 **/
 		page = pfn_to_page(pfn1);
 		end  = pfn_to_page(pfn2 - 1) + 1;
 
+		/** 20130907    
+		 * bank의 각 pfn을 돌면서 free_pages와 reserved_pages를 각각 counting.
+		 **/
 		do {
+			/** 20130907    
+			 * reserved된 page의 수를 counting.
+			 **/
 			if (PageReserved(page))
 				reserved_pages++;
+			/** 20130907    
+			 * page의 _count가 0이라면 사용되지 않는 page이다.
+			 **/
 			else if (!page_count(page))
 				free_pages++;
+			/** 20130907    
+			 * 다음 page를 가리킴
+			 **/
 			page++;
 		} while (page < end);
 	}
@@ -848,8 +953,28 @@ void __init mem_init(void)
 	 * Since our memory may not be contiguous, calculate the
 	 * real number of pages we have in this system
 	 */
+	/** 20130907    
+	 * vexpress의 출력 예
+	 * 
+	Memory: 1024MB = 1024MB total
+	Memory: 1032552k/1032552k available, 16024k reserved, 0K highmem
+	Virtual kernel memory layout:
+		vector  : 0xffff0000 - 0xffff1000   (   4 kB)
+		fixmap  : 0xfff00000 - 0xfffe0000   ( 896 kB)
+		vmalloc : 0xc0800000 - 0xff000000   (1000 MB)
+		lowmem  : 0x80000000 - 0xc0000000   (1024 MB)
+		modules : 0x7f000000 - 0x80000000   (  16 MB)
+		  .text : 0x80008000 - 0x804450f0   (4341 kB)
+		  .init : 0x80446000 - 0x804729c0   ( 179 kB)
+		  .data : 0x80474000 - 0x804a2be0   ( 187 kB)
+		   .bss : 0x804a2c04 - 0x804c13b8   ( 122 kB)
+	 *
+	 **/
 	printk(KERN_INFO "Memory:");
 	num_physpages = 0;
+	/** 20130907    
+	 * memblock 의 memory region에 속한 pages의 수를 구해 num_physpages에 누적시킨다.
+	 **/
 	for_each_memblock(memory, reg) {
 		unsigned long pages = memblock_region_memory_end_pfn(reg) -
 			memblock_region_memory_base_pfn(reg);
@@ -919,6 +1044,9 @@ void __init mem_init(void)
 	 * be detected at build time already.
 	 */
 #ifdef CONFIG_MMU
+	/** 20130907    
+	 * TASK_SIZE가 MODULES_VADDR보다 크면 BUG
+	 **/
 	BUILD_BUG_ON(TASK_SIZE				> MODULES_VADDR);
 	BUG_ON(TASK_SIZE 				> MODULES_VADDR);
 #endif
@@ -928,6 +1056,9 @@ void __init mem_init(void)
 	BUG_ON(PKMAP_BASE + LAST_PKMAP * PAGE_SIZE	> PAGE_OFFSET);
 #endif
 
+	/** 20130907    
+	 * PAGE_SIZE가 16KB 이상이고 num_physpages가 128 이하라면 OVERCOMMIT_ALWAYS 속성으로 지정한다.
+	 **/
 	if (PAGE_SIZE >= 16384 && num_physpages <= 128) {
 		extern int sysctl_overcommit_memory;
 		/*

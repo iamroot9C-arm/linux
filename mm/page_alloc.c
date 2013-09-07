@@ -109,6 +109,10 @@ unsigned long totalreserve_pages __read_mostly;
 unsigned long dirty_balance_reserve __read_mostly;
 
 int percpu_pagelist_fraction;
+/** 20130907    
+ * gfp_allowed_mask는 gfp_mask로 사용할 수 있는 속성들을 정의.
+ * 초기값은 BOOT 중 사용할 수 있는 속성.
+ **/
 gfp_t gfp_allowed_mask __read_mostly = GFP_BOOT_MASK;
 
 #ifdef CONFIG_PM_SLEEP
@@ -178,6 +182,10 @@ int sysctl_lowmem_reserve_ratio[MAX_NR_ZONES-1] = {
 	 32,
 };
 
+/** 20130907    
+ * mem_init에서 free시켜준 page 수를 이 변수에 누적시킴.
+ * 이후 free_XXX 류의 함수들을 통해 해제된 page들의 수를 누적
+ **/
 EXPORT_SYMBOL(totalram_pages);
 
 /** 20130427    
@@ -566,6 +574,7 @@ static inline int page_is_buddy(struct page *page, struct page *buddy,
 
 /** 20130831    
  * __free_pages_bootmem 에서 불렸지만, depth가 깊어 추후 다시 분석하기로 함 ???
+ * free_all_bootmem_core 에서 호출될 경우 buddy가 관리하는 free_list에까지 넣어주는 것인지 확인 필요
  **/
 static inline void __free_one_page(struct page *page,
 		struct zone *zone, unsigned int order,
@@ -576,10 +585,16 @@ static inline void __free_one_page(struct page *page,
 	unsigned long uninitialized_var(buddy_idx);
 	struct page *buddy;
 
+	/** 20130907    
+	 * Compound page라면 destroy_compound_page로 풀고, 실패한다면 리턴.
+	 **/
 	if (unlikely(PageCompound(page)))
 		if (unlikely(destroy_compound_page(page, order)))
 			return;
 
+	/** 20130907    
+	 * migratetype
+	 **/
 	VM_BUG_ON(migratetype == -1);
 
 	page_idx = page_to_pfn(page) & ((1 << MAX_ORDER) - 1);
@@ -915,6 +930,7 @@ void __meminit __free_pages_bootmem(struct page *page, unsigned int order)
 
 	/** 20130803    
 	 * 첫번째 page에 대해서만 _count를 1로 설정한다.
+	 * 20130907 _count를 하나 감소시키고 0이 되어야 실제 free를 하는 __free_pages의 구현방식을 맞춰주기 위해.
 	 *
 	 * 20130831
 	 * __free_pages에서 다시 감소시키므로. 이 안에서 이전 값이 0이라면 VM_BUG_ON.
@@ -1803,6 +1819,13 @@ late_initcall(fail_page_alloc_debugfs);
 
 #else /* CONFIG_FAIL_PAGE_ALLOC */
 
+/** 20130907    
+ * CONFIG_FAIL_PAGE_ALLOC 이 CONFIG 되어 있지 않아 false 리턴.
+ *
+ * fault-injection은 특정 기능이 실패했을 경우 적당한 절차로 처리되는지 검사하기 위한 기법
+ * [참고] http://en.wikipedia.org/wiki/Fault_injection
+ *        Documentation/fault-injection/
+ **/
 static inline bool should_fail_alloc_page(gfp_t gfp_mask, unsigned int order)
 {
 	return false;
@@ -2753,10 +2776,17 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
 	int migratetype = allocflags_to_migratetype(gfp_mask);
 	unsigned int cpuset_mems_cookie;
 
+	/** 20130907    
+	 * gfp_allowed_mask 로 제한된 gfp_mask 속성만 사용할 수 있다.
+	 **/
 	gfp_mask &= gfp_allowed_mask;
 
 	lockdep_trace_alloc(gfp_mask);
 
+	/** 20130907    
+	 * gfp_mask에 __GFP_WAIT 속성이 있다면 might_sleep() 함수 호출.
+	 * boot time시에는 __GFP_WAIT이 allowed가 아니므로 sleep 가능하지 않다.
+	 **/
 	might_sleep_if(gfp_mask & __GFP_WAIT);
 
 	if (should_fail_alloc_page(gfp_mask, order))
@@ -2767,6 +2797,9 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
 	 * valid zone. It's possible to have an empty zonelist as a result
 	 * of GFP_THISNODE and a memoryless node
 	 */
+	/** 20130907    
+	 * 넘어온 zonelist에 실제 zone이 존재하지 않으면 NULL 리턴.
+	 **/
 	if (unlikely(!zonelist->_zonerefs->zone))
 		return NULL;
 
@@ -2818,6 +2851,9 @@ unsigned long __get_free_pages(gfp_t gfp_mask, unsigned int order)
 	 * __get_free_pages() returns a 32-bit address, which cannot represent
 	 * a highmem page
 	 */
+	/** 20130907    
+	 * highmem 에서는 할당 받아 올 수 없는 함수.
+	 **/
 	VM_BUG_ON((gfp_mask & __GFP_HIGHMEM) != 0);
 
 	page = alloc_pages(gfp_mask, order);
@@ -4149,7 +4185,9 @@ static void setup_zone_migrate_reserve(struct zone *zone)
 		2. 모든 page(pfn 단위)에 PG_reserved  비트를 설정 
 		3. PFN이 1024의 배수인 page에 대해서 migrate type을 MIGRATE_MOVABLE 설정
 
-	**/
+	20130907    
+	여기서 reserved 된 page들은 free_all_bootmem()에서 PG_reserved flags를 해제 해준다.
+**/
 void __meminit memmap_init_zone(unsigned long size, int nid, unsigned long zone,
 		unsigned long start_pfn, enum memmap_context context)
 {

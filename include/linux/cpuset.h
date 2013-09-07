@@ -98,6 +98,9 @@ extern void cpuset_print_task_mems_allowed(struct task_struct *p);
  * process failure. A retry loop with get_mems_allowed and put_mems_allowed
  * prevents these artificial failures.
  */
+/** 20130907    
+ * 20130915 다음주 주석 달 차례
+ **/
 static inline unsigned int get_mems_allowed(void)
 {
 	return read_seqcount_begin(&current->mems_allowed_seq);

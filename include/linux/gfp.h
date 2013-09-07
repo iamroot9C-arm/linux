@@ -141,6 +141,10 @@ struct vm_area_struct;
 			__GFP_NORETRY|__GFP_MEMALLOC|__GFP_NOMEMALLOC)
 
 /* Control slab gfp mask during early boot */
+/** 20130907    
+ * __GFP_BITS_MASK : GFP가 사용하는 BIT MASK의 범위
+ * & ~(__GFP_WAIT|__GFP_IO|__GFP_FS) : 사용할 수 없는 속성을 지워준다.
+ **/
 #define GFP_BOOT_MASK (__GFP_BITS_MASK & ~(__GFP_WAIT|__GFP_IO|__GFP_FS))
 
 /* Control allocation constraints */
@@ -366,6 +370,9 @@ static inline struct page *alloc_pages_node(int nid, gfp_t gfp_mask,
 	if (nid < 0)
 		nid = numa_node_id();
 
+	/** 20130907    
+	 * nid 에 해당하는 node에서 gfp_mask와 일치하는 zone을 가져와 __alloc_pages에 전달.
+	 **/
 	return __alloc_pages(gfp_mask, order, node_zonelist(nid, gfp_mask));
 }
 
@@ -389,6 +396,10 @@ extern struct page *alloc_pages_vma(gfp_t gfp_mask, int order,
 			struct vm_area_struct *vma, unsigned long addr,
 			int node);
 #else
+/** 20130907    
+ * NUMA가 아니므로 이 함수가 실행됨.
+ * numa_node_id()는 0을 반환.
+ **/
 #define alloc_pages(gfp_mask, order) \
 		alloc_pages_node(numa_node_id(), gfp_mask, order)
 #define alloc_pages_vma(gfp_mask, order, vma, addr, node)	\
@@ -419,6 +430,9 @@ extern void free_pages(unsigned long addr, unsigned int order);
 extern void free_hot_cold_page(struct page *page, int cold);
 extern void free_hot_cold_page_list(struct list_head *list, int cold);
 
+/** 20130907    
+ * 하나의 page는 order를 0으로 해서 __free_pages 호출
+ **/
 #define __free_page(page) __free_pages((page), 0)
 #define free_page(addr) free_pages((addr), 0)
 

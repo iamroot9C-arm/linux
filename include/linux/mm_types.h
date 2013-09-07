@@ -44,6 +44,9 @@ struct page {
 	 * set_page_section으로 flags에 section 정보를 기록,
 	 * set_page_zone으로 flags에 zone 정보를 기록,
 	 * set_page_node으로 flags에 node id를 기록
+	 *
+	 * 20130907    
+	 * memmap_init_zone 에서 flags에 대해 PG_reserved 설정
 	 **/
 	unsigned long flags;		/* Atomic flags, some possibly
 					 * updated asynchronously */
