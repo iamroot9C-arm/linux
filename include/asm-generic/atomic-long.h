@@ -140,6 +140,9 @@ static inline long atomic_long_add_unless(atomic_long_t *l, long a, long u)
 
 typedef atomic_t atomic_long_t;
 
+/** 20130914
+atomic하게 long타입의 변수를 읽는다.
+**/
 #define ATOMIC_LONG_INIT(i)	ATOMIC_INIT(i)
 static inline long atomic_long_read(atomic_long_t *l)
 {

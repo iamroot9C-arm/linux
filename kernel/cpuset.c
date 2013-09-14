@@ -2357,6 +2357,9 @@ static const struct cpuset *nearest_hardwall_ancestor(const struct cpuset *cs)
  *    pass in the __GFP_HARDWALL flag set in gfp_flag, which disables
  *    the code that might scan up ancestor cpusets and sleep.
  */
+/** 20130914
+추후 분석???
+**/
 int __cpuset_node_allowed_softwall(int node, gfp_t gfp_mask)
 {
 	const struct cpuset *cs;	/* current cpuset ancestors */

@@ -34,6 +34,11 @@ int cpuset_nodemask_valid_mems_allowed(nodemask_t *nodemask);
 extern int __cpuset_node_allowed_softwall(int node, gfp_t gfp_mask);
 extern int __cpuset_node_allowed_hardwall(int node, gfp_t gfp_mask);
 
+/** 20130914
+number_of_cpuset 은 부팅 직후 0
+softwall과 hardwall 두가지가 있는데 차이는???
+참고 : man cpuset
+**/
 static inline int cpuset_node_allowed_softwall(int node, gfp_t gfp_mask)
 {
 	return number_of_cpusets <= 1 ||
@@ -98,9 +103,10 @@ extern void cpuset_print_task_mems_allowed(struct task_struct *p);
  * process failure. A retry loop with get_mems_allowed and put_mems_allowed
  * prevents these artificial failures.
  */
-/** 20130907    
- * 20130915 다음주 주석 달 차례
- **/
+/** 20130914
+read,write의 상호배제적으로 수행하기 위해서 sequence lock을 사용하는 부분으로..
+	- read시 mems_alloed_seq의 값을 체크하여 다음 operation을 계속 할지 아니면 기다릴지를 확인.
+**/
 static inline unsigned int get_mems_allowed(void)
 {
 	return read_seqcount_begin(&current->mems_allowed_seq);

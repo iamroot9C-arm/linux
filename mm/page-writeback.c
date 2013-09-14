@@ -186,7 +186,13 @@ static unsigned long writeout_period_time = 0;
  * require translating the configured limit into a percentage of
  * global dirtyable memory first.
  */
+/** 20130914
+모든 노드의 ZONE_HIGHMEM의 dirtyable page를 구한다
+그리고 전역적으로 존재하는 모든 dirtyable페이지와 비교해서
+작은 값을 리턴한다.
 
+highmem pages의 갯수가 총 diryable 페이지 겟수보다 크면 안되는 이유는???
+**/
 static unsigned long highmem_dirtyable_memory(unsigned long total)
 {
 #ifdef CONFIG_HIGHMEM
@@ -218,13 +224,23 @@ static unsigned long highmem_dirtyable_memory(unsigned long total)
  * Returns the global number of pages potentially available for dirty
  * page cache.  This is the base value for the global dirty limits.
  */
+/** 20130914
+전역적으로 존재하는 모든 dirtyable한 페이지수를 리턴
+**/
 static unsigned long global_dirtyable_memory(void)
 {
 	unsigned long x;
 
+	/** 20130914
+	전역적으로 존재하는 모든 dirtyable 한 페이지를 구한다.
+	**/
 	x = global_page_state(NR_FREE_PAGES) + global_reclaimable_pages() -
 	    dirty_balance_reserve;
-
+	
+	/** 20130914
+	vm_highmem_is_dirtyable은 항상 0일듯 (다른값을 세팅해주는 부분없음)
+	구한 x에서 모든 노드의 ZONE_HIGHMEM에 존재하는 dirtyable 페이지를 빼준다.	
+	**/
 	if (!vm_highmem_is_dirtyable)
 		x -= highmem_dirtyable_memory(x);
 
@@ -279,6 +295,9 @@ void global_dirty_limits(unsigned long *pbackground, unsigned long *pdirty)
  * Returns the zone's number of pages potentially available for dirty
  * page cache.  This is the base value for the per-zone dirty limits.
  */
+/** 20130914
+해당 zone에 대한 총 dirtyable 페이지 수를 리턴한다.
+**/
 static unsigned long zone_dirtyable_memory(struct zone *zone)
 {
 	/*
@@ -290,6 +309,10 @@ static unsigned long zone_dirtyable_memory(struct zone *zone)
 	 * highmem zone can hold its share of dirty pages, so we don't
 	 * care about vm_highmem_is_dirtyable here.
 	 */
+	
+	/** 20130914
+	zone->vm_stat[NR_FREE_PAGES] + 회수 가능한 모든 페이지 - dirtyable 할수 없는 reserve 페이지	
+	**/
 	return zone_page_state(zone, NR_FREE_PAGES) +
 	       zone_reclaimable_pages(zone) -
 	       zone->dirty_balance_reserve;
@@ -302,18 +325,43 @@ static unsigned long zone_dirtyable_memory(struct zone *zone)
  * Returns the maximum number of dirty pages allowed in a zone, based
  * on the zone's dirtyable memory.
  */
+/** 20130914
+해당 zone에서 허락된 최대 dirty page를 구해서 리턴
+	zone_dirtyable_memory에서 구한 값을 기준으로 설정
+**/
 static unsigned long zone_dirty_limit(struct zone *zone)
 {
+	/** 20130914
+	해당 zone에 대한 총 dirtyable 페이지 수를 리턴한다.
+	**/
 	unsigned long zone_memory = zone_dirtyable_memory(zone);
 	struct task_struct *tsk = current;
 	unsigned long dirty;
 
+	/** 20130914
+	vm_dirty_bytes 값의  존재 유무에 따라서 
+	vm_dirty_bytes가 있으면
+		- (zone_memory / (전역적으로 존재하는 총 dirtyable 페이지수))  
+		* DIV_ROUND_UP(vm_dirty_bytes, PAGE_SIZE)
+		 
+	없으면
+		- (vm_dirty_ratio(20)/100) * zone_memory
+		: 해당 zone에 대한 총 dirtyable 페이지 수중 20%만 dirty로 세팅
+	
+	참고 : https://lkml.org/lkml/2008/11/23/160
+		   www.kernel.org/doc/Documentation/sysctl/vm.txt 
+	**/
 	if (vm_dirty_bytes)
 		dirty = DIV_ROUND_UP(vm_dirty_bytes, PAGE_SIZE) *
 			zone_memory / global_dirtyable_memory();
 	else
 		dirty = vm_dirty_ratio * zone_memory / 100;
 
+	/** 20130914
+	#define PF_LESS_THROTTLE 0x00100000 //Throttle me less: I clean memory
+	현재 task의 flags가 PF_LESS_THROTTLE이거나 prio값을(rt priority) 가졌을경우 
+	dirty limit값을 증가 시켜준다.(여유를 주는듯???)
+	**/
 	if (tsk->flags & PF_LESS_THROTTLE || rt_task(tsk))
 		dirty += dirty / 4;
 
@@ -327,6 +375,16 @@ static unsigned long zone_dirty_limit(struct zone *zone)
  * Returns %true when the dirty pages in @zone are within the zone's
  * dirty limit, %false if the limit is exceeded.
  */
+/** 20130914
+	1. zone_dirty_limit으로 dirty_limit을 가져와서
+	2. 존의 NR_FILE_DIRTY,NR_UNSTABLE_NFS, NR_WRITEBACK의 vm_stat을 
+	모두 더한 값과 비교.
+
+	즉, dirty_limit(허용치) 보다 작거나 같으면 return true
+	아니면 return false;
+
+	NR_FILE_DIRTY,NR_UNSTABLE_NFS, NR_WRITEBACK는 의미는???
+**/
 bool zone_dirty_ok(struct zone *zone)
 {
 	unsigned long limit = zone_dirty_limit(zone);

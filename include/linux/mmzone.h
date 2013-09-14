@@ -369,6 +369,9 @@ struct zone {
 	 */
 	unsigned long		lowmem_reserve[MAX_NR_ZONES];
 
+	/** 20130914
+	dirtyable이 되면 안되는 zone 당 reserve page의 수
+	**/
 	/*
 	 * This is a per-zone reserve of pages that should not be
 	 * considered dirtyable memory.

@@ -113,6 +113,9 @@ int percpu_pagelist_fraction;
  * gfp_allowed_mask는 gfp_mask로 사용할 수 있는 속성들을 정의.
  * 초기값은 BOOT 중 사용할 수 있는 속성.
  **/
+/** 20130914
+#define GFP_BOOT_MASK (__GFP_BITS_MASK & ~(__GFP_WAIT|__GFP_IO|__GFP_FS))
+**/
 gfp_t gfp_allowed_mask __read_mostly = GFP_BOOT_MASK;
 
 #ifdef CONFIG_PM_SLEEP
@@ -1837,6 +1840,12 @@ static inline bool should_fail_alloc_page(gfp_t gfp_mask, unsigned int order)
  * Return true if free pages are above 'mark'. This takes into account the order
  * of the allocation.
  */
+/** 20130914
+__zone_watermark_ok(z, order, mark, classzone_idx, alloc_flags,
+					zone_page_state(z, NR_FREE_PAGES));
+watermark 범위안에 있으면 return true, 아니면  return false;
+다음주에 다시 확인???
+**/
 static bool __zone_watermark_ok(struct zone *z, int order, unsigned long mark,
 		      int classzone_idx, int alloc_flags, long free_pages)
 {
@@ -1845,7 +1854,28 @@ static bool __zone_watermark_ok(struct zone *z, int order, unsigned long mark,
 	long lowmem_reserve = z->lowmem_reserve[classzone_idx];
 	int o;
 
+	/** 20130914
+	-1 을 왜하는건지???
+	**/
 	free_pages -= (1 << order) - 1;
+
+	/** 20130914
+	|             |
+	|  |free page |
+	|++|+++++++++ |-> WATER_MARK 
+	|  |          |
+	|  |          |
+	|++|+++++++++ |-> ALLOC_HARDER
+	|  |          |   min-min/4
+	|  |          |
+	|++|+++++++++ |-> ALLOC_HIGH
+	|  |	      |   min-min/2
+	|			  |
+
+	free_pages 가 watermark 이하로 떨어지면 return false
+	단, 위와 같이 alloc_flags에따라(ALLOC_HIGH,ALLOC_HARDER 일경우)
+	비교되는 watermark(min)은 조정된다.
+	**/
 	if (alloc_flags & ALLOC_HIGH)
 		min -= min / 2;
 	if (alloc_flags & ALLOC_HARDER)
@@ -1853,6 +1883,21 @@ static bool __zone_watermark_ok(struct zone *z, int order, unsigned long mark,
 
 	if (free_pages <= min + lowmem_reserve)
 		return false;
+	
+	/** 20130914
+		각 order를 순회하면서
+		for(o=0;o<order;o++)
+		{
+			1. zone 의 총 free page(free_pages) 에서  각 order의 free page 를 구해서 빼준다.
+			2. min을 2로 나눈다.
+
+			3. free_pages가  min보다 작거나 같다면 return  false
+			   아니면  다음 for문 실행
+		}
+
+		이게 맞나???
+			- min 이 이렇게 조정이 되는이유는???
+	**/
 	for (o = 0; o < order; o++) {
 		/* At the next order, this order's pages become unavailable */
 		free_pages -= z->free_area[o].nr_free << o;
@@ -2030,7 +2075,9 @@ static nodemask_t *zlc_setup(struct zonelist *zonelist, int alloc_flags)
 {
 	return NULL;
 }
-
+/** 20130914
+vexpress는 NUMA가 아니므로 리턴 1
+**/
 static int zlc_zone_worth_trying(struct zonelist *zonelist, struct zoneref *z,
 				nodemask_t *allowednodes)
 {
@@ -2050,6 +2097,11 @@ static void zlc_clear_zones_full(struct zonelist *zonelist)
  * get_page_from_freelist goes through the zonelist trying to allocate
  * a page.
  */
+/** 20130914
+page = get_page_from_freelist(gfp_mask|__GFP_HARDWALL, nodemask, order,
+			zonelist, high_zoneidx, ALLOC_WMARK_LOW|ALLOC_CPUSET,
+			preferred_zone, migratetype);
+**/
 static struct page *
 get_page_from_freelist(gfp_t gfp_mask, nodemask_t *nodemask, unsigned int order,
 		struct zonelist *zonelist, int high_zoneidx, int alloc_flags,
@@ -2071,6 +2123,9 @@ zonelist_scan:
 	 */
 	for_each_zone_zonelist_nodemask(zone, z, zonelist,
 						high_zoneidx, nodemask) {
+		/** 20130914
+		NUMA가 아니므로 다음 if는 거짓
+		**/
 		if (NUMA_BUILD && zlc_active &&
 			!zlc_zone_worth_trying(zonelist, z, allowednodes))
 				continue;
@@ -2103,10 +2158,17 @@ zonelist_scan:
 		 * will require awareness of zones in the
 		 * dirty-throttling and the flusher threads.
 		 */
+		/** 20130914
+		ALLOC_WMARK_LOW가 설정되어 있고 요청 페이지의 타입이 Write일경우 
+		그리고 dirty limit을 초과 했을 경우 this_zone_full로 goto. 
+		**/
 		if ((alloc_flags & ALLOC_WMARK_LOW) &&
 		    (gfp_mask & __GFP_WRITE) && !zone_dirty_ok(zone))
 			goto this_zone_full;
 
+		/** 20130914
+		#define ALLOC_NO_WATERMARKS	0x04 // don't check watermarks at all
+		**/
 		BUILD_BUG_ON(ALLOC_NO_WATERMARKS < NR_WMARK);
 		if (!(alloc_flags & ALLOC_NO_WATERMARKS)) {
 			unsigned long mark;
@@ -2807,9 +2869,15 @@ retry_cpuset:
 	cpuset_mems_cookie = get_mems_allowed();
 
 	/* The preferred zone is used for statistics later */
+	/** 20130914
+	nodemask의 값에따라 
+	zonelist에서 첫번째 zoneref가 가리키는 struct zone의 주소를
+	cpuset_current_mems_allowed 나 preferred_zone에 채워 준다.
+	**/
 	first_zones_zonelist(zonelist, high_zoneidx,
 				nodemask ? : &cpuset_current_mems_allowed,
 				&preferred_zone);
+	
 	if (!preferred_zone)
 		goto out;
 
