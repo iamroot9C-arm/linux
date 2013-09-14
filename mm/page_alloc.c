@@ -579,6 +579,9 @@ static inline int page_is_buddy(struct page *page, struct page *buddy,
  * __free_pages_bootmem 에서 불렸지만, depth가 깊어 추후 다시 분석하기로 함 ???
  * free_all_bootmem_core 에서 호출될 경우 buddy가 관리하는 free_list에까지 넣어주는 것인지 확인 필요
  **/
+/** 20130914
+ 다음주에 분석
+**/
 static inline void __free_one_page(struct page *page,
 		struct zone *zone, unsigned int order,
 		int migratetype)
