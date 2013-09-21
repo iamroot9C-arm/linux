@@ -466,20 +466,44 @@ static inline void init_page_count(struct page *page)
  */
 #define PAGE_BUDDY_MAPCOUNT_VALUE (-128)
 
+/** 20130921    
+ * page의 _mapcount가 PAGE_BUDDY_MAPCOUNT_VALUE면 page가 buddy에 들어 있는 page이다.
+ **/
 static inline int PageBuddy(struct page *page)
 {
 	return atomic_read(&page->_mapcount) == PAGE_BUDDY_MAPCOUNT_VALUE;
 }
 
+/** 20130921    
+ * page의 _mapcount를 설정해 page가 Buddy에 의해 관리됨을 나타낸다.
+ * PageBuddy(page)로 검사할 수 있다.
+ **/
 static inline void __SetPageBuddy(struct page *page)
 {
+	/** 20130921    
+	 * 부팅단계에서 memmap_init_zone 에서 reset_page_mapcount 을 해주었다.
+	 * 또는 running 중일 때 이미 buddy로 사용 중일 경우 -1이 false일 겻이다.
+	 **/
 	VM_BUG_ON(atomic_read(&page->_mapcount) != -1);
+	/** 20130921    
+	 * _mapcount를 PAGE_BUDDY_MAPCOUNT_VALUE로 설정해 Buddy에 의해 관리됨을 나타낸다.
+	 **/
 	atomic_set(&page->_mapcount, PAGE_BUDDY_MAPCOUNT_VALUE);
 }
 
+/** 20130921    
+ * page를 Buddy에 의해 관리되지 않는 상태로 초기화 시킨다.
+ * (Buddy에 의해 관리되는 것은 order 단위로 떨어지는 첫번째 page이다)
+ **/
 static inline void __ClearPageBuddy(struct page *page)
 {
+	/** 20130921    
+	 * page가 PageBuddy가 아닐 경우 정상적인 상태에서 호출되지 않았으므로 BUG.
+	 **/
 	VM_BUG_ON(!PageBuddy(page));
+	/** 20130921    
+	 * page의 _mapcount를 -1로 초기화.
+	 **/
 	atomic_set(&page->_mapcount, -1);
 }
 
@@ -1758,6 +1782,9 @@ static inline bool page_is_guard(struct page *page)
  * page memory allocator 에 대한 DEBUG 를 사용하지 않으면 그냥 0을 리턴
  **/
 static inline unsigned int debug_guardpage_minorder(void) { return 0; }
+/** 20130921    
+ * page memory allocator 에 대한 DEBUG 를 사용하지 않으면 false 리턴.
+ **/
 static inline bool page_is_guard(struct page *page) { return false; }
 #endif /* CONFIG_DEBUG_PAGEALLOC */
 

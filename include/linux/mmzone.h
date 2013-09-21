@@ -86,6 +86,16 @@ static inline int get_pageblock_migratetype(struct page *page)
 	return get_pageblock_flags_group(page, PB_migrate, PB_migrate_end);
 }
 
+/** 20130921    
+ * 2.6.19 이전
+ * struct free_area {
+ *     struct list_head    free_list;
+ *     unsigned long       *map;
+ * };
+ *
+ * free_list -> MIGRATE_TYPES 별로 list 별도 존재
+ * map -> nr_free로 변경. watermark 와 nr_free 비교하는 방식으로 변경
+ **/
 struct free_area {
 	struct list_head	free_list[MIGRATE_TYPES];
 	unsigned long		nr_free;
@@ -1304,6 +1314,9 @@ unsigned long __init node_memmap_size_bytes(int, unsigned long, unsigned long);
 #ifdef CONFIG_HOLES_IN_ZONE
 #define pfn_valid_within(pfn) pfn_valid(pfn)
 #else
+/** 20130921    
+ * CONFIG_HOLES_IN_ZONE 정의되어 있지 않아 항상 1
+ **/
 #define pfn_valid_within(pfn) (1)
 #endif
 

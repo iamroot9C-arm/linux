@@ -151,6 +151,9 @@ isolate_migratepages_range(struct zone *zone, struct compact_control *cc,
  * zone->lock is already acquired when we use these.
  * So, we don't need atomic page->flags operations here.
  */
+/** 20130921    
+ * page의 private에 설정된 order값을 리턴한다.
+ **/
 static inline unsigned long page_order(struct page *page)
 {
 	/* PageBuddy() must be checked by the caller */

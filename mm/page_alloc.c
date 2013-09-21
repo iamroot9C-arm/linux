@@ -296,6 +296,9 @@ static int bad_range(struct zone *zone, struct page *page)
 	return 0;
 }
 #else
+/** 20130921    
+ * CONFIG_DEBUG_VM 가 정의되어 있지 않은 경우 거짓 리턴.
+ **/
 static inline int bad_range(struct zone *zone, struct page *page)
 {
 	return 0;
@@ -482,15 +485,34 @@ static inline void set_page_guard_flag(struct page *page) { }
 static inline void clear_page_guard_flag(struct page *page) { }
 #endif
 
+/** 20130921    
+ * page의 private에 order를 설정하고, private 멤버를 설정해 buddy에서 order 단위로 관리됨을 설정한다.
+ **/
 static inline void set_page_order(struct page *page, int order)
 {
+	/** 20130921    
+	 * struct page의 private 멤버에 order를 넣어준다.
+	 **/
 	set_page_private(page, order);
+	/** 20130921    
+	 * page가 Buddy로 관리됨을 설정한다.
+	 **/
 	__SetPageBuddy(page);
 }
 
+/** 20130921    
+ * page의 buddy 정보와 order정보를 초기화 한다. 
+ **/
 static inline void rmv_page_order(struct page *page)
 {
+	/** 20130921    
+	 * page를 Buddy에 의해 관리되지 않음을 나타낸다.
+	 * (해당 order로 나누어 떨어지는 첫번째 page만 __SetPageBuddy를 해준다.)
+	 **/
 	__ClearPageBuddy(page);
+	/** 20130921    
+	 * page의 private를 0으로 해준다. (order의 첫번째 page의 private 에 order를 넣어준다)
+	 **/
 	set_page_private(page, 0);
 }
 
@@ -511,6 +533,18 @@ static inline void rmv_page_order(struct page *page)
  *
  * Assumption: *_mem_map is contiguous at least up to MAX_ORDER
  */
+/** 20130921    
+ * buddy의 index를 찾는다.
+ * page_idx가 4이고,
+ *   order가 0인 경우     4 ^ (1<<0) = 4 ^ 1 = 5
+ *     (0) (1)|(2) (3)|(4) (5)|(6) (7)
+ *
+ *   order가 1인 경우     4 ^ (1<<1) = 4 ^ 2 = 6
+ *     (0 1) (2 3)|(4 5) (6 7)
+ *
+ *   order가 2인 경우     4 ^ (1<<2) = 4 ^ 4 = 0
+ *     (0 1 2 3) (4 5 6 7)|(8 9 10 11) (12 13 14 15)
+ **/
 static inline unsigned long
 __find_buddy_index(unsigned long page_idx, unsigned int order)
 {
@@ -530,20 +564,41 @@ __find_buddy_index(unsigned long page_idx, unsigned int order)
  *
  * For recording page's order, we use page_private(page).
  */
+/** 20130921    
+ * page와 buddy가 order 레벨에서 buddy인지 판단하는 함수
+ **/
 static inline int page_is_buddy(struct page *page, struct page *buddy,
 								int order)
 {
+	/** 20130921    
+	 * CONFIG_HOLES_IN_ZONE 가 정의되어 있지 않아 항상 valid.
+	 **/
 	if (!pfn_valid_within(page_to_pfn(buddy)))
 		return 0;
 
+	/** 20130921    
+	 * page와 buddy의 zoneid가 같지 않으면 0 리턴.
+	 **/
 	if (page_zone_id(page) != page_zone_id(buddy))
 		return 0;
 
+	/** 20130921    
+	 * DEBUG가 켜 있지 않아 page_is_guard는 항상 false 리턴.
+	 **/
 	if (page_is_guard(buddy) && page_order(buddy) == order) {
 		VM_BUG_ON(page_count(buddy) != 0);
 		return 1;
 	}
 
+	/** 20130921    
+	 * free_all_bootmem에서 온 경우 buddy는 PageBuddy가 아닌 상태.
+	 * 따라서 해당 안 됨.
+	 *
+	 * 일반적인 경우 buddy가 Buddy에 의해 관리되는 page이고,
+	 * buddy의 order가 현재 order와 같은 경우 return 1.
+	 * (page_order는 set_page_order에서만 설정됨.
+	 *  따라서 buddy는 이미 Buddy Allocator에 의해 free page.)
+	 **/
 	if (PageBuddy(buddy) && page_order(buddy) == order) {
 		VM_BUG_ON(page_count(buddy) != 0);
 		return 1;
@@ -579,8 +634,9 @@ static inline int page_is_buddy(struct page *page, struct page *buddy,
  * __free_pages_bootmem 에서 불렸지만, depth가 깊어 추후 다시 분석하기로 함 ???
  * free_all_bootmem_core 에서 호출될 경우 buddy가 관리하는 free_list에까지 넣어주는 것인지 확인 필요
  **/
-/** 20130914
- 다음주에 분석
+/** 20130921
+ * buddy allocator를 이용해 page를 order개만큼 해제하는 함수.
+ * buddy가 free인동안 상위 order를 따라가며 묶음 단위로 free 하는 concept.
 **/
 static inline void __free_one_page(struct page *page,
 		struct zone *zone, unsigned int order,
@@ -603,34 +659,106 @@ static inline void __free_one_page(struct page *page,
 	 **/
 	VM_BUG_ON(migratetype == -1);
 
+	/** 20130921    
+	 * struct page *page가 가리키는 pfn에서,
+	 * MAX_ORDER (11)개의 하위 비트만 취해 인덱스로 삼는다.
+	 **/
 	page_idx = page_to_pfn(page) & ((1 << MAX_ORDER) - 1);
 
+	/** 20130921    
+	 * 계산한 page_idx가 요청한 order 단위로 안 떨어질 경우 BUG.
+	 *
+	 * 예를 들어 4개의 page 해제를 요청할 때, page_idx는 첫번째 페이지가 넘어와야 한다.
+	 * 정렬되지 않은 2, 3, 4번째 page가 넘어온 경우에는 BUG.
+	 **/
 	VM_BUG_ON(page_idx & ((1 << order) - 1));
+	/** 20130921    
+	 * page가 zone의 범위 내에 없다면 bad_range.
+	 **/
 	VM_BUG_ON(bad_range(zone, page));
 
+	/** 20130921    
+	 * 현재 order부터 MAX_ORDER-1까지 반복(현재 커널 버전에서 MAX_ORDER는 11) 
+	 **/
 	while (order < MAX_ORDER-1) {
+		/** 20130921    
+		 * page_idx의 order 단위 buddy의 index를 구해온다.
+		 **/
 		buddy_idx = __find_buddy_index(page_idx, order);
+		/** 20130921    
+		 * struct page *page를 기준으로 buddy의 struct page *를 구한다.
+		 **/
 		buddy = page + (buddy_idx - page_idx);
+		/** 20130921    
+		 * page와 buddy가 order 레벨에서 buddy가 아닐 경우 false로 break
+		 * (buddy에 의해 관리되는 free page일 경우)
+		 **/
 		if (!page_is_buddy(page, buddy, order))
 			break;
 		/*
 		 * Our buddy is free or it is CONFIG_DEBUG_PAGEALLOC guard page,
 		 * merge with it and move up one order.
 		 */
+		/** 20130921    
+		 * CONFIG_DEBUG_PAGEALLOC 가 아닐 경우 항상 false.
+		 **/
 		if (page_is_guard(buddy)) {
 			clear_page_guard_flag(buddy);
 			set_page_private(page, 0);
 			__mod_zone_page_state(zone, NR_FREE_PAGES, 1 << order);
 		} else {
+			/** 20130921    
+			 * page와 buddy가 해당 order에서 buddy이므로 free 가 되면서
+			 * 상위 order로 관리하기 위해 현재 order에서 빼준다.
+			 **/
+			/** 20130921    
+			 * buddy page를 lru list에서 빼준다.
+			 **/
 			list_del(&buddy->lru);
+			/** 20130921    
+			 * 현재 order의 nr_free를 감소시킨다.
+			 **/
 			zone->free_area[order].nr_free--;
+			/** 20130921    
+			 * buddy의 order나 buddy 관리 정보를 초기화 한다.
+			 *
+			 * order = 2에서 page_idx가 4이고, buddy_idx가 0일 경우
+			 * buddy_idx가 combinded_idx가 되어 새로운 page_idx로 될텐데,
+			 * 기존의 page_idx로 rmv_page_order를 해줘야 하지 않을까?
+			 **/
 			rmv_page_order(buddy);
 		}
+		/** 20130921    
+		 * combined_idx를 merge 상태의 첫번째 page의 idx를 가리키기 위해 변경한다.
+		 *
+		 * page_idx가 4이고, buddy_idx는 order에 따라 결정되고
+		 *   order가 0인 경우     4 & 5 = 4
+		 *     (0) (1)|(2) (3)|(4) (5)|(6) (7)
+		 *
+		 *   order가 1인 경우     4 & 6 = 4
+		 *     (0 1) (2 3)|(4 5) (6 7)
+		 *
+		 *   order가 2인 경우     4 & 0 = 0
+		 *     (0 1 2 3) (4 5 6 7)|(8 9 10 11) (12 13 14 15)
+		 **/
 		combined_idx = buddy_idx & page_idx;
+		/** 20130921    
+		 * page 역시 새로 지정된 combined_idx가 가리키는 page로 변경
+		 **/
 		page = page + (combined_idx - page_idx);
+		/** 20130921    
+		 * combined_idx를 새로 page_idx로 삼는다.
+		 **/
 		page_idx = combined_idx;
+		/** 20130921    
+		 * 상위 order로 이동한다.
+		 **/
 		order++;
 	}
+	/** 20130921    
+	 * page의 order를 설정해 buddy에서 해당 order 단위로 관리됨으로 나타낸다.
+	 * 처음 bootmem에서 buddy 이관시에는 page_is_buddy에서 빠져나와 이곳을 바로 수행한다.
+	 **/
 	set_page_order(page, order);
 
 	/*
@@ -641,12 +769,37 @@ static inline void __free_one_page(struct page *page,
 	 * so it's less likely to be used soon and more likely to be merged
 	 * as a higher order page
 	 */
+	/** 20130921    
+	 * order가 MAX_ORDER-2까지 도달하지 않았을 경우 다음 order의 buddy가 free인지 파악해
+	 * free라면 현재 page를 현재 order에 free_list의 마지막에 추가한다.
+	 * 즉, 현재 order의 page의 buddy가 free가 아니더라도(현재 order의 page는 free 함수이므로 항상 free)
+	 * 곧 free될 가능성이 높으므로(확인 필요함???) 미리 free_list의 끝에 추가해 두는 것이다.
+	 **/
 	if ((order < MAX_ORDER-2) && pfn_valid_within(page_to_pfn(buddy))) {
 		struct page *higher_page, *higher_buddy;
+		/** 20130921    
+		 * page_idx와 buddy_idx로 combined_idx를 구한다.
+		 **/
 		combined_idx = buddy_idx & page_idx;
+		/** 20130921    
+		 * combined_idx에 해당하는 page를 구해 higher_page에 저장.
+		 **/
 		higher_page = page + (combined_idx - page_idx);
+		/** 20130921    
+		 * ex) order 2인 상태에서
+		 * buddy_idx: 0, page_idx: 4인 경우 combined_idx: 0.
+		 *     order 3일 때의 buddy_idx를 구했으므로
+		 * buddy_idx: 8
+		 **/
 		buddy_idx = __find_buddy_index(combined_idx, order + 1);
+		/** 20130921    
+		 * higher_buddy는 higher buddy_idx에 대한 struct page *.
+		 **/
 		higher_buddy = page + (buddy_idx - combined_idx);
+		/** 20130921    
+		 * higher_page와 higher_buddy로 다시 두 page가 buddy 관계일 때
+		 * 현재 order의 free_list의 'tail'에 추가한다.
+		 **/
 		if (page_is_buddy(higher_page, higher_buddy, order + 1)) {
 			list_add_tail(&page->lru,
 				&zone->free_area[order].free_list[migratetype]);
@@ -654,8 +807,14 @@ static inline void __free_one_page(struct page *page,
 		}
 	}
 
+	/** 20130921    
+	 * 위의 경우가 아니라면 현재 page를 현재 order의 free_list의 처음에 넣어준다.
+	 **/
 	list_add(&page->lru, &zone->free_area[order].free_list[migratetype]);
 out:
+	/** 20130921    
+	 * 현재 order 의 nr_free를 증가시킨다.
+	 **/
 	zone->free_area[order].nr_free++;
 }
 
@@ -1567,7 +1726,7 @@ void free_hot_cold_page(struct page *page, int cold)
 	 **/
 	pcp->count++;
 	/** 20130831    
-	 * count의 수가 high watermark 이상이라면
+	 * count의 수가 high watermark 이상이라면 (너무 많은 수의 page들이 리스트에 등록되어 있을 경우)
 	 *   pcp->batch 수만큼 free 하고, pcp->batch 단위만큼 count에 감소시킨다.
 	 **/
 	if (pcp->count >= pcp->high) {
