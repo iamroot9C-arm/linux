@@ -274,7 +274,13 @@ extern int sysctl_min_unmapped_ratio;
 extern int sysctl_min_slab_ratio;
 extern int zone_reclaim(struct zone *, gfp_t, unsigned int);
 #else
+/** 20130928    
+ * NUMA가 아닐 경우 zone_reclaim_mode는 0
+ **/
 #define zone_reclaim_mode 0
+/** 20130928    
+ * NUMA가 아닐 경우 zone_reclaim 함수는 zone reclaim 을 하지 않는다.
+ **/
 static inline int zone_reclaim(struct zone *z, gfp_t mask, unsigned int order)
 {
 	return 0;

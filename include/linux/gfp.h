@@ -371,7 +371,7 @@ static inline struct page *alloc_pages_node(int nid, gfp_t gfp_mask,
 		nid = numa_node_id();
 
 	/** 20130907    
-	 * nid 에 해당하는 node에서 gfp_mask와 일치하는 zone을 가져와 __alloc_pages에 전달.
+	 * nid 에 해당하는 node에서 gfp_mask와 일치하는 zonelist를 가져와 __alloc_pages에 전달.
 	 **/
 	return __alloc_pages(gfp_mask, order, node_zonelist(nid, gfp_mask));
 }

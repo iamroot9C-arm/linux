@@ -64,6 +64,9 @@ enum {
 	MIGRATE_TYPES
 };
 
+/** 20130928    
+ * vexpress 기본 설정으로 CONFIG_CMA를 사용하지 않는다.
+ **/
 #ifdef CONFIG_CMA
 #  define is_migrate_cma(migratetype) unlikely((migratetype) == MIGRATE_CMA)
 #  define cma_wmark_pages(zone)	zone->min_cma_pages
@@ -98,6 +101,9 @@ static inline int get_pageblock_migratetype(struct page *page)
  **/
 struct free_area {
 	struct list_head	free_list[MIGRATE_TYPES];
+	/** 20130928    
+	 * 가용한 개수 (해당 order 단위로 몇 개의 블럭을 사용 가능하다)
+	 **/
 	unsigned long		nr_free;
 };
 
@@ -275,6 +281,9 @@ struct per_cpu_pageset {
 	s8 expire;
 #endif
 #ifdef CONFIG_SMP
+	/** 20130928    
+	 * 추후 확인 필요 ???
+	 **/
 	s8 stat_threshold;
 	s8 vm_stat_diff[NR_VM_ZONE_STAT_ITEMS];
 #endif

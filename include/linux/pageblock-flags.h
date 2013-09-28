@@ -49,6 +49,10 @@ extern int pageblock_order;
 
 #else /* CONFIG_HUGETLB_PAGE */
 
+/** 20130928    
+ * vexpress에서 CONFIG_HUGETLB_PAGE를 정의하고 있지 않다.
+ * pageblock_order는 최대 order.
+ **/
 /* If huge pages are not used, group by MAX_ORDER_NR_PAGES */
 #define pageblock_order		(MAX_ORDER-1)
 
