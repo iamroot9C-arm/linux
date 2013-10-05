@@ -651,6 +651,9 @@ static inline void ClearPageSlabPfmemalloc(struct page *page)
  * Pages being prepped should not have any flags set.  It they are set,
  * there has been a kernel bug or struct page corruption.
  */
+/** 20131005    
+ * FLAGS의 모든 비트. PREP 단계에서 FLAGS를 체크하기 위해 사용됨.
+ **/
 #define PAGE_FLAGS_CHECK_AT_PREP	((1 << NR_PAGEFLAGS) - 1)
 
 #define PAGE_FLAGS_PRIVATE				\

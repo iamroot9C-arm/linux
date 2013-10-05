@@ -126,6 +126,9 @@ static inline void __list_del(struct list_head * prev, struct list_head * next)
  * in an undefined state.
  */
 #ifndef CONFIG_DEBUG_LIST
+/** 20131005    
+ * entry의 prev와 next를 서로 가리키게 하여 자신을 list에서 제거한다.
+ **/
 static inline void __list_del_entry(struct list_head *entry)
 {
 	__list_del(entry->prev, entry->next);
@@ -186,9 +189,18 @@ static inline void list_del_init(struct list_head *entry)
  * @list: the entry to move
  * @head: the head that will precede our entry
  */
+/** 20131005    
+ * 'list'를 원래 존재하던 list에서 제거한 뒤 새로운 list 'head'에 추가한다.
+ **/
 static inline void list_move(struct list_head *list, struct list_head *head)
 {
+	/** 20131005    
+	 * 'list'라는 entry를 list에서 제거한다.
+	 **/
 	__list_del_entry(list);
+	/** 20131005    
+	 * 'list'를 head가 가리키는 list에 추가한다.
+	 **/
 	list_add(list, head);
 }
 

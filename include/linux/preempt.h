@@ -28,6 +28,9 @@
 #define inc_preempt_count() add_preempt_count(1)
 #define dec_preempt_count() sub_preempt_count(1)
 
+/** 20131005    
+ * 현재 task의 thread_info에서 preempt_count를 리턴한다.
+ **/
 #define preempt_count()	(current_thread_info()->preempt_count)
 
 #ifdef CONFIG_PREEMPT

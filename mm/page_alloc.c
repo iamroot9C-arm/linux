@@ -449,6 +449,12 @@ static inline void prep_zero_page(struct page *page, int order, gfp_t gfp_flags)
 	 * clear_highpage() will use KM_USER0, so it's a bug to use __GFP_ZERO
 	 * and __GFP_HIGHMEM from hard or soft interrupt context.
 	 */
+	/** 20131005    
+	 * VM_BUG_ON은 선언의 주석을 참고.
+	 **/
+	/** 20131012
+	 * 여기부터...
+	 **/
 	VM_BUG_ON((gfp_flags & __GFP_HIGHMEM) && in_interrupt());
 	for (i = 0; i < (1 << order); i++)
 		clear_highpage(page + i);
@@ -869,7 +875,7 @@ static inline int free_pages_check(struct page *page)
 /** 20130831    
  * per_cpu_pages 리스트 중 하나를 가져와 count 만큼 free 시킨다.
  *   - list에서 삭제
- *   - __free_one_page에서 실제 free (현재 분석 안 함)
+ *   - __free_one_page에서 실제 free (20130928 분석)
  *   - states에 반영
  **/
 static void free_pcppages_bulk(struct zone *zone, int count,
@@ -958,7 +964,7 @@ static void free_pcppages_bulk(struct zone *zone, int count,
 }
 
 /** 20130831    
- * __free_one_page는 buddy에 대한 내용이 있으므로 추후 다시 분석하기로 함 ???
+ * __free_one_page는 buddy에 대한 내용이 있으므로 추후 다시 분석하기로 함
  *
  * 20130928
  * __free_one_page로 page부터 order 만큼의 페이지를 해제하고,
@@ -1263,8 +1269,20 @@ static inline void expand(struct zone *zone, struct page *page,
 /*
  * This page is about to be returned from the page allocator
  */
+/** 20131005    
+ * new page라면 0, 사용 중이라면 1을 리턴
+ **/
 static inline int check_new_page(struct page *page)
 {
+	/** 20131005    
+	 *  page_mapcount(page)					: page_mapcount가 0이 아니다.
+		(page->mapping != NULL)				: page->mapping이 NULL이 아니다.
+		(atomic_read(&page->_count) != 0)	: page->_count가 0이 아니다. (reference count)
+		(page->flags & PAGE_FLAGS_CHECK_AT_PREP) : flags 속성 중 하나 이상이 설정되어 있다.
+		(mem_cgroup_bad_page_check(page))	: cgroup bad page check 는 항상 false.
+
+		즉 page가 사용된 정보가 하나라도 있다면 1을 리턴.
+	 **/
 	if (unlikely(page_mapcount(page) |
 		(page->mapping != NULL)  |
 		(atomic_read(&page->_count) != 0)  |
@@ -1280,18 +1298,39 @@ static int prep_new_page(struct page *page, int order, gfp_t gfp_flags)
 {
 	int i;
 
+	/** 20131005    
+	 * page부터 1<<order만큼 loop를 수행
+	 **/
 	for (i = 0; i < (1 << order); i++) {
+		/** 20131005    
+		 * 하나의 struct page를 가져옴
+		 **/
 		struct page *p = page + i;
+		/** 20131005    
+		 * page가 사용 중이라면 check_new_page가 true가 되어 1로 리턴함.
+		 **/
 		if (unlikely(check_new_page(p)))
 			return 1;
 	}
 
+	/** 20131005    
+	 * page 구조체에 private에 0을 설정.
+	 **/
 	set_page_private(page, 0);
+	/** 20131005    
+	 * page의 _count 변수를 설정해 reference 상태로 만든다.
+	 **/
 	set_page_refcounted(page);
 
+	/** 20131005    
+	 * 둘 모두 NULL 함수
+	 **/
 	arch_alloc_page(page, order);
 	kernel_map_pages(page, 1 << order, 1);
 
+	/** 20131005    
+	 * __GFP_ZERO 속성이 gfp_flags로 요청되었다면
+	 **/
 	if (gfp_flags & __GFP_ZERO)
 		prep_zero_page(page, order, gfp_flags);
 
@@ -1377,6 +1416,10 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
  * This array describes the order lists are fallen back to when
  * the free lists for the desirable migrate type are depleted
  */
+/** 20131005    
+ * 요청한 migratetype이 고갈되어 페이지를 가져올 수 없을 경우 대신
+ * free lists를 찾을 migratetype의 순서를 정의한 array.
+ **/
 static int fallbacks[MIGRATE_TYPES][4] = {
 	[MIGRATE_UNMOVABLE]   = { MIGRATE_RECLAIMABLE, MIGRATE_MOVABLE,     MIGRATE_RESERVE },
 	[MIGRATE_RECLAIMABLE] = { MIGRATE_UNMOVABLE,   MIGRATE_MOVABLE,     MIGRATE_RESERVE },
@@ -1395,6 +1438,11 @@ static int fallbacks[MIGRATE_TYPES][4] = {
  * Note that start_page and end_pages are not aligned on a pageblock
  * boundary. If alignment is required, use move_freepages_block()
  */
+/** 20131005    
+ * start_page에서 end_page까지 page를 옮길 수 있는 경우
+ * zone의 free_area의 free_list[migratetype]로 옮기고
+ * 이동시킨 page의 개수를 리턴한다.
+ **/
 static int move_freepages(struct zone *zone,
 			  struct page *start_page, struct page *end_page,
 			  int migratetype)
@@ -1411,33 +1459,61 @@ static int move_freepages(struct zone *zone,
 	 * Remove at a later date when no bug reports exist related to
 	 * grouping pages by mobility
 	 */
+	/** 20131005    
+	 * start_page와 end_page가 같은 zone에 있지 않은 경우 BUG.
+	 **/
 	BUG_ON(page_zone(start_page) != page_zone(end_page));
 #endif
 
 	for (page = start_page; page <= end_page;) {
 		/* Make sure we are not inadvertently changing nodes */
+		/** 20131005    
+		 * page와 zone이 같은 node에 있어야 한다.
+		 **/
 		VM_BUG_ON(page_to_nid(page) != zone_to_nid(zone));
 
+		/** 20131005    
+		 * pfn_valid_within은 1이므로 if문은 false.
+		 **/
 		if (!pfn_valid_within(page_to_pfn(page))) {
 			page++;
 			continue;
 		}
 
+		/** 20131005    
+		 * page가 Buddy Allocator에 의해 관리되지 않는 경우
+		 * 다음 page로 계속 시도
+		 **/
 		if (!PageBuddy(page)) {
 			page++;
 			continue;
 		}
 
+		/** 20131005    
+		 * private에 설정한 order값을 가져온다.
+		 **/
 		order = page_order(page);
+		/** 20131005    
+		 * page를 lru에서 제거해 zone의 free_area의 free_list에 달아준다.
+		 **/
 		list_move(&page->lru,
 			  &zone->free_area[order].free_list[migratetype]);
+		/** 20131005    
+		 * order 만큼 건너뛰어 다음 처리할 page를 가리킨다.
+		 **/
 		page += 1 << order;
+		/** 20131005    
+		 * 몇 개의 page를 옮겼는지 기록.
+		 **/
 		pages_moved += 1 << order;
 	}
 
 	return pages_moved;
 }
 
+/** 20131005    
+ * page를 pageblock 단위로 새로운 zone의 free_area의 free_list[migratetype]으로 옮긴다.
+ **/
 int move_freepages_block(struct zone *zone, struct page *page,
 				int migratetype)
 {
@@ -1453,33 +1529,61 @@ int move_freepages_block(struct zone *zone, struct page *page,
 	 * 정렬한 pfn에 해당하는 struct page*를 가져온다.
 	 **/
 	start_page = pfn_to_page(start_pfn);
+	/** 20131005    
+	 * end_page는 pageblock 개수만큼 떨어진 page.
+	 **/
 	end_page = start_page + pageblock_nr_pages - 1;
 	end_pfn = start_pfn + pageblock_nr_pages - 1;
 
-	/** 20131005
-	 * 여기부터...
-	 **/
 	/* Do not cross zone boundaries */
+	/** 20131005
+	 * 정렬로 인해 start_pfn이 zone의 첫번째 pfn보다 작으면
+	 * page를 start_page로 설정한다.
+	 **/
 	if (start_pfn < zone->zone_start_pfn)
 		start_page = page;
+	/** 20131005    
+	 * end_pfn이 zone의 마지막 페이지를 벗어난다면 pageblock 단위로
+	 * 이동시키지 못하기 때문에 0을 리턴
+	 **/
 	if (end_pfn >= zone->zone_start_pfn + zone->spanned_pages)
 		return 0;
 
 	return move_freepages(zone, start_page, end_page, migratetype);
 }
 
+/** 20131005    
+ * start_order의 page들을 pageblock 단위로 새로운 'migratetype'으로 옮겨준다.
+ **/
 static void change_pageblock_range(struct page *pageblock_page,
 					int start_order, int migratetype)
 {
+	/** 20131005    
+	 * pageblocks 단위로 몇 blocks까지 수행할지 연산.
+	 **/
 	int nr_pageblocks = 1 << (start_order - pageblock_order);
 
+	/** 20131005    
+	 * nr_pageblocks 번만큼 수행
+	 **/
 	while (nr_pageblocks--) {
+		/** 20131005    
+		 * pageblock_page의 migratetype을 'migratetype'으로 변경.
+		 **/
 		set_pageblock_migratetype(pageblock_page, migratetype);
+		/** 20131005    
+		 * 다음 pageblock 단위의 시작 위치를 나타내가 위해 변경.
+		 **/
 		pageblock_page += pageblock_nr_pages;
 	}
 }
 
 /* Remove an element from the buddy allocator from the fallback list */
+/** 20131005    
+ * fallback을 시작하기 전의 migratetype이 start_migratetype이다.
+ * start_migratetype의 fallbacks를 순회하며 free list에서 order 단위의 page를 가져온다.
+ * 성공한다면 가져온 page를 리턴하고, 실패한다면 NULL을 리턴한다.
+ **/
 static inline struct page *
 __rmqueue_fallback(struct zone *zone, int order, int start_migratetype)
 {
@@ -1503,7 +1607,8 @@ __rmqueue_fallback(struct zone *zone, int order, int start_migratetype)
 
 			/* MIGRATE_RESERVE handled later if necessary */
 			/** 20130928    
-			 * MIGRATE_RESERVE일 경우는 loop을 빠져나간다.
+			 * fallbacks에서 가져온 migratetype이 MIGRATE_RESERVE일 경우는
+			 * 다음 order에서 찾기 위해 loop을 빠져나간다.
 			 **/
 			if (migratetype == MIGRATE_RESERVE)
 				break;
@@ -1546,7 +1651,7 @@ __rmqueue_fallback(struct zone *zone, int order, int start_migratetype)
 			/** 20130928    
 			 * migratetype이 cma가 아니고,
 			 *   current_order가 pageblock_order의 절반 이상이거나 (vexpress는 MAX_ORDER-1)
-			 *   start_migratetype이  MIGRATE_RECLAIMABLE이거나
+			 *   start_migratetype(원래 migratetype)이  MIGRATE_RECLAIMABLE이거나
 			 *   page_group_by_mobility_disabled 이라면 (vexpress에 1기가를 할당한 경우 0)
 			 * 실행
 			 **/
@@ -1555,35 +1660,72 @@ __rmqueue_fallback(struct zone *zone, int order, int start_migratetype)
 			     start_migratetype == MIGRATE_RECLAIMABLE ||
 			     page_group_by_mobility_disabled)) {
 				int pages;
+				/** 20131005    
+				 * page를 pageblock 단위로 start_migratetype이 가리키는
+				 * free_list로 옮기고, 실제 옮겨진 개수를 pages에 저장한다.
+				 **/
 				pages = move_freepages_block(zone, page,
 								start_migratetype);
 
 				/* Claim the whole block if over half of it is free */
+				/** 20131005    
+				 * 옮겨진 page의 수가 1 << (pageblock_order-1) (512) 이상인 경우이거나
+				 * page_group_by_mobility_disabled인 경우
+				 **/
 				if (pages >= (1 << (pageblock_order-1)) ||
 						page_group_by_mobility_disabled)
+					/** 20131005    
+					 * page의 start_migratetype을 새롭게 지정한다.
+					 **/
 					set_pageblock_migratetype(page,
 								start_migratetype);
 
+				/** 20131005    
+				 * page가 start_migratetype가 가리키는 free_list로 옮겨졌으므로
+				 * 이후 migratetype은 start_migratetype으로 한다.
+				 **/
 				migratetype = start_migratetype;
 			}
 
 			/* Remove the page from the freelists */
+			/** 20131005    
+			 * page를 현재 lru가 가리키는 list에서 제거하고,
+			 * buddy 정보와 order 정보를 초기화 한다.
+			 **/
 			list_del(&page->lru);
 			rmv_page_order(page);
 
 			/* Take ownership for orders >= pageblock_order */
+			/** 20131005    
+			 * current_order가 pageblock_order 이상이고,
+			 * migratetype이 CMA가 아니라면 
+			 *   pageblock_order 단위로 옮겨주고 start_migratetype로 변경한다.
+			 **/
 			if (current_order >= pageblock_order &&
 			    !is_migrate_cma(migratetype))
 				change_pageblock_range(page, current_order,
 							start_migratetype);
 
+			/** 20131005    
+			 * current_order(high)에서 order(low)까지 순회하며
+			 * buddy의 free_list의 하위 order의 free list에 추가한다.
+			 *
+			 * migrate가 CMA일 경우 기존의 migratetype에 해당하는 free list에 추가하고,
+			 * CMA가 아닌 경우 start_migratetype에 해당하는 free list에 추가한다.
+			 **/
 			expand(zone, page, order, current_order, area,
 			       is_migrate_cma(migratetype)
 			     ? migratetype : start_migratetype);
 
+			/** 20131005    
+			 * TRACE 관련 함수는 분석하지 않음
+			 **/
 			trace_mm_page_alloc_extfrag(page, order, current_order,
 				start_migratetype, migratetype);
 
+			/** 20131005    
+			 * 가져온 page를 리턴한다.
+			 **/
 			return page;
 		}
 	}
@@ -1595,6 +1737,12 @@ __rmqueue_fallback(struct zone *zone, int order, int start_migratetype)
  * Do the hard work of removing an element from the buddy allocator.
  * Call me with the zone->lock already held.
  */
+/** 20131005    
+ * zone에서 migratetype에 해당하는 free list에서 최하 1<<order만큼의 page를 받아와
+ * 리턴한다.
+ * 첫번째 시도에서 실패했을 경우 __rmqueue_fallback으로 다른 migratetype으로 시도하고,
+ * 다음 시도에서 역시 실패했을 경우 MIGRATE_RESERVE로 변경해서 __rmqueue_smallest를 다시 시도한다.
+ **/
 static struct page *__rmqueue(struct zone *zone, unsigned int order,
 						int migratetype)
 {
@@ -1611,6 +1759,9 @@ retry_reserve:
 	 * page를 가져오는데 실패했고, 요청한 migratetype이 MIGRATE_RESERVE이 아니라면
 	 **/
 	if (unlikely(!page) && migratetype != MIGRATE_RESERVE) {
+		/** 20131005    
+		 * __rmqueue_fallback으로 가져온 page를 저장한다.
+		 **/
 		page = __rmqueue_fallback(zone, order, migratetype);
 
 		/*
@@ -1618,6 +1769,10 @@ retry_reserve:
 		 * is used because __rmqueue_smallest is an inline function
 		 * and we want just one call site
 		 */
+		/** 20131005    
+		 * page를 가져오는데 실패했다면
+		 * migratetype을 MIGRATE_RESERVE로 변경한 뒤 다시 시도한다.
+		 **/
 		if (!page) {
 			migratetype = MIGRATE_RESERVE;
 			goto retry_reserve;
@@ -1636,6 +1791,15 @@ retry_reserve:
  * a single hold of the lock, for efficiency.  Add them to the supplied list.
  * Returns the number of new pages which were placed at *list.
  */
+/** 20131005    
+ * zone에 해당하는 buddy allocator로부터 (1<<order) * count 만큼의 page를 받아온다.
+ * 성공한다면 'list'에 'cold' 여부에 따라 cold/hot으로 추가시킨다.
+ *
+ * page를 받아올 migratetype은 요청되어진 migratetype을 우선하고,
+ * 실패했을 경우 약속된 다른 migratetype에서 받아올 수 있다.
+ * 
+ * buddy에서 빼왔으므로 받아온 page의 private영역에 migratetype을 저장하고 state를 조정한다.
+  **/
 static int rmqueue_bulk(struct zone *zone, unsigned int order,
 			unsigned long count, struct list_head *list,
 			int migratetype, int cold)
@@ -1650,7 +1814,14 @@ static int rmqueue_bulk(struct zone *zone, unsigned int order,
 	 * count 개수(pcp->bulk)만큼 반복한다.
 	 **/
 	for (i = 0; i < count; ++i) {
+		/** 20131005    
+		 * zone에서 migratetype의 free list에서 1 << order 이상의 page를 가져온다.
+		 * (현재 rmqueue_bulk를 호출하는 곳은 buffered_rmqueue이고, 이 때 order는 0)
+		 **/
 		struct page *page = __rmqueue(zone, order, migratetype);
+		/** 20131005    
+		 * __rmqueue가 실패했을 경우 중단.
+		 **/
 		if (unlikely(page == NULL))
 			break;
 
@@ -1663,20 +1834,44 @@ static int rmqueue_bulk(struct zone *zone, unsigned int order,
 		 * merge IO requests if the physical pages are ordered
 		 * properly.
 		 */
+		/** 20131005    
+		 * cold가 아닌 경우 'list'의 앞에 page를 추가한다.
+		 * (rmqueue_bulk를 호출했을 때의 list는 pcp->lists[migratetype]이었고,
+		 *  한 번 수행된 이후에 list가 &page->lru로 변경된다.)
+		 * cold인 경우 'list'의 마지막에 page를 추가한다.
+		 **/
 		if (likely(cold == 0))
 			list_add(&page->lru, list);
 		else
 			list_add_tail(&page->lru, list);
+		/** 20131005    
+		 * CONFIG_CMA이 정의되어 있지 않으므로 false.
+		 **/
 		if (IS_ENABLED(CONFIG_CMA)) {
 			mt = get_pageblock_migratetype(page);
 			if (!is_migrate_cma(mt) && mt != MIGRATE_ISOLATE)
 				mt = migratetype;
 		}
+		/** 20131005    
+		 * pcp로 관리되는 page의 prviate에는 migratetype을 저장한다.
+		 **/
 		set_page_private(page, mt);
+		/** 20131005    
+		 * list의 기준위치를 가져온 page->lru로 다시 설정한다.
+		 **/
 		list = &page->lru;
 	}
+	/** 20131005    
+	 * zone의 NR_FREE_PAGES state를 i<<order개만큼 뺀다.
+	 **/
 	__mod_zone_page_state(zone, NR_FREE_PAGES, -(i << order));
+	/** 20131005    
+	 * spinlock을 푼다.
+	 **/
 	spin_unlock(&zone->lock);
+	/** 20131005    
+	 * i를 리턴
+	 **/
 	return i;
 }
 
@@ -2059,21 +2254,47 @@ again:
 		 * pcp의 list가 비어 있다면
 		 **/
 		if (list_empty(list)) {
+			/** 20131005    
+			 * zone에 해당하는 buddy allocator에서 pcp->batch개 만큼 page를 받아와 list에 추가한다.
+			 * 추가한 개수만큼 pcp->count에 더한다.
+			 *
+			 *  pcp->batch는 setup_pageset() 에서 설정. 
+			 **/
 			pcp->count += rmqueue_bulk(zone, 0,
 					pcp->batch, list,
 					migratetype, cold);
+			/** 20131005    
+			 * 여전히 list가 비어있다면, failed로 이동.
+			 **/
 			if (unlikely(list_empty(list)))
 				goto failed;
 		}
 
+		/** 20131005    
+		 * cold가 주어졌다면 page는 list->prev가 가리키는 page (pcp->lists[migratetype]의 마지막)
+		 * cold가 없다면 page는 list->next가 가리키는 page (pcp->lists[migratetype]의 처음)
+		 **/
 		if (cold)
 			page = list_entry(list->prev, struct page, lru);
 		else
 			page = list_entry(list->next, struct page, lru);
 
+		/** 20131005    
+		 * pcp->lists[migratetype]이 가리키는 list에서 제거.
+		 **/
 		list_del(&page->lru);
+		/** 20131005    
+		 * pcp로 관리되는 page 수를 감소
+		 **/
 		pcp->count--;
 	} else {
+		/** 20131005    
+		 * order가 0이 아닌 경우
+		 **/
+
+		/** 20131005    
+		 * gfp_flags에 __GFP_NOFAIL이 있다면 order가 1보다 크면 WARN.
+		 **/
 		if (unlikely(gfp_flags & __GFP_NOFAIL)) {
 			/*
 			 * __GFP_NOFAIL is not to be used in new code.
@@ -2087,19 +2308,48 @@ again:
 			 */
 			WARN_ON_ONCE(order > 1);
 		}
+		/** 20131005    
+		 * zone의 spinlock을 걸고, 현재 정보를 flags에 저장한다.
+		 **/
 		spin_lock_irqsave(&zone->lock, flags);
+		/** 20131005    
+		 * zone의 migratetype에 해당하는 free list에서 (1<<order)개의 page를 가져온다.
+		 **/
 		page = __rmqueue(zone, order, migratetype);
+		/** 20131005    
+		 * lock만 해제한다.
+		 **/
 		spin_unlock(&zone->lock);
+		/** 20131005    
+		 * page를 받아오지 못했다면 failed로 이동
+		 **/
 		if (!page)
 			goto failed;
+		/** 20131005    
+		 * NR_FREE_PAGES의 state를 감소시킨다.
+		 **/
 		__mod_zone_page_state(zone, NR_FREE_PAGES, -(1 << order));
 	}
 
+	/** 20131005    
+	 * __count_vm_events(PGALLOC_NORMAL - ZONE_NORMAL + ((zone) - (zone)->zone_pgdat->node_zones), 1 << order);
+	 **/
 	__count_zone_vm_events(PGALLOC, zone, 1 << order);
+	/** 20131005    
+	 * NUMA가 아닐 때는 NULL.
+	 **/
 	zone_statistics(preferred_zone, zone, gfp_flags);
+	/** 20131005    
+	 * 저장해둔  irq 복원
+	 **/
 	local_irq_restore(flags);
 
+	/** 20131005    
+	 * DEBUG용 함수
+	 **/
 	VM_BUG_ON(bad_range(zone, page));
+	/** 20131005    
+	 **/
 	if (prep_new_page(page, order, gfp_flags))
 		goto again;
 	return page;

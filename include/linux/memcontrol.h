@@ -380,6 +380,9 @@ static inline void mem_cgroup_replace_page_cache(struct page *oldpage,
 #endif /* CONFIG_MEMCG */
 
 #if !defined(CONFIG_MEMCG) || !defined(CONFIG_DEBUG_VM)
+/** 20131005    
+ * CONFIG_MEMCG 가 정의되어 있지 않아 항상 false.
+ **/
 static inline bool
 mem_cgroup_bad_page_check(struct page *page)
 {

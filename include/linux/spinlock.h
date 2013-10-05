@@ -355,6 +355,9 @@ static inline void spin_lock_irq(spinlock_t *lock)
 	raw_spin_lock_irq(&lock->rlock);
 }
 
+/** 20131005    
+ * irq를 disable 시킨 뒤 spinlock을 건다.
+ **/
 #define spin_lock_irqsave(lock, flags)				\
 do {								\
 	raw_spin_lock_irqsave(spinlock_check(lock), flags);	\

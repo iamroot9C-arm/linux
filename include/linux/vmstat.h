@@ -83,6 +83,9 @@ static inline void vm_events_fold_cpu(int cpu)
 
 #endif /* CONFIG_VM_EVENT_COUNTERS */
 
+/** 20131005    
+ * item##_NORMAL - ZONE_NORMAL + zone_idx(zone)의 의미는 ???
+ **/
 #define __count_zone_vm_events(item, zone, delta) \
 		__count_vm_events(item##_NORMAL - ZONE_NORMAL + \
 		zone_idx(zone), delta)
@@ -188,6 +191,9 @@ extern void zone_statistics(struct zone *, struct zone *, gfp_t gfp);
 #else
 
 #define node_page_state(node, item) global_page_state(item)
+/** 20131005    
+ * NUMA가 아닐 때는 NULL.
+ **/
 #define zone_statistics(_zl, _z, gfp) do { } while (0)
 
 #endif /* CONFIG_NUMA */

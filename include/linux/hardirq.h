@@ -74,6 +74,10 @@
 
 #define hardirq_count()	(preempt_count() & HARDIRQ_MASK)
 #define softirq_count()	(preempt_count() & SOFTIRQ_MASK)
+/** 20131005    
+ * vexpress_defconfig에서
+ * preempt_count는 CONFIG_PREEMPT_COUNT가 정의되지 않아 0을 리턴.
+ **/
 #define irq_count()	(preempt_count() & (HARDIRQ_MASK | SOFTIRQ_MASK \
 				 | NMI_MASK))
 
@@ -85,6 +89,9 @@
  */
 #define in_irq()		(hardirq_count())
 #define in_softirq()		(softirq_count())
+/** 20131005    
+ * 추후 분석 ???
+ **/
 #define in_interrupt()		(irq_count())
 #define in_serving_softirq()	(softirq_count() & SOFTIRQ_OFFSET)
 
