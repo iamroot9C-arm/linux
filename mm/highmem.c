@@ -80,6 +80,21 @@ static DECLARE_WAIT_QUEUE_HEAD(pkmap_map_wait);
  * the disabling of IRQ out of the locking in that case to save on a
  * potential useless overhead.
  */
+/** 20131012
+  1. lock_kmap_any(flags)에 대하여,
+  * ARCH_NEEDS_KMAP_HIGH_GET이 define되어있으면, irq 상태 플래그를 저장한 뒤,disable하고 스핀락을 해준다.
+  * ARCH_NEEDS_KMAP_HIGH_GET이 define되어있지 않으면, 스핀락만 해준다.
+  * vexpress_defconfig에서는 ARCH_NEEDS_KMAP_HIGH_GET이 define된다
+  2. unlock_kmap_any(flags)에 대하여,
+  * ARCH_NEEDS_KMAP_HIGH_GET이 define되어있으면, irq 상태 플래그를 복구한 뒤 스핀락을 해제한다.
+  * ARCH_NEEDS_KMAP_HIGH_GET이 define되어있지 않으면, 스핀락만 해제한다.
+  * vexpress_defconfig에서는 ARCH_NEEDS_KMAP_HIGH_GET이 define된다
+
+#define ARCH_NEEDS_KMAP_HIGH_GET
+#if defined(CONFIG_SMP) && defined(CONFIG_CPU_TLB_V6)
+#undef ARCH_NEEDS_KMAP_HIGH_GET
+
+**/
 #ifdef ARCH_NEEDS_KMAP_HIGH_GET
 #define lock_kmap()             spin_lock_irq(&kmap_lock)
 #define unlock_kmap()           spin_unlock_irq(&kmap_lock)
@@ -246,16 +261,33 @@ EXPORT_SYMBOL(kmap_high);
  *
  * This can be called from any context.
  */
+/** 20131012
+  * high memory에 대해 맵핑되어 있으면 virtual address를 리턴하고,
+  * 그렇지 않으면 NULL을 리턴한다.
+ **/
 void *kmap_high_get(struct page *page)
 {
 	unsigned long vaddr, flags;
-
+  /** 20131012
+   * irq diable하고 spin_lock()함수를 호출한다.
+   **/
 	lock_kmap_any(flags);
+    /** 20131012
+      * page에 대한 virtual address를 가져온다
+     **/
 	vaddr = (unsigned long)page_address(page);
+        /** 20131012
+      * vaddr이 존재할때 PKMAP_NR이 1보다 작으면 BUG_ON을 실행한다.
+      * BUG가 아니면 pkmap_count를 1 증가 시킨다.
+     **/
+
 	if (vaddr) {
 		BUG_ON(pkmap_count[PKMAP_NR(vaddr)] < 1);
 		pkmap_count[PKMAP_NR(vaddr)]++;
 	}
+    /** 20131012
+    * spin_unlock()을 호출하고 irq상태플래그를 복원한다.
+     **/
 	unlock_kmap_any(flags);
 	return (void*) vaddr;
 }
@@ -349,6 +381,13 @@ static struct page_address_slot *page_slot(const struct page *page)
  *
  * Returns the page's virtual address.
  */
+/** 20131012
+* CONFIG_HIGHMEM이 define되어 있을 경우 실행된다.
+* page에 해당하는 해쉬 테이블 슬롯을 가져와서 pas->lh를 순회하며 
+* page_address_map과 page가 같은것을 찾으면 그 page의 virtual address를 리턴한다
+* =>상세한 코드 분석은 생략하고 넘어감 ???
+ **/
+
 void *page_address(const struct page *page)
 {
 	unsigned long flags;

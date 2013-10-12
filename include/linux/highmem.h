@@ -87,6 +87,10 @@ static inline void __kunmap_atomic(void *addr)
 
 DECLARE_PER_CPU(int, __kmap_atomic_idx);
 
+/** 20131012
+  * 현재 cpu에 해당하는 pcp값(__kmap_atomic_idx)에 1을 더하고 
+  * 이전 값을 리턴한다.
+ **/
 static inline int kmap_atomic_idx_push(void)
 {
 	int idx = __this_cpu_inc_return(__kmap_atomic_idx) - 1;

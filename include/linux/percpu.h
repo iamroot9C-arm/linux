@@ -666,12 +666,17 @@ do {									\
 # define __this_cpu_xor(pcp, val)	__pcpu_size_call(__this_cpu_xor_, (pcp), (val))
 #endif
 
+ /** 20131012
+  pcp변수에 val을 더한뒤 pcp를 리턴한다. 
+  **/
 #define __this_cpu_generic_add_return(pcp, val)				\
 ({									\
 	__this_cpu_add(pcp, val);					\
 	__this_cpu_read(pcp);						\
 })
-
+/** 20131012
+  * pcp변수의 타입에 따라 실행되는 함수를 지정한다
+ **/
 #ifndef __this_cpu_add_return
 # ifndef __this_cpu_add_return_1
 #  define __this_cpu_add_return_1(pcp, val)	__this_cpu_generic_add_return(pcp, val)
@@ -689,6 +694,9 @@ do {									\
 	__pcpu_size_call_return2(__this_cpu_add_return_, pcp, val)
 #endif
 
+/** 20131012
+  * 현재 cpu에 해당하는 pcp변수와 val을 더한다.
+ **/
 #define __this_cpu_sub_return(pcp, val)	__this_cpu_add_return(pcp, -(val))
 #define __this_cpu_inc_return(pcp)	__this_cpu_add_return(pcp, 1)
 #define __this_cpu_dec_return(pcp)	__this_cpu_add_return(pcp, -1)

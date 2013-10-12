@@ -42,9 +42,18 @@ void *kmap_atomic(struct page *page)
 	unsigned long vaddr;
 	void *kmap;
 	int type;
-
+/** 20131012
+ * pagefault handler를 disable시킨다.
+ **/
 	pagefault_disable();
+    /** 20131012
+    * CONFIG_HIGHMEM이 define되어있지 않으므로 page_address(page)를 리턴 
+     **/
+
 	if (!PageHighMem(page))
+      /** 20131012
+        * page에 대한 virtual address를 리턴한다.
+       **/
 		return page_address(page);
 
 #ifdef CONFIG_DEBUG_HIGHMEM
@@ -60,7 +69,13 @@ void *kmap_atomic(struct page *page)
 	if (kmap)
 		return kmap;
 
+    /** 20131012
+    * 현재 __kmap_atomic_idx값을 type에 저장하고, 1 증가시킨다. 
+     **/
 	type = kmap_atomic_idx_push();
+    /** 20131019
+      * 다음주 계속 진행...
+     **/
 
 	idx = type + KM_TYPE_NR * smp_processor_id();
 	vaddr = __fix_to_virt(FIX_KMAP_BEGIN + idx);

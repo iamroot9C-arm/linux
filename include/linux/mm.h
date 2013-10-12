@@ -874,6 +874,9 @@ void page_address_init(void);
 #endif
 /** 20130511 
 **/
+/** 20131012
+* HASHED_PAGE_VIRTUAL이 define되어있지 않으므로 lowmem_page_address(page)가 define됨
+ **/
 #if !defined(HASHED_PAGE_VIRTUAL) && !defined(WANT_PAGE_VIRTUAL)
 #define page_address(page) lowmem_page_address(page)
 #define set_page_address(page, address)  do { } while(0)

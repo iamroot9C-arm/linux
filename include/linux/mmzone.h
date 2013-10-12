@@ -900,6 +900,9 @@ static inline int is_normal_idx(enum zone_type idx)
  *              to ZONE_{DMA/NORMAL/HIGHMEM/etc} in general code to a minimum.
  * @zone - pointer to struct zone variable
  */
+/** 20131012
+* zone이 highmem zone인지 아닌지를 판별하는 함수
+ **/
 static inline int is_highmem(struct zone *zone)
 {
 #ifdef CONFIG_HIGHMEM

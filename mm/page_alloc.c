@@ -453,9 +453,11 @@ static inline void prep_zero_page(struct page *page, int order, gfp_t gfp_flags)
 	 * VM_BUG_ON은 선언의 주석을 참고.
 	 **/
 	/** 20131012
-	 * 여기부터...
+	 * in_interrupt()는 0을 리턴.컴파일시에서만 expression검사를 수행한다.
 	 **/
 	VM_BUG_ON((gfp_flags & __GFP_HIGHMEM) && in_interrupt());
+    /** 20131012
+     **/
 	for (i = 0; i < (1 << order); i++)
 		clear_highpage(page + i);
 }

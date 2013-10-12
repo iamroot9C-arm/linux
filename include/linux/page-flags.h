@@ -274,6 +274,9 @@ PAGEFLAG(Readahead, reclaim)		/* Reminder to do async read-ahead */
  * Must use a macro here due to header dependency issues. page_zone() is not
  * available at this point.
  */
+  /** 20131012
+  * __p가 highmem zone이 아니면 0을 리턴한다.
+   **/
 #define PageHighMem(__p) is_highmem(page_zone(__p))
 #else
 PAGEFLAG_FALSE(HighMem)

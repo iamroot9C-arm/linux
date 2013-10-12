@@ -13,8 +13,15 @@
  * no other way to make the pagefault handlers do this. So we do
  * disable preemption but we don't necessarily care about that.
  */
+
+/** 20131012
+* preempt_count의 증가와 pagefault handler disable 과의 관계 ???
+ **/
 static inline void pagefault_disable(void)
 {
+    /** 20131012
+    * 커널 스택의 current_thread_info()->preempt_count를 +1증가시킨다.
+   **/
 	inc_preempt_count();
 	/*
 	 * make sure to have issued the store before a pagefault
