@@ -17,6 +17,10 @@
 /** 20131012
 * preempt_count의 증가와 pagefault handler disable 과의 관계 ???
  **/
+/** 20131019
+  preemp_count가 0이 아니면 선점불가.
+ **/
+
 static inline void pagefault_disable(void)
 {
     /** 20131012

@@ -178,6 +178,9 @@ extern pgd_t swapper_pg_dir[PTRS_PER_PGD];
 #define pgd_offset(mm, addr)	((mm)->pgd + pgd_index(addr))
 
 /* to find an entry in a kernel page-table-directory */
+/** 20131019
+ * mm이 가리키는 pgd에서 index만큼을 더한 주소를 리턴한다.
+ **/
 #define pgd_offset_k(addr)	pgd_offset(&init_mm, addr)
 
 /** 20130330    
@@ -197,7 +200,7 @@ static inline pte_t *pmd_page_vaddr(pmd_t pmd)
 	/** 20130309    
 	 * pmd_val를 mask한 값을 취한다.
 	 *   PHYS_MASK 0xffffffff
-	 *   PAGE_MASK 0xffff0000
+	 *   PAGE_MASK 0xfffff000
 	 * pte를 할당할 때 PAGE_SIZE 단위로 align된 주소를 받아왔으므로
 	 *   PAGE_MASK를 씌워도 pte 주소값이 손상되지 않음
 	 *   (PTE_HWTABLE_OFF + PTE_HWTABLE_SIZE)
@@ -222,10 +225,12 @@ static inline pte_t *pmd_page_vaddr(pmd_t pmd)
 
 /** 20130309    
  * addr에 대한 해당 pte entry 주소를 리턴
- *   pmd_page_vaddr(*(pmd) : pte table의 주소
+ *   pmd_page_vaddr(*(pmd)) : 해당 pmd가 가리키는 pte table의 주소를 추출
  *   pte_index             : pte table에서의 index
  **/
-
+/** 20131019
+* 해당 pmd에서 index(addr를 변환)에 해당되는 pte주소를 추출
+ **/
 #define pte_offset_kernel(pmd,addr)	(pmd_page_vaddr(*(pmd)) + pte_index(addr))
 
 #define pte_offset_map(pmd,addr)	(__pte_map(pmd) + pte_index(addr))
@@ -241,6 +246,9 @@ static inline pte_t *pmd_page_vaddr(pmd_t pmd)
 #define pfn_pte(pfn,prot)	__pte(__pfn_to_phys(pfn) | pgprot_val(prot))
 
 #define pte_page(pte)		pfn_to_page(pte_pfn(pte))
+/** 20131019
+* page를 pfn으로 변환 후, prot과 OR하여 얻어진 값으로 pte 데이터를 구하고 리턴함
+ **/
 #define mk_pte(page,prot)	pfn_pte(page_to_pfn(page), prot)
 
 #define pte_clear(mm,addr,ptep)	set_pte_ext(ptep, __pte(0), 0)

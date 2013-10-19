@@ -47,6 +47,9 @@ static inline pte_t get_top_pte(unsigned long va)
 /** 20130216
  * 해당 pmd entry의 주소. (2 level 사용시에는 pgd=pmd)
  **/
+/** 20131019
+* virt가 pgd, pud, pmd를 거치는 과정에서 변환되는 pmd entry의 주소를 리턴
+ **/
 static inline pmd_t *pmd_off_k(unsigned long virt)
 {
 	/** 20130216

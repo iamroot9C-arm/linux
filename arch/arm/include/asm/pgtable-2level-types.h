@@ -53,6 +53,9 @@ typedef pmdval_t pmd_t;
 typedef pmdval_t pgd_t[2];
 typedef pteval_t pgprot_t;
 
+/** 20131019
+* STRICT_MM_TYPECHECKS가 undefine되어 있으므로 else를 실행한다.
+ **/
 #define pte_val(x)      (x)
 #define pmd_val(x)      (x)
 #define pgd_val(x)	((x)[0])

@@ -76,6 +76,10 @@
 #define PTRS_PER_PMD		1
 #define PTRS_PER_PGD		2048
 
+/** 20131019
+* PTE_HWTABLE_OFF : 512 x 4 = 2KB
+* PTE_HWTABLE_SIZE : 512 x 4 = 2KB
+ **/
 #define PTE_HWTABLE_PTRS	(PTRS_PER_PTE)
 #define PTE_HWTABLE_OFF		(PTE_HWTABLE_PTRS * sizeof(pte_t))
 #define PTE_HWTABLE_SIZE	(PTRS_PER_PTE * sizeof(u32))
@@ -159,6 +163,11 @@
 #define pud_present(pud)	(1)
 #define pud_clear(pudp)		do { } while (0)
 #define set_pud(pud,pudp)	do { } while (0)
+
+
+/** 20131019
+* pud를 pmd_t * 타입으로 캐스팅하여 리턴함
+**/
 
 static inline pmd_t *pmd_offset(pud_t *pud, unsigned long addr)
 {

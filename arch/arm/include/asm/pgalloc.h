@@ -129,6 +129,11 @@ static inline void pte_free(struct mm_struct *mm, pgtable_t pte)
 /** 20130309    
  * pmd에 pte 주소를 포함한 value를 채운다.
  **/
+/** 20131019
+  * LPAE가 아닐경우 pmdp[0],pmdp[1]에 pte table 각각의 시작주소와 
+  * prot속성으로 엔트리를 채운다.
+ **/
+
 static inline void __pmd_populate(pmd_t *pmdp, phys_addr_t pte,
 				  pmdval_t prot)
 {

@@ -20,6 +20,9 @@
 #define FIX_KMAP_BEGIN		0
 #define FIX_KMAP_END		(FIXADDR_SIZE >> PAGE_SHIFT)
 
+/** 20131019
+* FIXADDR_START로부터 4KB씩 FIXMAP에 맵핑한다.
+ **/
 #define __fix_to_virt(x)	(FIXADDR_START + ((x) << PAGE_SHIFT))
 #define __virt_to_fix(x)	(((x) - FIXADDR_START) >> PAGE_SHIFT)
 

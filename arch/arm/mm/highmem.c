@@ -74,10 +74,32 @@ void *kmap_atomic(struct page *page)
      **/
 	type = kmap_atomic_idx_push();
     /** 20131019
-      * 다음주 계속 진행...
-     **/
+    idx               smp_id_processor
+    0    +-------------+       0
+    1    |     type 0  |                   
+    2    |     type 1  |
+    .    |     ......  |
+    15   |     type 15 |
+    16   +-------------+       1
+    .    |     type 0  |                 
+    .    |     type 1  |
+    .    |     ......  |
+    .    |     type 15 |
+    .    +-------------+       2
+    .    |     type 0  |               
+    .    |     type 1  |
+    .    |     ......  |
+    .    |     type 15 |
+    .    +-------------+       ...
+    .    |     type 0  |             
+    .    |     type 1  |
+              ......
 
+     **/
 	idx = type + KM_TYPE_NR * smp_processor_id();
+    /** 20131019
+        idx를 통해서 가상주소를 얻어온다.
+     **/
 	vaddr = __fix_to_virt(FIX_KMAP_BEGIN + idx);
 #ifdef CONFIG_DEBUG_HIGHMEM
 	/*
@@ -91,7 +113,14 @@ void *kmap_atomic(struct page *page)
 	 * in place, so the contained TLB flush ensures the TLB is updated
 	 * with the new mapping.
 	 */
+    /** 20131019
+    * top_pmd에서 vaddr에 대한 pte entry의 위치를 구하고, 
+    * mk_pte로 pte값을 생성해서 넣어준다.
+     **/
 	set_top_pte(vaddr, mk_pte(page, kmap_prot));
+  /** 20131026
+      다음주 진행예정
+**/
 
 	return (void *)vaddr;
 }

@@ -44,6 +44,11 @@ EXPORT_SYMBOL(empty_zero_page);
 /*
  * The pmd table for the upper-most set of pages.
  */
+/** 20131019
+* high vector table의 시작 주소에 대한 변환 값을 가지고 있는 pmd entry의 주소
+* paging_init에서 참조
+**/
+
 pmd_t *top_pmd;
 
 #define CPOLICY_UNCACHED	0
@@ -712,8 +717,16 @@ static pte_t * __init early_pte_alloc(pmd_t *pmd, unsigned long addr, unsigned l
  	* +--------+ +8    |  h/w pt 1  |
  	* |        |       +------------+ +4096
  	*
-	**/	
+	**/
+      /** 20131019
+      * PTE_HWTABLE_OFF : 2KB
+      * PTE_HWTABLE_SIZE : 2KB
+      * memblock에서 4KB크기의 메모리를 받아온다.
+       **/
 		pte_t *pte = early_alloc(PTE_HWTABLE_OFF + PTE_HWTABLE_SIZE);
+  /** 20131019
+      pte 물리 주소 정보와 pmd의 prot 속성을 pmd 엔트리에 저장한다.
+   **/
 		__pmd_populate(pmd, __pa(pte), prot);
 	}
 	/** 20130309    
@@ -723,6 +736,10 @@ static pte_t * __init early_pte_alloc(pmd_t *pmd, unsigned long addr, unsigned l
 	/** 20130309    
 	 * alloc한 pte에서 addr에 해당하는 pte entry의 주소를 리턴
 	 **/
+    /** 20131019
+      pmd가리키고 있는 pte 테이블에서 addr에 해당되는 
+      pte엔트리의 시작주소를 리턴한다.
+     **/
 	return pte_offset_kernel(pmd, addr);
 }
 
