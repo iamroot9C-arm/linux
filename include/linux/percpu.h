@@ -614,6 +614,9 @@ do {									\
 # define __this_cpu_inc(pcp)		__this_cpu_add((pcp), 1)
 #endif
 
+/** 20131026    
+ * percpu 변수에서 1을 감소시킨다.
+ **/
 #ifndef __this_cpu_dec
 # define __this_cpu_dec(pcp)		__this_cpu_sub((pcp), 1)
 #endif

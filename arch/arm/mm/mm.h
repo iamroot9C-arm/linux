@@ -18,7 +18,7 @@ extern pmd_t *top_pmd;
 
 /** 20130518    
  * va에 해당하는 top_pte 주소에 pte를 써주고,
- * tlb flush 하는 함수
+ * va에 해당하는 tlb를 flush 하는 함수
  **/
 static inline void set_top_pte(unsigned long va, pte_t pte)
 {

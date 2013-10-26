@@ -20,7 +20,6 @@
 /** 20131019
   preemp_count가 0이 아니면 선점불가.
  **/
-
 static inline void pagefault_disable(void)
 {
     /** 20131012
@@ -31,6 +30,9 @@ static inline void pagefault_disable(void)
 	 * make sure to have issued the store before a pagefault
 	 * can hit.
 	 */
+	/** 20131026    
+	 * pagefault 가 먼저 발생하지 않도록 barrier를 세운다.
+	 **/
 	barrier();
 }
 

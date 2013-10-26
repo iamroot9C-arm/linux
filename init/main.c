@@ -600,6 +600,9 @@ asmlinkage void __init start_kernel(void)
     /** 20121208
     vexpress에서는 NULL함수임
      **/
+	/** 20131026    
+	 * CONFIG_HIGHMEM인 경우 호출됨
+	 **/
 	page_address_init();
 
 	printk(KERN_NOTICE "%s", linux_banner);

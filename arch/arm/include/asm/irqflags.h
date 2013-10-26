@@ -38,6 +38,10 @@ static inline void arch_local_irq_enable(void)
 		: "memory", "cc");
 }
 
+/** 20131026    
+ * local cpu에서 interrupt disable.
+ * 이전 상태를 리턴하지 않는다.
+ **/
 static inline void arch_local_irq_disable(void)
 {
 	asm volatile(

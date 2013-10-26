@@ -139,6 +139,10 @@ static inline int up_smp_call_function(smp_call_func_t func, void *info)
 }
 #define smp_call_function(func, info, wait) \
 			(up_smp_call_function(func, info))
+/** 20131026    
+ * local irq disable, enable을 해주는 이유는???
+ * func 함수를 실행하는 매크로
+ **/
 #define on_each_cpu(func,info,wait)		\
 	({					\
 		local_irq_disable();		\

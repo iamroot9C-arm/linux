@@ -120,6 +120,9 @@ struct cpu_cache_fns {
 
 extern struct cpu_cache_fns cpu_cache;
 
+/** 20131026    
+ * v7 architecture의 경우 cache-v7.S의 v7_XXXXX 가 호출된다.
+ **/
 #define __cpuc_flush_icache_all		cpu_cache.flush_icache_all
 #define __cpuc_flush_kern_all		cpu_cache.flush_kern_all
 #define __cpuc_flush_user_all		cpu_cache.flush_user_all
@@ -207,6 +210,9 @@ static inline void __flush_icache_all(void)
 	__flush_icache_preferred();
 }
 
+/** 20131026    
+ * cache flush 인터페이스 함수.
+ **/
 #define flush_cache_all()		__cpuc_flush_kern_all()
 
 static inline void vivt_flush_cache_mm(struct mm_struct *mm)

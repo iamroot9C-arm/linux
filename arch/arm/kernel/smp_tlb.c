@@ -116,9 +116,19 @@ void flush_tlb_range(struct vm_area_struct *vma,
 		local_flush_tlb_range(vma, start, end);
 }
 
+/** 20131026    
+ * CONFIG_SMP일 경우
+ **/
 void flush_tlb_kernel_range(unsigned long start, unsigned long end)
 {
+	/** 20131026    
+	 * tlb operation이 broadcast되어야 하는 경우
+	 **/
 	if (tlb_ops_need_broadcast()) {
+		/** 20131026    
+		 * tlb_args 구조체를 채운다.
+		 * kernel range이므로 vm_area_struct는 채우지 않는다.
+		 **/
 		struct tlb_args ta;
 		ta.ta_start = start;
 		ta.ta_end = end;

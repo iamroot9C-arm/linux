@@ -17,6 +17,9 @@
 #include <asm/types.h>
 
 /* 2^31 + 2^29 - 2^25 + 2^22 - 2^19 - 2^16 + 1 */
+/** 20131026    
+ * hash golden ration
+ **/
 #define GOLDEN_RATIO_PRIME_32 0x9e370001UL
 /*  2^63 + 2^61 - 2^57 + 2^54 - 2^51 - 2^18 + 1 */
 #define GOLDEN_RATIO_PRIME_64 0x9e37fffffffc0001UL
@@ -54,9 +57,15 @@ static inline u64 hash_64(u64 val, unsigned int bits)
 	return hash >> (64 - bits);
 }
 
+/** 20131026    
+ * 주어진 값과 bits를 이용해 hash table의 index를 가져온다.
+ **/
 static inline u32 hash_32(u32 val, unsigned int bits)
 {
 	/* On some cpus multiply is faster, on others gcc will do shifts */
+	/** 20131026    
+	 * hash 값을 구해온다.
+	 **/
 	u32 hash = val * GOLDEN_RATIO_PRIME_32;
 
 	/* High bits are more random, so use them. */

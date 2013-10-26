@@ -153,7 +153,13 @@ unsigned long __lockfunc _raw_spin_lock_irqsave(raw_spinlock_t *lock)
 EXPORT_SYMBOL(_raw_spin_lock_irqsave);
 #endif
 
+/** 20131026    
+ * CONFIG_INLINE_SPIN_LOCK_IRQ 는 선언되어 있지 않음.
+ **/
 #ifndef CONFIG_INLINE_SPIN_LOCK_IRQ
+/** 20131026    
+ * irq disable 상태에서 spinlock을 획득하는 함수
+ **/
 void __lockfunc _raw_spin_lock_irq(raw_spinlock_t *lock)
 {
 	__raw_spin_lock_irq(lock);

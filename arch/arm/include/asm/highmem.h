@@ -5,8 +5,13 @@
 
 /** 20131012
 * L2 Page Table의 Base 주소
+*
+* memory layout은 Documentation/arm/memory.txt 참고
  **/
 #define PKMAP_BASE		(PAGE_OFFSET - PMD_SIZE)
+/** 20131026    
+ * LAST_PKMAP은 PTRS_PER_PTE (512)
+ **/
 #define LAST_PKMAP		PTRS_PER_PTE
 #define LAST_PKMAP_MASK		(LAST_PKMAP - 1)
 /** 20131012
@@ -17,6 +22,10 @@
 
 #define kmap_prot		PAGE_KERNEL
 
+/** 20131026    
+ * cache type이 vivt인 경우 flush_cache_all.
+ * vipt인 경우는???
+ **/
 #define flush_cache_kmaps() \
 	do { \
 		if (cache_is_vivt()) \

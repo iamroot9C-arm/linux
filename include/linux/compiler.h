@@ -24,6 +24,9 @@
 extern void __chk_user_ptr(const volatile void __user *);
 extern void __chk_io_ptr(const volatile void __iomem *);
 #else
+/** 20131026    
+ * __CHECKER__가 아닌 경우 관련 attribute를 선언하지 않는다.
+ **/
 # define __user
 # define __kernel
 # define __safe

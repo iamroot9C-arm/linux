@@ -245,12 +245,18 @@ static inline pte_t *pmd_page_vaddr(pmd_t pmd)
  **/
 #define pfn_pte(pfn,prot)	__pte(__pfn_to_phys(pfn) | pgprot_val(prot))
 
+/** 20131026    
+ * pte -> pfn -> page로 struct page *를 가져온다.
+ **/
 #define pte_page(pte)		pfn_to_page(pte_pfn(pte))
 /** 20131019
 * page를 pfn으로 변환 후, prot과 OR하여 얻어진 값으로 pte 데이터를 구하고 리턴함
  **/
 #define mk_pte(page,prot)	pfn_pte(page_to_pfn(page), prot)
 
+/** 20131026    
+ * pte entry를 주소 0, 속성 0으로 채워 clear 시킨다.
+ **/
 #define pte_clear(mm,addr,ptep)	set_pte_ext(ptep, __pte(0), 0)
 
 #if __LINUX_ARM_ARCH__ < 6
@@ -272,6 +278,9 @@ static inline void set_pte_at(struct mm_struct *mm, unsigned long addr,
 	}
 }
 
+/** 20131026    
+ * pte_val이 0인 경우 pte_none이다.
+ **/
 #define pte_none(pte)		(!pte_val(pte))
 #define pte_present(pte)	(pte_val(pte) & L_PTE_PRESENT)
 #define pte_write(pte)		(!(pte_val(pte) & L_PTE_RDONLY))

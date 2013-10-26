@@ -1620,6 +1620,9 @@ static void __init kmap_init(void)
 	 * pmd_off_k(PKMAP_BASE)
 	 *	-> PAGE_OFFSET - PMD_SIZE (0x80000000 - 0x200000)에 대한 pmd entry의 주소
 	 **/
+	/** 20131026    
+	 * PKMAP_BASE 영역에 해당하는 pmd entry에, pte table을 생성해 주소를 지정한다.
+	 **/
 	pkmap_page_table = early_pte_alloc(pmd_off_k(PKMAP_BASE),
 		PKMAP_BASE, _PAGE_KERNEL_TABLE);
 #endif

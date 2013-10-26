@@ -59,6 +59,9 @@
 /*
  * Wrap the arch provided IRQ routines to provide appropriate checks.
  */
+/** 20131026    
+ * local irq를 disable. 이전 상태는 리턴하지 않음.
+ **/
 #define raw_local_irq_disable()		arch_local_irq_disable()
 #define raw_local_irq_enable()		arch_local_irq_enable()
 /** 20121124
@@ -105,6 +108,9 @@
  * if !TRACE_IRQFLAGS.
  */
 #ifdef CONFIG_TRACE_IRQFLAGS_SUPPORT
+/** 20131026    
+ * local irq 정의되어 있음
+ **/
 #define local_irq_enable() \
 	do { trace_hardirqs_on(); raw_local_irq_enable(); } while (0)
 #define local_irq_disable() \

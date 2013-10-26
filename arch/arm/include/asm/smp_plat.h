@@ -29,11 +29,31 @@ static inline bool is_smp(void)
 }
 
 /* all SMP configurations have the extended CPUID registers */
+/** 20131026    
+ * tlb operation이 broadcast되어야 하는 경우인지 조회해 리턴.
+ **/
 static inline int tlb_ops_need_broadcast(void)
 {
+	/** 20131026    
+	 * smp가 아닐 경우 바로 return.
+	 **/
 	if (!is_smp())
 		return 0;
 
+	/** 20131026    
+	 * ARM B4.1.92
+	 * ID_MMFR3, Memory Model Feature Register 3, VMSA
+	 *
+	 * Indicates whether Cache, TLB and branch predictor operations are broadcast. Permitted values are:
+	 * 0b0000 Cache, TLB and branch predictor operations only affect local structures.
+	 * 0b0001 Cache and branch predictor operations affect structures according to shareability and defined behavior of instructions. TLB operations only affect local structures.
+	 * 0b0010 Cache, TLB and branch predictor operations affect structures according to shareability and defined behavior of instructions.
+	 *
+	 *
+	 * Maintenance broadcast 필드의 값이 2보다 작은 경우,
+	 * 즉 TLB operation이 local structure에 영향을 미치는 경우 true 리턴.
+	 * local structure ???
+	 **/
 	return ((read_cpuid_ext(CPUID_EXT_MMFR3) >> 12) & 0xf) < 2;
 }
 

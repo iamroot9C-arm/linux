@@ -13,6 +13,10 @@
  * 0xfffe0000 and 0xfffeffff.
  */
 
+/** 20131026    
+ * FIXADDR memory layout은 다음 document 참고.
+ * Documentation/arm/memory.txt
+ **/
 #define FIXADDR_START		0xfff00000UL
 #define FIXADDR_TOP		0xfffe0000UL
 #define FIXADDR_SIZE		(FIXADDR_TOP - FIXADDR_START)
@@ -21,7 +25,7 @@
 #define FIX_KMAP_END		(FIXADDR_SIZE >> PAGE_SHIFT)
 
 /** 20131019
-* FIXADDR_START로부터 4KB씩 FIXMAP에 맵핑한다.
+ * FIXADDR_START로부터 page size씩 FIXMAP에 맵핑한다.
  **/
 #define __fix_to_virt(x)	(FIXADDR_START + ((x) << PAGE_SHIFT))
 #define __virt_to_fix(x)	(((x) - FIXADDR_START) >> PAGE_SHIFT)

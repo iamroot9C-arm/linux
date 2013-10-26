@@ -239,6 +239,8 @@ static inline void do_raw_spin_unlock(raw_spinlock_t *lock) __releases(lock)
 
 #endif
 
+/** 20131026    
+ **/
 #define raw_spin_lock_irq(lock)		_raw_spin_lock_irq(lock)
 #define raw_spin_lock_bh(lock)		_raw_spin_lock_bh(lock)
 /** 20130713    
@@ -350,6 +352,10 @@ do {									\
 	raw_spin_lock_nest_lock(spinlock_check(lock), nest_lock);	\
 } while (0)
 
+/** 20131026    
+ * irq disable 시킨 뒤, spinlock을 거는 함수.
+ * irq 상태는 저장하지 않는다.
+ **/
 static inline void spin_lock_irq(spinlock_t *lock)
 {
 	raw_spin_lock_irq(&lock->rlock);

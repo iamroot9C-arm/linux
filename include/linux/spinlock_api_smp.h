@@ -145,11 +145,26 @@ static inline unsigned long __raw_spin_lock_irqsave(raw_spinlock_t *lock)
 	return flags;
 }
 
+/** 20131026    
+ * irq disable, preempt_disable 호출 후 spinlock을 획득하는 함수
+ **/
 static inline void __raw_spin_lock_irq(raw_spinlock_t *lock)
 {
+	/** 20131026    
+	 * local irq disable. 이전 상태는 별도로 저장하지 않는다.
+	 **/
 	local_irq_disable();
+	/** 20131026    
+	 * 선점 불가.
+	 **/
 	preempt_disable();
+	/** 20131026    
+	 * vexpress에서 NULL함수
+	 **/
 	spin_acquire(&lock->dep_map, 0, 0, _RET_IP_);
+	/** 20131026    
+	 *do_raw_spin_lock을 호출해 lock을 획득.
+	 **/
 	LOCK_CONTENDED(lock, do_raw_spin_trylock, do_raw_spin_lock);
 }
 

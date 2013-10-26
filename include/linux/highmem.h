@@ -102,11 +102,18 @@ static inline int kmap_atomic_idx_push(void)
 	return idx;
 }
 
+/** 20131026    
+ * 현재 cpu에 해당하는 pcp값 (__kmap_atomic_idx)을 가져와 -1을 해 리턴한다.
+ * 마지막에 kmap_atomic_idx_push 한 idx를 리턴하는 셈이다.
+ **/
 static inline int kmap_atomic_idx(void)
 {
 	return __this_cpu_read(__kmap_atomic_idx) - 1;
 }
 
+/** 20131026    
+ * 현재 cpu에 해당하는 pcp값 (__kmap_atomic_idx)을 -1 한다.
+ **/
 static inline void kmap_atomic_idx_pop(void)
 {
 #ifdef CONFIG_DEBUG_HIGHMEM
@@ -124,6 +131,11 @@ static inline void kmap_atomic_idx_pop(void)
  * Prevent people trying to call kunmap_atomic() as if it were kunmap()
  * kunmap_atomic() should get the return value of kmap_atomic, not the page.
  */
+/** 20131026    
+ * kunmap_atomic()은 kmap_atomic()이 리턴한 VA로 호출해야 한다.
+ * kunmap()처럼 struct page *로 호출한 경우에 BUILD_BUG를 생성하는 함수.
+ * 그렇지 않은 경우 __kunmap_atomic()을 호출한다.
+ **/
 #define kunmap_atomic(addr)                                     \
 do {                                                            \
 	BUILD_BUG_ON(__same_type((addr), struct page *));       \
@@ -188,7 +200,13 @@ alloc_zeroed_user_highpage_movable(struct vm_area_struct *vma,
 
 static inline void clear_highpage(struct page *page)
 {
+	/** 20131026    
+	 * page에 대한 VA를 받아 온다.
+	 **/
 	void *kaddr = kmap_atomic(page);
+	/** 20131026    
+	 * page를 0으로 memset 한다.
+	 **/
 	clear_page(kaddr);
 	kunmap_atomic(kaddr);
 }

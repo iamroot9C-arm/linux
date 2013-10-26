@@ -854,6 +854,10 @@ static __always_inline void *lowmem_page_address(const struct page *page)
 	return __va(PFN_PHYS(page_to_pfn(page)));
 }
 
+/** 20131026    
+ * CONFIG_HIGHMEM이고 !WANT_PAGE_VIRTUAL인 경우
+ * HASHED_PAGE_VIRTUAL 선언됨.
+ **/
 #if defined(CONFIG_HIGHMEM) && !defined(WANT_PAGE_VIRTUAL)
 #define HASHED_PAGE_VIRTUAL
 #endif
@@ -867,6 +871,9 @@ static __always_inline void *lowmem_page_address(const struct page *page)
 #define page_address_init()  do { } while(0)
 #endif
 
+/** 20131026    
+ * CONFIG_HIGHMEM이 선언되어 있다고 가정한 경우 해당됨
+ **/
 #if defined(HASHED_PAGE_VIRTUAL)
 void *page_address(const struct page *page);
 void set_page_address(struct page *page, void *virtual);
@@ -875,7 +882,8 @@ void page_address_init(void);
 /** 20130511 
 **/
 /** 20131012
-* HASHED_PAGE_VIRTUAL이 define되어있지 않으므로 lowmem_page_address(page)가 define됨
+ * CONFIG_HIGHMEM 꺼져있는 경우 
+ * HASHED_PAGE_VIRTUAL이 define되어있지 않으므로 lowmem_page_address(page)가 define됨
  **/
 #if !defined(HASHED_PAGE_VIRTUAL) && !defined(WANT_PAGE_VIRTUAL)
 #define page_address(page) lowmem_page_address(page)
