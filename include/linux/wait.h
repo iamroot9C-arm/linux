@@ -58,18 +58,30 @@ struct task_struct;
  * Macros for declaration and initialisaton of the datatypes
  */
 
+/** 20131102    
+ * struct __wait_queue 초기화
+ **/
 #define __WAITQUEUE_INITIALIZER(name, tsk) {				\
 	.private	= tsk,						\
 	.func		= default_wake_function,			\
 	.task_list	= { NULL, NULL } }
 
+/** 20131102    
+ * wait_queue를 생성
+ **/
 #define DECLARE_WAITQUEUE(name, tsk)					\
 	wait_queue_t name = __WAITQUEUE_INITIALIZER(name, tsk)
 
+/** 20131102    
+ * WAIT QUEUE HEAD 초기화값.
+ **/
 #define __WAIT_QUEUE_HEAD_INITIALIZER(name) {				\
 	.lock		= __SPIN_LOCK_UNLOCKED(name.lock),		\
 	.task_list	= { &(name).task_list, &(name).task_list } }
 
+/** 20131102    
+ * wait queue head를 초기화와 함께 선언.
+ **/
 #define DECLARE_WAIT_QUEUE_HEAD(name) \
 	wait_queue_head_t name = __WAIT_QUEUE_HEAD_INITIALIZER(name)
 
@@ -149,9 +161,15 @@ static inline void __add_wait_queue_tail_exclusive(wait_queue_head_t *q,
 	__add_wait_queue_tail(q, wait);
 }
 
+/** 20131102    
+ * wait queue에서 old라는 wait queue를 제거한다.
+ **/
 static inline void __remove_wait_queue(wait_queue_head_t *head,
 							wait_queue_t *old)
 {
+	/** 20131102    
+	 * old->task_list를 list에서 제거함
+	 **/
 	list_del(&old->task_list);
 }
 

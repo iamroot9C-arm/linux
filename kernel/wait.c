@@ -35,7 +35,14 @@ void add_wait_queue(wait_queue_head_t *q, wait_queue_t *wait)
 {
 	unsigned long flags;
 
+	/** 20131102    
+	 * 전달된 wait queue의 flags에서 WQ_FLAG_EXCLUSIVE를 제거.
+	 * exclusive한 버전은 add_wait_queue_exclusive
+	 **/
 	wait->flags &= ~WQ_FLAG_EXCLUSIVE;
+	/** 20131102    
+	 * spinlock으로 wait queue head에 대한 동기화를 보장.
+	 **/
 	spin_lock_irqsave(&q->lock, flags);
 	__add_wait_queue(q, wait);
 	spin_unlock_irqrestore(&q->lock, flags);
@@ -53,10 +60,18 @@ void add_wait_queue_exclusive(wait_queue_head_t *q, wait_queue_t *wait)
 }
 EXPORT_SYMBOL(add_wait_queue_exclusive);
 
+/** 20131102    
+ * wait queue entry 하나를 wait queue head가 가리키는 list에서 제거한다.
+ * 즉, wait queue를 벗어난다.
+ **/
 void remove_wait_queue(wait_queue_head_t *q, wait_queue_t *wait)
 {
 	unsigned long flags;
 
+	/** 20131102    
+	 * wait queue head에 대한 동기화 구간 안에서
+	 * wait을 wait queue list에서 제거한다.
+	 **/
 	spin_lock_irqsave(&q->lock, flags);
 	__remove_wait_queue(q, wait);
 	spin_unlock_irqrestore(&q->lock, flags);

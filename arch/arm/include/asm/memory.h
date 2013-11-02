@@ -36,6 +36,10 @@
  * TASK_UNMAPPED_BASE - the lower boundary of the mmap VM area
  */
 #define PAGE_OFFSET		UL(CONFIG_PAGE_OFFSET)
+/** 20131102    
+ * TASK_SIZE는 user space mapping 주소 다음 위치.
+ * Documentation/arm/memory.txt 를 참고
+ **/
 #define TASK_SIZE		(UL(CONFIG_PAGE_OFFSET) - UL(0x01000000))
 #define TASK_UNMAPPED_BASE	(UL(CONFIG_PAGE_OFFSET) / 3)
 

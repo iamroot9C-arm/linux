@@ -18,6 +18,9 @@
 * L2 Page Table의 인덱스를 구한다.
  **/
 #define PKMAP_NR(virt)		(((virt) - PKMAP_BASE) >> PAGE_SHIFT)
+/** 20131102    
+ * PKMAP_BASE에 PAGE_SHIFT만큼 index를 이동시켜 virtual address 주소를 받아온다.
+ **/
 #define PKMAP_ADDR(nr)		(PKMAP_BASE + ((nr) << PAGE_SHIFT))
 
 #define kmap_prot		PAGE_KERNEL

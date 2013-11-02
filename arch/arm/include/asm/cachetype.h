@@ -13,6 +13,10 @@ extern unsigned int cacheid;
 
 #define cache_is_vivt()			cacheid_is(CACHEID_VIVT)
 #define cache_is_vipt()			cacheid_is(CACHEID_VIPT)
+/** 20131102    
+ * cache type이 vipt_nonaliasing인지 검사.
+ * cacheid_init에서 CACHEID_VIPT_NONALIASING으로 설정
+ **/
 #define cache_is_vipt_nonaliasing()	cacheid_is(CACHEID_VIPT_NONALIASING)
 /** 20130511
 vexpress에서는 cache_is_vipt_aliasing은 0

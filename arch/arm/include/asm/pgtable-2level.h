@@ -126,6 +126,14 @@
  * The PTE table pointer refers to the hardware entries; the "Linux"
  * entries are stored 1024 bytes below.
  */
+/** 20131102    
+ * struct mem_type을 보면
+ * L_PTE_PRESENT
+ *   항상 매핑되어 있는 vector table, memory, 매핑된 kernel 또는 user entry 등
+ *
+ * L_PTE_USER
+ *   
+ **/
 #define L_PTE_PRESENT		(_AT(pteval_t, 1) << 0)
 #define L_PTE_YOUNG		(_AT(pteval_t, 1) << 1)
 #define L_PTE_FILE		(_AT(pteval_t, 1) << 2)	/* only when !PRESENT */

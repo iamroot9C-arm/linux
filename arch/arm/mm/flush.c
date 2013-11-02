@@ -252,6 +252,9 @@ static void __flush_dcache_aliases(struct address_space *mapping, struct page *p
 	flush_dcache_mmap_unlock(mapping);
 }
 
+/** 20131102    
+ * __LINUX_ARM_ARCH__ 가 7이므로 이 함수 호출.
+ **/
 #if __LINUX_ARM_ARCH__ >= 6
 void __sync_icache_dcache(pte_t pteval)
 {
@@ -259,16 +262,40 @@ void __sync_icache_dcache(pte_t pteval)
 	struct page *page;
 	struct address_space *mapping;
 
+	/** 20131102    
+	 * L_PTE_PRESENT와 L_PTE_USER 속성이 모두 지정되어 있는 않은 경우
+	 * 바로 리턴.
+	 **/
 	if (!pte_present_user(pteval))
 		return;
+	/** 20131102    
+	 * vipt_nonaliasing이면서 실행할 수 없는 address range인 경우 바로 리턴.
+	 * (실행할 수 없는 instruction인 경우) 왜 ???
+	 **/
 	if (cache_is_vipt_nonaliasing() && !pte_exec(pteval))
 		/* only flush non-aliasing VIPT caches for exec mappings */
 		return;
+	/** 20131102    
+	 * pteval에서 주소에 해당하는 부분을 추출해 pfn을 구한다.
+	 **/
 	pfn = pte_pfn(pteval);
+	/** 20131102    
+	 * 물리 메모리 내에 속하지 않는 pfn인 경우 바로 리턴.
+	 **/
 	if (!pfn_valid(pfn))
 		return;
 
+	/** 20131102    
+	 * pfn에 해당하는 page 구조체를 구해온다.
+	 **/
 	page = pfn_to_page(pfn);
+	/** 20131102    
+	 * cache_is_vipt_aliasing인 경우 mapping 주소를 받아온다.
+	 * 그렇지 않은 경우 mapping은 NULL.
+	 *
+	 * 20131109
+	 * 여기부터, page_mapping 나머지 부분도 봐야함.
+	 **/
 	if (cache_is_vipt_aliasing())
 		mapping = page_mapping(page);
 	else

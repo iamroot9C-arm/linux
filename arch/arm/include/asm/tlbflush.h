@@ -206,6 +206,9 @@
 
 #include <linux/sched.h>
 
+/** 20131102    
+ * armv7의 경우 proc-v7.S
+ **/
 struct cpu_tlb_fns {
 	void (*flush_user_range)(unsigned long, unsigned long, struct vm_area_struct *);
 	void (*flush_kern_range)(unsigned long, unsigned long);
@@ -215,8 +218,16 @@ struct cpu_tlb_fns {
 /*
  * Select the calling method
  */
+/** 20131102    
+ * CONFIG_SMP_ON_UP에 따라 MULTI_TLB가 선언되어 있음
+ **/
 #ifdef MULTI_TLB
 
+/** 20131102    
+ * __v7_ca9mp_proc_info
+ *   v7wbi_flush_user_tlb_range
+ *   v7wbi_flush_kern_tlb_range
+ **/
 #define __cpu_flush_user_tlb_range	cpu_tlb.flush_user_range
 #define __cpu_flush_kern_tlb_range	cpu_tlb.flush_kern_range
 
@@ -566,6 +577,8 @@ static inline void clean_pmd_entry(void *pmd)
  * Convert calls to our calling convention.
  */
 #define local_flush_tlb_range(vma,start,end)	__cpu_flush_user_tlb_range(start,end,vma)
+/** 20131102    
+ **/
 #define local_flush_tlb_kernel_range(s,e)	__cpu_flush_kern_tlb_range(s,e)
 
 #ifndef CONFIG_SMP

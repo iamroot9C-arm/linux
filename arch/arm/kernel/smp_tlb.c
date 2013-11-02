@@ -57,10 +57,16 @@ static inline void ipi_flush_tlb_range(void *arg)
 	local_flush_tlb_range(ta->ta_vma, ta->ta_start, ta->ta_end);
 }
 
+/** 20131102    
+ * 커널 address 영역에 대한 flush tlb 명령을 수행한다.
+ **/
 static inline void ipi_flush_tlb_kernel_range(void *arg)
 {
 	struct tlb_args *ta = (struct tlb_args *)arg;
 
+	/** 20131102    
+	 * arg로 넘어온 start~end 사이의 주소에 대해 TLB invalidate 시킴.
+	 **/
 	local_flush_tlb_kernel_range(ta->ta_start, ta->ta_end);
 }
 
@@ -118,11 +124,13 @@ void flush_tlb_range(struct vm_area_struct *vma,
 
 /** 20131026    
  * CONFIG_SMP일 경우
+ * start ~ end 사이의 커널 주소 공간에 대해 flush tlb 를 수행
  **/
 void flush_tlb_kernel_range(unsigned long start, unsigned long end)
 {
 	/** 20131026    
 	 * tlb operation이 broadcast되어야 하는 경우
+	 * (operation이 local structures에만 반영되는 경우)
 	 **/
 	if (tlb_ops_need_broadcast()) {
 		/** 20131026    

@@ -270,8 +270,16 @@ extern void __sync_icache_dcache(pte_t pteval);
 static inline void set_pte_at(struct mm_struct *mm, unsigned long addr,
 			      pte_t *ptep, pte_t pteval)
 {
+	/** 20131102    
+	 * addr가 TASK_SIZE 이후일 경우 
+	 * set_pte_ext로 ptep가 가리키는 pte entry의 값을 pteval로 채움.
+	 * hw 속성은 0.
+	 **/
 	if (addr >= TASK_SIZE)
 		set_pte_ext(ptep, pteval, 0);
+	/** 20131102    
+	 * user space address라면
+	 **/
 	else {
 		__sync_icache_dcache(pteval);
 		set_pte_ext(ptep, pteval, PTE_EXT_NG);
@@ -286,9 +294,17 @@ static inline void set_pte_at(struct mm_struct *mm, unsigned long addr,
 #define pte_write(pte)		(!(pte_val(pte) & L_PTE_RDONLY))
 #define pte_dirty(pte)		(pte_val(pte) & L_PTE_DIRTY)
 #define pte_young(pte)		(pte_val(pte) & L_PTE_YOUNG)
+/** 20131102    
+ * pte의 속성에 L_PTE_XN이면 실행할 수 없는 address range.
+ * 그렇지 않을 경우 true.
+ **/
 #define pte_exec(pte)		(!(pte_val(pte) & L_PTE_XN))
 #define pte_special(pte)	(0)
 
+/** 20131102    
+ * pte는 linux용 pte value.
+ * pteval에 L_PTE_PRESENT 또는 L_PTE_USER이 지정되어 있는지 검사
+ **/
 #define pte_present_user(pte) \
 	((pte_val(pte) & (L_PTE_PRESENT | L_PTE_USER)) == \
 	 (L_PTE_PRESENT | L_PTE_USER))

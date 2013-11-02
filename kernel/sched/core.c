@@ -3994,6 +3994,10 @@ EXPORT_SYMBOL(default_wake_function);
  * started to run but is not in state TASK_RUNNING. try_to_wake_up() returns
  * zero in this (rare) case, and we handle it by continuing to scan the queue.
  */
+/** 20131102    
+ * nr_exclusive 개의 exclusive와 그 이전의 모든 non-exclusive를 깨운다.
+ * 자세한 분석은 하지 않았음.
+ **/
 static void __wake_up_common(wait_queue_head_t *q, unsigned int mode,
 			int nr_exclusive, int wake_flags, void *key)
 {

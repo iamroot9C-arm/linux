@@ -68,6 +68,13 @@ ENDPROC(v7wbi_flush_user_tlb_range)
  *	- start - start address (may not be aligned)
  *	- end   - end address (exclusive, may not be aligned)
  */
+/** 20131102
+ * dsb
+ * start ~ end까지 page 단위로 반복
+ *   tlb invalidate (address를 인자로 전달)
+ * dsb
+ * isb
+ **/
 ENTRY(v7wbi_flush_kern_tlb_range)
 	dsb
 	mov	r0, r0, lsr #PAGE_SHIFT		@ align address

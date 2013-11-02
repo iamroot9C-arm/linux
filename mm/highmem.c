@@ -67,12 +67,24 @@ unsigned int nr_free_highpages (void)
 	return pages;
 }
 
+/** 20131102    
+ * pkmap_count
+ * 0  해당 페이지 테이블 엔트리는 어떤 상위 메모리 페이지 프레임도 매핑하지 않고 사용 가능하다.
+ * 1  해당 페이지 테이블 엔트리는 어떤 상위 메모리 페이지 프레임도 매핑하지 않지만, 이를 마지막으로 사용한 후에 해당 TLB 엔트리를 비우지 않아서 사용할 수 없다.
+ * 2  해당 페이지 테이블 엔트리는 상위 메모리 페이지 프레임을 매핑하여, 커널 구성 요소 n-1개에서 사용한다.
+ **/
 static int pkmap_count[LAST_PKMAP];
 static unsigned int last_pkmap_nr;
 static  __cacheline_aligned_in_smp DEFINE_SPINLOCK(kmap_lock);
 
+/** 20131102    
+ * PKMAP_BASE 영역에 대한 pte table. kmap_init에서 할당.
+ **/
 pte_t * pkmap_page_table;
 
+/** 20131102    
+ * pkmap_map_wait이라는 이름으로 wait queue head를 선언.
+ **/
 static DECLARE_WAIT_QUEUE_HEAD(pkmap_map_wait);
 
 /*
@@ -124,6 +136,11 @@ struct page *kmap_to_page(void *vaddr)
 	return virt_to_page(addr);
 }
 
+/** 20131102    
+ * pkmaps entry 각각을 돌면서 pkmap_count가 1인 경우
+ * pkmap_count를 0으로 설정하고 pte entry 초기화.
+ * 하나라도 pte가 변경되었다면 flush.
+ **/
 static void flush_all_zero_pkmaps(void)
 {
 	int i;
@@ -188,6 +205,10 @@ static void flush_all_zero_pkmaps(void)
 		 **/
 		need_flush = 1;
 	}
+	/** 20131102    
+	 * need_flush가 체크되어 있다면
+	 *   PKMAP_ADDR 사이의 주소공간에 대해 TLB를 시킨다.
+	 **/
 	if (need_flush)
 		flush_tlb_kernel_range(PKMAP_ADDR(0), PKMAP_ADDR(LAST_PKMAP));
 }
@@ -202,6 +223,9 @@ void kmap_flush_unused(void)
 	unlock_kmap();
 }
 
+/** 20131102    
+ * map_new_virtual 이전에 lock_kmap.
+ **/
 static inline unsigned long map_new_virtual(struct page *page)
 {
 	unsigned long vaddr;
@@ -222,11 +246,24 @@ start:
 		 * last_pkmap_nr가 0인 경우, 즉 LAST_PKMAP-1번째 수행시
 		 **/
 		if (!last_pkmap_nr) {
+			/** 20131102    
+			 * 해제 가능한 pkmaps entry를 비워주는 함수
+			 **/
 			flush_all_zero_pkmaps();
+			/** 20131102    
+			 * count를 LAST_PKMAP으로 다시 설정한다.
+			 **/
 			count = LAST_PKMAP;
 		}
+		/** 20131102    
+		 * 현재 pkmap_count가 0이라면 사용할 수 있는 entry를 찾았으므로 break
+		 **/
 		if (!pkmap_count[last_pkmap_nr])
 			break;	/* Found a usable entry */
+		/** 20131102    
+		 * count를 감소시켜 0이 아니라면 계속 실행.
+		 * count가 entry만큼 설정되었으므로 0이 되었다면 아래 조치를 취해야 한다.
+		 **/
 		if (--count)
 			continue;
 
@@ -234,24 +271,59 @@ start:
 		 * Sleep for somebody else to unmap their entries
 		 */
 		{
+			/** 20131102    
+			 * wait이라는 이름의 waitqueue를 생성하고, .private에 current 넣어줌.
+			 **/
 			DECLARE_WAITQUEUE(wait, current);
 
+			/** 20131102    
+			 * TASK_UNINTERRUPTIBLE 상태로 만들어 준다.
+			 * lock이 걸려 있는 상황이므로 memory barrier가 없는 버전을 사용???
+			 **/
 			__set_current_state(TASK_UNINTERRUPTIBLE);
+			/** 20131102
+			 * wait queue에 non-exclusive 하게 넣어준다.
+			 **/
 			add_wait_queue(&pkmap_map_wait, &wait);
+			/** 20131102    
+			 * sleep에 들어가기 전에 kmap에 대한 spinklock을 해제한다.
+			 **/
 			unlock_kmap();
+			/** 20131102    
+			 * wait queue에 들어간 상태로 task는 sleep 상태가 된다.
+			 **/
 			schedule();
+			/** 20131102    
+			 * scheduler에 의해 깨어나 다시 실행되는 위치.
+			 **/
 			remove_wait_queue(&pkmap_map_wait, &wait);
+			/** 20131102    
+			 * sleep에서 깨어난 뒤에 다시 lock을 건다.
+			 **/
 			lock_kmap();
 
 			/* Somebody else might have mapped it while we slept */
+			/** 20131102    
+			 * sleep 상태인 동안, page에 대해 virtual address가 mapping 되어 있다면
+			 * 해당 virtual address를 바로 리턴.
+			 **/
 			if (page_address(page))
 				return (unsigned long)page_address(page);
 
 			/* Re-start */
+			/** 20131102    
+			 * 그렇지 않다면 re-start.
+			 **/
 			goto start;
 		}
 	}
+	/** 20131102    
+	 * last_pkmap_nr이 가리키고 있는 index에 해당하는 VA를 받아 온다.
+	 **/
 	vaddr = PKMAP_ADDR(last_pkmap_nr);
+	/** 20131102    
+	 *
+	 **/
 	set_pte_at(&init_mm, vaddr,
 		   &(pkmap_page_table[last_pkmap_nr]), mk_pte(page, kmap_prot));
 
