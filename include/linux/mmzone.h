@@ -906,7 +906,28 @@ static inline int is_normal_idx(enum zone_type idx)
 static inline int is_highmem(struct zone *zone)
 {
 #ifdef CONFIG_HIGHMEM
+		/** 20131109
+		 * 해당 zone구조체위치에서 node_zones배열 구조체의 위치의 offset을 구한다.
+		
+		 struct zone
+		+-----------+ node_zones[0]
+		|			|
+		| DMA		|
+		+-----------+ node_zones[1]
+		|			|
+		| NORMAL	|
+		+-----------+ node_zones[2]
+		|			|
+		| HIGHMEM	|
+		+-----------+ ....
+		|			|
+		| ...		|
+		 **/
 	int zone_off = (char *)zone - (char *)zone->zone_pgdat->node_zones;
+	/** 20131109
+	  zone에 해당하는 배열의 오프셋을 리턴한다.
+	  zone_off가 HIGHMEM이거나 MOVABLE이면서 HIGHMEM이면 true를 리턴한다.
+	 **/
 	return zone_off == ZONE_HIGHMEM * sizeof(*zone) ||
 	       (zone_off == ZONE_MOVABLE * sizeof(*zone) &&
 		zone_movable_is_highmem());

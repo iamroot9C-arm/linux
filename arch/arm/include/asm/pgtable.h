@@ -267,6 +267,11 @@ static inline void __sync_icache_dcache(pte_t pteval)
 extern void __sync_icache_dcache(pte_t pteval);
 #endif
 
+/** 20131109
+ * addr가 커널영역이면 pte만 채우고, 
+ * 유저영역이면 pte에 해당되는 영역을 flush하고 
+ * flag에 PTE_EXT_NG를 세팅한다.
+ **/
 static inline void set_pte_at(struct mm_struct *mm, unsigned long addr,
 			      pte_t *ptep, pte_t pteval)
 {
@@ -278,7 +283,9 @@ static inline void set_pte_at(struct mm_struct *mm, unsigned long addr,
 	if (addr >= TASK_SIZE)
 		set_pte_ext(ptep, pteval, 0);
 	/** 20131102    
-	 * user space address라면
+	 * user space address라면 icache, dcache를 sync해주고
+	 * ptep가 가리키는 pte entry의 값을 pteval로 채움
+	 * PTE_EXT_NG : user process용으로 사용되는 page를 의미함
 	 **/
 	else {
 		__sync_icache_dcache(pteval);

@@ -912,11 +912,24 @@ void page_address_init(void);
 #define PAGE_MAPPING_FLAGS	(PAGE_MAPPING_ANON | PAGE_MAPPING_KSM)
 
 extern struct address_space swapper_space;
+
+/** 20131109
+ * page의 속성이 
+   1. swapcache일 경우 swapper_space의 주소를 리턴하고
+   2. anonymouse일 경우 NULL을 리턴한다.
+   3. 그 이외일 경우 page->mapping을 리턴한다.
+ **/
 static inline struct address_space *page_mapping(struct page *page)
 {
 	struct address_space *mapping = page->mapping;
 
+	/** 20131109
+	 * page가 slab에서 할당된 페이지이면 버그를 출력 
+	 **/
 	VM_BUG_ON(PageSlab(page));
+	/** 20131109
+	 * page가 SwapCache이면 Swapper_space를 매핑시킨다
+	 **/
 	if (unlikely(PageSwapCache(page)))
 		mapping = &swapper_space;
 	else if ((unsigned long)mapping & PAGE_MAPPING_ANON)

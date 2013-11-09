@@ -63,6 +63,9 @@
  * local irq를 disable. 이전 상태는 리턴하지 않음.
  **/
 #define raw_local_irq_disable()		arch_local_irq_disable()
+/** 20131109
+ * local irq를 enable. 이전 상태는 리턴하지 않음.
+ **/
 #define raw_local_irq_enable()		arch_local_irq_enable()
 /** 20121124
  * typecheck - flags의 type 검사

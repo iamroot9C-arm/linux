@@ -29,6 +29,10 @@ static inline unsigned long arch_local_irq_save(void)
 	return flags;
 }
 
+/** 20131109
+ * local cpu에서 interrupt enable한다
+ * 이전 상태를 리턴하지 않음
+ **/
 static inline void arch_local_irq_enable(void)
 {
 	asm volatile(

@@ -17,7 +17,10 @@
 #include <asm/cacheflush.h>
 #include <asm/tlbflush.h>
 #include "mm.h"
-
+/** 20131109
+ * page에 대한 virtual adddress를 리턴한다.
+ * 단, interrupt context에서 호출되어서는 안된다.
+ **/
 void *kmap(struct page *page)
 {
 	/** 20131026    
@@ -34,18 +37,25 @@ void *kmap(struct page *page)
 	if (!PageHighMem(page))
 		return page_address(page);
 	/** 20131026    
-	 * highmem이라면
-	 *
+	 * highmem이라면 page에 대한 virtual address를 리턴한다.
 	 **/
 	return kmap_high(page);
 }
 EXPORT_SYMBOL(kmap);
 
+/** 20131109
+ * page가 highmem영역이면 virtual address를 unmapping하고
+ * 휴면 상태에 있는 태스크를 깨운다
+ **/
 void kunmap(struct page *page)
 {
 	BUG_ON(in_interrupt());
+	/** 20131109
+	 * page가 highmem영역에 없으면 바로 리턴
+	 **/
 	if (!PageHighMem(page))
 		return;
+
 	kunmap_high(page);
 }
 EXPORT_SYMBOL(kunmap);
@@ -226,6 +236,11 @@ void __kunmap_atomic(void *kvaddr)
 	 **/
 	} else if (vaddr >= PKMAP_ADDR(0) && vaddr < PKMAP_ADDR(LAST_PKMAP)) {
 		/* this address was obtained through kmap_high_get() */
+		/** 20131109
+		 * vaddr에 해당되는 PKMP_Nr을 구하고, pkmap_page_table에서
+		 * 해당 인덱스에 대한 pte를 가져온다.
+		 * 그리고 pte엔트리에 대한 page를 가져와서 unmapping한다
+		 **/		
 		kunmap_high(pte_page(pkmap_page_table[PKMAP_NR(vaddr)]));
 	}
 	pagefault_enable();

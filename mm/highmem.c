@@ -111,9 +111,19 @@ static DECLARE_WAIT_QUEUE_HEAD(pkmap_map_wait);
 /** 20131026    
  * irq disable 시킨 뒤 spin_lock 획득
  **/
+
 #define lock_kmap()             spin_lock_irq(&kmap_lock)
+/** 20131109
+ * spin lock을 해제하고 irq enable함
+ **/
 #define unlock_kmap()           spin_unlock_irq(&kmap_lock)
+/** 20131109
+ * irq save및 disable하고 spinlock을 건다
+ **/
 #define lock_kmap_any(flags)    spin_lock_irqsave(&kmap_lock, flags)
+/** 20131109
+ * spinlock을 해제하고 irq를 restore한다
+ **/
 #define unlock_kmap_any(flags)  spin_unlock_irqrestore(&kmap_lock, flags)
 #else
 #define lock_kmap()             spin_lock(&kmap_lock)
@@ -226,6 +236,10 @@ void kmap_flush_unused(void)
 /** 20131102    
  * map_new_virtual 이전에 lock_kmap.
  **/
+/** 20131109
+ * pkmap_count가 0인 부분을 찾으면 set_page_addres함수를 통해 
+ * page를 매핑시켜 VA를 가져온다
+ **/
 static inline unsigned long map_new_virtual(struct page *page)
 {
 	unsigned long vaddr;
@@ -244,6 +258,10 @@ start:
 		last_pkmap_nr = (last_pkmap_nr + 1) & LAST_PKMAP_MASK;
 		/** 20131026    
 		 * last_pkmap_nr가 0인 경우, 즉 LAST_PKMAP-1번째 수행시
+		 **/
+		/** 20131109
+		 * LAST_PKMAP의 수만큼 한바퀴 돌았다면 
+		 * pkmap_count값이 1인 부분만을 0으로 바꿔 플러쉬한다.
 		 **/
 		if (!last_pkmap_nr) {
 			/** 20131102    
@@ -322,11 +340,14 @@ start:
 	 **/
 	vaddr = PKMAP_ADDR(last_pkmap_nr);
 	/** 20131102    
-	 *
+	 * last_pkmap_nr번째 엔트리의 VA에 해당되는 pte값을 설정한다.
 	 **/
 	set_pte_at(&init_mm, vaddr,
 		   &(pkmap_page_table[last_pkmap_nr]), mk_pte(page, kmap_prot));
-
+/** 20131109
+ * last_pkmap_nr번째 pkmap_count를 1로 초기화한다.
+ * 1  해당 페이지 테이블 엔트리는 어떤 상위 메모리 페이지 프레임도 매핑하지 않지만, 이를 마지막으로 사용한 후에 해당 TLB 엔트리를 비우지 않아서 사용할 수 없다.
+ **/
 	pkmap_count[last_pkmap_nr] = 1;
 	set_page_address(page, (void *)vaddr);
 
@@ -341,6 +362,13 @@ start:
  *
  * We cannot call this from interrupts, as it may block.
  */
+/** 20131109
+ * page에 대한 virtual address가 존재할 경우 그대로 리턴하고 
+ * 없을 경우 map_new_virtual 함수를 통해 생성하여 리턴한다.
+ * 새로운 매핑이 불가능할 경우 sleep된다. 
+ * 따라서 interrupt루틴에서 불려질 수 없다.
+ **/
+
 void *kmap_high(struct page *page)
 {
 	unsigned long vaddr;
@@ -355,15 +383,24 @@ void *kmap_high(struct page *page)
 	lock_kmap();
 	/** 20131026    
 	 * lowmem일 경우 page에 대한 vaddr을 받아 온다.
+	 * higmem일 경우 hash table의 order에 해당하는 list를 순회하면서 
+	 * page와 일치하는 virtual address를 리턴한다.
 	 **/
 	vaddr = (unsigned long)page_address(page);
 	/** 20131026    
-	 * vaddr이 NULL인 경우
+	 * vaddr이 NULL인 경우 새로운 mapping 생성하고
+	 * virtual address를 받아온다.
 	 **/
 	if (!vaddr)
 		vaddr = map_new_virtual(page);
+	/** 20131109
+	 *	pkmap_count를 1증가시킨다.
+	 **/
 	pkmap_count[PKMAP_NR(vaddr)]++;
 	BUG_ON(pkmap_count[PKMAP_NR(vaddr)] < 2);
+	/** 20131109
+	 * spinlock을 해제하고 irq를 enable시킴
+	**/
 	unlock_kmap();
 	return (void*) vaddr;
 }
@@ -419,16 +456,28 @@ void *kmap_high_get(struct page *page)
  * If ARCH_NEEDS_KMAP_HIGH_GET is not defined then this may be called
  * only from user context.
  */
+/** 20131109
+ * Virtual address에 대해 pkmap_count를 감소시키는 걸로 unmapping한다.
+ * pkmap_wait 큐에 들어 있는 sleep상태에 있는 태스크들을 깨워준다
+ **/
 void kunmap_high(struct page *page)
 {
 	unsigned long vaddr;
 	unsigned long nr;
 	unsigned long flags;
 	int need_wakeup;
-
+/** 20131109a
+ * irq save,disable및 spinlock을 건다
+ **/
 	lock_kmap_any(flags);
+	/** 20131109
+	 * page의 virtual address를 가져온다
+	 **/
 	vaddr = (unsigned long)page_address(page);
 	BUG_ON(!vaddr);
+	/** 20131109
+	 * L2 Page Table의 인덱스를 가져온다.
+	 **/
 	nr = PKMAP_NR(vaddr);
 
 	/*
@@ -450,11 +499,21 @@ void kunmap_high(struct page *page)
 		 * no need for the wait-queue-head's lock.  Simply
 		 * test if the queue is empty.
 		 */
+		/** 20131109
+		 * pkmap_map_wait에서 대기중인 태스크가 있을경우 
+		 * true를 리턴한다.
+		 **/
 		need_wakeup = waitqueue_active(&pkmap_map_wait);
 	}
+	/** 20131109
+	 * spinlock을 해제하고 irq를 restore한다
+	 **/
 	unlock_kmap_any(flags);
 
 	/* do wake-up, if needed, race-free outside of the spin lock */
+	/** 20131109
+	 * 대기중인 태스크들이 있을경우 wake한다
+	 **/
 	if (need_wakeup)
 		wake_up(&pkmap_map_wait);
 }
@@ -517,7 +576,6 @@ static struct page_address_slot *page_slot(const struct page *page)
  * CONFIG_HIGHMEM이 define되어 있을 경우 실행된다.
  * page에 해당하는 해쉬 테이블 슬롯을 가져와서 pas->lh를 순회하며 
  * page_address_map과 page가 같은것을 찾으면 그 page의 virtual address를 리턴한다
- * =>상세한 코드 분석은 생략하고 넘어감 ???
  **/
 void *page_address(const struct page *page)
 {
@@ -527,13 +585,21 @@ void *page_address(const struct page *page)
 
 	if (!PageHighMem(page))
 		return lowmem_page_address(page);
-
+/** 20131109
+ * order에 해당하는 node의 hash list를 돌면서 page slot을 찾아 리턴한다.
+ **/
 	pas = page_slot(page);
 	ret = NULL;
+	/** 20131109
+	* irq save를 하고 spin lock을 건다
+	 **/
 	spin_lock_irqsave(&pas->lock, flags);
+	/** 20131109
+	 * list가 비어있지 않으면 list를 순회하면서
+	 * page와 일치하는 pam->virtual을 리턴한다.
+	 **/
 	if (!list_empty(&pas->lh)) {
 		struct page_address_map *pam;
-
 		list_for_each_entry(pam, &pas->lh, list) {
 			if (pam->page == page) {
 				ret = pam->virtual;
@@ -542,6 +608,9 @@ void *page_address(const struct page *page)
 		}
 	}
 done:
+	/** 20131109
+	 * spin lock을 해제하고 irq를 restore한다.
+	 **/
 	spin_unlock_irqrestore(&pas->lock, flags);
 	return ret;
 }

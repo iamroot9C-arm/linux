@@ -246,8 +246,12 @@ static inline void do_raw_spin_unlock(raw_spinlock_t *lock) __releases(lock)
 /** 20130713    
  **/
 #define raw_spin_unlock(lock)		_raw_spin_unlock(lock)
+/** 20131109
+ **/
 #define raw_spin_unlock_irq(lock)	_raw_spin_unlock_irq(lock)
 
+/** 20131109
+ **/
 #define raw_spin_unlock_irqrestore(lock, flags)		\
 	do {							\
 		typecheck(unsigned long, flags);		\
@@ -386,12 +390,14 @@ static inline void spin_unlock_bh(spinlock_t *lock)
 {
 	raw_spin_unlock_bh(&lock->rlock);
 }
-
+/** 20131109
+ **/
 static inline void spin_unlock_irq(spinlock_t *lock)
 {
 	raw_spin_unlock_irq(&lock->rlock);
 }
-
+/** 20131109
+ **/
 static inline void spin_unlock_irqrestore(spinlock_t *lock, unsigned long flags)
 {
 	raw_spin_unlock_irqrestore(&lock->rlock, flags);

@@ -87,6 +87,8 @@ _raw_spin_unlock_irqrestore(raw_spinlock_t *lock, unsigned long flags)
 #endif
 
 #ifdef CONFIG_INLINE_SPIN_UNLOCK_IRQ
+/** 20131109
+**/
 #define _raw_spin_unlock_irq(lock) __raw_spin_unlock_irq(lock)
 #endif
 
@@ -228,12 +230,27 @@ static inline void __raw_spin_unlock_irqrestore(raw_spinlock_t *lock,
 	local_irq_restore(flags);
 	preempt_enable();
 }
-
+/** 20131109
+ * spin lock을 해제하고 irq를 enable한다
+ **/
 static inline void __raw_spin_unlock_irq(raw_spinlock_t *lock)
 {
+	/** 20131109
+	 * #ifdef CONFIG_DEBUG_LOCK_ALLOC이 설정되어 있지 않음
+	 * # define spin_release(l, n, i)			do { } while (0)
+	 **/
 	spin_release(&lock->dep_map, 1, _RET_IP_);
+	/** 20131109
+	 * raw_spin_lock을 해제해준다
+	 **/
 	do_raw_spin_unlock(lock);
+	/** 2013110
+	 * local irq를 enable한다
+	 **/
 	local_irq_enable();
+	/** 20131109
+	 * 정의 되어 있지 않으므로 NULL
+	 **/
 	preempt_enable();
 }
 

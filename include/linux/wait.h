@@ -123,7 +123,9 @@ static inline void init_waitqueue_func_entry(wait_queue_t *q,
 	q->private = NULL;
 	q->func = func;
 }
-
+/** 20131109
+ * wait queue가 비어있으면 0을 리턴
+ **/
 static inline int waitqueue_active(wait_queue_head_t *q)
 {
 	return !list_empty(&q->task_list);

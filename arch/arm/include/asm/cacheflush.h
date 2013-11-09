@@ -205,6 +205,9 @@ extern void copy_to_user_page(struct vm_area_struct *, struct page *,
 #define __flush_icache_preferred	__flush_icache_all_generic
 #endif
 
+/** 20131109
+ * __cpu_flush_icache_all가 호출되고 cache-v7.S의 v7_flush_icache_all이 실행됨
+ **/
 static inline void __flush_icache_all(void)
 {
 	__flush_icache_preferred();

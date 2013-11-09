@@ -45,9 +45,11 @@ static void flush_pfn_alias(unsigned long pfn, unsigned long vaddr)
 	 * r1 : to + PAGE_SIZE - L1_CACHE_BYTES
 	 * r2 : zero
 	 *
-	 * 첫번째 instruction은 CNTPCT에 register의 값을 쓰는 동작. 어떤 의미인지???
-	 * 두번째 instruction은 DSB operation.
-	 **/
+	 * 첫번째 instruction은 
+	 r0에서r1까지의 범위에 data cache를 clean하고 invalidate시킴.
+	 -> Block transfer operation중의 하나임
+ 	 (c14 0 Clean and invalidate data cache range  Start address End address)
+	 * 두번째 instruction은 DSB operation.  **/
 	asm(	"mcrr	p15, 0, %1, %0, c14\n"
 	"	mcr	p15, 0, %2, c7, c10, 4"
 	    :
@@ -215,6 +217,10 @@ void __flush_dcache_page(struct address_space *mapping, struct page *page)
 	 * userspace colour, which is congruent with page->index.
 	 */
 
+	/** 20131109
+	 * mapping이 존재하고 현재 시스템의 cache형태가 vipt aliasing인 경우
+	 * 해당 페이지 구간을 플러시한다.
+	 **/
 	if (mapping && cache_is_vipt_aliasing())
 		flush_pfn_alias(page_to_pfn(page),
 				page->index << PAGE_CACHE_SHIFT);
@@ -255,6 +261,9 @@ static void __flush_dcache_aliases(struct address_space *mapping, struct page *p
 /** 20131102    
  * __LINUX_ARM_ARCH__ 가 7이므로 이 함수 호출.
  **/
+/** 20131109
+ * pteval에 해당되는 영역의 icache와 dcache를 flush 해준다
+ **/
 #if __LINUX_ARM_ARCH__ >= 6
 void __sync_icache_dcache(pte_t pteval)
 {
@@ -293,17 +302,21 @@ void __sync_icache_dcache(pte_t pteval)
 	 * cache_is_vipt_aliasing인 경우 mapping 주소를 받아온다.
 	 * 그렇지 않은 경우 mapping은 NULL.
 	 *
-	 * 20131109
-	 * 여기부터, page_mapping 나머지 부분도 봐야함.
-	 **/
+	**/
 	if (cache_is_vipt_aliasing())
 		mapping = page_mapping(page);
 	else
 		mapping = NULL;
 
+	/** 20131109
+	 * page->flags중 PG_dcache_clean이 세팅 되어 있지 않으면 
+	 * PG_dcache_clean을 세팅하고 page의 dcache를 flush한다.
+	 **/
 	if (!test_and_set_bit(PG_dcache_clean, &page->flags))
 		__flush_dcache_page(mapping, page);
-
+	/** 20131109
+	  pteval가 가리키는 page가 실행 가능한 영역이면 icache를 flush한다.
+ 	**/
 	if (pte_exec(pteval))
 		__flush_icache_all();
 }
