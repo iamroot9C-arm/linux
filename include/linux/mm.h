@@ -520,6 +520,12 @@ int split_free_page(struct page *page);
  */
 typedef void compound_page_dtor(struct page *);
 
+/** 20131116    
+ * compound_page desctructor 함수 포인터를 저장한다.
+ *   저장 위치는 다음 page의 lru.next이다.
+ *   첫번째 page가 갖는 lru.next는 유효한 값이어야 하므로,
+ *   다음 페이지의 공간을 활용하는듯???
+ **/
 static inline void set_compound_page_dtor(struct page *page,
 						compound_page_dtor *dtor)
 {
@@ -531,10 +537,21 @@ static inline compound_page_dtor *get_compound_page_dtor(struct page *page)
 	return (compound_page_dtor *)page[1].lru.next;
 }
 
+/** 20131116    
+ * page의 compound order를 리턴한다.
+ **/
 static inline int compound_order(struct page *page)
 {
+	/** 20131116    
+	 * page가 compound page의 head가 아니라면 바로 리턴한다.
+	 * 
+	 * PageHead는 __PAGEFLAG(Head, head) 매크로에 의해 생성된다.
+	 **/
 	if (!PageHead(page))
 		return 0;
+	/** 20131116    
+	 *   다음 page의 lru.prev에 compound order가 저장된다.
+	 **/
 	return (unsigned long)page[1].lru.prev;
 }
 
@@ -552,8 +569,15 @@ static inline int compound_trans_order(struct page *page)
 	return order;
 }
 
+/** 20131116    
+ * compound order를 저장한다.
+ **/
 static inline void set_compound_order(struct page *page, unsigned long order)
 {
+	/** 20131116    
+	 * struct page *page의 다음 page의 lru.prev에 order를 저장한다.
+	 * 참고: set_compound_page_dtor(), get_compound_page_dtor()
+	 **/
 	page[1].lru.prev = (void *)order;
 }
 

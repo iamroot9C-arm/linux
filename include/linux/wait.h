@@ -125,6 +125,7 @@ static inline void init_waitqueue_func_entry(wait_queue_t *q,
 }
 /** 20131109
  * wait queue가 비어있으면 0을 리턴
+ * 즉, 대기중인 task가 있다면 참이 리턴된다.
  **/
 static inline int waitqueue_active(wait_queue_head_t *q)
 {
@@ -195,6 +196,9 @@ wait_queue_head_t *bit_waitqueue(void *, int);
 #define wake_up_locked(x)		__wake_up_locked((x), TASK_NORMAL, 1)
 #define wake_up_all_locked(x)		__wake_up_locked((x), TASK_NORMAL, 0)
 
+/** 20131116    
+ * TASK_INTERRUPTIBLE 속성을 사용해 nr_exclusive 1개를 포함한 task를 깨운다.
+ **/
 #define wake_up_interruptible(x)	__wake_up(x, TASK_INTERRUPTIBLE, 1, NULL)
 #define wake_up_interruptible_nr(x, nr)	__wake_up(x, TASK_INTERRUPTIBLE, nr, NULL)
 #define wake_up_interruptible_all(x)	__wake_up(x, TASK_INTERRUPTIBLE, 0, NULL)

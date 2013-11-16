@@ -198,6 +198,10 @@ alloc_zeroed_user_highpage_movable(struct vm_area_struct *vma,
 	return __alloc_zeroed_user_highpage(__GFP_MOVABLE, vma, vaddr);
 }
 
+/** 20131116    
+ * page가 할당 받은 메모리를 초기화 하기 위해 kmap_atomic으로 VA를 받아
+ * 초기화 한 뒤, kunmap_atomic으로 할당 받은 VA를 해제하는 함수.
+ **/
 static inline void clear_highpage(struct page *page)
 {
 	/** 20131026    
@@ -208,6 +212,9 @@ static inline void clear_highpage(struct page *page)
 	 * page를 0으로 memset 한다.
 	 **/
 	clear_page(kaddr);
+	/** 20131116    
+	 * 받아온 VA를 해제한다.
+	 **/
 	kunmap_atomic(kaddr);
 }
 

@@ -397,14 +397,35 @@ static void free_compound_page(struct page *page)
 	__free_pages_ok(page, compound_order(page));
 }
 
+/** 20131116    
+ * page부터 order 만큼의 page를 compound page로 묶어준다.
+ **/
 void prep_compound_page(struct page *page, unsigned long order)
 {
 	int i;
 	int nr_pages = 1 << order;
 
+	/** 20131116    
+	 * compound page의 destructor 함수를 free_compound_page로 지정한다.
+	 **/
 	set_compound_page_dtor(page, free_compound_page);
+	/** 20131116    
+	 * compound order를 page[1].lru.prev에 저장한다.
+	 **/
 	set_compound_order(page, order);
+	/** 20131116    
+	 * struct page 구조체의 flags 필드에 PG_head 비트를 설정해 head page임을 나타낸다.
+	 **/
 	__SetPageHead(page);
+	/** 20131116    
+	 * 나머지 페이지들에 대해서 각각의 page에
+	 *   - PG_tail 비트를 설정한다.
+	 *   - _count를 0으로 설정한다.
+	 *   - first_page를 head page로 설정한다.
+	 *
+	 * CONFIG_PAGEFLAGS_EXTENDED가 설정된 경우
+	 * [PG_head][PG_tail][PG_tail]...[PG_tail]
+	 **/
 	for (i = 1; i < nr_pages; i++) {
 		struct page *p = page + i;
 		__SetPageTail(p);
@@ -414,33 +435,58 @@ void prep_compound_page(struct page *page, unsigned long order)
 }
 
 /* update __split_huge_page_refcount if you change this function */
+/** 20131116    
+ * compound page를 위한 각 page의 정보를 초기화 해
+ * compound page를 각각의 page로 관리되게 한다.
+ **/
 static int destroy_compound_page(struct page *page, unsigned long order)
 {
 	int i;
 	int nr_pages = 1 << order;
 	int bad = 0;
 
+	/** 20131116    
+	 * order로 전달된 값과 page에 저장된 compound order의 값이 다르거나,
+	 * page가 PageHead가 아닐 경우
+	 *   bad_page로 page 정보를 출력하고, bad count를 하나 증가시킨다.
+	 **/
 	if (unlikely(compound_order(page) != order) ||
 	    unlikely(!PageHead(page))) {
 		bad_page(page);
 		bad++;
 	}
 
+	/** 20131116    
+	 * PageHead flag를 지워준다.
+	 **/
 	__ClearPageHead(page);
 
 	for (i = 1; i < nr_pages; i++) {
 		struct page *p = page + i;
 
+		/** 20131116    
+		 * PageTail flag가 설정되어 있지 않거나 first_page가 넘어온 page와 같지 않다면 bad page 처리
+		 * 참고: prep_compound_page 의 설정과정
+		 **/
 		if (unlikely(!PageTail(p) || (p->first_page != page))) {
 			bad_page(page);
 			bad++;
 		}
+		/** 20131116    
+		 * PG_tail 비트를 flags에서 삭제한다.
+		 **/
 		__ClearPageTail(p);
 	}
 
+	/** 20131116    
+	 * bad의 수를 리턴
+	 **/
 	return bad;
 }
 
+/** 20131116    
+ * page부터 (1<<order)개만큼의 page를 0으로 초기화 시킨다.
+ **/
 static inline void prep_zero_page(struct page *page, int order, gfp_t gfp_flags)
 {
 	int i;
@@ -457,6 +503,7 @@ static inline void prep_zero_page(struct page *page, int order, gfp_t gfp_flags)
 	 **/
 	VM_BUG_ON((gfp_flags & __GFP_HIGHMEM) && in_interrupt());
     /** 20131012
+	 * struct page *page부터 order개만큼의 page를 clear 시키는 함수
      **/
 	for (i = 0; i < (1 << order); i++)
 		clear_highpage(page + i);
@@ -1296,16 +1343,19 @@ static inline int check_new_page(struct page *page)
 	return 0;
 }
 
+/** 20131116    
+ * gfp_flags에 따라 새로 받아온 page들에 대해 관련된 자료구조를 초기화 해준다.
+ **/
 static int prep_new_page(struct page *page, int order, gfp_t gfp_flags)
 {
 	int i;
 
 	/** 20131005    
-	 * page부터 1<<order만큼 loop를 수행
+	 * page부터 1<<order만큼 loop를 수행해 new page인지 검사
 	 **/
 	for (i = 0; i < (1 << order); i++) {
 		/** 20131005    
-		 * 하나의 struct page를 가져옴
+		 * 하나의 struct page *를 가져옴
 		 **/
 		struct page *p = page + i;
 		/** 20131005    
@@ -1332,10 +1382,15 @@ static int prep_new_page(struct page *page, int order, gfp_t gfp_flags)
 
 	/** 20131005    
 	 * __GFP_ZERO 속성이 gfp_flags로 요청되었다면
+	 * page의 내용을 0으로 초기화 한다.
 	 **/
 	if (gfp_flags & __GFP_ZERO)
 		prep_zero_page(page, order, gfp_flags);
 
+	/** 20131116    
+	 * __GFP_COMP 속성이 gfp_flags로 요청되어 있고, order가 주어졌다면
+	 * compound page로 묶어준다.
+	 **/
 	if (order && (gfp_flags & __GFP_COMP))
 		prep_compound_page(page, order);
 
@@ -1855,7 +1910,7 @@ static int rmqueue_bulk(struct zone *zone, unsigned int order,
 				mt = migratetype;
 		}
 		/** 20131005    
-		 * pcp로 관리되는 page의 prviate에는 migratetype을 저장한다.
+		 * pcp로 관리되는 page의 private에는 migratetype을 저장한다.
 		 **/
 		set_page_private(page, mt);
 		/** 20131005    
@@ -2220,6 +2275,17 @@ int split_free_page(struct page *page)
  * we cheat by calling it from here, in the order > 0 path.  Saves a branch
  * or two.
  */
+/** 20131116    
+ * order == 0인 경우
+ *     해당 cpu의 pcp 에 접근해 migratetype에 해당하는 list에서 page를 가져온다.
+ *     list가 비어 있다면 rmqueue_bulk를 호출해 buddy로부터 할당받아 채운다.
+ * order > 0인 경우
+ *     __rmqueue를 이용해 free list에서 (1<<order)개의 page를 가져온다.
+ *     __rmqueue는 요청된 migratetype에 대해 충분한 page들을 확보하지 않았다면 
+ *       fallback 정책을 사용해 다른 migratetype으로 다시 시도한다.
+ *
+ * page를 얻어온 뒤에 prep_new_page를 호출하여 관련된 자료구조를 설정한다.
+ **/
 static inline
 struct page *buffered_rmqueue(struct zone *preferred_zone,
 			struct zone *zone, int order, gfp_t gfp_flags,
@@ -2351,9 +2417,13 @@ again:
 	 **/
 	VM_BUG_ON(bad_range(zone, page));
 	/** 20131005    
+	 * gfp_flags에 따라 관련된 자료구조를 설정하고, 실패한다면 again부터 다시 실행
 	 **/
 	if (prep_new_page(page, order, gfp_flags))
 		goto again;
+	/** 20131116    
+	 * 첫번째 page를 리턴한다.
+	 **/
 	return page;
 
 failed:
@@ -2548,6 +2618,9 @@ static inline unsigned long nr_zone_isolate_freepages(struct zone *zone)
 	return 0;
 }
 #else
+/** 20131116    
+ * CONFIG_MEMORY_ISOLATION가 설정되어 있지 않아 0을 리턴.
+ **/
 static inline unsigned long nr_zone_isolate_freepages(struct zone *zone)
 {
 	return 0;
@@ -2565,11 +2638,21 @@ bool zone_watermark_ok(struct zone *z, int order, unsigned long mark,
 					zone_page_state(z, NR_FREE_PAGES));
 }
 
+/** 20131116    
+ * freepages 값에 percpu와 isolate 값을 반영해 watermark 기준을 통과하는지 결과를 리턴한다.
+ **/
 bool zone_watermark_ok_safe(struct zone *z, int order, unsigned long mark,
 		      int classzone_idx, int alloc_flags)
 {
+	/** 20131116    
+	 * zone state에서 NR_FREE_PAGES의 값을 free_pages에 저장한다.
+	 **/
 	long free_pages = zone_page_state(z, NR_FREE_PAGES);
 
+	/** 20131116    
+	 * zone의 percpu_drift_mark가 설정되어 있고, 이 값이 free_pages보다 클 때만
+	 * 보다 정확한 값을 읽어온다.
+	 **/
 	if (z->percpu_drift_mark && free_pages < z->percpu_drift_mark)
 		free_pages = zone_page_state_snapshot(z, NR_FREE_PAGES);
 
@@ -2580,7 +2663,13 @@ bool zone_watermark_ok_safe(struct zone *z, int order, unsigned long mark,
 	 * hotplug than sleeping which can cause a livelock in the direct
 	 * reclaim path.
 	 */
+	/** 20131116    
+	 * isolate된 freepages 값을 free_pages에 빼준다.
+	 **/
 	free_pages -= nr_zone_isolate_freepages(z);
+	/** 20131116    
+	 * 계산된 free_pages 정보로 __zone_watermark_ok 에 전달해 결과를 리턴한다.
+	 **/
 	return __zone_watermark_ok(z, order, mark, classzone_idx, alloc_flags,
 								free_pages);
 }
@@ -2730,11 +2819,13 @@ static void zlc_clear_zones_full(struct zonelist *zonelist)
  * get_page_from_freelist goes through the zonelist trying to allocate
  * a page.
  */
-/** 20130914
-page = get_page_from_freelist(gfp_mask|__GFP_HARDWALL, nodemask, order,
-			zonelist, high_zoneidx, ALLOC_WMARK_LOW|ALLOC_CPUSET,
-			preferred_zone, migratetype);
-**/
+/** 20131116    
+ *
+ * 선호하는 zone의 watermark를 검사해 watermark를 통과하면
+ * 해당 zone에서 (1<<order)만큼의 page를 받아 온다.
+ *
+ * 실패했을 경우 zonelist를 순회하며 다른 zone으로부터 page를 얻어온다.
+ **/
 static struct page *
 get_page_from_freelist(gfp_t gfp_mask, nodemask_t *nodemask, unsigned int order,
 		struct zonelist *zonelist, int high_zoneidx, int alloc_flags,
@@ -2803,6 +2894,9 @@ zonelist_scan:
 		#define ALLOC_NO_WATERMARKS	0x04 // don't check watermarks at all
 		**/
 		BUILD_BUG_ON(ALLOC_NO_WATERMARKS < NR_WMARK);
+		/** 20131116    
+		 * ALLOC_NO_WATERMARKS가 설정되지 않았다면 watermark를 검사한다.
+		 **/
 		if (!(alloc_flags & ALLOC_NO_WATERMARKS)) {
 			unsigned long mark;
 			int ret;
@@ -2861,8 +2955,14 @@ zonelist_scan:
 		}
 
 try_this_zone:
+		/** 20131116    
+		 * zone에서 (1<<order)만큼의 page들을 할당 받는다.
+		 **/
 		page = buffered_rmqueue(preferred_zone, zone, order,
 						gfp_mask, migratetype);
+		/** 20131116    
+		 * 성공적으로 페이지를 할당받았다면 break.
+		 **/
 		if (page)
 			break;
 this_zone_full:
@@ -2874,11 +2974,17 @@ this_zone_full:
 			zlc_mark_zone_full(zonelist, z);
 	}
 
+	/** 20131116    
+	 * CONFIG_NUMA가 설정되지 않았으므로 NUMA_BUILD 는 0.
+	 **/
 	if (unlikely(NUMA_BUILD && page == NULL && zlc_active)) {
 		/* Disable zlc cache for second zonelist scan */
 		zlc_active = 0;
 		goto zonelist_scan;
 	}
+	/** 20131116    
+	 * 할당 받은 page를 리턴
+	 **/
 	return page;
 }
 
@@ -3208,6 +3314,10 @@ void wake_all_kswapd(unsigned int order, struct zonelist *zonelist,
 	struct zoneref *z;
 	struct zone *zone;
 
+	/** 20131116    
+	 * zonelist에서 high_zoneidx보다 작은 zone들에 대해 순회하며
+	 * kswapd를 깨울지 판단해 low memory 상태일 경우 깨운다.
+	 **/
 	for_each_zone_zonelist(zone, z, zonelist, high_zoneidx)
 		wakeup_kswapd(zone, order, classzone_idx);
 }
@@ -3215,7 +3325,13 @@ void wake_all_kswapd(unsigned int order, struct zonelist *zonelist,
 static inline int
 gfp_to_alloc_flags(gfp_t gfp_mask)
 {
+	/** 20131116    
+	 * alloc_flags의 초기값은 ALLOC_WMARK_MIN과 ALLOC_CPUSET을 포함한다.
+	 **/
 	int alloc_flags = ALLOC_WMARK_MIN | ALLOC_CPUSET;
+	/** 20131116    
+	 * gfp_mask가 __GFP_WAIT 속성을 포함하는지 여부를 wait에 저장한다.
+	 **/
 	const gfp_t wait = gfp_mask & __GFP_WAIT;
 
 	/* __GFP_HIGH is assumed to be the same as ALLOC_HIGH to save a branch. */
@@ -3227,8 +3343,14 @@ gfp_to_alloc_flags(gfp_t gfp_mask)
 	 * policy or is asking for __GFP_HIGH memory.  GFP_ATOMIC requests will
 	 * set both ALLOC_HARDER (!wait) and ALLOC_HIGH (__GFP_HIGH).
 	 */
+	/** 20131116    
+	 * gfp_mask에 __GFP_HIGH가 포함되어 있다면 alloc_flags 에도 표시한다.
+	 **/
 	alloc_flags |= (__force int) (gfp_mask & __GFP_HIGH);
 
+	/** 20131123
+	 * 여기부터...
+	 **/
 	if (!wait) {
 		/*
 		 * Not worth trying to allocate harder for
@@ -3283,6 +3405,9 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
 	 * be using allocators in order of preference for an area that is
 	 * too large.
 	 */
+	/** 20131116    
+	 * order는 MAX_ORDER보다 크면 안 된다.
+	 **/
 	if (order >= MAX_ORDER) {
 		WARN_ON_ONCE(!(gfp_mask & __GFP_NOWARN));
 		return NULL;
@@ -3296,10 +3421,17 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
 	 * allowed per node queues are empty and that nodes are
 	 * over allocated.
 	 */
+	/** 20131116    
+	 * vexpress는 NUMA가 아니므로 NUMA_BUILD가 항상 0.
+	 **/
 	if (NUMA_BUILD && (gfp_mask & GFP_THISNODE) == GFP_THISNODE)
 		goto nopage;
 
 restart:
+	/** 20131116    
+	 * 명시적으로 __GFP_NO_KSWAPD가 속성으로 지정되어 있지 않은 경우
+	 * zonelist를 순회하며 watermark low 보다 free page가 낮은 zone에 대해 kswap을 실행시킨다.
+	 **/
 	if (!(gfp_mask & __GFP_NO_KSWAPD))
 		wake_all_kswapd(order, zonelist, high_zoneidx,
 						zone_idx(preferred_zone));
@@ -3479,6 +3611,9 @@ struct page *
 __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
 			struct zonelist *zonelist, nodemask_t *nodemask)
 {
+	/** 20131116    
+	 * gfp_mask로부터 zone type을 받아 high_zoneidx로 삼는다.
+	 **/
 	enum zone_type high_zoneidx = gfp_zone(gfp_mask);
 	struct zone *preferred_zone;
 	struct page *page = NULL;
@@ -3539,6 +3674,10 @@ retry_cpuset:
 	page = get_page_from_freelist(gfp_mask|__GFP_HARDWALL, nodemask, order,
 			zonelist, high_zoneidx, ALLOC_WMARK_LOW|ALLOC_CPUSET,
 			preferred_zone, migratetype);
+	/** 20131116    
+	 * get_page_from_freelist로 페이지를 가져오지 못했을 경우
+	 * __alloc_pages_slowpath로 시도한다.
+	 */
 	if (unlikely(!page))
 		page = __alloc_pages_slowpath(gfp_mask, order,
 				zonelist, high_zoneidx, nodemask,
@@ -5708,6 +5847,9 @@ static void __paginginit free_area_init_core(struct pglist_data *pgdat,
 	pgdat_resize_init(pgdat);
 	/** 20130427    
 	 * pgdat의 wait_queue_head_t 자료구조 초기화
+	 *
+	 * 20131116
+	 * wakeup_kswapd 에서 깨운다.
 	 **/
 	init_waitqueue_head(&pgdat->kswapd_wait);
 	init_waitqueue_head(&pgdat->pfmemalloc_wait);

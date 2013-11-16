@@ -263,6 +263,9 @@ enum zone_watermarks {
 };
 
 #define min_wmark_pages(z) (z->watermark[WMARK_MIN])
+/** 20131116    
+ * zone의 watermark[WMARK_LOW] 값
+ **/
 #define low_wmark_pages(z) (z->watermark[WMARK_LOW])
 #define high_wmark_pages(z) (z->watermark[WMARK_HIGH])
 
@@ -376,6 +379,10 @@ struct zone {
 	 * when reading the number of free pages to avoid per-cpu counter
 	 * drift allowing watermarks to be breached
 	 */
+	/** 20131116    
+	 * free pages 수가 이 지점 아래로 떨어질 때 추가단계가 수행된다.
+	 * free pages의 수를 읽을 때 per-cpu 카운터 드리프트가 허용되는 watermask를 넘어서지 않기 위해서.
+	 **/
 	unsigned long percpu_drift_mark;
 
 	/*
@@ -785,6 +792,9 @@ typedef struct pglist_data {
 	wait_queue_head_t kswapd_wait;
 	wait_queue_head_t pfmemalloc_wait;
 	struct task_struct *kswapd;	/* Protected by lock_memory_hotplug() */
+	/** 20131116    
+	 * wakeup_kswapd 에서 업데이트
+	 **/
 	int kswapd_max_order;
 	enum zone_type classzone_idx;
 } pg_data_t;

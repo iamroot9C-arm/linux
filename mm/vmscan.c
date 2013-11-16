@@ -2959,26 +2959,59 @@ static int kswapd(void *p)
 /*
  * A zone is low on free memory, so wake its kswapd task to service it.
  */
+/** 20131116    
+ * 해당 zone의 free pages의 수가 LOW WMARK 아래로 떨어진다면 kswapd를 실행시킨다.
+ **/
 void wakeup_kswapd(struct zone *zone, int order, enum zone_type classzone_idx)
 {
 	pg_data_t *pgdat;
 
+	/** 20131116    
+	 * present_pages이 설정되어 있지 않다면 바로 리턴
+	 **/
 	if (!populated_zone(zone))
 		return;
 
+	/** 20131116    
+	 * zone에서 메모리를 할당받는 게 허용되는지 hardwall 기준으로 검사해
+	 * 허용되어 있지 않을 경우 바로 리턴.
+	 **/
 	if (!cpuset_zone_allowed_hardwall(zone, GFP_KERNEL))
 		return;
+	/** 20131116    
+	 * zone_pgdat를 가져온다.
+	 **/
 	pgdat = zone->zone_pgdat;
+	/** 20131116    
+	 * kswapd_max_order 보다 요청 받은 order가 크다면 
+	 * order를 새로운 kswapd_max_order로 설정한다.
+	 **/
 	if (pgdat->kswapd_max_order < order) {
 		pgdat->kswapd_max_order = order;
+		/** 20131116    
+		 * classzone_idx는 wake_all_swapd인 경우 preferred_zone의 zone_idx값.
+		 * pgdat에 저장된 값 중에 더 작은 값을 pgdat에 갱신한다.
+		 **/
 		pgdat->classzone_idx = min(pgdat->classzone_idx, classzone_idx);
 	}
+	/** 20131116    
+	 * kswapd_wait waitqueue에 대기 중인 task가 없다면 바로 리턴.
+	 **/
 	if (!waitqueue_active(&pgdat->kswapd_wait))
 		return;
+	/** 20131116    
+	 * low wmark 값보다 free_pages 값이 낮지 않다면 true가 되어 바로 리턴.
+	 **/
 	if (zone_watermark_ok_safe(zone, order, low_wmark_pages(zone), 0, 0))
 		return;
 
+	/** 20131116    
+	 * trace용 함수. 분석 생략
+	 **/
 	trace_mm_vmscan_wakeup_kswapd(pgdat->node_id, zone_idx(zone), order);
+	/** 20131116    
+	 * pgdat->kwapd_wait 에서 sleep 중인 kswapd task를 깨운다.
+	 **/
 	wake_up_interruptible(&pgdat->kswapd_wait);
 }
 

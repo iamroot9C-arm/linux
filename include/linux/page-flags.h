@@ -153,6 +153,9 @@ static inline int Page##uname(const struct page *page)			\
 /** 20130504
 	page struct의 flags 중에 PG_##lname번째 비트를 셋한다.
 **/
+/** 20131116    
+ * __가 없는 버전이 ATOMIC, 있는 버전이 NON ATOMIC한 함수이다.
+ **/
 #define SETPAGEFLAG(uname, lname)					\
 static inline void SetPage##uname(struct page *page)			\
 			{ set_bit(PG_##lname, &page->flags); }
@@ -484,6 +487,19 @@ static inline void set_page_writeback(struct page *page)
  * tests can be used in performance sensitive paths. PageCompound is
  * generally not used in hot code paths.
  */
+/** 20131116    
+ * CONFIG_PAGEFLAGS_EXTENDED  정의되어 있다.
+#ifdef CONFIG_PAGEFLAGS_EXTENDED
+	PG_head,		* A head page *
+	PG_tail,		* A tail page *
+#else
+	PG_compound,		* A compound page *
+#endif
+ * PG_head, PG_tail 속성이 정의된다.
+ *
+ * __PAGEFLAG로 선언했으므로 __CLEARPAGEFLAG로 함수가 생성되는데,
+ * PG_head의 경우 ATOMIC 버전의 CLEARPAGEFLAG를 추가로 생성한다.
+ **/
 __PAGEFLAG(Head, head) CLEARPAGEFLAG(Head, head)
 __PAGEFLAG(Tail, tail)
 
@@ -522,6 +538,9 @@ __PAGEFLAG(Head, compound)
  * PG_compound & PG_reclaim	=> Tail page
  * PG_compound & ~PG_reclaim	=> Head page
  */
+/** 20131116    
+ * CONFIG_PAGEFLAGS_EXTENDED가 정의되어 있으므로 아래 부분은 포함되지 않는다.
+ **/
 /** 20130803    
  * PG_compound와 PG_reclaim 비트로 PG_head_tail_mask 속성을 만들어 준다.
  **/

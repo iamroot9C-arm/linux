@@ -2417,16 +2417,29 @@ int __cpuset_node_allowed_softwall(int node, gfp_t gfp_mask)
  * cpuset hierarchy for the nearest enclosing mem_exclusive cpuset.
  * It never sleeps.
  */
+/** 20131116    
+ * node에서 메모리 할당 받는 것이 허용되지는 조사하는 함수
+ **/
 int __cpuset_node_allowed_hardwall(int node, gfp_t gfp_mask)
 {
+	/** 20131116    
+	 * interrupt 중에 있거나 __GFP_THISNODE가 속성으로 요청되어 있다면 참을 리턴
+	 * interrupt 중에 있다면 왜 허용이 되는 것인가???
+	 **/
 	if (in_interrupt() || (gfp_mask & __GFP_THISNODE))
 		return 1;
+	/** 20131116    
+	 * node가 현재 task의 mems_allowed 에 속해있다면 참을 리턴
+	 **/
 	if (node_isset(node, current->mems_allowed))
 		return 1;
 	/*
 	 * Allow tasks that have access to memory reserves because they have
 	 * been OOM killed to get memory anywhere.
 	 */
+	/** 20131116    
+	 * thread_info() flags에 TIF_MEMDIE가 있다면 참을 리턴
+	 **/
 	if (unlikely(test_thread_flag(TIF_MEMDIE)))
 		return 1;
 	return 0;

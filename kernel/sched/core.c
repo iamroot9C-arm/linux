@@ -4022,11 +4022,18 @@ static void __wake_up_common(wait_queue_head_t *q, unsigned int mode,
  * It may be assumed that this function implies a write memory barrier before
  * changing the task state if and only if any tasks are woken up.
  */
+/** 20131116    
+ * wait queue에서 sleep 상태로 대기중인 task를 깨운다.
+ **/
 void __wake_up(wait_queue_head_t *q, unsigned int mode,
 			int nr_exclusive, void *key)
 {
 	unsigned long flags;
 
+	/** 20131116    
+	 * wait queue는 spinlock으로 보호된다.
+	 * nr_exclusive 개수만큼 wait queue에서 task를 깨운다.
+	 **/
 	spin_lock_irqsave(&q->lock, flags);
 	__wake_up_common(q, mode, nr_exclusive, 0, key);
 	spin_unlock_irqrestore(&q->lock, flags);

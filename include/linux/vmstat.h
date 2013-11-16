@@ -142,16 +142,28 @@ static inline unsigned long zone_page_state(struct zone *zone,
  * deltas. There is no synchronization so the result cannot be
  * exactly accurate either.
  */
+/** 20131116    
+ * item에 해당하는 현재의 zone_page_state 값에 percpu 값을 반영시켜 계산한다.
+ **/
 static inline unsigned long zone_page_state_snapshot(struct zone *zone,
 					enum zone_stat_item item)
 {
+	/** 20131116    
+	 * vm_stat에서 item에 해당하는 값을 읽어 x에 저장한다
+	 **/
 	long x = atomic_long_read(&zone->vm_stat[item]);
 
 #ifdef CONFIG_SMP
 	int cpu;
+	/** 20131116    
+	 * 각 cpu들을 순회하면서 zone->pageset의 vm_stat_diff[item] 값을 x에 반영시킨다.
+	 **/
 	for_each_online_cpu(cpu)
 		x += per_cpu_ptr(zone->pageset, cpu)->vm_stat_diff[item];
 
+	/** 20131116    
+	 * 최하값은 0.
+	 **/
 	if (x < 0)
 		x = 0;
 #endif
