@@ -775,10 +775,17 @@ int bdi_setup_and_register(struct backing_dev_info *bdi, char *name,
 }
 EXPORT_SYMBOL(bdi_setup_and_register);
 
+/** 20131123    
+ * sync, async용 waitqueue head를 2개를 배열로 선언.
+ **/
 static wait_queue_head_t congestion_wqh[2] = {
 		__WAIT_QUEUE_HEAD_INITIALIZER(congestion_wqh[0]),
 		__WAIT_QUEUE_HEAD_INITIALIZER(congestion_wqh[1])
 	};
+/** 20131123    
+ * bdi : backing device information.
+ * waitqueue에 등록된 entry의 개수를 저장하는 atomic 변수.
+ **/
 static atomic_t nr_bdi_congested[2];
 
 void clear_bdi_congested(struct backing_dev_info *bdi, int sync)
@@ -853,8 +860,16 @@ EXPORT_SYMBOL(congestion_wait);
 long wait_iff_congested(struct zone *zone, int sync, long timeout)
 {
 	long ret;
+	/** 20131123    
+	 * 현재 jiffies를 start로 저장한다.
+	 **/
 	unsigned long start = jiffies;
 	DEFINE_WAIT(wait);
+	/** 20131123    
+	 * sync에 따른 waitqueue head를 받아온다.
+	 *
+	 *  __alloc_pages_high_priority 에서 호출되었을 경우 BLK_RW_ASYNC.
+	 **/
 	wait_queue_head_t *wqh = &congestion_wqh[sync];
 
 	/*
@@ -862,6 +877,9 @@ long wait_iff_congested(struct zone *zone, int sync, long timeout)
 	 * encountered in the current zone, yield if necessary instead
 	 * of sleeping on the congestion queue
 	 */
+	/** 20131123    
+	 * sync에 해당하는 congested waitqueue에 등록된 entry가 없거나
+	 **/
 	if (atomic_read(&nr_bdi_congested[sync]) == 0 ||
 			!zone_is_reclaim_congested(zone)) {
 		cond_resched();

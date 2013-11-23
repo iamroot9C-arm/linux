@@ -2845,6 +2845,10 @@ zonelist_scan:
 	 * Scan zonelist, looking for a zone with enough free.
 	 * See also cpuset_zone_allowed() comment in kernel/cpuset.c.
 	 */
+	/** 20131123    
+	 * nodemask를 적용해 zonelist의 각 zone을 순회하며 page를 할당 받아온다.
+	 * 만약 zonelist에서 적합한 zone을 찾지 못한다면 page는 NULL인 상태로 종료.
+	 **/
 	for_each_zone_zonelist_nodemask(zone, z, zonelist,
 						high_zoneidx, nodemask) {
 		/** 20130914
@@ -3295,10 +3299,16 @@ __alloc_pages_high_priority(gfp_t gfp_mask, unsigned int order,
 	struct page *page;
 
 	do {
+		/** 20131123    
+		 * alloc_flags를 ALLOC_NO_WATERMARKS로 변경해서 다시 시도한다.
+		 **/
 		page = get_page_from_freelist(gfp_mask, nodemask, order,
 			zonelist, high_zoneidx, ALLOC_NO_WATERMARKS,
 			preferred_zone, migratetype);
 
+		/** 20131123    
+		 * 마찬가지로 page를 할당받는데 실패하고, __GFP_NOFAIL인 경우
+		 **/
 		if (!page && gfp_mask & __GFP_NOFAIL)
 			wait_iff_congested(preferred_zone, BLK_RW_ASYNC, HZ/50);
 	} while (!page && (gfp_mask & __GFP_NOFAIL));
@@ -3306,6 +3316,9 @@ __alloc_pages_high_priority(gfp_t gfp_mask, unsigned int order,
 	return page;
 }
 
+/** 20131123    
+ * zonelist를 순회하며 
+ **/
 static inline
 void wake_all_kswapd(unsigned int order, struct zonelist *zonelist,
 						enum zone_type high_zoneidx,
@@ -3322,6 +3335,9 @@ void wake_all_kswapd(unsigned int order, struct zonelist *zonelist,
 		wakeup_kswapd(zone, order, classzone_idx);
 }
 
+/** 20131123    
+ * gfp_mask로부터 alloc_flags를 생성한다.
+ **/
 static inline int
 gfp_to_alloc_flags(gfp_t gfp_mask)
 {
@@ -3345,38 +3361,72 @@ gfp_to_alloc_flags(gfp_t gfp_mask)
 	 */
 	/** 20131116    
 	 * gfp_mask에 __GFP_HIGH가 포함되어 있다면 alloc_flags 에도 표시한다.
+	 * ALLOC_HIGH와 __GFP_HIGH가 같은 값으로 define되어 있음
 	 **/
 	alloc_flags |= (__force int) (gfp_mask & __GFP_HIGH);
 
-	/** 20131123
-	 * 여기부터...
-	 **/
 	if (!wait) {
+		/** 20131123    
+		 * 먼저 wait이 가능하지 않다면 (GFP_ATOMIC의 경우)
+		 **/
 		/*
 		 * Not worth trying to allocate harder for
 		 * __GFP_NOMEMALLOC even if it can't schedule.
 		 */
+		/** 20131123    
+		 * __GFP_NOMEMALLOC이 주어져 있다면 ALLOC_HARDER 사용하지 않는다.
+		 *
+		 * ALLOC_HARDER는 zone_watermark_ok () 에서 WMARK min을 더 높인다.
+		 * 즉, reclaim pages 등에 대한 요구사항을 높이는 것이다.
+		 **/
 		if  (!(gfp_mask & __GFP_NOMEMALLOC))
 			alloc_flags |= ALLOC_HARDER;
 		/*
 		 * Ignore cpuset if GFP_ATOMIC (!wait) rather than fail alloc.
 		 * See also cpuset_zone_allowed() comment in kernel/cpuset.c.
 		 */
+		/** 20131123    
+		 * alloc_flags에서 ALLOC_CPUSET 속성을 삭제한다.
+		 * ALLOC_CPUSET은 check for correct cpuset. cpuset 검사를 하지 않는다.
+		 **/
 		alloc_flags &= ~ALLOC_CPUSET;
 	} else if (unlikely(rt_task(current)) && !in_interrupt())
+		/** 20131123    
+		 * !wait이 아닌 경우
+		 * 현재 task가 rt_task이면서 interrupt context에 있지 않은 경우
+		 * ALLOC_HARDER를 속성에 준다.
+		 * 즉, 
+		 **/
 		alloc_flags |= ALLOC_HARDER;
 
+	/** 20131123    
+	 *  __GFP_NOMEMALLOC 속성이 없을 경우
+	 **/
 	if (likely(!(gfp_mask & __GFP_NOMEMALLOC))) {
+		/** 20131123    
+		 * __GFP_MEMALLOC 속성이 있다면 watermarks 체크를 하지 않는다.
+		 **/
 		if (gfp_mask & __GFP_MEMALLOC)
 			alloc_flags |= ALLOC_NO_WATERMARKS;
+		/** 20131123    
+		 * softirq가 처리 중이고, 현재 task의 flags에 PF_MEMALLOC이 설정되어 있다면 watermarks 체크를 하지 않는다.
+		 *
+		 **/
 		else if (in_serving_softirq() && (current->flags & PF_MEMALLOC))
 			alloc_flags |= ALLOC_NO_WATERMARKS;
+		/** 20131123    
+		 * interrupt context가 아니고,
+		 *   현재 task의 flags에 PF_MEMALLOC이 설정되어 있거나 TIF_MEMDIE가 thread flag에 포함되어 있다면 watermarks 체크를 하지 않는다.
+		 **/
 		else if (!in_interrupt() &&
 				((current->flags & PF_MEMALLOC) ||
 				 unlikely(test_thread_flag(TIF_MEMDIE))))
 			alloc_flags |= ALLOC_NO_WATERMARKS;
 	}
 
+	/** 20131123    
+	 * alloc_flags를 리턴
+	 **/
 	return alloc_flags;
 }
 
@@ -3441,31 +3491,53 @@ restart:
 	 * reclaim. Now things get more complex, so set up alloc_flags according
 	 * to how we want to proceed.
 	 */
+	/** 20131123    
+	 * gfp_mask를 바탕으로 alloc_flags를 생성한다.
+	 **/
 	alloc_flags = gfp_to_alloc_flags(gfp_mask);
 
 	/*
 	 * Find the true preferred zone if the allocation is unconstrained by
 	 * cpusets.
 	 */
+	/** 20131123    
+	 * alloc_flags에 ALLOC_CPUSET이 존재하지 않고 (CPUSET 검사 확인을 하지 않고)
+	 * nodemask가 없다면,
+	 *   first_zones_zonelist으로 high_zoneidx보다 작은 첫번째 zone을
+	 *   preferred_zone을 가져온다.
+	 **/
 	if (!(alloc_flags & ALLOC_CPUSET) && !nodemask)
 		first_zones_zonelist(zonelist, high_zoneidx, NULL,
 					&preferred_zone);
 
 rebalance:
 	/* This is the last chance, in general, before the goto nopage. */
+	/** 20131123    
+	 * gfp_to_alloc_flags에서 받아온 alloc_flags에서 ALLOC_NO_WATERMARKS 제외한  속성
+	 * get_page_from_freelist를 다시 실행한다.
+	 **/
 	page = get_page_from_freelist(gfp_mask, nodemask, order, zonelist,
 			high_zoneidx, alloc_flags & ~ALLOC_NO_WATERMARKS,
 			preferred_zone, migratetype);
+	/** 20131123    
+	 * freelist로부터 page를 받았다면 got_pg로 바로 이동.
+	 **/
 	if (page)
 		goto got_pg;
 
 	/* Allocate without watermarks if the context allows */
+	/** 20131123    
+	 * ALLOC_NO_WATERMARKS 인 경우,
+	 **/
 	if (alloc_flags & ALLOC_NO_WATERMARKS) {
 		/*
 		 * Ignore mempolicies if ALLOC_NO_WATERMARKS on the grounds
 		 * the allocation is high priority and these type of
 		 * allocations are system rather than user orientated
 		 */
+		/** 20131123    
+		 * node id 와 gfp_mask 로 적합한 zonelist를 반환한다.
+		 **/
 		zonelist = node_zonelist(numa_node_id(), gfp_mask);
 
 		page = __alloc_pages_high_priority(gfp_mask, order,
@@ -3671,6 +3743,11 @@ retry_cpuset:
 		goto out;
 
 	/* First allocation attempt */
+	/** 20131123    
+	 * freelist로부터 page를 받아온다.
+	 *   gfp_mask에 __GFP_HARDWALL로 추가,
+	 *   alloc_flags에 ALLOC_WMARK_LOW | ALLOC_CPUSET 지정
+	 **/
 	page = get_page_from_freelist(gfp_mask|__GFP_HARDWALL, nodemask, order,
 			zonelist, high_zoneidx, ALLOC_WMARK_LOW|ALLOC_CPUSET,
 			preferred_zone, migratetype);

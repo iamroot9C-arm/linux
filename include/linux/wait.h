@@ -32,6 +32,9 @@ struct __wait_queue {
 	unsigned int flags;
 #define WQ_FLAG_EXCLUSIVE	0x01
 	void *private;
+	/** 20131123    
+	 * __wake_up_common 등에서 task를 깨울 때 호출할 콜백함수를 저장한다.
+	 **/
 	wait_queue_func_t func;
 	struct list_head task_list;
 };
@@ -136,8 +139,14 @@ extern void add_wait_queue(wait_queue_head_t *q, wait_queue_t *wait);
 extern void add_wait_queue_exclusive(wait_queue_head_t *q, wait_queue_t *wait);
 extern void remove_wait_queue(wait_queue_head_t *q, wait_queue_t *wait);
 
+/** 20131123    
+ * waitqueue의 task_list에 새로운 wait_queue_t를 등록시킨다.
+ **/
 static inline void __add_wait_queue(wait_queue_head_t *head, wait_queue_t *new)
 {
+	/** 20131123    
+	 * head->task_list 다음에 새로운 task_list를 등록한다.
+	 **/
 	list_add(&new->task_list, &head->task_list);
 }
 
@@ -616,6 +625,12 @@ void abort_exclusive_wait(wait_queue_head_t *q, wait_queue_t *wait,
 int autoremove_wake_function(wait_queue_t *wait, unsigned mode, int sync, void *key);
 int wake_bit_function(wait_queue_t *wait, unsigned mode, int sync, void *key);
 
+/** 20131123    
+ * waitqueue 선언.
+ * .private에 current를 지정하고, .func에 매개변수로 받은 function을 지정한다.
+ * .task_list는 일반적인 list_head.
+ * 왜 .private에 current를 지정하는 것인지??? try_to_wake_up에서 이 값이 사용되는데?
+ **/
 #define DEFINE_WAIT_FUNC(name, function)				\
 	wait_queue_t name = {						\
 		.private	= current,				\
@@ -623,6 +638,9 @@ int wake_bit_function(wait_queue_t *wait, unsigned mode, int sync, void *key);
 		.task_list	= LIST_HEAD_INIT((name).task_list),	\
 	}
 
+/** 20131123    
+ * default로 autoremove_wake_function를 function으로 하는 waitqueue를 선언
+ **/
 #define DEFINE_WAIT(name) DEFINE_WAIT_FUNC(name, autoremove_wake_function)
 
 #define DEFINE_WAIT_BIT(name, word, bit)				\

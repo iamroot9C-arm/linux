@@ -48,6 +48,12 @@
 #define HARDIRQ_SHIFT	(SOFTIRQ_SHIFT + SOFTIRQ_BITS)
 #define NMI_SHIFT	(HARDIRQ_SHIFT + HARDIRQ_BITS)
 
+/** 20131123    
+ * PREEMPT_MASK: 0x000000ff
+ * SOFTIRQ_MASK: 0x0000ff00
+ * HARDIRQ_MASK: 0x03ff0000
+ *     NMI_MASK: 0x04000000
+ **/
 #define __IRQ_MASK(x)	((1UL << (x))-1)
 
 #define PREEMPT_MASK	(__IRQ_MASK(PREEMPT_BITS) << PREEMPT_SHIFT)
@@ -73,6 +79,9 @@
 #endif
 
 #define hardirq_count()	(preempt_count() & HARDIRQ_MASK)
+/** 20131123    
+ * preempt_count에서 SOFTIRQ_MASK를 씌워 softirq_count를 리턴한다.
+ **/
 #define softirq_count()	(preempt_count() & SOFTIRQ_MASK)
 /** 20131005    
  * vexpress_defconfig에서
@@ -93,6 +102,10 @@
  * 추후 분석 ???
  **/
 #define in_interrupt()		(irq_count())
+/** 20131123    
+ * softirq_count()에서 SOFTIRQ_OFFSET 비트들을 (0x0000ff00) 검사해
+ * 현재 softirq 중인지 판단한다.
+ **/
 #define in_serving_softirq()	(softirq_count() & SOFTIRQ_OFFSET)
 
 /*

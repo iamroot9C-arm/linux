@@ -187,12 +187,25 @@ void abort_exclusive_wait(wait_queue_head_t *q, wait_queue_t *wait,
 }
 EXPORT_SYMBOL(abort_exclusive_wait);
 
+/** 20131123    
+ * wait으로 받은 task를 깨우고, 성공적으로 삭제했다면 list에서 제거한다.
+ * 성공했다면 참을 반환.
+ **/
 int autoremove_wake_function(wait_queue_t *wait, unsigned mode, int sync, void *key)
 {
+	/** 20131123    
+	 * default_wake_function을 호출하고, 결과를 받아온다.
+	 **/
 	int ret = default_wake_function(wait, mode, sync, key);
 
+	/** 20131123    
+	 * wake up에 성공했다면 wakequeue의 task_list에서 제거하고 포인터를 초기화 한다.
+	 **/
 	if (ret)
 		list_del_init(&wait->task_list);
+	/** 20131123    
+	 * wake 결과를 반환
+	 **/
 	return ret;
 }
 EXPORT_SYMBOL(autoremove_wake_function);

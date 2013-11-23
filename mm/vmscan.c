@@ -2960,7 +2960,7 @@ static int kswapd(void *p)
  * A zone is low on free memory, so wake its kswapd task to service it.
  */
 /** 20131116    
- * 해당 zone의 free pages의 수가 LOW WMARK 아래로 떨어진다면 kswapd를 실행시킨다.
+ * 해당 zone의 free pages의 수가 WMARK_LOW 아래로 떨어진다면 kswapd를 실행시킨다.
  **/
 void wakeup_kswapd(struct zone *zone, int order, enum zone_type classzone_idx)
 {
@@ -2984,7 +2984,7 @@ void wakeup_kswapd(struct zone *zone, int order, enum zone_type classzone_idx)
 	pgdat = zone->zone_pgdat;
 	/** 20131116    
 	 * kswapd_max_order 보다 요청 받은 order가 크다면 
-	 * order를 새로운 kswapd_max_order로 설정한다.
+	 * order를 새로운 kswapd_max_order로 설정한다. (늘려준다)
 	 **/
 	if (pgdat->kswapd_max_order < order) {
 		pgdat->kswapd_max_order = order;

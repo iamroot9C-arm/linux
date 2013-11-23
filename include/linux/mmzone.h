@@ -570,6 +570,8 @@ static inline void zone_clear_flag(struct zone *zone, zone_flags_t flag)
 	clear_bit(flag, &zone->flags);
 }
 
+/** 20131123    
+ **/
 static inline int zone_is_reclaim_congested(const struct zone *zone)
 {
 	return test_bit(ZONE_CONGESTED, &zone->flags);

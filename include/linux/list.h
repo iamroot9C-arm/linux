@@ -180,6 +180,10 @@ static inline void list_replace_init(struct list_head *old,
  */
 static inline void list_del_init(struct list_head *entry)
 {
+	/** 20131123    
+	 * entry를 list에서 삭제하고, entry의 list 연결 포인트를 초기화 한다.
+	 * 참고로 list_del로 삭제시켰을 경우 POISON 값을 써준다.
+	 **/
 	__list_del_entry(entry);
 	INIT_LIST_HEAD(entry);
 }
@@ -550,6 +554,11 @@ static inline void list_splice_tail_init(struct list_head *list,
  * @head:	the head for your list.
  * @member:	the name of the list_struct within the struct.
  */
+/** 20131123    
+ * list head부터 각 entry를 순회한다.
+ * iteration 중에 entry가 삭제되어도 자료구조가 깨어지지 않도록 next entry에
+ * 대한 포인터를 미리 저장해두는 안전한 버전.
+ **/
 #define list_for_each_entry_safe(pos, n, head, member)			\
 	for (pos = list_entry((head)->next, typeof(*pos), member),	\
 		n = list_entry(pos->member.next, typeof(*pos), member);	\

@@ -3978,6 +3978,9 @@ asmlinkage void __sched preempt_schedule_irq(void)
 
 #endif /* CONFIG_PREEMPT */
 
+/** 20131123    
+ * try_to_wake_up에 깨울 entry의 private(보통 entry에 추가할 당시의 current)을 넘겨 task를 깨운다.
+ **/
 int default_wake_function(wait_queue_t *curr, unsigned mode, int wake_flags,
 			  void *key)
 {
@@ -3995,17 +3998,25 @@ EXPORT_SYMBOL(default_wake_function);
  * zero in this (rare) case, and we handle it by continuing to scan the queue.
  */
 /** 20131102    
+ * waitqueue에 등록되어 sleep 상태인 task를 깨우는 함수.
  * nr_exclusive 개의 exclusive와 그 이전의 모든 non-exclusive를 깨운다.
- * 자세한 분석은 하지 않았음.
+ *   mode로 지정된 속성이 sleep 상태인 task에 저장된 mode가 일치될 때만 해당한다.
  **/
 static void __wake_up_common(wait_queue_head_t *q, unsigned int mode,
 			int nr_exclusive, int wake_flags, void *key)
 {
 	wait_queue_t *curr, *next;
 
+	/** 20131123    
+	 * waitqueue의 task_list를 순회하며 queue에 추가할 당시 등록한 func으로 waitqueue를 깨운다.
+	 **/
 	list_for_each_entry_safe(curr, next, &q->task_list, task_list) {
 		unsigned flags = curr->flags;
 
+		/** 20131123    
+		 * 현재 waitqueue에 등록된 .func을 호출해 wake up.
+		 * 성공적으로 깨웠으며 WQ_FLAG_EXCLUSIVE이고, nr_exclusive개만큼 깨웠으면 break;
+		 **/
 		if (curr->func(curr, mode, wake_flags, key) &&
 				(flags & WQ_FLAG_EXCLUSIVE) && !--nr_exclusive)
 			break;

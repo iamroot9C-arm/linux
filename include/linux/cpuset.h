@@ -64,6 +64,8 @@ static inline int cpuset_zone_allowed_softwall(struct zone *z, gfp_t gfp_mask)
 	return cpuset_node_allowed_softwall(zone_to_nid(z), gfp_mask);
 }
 
+/** 20131123    
+ **/
 static inline int cpuset_zone_allowed_hardwall(struct zone *z, gfp_t gfp_mask)
 {
 	return cpuset_node_allowed_hardwall(zone_to_nid(z), gfp_mask);
