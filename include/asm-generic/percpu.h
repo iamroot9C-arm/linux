@@ -85,6 +85,9 @@ extern unsigned long __per_cpu_offset[NR_CPUS];
 #endif
 
 #define __get_cpu_var(var) (*this_cpu_ptr(&(var)))
+/** 20131130    
+ * percpu 변수에서 현재 cpu에 해당하는 변수의 위치에서 값을 가져온다.
+ **/
 #define __raw_get_cpu_var(var) (*__this_cpu_ptr(&(var)))
 
 #ifdef CONFIG_HAVE_SETUP_PER_CPU_AREA

@@ -3290,6 +3290,12 @@ retry:
  * This is called in the allocator slow-path if the allocation request is of
  * sufficient urgency to ignore watermarks and take other desperate measures
  */
+/** 20131130    
+ * slow-path에서도 page를 할당받지 못한 경우,
+ * 극단적인 방법으로 watermarks를 무시한 상태에서 페이지 할당을 시도한다.
+ *   WATERMARKS를 무시한 상태로 페이지 할당을 요청하며,
+ *   GPF_NO_FAIL인 경우 congested가 해제되도록 한다.
+ **/
 static inline struct page *
 __alloc_pages_high_priority(gfp_t gfp_mask, unsigned int order,
 	struct zonelist *zonelist, enum zone_type high_zoneidx,
@@ -3298,6 +3304,10 @@ __alloc_pages_high_priority(gfp_t gfp_mask, unsigned int order,
 {
 	struct page *page;
 
+	/** 20131130    
+	 * page를 못 받아온 상황에서 __GFP_NOFAIL mask가 설정되어 있다면
+	 * page를 얻어올 때까지 get_page_from_freelist를 NO_WATERMARKS로 시도한다.
+	 **/
 	do {
 		/** 20131123    
 		 * alloc_flags를 ALLOC_NO_WATERMARKS로 변경해서 다시 시도한다.
@@ -3308,6 +3318,7 @@ __alloc_pages_high_priority(gfp_t gfp_mask, unsigned int order,
 
 		/** 20131123    
 		 * 마찬가지로 page를 할당받는데 실패하고, __GFP_NOFAIL인 경우
+		 *   wait_iff_congested를 호출한다.
 		 **/
 		if (!page && gfp_mask & __GFP_NOFAIL)
 			wait_iff_congested(preferred_zone, BLK_RW_ASYNC, HZ/50);
@@ -3527,7 +3538,13 @@ rebalance:
 
 	/* Allocate without watermarks if the context allows */
 	/** 20131123    
-	 * ALLOC_NO_WATERMARKS 인 경우,
+	 * ALLOC_NO_WATERMARKS 인 경우, (WATERMARKS check를 하지 않는다)
+	 *   gfp_to_alloc_flags에서
+	 *   - gfp_mask & __GFP_MEMALLOC인 경우
+	 *   - (in_serving_softirq() && (current->flags & PF_MEMALLOC))
+	 *   - (!in_interrupt() &&
+				((current->flags & PF_MEMALLOC) ||
+				 unlikely(test_thread_flag(TIF_MEMDIE))))인 경우
 	 **/
 	if (alloc_flags & ALLOC_NO_WATERMARKS) {
 		/*
@@ -3540,9 +3557,16 @@ rebalance:
 		 **/
 		zonelist = node_zonelist(numa_node_id(), gfp_mask);
 
+		/** 20131130    
+		 * page를 여전히 할당받지 못한 경우 watermarks 체크를 하지 않고 page 할당한다.
+		 * 여전히 할당받지 못한 경우 GFP_NO_FAIL 속성이 주어져 있다면 page를 할당받을 때까지 반복해 시도한다.
+		 **/
 		page = __alloc_pages_high_priority(gfp_mask, order,
 				zonelist, high_zoneidx, nodemask,
 				preferred_zone, migratetype);
+		/** 20131130    
+		 * 할당 받아 온 경우
+		 **/
 		if (page) {
 			/*
 			 * page->pfmemalloc is set when ALLOC_NO_WATERMARKS was
@@ -3551,20 +3575,42 @@ rebalance:
 			 * memory. The caller should avoid the page being used
 			 * for !PFMEMALLOC purposes.
 			 */
+			/** 20131130    
+			 * page를 할당받기 위해 ALLOC_NO_WATERMARKS가 필요했을 경우
+			 * page->pfmemalloc이 설정된다.
+			 * 호출자에게 좀더 많은 메모리를 해제하기 위해 추가적인 작업을 수행하도록 기대된다.
+			 * 호출자는 !pfmemalloc가 아닌 목적을 위해 page를 사용하는 것을 피해야 한다.
+			 *   --> GFP에 __GFP_MEMALLOC가 포함된 경우에 해당.
+			 **/
 			page->pfmemalloc = true;
+			/** 20131130    
+			 * got_pg로 이동.
+			 **/
 			goto got_pg;
 		}
 	}
 
 	/* Atomic allocations - we can't balance anything */
+	/** 20131130    
+	 * page를 할당받지 못한 상태이므로
+	 * gfp_mask에 __GFP_WAIT이 없는 경우 바로 nopage로 이동
+	 **/
 	if (!wait)
 		goto nopage;
 
 	/* Avoid recursion of direct reclaim */
+	/** 20131130    
+	 * 현재 task의 flags가 PF_MEMALLOC이 설정되어 있는 경우 바로 nopage로 이동.
+	 * PF_MEMALLOC의 의미는???
+	 *   kswapd, __perform_reclaim, shrink_all_memory 인 경우 속성이 주어진다.
+	 **/
 	if (current->flags & PF_MEMALLOC)
 		goto nopage;
 
 	/* Avoid allocations with no watermarks from looping endlessly */
+	/** 20131130    
+	 * Thread information에 TIF_MEMDIE인 경우, __GFP_NOFAIL 
+	 **/
 	if (test_thread_flag(TIF_MEMDIE) && !(gfp_mask & __GFP_NOFAIL))
 		goto nopage;
 

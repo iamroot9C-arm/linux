@@ -1348,6 +1348,9 @@ struct task_struct {
 	unsigned did_exec:1;
 	unsigned in_execve:1;	/* Tell the LSMs that the process is doing an
 				 * execve */
+	/** 20131130    
+	 * bitfield 선언. iowait을 대기 중인지 확인하는 용도.
+	 **/
 	unsigned in_iowait:1;
 
 	/* task may not gain privileges */

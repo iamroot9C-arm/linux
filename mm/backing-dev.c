@@ -857,6 +857,12 @@ EXPORT_SYMBOL(congestion_wait);
  * it is the number of jiffies that were still remaining when the function
  * returned. return_value == timeout implies the function did not sleep.
  */
+/** 20131130    
+ * sync가 BLK_RW_ASYNC 인 경우 호출.
+ * 1. congested 상황인지 검사해서 congested 상황이 아니라면 바로 return.
+ * 2. congested라면 blk_flush_plug()를 호출하고 timeout 시간동안 대기한다.
+ *   blk_flush_plug는 분석하지 않았음???
+ **/
 long wait_iff_congested(struct zone *zone, int sync, long timeout)
 {
 	long ret;
@@ -879,12 +885,20 @@ long wait_iff_congested(struct zone *zone, int sync, long timeout)
 	 */
 	/** 20131123    
 	 * sync에 해당하는 congested waitqueue에 등록된 entry가 없거나
+	 * 해당 zone에 reclaim이 congested되어 있지 않다면
 	 **/
 	if (atomic_read(&nr_bdi_congested[sync]) == 0 ||
 			!zone_is_reclaim_congested(zone)) {
+		/** 20131130    
+		 * scheduling이 필요하면 스케쥴러를 호출한다.
+		 **/
 		cond_resched();
 
 		/* In case we scheduled, work out time remaining */
+		/** 20131130    
+		 * 다시 스케쥴러에 의해 돌아왔다면 소비된 시간만큼 timeout을 감소시킨다.
+		 * 남은 시간을 return.
+		 **/
 		ret = timeout - (jiffies - start);
 		if (ret < 0)
 			ret = 0;
@@ -893,11 +907,25 @@ long wait_iff_congested(struct zone *zone, int sync, long timeout)
 	}
 
 	/* Sleep until uncongested or a write happens */
+	/** 20131130    
+	 * waitqueue에 등록한다.
+	 * 이 때 대기하는 task의 상태는 TASK_UNINTERRUPTIBLE이다.
+	 **/
 	prepare_to_wait(wqh, &wait, TASK_UNINTERRUPTIBLE);
+	/** 20131130    
+	 * timeout 시간동안 iowait.
+	 **/
 	ret = io_schedule_timeout(timeout);
+	/** 20131130    
+	 * iowait 이 완료되고 task 상태 변경,
+	 * waitqueue에 여전히 등록되어 있다면 삭제한다.
+	 **/
 	finish_wait(wqh, &wait);
 
 out:
+	/** 20131130    
+	 * trace 관련 함수는 생략.
+	 **/
 	trace_writeback_wait_iff_congested(jiffies_to_usecs(timeout),
 					jiffies_to_usecs(jiffies - start));
 

@@ -178,6 +178,9 @@ static inline void list_replace_init(struct list_head *old,
  * list_del_init - deletes entry from list and reinitialize it.
  * @entry: the element to delete from the list.
  */
+/** 20131130    
+ * 현재 entry를 연결된 list에서 삭제하고, 포인터를 초기화
+ **/
 static inline void list_del_init(struct list_head *entry)
 {
 	/** 20131123    
@@ -256,6 +259,14 @@ static inline int list_empty(const struct list_head *head)
  * to the list entry is list_del_init(). Eg. it cannot be used
  * if another CPU could re-list_add() it.
  */
+/** 20131130    
+ * next와 head를 같이 비교해
+ * 다른 cpu에서 다른 멤버를 수정 중이지 않음을 판단 가능하다.
+ *
+ * NOTE: 동기화 없이 list_empty_careful()을 사용하는 것은
+ * list entry에 대해 list_del_init() 할 때만 안전하다.
+ *  예를 들어, 다른 cpu에서 다시 list_add()를 할 경우에는 사용할 수 없다.
+ **/
 static inline int list_empty_careful(const struct list_head *head)
 {
 	struct list_head *next = head->next;

@@ -36,6 +36,9 @@ struct __wait_queue {
 	 * __wake_up_common 등에서 task를 깨울 때 호출할 콜백함수를 저장한다.
 	 **/
 	wait_queue_func_t func;
+	/** 20131130    
+	 * list 연결을 위한 list_head
+	 **/
 	struct list_head task_list;
 };
 

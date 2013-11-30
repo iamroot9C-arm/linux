@@ -479,6 +479,9 @@ static inline int cpu_of(struct rq *rq)
 #endif
 }
 
+/** 20131130    
+ * per cpu 변수로 struct rq runqueues를 생성.
+ **/
 DECLARE_PER_CPU(struct rq, runqueues);
 
 /** 20130713    
@@ -495,6 +498,9 @@ DECLARE_PER_CPU(struct rq, runqueues);
  * cpu runqueue의 curr가 가리키는 task_struct
  **/
 #define cpu_curr(cpu)		(cpu_rq(cpu)->curr)
+/** 20131130    
+ * 현재 cpu에 해당하는 runqueues값을 가져온다.
+ **/
 #define raw_rq()		(&__raw_get_cpu_var(runqueues))
 
 #ifdef CONFIG_SMP

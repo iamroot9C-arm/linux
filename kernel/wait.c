@@ -80,6 +80,15 @@ EXPORT_SYMBOL(remove_wait_queue);
 
 
 /*
+ * SMP에서 memory barrier가 필요하므로
+ * set_current_state()를 wait-queue add 이후에 썼다.
+ * set_current_state 내에 smb가 존재한다.
+ *
+ * wait-queue가 active한지 검사하는 어떤 wait-함수가
+ * 이 스레드에서 waitqueue 추가 또는 이어지는 다른 검사가
+ * wakeup이 발생(taken place) 했음을 알게 된다.
+ *   -> wake-함수가 wakeup이 발생했음을 알게 된다.
+ * 
  * Note: we use "set_current_state()" _after_ the wait-queue add,
  * because we need a memory barrier there on SMP, so that any
  * wake-function that tests for the wait-queue being active
@@ -91,16 +100,37 @@ EXPORT_SYMBOL(remove_wait_queue);
  * stops them from bleeding out - it would still allow subsequent
  * loads to move into the critical region).
  */
+/** 20131130    
+ * wait하기 전에 필요한 자료구조를 설정한다.
+ *   - wait queue에 들어가 있지 않다면 queue에 등록해준다.
+ *   - 현재 task의 state를 변경한다. (dmb가 포함되어 있다)
+ **/
 void
 prepare_to_wait(wait_queue_head_t *q, wait_queue_t *wait, int state)
 {
 	unsigned long flags;
 
+	/** 20131130    
+	 * WQ_FLAG_EXCLUSIVE 속성을 제거한다.
+	 **/
 	wait->flags &= ~WQ_FLAG_EXCLUSIVE;
+	/** 20131130    
+	 * queue에 lock을 건다.
+	 **/
 	spin_lock_irqsave(&q->lock, flags);
+	/** 20131130    
+	 * wait의 task_list가 비어 있다면, 즉 list에 연결되어 있지 않다면
+	 *   wait을 q에 연결한다.
+	 **/
 	if (list_empty(&wait->task_list))
 		__add_wait_queue(q, wait);
+	/** 20131130    
+	 * 넘어온 state로 현재 task의 상태를 변경한다.
+	 **/
 	set_current_state(state);
+	/** 20131130    
+	 * queue의 lock을 해제한다.
+	 **/
 	spin_unlock_irqrestore(&q->lock, flags);
 }
 EXPORT_SYMBOL(prepare_to_wait);
@@ -128,14 +158,27 @@ EXPORT_SYMBOL(prepare_to_wait_exclusive);
  * the wait descriptor from the given waitqueue if still
  * queued.
  */
+/** 20131130    
+ * 현재 task 상태를 running으로 변경하고,
+ * waitqueue에 아직 queue되어 있다면 제거한다.
+ **/
 void finish_wait(wait_queue_head_t *q, wait_queue_t *wait)
 {
 	unsigned long flags;
 
+	/** 20131130    
+	 * 현재 task의 상태를 TASK_RUNNING로 변경.
+	 *   prepare_to_wait에서는 set_current_state() 함수 사용
+	 **/
 	__set_current_state(TASK_RUNNING);
 	/*
 	 * We can check for list emptiness outside the lock
 	 * IFF:
+	 *   ** 20131130    
+	 *     "careful" 체크를 사용해 next와 prev 포인터를 같이 검사한다.
+	 *     다른 CPU에서 갱신 중인 경우라도 half-pending 이 발생할 수 없다.
+	 *     (스택 영역에서 변경은 진행 중일 수 있다)
+	 *   **
 	 *  - we use the "careful" check that verifies both
 	 *    the next and prev pointers, so that there cannot
 	 *    be any half-pending updates in progress on other
@@ -146,6 +189,10 @@ void finish_wait(wait_queue_head_t *q, wait_queue_t *wait)
 	 *    have _one_ other CPU that looks at or modifies
 	 *    the list).
 	 */
+	/** 20131130    
+	 * wait->task_list이 empty가 아닌 경우 (careful로 검사)
+	 * spinlock으로 q를 보호한 상태에서 wait을 list에서 제거한다.
+	 **/
 	if (!list_empty_careful(&wait->task_list)) {
 		spin_lock_irqsave(&q->lock, flags);
 		list_del_init(&wait->task_list);

@@ -914,6 +914,10 @@ extern void blk_put_queue(struct request_queue *);
  * the plug list when the task sleeps by itself. For details, please see
  * schedule() where blk_schedule_flush_plug() is called.
  */
+/** 20131130    
+ * 짧은 시간동안의 I/O 요청 조각을 모아둔 뒤, 관련된 요청을 모아 큰 단위로
+ * merge하기 위한 자료구조
+ **/
 struct blk_plug {
 	unsigned long magic; /* detect uninitialized use-cases */
 	struct list_head list; /* requests */
@@ -935,8 +939,14 @@ extern void blk_start_plug(struct blk_plug *);
 extern void blk_finish_plug(struct blk_plug *);
 extern void blk_flush_plug_list(struct blk_plug *, bool);
 
+/** 20131130    
+ * 추후 분석 ???
+ **/
 static inline void blk_flush_plug(struct task_struct *tsk)
 {
+	/** 20131130    
+	 * task plug 구조체를 받아온다.
+	 **/
 	struct blk_plug *plug = tsk->plug;
 
 	if (plug)

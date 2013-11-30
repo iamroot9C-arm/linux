@@ -2480,7 +2480,14 @@ unsigned long nr_iowait(void)
 {
 	unsigned long i, sum = 0;
 
+	/** 20131130    
+	 * possible로 설정된 cpu들을 반복하면서
+	 **/
 	for_each_possible_cpu(i)
+	/** 20131130    
+	 * i에 해당하는 cpu runqueue의 nr_iowait의 수를 읽어
+	 * sum에 누적
+	 **/
 		sum += atomic_read(&cpu_rq(i)->nr_iowait);
 
 	return sum;
@@ -5329,18 +5336,43 @@ void __sched io_schedule(void)
 }
 EXPORT_SYMBOL(io_schedule);
 
+/** 20131130    
+ * blk_flush를 호출하고,  timeout 시간동안 io를 대기하는 함수
+ **/
 long __sched io_schedule_timeout(long timeout)
 {
+	/** 20131130    
+	 * 현재 cpu에 해당하는 runqueue를 가져온다.
+	 **/
 	struct rq *rq = raw_rq();
 	long ret;
 
+	/** 20131130    
+	 * NULL 함수
+	 **/
 	delayacct_blkio_start();
+	/** 20131130    
+	 * runqueue의 nr_iowait을 증가시킨다.
+	 **/
 	atomic_inc(&rq->nr_iowait);
+	/** 20131130    
+	 * 실제 flush 동작을 호출.
+	 **/
 	blk_flush_plug(current);
+	/** 20131130    
+	 * in_iowait 상태에서 schedule_timeout 수행.
+	 * timeout이 완료될 때까지 미리 정의된 상태로 sleep한다.
+	 **/
 	current->in_iowait = 1;
 	ret = schedule_timeout(timeout);
 	current->in_iowait = 0;
+	/** 20131130    
+	 * runqueue의 nr_iowait을 감소시킨다.
+	 **/
 	atomic_dec(&rq->nr_iowait);
+	/** 20131130    
+	 * NULL 함수
+	 **/
 	delayacct_blkio_end();
 	return ret;
 }

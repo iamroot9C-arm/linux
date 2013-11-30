@@ -122,6 +122,9 @@ static inline void delayacct_freepages_end(void)
 }
 
 #else
+/** 20131130
+	CONFIG_TASK_DELAY_ACCT가 정의되어 있지 않아 acct 관련 함수는 NULL.
+**/
 static inline void delayacct_set_flag(int flag)
 {}
 static inline void delayacct_clear_flag(int flag)

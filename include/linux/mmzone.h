@@ -571,6 +571,8 @@ static inline void zone_clear_flag(struct zone *zone, zone_flags_t flag)
 }
 
 /** 20131123    
+ * zone flags에서 ZONE_CONGESTED 비트를 검사
+ *   ZONE_CONGESTED: zone has many dirty pages backed by a congested BDI
  **/
 static inline int zone_is_reclaim_congested(const struct zone *zone)
 {
