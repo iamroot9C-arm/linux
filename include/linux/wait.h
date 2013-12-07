@@ -339,7 +339,17 @@ do {									\
 		__wait_event_interruptible(wq, condition, __ret);	\
 	__ret;								\
 })
-
+/** 20131207
+ * 1.waitqueue를 define
+ * 2.wait head에 1의 waitqueue를 넣어준다. current task state는 TASK_INTERRUPTIBLE로 설정
+ * 3.1)condition을 만족하거나
+ *		2)signal이 pending되어 있거나
+ *			3)schedule_timeout에 의해서 timeout이 되었거나 
+ *	위 조건중 하나가 만족할때 define한 waitqueue를 제거하고 종료.
+ *  ret 0 이면 timeout 으로 종료.
+ *  양수면 남은 time값이며 1) 2)을 다시 확인해서 나감.
+ *  즉, 최대 timeout까지 기다리며, 중간에 조건 1)2)가 만족하면 종료. 
+ */
 #define __wait_event_interruptible_timeout(wq, condition, ret)		\
 do {									\
 	DEFINE_WAIT(__wait);						\
@@ -376,6 +386,10 @@ do {									\
  * The function returns 0 if the @timeout elapsed, -ERESTARTSYS if it
  * was interrupted by a signal, and the remaining jiffies otherwise
  * if the condition evaluated to true before the timeout elapsed.
+ */
+/** 20131207
+ * condition이 true가 되거나 timeout이 될때까지 sleep
+ * 소진한 time값을 반환
  */
 #define wait_event_interruptible_timeout(wq, condition, timeout)	\
 ({									\
@@ -562,7 +576,15 @@ do {									\
 	((condition)							\
 	 ? 0 : __wait_event_interruptible_locked(wq, condition, 1, 1))
 
-
+/** 20131207
+ * 1.waitqueue를 define
+ * 2.wait head에 1의 waitqueue를 넣어준다. current task state는 TASK_KILLABLE로 설정
+ * 3.1)condition을 만족하거나
+ *		2)fatal signal이 pending되어 있거나
+ *	
+ * 4.1)2)를 만족 못하면 schedule에 의해서 sleep 
+ * 5.이후 스캐쥴러에서 깨어날때 1)2)을 다시 검사하여 만족하면 break 아니면 goto 4. 
+ */
 
 #define __wait_event_killable(wq, condition, ret)			\
 do {									\

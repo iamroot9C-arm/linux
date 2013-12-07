@@ -32,6 +32,9 @@ static inline void __count_vm_event(enum vm_event_item item)
 	__this_cpu_inc(vm_event_states.event[item]);
 }
 
+/** 20131207
+ * percpu로 존재하는 vm_event_states의 event[item]를 하나씩 증가
+ */
 static inline void count_vm_event(enum vm_event_item item)
 {
 	this_cpu_inc(vm_event_states.event[item]);

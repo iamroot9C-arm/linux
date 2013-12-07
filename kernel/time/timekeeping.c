@@ -1235,6 +1235,9 @@ void monotonic_to_bootbased(struct timespec *ts)
 }
 EXPORT_SYMBOL_GPL(monotonic_to_bootbased);
 
+/** 20131207
+ * 현재 시간을 second 단위로 반환
+ ***/
 unsigned long get_seconds(void)
 {
 	return timekeeper.xtime_sec;

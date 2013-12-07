@@ -5155,7 +5155,10 @@ SYSCALL_DEFINE0(sched_yield)
 
 	return 0;
 }
-
+/** 20131207
+ * 스캐쥴이 필요하고, PREEMPT_ACTIVE가 증가 되지 않았을 경우
+ * 밑 add_preempt_count 참조
+ ***/
 static inline int should_resched(void)
 {
 	return need_resched() && !(preempt_count() & PREEMPT_ACTIVE);
@@ -5167,7 +5170,11 @@ static void __cond_resched(void)
 	__schedule();
 	sub_preempt_count(PREEMPT_ACTIVE);
 }
-
+/** 20131207
+ * should_resched가 true이면
+ * (need_reched()가 true이고 preempt_count()가 PREEMPT_ACTIVE 상태가 아니면)
+ * __cond_resched() 호출(즉 __schedule 호출)
+ ***/
 int __sched _cond_resched(void)
 {
 	if (should_resched()) {

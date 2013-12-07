@@ -2146,6 +2146,11 @@ out:
 	return 0;
 }
 
+/** 20131207
+ * pfmemalloc 의 최소 필요 사이즈에 대한 water mark를 체크하고 결과는 리턴
+ * - 해당 노드의 free_pages와 water mark min/2 비교하여 
+ * free pages가 부족하면 swapd를 깨운다.
+ */
 static bool pfmemalloc_watermark_ok(pg_data_t *pgdat)
 {
 	struct zone *zone;
@@ -2154,18 +2159,43 @@ static bool pfmemalloc_watermark_ok(pg_data_t *pgdat)
 	int i;
 	bool wmark_ok;
 
+	/** 20131207
+	 *0부터 ZONE_NORMAL까지의 zone의 총 water mark min값과 
+	 *free pages 값을 구한다.
+	 */
 	for (i = 0; i <= ZONE_NORMAL; i++) {
 		zone = &pgdat->node_zones[i];
+		/** 20131207
+		 * zone에 해당하는 water mark min값을 pfmemalloc_reserve에 더함
+		 */
 		pfmemalloc_reserve += min_wmark_pages(zone);
+		/** 20131207
+		 * zone에 해당하는 free pages를 free_pages에 더함.
+		 */
 		free_pages += zone_page_state(zone, NR_FREE_PAGES);
 	}
 
+	/** 20131207
+	 * 위에서 구한 free_pages와 pfmemalloc_reserve/2값을 비교하여
+	 * wmark_ok 를 설정한다.
+	 */
 	wmark_ok = free_pages > pfmemalloc_reserve / 2;
 
 	/* kswapd must be awake if processes are being throttled */
+	/** 20131207
+	 * 위에서 구한 wmark_ok가 false이고 kswapd가 waitqueue들어가 있으면
+	 * pgdat->classzone_idx 를  검사하고, swapd를 깨운다.
+	 * (free_pages가 위 조건기준으로 부족할 경우)
+	 */
 	if (!wmark_ok && waitqueue_active(&pgdat->kswapd_wait)) {
+		/** 20131207
+		 * classzone_idx를 ZONE_NORMAL을 상한선으로 정한다.
+		 */
 		pgdat->classzone_idx = min(pgdat->classzone_idx,
 						(enum zone_type)ZONE_NORMAL);
+		/** 20131207
+		 * 해당 노드의 swapd를 깨운다.
+		 */
 		wake_up_interruptible(&pgdat->kswapd_wait);
 	}
 
@@ -2192,16 +2222,28 @@ static void throttle_direct_reclaim(gfp_t gfp_mask, struct zonelist *zonelist,
 	 * committing a transaction where throttling it could forcing other
 	 * processes to block on log_wait_commit().
 	 */
+	/** 20131207
+	 * current task의 flags가 PF_KTHREAD(kernel thread)라면 리턴!
+	 * 이유는 위 주석인데...???
+	 */
 	if (current->flags & PF_KTHREAD)
 		return;
 
 	/* Check if the pfmemalloc reserves are ok */
 	first_zones_zonelist(zonelist, high_zoneidx, NULL, &zone);
+	/** 20131207
+	 * zone이pgdata를 가져와서 watermark 검사를 한다.
+	 * true이면 throttle을 할 필요없다!
+	 */
 	pgdat = zone->zone_pgdat;
 	if (pfmemalloc_watermark_ok(pgdat))
 		return;
 
 	/* Account for the throttling */
+	/** 20131207
+	 * cat /proc/vmstat  | grep -i throttle
+	 * 로 확인 가능
+	 */
 	count_vm_event(PGSCAN_DIRECT_THROTTLE);
 
 	/*
@@ -2212,6 +2254,10 @@ static void throttle_direct_reclaim(gfp_t gfp_mask, struct zonelist *zonelist,
 	 * blocked waiting on the same lock. Instead, throttle for up to a
 	 * second before continuing.
 	 */
+	/** 20131207
+	 * filesystem을 사용할수 없는 경우(FS lock holding, journal transaction)
+	 * HZ시간 동안 기다리거나 pfmemalloc_watermark_ok조건이 참이 될때까지 기다린다
+	 */
 	if (!(gfp_mask & __GFP_FS)) {
 		wait_event_interruptible_timeout(pgdat->pfmemalloc_wait,
 			pfmemalloc_watermark_ok(pgdat), HZ);
@@ -2221,6 +2267,9 @@ static void throttle_direct_reclaim(gfp_t gfp_mask, struct zonelist *zonelist,
 	/* Throttle until kswapd wakes the process */
 	wait_event_killable(zone->zone_pgdat->pfmemalloc_wait,
 		pfmemalloc_watermark_ok(pgdat));
+	/** 20131214
+	 * 여기부터
+	 */
 }
 
 unsigned long try_to_free_pages(struct zonelist *zonelist, int order,

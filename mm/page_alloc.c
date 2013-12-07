@@ -3146,6 +3146,10 @@ out:
 }
 
 #ifdef CONFIG_COMPACTION
+/** 20131207
+ * vexpress에서는 undefined
+ * page migrate와 관련된 구현인듯..? 추후 분석???
+ **/
 /* Try memory compaction for high-order allocations before reclaim */
 static struct page *
 __alloc_pages_direct_compact(gfp_t gfp_mask, unsigned int order,
@@ -3232,8 +3236,19 @@ __perform_reclaim(gfp_t gfp_mask, unsigned int order, struct zonelist *zonelist,
 
 	/* We now go into synchronous reclaim */
 	cpuset_memory_pressure_bump();
+	/** 20131207
+	 * current task의 flag에서 PF_MEMALLOC 속성을 더함
+	 * 원하는 작업이 끝나면 다시 속성을 빼준다. 
+	 * current->flags &= ~PF_MEMALLOC; 참고
+	 ***/
 	current->flags |= PF_MEMALLOC;
+	/** 20131207
+	* vexpress NULL
+	**/
 	lockdep_set_current_reclaim_state(gfp_mask);
+	/** 20131207
+	*current task의 reclaim_state 설정(초기화???)
+	***/
 	reclaim_state.reclaimed_slab = 0;
 	current->reclaim_state = &reclaim_state;
 
@@ -3609,7 +3624,8 @@ rebalance:
 
 	/* Avoid allocations with no watermarks from looping endlessly */
 	/** 20131130    
-	 * Thread information에 TIF_MEMDIE인 경우, __GFP_NOFAIL 
+	 * thread_info 의 flag(low level flag)  TIF_MEMDIE이고  gfp_mask가
+	 * __GFP_NOFAIL이 없는 경우 nopage로 goto (이때는 page가 NULL일듯..)
 	 **/
 	if (test_thread_flag(TIF_MEMDIE) && !(gfp_mask & __GFP_NOFAIL))
 		goto nopage;
@@ -3618,6 +3634,11 @@ rebalance:
 	 * Try direct compaction. The first pass is asynchronous. Subsequent
 	 * attempts after direct reclaim are synchronous
 	 */
+	/** 20131207
+	 * vexpress에서는 null 리턴
+	 * direct compaction(???)을 비동기로 하고, 다음 코드(__alloc_pages_direct_reclaim
+	 * )에서direct reclaim후 동기로 두번째 direct compaction 시도.
+	 ***/
 	page = __alloc_pages_direct_compact(gfp_mask, order,
 					zonelist, high_zoneidx,
 					nodemask,
@@ -3635,6 +3656,9 @@ rebalance:
 	 * has requested the system not be heavily disrupted, fail the
 	 * allocation now instead of entering direct reclaim
 	 */
+	/** 20131207
+	 * deferred_compaction은 false 이므로 다음코드 진행
+	 ***/
 	if (deferred_compaction && (gfp_mask & __GFP_NO_KSWAPD))
 		goto nopage;
 
@@ -3713,6 +3737,9 @@ rebalance:
 	}
 
 nopage:
+	/** 20131207
+	 * nopage 상태에서 경고 메시지와 dump stack, memory 정보를 보여준다. 
+	 ***/
 	warn_alloc_failed(gfp_mask, order, NULL);
 	return page;
 got_pg:

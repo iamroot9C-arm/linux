@@ -2472,11 +2472,16 @@ static inline int thread_group_empty(struct task_struct *p)
  * It must not be nested with write_lock_irq(&tasklist_lock),
  * neither inside nor outside.
  */
+/** 20131207
+ * task(p)에 자원에 대한 spin_lock
+ ***/
 static inline void task_lock(struct task_struct *p)
 {
 	spin_lock(&p->alloc_lock);
 }
-
+/** 20131207
+ * task(p)에 자원에 대한 spin_unlock
+ ***/
 static inline void task_unlock(struct task_struct *p)
 {
 	spin_unlock(&p->alloc_lock);
@@ -2665,7 +2670,9 @@ static inline int restart_syscall(void)
 	set_tsk_thread_flag(current, TIF_SIGPENDING);
 	return -ERESTARTNOINTR;
 }
-
+/** 20131207
+ * current의 thread_info 의 flag가 TIF_SIGPENDING가 있으면 true 반환
+ */
 static inline int signal_pending(struct task_struct *p)
 {
 	return unlikely(test_tsk_thread_flag(p,TIF_SIGPENDING));
@@ -2679,6 +2686,9 @@ static inline int __fatal_signal_pending(struct task_struct *p)
 	return unlikely(sigismember(&p->pending.signal, SIGKILL));
 }
 
+/** 20131207
+ * signal_pending 과 SIGKILL 가 모두 만족하면 true (어떤 경우인지???)
+ */
 static inline int fatal_signal_pending(struct task_struct *p)
 {
 	return signal_pending(p) && __fatal_signal_pending(p);
@@ -2723,7 +2733,10 @@ static inline int need_resched(void)
  * cond_resched_softirq() will enable bhs before scheduling.
  */
 extern int _cond_resched(void);
-
+/** 20131207
+ * __might_sleep 비어있음.
+ * _cond_resched를 실행
+ ***/
 #define cond_resched() ({			\
 	__might_sleep(__FILE__, __LINE__, 0);	\
 	_cond_resched();			\

@@ -1329,29 +1329,75 @@ static void fmeter_init(struct fmeter *fmp)
 	spin_lock_init(&fmp->lock);
 }
 
+
 /* Internal meter update - process cnt events and update value */
+/** 20131207
+ *   fmeter_update() - internal routine used to update fmeter.
+ *   cpuset에서 사용하는 frequency meter(측정기)의 내부 함수로써
+ *   fmeter(측정 값을 대표하는 구조체)를 update해준다.
+ * "Frequency meter - How fast is some event occurring?" 주석 참고
+ *  **/
 static void fmeter_update(struct fmeter *fmp)
 {
 	time_t now = get_seconds();
+	/** 20131207
+	 * 현재 시간(단위 second)를  fmp->time로 뺀다.
+	 ***/
 	time_t ticks = now - fmp->time;
-
+	/** 20131207
+	 * ticks 가 0이면 return 0
+	 * 이 의미는 직전에서 update시 저장한 time값과 현재 시간값이 
+	 * 0이란 의미. 즉, 1초도 안지나고 이함수가 불렸고, 그래서 리턴.
+	 ***/
 	if (ticks == 0)
 		return;
-
+	/** 20131207
+	* FM_MAXTICKS ((time_t)99) 와 ticks를 비교하여 작은 값을 반환
+	* 즉, ticks 는 FM_MAXTICKS 보다 크면 안됨.
+	***/
 	ticks = min(FM_MAXTICKS, ticks);
-	while (ticks-- > 0)
-		fmp->val = (FM_COEF * fmp->val) / FM_SCALE;
+
+	/** 20131207
+	 * tick가 0이 될때까지 fmp->val 재계산
+	 * 비례식 -> FM_COEF : FM_SCALE = 구할 val : 현재 val
+	 ***/
+	while (ticks-- > 0) 
+		fmp->val = (FM_COEF * fmp->val) / FM_SCALE; //(933*val)/1000
+	/** 20131207
+	 * 현재 시간(in second) fmp의 time 에 저장
+	**/
 	fmp->time = now;
 
+	/** 20131207
+	 *fmp->val 갱신
+	**/
 	fmp->val += ((FM_SCALE - FM_COEF) * fmp->cnt) / FM_SCALE;
+	/** 20131207
+	 * cnt 리셋
+	 ***/
 	fmp->cnt = 0;
 }
 
 /* Process any previous ticks, then bump cnt by one (times scale). */
+/** 20131207
+ * fmeter_markevent() - called each time the event happens.
+ * 즉, event 가 발생시 불려지는 함수.
+ * fmeter 구조체에 값을 update해준다.
+ * event는 callback 구조 아니였나??? 추후 분석 필요???
+ *
+ * 
+ ***/
 static void fmeter_markevent(struct fmeter *fmp)
 {
 	spin_lock(&fmp->lock);
+	/** 20131207
+	 * fmp 업데이트
+	 ***/
 	fmeter_update(fmp);
+	/** 20131207
+	 * cnt 업데이트
+	 * FM_MAXCNT를 초과하면 안된다.
+	 **/
 	fmp->cnt = min(FM_MAXCNT, fmp->cnt + FM_SCALE);
 	spin_unlock(&fmp->lock);
 }
@@ -2579,9 +2625,15 @@ int cpuset_memory_pressure_enabled __read_mostly;
  * representing the recent rate of entry into the synchronous
  * (direct) page reclaim by any task attached to the cpuset.
  **/
-
+/** 20131207
+ * cpuset의 memory pressure의 측정치을 계산후 업데이트
+ * //sys/fs/cgroup/memory_pressure에서 측정 값을 확인 가능.
+ ***/
 void __cpuset_memory_pressure_bump(void)
 {
+	/** 20131207
+	 * current task의 lock을 건다.
+	 */
 	task_lock(current);
 	fmeter_markevent(&task_cs(current)->fmeter);
 	task_unlock(current);
