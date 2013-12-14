@@ -182,6 +182,18 @@ print_cfs_rq(struct seq_file *m, int cpu, struct cfs_rq *cfs_rq)
  * mistake.
  */
 #define TASK_RUNNING		0
+/** 20131214    
+ * TASK_INTERRUPTIBLE로 suspend(sleeping) 상태인  TASK가 깨어나는 경우의 수
+ *   - hardware interrupt
+ *   - 프로세스가 기다리는 시스템 리소스의 해제
+ *   - task를 깨울 수 있는 시그널의 도착
+ *
+ * TASK_UNINTERRUPTIBLE은 시그널에 의해 방해 받지 않는다.
+ *   디바이스 드라이버에서 주로 사용된다.
+ *
+ * [참고] Understanding the Linux Kernel
+ *   Figure 3-1. The Linux process descriptor
+ **/
 #define TASK_INTERRUPTIBLE	1
 #define TASK_UNINTERRUPTIBLE	2
 #define __TASK_STOPPED		4

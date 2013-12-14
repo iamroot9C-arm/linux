@@ -119,8 +119,8 @@ prepare_to_wait(wait_queue_head_t *q, wait_queue_t *wait, int state)
 	 **/
 	spin_lock_irqsave(&q->lock, flags);
 	/** 20131130    
-	 * wait의 task_list가 비어 있다면, 즉 list에 연결되어 있지 않다면
-	 *   wait을 q에 연결한다.
+	 * wait의 task_list가 비어 있다면
+	 *   즉, list에 연결되어 있지 않다면 wait을 q에 연결한다.
 	 **/
 	if (list_empty(&wait->task_list))
 		__add_wait_queue(q, wait);

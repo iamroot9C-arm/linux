@@ -2551,8 +2551,11 @@ static bool __zone_watermark_ok(struct zone *z, int order, unsigned long mark,
 	int o;
 
 	/** 20130914
-	-1 을 왜하는건지???
-	**/
+	 * -1 을 왜하는건지???
+	 *
+	 * 20131214
+	 * 아래서 min값과 equal로 비교해 같으면 실패로 판정했으므로 -1을 미리 빼준듯.
+	 **/
 	free_pages -= (1 << order) - 1;
 
 	/** 20130914
@@ -2596,6 +2599,13 @@ static bool __zone_watermark_ok(struct zone *z, int order, unsigned long mark,
 
 		이게 맞나???
 			- min 이 이렇게 조정이 되는이유는???
+
+		 20131214    
+		  각 단계에서 WMARK_MIN / (2 ^ o) 보다 많은 free page의 개수를 갖지 못한다.
+		    (연속된 page라면 이미 그 상위 order로 merge가 될 것이기 때문에)
+		  이 때 free_pages가 min 이하라면 watermark 테스트를 실패했다고 할 수 있다.
+		 
+		    -> lazy merge에서는 이렇게 단계별로 비교하는 것이 무의미 하지 않나???
 	**/
 	for (o = 0; o < order; o++) {
 		/* At the next order, this order's pages become unavailable */
@@ -2839,6 +2849,9 @@ get_page_from_freelist(gfp_t gfp_mask, nodemask_t *nodemask, unsigned int order,
 	int zlc_active = 0;		/* set if using zonelist_cache */
 	int did_zlc_setup = 0;		/* just call zlc_setup() one time */
 
+	/** 20131214    
+	 * 선호하는 zone의 idx를 구해온다.
+	 **/
 	classzone_idx = zone_idx(preferred_zone);
 zonelist_scan:
 	/*
@@ -2905,6 +2918,11 @@ zonelist_scan:
 			unsigned long mark;
 			int ret;
 
+			/** 20131214    
+			 * alloc_flags의 WAMRK_MASK에 해당하는 비트는
+			 *    gfp_to_alloc_flags에서 default로 ALLOC_WMARK_MIN이거나
+			 *    목적에 따라 get_page_from_freelist 호출시 명시적으로 지정한 값이다.
+			 **/
 			mark = zone->watermark[alloc_flags & ALLOC_WMARK_MASK];
 			/** 20130928    
 			 * classzone_idx는 preferred_zone의 zone idx.
@@ -2930,6 +2948,11 @@ zonelist_scan:
 
 			/** 20130928    
 			 * NUMA가 아닌 경우 항상 0으로 this_zone_full로 이동
+			 *
+			 * 20131214
+			 * zone_reclaim_mode는 NUMA인 경우 build_zonelists에서 초기값이 1로 설정되거나
+			 * sysctl에 의해서 바뀔 수 있다.
+			 * UMA인 경우 초기값 0이기 때문에 watermark false이므로 항상 this_zone_full로 이동.
 			 **/
 			if (zone_reclaim_mode == 0)
 				goto this_zone_full;
@@ -2987,7 +3010,7 @@ this_zone_full:
 		goto zonelist_scan;
 	}
 	/** 20131116    
-	 * 할당 받은 page를 리턴
+	 * 할당 받은 page를 리턴. 할당받지 못한 상태라면 page는 NULL.
 	 **/
 	return page;
 }
@@ -3343,7 +3366,7 @@ __alloc_pages_high_priority(gfp_t gfp_mask, unsigned int order,
 }
 
 /** 20131123    
- * zonelist를 순회하며 
+ * zonelist를 순회하며 kswapd를 깨울지 판단하고, 깨워야 한다면 wake시킨다.
  **/
 static inline
 void wake_all_kswapd(unsigned int order, struct zonelist *zonelist,
@@ -3467,6 +3490,9 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
 	nodemask_t *nodemask, struct zone *preferred_zone,
 	int migratetype)
 {
+	/** 20131214    
+	 * __GFP_WAIT 여부를 wait에 저장
+	 **/
 	const gfp_t wait = gfp_mask & __GFP_WAIT;
 	struct page *page = NULL;
 	int alloc_flags;
@@ -3483,6 +3509,9 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
 	 */
 	/** 20131116    
 	 * order는 MAX_ORDER보다 크면 안 된다.
+	 *
+	 * 20131214
+	 * __GFP_NO_WARN 옵션이 주어지면 메모리 할당실패시 경고 메시지를 발생시키지 않는다.
 	 **/
 	if (order >= MAX_ORDER) {
 		WARN_ON_ONCE(!(gfp_mask & __GFP_NOWARN));
@@ -3553,6 +3582,8 @@ rebalance:
 
 	/* Allocate without watermarks if the context allows */
 	/** 20131123    
+	 * ~ALLOC_NO_WATERMARKS로 get_page_from_freelist가 실패한 경우
+	 *
 	 * ALLOC_NO_WATERMARKS 인 경우, (WATERMARKS check를 하지 않는다)
 	 *   gfp_to_alloc_flags에서
 	 *   - gfp_mask & __GFP_MEMALLOC인 경우
@@ -3575,6 +3606,10 @@ rebalance:
 		/** 20131130    
 		 * page를 여전히 할당받지 못한 경우 watermarks 체크를 하지 않고 page 할당한다.
 		 * 여전히 할당받지 못한 경우 GFP_NO_FAIL 속성이 주어져 있다면 page를 할당받을 때까지 반복해 시도한다.
+		 *
+		 * 20131214
+		 * WATERMARK_MIN 이하의 메모리를 사용해서라도 메모리를 할당해 줘야 하는 경우
+		 * high priority로 수행한다.
 		 **/
 		page = __alloc_pages_high_priority(gfp_mask, order,
 				zonelist, high_zoneidx, nodemask,
@@ -6010,6 +6045,9 @@ static void __paginginit free_area_init_core(struct pglist_data *pgdat,
 
 	/** 20130511 
 	zone의 모든 영역을 순회하면서 zone 구조체의 내용을 채운다. 
+
+	20131214
+	node에 속한 zone들을 순회하면서 zone 자료구조를 채운다. node_zones는 array.
 	**/
 	for (j = 0; j < MAX_NR_ZONES; j++) {
 		struct zone *zone = pgdat->node_zones + j;

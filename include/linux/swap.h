@@ -24,6 +24,9 @@ struct bio;
 #define SWAP_FLAGS_VALID	(SWAP_FLAG_PRIO_MASK | SWAP_FLAG_PREFER | \
 				 SWAP_FLAG_DISCARD)
 
+/** 20131214    
+ * 현재 task struct의 flags에 PF_KSWAPD를 검사해 kswapd 여부를 판단.
+ **/
 static inline int current_is_kswapd(void)
 {
 	return current->flags & PF_KSWAPD;

@@ -124,6 +124,9 @@ struct zone_padding {
 #define ZONE_PADDING(name)
 #endif
 
+/** 20131214    
+ * vmstat으로 확인 할 수 있는 항목
+ **/
 enum zone_stat_item {
 	/* First 128 byte cacheline (assuming 64 bit words) */
 	NR_FREE_PAGES,
@@ -265,6 +268,7 @@ enum zone_watermarks {
 #define min_wmark_pages(z) (z->watermark[WMARK_MIN])
 /** 20131116    
  * zone의 watermark[WMARK_LOW] 값
+ * zone의 watermark[WMARK_HIGH] 값
  **/
 #define low_wmark_pages(z) (z->watermark[WMARK_LOW])
 #define high_wmark_pages(z) (z->watermark[WMARK_HIGH])
@@ -420,6 +424,10 @@ struct zone {
 	 * free areas of different sizes
 	 */
 	spinlock_t		lock;
+	/** 20131214    
+	 * zone 의 모든 page들이 고정되어 있어 reclaimable 하지 않다는 의미.
+	 * balance_pgdat에서 1로 설정.
+	 **/
 	int                     all_unreclaimable; /* All pages pinned */
 #if defined CONFIG_COMPACTION || defined CONFIG_CMA
 	/* pfn where the last incremental compaction isolated free pages */
@@ -461,6 +469,9 @@ struct zone {
 
 	/* Fields commonly accessed by the page reclaim scanner */
 	spinlock_t		lru_lock;
+	/** 20131214    
+	 * free_area_init_core에서 자료구조 초기화
+	 **/
 	struct lruvec		lruvec;
 
 	unsigned long		pages_scanned;	   /* since last reclaim */
@@ -512,6 +523,8 @@ struct zone {
 	 */
 	/** 20130427    
 	 * free_area_init_core 에서 초기화
+	 * 20131214
+	 * zone이 속한 node 자료구조를 가리키는 포인터
 	 **/
 	struct pglist_data	*zone_pgdat;
 	/* zone_start_pfn == zone_start_paddr >> PAGE_SHIFT */
@@ -752,7 +765,9 @@ extern struct page *mem_map;
 struct bootmem_data;
 typedef struct pglist_data {
 	/** 20130427    
-	 * free_area_init_core 에서 채워줌
+	 * free_area_init_core 에서 채워줌.
+	 * 20131214
+	 * node에 속한 zone 자료구조를 배열로 가지고 있다.
 	 **/
 	struct zone node_zones[MAX_NR_ZONES];
 	/** 20130629    
@@ -794,6 +809,9 @@ typedef struct pglist_data {
 	 * free_area_init_core에서 초기화
 	 **/
 	wait_queue_head_t kswapd_wait;
+	/** 20131214    
+	 * throttle_direct_reclaim 등에서 pfmemalloc이 available 할 때까지 대기할 wait queue
+	 **/
 	wait_queue_head_t pfmemalloc_wait;
 	struct task_struct *kswapd;	/* Protected by lock_memory_hotplug() */
 	/** 20131116    
@@ -838,6 +856,9 @@ extern int init_currently_empty_zone(struct zone *zone, unsigned long start_pfn,
 
 extern void lruvec_init(struct lruvec *lruvec, struct zone *zone);
 
+/** 20131214    
+ * 해당 lruvec을 포함하고 있는 zone 구조체 포인터를 리턴한다.
+ **/
 static inline struct zone *lruvec_zone(struct lruvec *lruvec)
 {
 #ifdef CONFIG_MEMCG
@@ -868,6 +889,13 @@ unsigned long __init node_memmap_size_bytes(int, unsigned long, unsigned long);
  */
 /** 20130504
 zone 의 인덱스를 구함
+
+20131214
+[zone 0][zone 1][zone 2][zone 3] ...
+^               ^
+|               |_ zone
+|
+|_ zone->zone_pgda->node_zones
 **/
 #define zone_idx(zone)		((zone) - (zone)->zone_pgdat->node_zones)
 

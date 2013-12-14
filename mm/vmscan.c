@@ -127,6 +127,10 @@ struct scan_control {
 /*
  * From 0 .. 100.  Higher means more swappy.
  */
+/** 20131214    
+ * 숫자가 높을수록 가능하면 swap을 사용한다.
+ * [참고] http://ubuntu.or.kr/wiki/doku.php?id=목차:vm.swap_조정하기
+ **/
 int vm_swappiness = 60;
 long vm_total_pages;	/* The total number of pages which the VM controls */
 
@@ -139,17 +143,29 @@ static bool global_reclaim(struct scan_control *sc)
 	return !sc->target_mem_cgroup;
 }
 #else
+/** 20131214    
+ * 항상 true
+ **/
 static bool global_reclaim(struct scan_control *sc)
 {
 	return true;
 }
 #endif
 
+/** 20131214    
+ * zone의 stat 정보에서 lru에 해당하는 통계값을 리턴.
+ **/
 static unsigned long get_lru_size(struct lruvec *lruvec, enum lru_list lru)
 {
+	/** 20131214    
+	 * mem_cgroup_disabled은 항상 true이므로 if문은 false
+	 **/
 	if (!mem_cgroup_disabled())
 		return mem_cgroup_get_lru_size(lruvec, lru);
 
+	/** 20131214    
+	 * lruvec을 포함하고 있는 zone의 vm stat에서 lru에 해당하는 값을 리턴.
+	 **/
 	return zone_page_state(lruvec_zone(lruvec), NR_LRU_BASE + lru);
 }
 
@@ -1627,29 +1643,61 @@ static void get_scan_count(struct lruvec *lruvec, struct scan_control *sc,
 	 * latencies, so it's better to scan a minimum amount there as
 	 * well.
 	 */
+	/** 20131214    
+	 * 이 함수가 kswapd에 의해 수행되며
+	 * zone의 page들이 (고정되어) 회수되지 못하는 경우
+	 *   force_scan.
+	 **/
 	if (current_is_kswapd() && zone->all_unreclaimable)
 		force_scan = true;
+	/** 20131214    
+	 * global_reclaim는 항상 true이므로 false.
+	 **/
 	if (!global_reclaim(sc))
 		force_scan = true;
 
 	/* If we have no swap space, do not bother scanning anon pages. */
+	/** 20131214    
+	 * scan control 정보를 읽어 swap 가능하지 않거나
+	 * swap page의 크기가 0보다 작다면
+	 *
+	 * noswap.
+	 **/
 	if (!sc->may_swap || (nr_swap_pages <= 0)) {
 		noswap = 1;
 		fraction[0] = 0;
 		fraction[1] = 1;
+		/** 20131214    
+		 * 분모
+		 **/
 		denominator = 1;
 		goto out;
 	}
 
+	/** 20131214    
+	 * anon = active anon + inactive anon
+	 * file = active file + inactive file
+	 **/
 	anon  = get_lru_size(lruvec, LRU_ACTIVE_ANON) +
 		get_lru_size(lruvec, LRU_INACTIVE_ANON);
 	file  = get_lru_size(lruvec, LRU_ACTIVE_FILE) +
 		get_lru_size(lruvec, LRU_INACTIVE_FILE);
 
+	/** 20131214    
+	 * 항상 true.
+	 **/
 	if (global_reclaim(sc)) {
+		/** 20131214    
+		 * zone의 free pages 값을 읽어온다.
+		 **/
 		free  = zone_page_state(zone, NR_FREE_PAGES);
 		/* If we have very few page cache pages,
 		   force-scan anon pages. */
+		/** 20131214    
+		 * file로 mapping 된 page수와 free page수를 더한 값이
+		 *   high watermark를 넘지 않았다면
+		 *   ??? goto out.
+		 **/
 		if (unlikely(file + free <= high_wmark_pages(zone))) {
 			fraction[0] = 1;
 			fraction[1] = 0;
@@ -1662,9 +1710,17 @@ static void get_scan_count(struct lruvec *lruvec, struct scan_control *sc,
 	 * With swappiness at 100, anonymous and file have the same priority.
 	 * This scanning priority is essentially the inverse of IO cost.
 	 */
+	/** 20131214    
+	 * vmscan의 swappiness를 가져온다.
+	 * sysctl로 변경하지 않는다면 초기값 60 (0~100)
+	 *
+	 * swappiness가 100인 경우 anonymous와 file이 같은 priority를 갖는다.
+	 * 이 scanning
+	 **/
 	anon_prio = vmscan_swappiness(sc);
 	file_prio = 200 - anon_prio;
 
+	/** 20131221 여기부터 ... **/
 	/*
 	 * OK, so we have swap space and a fair amount of page cache
 	 * pages.  We use the recently rotated / recently scanned
@@ -1798,6 +1854,9 @@ static inline bool should_continue_reclaim(struct lruvec *lruvec,
  */
 static void shrink_lruvec(struct lruvec *lruvec, struct scan_control *sc)
 {
+	/** 20131214    
+	 * LRU LIST마다 nr 값을 저장하기 위한 array.
+	 **/
 	unsigned long nr[NR_LRU_LISTS];
 	unsigned long nr_to_scan;
 	enum lru_list lru;
@@ -1806,6 +1865,9 @@ static void shrink_lruvec(struct lruvec *lruvec, struct scan_control *sc)
 	struct blk_plug plug;
 
 restart:
+	/** 20131214    
+	 * nr_reclaimed, nr_scanned 초기화
+	 **/
 	nr_reclaimed = 0;
 	nr_scanned = sc->nr_scanned;
 	get_scan_count(lruvec, sc, nr);
@@ -1865,6 +1927,9 @@ static void shrink_zone(struct zone *zone, struct scan_control *sc)
 
 	memcg = mem_cgroup_iter(root, NULL, &reclaim);
 	do {
+		/** 20131214    
+		 * memcg을 사용하지 않아 zone에 해당하는 lruvec을 받아옴
+		 **/
 		struct lruvec *lruvec = mem_cgroup_zone_lruvec(zone, memcg);
 
 		shrink_lruvec(lruvec, sc);
@@ -1957,23 +2022,48 @@ static bool shrink_zones(struct zonelist *zonelist, struct scan_control *sc)
 	 * allowed level, force direct reclaim to scan the highmem zone as
 	 * highmem pages could be pinning lowmem pages storing buffer_heads
 	 */
+	/** 20131214    
+	 * buffer heads가 허용된 수치를 초과할 경우
+	 * scan control의 gfp_mask에 GFP_HIGHMEM 속성을 추가한다.
+	 * 주석은 이해 안 됨???
+	 **/
 	if (buffer_heads_over_limit)
 		sc->gfp_mask |= __GFP_HIGHMEM;
 
+	/** 20131214    
+	 * 전체 zone list들 중 gfp_zone 이하의 존들에 대해 반복
+	 **/
 	for_each_zone_zonelist_nodemask(zone, z, zonelist,
 					gfp_zone(sc->gfp_mask), sc->nodemask) {
+		/** 20131214    
+		 * zone이 비어 있으면 다음 zone.
+		 **/
 		if (!populated_zone(zone))
 			continue;
 		/*
 		 * Take care memory controller reclaiming has small influence
 		 * to global LRU.
 		 */
+		/** 20131214    
+		 * global_reclaim는 항상 true.
+		 **/
 		if (global_reclaim(sc)) {
+			/** 20131214    
+			 * hardwall 기준을 통과하는 zone이 아니라면 다음 zone으로.
+			 **/
 			if (!cpuset_zone_allowed_hardwall(zone, GFP_KERNEL))
 				continue;
+			/** 20131214    
+			 * zone의 page들이 unreclaimable (pinned 되어 있다) 하고,
+			 * 초기값 DEF_PRIORITY가 아닌 경우 다음 zone으로.
+			 **/
 			if (zone->all_unreclaimable &&
 					sc->priority != DEF_PRIORITY)
 				continue;	/* Let kswapd poll it */
+			/** 20131214    
+			 * huge page를 위한 memory compaction을 하도록 빌드 되어 있는지 검사.
+			 * default로 설정되어 있지 않아 false.
+			 **/
 			if (COMPACTION_BUILD) {
 				/*
 				 * If we already have plenty of memory free for
@@ -1996,9 +2086,15 @@ static bool shrink_zones(struct zonelist *zonelist, struct scan_control *sc)
 			 * and balancing, not for a memcg's limit.
 			 */
 			nr_soft_scanned = 0;
+			/** 20131214    
+			 * MEM CGROUP을 사용하지 않아 0을 리턴한다.
+			 **/
 			nr_soft_reclaimed = mem_cgroup_soft_limit_reclaim(zone,
 						sc->order, sc->gfp_mask,
 						&nr_soft_scanned);
+			/** 20131214    
+			 * 정의되어 있지 않아 누적해도 0.
+			 **/
 			sc->nr_reclaimed += nr_soft_reclaimed;
 			sc->nr_scanned += nr_soft_scanned;
 			/* need some check for avoid more shrink_zone() */
@@ -2062,12 +2158,24 @@ static unsigned long do_try_to_free_pages(struct zonelist *zonelist,
 	unsigned long writeback_threshold;
 	bool aborted_reclaim;
 
+	/** 20131214    
+	 * CONFIG_TASK_DELAY_ACCT 설정되어 있지 않아 NULL 함수
+	 **/
 	delayacct_freepages_start();
 
+	/** 20131214    
+	 * CONFIG_MEMCG가 설정되어 있지 않아 true.
+	 **/
 	if (global_reclaim(sc))
+		/** 20131214    
+		 * ALLOCSTALL을 event count를 증가시킨다.
+		 **/
 		count_vm_event(ALLOCSTALL);
 
 	do {
+		/** 20131214    
+		 * scan된 inactive pages 수를 초기화.
+		 **/
 		sc->nr_scanned = 0;
 		aborted_reclaim = shrink_zones(zonelist, sc);
 
@@ -2150,6 +2258,10 @@ out:
  * pfmemalloc 의 최소 필요 사이즈에 대한 water mark를 체크하고 결과는 리턴
  * - 해당 노드의 free_pages와 water mark min/2 비교하여 
  * free pages가 부족하면 swapd를 깨운다.
+ *
+ * 20131214
+ * wmark min 이하의 메모리들은 pfmemalloc용으로 사용하기 위한 용도의
+ * watermark 하한이다. 이 공간들로 다시 pfmemalloc용 watermark test를 한다.
  */
 static bool pfmemalloc_watermark_ok(pg_data_t *pgdat)
 {
@@ -2208,6 +2320,9 @@ static bool pfmemalloc_watermark_ok(pg_data_t *pgdat)
  * depleted. kswapd will continue to make progress and wake the processes
  * when the low watermark is reached
  */
+/** 20131214    
+ * direct reclaim 전에 PFMEMALLOC watermark 테스트를 만족할 때까지 기다린다.
+ **/
 static void throttle_direct_reclaim(gfp_t gfp_mask, struct zonelist *zonelist,
 					nodemask_t *nodemask)
 {
@@ -2256,7 +2371,11 @@ static void throttle_direct_reclaim(gfp_t gfp_mask, struct zonelist *zonelist,
 	 */
 	/** 20131207
 	 * filesystem을 사용할수 없는 경우(FS lock holding, journal transaction)
-	 * HZ시간 동안 기다리거나 pfmemalloc_watermark_ok조건이 참이 될때까지 기다린다
+	 * HZ시간 동안 기다리거나 pfmemalloc_watermark_ok조건이 참이 될때까지 기다린다(sleep)
+	 *
+	 * 20131214
+	 * __GFP_FS
+	 *   If clear, the kernel is not allowed to perform filesystem-dependent operations.
 	 */
 	if (!(gfp_mask & __GFP_FS)) {
 		wait_event_interruptible_timeout(pgdat->pfmemalloc_wait,
@@ -2265,11 +2384,16 @@ static void throttle_direct_reclaim(gfp_t gfp_mask, struct zonelist *zonelist,
 	}
 
 	/* Throttle until kswapd wakes the process */
+	/** 20131214    
+	 * 여기까지 왔다면 kernel thread가 아니고,
+	 * FileSystem 사용 불가 상태도 아니다.
+	 *
+	 * kswapd가 메모리를 확보해 pfmemalloc_watermark 테스트를 통과할 때까지
+	 * TASK_KILLABLE 상태로 sleep 한다.
+	 * 또는 FATAL SIGNAL이 pending 되어 있을 경우 리턴한다.
+	 **/
 	wait_event_killable(zone->zone_pgdat->pfmemalloc_wait,
 		pfmemalloc_watermark_ok(pgdat));
-	/** 20131214
-	 * 여기부터
-	 */
 }
 
 unsigned long try_to_free_pages(struct zonelist *zonelist, int order,
@@ -2291,12 +2415,18 @@ unsigned long try_to_free_pages(struct zonelist *zonelist, int order,
 		.gfp_mask = sc.gfp_mask,
 	};
 
+	/** 20131214    
+	 * reclaim 전에 throttle을 준다.
+	 **/
 	throttle_direct_reclaim(gfp_mask, zonelist, nodemask);
 
 	/*
 	 * Do not enter reclaim if fatal signal is pending. 1 is returned so
 	 * that the page allocator does not consider triggering OOM
 	 */
+	/** 20131214    
+	 * fatal signal이 대기 중일 경우 reclaim을 하지 않고 리턴한다.
+	 **/
 	if (fatal_signal_pending(current))
 		return 1;
 
@@ -3010,6 +3140,9 @@ static int kswapd(void *p)
  */
 /** 20131116    
  * 해당 zone의 free pages의 수가 WMARK_LOW 아래로 떨어진다면 kswapd를 실행시킨다.
+ * 
+ * 20131214
+ * wakeup_kswapd가 호출되더라도 zone_watermark_ok_safe 라면 바로 리턴한다.
  **/
 void wakeup_kswapd(struct zone *zone, int order, enum zone_type classzone_idx)
 {
@@ -3060,6 +3193,9 @@ void wakeup_kswapd(struct zone *zone, int order, enum zone_type classzone_idx)
 	trace_mm_vmscan_wakeup_kswapd(pgdat->node_id, zone_idx(zone), order);
 	/** 20131116    
 	 * pgdat->kwapd_wait 에서 sleep 중인 kswapd task를 깨운다.
+	 *
+	 * 20131214
+	 * kswapd는 TASK_INTERRUPTIBLE로 sleep 중이다.
 	 **/
 	wake_up_interruptible(&pgdat->kswapd_wait);
 }

@@ -236,6 +236,9 @@ static inline void mem_cgroup_uncharge_cache_page(struct page *page)
 {
 }
 
+/** 20131214    
+ * zone의 lruvec을 리턴.
+ **/
 static inline struct lruvec *mem_cgroup_zone_lruvec(struct zone *zone,
 						    struct mem_cgroup *memcg)
 {
@@ -287,6 +290,9 @@ static inline void mem_cgroup_end_migration(struct mem_cgroup *memcg,
 {
 }
 
+/** 20131214    
+ * NULL.
+ **/
 static inline struct mem_cgroup *
 mem_cgroup_iter(struct mem_cgroup *root,
 		struct mem_cgroup *prev,
@@ -301,7 +307,7 @@ static inline void mem_cgroup_iter_break(struct mem_cgroup *root,
 }
 
 /** 20130803    
- * NULL 함수
+ * 항상 true를 리턴
  **/
 static inline bool mem_cgroup_disabled(void)
 {
@@ -357,6 +363,9 @@ static inline void mem_cgroup_dec_page_stat(struct page *page,
 {
 }
 
+/** 20131214    
+ * 정의되어 있지 않음.
+ **/
 static inline
 unsigned long mem_cgroup_soft_limit_reclaim(struct zone *zone, int order,
 					    gfp_t gfp_mask,

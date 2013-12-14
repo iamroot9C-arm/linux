@@ -577,13 +577,16 @@ do {									\
 	 ? 0 : __wait_event_interruptible_locked(wq, condition, 1, 1))
 
 /** 20131207
- * 1.waitqueue를 define
- * 2.wait head에 1의 waitqueue를 넣어준다. current task state는 TASK_KILLABLE로 설정
- * 3.1)condition을 만족하거나
- *		2)fatal signal이 pending되어 있거나
- *	
- * 4.1)2)를 만족 못하면 schedule에 의해서 sleep 
- * 5.이후 스캐쥴러에서 깨어날때 1)2)을 다시 검사하여 만족하면 break 아니면 goto 4. 
+ * 1. waitqueue를 define
+ * 2. wait head에 1의 waitqueue를 넣어준다.
+ *    current task state는 TASK_KILLABLE로 설정
+ * 3. condition을 만족하면 wait을 끝낸다.
+ * 4. condition을 만족하지 않으면서
+ *    1) fatal signal이 pending되어 있지 않으면
+ *       schedule 함수를 실행한다. 이 때부터 이 task는 sleep 상태가 된다.
+ *    2) fatal signal이 pending되어 있으면
+ *       ret을 -ERESTARTSYS로 하고 finish_wait을 호출.
+ * 5. 이후 스캐쥴러에서 깨어날때 다시 for문의 처음으로 돌아가 3번부터 다시 수행
  */
 
 #define __wait_event_killable(wq, condition, ret)			\
@@ -619,6 +622,11 @@ do {									\
  * The function will return -ERESTARTSYS if it was interrupted by a
  * signal and 0 if @condition evaluated to true.
  */
+/** 20131214    
+ * condition을 만족하지 않았을 경우 __wait_event_killable 호출
+ *   wait 상태로 들어가기 전 1차로 condition 검사.
+ *   return값은 wait_event_killable를 호출한 곳으로 전달됨.
+ **/
 #define wait_event_killable(wq, condition)				\
 ({									\
 	int __ret = 0;							\
