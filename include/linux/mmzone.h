@@ -193,21 +193,33 @@ enum lru_list {
 	LRU_UNEVICTABLE,
 	NR_LRU_LISTS
 };
-
+/** 20131221
+ * 0에서 NR_LRU_LISTS까지 loop한다.
+ **/
 #define for_each_lru(lru) for (lru = 0; lru < NR_LRU_LISTS; lru++)
 
+/** 20131221
+ * 0에서 LRU_ACTIVE_FILE까지 loop한다.
+ **/
 #define for_each_evictable_lru(lru) for (lru = 0; lru <= LRU_ACTIVE_FILE; lru++)
-
+/** 20131221
+	lru_list가 file속성이면 true를 리턴한다
+ **/
 static inline int is_file_lru(enum lru_list lru)
 {
 	return (lru == LRU_INACTIVE_FILE || lru == LRU_ACTIVE_FILE);
 }
-
+/** 20131221
+ * lru_list가 active면 true를 리턴한다.
+ **/ 
 static inline int is_active_lru(enum lru_list lru)
 {
 	return (lru == LRU_ACTIVE_ANON || lru == LRU_ACTIVE_FILE);
 }
 
+/** 20131221
+ * lru_list가 unevictable속성이면 true를 리턴한다.
+ **/ 
 static inline int is_unevictable_lru(enum lru_list lru)
 {
 	return (lru == LRU_UNEVICTABLE);

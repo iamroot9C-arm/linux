@@ -20,13 +20,24 @@ static inline int page_is_file_cache(struct page *page)
 {
 	return !PageSwapBacked(page);
 }
-
+/** 20131221
+ * lruvec->list에 page를 추가시킨다.
+ **/
 static __always_inline void add_page_to_lru_list(struct page *page,
 				struct lruvec *lruvec, enum lru_list lru)
 {
+		/** 20131221
+		  nr_pages = 1
+		 **/
 	int nr_pages = hpage_nr_pages(page);
 	mem_cgroup_update_lru_size(lruvec, lru, nr_pages);
+	/** 20131221
+	 * lruvec->list에 page->lru를 등록시킨다
+	 **/
 	list_add(&page->lru, &lruvec->lists[lru]);
+	/** 20131221
+	 * lruvec로 부터 zone을 구하고 해당 zone의 page state에 nr_pages만큼을 증감시킨다.
+	 **/
 	__mod_zone_page_state(lruvec_zone(lruvec), NR_LRU_BASE + lru, nr_pages);
 }
 

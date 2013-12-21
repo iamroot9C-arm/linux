@@ -221,8 +221,13 @@ static inline void kick_all_cpus_sync(void) {  }
  **/
 # define smp_processor_id() raw_smp_processor_id()
 #endif
-
+/** 20131221
+ * 선점불가로 만들고 현재 cpuid를 리턴한다.
+ **/
 #define get_cpu()		({ preempt_disable(); smp_processor_id(); })
+/** 20131221
+ * 선점 가능으로 만듬
+ **/
 #define put_cpu()		preempt_enable()
 
 /*

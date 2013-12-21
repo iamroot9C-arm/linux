@@ -137,6 +137,9 @@ static inline void vma_adjust_trans_huge(struct vm_area_struct *vma,
 		return;
 	__vma_adjust_trans_huge(vma, start, end, adjust_next);
 }
+/** 20131221
+  page가 PageTransHuge페이지가 아니면 1을 리턴한다.
+ **/
 static inline int hpage_nr_pages(struct page *page)
 {
 	if (unlikely(PageTransHuge(page)))

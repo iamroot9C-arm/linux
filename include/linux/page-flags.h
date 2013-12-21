@@ -613,7 +613,9 @@ static inline int PageTransTail(struct page *page)
 }
 
 #else
-
+/** 20131221
+ * CONFIG_TRANSPARENT_HUGEPAGE가 define되어 있지않으므로 0을 리턴한다.
+ **/
 static inline int PageTransHuge(struct page *page)
 {
 	return 0;

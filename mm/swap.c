@@ -296,11 +296,17 @@ static void pagevec_lru_move_fn(struct pagevec *pvec,
 	struct zone *zone = NULL;
 	struct lruvec *lruvec;
 	unsigned long flags = 0;
-
+/** 20131221
+ pvec의 nr갯수만큼 루프를 돈다
+ pvec의 page[i]가 포함된 zone에 
+**/
 	for (i = 0; i < pagevec_count(pvec); i++) {
 		struct page *page = pvec->pages[i];
 		struct zone *pagezone = page_zone(page);
-
+		/** 20131221
+		  현재 page가 이전에 옮겨준 page와 다른 zone에 있으면
+		  이전 zone의 lock을 풀고 현재 zone의 lock을 건다.
+		**/
 		if (pagezone != zone) {
 			if (zone)
 				spin_unlock_irqrestore(&zone->lru_lock, flags);
@@ -309,10 +315,17 @@ static void pagevec_lru_move_fn(struct pagevec *pvec,
 		}
 
 		lruvec = mem_cgroup_page_lruvec(page, zone);
+		/** 20131221
+		 * 인자로 넘어온 *move_fn 함수를 호출한다.
+		 **/
 		(*move_fn)(page, lruvec, arg);
 	}
 	if (zone)
 		spin_unlock_irqrestore(&zone->lru_lock, flags);
+/** 20140104
+  여기서부터 시작 ...
+ **/
+
 	release_pages(pvec->pages, pvec->nr, pvec->cold);
 	pagevec_reinit(pvec);
 }
@@ -362,6 +375,10 @@ void rotate_reclaimable_page(struct page *page)
 	}
 }
 
+/** 20131221
+ * lruvec의 reclaim_stat의 scanned값을 증가시킨다.
+ * lru가 active일 경우 reclaim_stat의 rotated값도 같이 증가시킨다.
+ **/
 static void update_page_reclaim_stat(struct lruvec *lruvec,
 				     int file, int rotated)
 {
@@ -573,6 +590,9 @@ static void lru_deactivate_fn(struct page *page, struct lruvec *lruvec,
  */
 void lru_add_drain_cpu(int cpu)
 {
+		/** 20131221
+		 * cpu번호에 해당하는 per cpu에 lru_add_pvecs의 위치를 받아온다.
+		 **/
 	struct pagevec *pvecs = per_cpu(lru_add_pvecs, cpu);
 	struct pagevec *pvec;
 	int lru;
@@ -777,6 +797,9 @@ void lru_add_page_tail(struct page *page, struct page *page_tail,
 }
 #endif /* CONFIG_TRANSPARENT_HUGEPAGE */
 
+/** 20131221
+ * page를 lruvec에서 인자로 넘어온 lru리스트에 등록시켜주고 reclaim_stat을 갱신한다.
+ **/
 static void __pagevec_lru_add_fn(struct page *page, struct lruvec *lruvec,
 				 void *arg)
 {
@@ -787,10 +810,17 @@ static void __pagevec_lru_add_fn(struct page *page, struct lruvec *lruvec,
 	VM_BUG_ON(PageActive(page));
 	VM_BUG_ON(PageUnevictable(page));
 	VM_BUG_ON(PageLRU(page));
-
+/** 20131221
+ * page의 flag에서 LRU에 해당하는 bit를 Set해준다.
+ * page가 LRU리스트에 속한다는 의미임
+ **/
 	SetPageLRU(page);
+	/** 20131221
+	 * 등록할lru가 active일경우 page의 flag속성에 active bit를 set해준다
+	 **/
 	if (active)
 		SetPageActive(page);
+
 	add_page_to_lru_list(page, lruvec, lru);
 	update_page_reclaim_stat(lruvec, file, active);
 }

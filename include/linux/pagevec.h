@@ -38,7 +38,9 @@ static inline void pagevec_reinit(struct pagevec *pvec)
 {
 	pvec->nr = 0;
 }
-
+/** 20131221
+ * pvec의 nr멤버를 리턴한다.
+ **/
 static inline unsigned pagevec_count(struct pagevec *pvec)
 {
 	return pvec->nr;

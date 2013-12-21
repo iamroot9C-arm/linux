@@ -2843,6 +2843,9 @@ EXPORT_SYMBOL(kblockd_schedule_delayed_work);
  *   plug. By flushing the pending I/O when the process goes to sleep, we avoid
  *   this kind of deadlock.
  */
+/** 20131221
+ * blk_plug를 초기화 해주는 함수
+ **/
 void blk_start_plug(struct blk_plug *plug)
 {
 	struct task_struct *tsk = current;
@@ -3025,7 +3028,9 @@ void blk_flush_plug_list(struct blk_plug *plug, bool from_schedule)
 
 	local_irq_restore(flags);
 }
-
+/** 20131221
+ * 분석 생략???
+ **/
 void blk_finish_plug(struct blk_plug *plug)
 {
 	blk_flush_plug_list(plug, false);

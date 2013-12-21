@@ -1531,12 +1531,18 @@ static int inactive_anon_is_low_global(struct zone *zone)
  * Returns true if the zone does not have enough inactive anon pages,
  * meaning some active anon pages need to be deactivated.
  */
+/** 20131221
+ * inactive anon 페이지가 적으면 true를 리턴한다
+ **/
 static int inactive_anon_is_low(struct lruvec *lruvec)
 {
 	/*
 	 * If we don't have swap space, anonymous page deactivation
 	 * is pointless.
 	 */
+	/** 20131221
+	  swap으로 사용할 page가 없으면 0을 리턴한다.
+	 **/
 	if (!total_swap_pages)
 		return 0;
 
@@ -1552,6 +1558,9 @@ static inline int inactive_anon_is_low(struct lruvec *lruvec)
 }
 #endif
 
+/** 20131221
+ * 해당 zone에서 active file페이지가 크면 true를 리턴한다.
+ **/
 static int inactive_file_is_low_global(struct zone *zone)
 {
 	unsigned long active, inactive;
@@ -1576,14 +1585,22 @@ static int inactive_file_is_low_global(struct zone *zone)
  * This uses a different ratio than the anonymous pages, because
  * the page cache uses a use-once replacement algorithm.
  */
+/** 20131221
+ * inactive file페이지가 적으면 true를 리턴한다.
+ **/
 static int inactive_file_is_low(struct lruvec *lruvec)
 {
+		/** 20131221
+		 * mem_cgroup_disabled에서 항상 true를 리턴한다
+		 **/
 	if (!mem_cgroup_disabled())
 		return mem_cgroup_inactive_file_is_low(lruvec);
 
 	return inactive_file_is_low_global(lruvec_zone(lruvec));
 }
-
+/** 20131221
+ * 해당 lru에서 inactive된 페이지의 갯수가 적으면 true를 리턴한다.
+ **/
 static int inactive_list_is_low(struct lruvec *lruvec, enum lru_list lru)
 {
 	if (is_file_lru(lru))
@@ -1620,6 +1637,11 @@ static int vmscan_swappiness(struct scan_control *sc)
  * nr[0] = anon inactive pages to scan; nr[1] = anon active pages to scan
  * nr[2] = file inactive pages to scan; nr[3] = file active pages to scan
  */
+/** 20131221
+ * 각각의 lru에서 스캔해야 할 페이지의 수(nr)를 리턴한다.
+ * 자세한 분석은 생략함???
+ **/
+
 static void get_scan_count(struct lruvec *lruvec, struct scan_control *sc,
 			   unsigned long *nr)
 {
@@ -1720,7 +1742,10 @@ static void get_scan_count(struct lruvec *lruvec, struct scan_control *sc,
 	anon_prio = vmscan_swappiness(sc);
 	file_prio = 200 - anon_prio;
 
-	/** 20131221 여기부터 ... **/
+	/** 20131221
+	
+**/
+
 	/*
 	 * OK, so we have swap space and a fair amount of page cache
 	 * pages.  We use the recently rotated / recently scanned
@@ -1870,9 +1895,17 @@ restart:
 	 **/
 	nr_reclaimed = 0;
 	nr_scanned = sc->nr_scanned;
+/** 20131221
+ * 특정 lru알고리즘을 통해서 scan값을 얻어온다.
+ **/
 	get_scan_count(lruvec, sc, nr);
-
+/** 20131221
+ * blk_plug를 초기화하는 함수 
+ **/
 	blk_start_plug(&plug);
+	/** 20131221
+	 * active_anon을 제외한 lru리스트들이 존재하는 동안 shrink_list함수를 수행한다
+	 **/
 	while (nr[LRU_INACTIVE_ANON] || nr[LRU_ACTIVE_FILE] ||
 					nr[LRU_INACTIVE_FILE]) {
 		for_each_evictable_lru(lru) {
@@ -1897,6 +1930,9 @@ restart:
 		    sc->priority < DEF_PRIORITY)
 			break;
 	}
+/** 20131221
+  blk_plug구조체를 참조한 뒤에 해제함
+ **/
 	blk_finish_plug(&plug);
 	sc->nr_reclaimed += nr_reclaimed;
 
