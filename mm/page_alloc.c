@@ -1052,8 +1052,6 @@ static void free_one_page(struct zone *zone, struct page *page, int order,
 }
 
 /** 20130810
- * 여기부터...
- *
  * page부터 1 << order 개수의 pages들을 free 하기 전에
  * free가 가능한지 검사하는 함수
  **/
@@ -2183,6 +2181,9 @@ out:
 /*
  * Free a list of 0-order pages
  */
+/** 20140104    
+ * list에 등록된 page들을 순회하며 cold 여부에 따라 page를 free한다.
+ **/
 void free_hot_cold_page_list(struct list_head *list, int cold)
 {
 	struct page *page, *next;

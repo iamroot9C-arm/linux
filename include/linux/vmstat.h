@@ -27,6 +27,9 @@ struct vm_event_state {
 
 DECLARE_PER_CPU(struct vm_event_state, vm_event_states);
 
+/** 20140104    
+ * percpu vm event states를 증가시킨다.
+ **/
 static inline void __count_vm_event(enum vm_event_item item)
 {
 	__this_cpu_inc(vm_event_states.event[item]);

@@ -216,10 +216,19 @@ static inline void list_move(struct list_head *list, struct list_head *head)
  * @list: the entry to move
  * @head: the head that will follow our entry
  */
+/** 20140104    
+ * entry를 기존의 list에서 제거하고, head가 가리키는 새로운 list의 tail로 삽입
+ **/
 static inline void list_move_tail(struct list_head *list,
 				  struct list_head *head)
 {
+	/** 20140104    
+	 * list 에서 기존의 entry를 삭제
+	 **/
 	__list_del_entry(list);
+	/** 20140104    
+	 * head가 가리키는 list의 끝에 새로운 entry를 추가한다.
+	 **/
 	list_add_tail(list, head);
 }
 

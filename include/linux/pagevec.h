@@ -9,11 +9,17 @@
 #define _LINUX_PAGEVEC_H
 
 /* 14 pointers + two long's align the pagevec structure to a power of two */
+/** 20140104    
+ * 2의 n 제곱으로 맞춰주기 위한 값.
+ **/
 #define PAGEVEC_SIZE	14
 
 struct page;
 struct address_space;
 
+/** 20140104    
+ * pagevec의 nr개의 page들을 처리하는 동안 spinlock으로 동기화 한다.
+ **/
 struct pagevec {
 	unsigned long nr;
 	unsigned long cold;
@@ -28,12 +34,19 @@ unsigned pagevec_lookup_tag(struct pagevec *pvec,
 		struct address_space *mapping, pgoff_t *index, int tag,
 		unsigned nr_pages);
 
+/** 20140104    
+ * pagevec 구조체를 초기화 한다.
+ **/
 static inline void pagevec_init(struct pagevec *pvec, int cold)
 {
 	pvec->nr = 0;
 	pvec->cold = cold;
 }
 
+/** 20140104    
+ * pagevec 구조체를 초기화 한다.
+ * 왜 cold는 해주지 않은 것일까???
+ **/
 static inline void pagevec_reinit(struct pagevec *pvec)
 {
 	pvec->nr = 0;

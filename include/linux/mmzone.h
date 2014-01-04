@@ -240,6 +240,10 @@ struct zone_reclaim_stat {
 	 * 각각의 1은 LRU_INACTIVE_FILE, LRU_ACTIVE_FILE 인듯하고,
 	 * 각 변수는 각 리스트에 접근한 수를 저장한듯???
 	 **/
+	 /** 20140104    
+	  * inactivate -> activate 인 경우 rotated 증가.
+	  *   update_page_reclaim_stat 함수의 세번째 arg에 따라 증가 여부 결정
+	  **/
 	unsigned long		recent_rotated[2];
 	unsigned long		recent_scanned[2];
 };

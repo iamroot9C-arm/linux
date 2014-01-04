@@ -1014,6 +1014,9 @@ static inline pgoff_t page_file_index(struct page *page)
 /*
  * Return true if this page is mapped into pagetables.
  */
+/** 20140104    
+ * page가 pagetables에 mapping되는지 리턴.
+ **/
 static inline int page_mapped(struct page *page)
 {
 	return atomic_read(&(page)->_mapcount) >= 0;

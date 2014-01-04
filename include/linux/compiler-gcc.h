@@ -123,6 +123,9 @@
  * A trick to suppress uninitialized variable warning without generating any
  * code
  */
+/** 20140104    
+ * 초기화 되지 않은 변수에 대한 gcc warning을 막기 위해 초기화 트릭.
+ **/
 #define uninitialized_var(x) x = x
 
 /** 20130511 

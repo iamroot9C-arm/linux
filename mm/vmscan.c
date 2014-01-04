@@ -1429,15 +1429,26 @@ static void shrink_active_list(unsigned long nr_to_scan,
 	int file = is_file_lru(lru);
 	struct zone *zone = lruvec_zone(lruvec);
 
+	/** 20140104    
+	 * cpu lru list에 있던 page를 zone에 반영시킨다.
+	 **/
 	lru_add_drain();
 
+	/** 20140104    
+	 * try_to_free_pages의 지역변수 sc를 참고.
+	 **/
 	if (!sc->may_unmap)
 		isolate_mode |= ISOLATE_UNMAPPED;
 	if (!sc->may_writepage)
 		isolate_mode |= ISOLATE_CLEAN;
 
+	/** 20140104    
+	 * zone의 lru lock.
+	 **/
 	spin_lock_irq(&zone->lru_lock);
 
+	/** 20140111 여기부터...
+	 **/
 	nr_taken = isolate_lru_pages(nr_to_scan, lruvec, &l_hold,
 				     &nr_scanned, sc, isolate_mode, lru);
 	if (global_reclaim(sc))
@@ -1612,12 +1623,21 @@ static int inactive_list_is_low(struct lruvec *lruvec, enum lru_list lru)
 static unsigned long shrink_list(enum lru_list lru, unsigned long nr_to_scan,
 				 struct lruvec *lruvec, struct scan_control *sc)
 {
+	/** 20140104    
+	 * lru가 active인 경우 shrink_active_list를 호출
+	 **/
 	if (is_active_lru(lru)) {
+		/** 20140104    
+		 * 해당 lru의 type(file, anon)에서 inactive list의 수가 적을 때
+		 **/
 		if (inactive_list_is_low(lruvec, lru))
 			shrink_active_list(nr_to_scan, lruvec, sc, lru);
 		return 0;
 	}
 
+	/** 20140104    
+	 * lru가 inactive인 경우 shrink_inactive_list를 호출
+	 **/
 	return shrink_inactive_list(nr_to_scan, lruvec, sc, lru);
 }
 
@@ -1896,7 +1916,7 @@ restart:
 	nr_reclaimed = 0;
 	nr_scanned = sc->nr_scanned;
 /** 20131221
- * 특정 lru알고리즘을 통해서 scan값을 얻어온다.
+ * 특정 lru알고리즘을 통해서 scan할 페이지 수를 얻어온다.
  **/
 	get_scan_count(lruvec, sc, nr);
 /** 20131221
@@ -1910,8 +1930,14 @@ restart:
 					nr[LRU_INACTIVE_FILE]) {
 		for_each_evictable_lru(lru) {
 			if (nr[lru]) {
+				/** 20140104    
+				 * nr_to_scan의 최대치는 SWAP_CLUSTER_MAX
+				 **/
 				nr_to_scan = min_t(unsigned long,
 						   nr[lru], SWAP_CLUSTER_MAX);
+				/** 20140104    
+				 * nr_to_scan만큼 nr[lru]를 미리 뺀다.
+				 **/
 				nr[lru] -= nr_to_scan;
 
 				nr_reclaimed += shrink_list(lru, nr_to_scan,

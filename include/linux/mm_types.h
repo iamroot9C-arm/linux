@@ -106,6 +106,17 @@ struct page {
 					 * never succeed on tail
 					 * pages.
 					 */
+					/** 20140104    
+					 * pagetables에 의해 참조되는 page인 경우
+					 *   referencing 때마다 1씩 증가.
+					 *
+					 * reset value는 -1.
+					 *
+					 * 아래 함수에서 include.
+					 * page_add_new_anon_rmap,
+					 * page_add_file_rmap
+					 * [참고] http://studyfoss.egloos.com/5512112
+					 **/
 					atomic_t _mapcount;
 
 					struct { /* SLUB */

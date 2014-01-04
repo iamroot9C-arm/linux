@@ -245,6 +245,9 @@ static inline struct lruvec *mem_cgroup_zone_lruvec(struct zone *zone,
 	return &zone->lruvec;
 }
 
+/** 20140104    
+ * zone의 lruvec을 리턴.
+ **/
 static inline struct lruvec *mem_cgroup_page_lruvec(struct page *page,
 						    struct zone *zone)
 {
