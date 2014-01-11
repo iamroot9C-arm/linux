@@ -877,6 +877,9 @@ static int page_referenced_file(struct page *page,
  * Quick test_and_clear_referenced for all mappings to a page,
  * returns the number of ptes which referenced the page.
  */
+/** 20140111
+ * 추후 분석하기로 함 ???
+ **/
 int page_referenced(struct page *page,
 		    int is_locked,
 		    struct mem_cgroup *memcg,

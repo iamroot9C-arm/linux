@@ -26,6 +26,9 @@
  * Must be an lvalue. Since @var must be a simple identifier,
  * we force a syntax error here if it isn't.
  */
+/** 20140111
+ * 선점 불가능 상태로 만들고, 현재 cpu의 percpu에서 cpu변수의 주소값을 가져온다.
+ **/
 #define get_cpu_var(var) (*({				\
 	preempt_disable();				\
 	&__get_cpu_var(var); }))
@@ -34,6 +37,9 @@
  * The weird & is necessary because sparse considers (void)(var) to be
  * a direct dereference of percpu variable (var).
  */
+/** 20140111
+ * 선점 가능으로 만든다
+ **/
 #define put_cpu_var(var) do {				\
 	(void)&(var);					\
 	preempt_enable();				\

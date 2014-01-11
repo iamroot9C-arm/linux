@@ -47,6 +47,10 @@ static DEFINE_PER_CPU(struct pagevec, lru_deactivate_pvecs);
  * This path almost never happens for VM activity - pages are normally
  * freed via pagevecs.  But it gets used by networking.
  */
+/** 20140111
+ * page에 lru플래그가 설정되어 있으면, lru플래그를 클리어하고
+ * page를 lru리스트로부터 제거한다.
+**/
 static void __page_cache_release(struct page *page)
 {
 	if (PageLRU(page)) {
@@ -63,6 +67,9 @@ static void __page_cache_release(struct page *page)
 	}
 }
 
+/** 20140111
+ * order가 0인(single page)를 lru리스트로 부터 해제하고 percpu에 달아준다. 
+ **/
 static void __put_single_page(struct page *page)
 {
 	__page_cache_release(page);
@@ -160,6 +167,10 @@ skip_lock_tail:
 	}
 }
 
+/** 20140111
+ * page를 lru리스트에서 해제하는 함수???
+ * 자세한 분석은 생략???
+ **/
 void put_page(struct page *page)
 {
 	if (unlikely(PageCompound(page)))
@@ -173,6 +184,11 @@ EXPORT_SYMBOL(put_page);
  * This function is exported but must not be called by anything other
  * than get_page(). It implements the slow path of get_page().
  */
+/** 20140111
+ * compound 된 page로 부터 page_tail여부를 판단하고 page를 가져올수 있으면 
+ * true를 리턴한다???
+ * 자세한 분석은 생략???
+ **/
 bool __get_page_tail(struct page *page)
 {
 	/*
@@ -525,6 +541,10 @@ void mark_page_accessed(struct page *page)
 }
 EXPORT_SYMBOL(mark_page_accessed);
 
+/** 20140111
+ * page를 percpu의 lru리스트에 하나씩 등록시키고 pagevec에 page에 남은 슬롯이 없으면 
+ * pagevec의 lru리스트를 zone의 lru리스트에 등록시킨다.
+ **/
 void __lru_cache_add(struct page *page, enum lru_list lru)
 {
 	struct pagevec *pvec = &get_cpu_var(lru_add_pvecs)[lru];
@@ -541,6 +561,11 @@ EXPORT_SYMBOL(__lru_cache_add);
  * @page: the page to be added to the LRU.
  * @lru: the LRU list to which the page is added.
  */
+/** 20140111
+ * page가 active하다면 active속성을 clear하고,
+ * 그렇지 않으면서 unevictable 하다면 unevictable속성을 clear한다.
+ * page를 lru리스트에 추가한다.
+ **/
 void lru_cache_add_lru(struct page *page, enum lru_list lru)
 {
 	if (PageActive(page)) {
@@ -565,6 +590,10 @@ void lru_cache_add_lru(struct page *page, enum lru_list lru)
  * while it's locked or otherwise "invisible" to other tasks.  This is
  * difficult to do when using the pagevec cache, so bypass that.
  */
+/** 20140111
+ * page의 unevictable 플래그 및 lru 플래그를 set하고, 
+ * lruvec의 LRU_UNEVICTABLE리스트에 page를 추가한다.
+ **/
 void add_page_to_unevictable_list(struct page *page)
 {
 	struct zone *zone = page_zone(page);

@@ -94,6 +94,9 @@ struct scan_control {
 	nodemask_t	*nodemask;
 };
 
+/** 20140111
+ * lrt 리스트의 맨 마지막 페이지를 리턴
+ **/
 #define lru_to_page(_head) (list_entry((_head)->prev, struct page, lru))
 
 #ifdef ARCH_HAS_PREFETCH
@@ -111,6 +114,9 @@ struct scan_control {
 #endif
 
 #ifdef ARCH_HAS_PREFETCHW
+/** 20140111
+ * lruvec이 가리키는 lru리스트의 이전 페이지의 필드를 prefetch한다.
+ **/
 #define prefetchw_prev_lru_page(_page, _base, _field)			\
 	do {								\
 		if ((_page)->lru.prev != _base) {			\
@@ -558,6 +564,11 @@ int remove_mapping(struct address_space *mapping, struct page *page)
  *
  * lru_lock must not be held, interrupts must be enabled.
  */
+
+/** 20140111
+ * page가 evictable할 경우 percpu의 lru리스트에 page를 다시 등록시키고
+ * unevictable할 경우 zone의 lru리스트에 page를 등록시킨다.
+ **/
 void putback_lru_page(struct page *page)
 {
 	int lru;
@@ -569,6 +580,20 @@ void putback_lru_page(struct page *page)
 redo:
 	ClearPageUnevictable(page);
 
+	/*
+	enum lru_list {
+	LRU_INACTIVE_ANON = LRU_BASE,
+	LRU_ACTIVE_ANON = LRU_BASE + LRU_ACTIVE,
+	LRU_INACTIVE_FILE = LRU_BASE + LRU_FILE,
+	LRU_ACTIVE_FILE = LRU_BASE + LRU_FILE + LRU_ACTIVE,
+	LRU_UNEVICTABLE,
+	NR_LRU_LISTS
+};
+*/
+	/** 20140111
+	 * lru_list가 LRU_INACTIVE_ANON, LRU_ACTIVE_ANON, 
+	 * LRU_INACTIVE_FILE, LRU_ACTIVE_FILE 일 경우 실행
+	 **/
 	if (page_evictable(page, NULL)) {
 		/*
 		 * For evictable pages, we can use the cache.
@@ -577,7 +602,13 @@ redo:
 		 * We know how to handle that.
 		 */
 		lru = active + page_lru_base_type(page);
+		/** 20140111
+		 * percpu의 lru리스트에 page를 등록시킨다.
+		 **/
 		lru_cache_add_lru(page, lru);
+	/** 20140111
+	 * lru_list가 LRU_UNEVICTABLE일 경우 실행
+	 **/
 	} else {
 		/*
 		 * Put unevictable pages directly on zone's unevictable
@@ -986,15 +1017,24 @@ keep:
  *
  * returns 0 on success, -ve errno on failure.
  */
+/** 20140111
+ * lru리스트에서 page를 제거한다.
+ **/
+
 int __isolate_lru_page(struct page *page, isolate_mode_t mode)
 {
 	int ret = -EINVAL;
 
 	/* Only take pages on the LRU. */
+	/** 20140111
+	 * page가 lru리스트에 속해있지 않으면 에러를 리턴
+	 **/
 	if (!PageLRU(page))
 		return ret;
-
 	/* Do not give back unevictable pages for compaction */
+	/** 20140111
+	 * page가 메모리에 고정되어 있으면(unevictable) 에러를 리턴
+	 **/
 	if (PageUnevictable(page))
 		return ret;
 
@@ -1008,9 +1048,12 @@ int __isolate_lru_page(struct page *page, isolate_mode_t mode)
 	 * ISOLATE_CLEAN means that only clean pages should be isolated. This
 	 * is used by reclaim when it is cannot write to backing storage
 	 *
-	 * ISOLATE_ASYNC_MIGRATE is used to indicate that it only wants to pages
+	 * ISOLATE_ASYNC_MIGRATE is used to indicatedd that it only wants to pages
 	 * that it is possible to migrate without blocking
 	 */
+	/** 20140111
+	 * ISOLATE_CLEAN 및 ISOLATE_ASYNC_MIGRATE 모드에 따라 에러를 리턴한다
+	**/
 	if (mode & (ISOLATE_CLEAN|ISOLATE_ASYNC_MIGRATE)) {
 		/* All the caller can do on PageWriteback is block */
 		if (PageWriteback(page))
@@ -1028,14 +1071,27 @@ int __isolate_lru_page(struct page *page, isolate_mode_t mode)
 			 * ->migratepage callback are possible to migrate
 			 * without blocking
 			 */
+			/** 20140111
+			 * page가 매핑되어 있고  migratepage 콜백 함수가 지정
+			 * 되지 않은 경우 에러를 리턴한다.
+			 **/
 			mapping = page_mapping(page);
 			if (mapping && !mapping->a_ops->migratepage)
 				return ret;
 		}
 	}
 
+	/** 20140111
+	 * ISOLATE_UNMAPPED가 지정되어 있을 경우 page가 맵핑되어 있으면 
+	 * 에러를 리턴한다.
+	 **/
 	if ((mode & ISOLATE_UNMAPPED) && page_mapped(page))
 		return ret;
+
+	/** 20140111
+	 * page가 사용중인 경우 page를 가져오고 lru플래그를 클리어한다.
+	 * 0을 리턴한다.
+	 **/
 
 	if (likely(get_page_unless_zero(page))) {
 		/*
@@ -1070,6 +1126,10 @@ int __isolate_lru_page(struct page *page, isolate_mode_t mode)
  *
  * returns how many pages were moved onto *@dst.
  */
+/** 20140111
+ * nr_to_scan개의 page중 실제 스캔한 페이지의 갯수를  nr_scanned에 저장한다.
+ * lru리스트로 부터 isolate된 page의 총 개수(nr_taken)를 리턴한다.
+ **/
 static unsigned long isolate_lru_pages(unsigned long nr_to_scan,
 		struct lruvec *lruvec, struct list_head *dst,
 		unsigned long *nr_scanned, struct scan_control *sc,
@@ -1082,20 +1142,31 @@ static unsigned long isolate_lru_pages(unsigned long nr_to_scan,
 	for (scan = 0; scan < nr_to_scan && !list_empty(src); scan++) {
 		struct page *page;
 		int nr_pages;
-
+/** 20140111
+ * src 리스트로부터 맨 마지막 페이지를 page에 저장
+**/
 		page = lru_to_page(src);
+		/** 2014011
+		 * lru리스트의 이전페이지의 flags를 prefetch한다.
+		 **/
 		prefetchw_prev_lru_page(page, src, flags);
 
 		VM_BUG_ON(!PageLRU(page));
 
 		switch (__isolate_lru_page(page, mode)) {
+		/** 20140111
+		 * page가 isolate된 경우 lru리스트에서 dst으로 옮기고 옮긴 
+		 * page의 갯수를 nr_taken에 누적시킨다.
+		 **/
 		case 0:
 			nr_pages = hpage_nr_pages(page);
 			mem_cgroup_update_lru_size(lruvec, lru, -nr_pages);
 			list_move(&page->lru, dst);
 			nr_taken += nr_pages;
 			break;
-
+		/** 20140111
+		 * page가 isolate되지 않은 경우 lru리스트의 앞으로 옮겨준다.
+		 **/
 		case -EBUSY:
 			/* else it is being freed elsewhere */
 			list_move(&page->lru, src);
@@ -1411,6 +1482,12 @@ static void move_active_pages_to_lru(struct lruvec *lruvec,
 		__count_vm_events(PGDEACTIVATE, pgmoved);
 }
 
+/** 20140111
+ * isolate실행하고 isolate된 페이지들 중 evictable하지 않은 page를 putback하고
+ * file cache인 페이지이면 l_active리스트로 등록시켜 free한다.
+ * file cache가 아니면서 evictable한 page는 l_inactive 리스트로
+ * 등록시켜 free한다.
+**/
 static void shrink_active_list(unsigned long nr_to_scan,
 			       struct lruvec *lruvec,
 			       struct scan_control *sc,
@@ -1447,30 +1524,58 @@ static void shrink_active_list(unsigned long nr_to_scan,
 	 **/
 	spin_lock_irq(&zone->lru_lock);
 
-	/** 20140111 여기부터...
+	/** 20140111
+	 * isolate된 페이지의 갯수를 리턴한다.
 	 **/
 	nr_taken = isolate_lru_pages(nr_to_scan, lruvec, &l_hold,
 				     &nr_scanned, sc, isolate_mode, lru);
+
+	/** 20140111
+	 * scan된 page의 갯수를 누적시킨다.
+ 	**/
 	if (global_reclaim(sc))
 		zone->pages_scanned += nr_scanned;
 
+	/** 20140111
+	 * reclaim될 page에 대한 recent_scanned값을 누적시킨다.
+	 **/
 	reclaim_stat->recent_scanned[file] += nr_taken;
 
+	/** 20140111
+	 * zone에 발생한 event를 stat에 반영한다.
+	 **/
 	__count_zone_vm_events(PGREFILL, zone, nr_scanned);
 	__mod_zone_page_state(zone, NR_LRU_BASE + lru, -nr_taken);
 	__mod_zone_page_state(zone, NR_ISOLATED_ANON + file, nr_taken);
 	spin_unlock_irq(&zone->lru_lock);
 
+	/** 20140111
+	 * isolate한 page리스트(l_hold)에서 unevictable한 페이지를 putback하고
+	 * 남은 page리스트를 inactive시키고 l_inactive리스트에 추가한다.
+	 **/
 	while (!list_empty(&l_hold)) {
+		/** 20140111
+		 * condition에 따라 rescheduling됨, sleep도 가능
+		 **/
 		cond_resched();
+		/** 20140111
+		* l_hold리스트의 제일 마지막 page를 제거한다.
+		**/
 		page = lru_to_page(&l_hold);
 		list_del(&page->lru);
 
+		/** 20140111
+		 * isolate한 page가 evictable하지 않다면 lru에 다시 등록시킨다.
+		 **/
 		if (unlikely(!page_evictable(page, NULL))) {
 			putback_lru_page(page);
 			continue;
 		}
 
+		/** 20140111
+		 * buffer_heads_over_limit는 blkdev에 관련된 내용이므로
+		 * 추후 분석하기로함 ???
+		 **/
 		if (unlikely(buffer_heads_over_limit)) {
 			if (page_has_private(page) && trylock_page(page)) {
 				if (page_has_private(page))
@@ -1479,6 +1584,9 @@ static void shrink_active_list(unsigned long nr_to_scan,
 			}
 		}
 
+		/** 20140111
+		 * rmap관련 내용이므로 추후 분석하기로 함 ???
+		 **/
 		if (page_referenced(page, 0, sc->target_mem_cgroup,
 				    &vm_flags)) {
 			nr_rotated += hpage_nr_pages(page);
@@ -1491,13 +1599,22 @@ static void shrink_active_list(unsigned long nr_to_scan,
 			 * IO, plus JVM can create lots of anon VM_EXEC pages,
 			 * so we ignore them here.
 			 */
+			/** 20140111
+			 * 실행 가능하고 file cache인 page에 대해서는 
+			 * l_active리스트에 등록시킨다.
+			 **/
+
 			if ((vm_flags & VM_EXEC) && page_is_file_cache(page)) {
 				list_add(&page->lru, &l_active);
 				continue;
 			}
 		}
 
+		/** 20140111
+		 * page의 active flag를 clear하고 l_inactive에 page를 등록시킨다. 
+		 **/
 		ClearPageActive(page);	/* we are de-activating */
+
 		list_add(&page->lru, &l_inactive);
 	}
 
@@ -1511,8 +1628,16 @@ static void shrink_active_list(unsigned long nr_to_scan,
 	 * helps balance scan pressure between file and anonymous pages in
 	 * get_scan_ratio.
 	 */
+	/** 20140111
+	 * isolate된 page중 referrend되어 있으며, inactive된 page의 수(nr_rotated)
+	 * 를 reclaim_stat의 rotated 변수에 업데이트 시킨다.
+	 **/
 	reclaim_stat->recent_rotated[file] += nr_rotated;
 
+	/** 20140111
+	 * l_active 및 l_inactive의 page들을 l_hold로 옮겨준뒤, percpu의 cold page로서
+	 * free시킨다.
+	 **/
 	move_active_pages_to_lru(lruvec, &l_active, &l_hold, lru);
 	move_active_pages_to_lru(lruvec, &l_inactive, &l_hold, lru - LRU_ACTIVE);
 	__mod_zone_page_state(zone, NR_ISOLATED_ANON + file, -nr_taken);
@@ -3656,6 +3781,10 @@ int zone_reclaim(struct zone *zone, gfp_t gfp_mask, unsigned int order)
  * (2) page is part of an mlocked VMA
  *
  */
+/** 20140111
+ * mapping되어있는 page가 unevictable하거나, 
+ * page가 mlocked설정되어 있다면 0을 리턴한다.
+ **/
 int page_evictable(struct page *page, struct vm_area_struct *vma)
 {
 

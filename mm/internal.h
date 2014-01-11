@@ -179,14 +179,26 @@ static inline void munlock_vma_pages_all(struct vm_area_struct *vma)
  * to determine if it's being mapped into a LOCKED vma.
  * If so, mark page as mlocked.
  */
+
+/** 20140111
+ * vma에 lock이 걸려있으면 page플래그에도 mlock을 걸어주고 true를 리턴한다.
+ **/
 static inline int mlocked_vma_newpage(struct vm_area_struct *vma,
 				    struct page *page)
 {
 	VM_BUG_ON(PageLRU(page));
 
+	/** 20140111
+ 	 * vm_flags가 VM_LOCKED가 아니거나 또는 VM_SPECIAL인 경우 0를 리턴한다. 
+ 	 **/
 	if (likely((vma->vm_flags & (VM_LOCKED | VM_SPECIAL)) != VM_LOCKED))
 		return 0;
-
+	/** 20140111
+	 * page의 mlocked플래그를 set하고, 
+	 * 만약 이전 mlocked플래그값이 설정 되어 있지 않은 경우,
+	 * page state의 NR_MLOCK을 증가시키고, 
+	 * UNEVICTABLE_PGMLOCKED에 대한 event 카운트를 증가시킨다.
+	 **/
 	if (!TestSetPageMlocked(page)) {
 		inc_zone_page_state(page, NR_MLOCK);
 		count_vm_event(UNEVICTABLE_PGMLOCKED);

@@ -46,6 +46,10 @@ static inline void mapping_clear_unevictable(struct address_space *mapping)
 	clear_bit(AS_UNEVICTABLE, &mapping->flags);
 }
 
+/** 20140111
+ * 메모리 mapping되어 있는 경우 mapping flags가 AS_UNEVICTABLE이 설정되어 있으면
+ * true를 리턴한다(unevictable).
+ **/
 static inline int mapping_unevictable(struct address_space *mapping)
 {
 	if (mapping)
@@ -81,6 +85,8 @@ static inline void mapping_set_gfp_mask(struct address_space *m, gfp_t mask)
 #define PAGE_CACHE_MASK		PAGE_MASK
 #define PAGE_CACHE_ALIGN(addr)	(((addr)+PAGE_CACHE_SIZE-1)&PAGE_CACHE_MASK)
 
+/** 20140111
+ **/
 #define page_cache_get(page)		get_page(page)
 #define page_cache_release(page)	put_page(page)
 void release_pages(struct page **pages, int nr, int cold);
@@ -320,6 +326,11 @@ static inline void __clear_page_locked(struct page *page)
 {
 	__clear_bit(PG_locked, &page->flags);
 }
+
+/** 20140111
+ * locked되어 있지 않다면 lock을 시키고 1을 리턴한다.
+ * 이미 locked 되어 있었으면 0을 리턴한다.
+**/
 
 static inline int trylock_page(struct page *page)
 {

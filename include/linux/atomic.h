@@ -12,6 +12,10 @@
  * Atomically adds @a to @v, so long as @v was not already @u.
  * Returns non-zero if @v was not @u, and zero otherwise.
  */
+/** 20140111
+ * __atomic_add_unless함수에서 a만큼 증가를 시도하고,
+ * 만약 v값이 증가되지 않은 경우 false리턴한다.
+ **/
 static inline int atomic_add_unless(atomic_t *v, int a, int u)
 {
 	return __atomic_add_unless(v, a, u) != u;

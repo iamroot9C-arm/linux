@@ -291,6 +291,10 @@ static inline int put_page_testzero(struct page *page)
  * Try to grab a ref unless the page has a refcount of zero, return false if
  * that is the case.
  */
+/** 20140111
+ * page의 _count의 이전 값이 0이 아닌 경우에만 페이지를 가져오고 
+ * true를 리턴한다.
+ **/
 static inline int get_page_unless_zero(struct page *page)
 {
 	return atomic_inc_not_zero(&page->_count);
@@ -419,7 +423,10 @@ static inline void get_huge_page_tail(struct page *page)
 }
 
 extern bool __get_page_tail(struct page *page);
-
+/** 20140111
+ * page가 compount page일 경우 PageTail의 count를 증가시키고,
+ * normal page일 경우 page->_count를 증가시킨다.
+ **/
 static inline void get_page(struct page *page)
 {
 	if (unlikely(PageTail(page)))

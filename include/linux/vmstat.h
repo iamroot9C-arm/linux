@@ -92,6 +92,9 @@ static inline void vm_events_fold_cpu(int cpu)
 /** 20131005    
  * item##_NORMAL - ZONE_NORMAL + zone_idx(zone)의 의미는 ???
  **/
+/** 20140111
+ * zone에서 발생한 event에 대한 카운팅을 해당 cpu에 반영한다.
+ **/
 #define __count_zone_vm_events(item, zone, delta) \
 		__count_vm_events(item##_NORMAL - ZONE_NORMAL + \
 		zone_idx(zone), delta)

@@ -360,6 +360,9 @@ static inline void atomic_clear_mask(unsigned long mask, unsigned long *addr)
  **/
 #define atomic_xchg(v, new) (xchg(&((v)->counter), new))
 
+/** 20140111
+ * v가 u와 다른경우, v값에 a만큼을 더해서 저장하고 이전값(v)을 리턴한다.
+ **/
 static inline int __atomic_add_unless(atomic_t *v, int a, int u)
 {
 	int c, old;
@@ -370,6 +373,8 @@ static inline int __atomic_add_unless(atomic_t *v, int a, int u)
 	return c;
 }
 
+/** 20140111
+ **/
 #define atomic_inc(v)		atomic_add(1, v)
 #define atomic_dec(v)		atomic_sub(1, v)
 
