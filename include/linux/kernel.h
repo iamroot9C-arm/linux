@@ -759,6 +759,10 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
 #endif
 
 /* This helps us avoid #ifdef CONFIG_COMPACTION */
+/** 20140118    
+ * CONFIG_COMPACTION이 정의되어 있지 않아
+ *  COMPACTION_BUILD는 0
+ **/
 #ifdef CONFIG_COMPACTION
 #define COMPACTION_BUILD 1
 #else

@@ -244,6 +244,9 @@ struct zone_reclaim_stat {
 	  * inactivate -> activate 인 경우 rotated 증가.
 	  *   update_page_reclaim_stat 함수의 세번째 arg에 따라 증가 여부 결정
 	  **/
+	/** 20140118    
+	 * shrink 등의 동작과정에서 lru 내의 page들을 scan한 갯수가 저장된다.
+	 **/
 	unsigned long		recent_rotated[2];
 	unsigned long		recent_scanned[2];
 };

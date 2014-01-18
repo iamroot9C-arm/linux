@@ -1647,13 +1647,23 @@ static void shrink_active_list(unsigned long nr_to_scan,
 }
 
 #ifdef CONFIG_SWAP
+/** 20140118    
+ * zone 내에서 inactive ratio를 감안한 inactive anon 페이지의 수가 
+ * active anon 페이지의 수보다 적은지 검사해 리턴
+ **/
 static int inactive_anon_is_low_global(struct zone *zone)
 {
 	unsigned long active, inactive;
 
+	/** 20140118    
+	 * zone 상의 ACTIVE ANON과 INACTIVE ANON 페이지의 수를 구한다.
+	 **/
 	active = zone_page_state(zone, NR_ACTIVE_ANON);
 	inactive = zone_page_state(zone, NR_INACTIVE_ANON);
 
+	/** 20140118    
+	 * inactive에 ratio를 적용한 것이 active 페이지의 수보다 작다면 1을 리턴
+	 **/
 	if (inactive * zone->inactive_ratio < active)
 		return 1;
 
@@ -1668,6 +1678,7 @@ static int inactive_anon_is_low_global(struct zone *zone)
  * meaning some active anon pages need to be deactivated.
  */
 /** 20131221
+ * lruvec에 해당하는 zone에서
  * inactive anon 페이지가 적으면 true를 리턴한다
  **/
 static int inactive_anon_is_low(struct lruvec *lruvec)
@@ -1745,6 +1756,15 @@ static int inactive_list_is_low(struct lruvec *lruvec, enum lru_list lru)
 		return inactive_anon_is_low(lruvec);
 }
 
+/** 20140118    
+ * 주어진 lru가 active lru인 경우,
+ *   inactive lru의 target ratio 아래로 page수가 떨어졌을 경우 shrink 수행
+ * 주어진 lru가 inactive lru인 경우,
+ *   inactive shrink 수행
+ *
+ * active lru인 경우 reclaim 여부와 상관없이 항상 0을 리턴,
+ * inactive lru인 경우 reclaim한 페이지 수를 리턴 (왜???)
+ **/
 static unsigned long shrink_list(enum lru_list lru, unsigned long nr_to_scan,
 				 struct lruvec *lruvec, struct scan_control *sc)
 {
@@ -1945,6 +1965,9 @@ out:
 }
 
 /* Use reclaim/compaction for costly allocs or under memory pressure */
+/** 20140118    
+ * COMPACTION_BUILD를 사용하지 않아 항상 false 리턴.
+ **/
 static bool in_reclaim_compaction(struct scan_control *sc)
 {
 	if (COMPACTION_BUILD && sc->order &&
@@ -1962,6 +1985,13 @@ static bool in_reclaim_compaction(struct scan_control *sc)
  * calls try_to_compact_zone() that it will have enough free pages to succeed.
  * It will give up earlier than that if there is difficulty reclaiming pages.
  */
+/** 20140118    
+ *     nr_reclaimed : 앞서 reclaimed 된 페이지의 수
+ *     nr_scanned   : 앞서 scanned 된 페이지의 수
+ *
+ *  CONFIG_COMPACTION이 정의되어 있지 않아 바로 false 리턴.
+ *  분석 안함???
+ **/
 static inline bool should_continue_reclaim(struct lruvec *lruvec,
 					unsigned long nr_reclaimed,
 					unsigned long nr_scanned,
@@ -1971,6 +2001,9 @@ static inline bool should_continue_reclaim(struct lruvec *lruvec,
 	unsigned long inactive_lru_pages;
 
 	/* If not in reclaim/compaction mode, stop */
+	/** 20140118    
+	 * compaction을 사용하지 않도록 설정하였으므로 바로 false 리턴
+	 **/
 	if (!in_reclaim_compaction(sc))
 		return false;
 
@@ -2022,6 +2055,11 @@ static inline bool should_continue_reclaim(struct lruvec *lruvec,
 /*
  * This is a basic per-zone page freer.  Used by both kswapd and direct reclaim.
  */
+/** 20140118    
+ * 특정 zone의 lru list에 대한 정보를 담고 있는 lruvec과
+ * scan control로부터 scanning할 페이지의 속성과 reclaim할 갯수 등을 받아와
+ * 각 lru list에 대해 shrink를 수행한다.
+ **/
 static void shrink_lruvec(struct lruvec *lruvec, struct scan_control *sc)
 {
 	/** 20131214    
@@ -2053,6 +2091,9 @@ restart:
 	 **/
 	while (nr[LRU_INACTIVE_ANON] || nr[LRU_ACTIVE_FILE] ||
 					nr[LRU_INACTIVE_FILE]) {
+		/** 20140118    
+		 * evictable한 lru list에 대해 반복수행
+		 **/
 		for_each_evictable_lru(lru) {
 			if (nr[lru]) {
 				/** 20140104    
@@ -2065,6 +2106,9 @@ restart:
 				 **/
 				nr[lru] -= nr_to_scan;
 
+				/** 20140118    
+				 * reclaimed 된 수를 누적시킨다.
+				 **/
 				nr_reclaimed += shrink_list(lru, nr_to_scan,
 							    lruvec, sc);
 			}
@@ -2077,6 +2121,10 @@ restart:
 		 * with multiple processes reclaiming pages, the total
 		 * freeing target can get unreasonably large.
 		 */
+		/** 20140118    
+		 * scan control로 전달된 목표치 이상을 reclaimed 했을 경우
+		 * scan할 page의 수가 남아 있어도 break 한다.
+		 **/
 		if (nr_reclaimed >= nr_to_reclaim &&
 		    sc->priority < DEF_PRIORITY)
 			break;
@@ -2091,6 +2139,10 @@ restart:
 	 * Even if we did not try to evict anon pages at all, we want to
 	 * rebalance the anon lru active/inactive ratio.
 	 */
+	/** 20140118    
+	 * inactive anon 페이지가 적다면
+	 *   shrink active list를 통해 inactive anon 페이지를 확보한다.
+	 **/
 	if (inactive_anon_is_low(lruvec))
 		shrink_active_list(SWAP_CLUSTER_MAX, lruvec,
 				   sc, LRU_ACTIVE_ANON);
@@ -2103,6 +2155,10 @@ restart:
 	throttle_vm_writeout(sc->gfp_mask);
 }
 
+/** 20140118    
+ * zone에 대해 shrink를 수행한다.
+ *   MEMCG를 사용하지 않기에 zone에 대해 한 번만 수행된다.
+ **/
 static void shrink_zone(struct zone *zone, struct scan_control *sc)
 {
 	struct mem_cgroup *root = sc->target_mem_cgroup;
@@ -2131,6 +2187,9 @@ static void shrink_zone(struct zone *zone, struct scan_control *sc)
 		 * to scan all memory cgroups to fulfill the overall
 		 * scan target for the zone.
 		 */
+		/** 20140118    
+		 * MEMCG를 사용하지 않아 global reclaim 사용
+		 **/
 		if (!global_reclaim(sc)) {
 			mem_cgroup_iter_break(root, memcg);
 			break;
@@ -2196,6 +2255,10 @@ static inline bool compaction_ready(struct zone *zone, struct scan_control *sc)
  * the caller that it should consider retrying the allocation instead of
  * further reclaim.
  */
+/** 20140118    
+ * scan control에 설정된 정책값에 의해 zonelist에 속하는 zone들에 대해
+ * shrink를 수행한다.
+ **/
 static bool shrink_zones(struct zonelist *zonelist, struct scan_control *sc)
 {
 	struct zoneref *z;
@@ -2364,6 +2427,10 @@ static unsigned long do_try_to_free_pages(struct zonelist *zonelist,
 		 * scan된 inactive pages 수를 초기화.
 		 **/
 		sc->nr_scanned = 0;
+		/** 20140118    
+		 * sc에 따라 zonelist의 해당 zone에 대해 shrink를 수행한다.
+		 * shrink_zones의 리턴값에 따라 reclaim을 중단할지 계속 수행할지 결정된다.
+		 **/
 		aborted_reclaim = shrink_zones(zonelist, sc);
 
 		/*

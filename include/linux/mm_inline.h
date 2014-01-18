@@ -25,6 +25,15 @@ static inline int page_is_file_cache(struct page *page)
 }
 /** 20131221
  * lruvec->list에 page를 추가시킨다.
+ *
+ * 20140118    
+ * 추가되는 위치는 head와 head->next 사이, 즉 처음 위치이다.
+ *
+ * n: 새로 추가되는 페이지
+ * o: 이전에 추가된 페이지
+ *
+ * lru head -> n ->  o  ->  o  ->  o  ->  o
+ *   최근 추가된 페이지 -> 오래전 추가된 페이지 순서로 전재
  **/
 static __always_inline void add_page_to_lru_list(struct page *page,
 				struct lruvec *lruvec, enum lru_list lru)
