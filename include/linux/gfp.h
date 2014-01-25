@@ -366,6 +366,9 @@ __alloc_pages(gfp_t gfp_mask, unsigned int order,
 	return __alloc_pages_nodemask(gfp_mask, order, zonelist, NULL);
 }
 
+/** 20140125    
+ * 특정 노드에서 페이지 프레임을 할당받아 첫번째 프레임에 대한 page 디스크립터 포인터를 리턴한다.
+ **/
 static inline struct page *alloc_pages_node(int nid, gfp_t gfp_mask,
 						unsigned int order)
 {

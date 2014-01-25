@@ -820,12 +820,21 @@ typedef struct pglist_data {
 	 * free_area_init_node에서 할당. meminfo의 첫번째 pfn
 	 **/
 	unsigned long node_start_pfn;
+	/** 20140125    
+	 * node_present_pages :  hole을 제외한 노드에 속한 pages 수
+	 * node_spanned_pages :  hole을 포함한 노드에 속한 pages 수
+	 **/
 	unsigned long node_present_pages; /* total number of physical pages */
 	unsigned long node_spanned_pages; /* total size of physical page
 					     range, including holes */
 	int node_id;
 	/** 20130427    
 	 * free_area_init_core에서 초기화
+	 *
+	 * 20140125    
+	 * page out을 위한 대기큐. 
+	 * pfmemalloc_watermark_ok에서
+	 *   watermark test에 실패하고, 대기큐에 대기 중인 큐가 있으면 동작시킨다.
 	 **/
 	wait_queue_head_t kswapd_wait;
 	/** 20131214    
