@@ -314,6 +314,10 @@ static inline size_t slab_ksize(const struct kmem_cache *s)
 	return s->size;
 }
 
+/** 20140208    
+ * slub의 order (buddy의 order와 같은 의미)를 가져와 전체 크기를 구한 뒤
+ * reserved를 제외한 나머지 영역으로 표현가능한 object의 개수를 구한다.
+ **/
 static inline int order_objects(int order, unsigned long size, int reserved)
 {
 	return ((PAGE_SIZE << order) - reserved) / size;
@@ -1224,6 +1228,9 @@ static inline int check_object(struct kmem_cache *s, struct page *page,
 static inline void add_full(struct kmem_cache *s, struct kmem_cache_node *n,
 					struct page *page) {}
 static inline void remove_full(struct kmem_cache *s, struct page *page) {}
+/** 20140208    
+ * CONFIG_SLUB_DEBUG가 정의되어 있지 않으면 flags를 바로 리턴
+ **/
 static inline unsigned long kmem_cache_flags(unsigned long object_size,
 	unsigned long flags, const char *name,
 	void (*ctor)(void *))
@@ -1409,6 +1416,9 @@ static void __free_slab(struct kmem_cache *s, struct page *page)
 	__free_pages(page, order);
 }
 
+/** 20140208    
+ *	struct page의 lru의 크기가 rcu_head 자료구조를 표현 가능한지 나타내는 매크로
+ **/
 #define need_reserve_slab_rcu						\
 	(sizeof(((struct page *)NULL)->lru) < sizeof(struct rcu_head))
 
@@ -2667,6 +2677,27 @@ static int slub_nomerge;
  * requested a higher mininum order then we start with that one instead of
  * the smallest order which will fit the object.
  */
+/** 20140208    
+ * slab 객체 하나의 크기를 할당받기 위해 필요한 order를 구한다.
+ *
+ *# name            <active_objs> <num_objs> <object_size> <objperslab> <pagesperslab>
+kmalloc-8192          42     52   8192    4    8
+kmalloc-4096         213    224   4096    8    8
+kmalloc-2048        2546   2576   2048   16    8
+kmalloc-1024        1332   1536   1024   32    8
+kmalloc-512         6325   6464    512   32    4
+kmalloc-256        11663  12224    256   32    2
+kmalloc-128         1635   1760    128   32    1
+kmalloc-64         20929  21568     64   64    1
+kmalloc-32          3200   3200     32  128    1
+kmalloc-16          5120   5120     16  256    1
+kmalloc-8           8704   8704      8  512    1
+kmalloc-192         3795   4704    192   42    2
+kmalloc-96          2982   2982     96   42    1
+kmem_cache           128    128    256   32    2
+kmem_cache_node      192    192     64   64    1
+
+ **/
 static inline int slab_order(int size, int min_objects,
 				int max_order, int fract_leftover, int reserved)
 {
@@ -2711,10 +2742,24 @@ static inline int calculate_order(int size, int reserved)
 	 * First we reduce the acceptable waste in a slab. Then
 	 * we reduce the minimum objects required in a slab.
 	 */
+	/** 20140208    
+	 * slub_min_objects 을 받아와 min_objects에 저장.
+	 * slub_min_objects가 초기화 되어 있지 않다면
+	 **/
 	min_objects = slub_min_objects;
+	/** 20140208    
+	 * 퍼포먼스를 위해 하나의 슬랩에 최소 몇 개의 objects 수가 있어야 하는지 구한다.
+	 **/
 	if (!min_objects)
 		min_objects = 4 * (fls(nr_cpu_ids) + 1);
+	/** 20140208    
+	 * slub_max_order로 슬랩을 할당하였을 경우 최대 저장 가능한 objects의 수를 구한다.
+	 **/
 	max_objects = order_objects(slub_max_order, size, reserved);
+	/** 20140208    
+	 * 작은 값을 취한다.
+	 * 만약 min_objects가 max_objects보다 크다면 max_objects가 min_objects가 된다.
+	 **/
 	min_objects = min(min_objects, max_objects);
 
 	while (min_objects > 1) {
@@ -2759,16 +2804,31 @@ static unsigned long calculate_alignment(unsigned long flags,
 	 * The hardware cache alignment cannot override the specified
 	 * alignment though. If that is greater then use it.
 	 */
+	/** 20140208    
+	 * flags에 hw cache 단위로 정렬이 필요하다고 지정되어 있으면
+	 **/
 	if (flags & SLAB_HWCACHE_ALIGN) {
+		/** 20140208    
+		 * size보다 크면서 가장 가까운 cache line의 1/(2의승수)를 구한다.
+		 **/
 		unsigned long ralign = cache_line_size();
 		while (size <= ralign / 2)
 			ralign /= 2;
+		/** 20140208    
+		 * 제공된 align과 계산된 ralign 중 큰 값을 취한다.
+		 **/
 		align = max(align, ralign);
 	}
 
+	/** 20140208    
+	 * align의 최소값은 ARCH_SLAB_MINALIGN
+	 **/
 	if (align < ARCH_SLAB_MINALIGN)
 		align = ARCH_SLAB_MINALIGN;
 
+	/** 20140208    
+	 * align을 void * 단위로 재정렬 시켜 리턴
+	 **/
 	return ALIGN(align, sizeof(void *));
 }
 
@@ -2904,6 +2964,9 @@ static void set_min_partial(struct kmem_cache *s, unsigned long min)
 static int calculate_sizes(struct kmem_cache *s, int forced_order)
 {
 	unsigned long flags = s->flags;
+	/** 20140208    
+	 * metadata를 제외한 object 하나의 크기
+	 **/
 	unsigned long size = s->object_size;
 	unsigned long align = s->align;
 	int order;
@@ -2913,6 +2976,10 @@ static int calculate_sizes(struct kmem_cache *s, int forced_order)
 	 * place the free pointer at word boundaries and this determines
 	 * the possible location of the free pointer.
 	 */
+	/** 20140208    
+	 * object의 size를 void * 단위로 정렬.
+	 *		kmem_cache_open을 통해 들어왔을 때 size는 kmem_size (struct kmem_cache)
+	 **/
 	size = ALIGN(size, sizeof(void *));
 
 #ifdef CONFIG_SLUB_DEBUG
@@ -2941,8 +3008,17 @@ static int calculate_sizes(struct kmem_cache *s, int forced_order)
 	 * With that we have determined the number of bytes in actual use
 	 * by the object. This is the potential offset to the free pointer.
 	 */
+	/** 20140208    
+	 * object 의 크기를 inuse에 저장. 
+	 **/
 	s->inuse = size;
 
+	/** 20140208    
+	 * flags에 SLAB_DESTROY_BY_RCU 또는 SLAB_POISON 지정되어 있거나
+	 * constructor가 지정되어 있다면
+	 *     현재까지의 크기(free pointer에 대한 offset)를 offset에 저장하고
+	 *     부가적인 정보를 저장하기 위해 size를 증가시킨다.
+	 **/
 	if (((flags & (SLAB_DESTROY_BY_RCU | SLAB_POISON)) ||
 		s->ctor)) {
 		/*
@@ -2981,6 +3057,9 @@ static int calculate_sizes(struct kmem_cache *s, int forced_order)
 	 * user specified and the dynamic determination of cache line size
 	 * on bootup.
 	 */
+	/** 20140208    
+	 * object의 align을 구해 kmem_cache의 align에 저장한다.
+	 **/
 	align = calculate_alignment(flags, align, s->object_size);
 	s->align = align;
 
@@ -2989,8 +3068,18 @@ static int calculate_sizes(struct kmem_cache *s, int forced_order)
 	 * offset 0. In order to align the objects we have to simply size
 	 * each object to conform to the alignment.
 	 */
+	/** 20140208    
+	 * 추가된 정보에 의해 size가 변경되었을 수 있으므로
+	 *  size를 다시align 단위로 정렬한다.
+	 **/
 	size = ALIGN(size, align);
+	/** 20140208    
+	 * debug 정보 등 metadata를 포함한 크기를 kmem_cache에 저장
+	 **/
 	s->size = size;
+	/** 20140208    
+	 * forced_order가 지정되어 있다면 forced_order를 order로 삼는다.
+	 **/
 	if (forced_order >= 0)
 		order = forced_order;
 	else
@@ -3026,14 +3115,26 @@ static int kmem_cache_open(struct kmem_cache *s,
 		size_t align, unsigned long flags,
 		void (*ctor)(void *))
 {
+	/** 20140208    
+	 * 구조체의 데이터를 채운다.
+	 **/
 	memset(s, 0, kmem_size);
 	s->name = name;
 	s->ctor = ctor;
+	/** 20140208    
+	 * metadata를 제외한 크기를 object_size에 저장
+	 **/
 	s->object_size = size;
 	s->align = align;
+	/** 20140208    
+	 * debug 모드가 아니므로 flags를 그대로 반환
+	 **/
 	s->flags = kmem_cache_flags(size, flags, name, ctor);
 	s->reserved = 0;
 
+	/** 20140208    
+	 * need_reserve_slab_rcu 가 false일 경우 reserved를 하지 않는다.
+	 **/
 	if (need_reserve_slab_rcu && (s->flags & SLAB_DESTROY_BY_RCU))
 		s->reserved = sizeof(struct rcu_head);
 
@@ -3727,6 +3828,9 @@ void __init kmem_cache_init(void)
 	 * kmem_size를 cacheline 크기로 정렬시킨다.
 	 **/
 	kmalloc_size = ALIGN(kmem_size, cache_line_size());
+	/** 20140208    
+	 * struct kmem_cache 자료구조 2개 크기만큼의 메모리를 할당받는다.
+	 **/
 	order = get_order(2 * kmalloc_size);
 	kmem_cache = (void *)__get_free_pages(GFP_NOWAIT, order);
 
@@ -3735,6 +3839,10 @@ void __init kmem_cache_init(void)
 	 * struct kmem_cache_node's. There is special bootstrap code in
 	 * kmem_cache_open for slab_state == DOWN.
 	 */
+	/** 20140208    
+	 * 할당받은 메모리에서 하나의 kmem_cache를 건너뛴 위치를
+	 * kmem_cache_node로 가리킨다.
+	 **/
 	kmem_cache_node = (void *)kmem_cache + kmalloc_size;
 
 	kmem_cache_open(kmem_cache_node, "kmem_cache_node",
