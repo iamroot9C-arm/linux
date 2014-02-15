@@ -121,6 +121,9 @@ struct page {
 
 					struct { /* SLUB */
 						unsigned inuse:16;
+						/** 20140215
+						 * allocate_slab함수에서 설정
+						 **/
 						unsigned objects:15;
 						unsigned frozen:1;
 					};

@@ -645,6 +645,9 @@ static inline int PageSlabPfmemalloc(struct page *page)
 static inline void SetPageSlabPfmemalloc(struct page *page)
 {
 	VM_BUG_ON(!PageSlab(page));
+	/** 20140215
+	 * page의 Active플래그를 세팅한다.
+	 **/
 	SetPageActive(page);
 }
 

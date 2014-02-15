@@ -69,6 +69,9 @@ struct kmem_cache_node {
  * contains both the order and the number of objects that a slab of the
  * given order would contain.
  */
+/** 20140215
+ * 하나의 slab에 대한 order와 object의 갯수에 대한 정보
+ **/
 struct kmem_cache_order_objects {
 	unsigned long x;
 };
@@ -84,7 +87,13 @@ struct kmem_cache {
 	int size;		/* The size of an object including meta data */
 	int object_size;	/* The size of an object without meta data */
 	int offset;		/* Free pointer offset. */
+	/** 20140215
+	 * kmem_cache_open()에서 초기화 됨
+	 **/
 	int cpu_partial;	/* Number of per cpu partial objects to keep around */
+	/** 20140215
+	 * 하나의 slab에 대한 order와 object의 수를 나타냄 
+	 **/
 	struct kmem_cache_order_objects oo;
 
 	/* Allocation and freeing of slabs */

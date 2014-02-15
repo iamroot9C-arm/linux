@@ -393,6 +393,9 @@ EXPORT_SYMBOL(dec_zone_page_state);
 /*
  * Use interrupt disable to serialize counter updates
  */
+/** 20140215
+ * zone의 stat갱신시 lock을 걸고 delta만큼 증가시켜줌
+ **/
 void mod_zone_page_state(struct zone *zone, enum zone_stat_item item,
 					int delta)
 {

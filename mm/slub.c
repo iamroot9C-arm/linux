@@ -217,7 +217,9 @@ static inline void sysfs_slab_remove(struct kmem_cache *s)
 }
 
 #endif
-
+/** 20140215
+ * 현재 cpu의 통계정보를 갱신한다
+ **/
 static inline void stat(const struct kmem_cache *s, enum stat_item si)
 {
 #ifdef CONFIG_SLUB_STATS
@@ -274,11 +276,17 @@ static inline void *get_freepointer_safe(struct kmem_cache *s, void *object)
 	return p;
 }
 
+/** 20140215
+ * object의 처음 위치로부터 s->offset만큼 떨어진 곳에 fp를 저장한다.
+ **/
 static inline void set_freepointer(struct kmem_cache *s, void *object, void *fp)
 {
 	*(void **)(object + s->offset) = fp;
 }
 
+/** 20140215
+ * slab의 모든 object를 loop한다
+ **/
 /* Loop over all objects in a slab */
 #define for_each_object(__p, __s, __addr, __objects) \
 	for (__p = (__addr); __p < (__addr) + (__objects) * (__s)->size;\
@@ -323,6 +331,9 @@ static inline int order_objects(int order, unsigned long size, int reserved)
 	return ((PAGE_SIZE << order) - reserved) / size;
 }
 
+/** 20140215
+ * long 변수의 상위 16비트는 order, 하위 16비트는 object의 수
+ **/
 static inline struct kmem_cache_order_objects oo_make(int order,
 		unsigned long size, int reserved)
 {
@@ -333,11 +344,17 @@ static inline struct kmem_cache_order_objects oo_make(int order,
 	return x;
 }
 
+/** 20140215
+ * kmem_cache_order_objects구조체의 order정보를 구한다
+ **/
 static inline int oo_order(struct kmem_cache_order_objects x)
 {
 	return x.x >> OO_SHIFT;
 }
 
+/** 20140215
+ * kmem_cache_order_objects구조체의 object갯수 정보를 구한다
+ **/
 static inline int oo_objects(struct kmem_cache_order_objects x)
 {
 	return x.x & OO_MASK;
@@ -1004,6 +1021,10 @@ static inline unsigned long node_nr_slabs(struct kmem_cache_node *n)
 	return atomic_long_read(&n->nr_slabs);
 }
 
+/** 20140215
+ * CONFIG_SLUB_DEBUG가 define되어 있을 경우 slab이 추가되었을때 디버깅용으로서 
+ * kmem_cache_node구조체의 nr_slabs와 total_objects를 갱신한다.
+ **/
 static inline void inc_slabs_node(struct kmem_cache *s, int node, int objects)
 {
 	struct kmem_cache_node *n = get_node(s, node);
@@ -1263,11 +1284,18 @@ static inline void slab_free_hook(struct kmem_cache *s, void *x) {}
 /*
  * Slab allocation and freeing
  */
+/** 20140215
+ * kmem_cache구조체의 size멤버로부터 구한 order를 가지고 
+ * page allocator로 부터 order만큼의 page를 할당 받는다.
+ **/
 static inline struct page *alloc_slab_page(gfp_t flags, int node,
 					struct kmem_cache_order_objects oo)
 {
 	int order = oo_order(oo);
 
+	/** 20140215
+	 * kmemcheck를 하지 않는다
+	 **/
 	flags |= __GFP_NOTRACK;
 
 	if (node == NUMA_NO_NODE)
@@ -1276,25 +1304,45 @@ static inline struct page *alloc_slab_page(gfp_t flags, int node,
 		return alloc_pages_exact_node(node, flags, order);
 }
 
+/** 20140215
+ * kmem_cache의 slab정보를 가지고 flag속성에 따라 page를 할당 받는다
+ **/
 static struct page *allocate_slab(struct kmem_cache *s, gfp_t flags, int node)
 {
 	struct page *page;
 	struct kmem_cache_order_objects oo = s->oo;
 	gfp_t alloc_gfp;
 
+	/** 20140215
+	 * flags에서 gfp_allowed_mask만을 추출한다. 
+	 * 부팅시에는 GFP_BOOT_MASK만 사용가능
+	 **/
 	flags &= gfp_allowed_mask;
 
+	/** 20140215
+	 * flags가 __GFP_WAIT 속성을 가지고 있으면 irq를 enable한다
+	 * (early_kmem_cache_node_alloc에서 호출되었을때는 GFP_NOWAIT속성으로 들어온다)
+	 **/
 	if (flags & __GFP_WAIT)
 		local_irq_enable();
 
+	/** 20140215
+	 * kmem_cache의 allocflags 속성을 flags에 추가한다.
+	 **/
 	flags |= s->allocflags;
-
 	/*
 	 * Let the initial higher-order allocation fail under memory pressure
 	 * so we fall-back to the minimum order allocation.
 	 */
+	/** 20140215
+	 * slab자체를 allocation 하기위해 warning이나 allocation retry를 하지 않는다
+	 **/
 	alloc_gfp = (flags | __GFP_NOWARN | __GFP_NORETRY) & ~__GFP_NOFAIL;
 
+	/** 20140215
+	 * kmem_cache의 order로 page를 할당받고 allocation이 실패하였을 경우
+	 * order를 min으로 바꾸어 다시한번 할당을 시도한다.
+	 **/
 	page = alloc_slab_page(alloc_gfp, node, oo);
 	if (unlikely(!page)) {
 		oo = s->min;
@@ -1304,6 +1352,10 @@ static struct page *allocate_slab(struct kmem_cache *s, gfp_t flags, int node)
 		 */
 		page = alloc_slab_page(flags, node, oo);
 
+		/** 20140215
+		 * CONFIG_SLUB_STATS가 define되어 있을 경우 
+		 * 할당이 성공하면 ORDER_FALLBACK항목을 갱신한다.
+ 		 **/
 		if (page)
 			stat(s, ORDER_FALLBACK);
 	}
@@ -1323,13 +1375,23 @@ static struct page *allocate_slab(struct kmem_cache *s, gfp_t flags, int node)
 		else
 			kmemcheck_mark_unallocated_pages(page, pages);
 	}
-
+	/** 20140215
+	 * early_kmem_cache_node_alloc에서는 GFP_NOWAIT이므로 해당사항 없음
+	 **/
 	if (flags & __GFP_WAIT)
 		local_irq_disable();
 	if (!page)
 		return NULL;
 
+	/** 20140215
+	 * object의 갯수를 page->objects에 저장 
+	 **/
 	page->objects = oo_objects(oo);
+	/** 20140215
+	 * page가 포함된 zone의 flag가 SLAB_RECLAIM_ACCOUNT속성이 있으면 
+	 * NR_SLAB_RECLAIMABLE을 갱신시키고 그렇지 않으면 NR_SLAB_UNRECLAIMABLE을
+	 * 갱신시킨다.
+	 **/
 	mod_zone_page_state(page_zone(page),
 		(s->flags & SLAB_RECLAIM_ACCOUNT) ?
 		NR_SLAB_RECLAIMABLE : NR_SLAB_UNRECLAIMABLE,
@@ -1345,7 +1407,9 @@ static void setup_object(struct kmem_cache *s, struct page *page,
 	if (unlikely(s->ctor))
 		s->ctor(object);
 }
-
+/** 20140215
+ * 
+ **/
 static struct page *new_slab(struct kmem_cache *s, gfp_t flags, int node)
 {
 	struct page *page;
@@ -1354,24 +1418,48 @@ static struct page *new_slab(struct kmem_cache *s, gfp_t flags, int node)
 	void *p;
 
 	BUG_ON(flags & GFP_SLAB_BUG_MASK);
-
+	/** 20140215
+	 * page allocator로부터 flag속성에 따라 slab으로 사용할 page를 할당받는다
+	**/
 	page = allocate_slab(s,
 		flags & (GFP_RECLAIM_MASK | GFP_CONSTRAINT_MASK), node);
 	if (!page)
 		goto out;
 
+	/** 20140215
+	 * kmem_cache_node구조체의 디버깅용 변수를 갱신한다.
+	 **/
 	inc_slabs_node(s, page_to_nid(page), page->objects);
-	page->slab = s;
+	/** 20140215
+	 * kmem_cache의 위치를 할당 받아온 page의 page->slab에 저장한다.
+	**/
+	 page->slab = s;
+	 /** 20140215
+	 page의 Slab관련 flag를 세팅한다.
+	  **/
 	__SetPageSlab(page);
+	/** 20140215
+	 * pfmemalloc이 true이면 page의 Active플래그를 세팅한다.
+	 **/
 	if (page->pfmemalloc)
 		SetPageSlabPfmemalloc(page);
 
+	/** 20140215
+	 * page구조체가 가리키는 virtual address를 구한다
+	 **/
 	start = page_address(page);
 
 	if (unlikely(s->flags & SLAB_POISON))
 		memset(start, POISON_INUSE, PAGE_SIZE << compound_order(page));
 
 	last = start;
+	/** 20140215
+	 * 각각의 object에 대해 freepointer를 리스트로 연결한다.
+	 **/
+	/** 20140222
+	  여기서부터....
+	 **/
+
 	for_each_object(p, s, start, page->objects) {
 		setup_object(s, page, last);
 		set_freepointer(s, last, p);
@@ -2883,6 +2971,8 @@ static void early_kmem_cache_node_alloc(int node)
 
 	BUG_ON(kmem_cache_node->size < sizeof(struct kmem_cache_node));
 
+	/** 20140215
+ 	**/
 	page = new_slab(kmem_cache_node, GFP_NOWAIT, node);
 
 	BUG_ON(!page);
@@ -2930,6 +3020,10 @@ static int init_kmem_cache_nodes(struct kmem_cache *s)
 	for_each_node_state(node, N_NORMAL_MEMORY) {
 		struct kmem_cache_node *n;
 
+		/** 20140215
+		 * slab_state 초기값은 DOWN
+		 **/
+
 		if (slab_state == DOWN) {
 			early_kmem_cache_node_alloc(node);
 			continue;
@@ -2948,6 +3042,10 @@ static int init_kmem_cache_nodes(struct kmem_cache *s)
 	return 1;
 }
 
+/** 20140215
+ * kmem_cache구조체의 min_partial값을 
+ * MIN_PARTIAL ~ MAX_PARTIAL사이 값으로 설정한다.
+ **/
 static void set_min_partial(struct kmem_cache *s, unsigned long min)
 {
 	if (min < MIN_PARTIAL)
@@ -2961,6 +3059,9 @@ static void set_min_partial(struct kmem_cache *s, unsigned long min)
  * calculate_sizes() determines the order and the distribution of data within
  * a slab object.
  */
+/** 20140215
+ * slab allocation시 필요한 정보(flag, order, object갯수, size)를 설정한다
+ **/
 static int calculate_sizes(struct kmem_cache *s, int forced_order)
 {
 	unsigned long flags = s->flags;
@@ -3083,15 +3184,26 @@ static int calculate_sizes(struct kmem_cache *s, int forced_order)
 	if (forced_order >= 0)
 		order = forced_order;
 	else
+	/** 20140215
+	 * 추후 분석 ??? (page기준으로 order를 구한다)
+	**/
 		order = calculate_order(size, s->reserved);
 
+	/** 20140215
+	 * order가 0보다 작을 경우 에러 리턴
+	 **/
 	if (order < 0)
 		return 0;
 
 	s->allocflags = 0;
+	/** 20140215
+	 * order가 1이상일 경우 compound 속성을 추가한다.
+	 **/
 	if (order)
 		s->allocflags |= __GFP_COMP;
-
+	/** 20140215
+ 	 * allocation플래그에 추가하는 부분 
+ 	 **/	
 	if (s->flags & SLAB_CACHE_DMA)
 		s->allocflags |= SLUB_DMA;
 
@@ -3101,10 +3213,24 @@ static int calculate_sizes(struct kmem_cache *s, int forced_order)
 	/*
 	 * Determine the number of objects per slab
 	 */
+	/** 20140215
+	 * slab당 order와 object의 수 정보를 s->oo에 저장
+	 **/
 	s->oo = oo_make(order, size, s->reserved);
+	/** 20140215
+	 * size가 표현할 수 있는 최소 order를 구하고 
+	 * order 와 object의 수를 s->min에 저장한다.
+	 **/
 	s->min = oo_make(get_order(size), size, s->reserved);
+	/** 20140215
+	 * s->max값을 갱신
+	 **/
 	if (oo_objects(s->oo) > oo_objects(s->max))
 		s->max = s->oo;
+
+	/** 20140215
+	 * object 갯수 여부를 리턴
+	 **/
 
 	return !!oo_objects(s->oo);
 
@@ -3138,8 +3264,15 @@ static int kmem_cache_open(struct kmem_cache *s,
 	if (need_reserve_slab_rcu && (s->flags & SLAB_DESTROY_BY_RCU))
 		s->reserved = sizeof(struct rcu_head);
 
+	/** 20140215
+	 * allocation에 필요한 size, slab당 order와 object갯수를 구한다.
+	 * object갯수가 존재하지 않으면 error를 리턴
+	 **/
 	if (!calculate_sizes(s, -1))
 		goto error;
+	/** 20140215
+	 * 디버깅에 해당하는 부분은 생략???
+	 **/
 	if (disable_higher_order_debug) {
 		/*
 		 * Disable debugging flags that store metadata if the min slab
@@ -3152,7 +3285,9 @@ static int kmem_cache_open(struct kmem_cache *s,
 				goto error;
 		}
 	}
-
+	/** 20140215
+	 * vexpress defconfig에 define 되어 있지 않으므로 pass???
+	 **/
 #if defined(CONFIG_HAVE_CMPXCHG_DOUBLE) && \
     defined(CONFIG_HAVE_ALIGNED_STRUCT_PAGE)
 	if (system_has_cmpxchg_double() && (s->flags & SLAB_DEBUG_FLAGS) == 0)
@@ -3164,6 +3299,12 @@ static int kmem_cache_open(struct kmem_cache *s,
 	 * The larger the object size is, the more pages we want on the partial
 	 * list to avoid pounding the page allocator excessively.
 	 */
+	/** 20140215
+	 * object의 사이즈가 커짐에 따라 MIN_PARTIAL ~ MAX_PARTIAL 범위내에서 
+	 * slab당 partial의 갯수가 증가한다.
+	 * (slab사이즈가 동일할 경우 object사이즈가 커지면 
+	 * slab당 object갯수가 줄어들기 때문에 그 수를 유지하기 위해서 일듯???)
+	 **/
 	set_min_partial(s, ilog2(s->size) / 2);
 
 	/*
@@ -3176,13 +3317,17 @@ static int kmem_cache_open(struct kmem_cache *s,
 	 * per node partial lists and therefore no locking will be required.
 	 *
 	 * This setting also determines
-	 *
+	 
 	 * A) The number of objects from per cpu partial slabs dumped to the
 	 *    per node list when we reach the limit.
 	 * B) The number of objects in cpu partial slabs to extract from the
 	 *    per node list when we run out of per cpu objects. We only fetch 50%
 	 *    to keep some capacity around for frees.
 	 */
+	
+	/** 20140215
+	 * object 사이즈에 따라 per cpu partial list의 object의 갯수가 결정됨
+	 **/
 	if (kmem_cache_debug(s))
 		s->cpu_partial = 0;
 	else if (s->size >= PAGE_SIZE)
@@ -3193,7 +3338,9 @@ static int kmem_cache_open(struct kmem_cache *s,
 		s->cpu_partial = 13;
 	else
 		s->cpu_partial = 30;
-
+	/** 20140215
+	 * slab cache destroy시 사용되는 카운트
+	 **/
 	s->refcount = 1;
 #ifdef CONFIG_NUMA
 	s->remote_node_defrag_ratio = 1000;
