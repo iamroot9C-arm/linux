@@ -313,10 +313,21 @@ static void __maybe_unused pcpu_next_pop(struct pcpu_chunk *chunk,
  * RETURNS:
  * Pointer to the allocated area on success, NULL on failure.
  */
+/** 20140222
+ * size만큼 0으로 초기화 한 메모리를 할당받는다.
+ **/
 static void *pcpu_mem_zalloc(size_t size)
 {
+	/** 20140222
+	 * slab이 사용가능하지 않으면 NULL을 리턴
+	 **/
 	if (WARN_ON_ONCE(!slab_is_available()))
 		return NULL;
+
+	/** 20140222
+	 * 요청한 size가 PAGE_SIZE보다 작으면 kalloc으로 할당하고
+	 * 크면 valloc으로 할당한다.
+	 **/
 
 	if (size <= PAGE_SIZE)
 		return kzalloc(size, GFP_KERNEL);
@@ -331,6 +342,9 @@ static void *pcpu_mem_zalloc(size_t size)
  *
  * Free @ptr.  @ptr should have been allocated using pcpu_mem_zalloc().
  */
+/** 20140222
+ * ptr이 가리키는 메모리를 해제한다.
+ **/
 static void pcpu_mem_free(void *ptr, size_t size)
 {
 	if (size <= PAGE_SIZE)
@@ -384,10 +398,17 @@ static void pcpu_chunk_relocate(struct pcpu_chunk *chunk, int oslot)
  * New target map allocation length if extension is necessary, 0
  * otherwise.
  */
+/** 20140222
+ * chunk에 할당된 map의 갯수가 부족하면 필요한 map의 갯수를 구해 리턴한다.
+ **/
 static int pcpu_need_to_extend(struct pcpu_chunk *chunk)
 {
 	int new_alloc;
 
+	/** 20140222
+	 * 할당된 map의 갯수가 사용된 map의 갯수보다 2개 이상 크면 
+	 * 확장을 할 필요가 없으므로 0을 리턴한다.
+	 **/
 	if (chunk->map_alloc >= chunk->map_used + 2)
 		return 0;
 
@@ -411,22 +432,33 @@ static int pcpu_need_to_extend(struct pcpu_chunk *chunk)
  * RETURNS:
  * 0 on success, -errno on failure.
  */
+/** 20140222
+ * chunk의 map을 확장한다.
+ **/
 static int pcpu_extend_area_map(struct pcpu_chunk *chunk, int new_alloc)
 {
 	int *old = NULL, *new = NULL;
 	size_t old_size = 0, new_size = new_alloc * sizeof(new[0]);
 	unsigned long flags;
 
+	/** 20140222
+	 * new_size만큼 memory를 할당받아온다.
+	 **/
 	new = pcpu_mem_zalloc(new_size);
 	if (!new)
 		return -ENOMEM;
 
 	/* acquire pcpu_lock and switch to new area map */
+	/** 20140222
+	 * chunk에 대해 lock을 건다.
+	 **/
 	spin_lock_irqsave(&pcpu_lock, flags);
 
 	if (new_alloc <= chunk->map_alloc)
 		goto out_unlock;
-
+	/** 20140222
+	 * 이전 map의 크기를 구하고, 새로운 맵에 이전에 구한 크기만큼 복사한다.
+ 	**/
 	old_size = chunk->map_alloc * sizeof(chunk->map[0]);
 	old = chunk->map;
 
@@ -437,12 +469,18 @@ static int pcpu_extend_area_map(struct pcpu_chunk *chunk, int new_alloc)
 	new = NULL;
 
 out_unlock:
+	/** 20140222
+	 * chunk에 대해 lock을 해제한다.
+	 **/
 	spin_unlock_irqrestore(&pcpu_lock, flags);
 
 	/*
 	 * pcpu_mem_free() might end up calling vfree() which uses
 	 * IRQ-unsafe lock and thus can't be called under pcpu_lock.
 	 */
+	/** 20140222
+	 * old가 가리키는 메모리를 해제한다.
+	 **/
 	pcpu_mem_free(old, old_size);
 	pcpu_mem_free(new, new_size);
 
@@ -512,6 +550,9 @@ static void pcpu_split_block(struct pcpu_chunk *chunk, int i,
  */
 static int pcpu_alloc_area(struct pcpu_chunk *chunk, int size, int align)
 {
+	/** 20140222
+	 * chunk의 여유공간의 합으로 구해진 size를 통해 slot의 인덱스를 구한다.
+	 **/
 	int oslot = pcpu_chunk_slot(chunk);
 	int max_contig = 0;
 	int i, off;
@@ -521,8 +562,15 @@ static int pcpu_alloc_area(struct pcpu_chunk *chunk, int size, int align)
 		int head, tail;
 
 		/* extra for alignment requirement */
+		/** 20140222
+		 * map배열의 첫번째 위치가 align되어 있지 않은 경우 BUG출력
+		 **/
 		head = ALIGN(off, align) - off;
 		BUG_ON(i == 0 && head != 0);
+
+		/** 20140222
+		 * 이미 map이 할당되어 있거나 요청한 size 만큼 만족하지 못하면 continue한다.
+		 **/
 
 		if (chunk->map[i] < 0)
 			continue;
@@ -537,6 +585,17 @@ static int pcpu_alloc_area(struct pcpu_chunk *chunk, int size, int align)
 		 * than sizeof(int), which is very small but isn't too
 		 * uncommon for percpu allocations.
 		 */
+		/** 20140222
+		 * map을 align시킨다. 
+		 * 이전 map이 비어있을경우 head만큼 늘려주고
+		 * 이전 map이 사용중인경우 head만큼 사용중으로 간주한다.
+		 * 그리고 정렬되지 않은 부분을 head만큼 빼서 align시킨다.
+		 **/
+
+		/** 20140301
+		 여기서 부터...
+		 **/
+
 		if (head && (head < sizeof(int) || chunk->map[i - 1] > 0)) {
 			if (chunk->map[i - 1] > 0)
 				chunk->map[i - 1] += head;
@@ -745,16 +804,32 @@ static void __percpu *pcpu_alloc(size_t size, size_t align, bool reserved)
 	unsigned long flags;
 	void __percpu *ptr;
 
+	/** 20140222
+	 * size및 align이 잘못되어 있으면 Warning메세지를 출력하고 NULL리턴한다.
+	 **/
 	if (unlikely(!size || size > PCPU_MIN_UNIT_SIZE || align > PAGE_SIZE)) {
 		WARN(true, "illegal size (%zu) or align (%zu) for "
 		     "percpu allocation\n", size, align);
 		return NULL;
 	}
 
+
+	/** 20140222
+	 * mutex_lock및 spin_lock을 건다.
+	 *
+	 * static DEFINE_MUTEX(pcpu_alloc_mutex); protects whole alloc and reclaim
+	 * static DEFINE_SPINLOCK(pcpu_lock); protects index data structures
+	 **/
 	mutex_lock(&pcpu_alloc_mutex);
 	spin_lock_irqsave(&pcpu_lock, flags);
 
 	/* serve reserved allocations from the reserved chunk if available */
+	/** 20140222
+	 * reserved 요청이 들어오고 pcpu_reserved_chunk가 존재하면 
+	 *
+
+	 **/
+
 	if (reserved && pcpu_reserved_chunk) {
 		chunk = pcpu_reserved_chunk;
 
@@ -763,6 +838,10 @@ static void __percpu *pcpu_alloc(size_t size, size_t align, bool reserved)
 			goto fail_unlock;
 		}
 
+		/** 20140222
+		 * chunk의 map을 확장할 필요가 있는지 조사하고
+		 * 확장할 필요가 있으면 map을 확장한다.
+		 **/
 		while ((new_alloc = pcpu_need_to_extend(chunk))) {
 			spin_unlock_irqrestore(&pcpu_lock, flags);
 			if (pcpu_extend_area_map(chunk, new_alloc) < 0) {

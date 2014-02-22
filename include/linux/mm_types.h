@@ -124,6 +124,9 @@ struct page {
 						/** 20140215
 						 * allocate_slab함수에서 설정
 						 **/
+						/** 20140222
+						 * object의 갯수를 나타냄
+						 **/
 						unsigned objects:15;
 						unsigned frozen:1;
 					};

@@ -254,6 +254,9 @@ static inline int check_valid_pointer(struct kmem_cache *s,
 	return 1;
 }
 
+/** 20140222
+ * object의 freepointer를 통해서 다음 free object의 위치를 리턴한다.
+ **/
 static inline void *get_freepointer(struct kmem_cache *s, void *object)
 {
 	return *(void **)(object + s->offset);
@@ -1400,6 +1403,9 @@ static struct page *allocate_slab(struct kmem_cache *s, gfp_t flags, int node)
 	return page;
 }
 
+/** 20140222
+ * constructor가 지정되어 있으면 constructor를 호출해서 object를 생성한다. 
+ **/
 static void setup_object(struct kmem_cache *s, struct page *page,
 				void *object)
 {
@@ -1407,8 +1413,8 @@ static void setup_object(struct kmem_cache *s, struct page *page,
 	if (unlikely(s->ctor))
 		s->ctor(object);
 }
-/** 20140215
- * 
+/** 20140222
+ * memory allocator로부터 page order만큼 memory를 할당 받아 slab을 구성한다.
  **/
 static struct page *new_slab(struct kmem_cache *s, gfp_t flags, int node)
 {
@@ -1457,17 +1463,28 @@ static struct page *new_slab(struct kmem_cache *s, gfp_t flags, int node)
 	 * 각각의 object에 대해 freepointer를 리스트로 연결한다.
 	 **/
 	/** 20140222
-	  여기서부터....
-	 **/
 
-	for_each_object(p, s, start, page->objects) {
+	  +-----+ +-----+ +---------------------------------------------------
+	  |	| 	| |	|	| |													|
+	  +-----+ +-----+ +---------------------------------------------------
+	  |
+	  |																		|
+	  +-------------------------------------------------------------------
+		다음 object의 위치를 이전 object의 freepointer에 연결시킨다.
+		loop를 돌고난 후 마지막 object의 freepointer는 NULL로 잡는다.
+	 **/
+	for_each_object(p, s, start, page->object) {
 		setup_object(s, page, last);
 		set_freepointer(s, last, p);
 		last = p;
 	}
 	setup_object(s, page, last);
 	set_freepointer(s, last, NULL);
-
+	/** 20140222
+	 * 처음 object의 위치를 page구조체의 freelist에 넣고
+	 * object의 갯수를 inuse에 입력
+	 * page->frozen은 object관리 대상에서 제외한다는 의미
+ 	**/
 	page->freelist = start;
 	page->inuse = page->objects;
 	page->frozen = 1;
@@ -1556,10 +1573,20 @@ static void discard_slab(struct kmem_cache *s, struct page *page)
  *
  * list_lock must be held.
  */
+/** 20140222
+ * n->partial리스트에 page를 하나 추가함.
+ **/
 static inline void add_partial(struct kmem_cache_node *n,
 				struct page *page, int tail)
 {
+	/** 20140222
+	 * n->partial에 하나가 추가된다.
+	 **/
 	n->nr_partial++;
+	/** 20140222
+	 * nr_partial리스트에 page를 추가한다.
+	 * tail값에 따라 리스트의 앞 뒤 추가 여부가 달라짐
+	 **/
 	if (tail == DEACTIVATE_TO_TAIL)
 		list_add_tail(&page->lru, &n->partial);
 	else
@@ -2920,6 +2947,9 @@ static unsigned long calculate_alignment(unsigned long flags,
 	return ALIGN(align, sizeof(void *));
 }
 
+/** 20140222
+ * kmem_cache_node 구조체를 초기화 시킨다.
+ **/
 static void
 init_kmem_cache_node(struct kmem_cache_node *n)
 {
@@ -2964,6 +2994,9 @@ static struct kmem_cache *kmem_cache_node;
  * when allocating for the kmalloc_node_cache. This is used for bootstrapping
  * memory on a fresh node that has no slab structures yet.
  */
+/** 20140222
+ * node에 대한 kmem_cache_node에 대한 slab을 하나 만들고 초기화 시킨다.
+ **/
 static void early_kmem_cache_node_alloc(int node)
 {
 	struct page *page;
@@ -2972,10 +3005,14 @@ static void early_kmem_cache_node_alloc(int node)
 	BUG_ON(kmem_cache_node->size < sizeof(struct kmem_cache_node));
 
 	/** 20140215
- 	**/
+	 * kmem_cache_node에 대한 slab을 구성한다.
+ 	 **/
 	page = new_slab(kmem_cache_node, GFP_NOWAIT, node);
 
 	BUG_ON(!page);
+	/** 20140222
+	 * node정보를 체크한다.
+	 **/
 	if (page_to_nid(page) != node) {
 		printk(KERN_ERR "SLUB: Unable to allocate memory from "
 				"node %d\n", node);
@@ -2983,19 +3020,41 @@ static void early_kmem_cache_node_alloc(int node)
 				"in order to be able to continue\n");
 	}
 
+	/** 20140222
+	 * page의 free한 object의 처음object의 위치
+	 **/
 	n = page->freelist;
 	BUG_ON(!n);
+
+	/** 20140222
+	 * 다음 object의 위치를 freelist에 설정하고
+	 * 사용하고 있는 object의 갯수를 1,
+	 * 현재 page의 frozen값을 0으로 하여 frozen 상태를 풀어준다
+	 **/
 	page->freelist = get_freepointer(kmem_cache_node, n);
 	page->inuse = 1;
 	page->frozen = 0;
+	/** 20140222
+	 * NUMA일 경우 node의 갯수만큼 kmem_cache_node가 존재하고
+	 * 처음 object의 freepointer의 위치를 저장한다.
+	 **/
 	kmem_cache_node->node[node] = n;
 #ifdef CONFIG_SLUB_DEBUG
 	init_object(kmem_cache_node, n, SLUB_RED_ACTIVE);
 	init_tracking(kmem_cache_node, n);
 #endif
+	/** 20140222
+	 * node의 kmem_cache_node를 초기화 시킨다.
+	 **/
 	init_kmem_cache_node(n);
+	/** 20140222
+	 * debug이 설정되어 있을경우 추가로 정보 갱신
+	 **/
 	inc_slabs_node(kmem_cache_node, node, page->objects);
 
+	/** 20140222
+	 * page를 kmem_cache_node의 partial리스트에 추가한다.
+	 **/
 	add_partial(n, page, DEACTIVATE_TO_HEAD);
 }
 
@@ -3013,6 +3072,9 @@ static void free_kmem_cache_nodes(struct kmem_cache *s)
 	}
 }
 
+/** 20140222
+ * kmem_cache_node에 대한 초기화 함수
+ **/
 static int init_kmem_cache_nodes(struct kmem_cache *s)
 {
 	int node;
@@ -3023,11 +3085,17 @@ static int init_kmem_cache_nodes(struct kmem_cache *s)
 		/** 20140215
 		 * slab_state 초기값은 DOWN
 		 **/
-
+		/** 20140222
+		 * slab_state가 DOWN이면 slab을 사용할수 없는 상태이므로 
+		 * kmem_cache_node에 대한 초기화를 수작업으로 실시한다.
+		 **/
 		if (slab_state == DOWN) {
 			early_kmem_cache_node_alloc(node);
 			continue;
 		}
+		/** 20140222
+		 * 추후분석???
+		 **/
 		n = kmem_cache_alloc_node(kmem_cache_node,
 						GFP_KERNEL, node);
 
@@ -3345,6 +3413,9 @@ static int kmem_cache_open(struct kmem_cache *s,
 #ifdef CONFIG_NUMA
 	s->remote_node_defrag_ratio = 1000;
 #endif
+	/** 20140222
+	 * kmem_cache를 받아서 kmem_cache_node들을 초기화한다.
+	 **/
 	if (!init_kmem_cache_nodes(s))
 		goto error;
 

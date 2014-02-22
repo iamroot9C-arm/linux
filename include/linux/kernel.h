@@ -221,6 +221,9 @@ extern int _cond_resched(void);
  * abs() should not be used for 64-bit types (s64, u64, long long) - use abs64()
  * for those.
  */
+  /** 20140222
+   * 절대값을 구함
+   **/
 #define abs(x) ({						\
 		long ret;					\
 		if (sizeof(x) == sizeof(long)) {		\

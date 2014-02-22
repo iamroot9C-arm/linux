@@ -53,6 +53,9 @@ struct kmem_cache_cpu {
 #endif
 };
 
+/** 20140222
+ * kmem_cache_node는 partial object에 대해서만 관리한다.
+ **/
 struct kmem_cache_node {
 	spinlock_t list_lock;	/* Protect partial list and nr_partial */
 	unsigned long nr_partial;
