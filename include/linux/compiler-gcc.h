@@ -101,6 +101,13 @@
 #define __scanf(a, b)			__attribute__((format(scanf, a, b)))
 #define  noinline			__attribute__((noinline))
 #define __attribute_const__		__attribute__((__const__))
+/** 20140301    
+ * 사용하지 않는 경우에도 compiler의 warning이 발생하지 않도록 한다.
+ * http://gcc.gnu.org/onlinedocs/gcc/Variable-Attributes.html
+ *
+ * This attribute, attached to a variable, means that the variable is meant to be possibly unused.
+ * GCC does not produce a warning for this variable. 
+ **/
 #define __maybe_unused			__attribute__((unused))
 #define __always_unused			__attribute__((unused))
 

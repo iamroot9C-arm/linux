@@ -119,6 +119,9 @@ static int vmap_pmd_range(pud_t *pud, unsigned long addr,
 	pmd_t *pmd;
 	unsigned long next;
 
+	/** 20140301    
+	 * 20140308 여기부터
+	 **/
 	pmd = pmd_alloc(&init_mm, pud, addr);
 	if (!pmd)
 		return -ENOMEM;
@@ -141,6 +144,9 @@ static int vmap_pud_range(pgd_t *pgd, unsigned long addr,
 		return -ENOMEM;
 	do {
 		next = pud_addr_end(addr, end);
+		/** 20140301    
+		 *
+		 **/
 		if (vmap_pmd_range(pud, addr, next, prot, pages, nr))
 			return -ENOMEM;
 	} while (pud++, addr = next, addr != end);
@@ -163,9 +169,17 @@ static int vmap_page_range_noflush(unsigned long start, unsigned long end,
 	int nr = 0;
 
 	BUG_ON(addr >= end);
+	/** 20140301    
+	 * addr (VA)에 해당하는 pgd entry의 위치를 가져온다.
+	 **/
 	pgd = pgd_offset_k(addr);
 	do {
+		/** 20140301    
+		 * addr와 end 중 작은 값을 취해 end를 넘지 않도록 한다.
+		 **/
 		next = pgd_addr_end(addr, end);
+		/** 20140301    
+		 **/
 		err = vmap_pud_range(pgd, addr, next, prot, pages, &nr);
 		if (err)
 			return err;

@@ -180,6 +180,9 @@ extern pgd_t swapper_pg_dir[PTRS_PER_PGD];
 /* to find an entry in a kernel page-table-directory */
 /** 20131019
  * mm이 가리키는 pgd에서 index만큼을 더한 주소를 리턴한다.
+ *
+ * 20140301
+ * virtual address를 가리키는 특정 pgd entry의 주소가 리턴된다.
  **/
 #define pgd_offset_k(addr)	pgd_offset(&init_mm, addr)
 

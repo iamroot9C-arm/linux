@@ -219,6 +219,9 @@ extern int _find_next_bit_be(const unsigned long *p, int size, int offset);
  **/
 #define find_next_zero_bit(p,sz,off)	_find_next_zero_bit_le(p,sz,off)
 #define find_first_bit(p,sz)		_find_first_bit_le(p,sz)
+/** 20140301    
+ * p에서 off만큼 떨어진 부분부터 sz까지 1인 비트를 찾아 리턴한다.
+ **/
 #define find_next_bit(p,sz,off)		_find_next_bit_le(p,sz,off)
 
 #else
