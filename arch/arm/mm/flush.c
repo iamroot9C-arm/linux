@@ -199,10 +199,10 @@ void __flush_dcache_page(struct address_space *mapping, struct page *page)
 		**/
 		__cpuc_flush_dcache_area(page_address(page), PAGE_SIZE);
 	} else {
-		void *addr = kmap_high_get(page);
+		void *addr = 0; /*kmap_high_get(page); */
 		if (addr) {
 			__cpuc_flush_dcache_area(addr, PAGE_SIZE);
-			kunmap_high(page);
+			0; /*kunmap_high(page); */
 		} else if (cache_is_vipt()) {
 			/* unmapped pages might still be cached */
 			addr = kmap_atomic(page);

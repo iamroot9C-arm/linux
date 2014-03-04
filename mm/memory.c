@@ -993,8 +993,8 @@ static inline int copy_pmd_range(struct mm_struct *dst_mm, struct mm_struct *src
 		if (pmd_trans_huge(*src_pmd)) {
 			int err;
 			VM_BUG_ON(next-addr != HPAGE_PMD_SIZE);
-			err = copy_huge_pmd(dst_mm, src_mm,
-					    dst_pmd, src_pmd, addr, vma);
+			err = 0; /*copy_huge_pmd(dst_mm, src_mm,
+					    dst_pmd, src_pmd, addr, vma); */
 			if (err == -ENOMEM)
 				return -ENOMEM;
 			if (!err)
@@ -1244,7 +1244,7 @@ static inline unsigned long zap_pmd_range(struct mmu_gather *tlb,
 				}
 #endif
 				split_huge_page_pmd(vma->vm_mm, pmd);
-			} else if (zap_huge_pmd(tlb, vma, pmd, addr))
+			} else if ( 0 /*zap_huge_pmd(tlb, vma, pmd, addr)*/)
 				goto next;
 			/* fall through */
 		}
@@ -1521,8 +1521,8 @@ struct page *follow_page(struct vm_area_struct *vma, unsigned long address,
 				spin_unlock(&mm->page_table_lock);
 				wait_split_huge_page(vma->anon_vma, pmd);
 			} else {
-				page = follow_trans_huge_pmd(mm, address,
-							     pmd, flags);
+				page = 0; /*follow_trans_huge_pmd(mm, address,
+							     pmd, flags); */
 				spin_unlock(&mm->page_table_lock);
 				goto out;
 			}
@@ -2974,7 +2974,7 @@ static int do_swap_page(struct mm_struct *mm, struct vm_area_struct *vma,
 
 	if (ksm_might_need_to_copy(page, vma, address)) {
 		swapcache = page;
-		page = ksm_does_need_to_copy(page, vma, address);
+		page = 0; /*ksm_does_need_to_copy(page, vma, address);*/
 
 		if (unlikely(!page)) {
 			ret = VM_FAULT_OOM;

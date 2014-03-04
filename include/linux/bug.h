@@ -77,12 +77,16 @@ extern int __build_bug_on_failed;
  * build time, you should use BUILD_BUG to detect if it is
  * unexpectedly used.
  */
+#if 1
+#define BUILD_BUG() (0)
+#else
 #define BUILD_BUG()						\
 	do {							\
 		extern void __build_bug_failed(void)		\
 			__linktime_error("BUILD_BUG failed");	\
 		__build_bug_failed();				\
 	} while (0)
+#endif
 
 #endif	/* __CHECKER__ */
 
