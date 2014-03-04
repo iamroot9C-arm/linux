@@ -1473,7 +1473,7 @@ static struct page *new_slab(struct kmem_cache *s, gfp_t flags, int node)
 		다음 object의 위치를 이전 object의 freepointer에 연결시킨다.
 		loop를 돌고난 후 마지막 object의 freepointer는 NULL로 잡는다.
 	 **/
-	for_each_object(p, s, start, page->object) {
+	for_each_object(p, s, start, page->objects) {
 		setup_object(s, page, last);
 		set_freepointer(s, last, p);
 		last = p;
