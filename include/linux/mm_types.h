@@ -60,7 +60,13 @@ struct page {
 	/* Second double word */
 	struct {
 		union {
+			/** 20140308    
+			 * percpu으로 사용될 경우 pcpu_set_page_chunk에서 chunk 주소를 지정
+			 **/
 			pgoff_t index;		/* Our offset within mapping. */
+			/** 20140308    
+			 * slub/slob으로 사용될 경우 new_slab에서 첫번째 free object를 지정
+			 **/
 			void *freelist;		/* slub/slob first free object */
 			bool pfmemalloc;	/* If set by the page allocator,
 						 * ALLOC_NO_WATERMARKS was set

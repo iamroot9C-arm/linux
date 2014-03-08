@@ -80,6 +80,13 @@
 #ifdef CONFIG_SMP
 /* default addr <-> pcpu_ptr mapping, override in asm/percpu.h if necessary */
 #ifndef __addr_to_pcpu_ptr
+/** 20140308    
+ * addr는 특정 percpu 변수의 주소.
+ * pcpu_base_addr 는 first chunk에서 pcpu가 할당받은 가장 작은 값.
+ * __per_cpu_start는 .data..percpu 영역의 시작 주소 (VA)
+ *
+ * offset을 구해서 VA에 더해 pcpu 포인터 주소로 만든다.
+ **/
 #define __addr_to_pcpu_ptr(addr)					\
 	(void __percpu *)((unsigned long)(addr) -			\
 			  (unsigned long)pcpu_base_addr	+		\
@@ -130,6 +137,10 @@ struct pcpu_chunk {
 		   |
 		{[*|*]}
 		   ..
+
+
+	{ ... } 는 chunk
+     [*|*]  는 struct list_head
  **/
 static int pcpu_unit_pages __read_mostly;
 static int pcpu_unit_size __read_mostly;
@@ -139,12 +150,21 @@ static int pcpu_nr_slots __read_mostly;
 static size_t pcpu_chunk_struct_size __read_mostly;
 
 /* cpus with the lowest and highest unit addresses */
+/** 20140308    
+ * pcpu_setup_first_chunk 에서 unit의 가장 작은, 가장 큰 unit offset을 가진
+ * cpu를 저장한다.
+ **/
 static unsigned int pcpu_low_unit_cpu __read_mostly;
 static unsigned int pcpu_high_unit_cpu __read_mostly;
 
 /* the address of the first chunk which starts with the kernel static area */
 /** 20130629    
  * pcpu_setup_first_chunk에서 초기값 설정
+ *
+ * 20140308
+ * first chunk 의 주소를 기록해 두고,
+ * 각 chunk 주소에서 offset을 구할 때 기준 주소로 삼는다.
+ * (pcpu_setup_first_chunk에서는 bootmem allocator로부터 할당받아온 메모리)
  **/
 void *pcpu_base_addr __read_mostly;
 EXPORT_SYMBOL_GPL(pcpu_base_addr);
@@ -236,15 +256,14 @@ static bool pcpu_addr_in_reserved_chunk(void *addr)
 		addr < first_start + pcpu_reserved_chunk_limit;
 }
 /** 20130622
-사이즈에 해당하는 slot index반환???
-1. size의 값에서 0이 아닌 첫번째 위치를 구해서 highbit에 저장 (지수승을 구하는듯)
-	0b10001001 -> 8 
-2. highbit 에 PCPU_SLOT_BASE_SHIFT를 빼서 2를 더한다.
-	- PCPU_SLOT_BASE_SHIFT는 unit 32(2^5)개가 하나의 slot이므로 비트 단위로 그룹 표현할때 필요한 SHIFT 인듯??? 
-	- 여기서 2를 더하는 이유는??? 
-- 그런데 어떻게,왜 slot의 인덱스가 구해지는지 모르겠음.....???
-max로 인해 slot사이즈는 최소 1이상여야함.
-**/
+ * size로 slot의 index를 계산해 반환
+ * 1. size의 값에서 0이 아닌 첫번째 위치를 구해서 highbit에 저장
+ *		0b10001001 -> 8 
+ * 2. highbit 에 PCPU_SLOT_BASE_SHIFT를 빼서 2를 더한다.
+ *		- PCPU_SLOT_BASE_SHIFT는 unit 32(2^5)개가 하나의 slot이므로 비트 단위로 그룹 표현할때 필요한 SHIFT 인듯??? 
+ *		- 여기서 2를 더하는 이유는??? 
+ *	max로 인해 slot사이즈는 최소 1이상여야함.
+ **/
 static int __pcpu_size_to_slot(int size)
 {
 	int highbit = fls(size);	/* size is in bytes */
@@ -254,6 +273,9 @@ static int __pcpu_size_to_slot(int size)
 /** 20130622
 	size와 pcpu_unit_size와 같다면 slot의 마지막 인덱스 반환
 	아니면 __pcpu_size_to_slot으로 인덱스 계산
+
+	20140308
+	size별로 구분된 slot 중에서 요청된 size로 해당 slot의 index를 리턴한다.
 **/
 static int pcpu_size_to_slot(int size)
 {
@@ -274,6 +296,9 @@ static int pcpu_chunk_slot(const struct pcpu_chunk *chunk)
 }
 
 /* set the pointer to a chunk in a page struct */
+/** 20140308    
+ * struct page의 index 필드에 chunk 주소를 적어준다.
+ **/
 static void pcpu_set_page_chunk(struct page *page, struct pcpu_chunk *pcpu)
 {
 	page->index = (unsigned long)pcpu;
@@ -286,7 +311,9 @@ static struct pcpu_chunk *pcpu_get_page_chunk(struct page *page)
 }
 
 /** 20140301    
- * cpu에 해당하는 page 중 특정 page (page_idx로 지정)가 리턴된다.
+ * cpu가 속하는 unit이 할당받은 pages 중 특정 page (page_idx로 지정)가
+ * index로 리턴된다. (NUMA에서 unit에 여러 개의 cpu가 속하는 경우)
+ *
  **/
 static int __maybe_unused pcpu_page_idx(unsigned int cpu, int page_idx)
 {
@@ -941,6 +968,18 @@ static struct pcpu_chunk *pcpu_chunk_addr_search(void *addr)
  * RETURNS:
  * Percpu pointer to the allocated area on success, NULL on failure.
  */
+/** 20140308    
+ * 동적으로 pcpu용 공간을 size만큼 할당하는 함수.
+ *     - size로 slot을 찾고, slot을 순회하며 alloc이 가능한 chunk를 찾는다.
+ *       (area 배열을 보고 찾는다)
+ *     - chunk를 찾았다면 data 영역을 할당 받고, vmap 시킨다.
+ *			==> populate
+ *     - slot의 chunk를 다 순회했지만 alloc이 가능한 chunk를 찾지 못했다면
+ *		 chunk를 새로 할당 받는다.
+ * 
+ * -> alloc/reclaim 구간은 임계구역이므로 pcpu_alloc_mutex로 보호한다.
+ * -> 현재 reserved가 false 인 상태로 가정해 reserved에 해당하는 영역은 추후 분석하기로 한다.
+ **/
 static void __percpu *pcpu_alloc(size_t size, size_t align, bool reserved)
 {
 	static int warn_limit = 10;
@@ -1008,6 +1047,11 @@ static void __percpu *pcpu_alloc(size_t size, size_t align, bool reserved)
 
 restart:
 	/* search through normal chunks */
+	/** 20140308    
+	 * size 별로 구분된 slot들에서 할당할 object의 크기로 slot을 찾아와
+	 * pcpu_nr_slots까지 순회하며
+	 *   slot에 묶인 chunk를 순회하며
+	 **/
 	for (slot = pcpu_size_to_slot(size); slot < pcpu_nr_slots; slot++) {
 		list_for_each_entry(chunk, &pcpu_slot[slot], list) {
 			/** 20140301    
@@ -1078,18 +1122,39 @@ area_found:
 	spin_unlock_irqrestore(&pcpu_lock, flags);
 
 	/* populate, map and clear the area */
+	/** 20140308    
+	 * chunk의 off부터 size만큼을 populate 되었음을 표시한다.
+	 * chunk에 대한 동작을 수행하므로 pcpu_lock은 이미 해제된 상태.
+	 **/
 	if (pcpu_populate_chunk(chunk, off, size)) {
 		spin_lock_irqsave(&pcpu_lock, flags);
+		/** 20140308    
+		 * free_percpu 분석할 때 분석하기로 함 ???
+		 **/
 		pcpu_free_area(chunk, off);
 		err = "failed to populate";
 		goto fail_unlock;
 	}
 
+	/** 20140308    
+	 * mutex lock 해제
+	 **/
 	mutex_unlock(&pcpu_alloc_mutex);
 
 	/* return address relative to base address */
+	/** 20140308    
+	 * off는 chunk->map에서 allocation한 위치(offset)이다.
+	 * 가상 주소를 __per_cpu_start를 기준으로한 percpu 주소로 변환한다.
+	 **/
 	ptr = __addr_to_pcpu_ptr(chunk->base_addr + off);
+	/** 20140308    
+	 * 추후 분석 ???
+	 * kmemleak에서 percpu용 memory block을 등록시킨다.
+	 **/
 	kmemleak_alloc_percpu(ptr, size);
+	/** 20140308    
+	 * percpu 변수 주소 리턴
+	 **/
 	return ptr;
 
 fail_unlock:

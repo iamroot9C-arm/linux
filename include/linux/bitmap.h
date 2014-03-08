@@ -192,11 +192,20 @@ static inline void bitmap_fill(unsigned long *dst, int nbits)
 	dst[nlongs - 1] = BITMAP_LAST_WORD_MASK(nbits);
 }
 
+/** 20140308    
+ * bitmap을 복사하는 함수
+ **/
 static inline void bitmap_copy(unsigned long *dst, const unsigned long *src,
 			int nbits)
 {
+	/** 20140308    
+	 * long 하나로 끝나는 경우는 한 word를 copy.
+	 **/
 	if (small_const_nbits(nbits))
 		*dst = *src;
+	/** 20140308    
+	 * 그렇지 않은 경우 word 단위로 복사한다.
+	 **/
 	else {
 		int len = BITS_TO_LONGS(nbits) * sizeof(unsigned long);
 		memcpy(dst, src, len);

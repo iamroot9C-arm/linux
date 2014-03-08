@@ -159,6 +159,9 @@ static int vmap_pud_range(pgd_t *pgd, unsigned long addr,
  *
  * Ie. pte at addr+N*PAGE_SIZE shall point to pfn corresponding to pages[N]
  */
+/** 20140308    
+ * percpu 분석 후 추후 분석예정 ???
+ **/
 static int vmap_page_range_noflush(unsigned long start, unsigned long end,
 				   pgprot_t prot, struct page **pages)
 {
@@ -178,8 +181,6 @@ static int vmap_page_range_noflush(unsigned long start, unsigned long end,
 		 * addr와 end 중 작은 값을 취해 end를 넘지 않도록 한다.
 		 **/
 		next = pgd_addr_end(addr, end);
-		/** 20140301    
-		 **/
 		err = vmap_pud_range(pgd, addr, next, prot, pages, &nr);
 		if (err)
 			return err;
@@ -1254,6 +1255,10 @@ void __init vmalloc_init(void)
  * RETURNS:
  * The number of pages mapped on success, -errno on failure.
  */
+/** 20140308    
+ * percpu에서 allocator로부터 할당받은 pages를 vmap 구간에 mapping.
+ * vmap_page_range_noflush은 percpu 분석 후 vmalloc 분석시 분석하기로 함.
+ **/
 int map_kernel_range_noflush(unsigned long addr, unsigned long size,
 			     pgprot_t prot, struct page **pages)
 {

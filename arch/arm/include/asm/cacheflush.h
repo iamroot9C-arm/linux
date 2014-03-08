@@ -215,6 +215,9 @@ static inline void __flush_icache_all(void)
 
 /** 20131026    
  * cache flush 인터페이스 함수.
+ *
+ * 20140308
+ * v7_flush_kern_cache_all 함수 호출됨
  **/
 #define flush_cache_all()		__cpuc_flush_kern_all()
 
@@ -342,10 +345,23 @@ static inline void flush_kernel_dcache_page(struct page *page)
  * data, we need to do a full cache flush to ensure that writebacks
  * don't corrupt data placed into these pages via the new mappings.
  */
+/** 20140308    
+ * vmap을 수행한 이후 cache를 반영시킨다.
+ **/
 static inline void flush_cache_vmap(unsigned long start, unsigned long end)
 {
+	/** 20140308    
+	 * vipt nonaliasing이 아닐 경우 전체 cache를 비움
+	 * icache는 invalidate, dcache는 flush.
+	 *
+	 * 다른 가상 주소가 동일한 물리 주소에 매핑되는 aliasing problem이 있는
+	 * VIPT cache의 경우, 데이터 일관성을 지켜주기 위해 전체 cache를 flush한다.
+	 **/
 	if (!cache_is_vipt_nonaliasing())
 		flush_cache_all();
+	/** 20140308    
+	 * 그렇지 않다면 dsb만 호출.
+	 **/
 	else
 		/*
 		 * set_pte_at() called from vmap_pte_range() does not
