@@ -262,11 +262,17 @@ static inline void *get_freepointer(struct kmem_cache *s, void *object)
 	return *(void **)(object + s->offset);
 }
 
+/** 20140315
+ * freepointer 가리키고있는 다음 object를 prefetch한다.
+ **/
 static void prefetch_freepointer(const struct kmem_cache *s, void *object)
 {
 	prefetch(object + s->offset);
 }
 
+/** 20140315
+ * get_freepointer와 동일
+ **/
 static inline void *get_freepointer_safe(struct kmem_cache *s, void *object)
 {
 	void *p;
@@ -281,6 +287,10 @@ static inline void *get_freepointer_safe(struct kmem_cache *s, void *object)
 
 /** 20140215
  * object의 처음 위치로부터 s->offset만큼 떨어진 곳에 fp를 저장한다.
+ 	s->offset
+ +--+---------------+
+ |	|fp|			|
+ +--+---------------+
  **/
 static inline void set_freepointer(struct kmem_cache *s, void *object, void *fp)
 {
@@ -1805,6 +1815,8 @@ static inline unsigned long tid_to_event(unsigned long tid)
 	return tid / TID_STEP;
 }
 
+/** 20140315
+ **/
 static inline unsigned int init_tid(int cpu)
 {
 	return cpu;
@@ -1834,10 +1846,15 @@ static inline void note_cmpxchg_failure(const char *n,
 	stat(s, CMPXCHG_DOUBLE_CPU_FAIL);
 }
 
+/** 20140315
+ * kmem_cache_cpu구조체를 초기화한다.
+ **/
 void init_kmem_cache_cpus(struct kmem_cache *s)
 {
 	int cpu;
-
+	/** 20140315
+	 * cpu를 순회하면서 kmem_cache_cpu구조체의 tid를 초기화한다.
+	 **/
 	for_each_possible_cpu(cpu)
 		per_cpu_ptr(s->cpu_slab, cpu)->tid = init_tid(cpu);
 }
@@ -2150,6 +2167,10 @@ static void flush_all(struct kmem_cache *s)
  * Check if the objects in a per cpu structure fit numa
  * locality expectations.
  */
+/** 20140315
+ * page가 가지고 있는 노드번호와 node가 일치하는지 검사
+ * CONFIG_NUMA가 정의되어 있지 않으면 1을 리턴한다.
+ **/
 static inline int node_match(struct page *page, int node)
 {
 #ifdef CONFIG_NUMA
@@ -2430,6 +2451,10 @@ new_slab:
  *
  * Otherwise we can simply pick the next object from the lockless free list.
  */
+/** 20140315
+ * fast-path로 동작할때는 freelist로부터 하나의 object를 가져온다.
+ * slow-path에 대한 분석은 추후 예정 ???
+ **/
 static __always_inline void *slab_alloc(struct kmem_cache *s,
 		gfp_t gfpflags, int node, unsigned long addr)
 {
@@ -2438,6 +2463,9 @@ static __always_inline void *slab_alloc(struct kmem_cache *s,
 	struct page *page;
 	unsigned long tid;
 
+	/** 20140315
+	 * Debug용 함수는 분석 생략 ???
+	 **/
 	if (slab_pre_alloc_hook(s, gfpflags))
 		return NULL;
 
@@ -2449,6 +2477,9 @@ redo:
 	 * reading from one cpu area. That does not matter as long
 	 * as we end up on the original cpu again when doing the cmpxchg.
 	 */
+	/** 20140315
+	 * 현재 cpu의 kmem_cache_cpu구조체를 가져온다
+	 **/
 	c = __this_cpu_ptr(s->cpu_slab);
 
 	/*
@@ -2462,9 +2493,14 @@ redo:
 
 	object = c->freelist;
 	page = c->page;
+	/** 20140315
+	 * 현재 slab에서 사용할수 있는 free object가 없거나 page의 node정보가 일치하지 않을때 slowpath로 동작한다.
+	 **/
 	if (unlikely(!object || !node_match(page, node)))
 		object = __slab_alloc(s, gfpflags, node, addr, c);
-
+	/** 20140315
+	 * freelist가 next object를 가리키도록 한다.
+	 **/
 	else {
 		void *next_object = get_freepointer_safe(s, object);
 
@@ -2492,6 +2528,9 @@ redo:
 		stat(s, ALLOC_FASTPATH);
 	}
 
+	/** 20140315
+	 * __GFP_ZERO 요청이 있을경우 object를 0으로 초기화한다.
+	 **/
 	if (unlikely(gfpflags & __GFP_ZERO) && object)
 		memset(object, 0, s->object_size);
 
@@ -2500,6 +2539,9 @@ redo:
 	return object;
 }
 
+/** 20140315
+ * kmem_cache로부터 object 하나를 리턴한다.
+ **/
 void *kmem_cache_alloc(struct kmem_cache *s, gfp_t gfpflags)
 {
 	void *ret = slab_alloc(s, gfpflags, NUMA_NO_NODE, _RET_IP_);
@@ -2688,6 +2730,13 @@ slab_empty:
  * If fastpath is not possible then fall back to __slab_free where we deal
  * with all sorts of special processing.
  */
+
+/** 20140315
+ * slab의 object를 해제하는 함수
+ * fastpath : x가 가리키는 kmem_cache_cpu구조체의 위치에서 s->offset만큼 떨어진
+ * 위치에 freelist pointer를 등록시킨다.
+ * slowpath : 추후분석???
+ **/
 static __always_inline void slab_free(struct kmem_cache *s,
 			struct page *page, void *x, unsigned long addr)
 {
@@ -2695,6 +2744,9 @@ static __always_inline void slab_free(struct kmem_cache *s,
 	struct kmem_cache_cpu *c;
 	unsigned long tid;
 
+	/** 20140315
+	 * debug용 함수이므로 생략 ???
+	 **/
 	slab_free_hook(s, x);
 
 redo:
@@ -2709,14 +2761,30 @@ redo:
 	tid = c->tid;
 	barrier();
 
+	/** 20140315
+	 * 현재 cpu의 percpu변수를 위해 할당한 page가
+	 * 해제할 object가 속해있는 page와 같다면 fast-path로 해제한다.
+	 **/
 	if (likely(page == c->page)) {
+	/** 20140315
+	 * object의 s->offset만큼의 위치에 fp가있는데
+	 * c->freelist의 값을 fp에 저장
+	 **/
 		set_freepointer(s, object, c->freelist);
 
+	/** 20140315
+	 * 할당해제할 kmem_cache_cpu의 freelist에 등록되어 있는 
+	 * object에 대한 freelist 및 tid값과 현재 cpu의 
+	 * freelist와 tid값을 비교해서 값이 같으면 object및 next_tid값을 갱신한다.
+	 **/
 		if (unlikely(!this_cpu_cmpxchg_double(
 				s->cpu_slab->freelist, s->cpu_slab->tid,
 				c->freelist, tid,
 				object, next_tid(tid)))) {
 
+			/** 20140315
+			 * stat함수는 분석 생략 ???
+			 **/
 			note_cmpxchg_failure("slab_free", s, tid);
 			goto redo;
 		}
@@ -2726,10 +2794,17 @@ redo:
 
 }
 
+/** 20140315
+ * object를 해제하는 함수
+ **/
 void kmem_cache_free(struct kmem_cache *s, void *x)
 {
 	struct page *page;
 
+	/** 20140315
+ 	 * x가 가리키는 가상주소를 포함하는 page의 주소를 리턴
+	 * struct page
+	 **/
 	page = virt_to_head_page(x);
 
 	slab_free(s, page, x, _RET_IP_);
@@ -2963,6 +3038,9 @@ init_kmem_cache_node(struct kmem_cache_node *n)
 #endif
 }
 
+/** 20140315
+ * kmem_cache구조체내의 kmem_cache_cpu를 위한 공간을 할당하고 초기화 한다.
+ **/
 static inline int alloc_kmem_cache_cpus(struct kmem_cache *s)
 {
 	BUILD_BUG_ON(PERCPU_DYNAMIC_EARLY_SIZE <
@@ -2972,6 +3050,9 @@ static inline int alloc_kmem_cache_cpus(struct kmem_cache *s)
 	 * Must align to double word boundary for the double cmpxchg
 	 * instructions to work; see __pcpu_double_call_return_bool().
 	 */
+	/** 20140315
+	 * kmem_cache_cpu구조체를 저장하기 위한 공간을 할당
+	 **/
 	s->cpu_slab = __alloc_percpu(sizeof(struct kmem_cache_cpu),
 				     2 * sizeof(void *));
 
@@ -3058,6 +3139,9 @@ static void early_kmem_cache_node_alloc(int node)
 	add_partial(n, page, DEACTIVATE_TO_HEAD);
 }
 
+/** 20140315
+ * kmem_cache_node의 object를 해제하는 함수
+ **/
 static void free_kmem_cache_nodes(struct kmem_cache *s)
 {
 	int node;
@@ -3093,8 +3177,9 @@ static int init_kmem_cache_nodes(struct kmem_cache *s)
 			early_kmem_cache_node_alloc(node);
 			continue;
 		}
-		/** 20140222
-		 * 추후분석???
+		/** 20140315
+		 * 해당node의 kmem_cache로부터 object하나를 얻어온다.
+		 * object는 struct kmem_cache_node이다 
 		 **/
 		n = kmem_cache_alloc_node(kmem_cache_node,
 						GFP_KERNEL, node);
@@ -3104,6 +3189,9 @@ static int init_kmem_cache_nodes(struct kmem_cache *s)
 			return 0;
 		}
 
+		/** 20140315
+		 * 받아온 object를 kmem_cache_node배열에 저장
+		 **/
 		s->node[node] = n;
 		init_kmem_cache_node(n);
 	}
@@ -3304,6 +3392,10 @@ static int calculate_sizes(struct kmem_cache *s, int forced_order)
 
 }
 
+/** 20140315
+ * kmem_cache 구조체에 대한 초기화 및 할당 
+ * slab allocator가 구성되기 전에 호출되어 동일한 역할을 수행한다.
+ **/
 static int kmem_cache_open(struct kmem_cache *s,
 		const char *name, size_t size,
 		size_t align, unsigned long flags,
@@ -3419,9 +3511,15 @@ static int kmem_cache_open(struct kmem_cache *s,
 	if (!init_kmem_cache_nodes(s))
 		goto error;
 
+	/** 20140315
+	 * kmem_cache_cpu를 위한 공간을 할당하고 초기화한다
+	 **/
 	if (alloc_kmem_cache_cpus(s))
 		return 1;
-
+	/** 20140315
+	 * kmem_cache_cpu의 object를 해제한다.
+	 * kmem_cache_cpu 할당이 실패했을 경우 kmem_cache_node를 해제한다.
+	 **/
 	free_kmem_cache_nodes(s);
 error:
 	if (flags & SLAB_PANIC)
@@ -4073,9 +4171,18 @@ void __init kmem_cache_init(void)
 	slab_state = PARTIAL;
 
 	temp_kmem_cache = kmem_cache;
+	/** 20140315
+	 * kmem_cache구조체를 "kmem_cache"라는 이름으로 align=0으로 초기화한다.
+	 **/
 	kmem_cache_open(kmem_cache, "kmem_cache", kmem_size,
 		0, SLAB_HWCACHE_ALIGN | SLAB_PANIC, NULL);
+	/** 20140315
+	 * slub으로부터 kmem_cache object하나생성
+	 **/
 	kmem_cache = kmem_cache_alloc(kmem_cache, GFP_NOWAIT);
+	/** 20140315
+	 * kmem_cache_open에서 설정한 데이터를 받아온 kmem_cache object에 복사
+	 **/
 	memcpy(kmem_cache, temp_kmem_cache, kmem_size);
 
 	/*
@@ -4083,11 +4190,22 @@ void __init kmem_cache_init(void)
 	 * kmem_cache_node is separately allocated so no need to
 	 * update any list pointers.
 	 */
+	/** 20140315
+	 * buddy로부터 받아온 struct kmem_cache포인터를 백업해놓는다.
+	 **/
 	temp_kmem_cache_node = kmem_cache_node;
 
+	/** 20140315
+	 * slub allocator로부터 kmem_cache 인스턴스를 생성한다.
+	 **/
 	kmem_cache_node = kmem_cache_alloc(kmem_cache, GFP_NOWAIT);
+	/** 20140315
+	 * kmem_cache_open에서 설정한 데이터를 받아온 kmem_cache_node object에 복사
+	 **/
 	memcpy(kmem_cache_node, temp_kmem_cache_node, kmem_size);
 
+	/** 20140322 여기서부터 시작...
+	 **/
 	kmem_cache_bootstrap_fixup(kmem_cache_node);
 
 	caches++;

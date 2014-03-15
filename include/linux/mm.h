@@ -440,6 +440,10 @@ static inline void get_page(struct page *page)
 	atomic_inc(&page->_count);
 }
 
+/** 20140315
+ * x가 가리키는 가상주소가 포함된 page에 대한 첫번째 주소를 리턴
+ * slab에 대한 인스턴스를 얻어오기 위해 x(object)가 속해있는 page를 구한다.
+ **/
 static inline struct page *virt_to_head_page(const void *x)
 {
 	struct page *page = virt_to_page(x);

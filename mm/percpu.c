@@ -1105,6 +1105,9 @@ restart:
 	/* hmmm... no space left, create a new chunk */
 	spin_unlock_irqrestore(&pcpu_lock, flags);
 
+	/** 20140315
+	 * 추후분석 예정 ???
+	 **/
 	chunk = pcpu_create_chunk();
 	if (!chunk) {
 		err = "failed to allocate new chunk";
@@ -1185,6 +1188,10 @@ fail_unlock_mutex:
  * RETURNS:
  * Percpu pointer to the allocated area on success, NULL on failure.
  */
+/** 20140315
+ * size크기의 align단위로 정렬된 percpu공간을 동적으로 할당
+ * reserved된 공간을 사용하지 않는다
+ **/
 void __percpu *__alloc_percpu(size_t size, size_t align)
 {
 	return pcpu_alloc(size, align, false);

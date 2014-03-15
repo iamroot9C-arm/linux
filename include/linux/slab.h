@@ -305,6 +305,9 @@ static inline void *__kmalloc_node(size_t size, gfp_t flags, int node)
 
 void *kmem_cache_alloc(struct kmem_cache *, gfp_t);
 
+/** 20140315
+ * node의 kmem_cache로부터 object하나를 리턴한다.
+ **/
 static inline void *kmem_cache_alloc_node(struct kmem_cache *cachep,
 					gfp_t flags, int node)
 {

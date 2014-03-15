@@ -155,6 +155,9 @@ extern int __init pcpu_page_first_chunk(size_t reserved_size,
  * version should probably be combined with get_cpu()/put_cpu().
  */
 #ifdef CONFIG_SMP
+/** 20140315
+ * ptr이 가리키는 주소로부터 cpu에 해당하는 위치
+ **/
 #define per_cpu_ptr(ptr, cpu)	SHIFT_PERCPU_PTR((ptr), per_cpu_offset((cpu)))
 #else
 #define per_cpu_ptr(ptr, cpu)	({ (void)(cpu); VERIFY_PERCPU_PTR((ptr)); })
