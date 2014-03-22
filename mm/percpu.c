@@ -75,6 +75,9 @@
 #include <asm/io.h>
 
 #define PCPU_SLOT_BASE_SHIFT		5	/* 1-31 shares the same slot */
+/** 20140322    
+ * 일반적인 percpu chunk의 경우 map의 크기를 16으로 한다.
+ **/
 #define PCPU_DFL_MAP_ALLOC		16	/* start a map with 16 ents */
 
 #ifdef CONFIG_SMP
@@ -106,11 +109,28 @@
 
 struct pcpu_chunk {
 	struct list_head	list;		/* linked to pcpu_slot lists */
+	/** 20140322    
+	 * chunk내의 사용 가능한 메모리 크기.
+	 * 초기값은 pcpu_alloc_chunk에서 pcpu_unit_size로 설정
+	 **/
 	int			free_size;	/* free bytes in the chunk */
+	/** 20140322    
+	 * 최초 free_size가 contig_hint로 들어감
+	 **/
 	int			contig_hint;	/* max contiguous size hint */
 	void			*base_addr;	/* base address of this chunk */
+	/** 20140322    
+	 * 사용된 map entry를 기록하는 변수
+	 **/
 	int			map_used;	/* # of map entries used */
+	/** 20140322    
+	 * 초기값은 pcpu_alloc_chunk에서 PCPU_DFL_MAP_ALLOC으로 설정
+	 * 부족하여 pcpu_extend_area_map 호출되면 갱신됨
+	 **/
 	int			map_alloc;	/* # of map entries allocated */
+	/** 20140322    
+	 * percpu chunk의 data 사용 layout을 map을 통해 표현한다.
+	 **/
 	int			*map;		/* allocation map */
 	void			*data;		/* chunk data */
 	bool			immutable;	/* no [de]population allowed */
@@ -126,6 +146,8 @@ struct pcpu_chunk {
  * pcpu_nr_units  : unit들의 개수
  * pcpu_atom_size : page 할당을 위한 최소 단위 (e.g. 4KB)
  * pcpu_nr_slots  : slot의 개수 (e.g. 15)
+ * pcpu_chunk_struct_size : chunk struct를 할당받기 위해 필요한 메모리 크기
+
  *
 	pcpu_slot
         slot0                            slot n
@@ -191,6 +213,9 @@ static const size_t *pcpu_group_sizes __read_mostly;
  */
 /** 20130629    
  * pcpu_setup_first_chunk 에서 first chunk를 bootmem에서 할당받아 설정.
+ *
+ * 20140322
+ * dynamic chunk가 있을 경우 pcpu_first_chunk는 dchunk가 된다.
  **/
 static struct pcpu_chunk *pcpu_first_chunk;
 
@@ -201,6 +226,10 @@ static struct pcpu_chunk *pcpu_first_chunk;
  * area doesn't exist, the following variables contain NULL and 0
  * respectively.
  */
+/** 20140322    
+ * pcpu_setup_first_chunk에서 reserved_size가 alloc_info에 존재할 경우
+ * schunk가 pcpu_reserved_chunk가 됨
+ **/
 static struct pcpu_chunk *pcpu_reserved_chunk;
 static int pcpu_reserved_chunk_limit;
 
@@ -859,14 +888,26 @@ static void pcpu_free_area(struct pcpu_chunk *chunk, int freeme)
 	pcpu_chunk_relocate(chunk, oslot);
 }
 
+/** 20140322    
+ * chunk를 받아와 struct pcpu_chunk 자료구조 초기화
+ *
+ * size의 크기에 따라 kzalloc / vzalloc이 다르게 호출되지만,
+ * size로 보아 pcpu_chunk와 map은 slub으로부터 할당될 것이다
+ **/
 static struct pcpu_chunk *pcpu_alloc_chunk(void)
 {
 	struct pcpu_chunk *chunk;
 
+	/** 20140322    
+	 * pcpu 용으로 사용할 메모리를 pcpu_chunk_struct_size 크기만큼 받아온다.
+	 **/
 	chunk = pcpu_mem_zalloc(pcpu_chunk_struct_size);
 	if (!chunk)
 		return NULL;
 
+	/** 20140322    
+	 * 새로운 chunk의 map에 사용할 메모리를 할당받는다.
+	 **/
 	chunk->map = pcpu_mem_zalloc(PCPU_DFL_MAP_ALLOC *
 						sizeof(chunk->map[0]));
 	if (!chunk->map) {
@@ -874,9 +915,16 @@ static struct pcpu_chunk *pcpu_alloc_chunk(void)
 		return NULL;
 	}
 
+	/** 20140322    
+	 * map entry의 개수를 할당한 MAP ALLOC 수로 초기화
+	 * map[0] 에 pcpu_unit_size가 초기화 되고 map_used가 하나 증가
+	 **/
 	chunk->map_alloc = PCPU_DFL_MAP_ALLOC;
 	chunk->map[chunk->map_used++] = pcpu_unit_size;
 
+	/** 20140322    
+	 * 자료구조 초기화
+	 **/
 	INIT_LIST_HEAD(&chunk->list);
 	chunk->free_size = pcpu_unit_size;
 	chunk->contig_hint = pcpu_unit_size;
@@ -1600,6 +1648,12 @@ int __init pcpu_setup_first_chunk(const struct pcpu_alloc_info *ai,
 				  void *base_addr)
 {
 	static char cpus_buf[4096] __initdata;
+	/** 20140322    
+	 * slab이 초기화 되기 전 smap, dmap의 크기는 상수값으로 초기화된다.
+	 * 이후 percpu_init_late에서 변경됨.
+	 *
+	 * __initdata이므로 static으로 선언되었어도 커널 초기화 이후 삭제된다.
+	 **/
 	static int smap[PERCPU_DYNAMIC_EARLY_SLOTS] __initdata;
 	static int dmap[PERCPU_DYNAMIC_EARLY_SLOTS] __initdata;
 	size_t dyn_size = ai->dyn_size;
@@ -1741,8 +1795,12 @@ int __init pcpu_setup_first_chunk(const struct pcpu_alloc_info *ai,
 	pcpu_unit_size = pcpu_unit_pages << PAGE_SHIFT;
 	pcpu_atom_size = ai->atom_size;
 	/** 20130622
-	chuck struct사이즈를 저장.
-	**/
+	  chuck struct사이즈를 저장.
+
+		20140322
+		pcpu_chunk 구조체의 크기와 populate의 크기를 더해
+		전역변수 pcpu_chunk_struct_size에 저장
+	 **/
 	pcpu_chunk_struct_size = sizeof(struct pcpu_chunk) +
 		BITS_TO_LONGS(pcpu_unit_pages) * sizeof(unsigned long);
 
@@ -1798,16 +1856,34 @@ int __init pcpu_setup_first_chunk(const struct pcpu_alloc_info *ai,
 	schunk->immutable = true;
 	bitmap_fill(schunk->populated, pcpu_unit_pages);
 
+	/** 20140322    
+	 * alloc info에 reserved_size가 존재할 경우 (현재 config에서 존재)
+	 **/
 	if (ai->reserved_size) {
+		/** 20140322    
+		 * reserved_size로 요청된 크기만큼 free_size로 설정
+		 **/
 		schunk->free_size = ai->reserved_size;
+		/** 20140322    
+		 * static chunk가 pcpu_reserved_chunk가 됨
+		 **/
 		pcpu_reserved_chunk = schunk;
+		/** 20140322    
+		 * pcpu_reserved_chunk_limit은 static + reserved
+		 **/
 		pcpu_reserved_chunk_limit = ai->static_size + ai->reserved_size;
 	} else {
 		schunk->free_size = dyn_size;
 		dyn_size = 0;			/* dynamic area covered */
 	}
+	/** 20140322    
+	 * free_size를 contig_hint로 사용
+	 **/
 	schunk->contig_hint = schunk->free_size;
 
+	/** 20140322    
+	 * static chunk에서 map_used에서 static_size만큼 여유공간으로 설정한다.
+	 **/
 	schunk->map[schunk->map_used++] = -ai->static_size;
 	if (schunk->free_size)
 		schunk->map[schunk->map_used++] = schunk->free_size;
@@ -2625,8 +2701,15 @@ void __init setup_per_cpu_areas(void)
  * This function is called after slab is brought up and replaces those
  * with properly allocated maps.
  */
+/** 20140322    
+ * slab이 online 된 이후 percpu의 chunk의 map을 할당받는 위치를 변경한다.
+ **/
 void __init percpu_init_late(void)
 {
+	/** 20140322    
+	 * setup_embed_first_chunk 후 분석한 환경에서는
+	 * pcpu_first_chunk로 dchunk, pcpu_reserved_chunk로 schunk가 들어간다.
+	 **/
 	struct pcpu_chunk *target_chunks[] =
 		{ pcpu_first_chunk, pcpu_reserved_chunk, NULL };
 	struct pcpu_chunk *chunk;
@@ -2635,15 +2718,31 @@ void __init percpu_init_late(void)
 
 	for (i = 0; (chunk = target_chunks[i]); i++) {
 		int *map;
+		/** 20140322    
+		 * size는 PERCPU_DYNAMIC_EARLY_SLOTS의 값 그대로 사용
+		 **/
 		const size_t size = PERCPU_DYNAMIC_EARLY_SLOTS * sizeof(map[0]);
 
 		BUILD_BUG_ON(size > PAGE_SIZE);
 
+		/** 20140322    
+		 * percpu용 memory를 할당한다.
+		 * 내부적으로 kzmalloc으로 호출될 가능성이 높으므로 slab에서 할당된다.
+		 **/
 		map = pcpu_mem_zalloc(size);
 		BUG_ON(!map);
 
+		/** 20140322    
+		 * pcpu_lock으로 map data를 보호한다.
+		 **/
 		spin_lock_irqsave(&pcpu_lock, flags);
+		/** 20140322    
+		 * map data를 그대로 복사
+		 **/
 		memcpy(map, chunk->map, size);
+		/** 20140322    
+		 * 구조체 변경
+		 **/
 		chunk->map = map;
 		spin_unlock_irqrestore(&pcpu_lock, flags);
 	}

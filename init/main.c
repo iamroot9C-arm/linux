@@ -497,6 +497,18 @@ void __init __weak thread_info_cache_init(void)
 /*
  * Set up kernel memory allocators
  */
+/** 20140322    
+ * mm_init
+ *	커널이 사용하는 메모리 관련 자료구조를 초기화 한다.
+ *
+ * o mem_init
+ *		bootmem에서 buddy allocator 전환
+ * o kmem_cache_init
+ *		slab(slub) allocator 사용을 위한 초기화
+ * o vmalloc_init
+ *		vmlist에 등록되어 있던 정보를 vmap_area으로 등록
+ *
+ **/
 static void __init mm_init(void)
 {
 	/*
@@ -510,6 +522,9 @@ static void __init mm_init(void)
 	mem_init();
 	/** 20130907    
 	 * CONFIG_SLUB이 정의되어 있으므로 mm/Makefile에서 slub.o가 생성된다.
+	 *
+	 * 20140322
+	 * slab allocator 동작을 위한 kmem_cache, kmem_cache_node 자료구조를 초기화
 	 **/
 	kmem_cache_init();
 	percpu_init_late();

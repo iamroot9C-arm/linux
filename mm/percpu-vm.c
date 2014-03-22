@@ -536,6 +536,9 @@ static struct pcpu_chunk *pcpu_create_chunk(void)
 	struct pcpu_chunk *chunk;
 	struct vm_struct **vms;
 
+	/** 20140322    
+	 * struct pcpu_chunk를 할당받는다.
+	 **/
 	chunk = pcpu_alloc_chunk();
 	if (!chunk)
 		return NULL;

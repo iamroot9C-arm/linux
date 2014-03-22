@@ -145,6 +145,9 @@ struct page {
 
 	/* Third double word block */
 	union {
+		/** 20140322    
+		 * slub에서 사용할 때 partial slub에 대한 list
+		 **/
 		struct list_head lru;	/* Pageout list, eg. active_list
 					 * protected by zone->lru_lock !
 					 */
@@ -178,6 +181,9 @@ struct page {
 #if USE_SPLIT_PTLOCKS
 		spinlock_t ptl;
 #endif
+		/** 20140322    
+		 * page가 SLUB에서 사용될 때 struct kmem_cache를 가리킨다.
+		 **/
 		struct kmem_cache *slab;	/* SLUB: Pointer to slab */
 		struct page *first_page;	/* Compound tail pages */
 	};

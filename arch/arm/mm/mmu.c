@@ -1076,6 +1076,9 @@ void __init iotable_init(struct map_desc *io_desc, int nr)
 
 /** 20130330    
  * 홀수 section인 경우 create_mapping 없이 vmlist에 추가
+ *
+ * 20140322
+ * 넘어온 addr는 masking 되어 정렬된 주소가 넘어온다 (addr & PMD_MASK)
  **/
 static void __init pmd_empty_section_gap(unsigned long addr)
 {

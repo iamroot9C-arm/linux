@@ -102,6 +102,9 @@
 /*
  * section address mask and size definitions.
  */
+/** 20140322    
+ * SECTION은 1MB 단위
+ **/
 #define SECTION_SHIFT		20
 #define SECTION_SIZE		(1UL << SECTION_SHIFT)
 #define SECTION_MASK		(~(SECTION_SIZE-1))

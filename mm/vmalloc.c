@@ -277,6 +277,9 @@ struct vmap_area {
 
 static DEFINE_SPINLOCK(vmap_area_lock);
 static LIST_HEAD(vmap_area_list);
+/** 20140322    
+ * vmap_area에서 사용되는 rb tree
+ **/
 static struct rb_root vmap_area_root = RB_ROOT;
 
 /* The vmap cache globals are protected by vmap_area_lock */
@@ -285,6 +288,9 @@ static unsigned long cached_hole_size;
 static unsigned long cached_vstart;
 static unsigned long cached_align;
 
+/** 20140322    
+ * 초기값은 vmalloc_init에서 VMALLOC_END로 설정
+ **/
 static unsigned long vmap_area_pcpu_hole;
 
 static struct vmap_area *__find_vmap_area(unsigned long addr)
@@ -308,6 +314,10 @@ static struct vmap_area *__find_vmap_area(unsigned long addr)
 
 static void __insert_vmap_area(struct vmap_area *va)
 {
+	/** 20140322    
+	 * rb tree에 대한 분석은 생략???
+	 * vmap_area의 rb_node를 초기화 해 vmap_area_root에 등록한다.
+	 **/
 	struct rb_node **p = &vmap_area_root.rb_node;
 	struct rb_node *parent = NULL;
 	struct rb_node *tmp;
@@ -329,6 +339,12 @@ static void __insert_vmap_area(struct vmap_area *va)
 	rb_insert_color(&va->rb_node, &vmap_area_root);
 
 	/* address-sort this list so it is usable like the vmlist */
+	/** 20140322    
+	 * rb_prev가 없는 경우 vmap_area_list로 등록
+	 * 존재하는 경우 rb_entry를 rb_node 내에서 등록
+	 *
+	 * 전체적인 구조 파악 필요???
+	 **/
 	tmp = rb_prev(&va->rb_node);
 	if (tmp) {
 		struct vmap_area *prev;
@@ -747,6 +763,9 @@ static void free_unmap_vmap_area_addr(unsigned long addr)
 
 #define VMAP_BLOCK_SIZE		(VMAP_BBMAP_BITS * PAGE_SIZE)
 
+/** 20140322    
+ * vmalloc_init이 호출 완료 여부를 표시
+ **/
 static bool vmap_initialized __read_mostly = false;
 
 struct vmap_block_queue {
@@ -767,6 +786,9 @@ struct vmap_block {
 };
 
 /* Queue of free and dirty vmap blocks, for allocation and flushing purposes */
+/** 20140322    
+ * 정적 per cpu 변수 선언.
+ **/
 static DEFINE_PER_CPU(struct vmap_block_queue, vmap_block_queue);
 
 /*
@@ -1207,22 +1229,41 @@ void __init vm_area_register_early(struct vm_struct *vm, size_t align)
 	vm_area_add_early(vm);
 }
 
+/** 20140322    
+ * vmlist에 등록되어 있던 entry를 vmap_area로 생성해 자료구조를 구성
+ **/
 void __init vmalloc_init(void)
 {
 	struct vmap_area *va;
 	struct vm_struct *tmp;
 	int i;
 
+	/** 20140322    
+	 * possible cpu를 순회하며
+	 **/
 	for_each_possible_cpu(i) {
 		struct vmap_block_queue *vbq;
 
+		/** 20140322    
+		 * cpu별로 별도의 vmap_block_queue를 가져와 vbq에 저장
+		 **/
 		vbq = &per_cpu(vmap_block_queue, i);
+		/** 20140322    
+		 * vmap_block_queue 자료구조 초기화
+		 **/
 		spin_lock_init(&vbq->lock);
 		INIT_LIST_HEAD(&vbq->free);
 	}
 
 	/* Import existing vmlist entries. */
+	/** 20140322    
+	 * 현재 vmlist에 등록되어 있는 entry를 순회하며 
+	 * vmap_area를 생성해 정보를 할당하고 vmap_area 자료구조에 추가한다.
+	 **/
 	for (tmp = vmlist; tmp; tmp = tmp->next) {
+		/** 20140322    
+		 * vmap_area 구조체를 하나 할당한다.
+		 **/
 		va = kzalloc(sizeof(struct vmap_area), GFP_NOWAIT);
 		va->flags = VM_VM_AREA;
 		va->va_start = (unsigned long)tmp->addr;
@@ -1231,6 +1272,9 @@ void __init vmalloc_init(void)
 		__insert_vmap_area(va);
 	}
 
+	/** 20140322    
+	 * vmap_area_pcpu_hole 초기값을 VMALLOC_END로 설정
+	 **/
 	vmap_area_pcpu_hole = VMALLOC_END;
 
 	vmap_initialized = true;
@@ -1320,6 +1364,11 @@ EXPORT_SYMBOL_GPL(map_vm_area);
 
 /*** Old vmalloc interfaces ***/
 DEFINE_RWLOCK(vmlist_lock);
+
+/** 20140322    
+ * vmalloc_init 전 vmlist에 추가하는 부분
+ *		vm_area_add_early
+ **/
 struct vm_struct *vmlist;
 
 static void setup_vmalloc_vm(struct vm_struct *vm, struct vmap_area *va,
@@ -2386,6 +2435,10 @@ static unsigned long pvm_determine_end(struct vmap_area **pnext,
  * area.  Scanning is repeated till all the areas fit and then all
  * necessary data structres are inserted and the result is returned.
  */
+/** 20140322    
+ * 호출 예
+ * pcpu_get_vm_areas(pcpu_group_offsets, pcpu_group_sizes, pcpu_nr_groups, pcpu_atom_size)
+ **/
 struct vm_struct **pcpu_get_vm_areas(const unsigned long *offsets,
 				     const size_t *sizes, int nr_vms,
 				     size_t align)

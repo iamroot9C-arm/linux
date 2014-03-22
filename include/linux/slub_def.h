@@ -44,8 +44,14 @@ enum stat_item {
 	NR_SLUB_STAT_ITEMS };
 
 struct kmem_cache_cpu {
+	/** 20140322    
+	 * fastpath로 다음 사용 가능한 object를 찾기 위한 포인터
+	 **/
 	void **freelist;	/* Pointer to next available object */
 	unsigned long tid;	/* Globally unique transaction id */
+	/** 20140322    
+	 * page : allocation 한 slab
+	 **/
 	struct page *page;	/* The slab from which we are allocating */
 	struct page *partial;	/* Partially allocated frozen slabs */
 #ifdef CONFIG_SLUB_STATS
@@ -109,6 +115,9 @@ struct kmem_cache {
 	int align;		/* Alignment */
 	int reserved;		/* Reserved bytes at the end of slabs */
 	const char *name;	/* Name (only for display!) */
+	/** 20140322    
+	 * slab_cache로 관리하기 위한 list_head
+	 **/
 	struct list_head list;	/* List of slab caches */
 #ifdef CONFIG_SYSFS
 	struct kobject kobj;	/* For sysfs */
@@ -132,6 +141,10 @@ struct kmem_cache {
 #define KMALLOC_MIN_SIZE 8
 #endif
 
+/** 20140322    
+ * KMALLOC_MIN_SIZE의 지수값을 KMALLOC_SHIFT_LOW로 사용
+ * (2^6 = 64이므로 6)
+ **/
 #define KMALLOC_SHIFT_LOW ilog2(KMALLOC_MIN_SIZE)
 
 /*
@@ -145,6 +158,10 @@ struct kmem_cache {
  */
 #define SLUB_MAX_SIZE (2 * PAGE_SIZE)
 
+/** 20140322    
+ * PAGE_SHIFT는 현재 12.
+ * SLUB_PAGE_SHIFT는 14.
+ **/
 #define SLUB_PAGE_SHIFT (PAGE_SHIFT + 2)
 
 #ifdef CONFIG_ZONE_DMA

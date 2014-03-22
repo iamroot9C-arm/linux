@@ -31,6 +31,9 @@
  **/
 #define LIST_HEAD_INIT(name) { &(name), &(name) }
 
+/** 20140322    
+ * 주로 전역변수로 list_head를 선언하고 초기화
+ **/
 #define LIST_HEAD(name) \
 	struct list_head name = LIST_HEAD_INIT(name)
 /** 20121208

@@ -1791,15 +1791,24 @@ static void *get_partial(struct kmem_cache *s, gfp_t flags, int node,
  * during cmpxchg. The transactions start with the cpu number and are then
  * incremented by CONFIG_NR_CPUS.
  */
+/** 20140322    
+ * PREEMPT 사용 중일 때는 cpu의 개수를 2의 제곱승으로 올려 TID_STEP로 삼는다.
+ **/
 #define TID_STEP  roundup_pow_of_two(CONFIG_NR_CPUS)
 #else
 /*
  * No preemption supported therefore also no need to check for
  * different cpus.
  */
+/** 20140322    
+ * vexpress default compile option에서는 CONFIG_PREEMPT가 빠져 있으므로 1
+ **/
 #define TID_STEP 1
 #endif
 
+/** 20140322    
+ * tid를 TID_STEP만큼 증가시킨다.
+ **/
 static inline unsigned long next_tid(unsigned long tid)
 {
 	return tid + TID_STEP;
@@ -2116,11 +2125,23 @@ int put_cpu_partial(struct kmem_cache *s, struct page *page, int drain)
 	return pobjects;
 }
 
+/** 20140322    
+ * keme_cache_cpu가 가리키던 slab을 flush.
+ **/
 static inline void flush_slab(struct kmem_cache *s, struct kmem_cache_cpu *c)
 {
+	/** 20140322    
+	 * CPUSLAB_FLUSH 항목의 statistics를 갱신
+	 **/
 	stat(s, CPUSLAB_FLUSH);
+	/** 20140322    
+	 * deactivate_slab는 slab생성 하는 내용과 함께 추후 분석하기로 함 ???
+	 **/
 	deactivate_slab(s, c->page, c->freelist);
 
+	/** 20140322    
+	 * cpu가 가리키고 있던 slab을 deactivate한 뒤 kmem_cache_cpu 자료구조를 변경
+	 **/
 	c->tid = next_tid(c->tid);
 	c->page = NULL;
 	c->freelist = NULL;
@@ -2133,6 +2154,9 @@ static inline void flush_slab(struct kmem_cache *s, struct kmem_cache_cpu *c)
  */
 static inline void __flush_cpu_slab(struct kmem_cache *s, int cpu)
 {
+	/** 20140322    
+	 * kmem_cache의 cpu_slab에서 
+	 **/
 	struct kmem_cache_cpu *c = per_cpu_ptr(s->cpu_slab, cpu);
 
 	if (likely(c)) {
@@ -3635,6 +3659,10 @@ EXPORT_SYMBOL(kmem_cache_destroy);
  *		Kmalloc subsystem
  *******************************************************************/
 
+/** 20140322    
+ * kmalloc 용 kmem_cache 포인터 배열
+ * 비어 있는 index는 사용되지 않음
+ **/
 struct kmem_cache *kmalloc_caches[SLUB_PAGE_SHIFT];
 EXPORT_SYMBOL(kmalloc_caches);
 
@@ -3680,21 +3708,37 @@ static int __init setup_slub_nomerge(char *str)
 
 __setup("slub_nomerge", setup_slub_nomerge);
 
+/** 20140322    
+ * kmalloc용 kmem_cache를 생성하는 함수.
+ *
+ * kmem_cache_open을 공통으로 사용한다.
+ * kmem_cache_open 후 slab_caches에 등록한다.
+ **/
 static struct kmem_cache *__init create_kmalloc_cache(const char *name,
 						int size, unsigned int flags)
 {
 	struct kmem_cache *s;
 
+	/** 20140322    
+	 * kmem_cache 구조체 object를 하나 받아온다.
+	 **/
 	s = kmem_cache_alloc(kmem_cache, GFP_NOWAIT);
 
 	/*
 	 * This function is called with IRQs disabled during early-boot on
 	 * single CPU so there's no need to take slab_mutex here.
 	 */
+	/** 20140322    
+	 * 받아온 메모리에 kmem_cache 구조체를 설정한다.
+	 * align이 L1 cache line size로 들어간다.
+	 **/
 	if (!kmem_cache_open(s, name, size, ARCH_KMALLOC_MINALIGN,
 								flags, NULL))
 		goto panic;
 
+	/** 20140322    
+	 * 새로운 kmem_cache가 설정된 뒤에 slab_caches에 등록한다.
+	 **/
 	list_add(&s->list, &slab_caches);
 	return s;
 
@@ -3709,6 +3753,14 @@ panic:
  * of two cache sizes there. The size of larger slabs can be determined using
  * fls.
  */
+/** 20140322    
+ * kmem_cache_init 과정에서 element의 값이 cache line size에 따라 변경됨
+ *
+ * 변경된 후
+ * 8 ~ 64까지 6
+ *   ~ 128까지 7
+ *   ~ 192까지 2
+ **/
 static s8 size_index[24] = {
 	3,	/* 8 */
 	4,	/* 16 */
@@ -3736,6 +3788,9 @@ static s8 size_index[24] = {
 	2	/* 192 */
 };
 
+/** 20140322    
+ * bytes를 받아 index로 변환
+ **/
 static inline int size_index_elem(size_t bytes)
 {
 	return (bytes - 1) / 8;
@@ -4095,19 +4150,42 @@ static int slab_memory_callback(struct notifier_block *self,
  * the page allocator
  */
 
+/** 20140322    
+ * slab_caches에 등록,  partial slab 초기화 등
+ * bootstrap으로 처리하면서 생기는 부분을 별도처리
+ **/
 static void __init kmem_cache_bootstrap_fixup(struct kmem_cache *s)
 {
 	int node;
 
+	/** 20140322    
+	 * slab_caches에 등록
+	 **/
 	list_add(&s->list, &slab_caches);
+	/** 20140322    
+	 * slab_cache_destroy시 제거 가능 여부를 검사할 때 사용하는 변수. 초기값 -1
+	 **/
 	s->refcount = -1;
 
+	/** 20140322    
+	 * 시스템의 전체 node 중 N_NORMAL_MEMORY인 node들을 순회하며
+	 **/
 	for_each_node_state(node, N_NORMAL_MEMORY) {
+		/** 20140322    
+		 * kmem_cache의 각 node 정보를 가져온다.
+		 **/
 		struct kmem_cache_node *n = get_node(s, node);
 		struct page *p;
 
 		if (n) {
+			/** 20140322    
+			 * n->partial의 각 entry를 순회하며 (struct page의 lru를 통해 연결)
+			 * page를 가져온다. (실제로 이 페이지가 slab 정보)
+			 **/
 			list_for_each_entry(p, &n->partial, lru)
+				/** 20140322    
+				 * 상호 참조를 위해 struct page에 kmem_cache 구조체를 연결.
+				 **/
 				p->slab = s;
 
 #ifdef CONFIG_SLUB_DEBUG
@@ -4118,6 +4196,11 @@ static void __init kmem_cache_bootstrap_fixup(struct kmem_cache *s)
 	}
 }
 
+/** 20140322    
+ * SLUB allocator를 초기화 한다.
+ *
+ * struct kmem_cache와 kmem_cache_node를 직접 생성하고 구조체의 각 변수를 초기화 한다.
+ **/
 void __init kmem_cache_init(void)
 {
 	int i;
@@ -4204,14 +4287,24 @@ void __init kmem_cache_init(void)
 	 **/
 	memcpy(kmem_cache_node, temp_kmem_cache_node, kmem_size);
 
-	/** 20140322 여기서부터 시작...
+	/** 20140322
+	 * kmem_cache_node에 대해 bootstrap fixup 수행
 	 **/
 	kmem_cache_bootstrap_fixup(kmem_cache_node);
 
+	/** 20140322    
+	 * log로 보여주기 위해 caches 증가
+	 **/
 	caches++;
+	/** 20140322
+	 * kmem_cache에 대해 bootstrap fixup 수행
+	 **/
 	kmem_cache_bootstrap_fixup(kmem_cache);
 	caches++;
 	/* Free temporary boot structure */
+	/** 20140322    
+	 * buddy로부터 받아온 메모리를 해제 (받아올 때 struct kmem_cache * 2 크기 할당)
+	 **/
 	free_pages((unsigned long)temp_kmem_cache, order);
 
 	/* Now we can use the kmem_cache to allocate kmalloc slabs */
@@ -4230,8 +4323,15 @@ void __init kmem_cache_init(void)
 	BUILD_BUG_ON(KMALLOC_MIN_SIZE > 256 ||
 		(KMALLOC_MIN_SIZE & (KMALLOC_MIN_SIZE - 1)));
 
+	/** 20140322    
+	 * KMALLOC_MIN_SIZE : vexpress의 경우 L1_CACHE_SIZE에 따라 64 bytes
+	 * L1 cache line 크기보다 작은 size에 대한 요청은 동일한 크기로 설정
+	 **/
 	for (i = 8; i < KMALLOC_MIN_SIZE; i += 8) {
 		int elem = size_index_elem(i);
+		/** 20140322    
+		 * 현재 elem index가 size_index의 배열 개수 이상이면 break
+		 **/
 		if (elem >= ARRAY_SIZE(size_index))
 			break;
 		size_index[elem] = KMALLOC_SHIFT_LOW;
@@ -4242,6 +4342,9 @@ void __init kmem_cache_init(void)
 		 * The 96 byte size cache is not used if the alignment
 		 * is 64 byte.
 		 */
+		/** 20140322    
+		 * L1 cache size가 64 byte인 경우 96까지의 size_index를 7로 설정
+		 **/
 		for (i = 64 + 8; i <= 96; i += 8)
 			size_index[size_index_elem(i)] = 7;
 	} else if (KMALLOC_MIN_SIZE == 128) {
@@ -4260,11 +4363,18 @@ void __init kmem_cache_init(void)
 		caches++;
 	}
 
+	/** 20140322    
+	 * kmalloc min size에 따라 정렬되지 않은 사이즈의 cache를 생성한다.
+	 **/
 	if (KMALLOC_MIN_SIZE <= 64) {
 		kmalloc_caches[2] = create_kmalloc_cache("kmalloc-192", 192, 0);
 		caches++;
 	}
 
+	/** 20140322    
+	 * 아래 범위 사이의 kmalloc kmem_cache를 생성
+	 * 2 ** 6 <= x < 2 ** 14
+	 **/
 	for (i = KMALLOC_SHIFT_LOW; i < SLUB_PAGE_SHIFT; i++) {
 		kmalloc_caches[i] = create_kmalloc_cache("kmalloc", 1 << i, 0);
 		caches++;
@@ -4283,6 +4393,12 @@ void __init kmem_cache_init(void)
 		BUG_ON(!kmalloc_caches[2]->name);
 	}
 
+	/** 20140322    
+	 * L1 cache line size 이상의 kmalloc kmem_cache 생성
+	 * 2 ** 6 ~ 2 ** 13
+	 *
+	 * 생성된 결과는 /proc/slabinfo, /sys/kernel/slab에서 확인 가능
+	 **/
 	for (i = KMALLOC_SHIFT_LOW; i < SLUB_PAGE_SHIFT; i++) {
 		char *s = kasprintf(GFP_NOWAIT, "kmalloc-%d", 1 << i);
 
@@ -4291,6 +4407,9 @@ void __init kmem_cache_init(void)
 	}
 
 #ifdef CONFIG_SMP
+	/** 20140322    
+	 * slab_notifier를 cpu notifier로 등록.
+	 **/
 	register_cpu_notifier(&slab_notifier);
 #endif
 
@@ -4308,6 +4427,12 @@ void __init kmem_cache_init(void)
 		}
 	}
 #endif
+	/** 20140322    
+	 * SLUB 관련 log 출력
+	 *
+	 * qemu
+	 * SLUB: Genslabs=15, HWalign=64, Order=0-3, MinObjects=0, CPUs=64, Nodes=1
+	 **/
 	printk(KERN_INFO
 		"SLUB: Genslabs=%d, HWalign=%d, Order=%d-%d, MinObjects=%d,"
 		" CPUs=%d, Nodes=%d\n",
@@ -4436,6 +4561,9 @@ struct kmem_cache *__kmem_cache_create(const char *name, size_t size,
  * Use the cpu notifier to insure that the cpu slabs are flushed when
  * necessary.
  */
+/** 20140322    
+ * notifier_block callback 함수.
+ **/
 static int __cpuinit slab_cpuup_callback(struct notifier_block *nfb,
 		unsigned long action, void *hcpu)
 {
@@ -4448,6 +4576,10 @@ static int __cpuinit slab_cpuup_callback(struct notifier_block *nfb,
 	case CPU_UP_CANCELED_FROZEN:
 	case CPU_DEAD:
 	case CPU_DEAD_FROZEN:
+		/** 20140322    
+		 * slab을 위한 mutex lock이 걸린 상태에서
+		 * irq disable로 context를 보호한 뒤 
+		 **/
 		mutex_lock(&slab_mutex);
 		list_for_each_entry(s, &slab_caches, list) {
 			local_irq_save(flags);
@@ -4462,6 +4594,10 @@ static int __cpuinit slab_cpuup_callback(struct notifier_block *nfb,
 	return NOTIFY_OK;
 }
 
+/** 20140322    
+ * slab notifier 선언.
+ * notifier_chain_register를 호출해 등록한다.
+ **/
 static struct notifier_block __cpuinitdata slab_notifier = {
 	.notifier_call = slab_cpuup_callback
 };

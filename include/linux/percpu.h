@@ -11,6 +11,10 @@
 
 /* enough to cover all DEFINE_PER_CPUs in modules */
 #ifdef CONFIG_MODULES
+/** 20140322    
+ * 현재 config에서 CONFIG_MODULES가 선언되어 있음
+ * 따라서 MODULE_RESERVE가 8K임
+ **/
 #define PERCPU_MODULE_RESERVE		(8 << 10)
 #else
 #define PERCPU_MODULE_RESERVE		0
@@ -64,6 +68,9 @@
  * preallocate for this.  Keep PERCPU_DYNAMIC_RESERVE equal to or
  * larger than PERCPU_DYNAMIC_EARLY_SIZE.
  */
+/** 20140322    
+ * slab이 초기화 되기 전 pcpu_chunk의 map 자료구조 초기값으로 사용된다.
+ **/
 #define PERCPU_DYNAMIC_EARLY_SLOTS	128
 #define PERCPU_DYNAMIC_EARLY_SIZE	(12 << 10)
 
@@ -157,6 +164,9 @@ extern int __init pcpu_page_first_chunk(size_t reserved_size,
 #ifdef CONFIG_SMP
 /** 20140315
  * ptr이 가리키는 주소로부터 cpu에 해당하는 위치
+ *
+ * 20140322
+ * dynamic으로 할당한 percpu에 접근할 때 사용
  **/
 #define per_cpu_ptr(ptr, cpu)	SHIFT_PERCPU_PTR((ptr), per_cpu_offset((cpu)))
 #else

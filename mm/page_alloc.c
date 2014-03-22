@@ -3935,6 +3935,9 @@ void __free_pages(struct page *page, unsigned int order)
 
 EXPORT_SYMBOL(__free_pages);
 
+/** 20140322    
+ * address와 order를 받아 page를 free 하는 함수
+ **/
 void free_pages(unsigned long addr, unsigned int order)
 {
 	if (addr != 0) {

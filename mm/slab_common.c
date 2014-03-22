@@ -20,6 +20,9 @@
 #include "slab.h"
 
 enum slab_state slab_state;
+/** 20140322    
+ * slab cache 전역변수
+ **/
 LIST_HEAD(slab_caches);
 DEFINE_MUTEX(slab_mutex);
 
