@@ -84,6 +84,9 @@ unsigned long num_physpages;
  * highstart_pfn must be the same; there must be no gap between ZONE_NORMAL
  * and ZONE_HIGHMEM.
  */
+/** 20140329    
+ * sanity_check_meminfo에서 초기화
+ **/
 void * high_memory;
 
 EXPORT_SYMBOL(num_physpages);
@@ -612,16 +615,37 @@ int __pte_alloc(struct mm_struct *mm, struct vm_area_struct *vma,
 	return 0;
 }
 
+/** 20140329    
+ * pte table을 할당받아 kernel prot을 적용해 pmd entry에 기록한다.
+ **/
 int __pte_alloc_kernel(pmd_t *pmd, unsigned long address)
 {
+	/** 20140329    
+	 * pte table을 하나 할당받는다.
+	 **/
 	pte_t *new = pte_alloc_one_kernel(&init_mm, address);
+	/** 20140329    
+	 * 실패시 NO MEMORY리턴
+	 **/
 	if (!new)
 		return -ENOMEM;
 
+	/** 20140329    
+	 * smp 환경에서도 사용 가능한 memory barrier 호출
+	 **/
 	smp_wmb(); /* See comment in __pte_alloc */
 
+	/** 20140329    
+	 * init_mm의 page table 조작시 spin lock을 걸어준다.
+	 **/
 	spin_lock(&init_mm.page_table_lock);
+	/** 20140329    
+	 * pmd entry에 데이터가 저장되어 있지 않을 경우
+	 **/
 	if (likely(pmd_none(*pmd))) {	/* Has another populated it ? */
+		/** 20140329    
+		 * pmd에 new 주소값을 기록한다.
+		 **/
 		pmd_populate_kernel(&init_mm, pmd, new);
 		new = NULL;
 	} else

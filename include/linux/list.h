@@ -240,6 +240,9 @@ static inline void list_move_tail(struct list_head *list,
  * @list: the entry to test
  * @head: the head of the list
  */
+/** 20140329    
+ * list의 next가 head면 list가 마지막 entry이다.
+ **/
 static inline int list_is_last(const struct list_head *list,
 				const struct list_head *head)
 {

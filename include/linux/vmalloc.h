@@ -24,6 +24,12 @@ struct vm_area_struct;		/* vma defining user mapping in mm_types.h */
 #define IOREMAP_MAX_ORDER	(7 + PAGE_SHIFT)	/* 128 pages */
 #endif
 
+/** 20140329    
+ * __get_vm_area_node
+ *		setup_vmalloc_vm에서 flags, addr, size, caller 설정
+ * __vmalloc_area_node
+ *		pages, nr_pages, caller 설정
+ **/
 struct vm_struct {
 	struct vm_struct	*next;
 	void			*addr;

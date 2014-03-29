@@ -1396,6 +1396,9 @@ ZONE_NORMAL에서 물리메모리의 마지막 주소를 가리킨다.
 	}
 #endif
 	meminfo.nr_banks = j;
+	/** 20140329    
+	 * PA arm_lowmem_limit-1을 VA로 변환해 +1을 더해 high_memory로 삼는다.
+	 **/
 	high_memory = __va(arm_lowmem_limit - 1) + 1;
     /** 20130119
     arm_lowmem_limit을 memblock.current_limit값으로 지정

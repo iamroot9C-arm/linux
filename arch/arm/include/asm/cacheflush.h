@@ -281,6 +281,9 @@ extern void flush_cache_page(struct vm_area_struct *vma, unsigned long user_addr
  * Perform necessary cache operations to ensure that the TLB will
  * see data written in the specified area.
  */
+/** 20140329    
+ * start~size에 해당하는 data cache 영역을 메모리에 적용한다.
+ **/
 #define clean_dcache_area(start,size)	cpu_dcache_clean_area(start, size)
 
 /*

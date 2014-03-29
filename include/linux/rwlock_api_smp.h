@@ -223,6 +223,9 @@ static inline void __raw_write_lock(rwlock_t *lock)
 	 * DEBUG OPTION에 따라 NULL 함수
 	 **/
 	rwlock_acquire(&lock->dep_map, 0, 0, _RET_IP_);
+	/** 20140329    
+	 * do_raw_write_lock (do_raw_write_trylock)
+	 **/
 	LOCK_CONTENDED(lock, do_raw_write_trylock, do_raw_write_lock);
 }
 

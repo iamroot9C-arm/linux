@@ -41,6 +41,9 @@
 	"nop.w"					\
 )
 #else
+/** 20140329    
+ * sev를 보내 wfe로 대기 중인 core를 동작시킨다.
+ **/
 #define SEV		ALT_SMP("sev", "nop")
 /** 20130323
 * SMP 경우 "wfe" cond 수행
@@ -291,6 +294,9 @@ static inline void arch_write_unlock(arch_rwlock_t *rw)
 	: "r" (&rw->lock), "r" (0)
 	: "cc");
 
+	/** 20140329    
+	 * dsb, sev
+	 **/
 	dsb_sev();
 }
 

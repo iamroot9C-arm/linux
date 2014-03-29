@@ -23,6 +23,9 @@
 #ifdef CONFIG_MMU
 
 #define _PAGE_USER_TABLE	(PMD_TYPE_TABLE | PMD_BIT4 | PMD_DOMAIN(DOMAIN_USER))
+/** 20140329    
+ * prot로 kernel에 해당하는 PMD table 정보를 기록한다.
+ **/
 #define _PAGE_KERNEL_TABLE	(PMD_TYPE_TABLE | PMD_BIT4 | PMD_DOMAIN(DOMAIN_KERNEL))
 
 #ifdef CONFIG_ARM_LPAE
@@ -59,6 +62,9 @@ extern void pgd_free(struct mm_struct *mm, pgd_t *pgd);
 
 #define PGALLOC_GFP	(GFP_KERNEL | __GFP_NOTRACK | __GFP_REPEAT | __GFP_ZERO)
 
+/** 20140329    
+ * 할당받아온 pte에 해당하는 data cache를 clean (dirty cache를 메모리에 반영한다)한다.
+ **/
 static inline void clean_pte_table(pte_t *pte)
 {
 	clean_dcache_area(pte + PTE_HWTABLE_PTRS, PTE_HWTABLE_SIZE);
@@ -80,12 +86,22 @@ static inline void clean_pte_table(pte_t *pte)
  *  |  h/w pt 1  |
  *  +------------+
  */
+/** 20140329    
+ * pte table용 페이지를 하나 할당 받는다.
+ * 페이지는 위에 있는 그림대로 나누어 사용한다.
+ **/
 static inline pte_t *
 pte_alloc_one_kernel(struct mm_struct *mm, unsigned long addr)
 {
 	pte_t *pte;
 
+	/** 20140329    
+	 * PGALLOC_GFP 속성에 해당하는 페이지 하나를 할당 받는다.
+	 **/
 	pte = (pte_t *)__get_free_page(PGALLOC_GFP);
+	/** 20140329    
+	 * 할당 받아온 주소에 해당하는 메모리를 반영시킨다.
+	 **/
 	if (pte)
 		clean_pte_table(pte);
 
@@ -165,6 +181,10 @@ static inline void __pmd_populate(pmd_t *pmdp, phys_addr_t pte,
  *
  * Ensure that we always set both PMD entries.
  */
+/** 20140329    
+ * pmdp (pmd entry)에
+ *	ptep의 위치와 _PAGE_KERNEL_TABLE 속성을 결합시켜 저장한다.
+ **/
 static inline void
 pmd_populate_kernel(struct mm_struct *mm, pmd_t *pmdp, pte_t *ptep)
 {

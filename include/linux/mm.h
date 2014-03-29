@@ -1356,6 +1356,9 @@ static inline pte_t *get_locked_pte(struct mm_struct *mm, unsigned long addr,
 }
 
 #ifdef __PAGETABLE_PUD_FOLDED
+/** 20140329    
+ * PUD FOLDED되어 있어 0을 리턴
+ **/
 static inline int __pud_alloc(struct mm_struct *mm, pgd_t *pgd,
 						unsigned long address)
 {
@@ -1366,6 +1369,9 @@ int __pud_alloc(struct mm_struct *mm, pgd_t *pgd, unsigned long address);
 #endif
 
 #ifdef __PAGETABLE_PMD_FOLDED
+/** 20140329    
+ * __pmd_alloc은 0을 리턴
+ **/
 static inline int __pmd_alloc(struct mm_struct *mm, pud_t *pud,
 						unsigned long address)
 {
@@ -1384,12 +1390,18 @@ int __pte_alloc_kernel(pmd_t *pmd, unsigned long address);
  * Remove it when 4level-fixup.h has been removed.
  */
 #if defined(CONFIG_MMU) && !defined(__ARCH_HAS_4LEVEL_HACK)
+/** 20140329    
+ * PUD = PMD이므로 pud_offset을 바로 호출
+ **/
 static inline pud_t *pud_alloc(struct mm_struct *mm, pgd_t *pgd, unsigned long address)
 {
 	return (unlikely(pgd_none(*pgd)) && __pud_alloc(mm, pgd, address))?
 		NULL: pud_offset(pgd, address);
 }
 
+/** 20140329    
+ * PUD가 FOLED된 경우 __pmd_alloc이 0을 리턴하므로 pmd_offset이 리턴된다.
+ **/
 static inline pmd_t *pmd_alloc(struct mm_struct *mm, pud_t *pud, unsigned long address)
 {
 	return (unlikely(pud_none(*pud)) && __pmd_alloc(mm, pud, address))?
@@ -1455,6 +1467,12 @@ static inline void pgtable_page_dtor(struct page *page)
 							pmd, address))?	\
 		NULL: pte_offset_map_lock(mm, pmd, address, ptlp))
 
+/** 20140329    
+ * pmd가 비어있다면, pte table을 할당받아 pmd 위치에 기록해
+ *		address에 해당하는 pte entry를 가져오고,
+ * pmd가 비어있지 않다면
+ *		address에 해당하는 pte entry를 가져온다.
+ **/
 #define pte_alloc_kernel(pmd, address)			\
 	((unlikely(pmd_none(*(pmd))) && __pte_alloc_kernel(pmd, address))? \
 		NULL: pte_offset_kernel(pmd, address))

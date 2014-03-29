@@ -77,8 +77,10 @@
 #define PTRS_PER_PGD		2048
 
 /** 20131019
-* PTE_HWTABLE_OFF : 512 x 4 = 2KB
-* PTE_HWTABLE_SIZE : 512 x 4 = 2KB
+ * pte table의 HW에 해당하는 주소 offset
+ *
+ * PTE_HWTABLE_OFF : 512 x 4 = 2KB
+ * PTE_HWTABLE_SIZE : 512 x 4 = 2KB
  **/
 #define PTE_HWTABLE_PTRS	(PTRS_PER_PTE)
 #define PTE_HWTABLE_OFF		(PTE_HWTABLE_PTRS * sizeof(pte_t))
@@ -209,6 +211,9 @@ static inline pmd_t *pmd_offset(pud_t *pud, unsigned long addr)
 	} while (0)
 
 /* we don't need complex calculations here as the pmd is folded into the pgd */
+/** 20140329    
+ * end가 바로 리턴됨.
+ **/
 #define pmd_addr_end(addr,end) (end)
 
 /** 20130309    

@@ -288,6 +288,9 @@ EXPORT_SYMBOL(_raw_write_trylock);
 #endif
 
 #ifndef CONFIG_INLINE_WRITE_LOCK
+/** 20140329    
+ * inline write lock이 정의되지 않은 경우
+ **/
 void __lockfunc _raw_write_lock(rwlock_t *lock)
 {
 	__raw_write_lock(lock);

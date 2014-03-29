@@ -45,7 +45,14 @@
 참고 : http://www.iamroot.org/xe/Kernel_7_ARM/25433	
 **/
 #define VMALLOC_OFFSET		(8*1024*1024)
+/** 20140329    
+ * high_memory 이후 VMALLOC_OFFSET로 정렬된 위치
+ * Documentation/arm/memory.txt 참고
+ **/
 #define VMALLOC_START		(((unsigned long)high_memory + VMALLOC_OFFSET) & ~(VMALLOC_OFFSET-1))
+/** 20140329    
+ * VMALLOC_END
+ **/
 #define VMALLOC_END		0xff000000UL
 
 #define LIBRARY_TEXT_START	0x0c000000

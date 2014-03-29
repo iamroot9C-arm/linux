@@ -870,6 +870,10 @@ static inline notrace void rcu_read_unlock_sched_notrace(void)
  * impossible-to-diagnose memory corruption.  So please be careful.
  * See the RCU_INIT_POINTER() comment header for details.
  */
+/** 20140329    
+ * rcu 포인터에 새로운 값을 할당.
+ * write barrier 명령을 수반한다.
+ **/
 #define rcu_assign_pointer(p, v) \
 	__rcu_assign_pointer((p), (v), __rcu)
 

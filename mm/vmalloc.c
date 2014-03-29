@@ -87,6 +87,9 @@ static void vunmap_page_range(unsigned long addr, unsigned long end)
 	} while (pgd++, addr = next, addr != end);
 }
 
+/** 20140329    
+ * addr ~ end까지 pmd에 해당하는 pte table의 정보를 구성한다.
+ **/
 static int vmap_pte_range(pmd_t *pmd, unsigned long addr,
 		unsigned long end, pgprot_t prot, struct page **pages, int *nr)
 {
@@ -97,34 +100,53 @@ static int vmap_pte_range(pmd_t *pmd, unsigned long addr,
 	 * callers keep track of where we're up to.
 	 */
 
+	/** 20140329    
+	 * addr에 해당하는 pte의 위치를 받아온다.
+	 **/
 	pte = pte_alloc_kernel(pmd, addr);
 	if (!pte)
 		return -ENOMEM;
+	/** 20140329    
+	 * addr ~ end까지 page 단위로 pte entry를 기록한다.
+	 **/
 	do {
+		/** 20140329    
+		 * pages 중 *nr번째 포인터 하나를 가져온다.
+		 **/
 		struct page *page = pages[*nr];
 
 		if (WARN_ON(!pte_none(*pte)))
 			return -EBUSY;
 		if (WARN_ON(!page))
 			return -ENOMEM;
+		/** 20140329    
+		 * pte에 pte entry 정보(미리 할당받아온 page frame 주소)를 구성해 기록한다.
+		 **/
 		set_pte_at(&init_mm, addr, pte, mk_pte(page, prot));
 		(*nr)++;
 	} while (pte++, addr += PAGE_SIZE, addr != end);
 	return 0;
 }
 
+/** 20140329    
+ * addr ~ end 사이의 pmd entry를 구성한다.
+ **/
 static int vmap_pmd_range(pud_t *pud, unsigned long addr,
 		unsigned long end, pgprot_t prot, struct page **pages, int *nr)
 {
 	pmd_t *pmd;
 	unsigned long next;
 
-	/** 20140301    
-	 * 20140308 여기부터
+	/** 20140329    
+	 * pud 내에서 addr에 해당하는 entry를 리턴한다.
+	 * 2단계 페이징에서는 pgd = pud = pmd
 	 **/
 	pmd = pmd_alloc(&init_mm, pud, addr);
 	if (!pmd)
 		return -ENOMEM;
+	/** 20140329    
+	 * pmd(2MB) 단위로 addr ~ end사이의 주소에 대해 pte table을 구성한다.
+	 **/
 	do {
 		next = pmd_addr_end(addr, end);
 		if (vmap_pte_range(pmd, addr, next, prot, pages, nr))
@@ -133,12 +155,20 @@ static int vmap_pmd_range(pud_t *pud, unsigned long addr,
 	return 0;
 }
 
+/** 20140329    
+ * pud = pmd 이므로 vmap_pmd_range 단위로 수행
+ *   (pages에는 미리 할당받은 page frame 정보가 들어 있다.
+ *    VA -> PA address를 mapping 하는 과정)
+ **/
 static int vmap_pud_range(pgd_t *pgd, unsigned long addr,
 		unsigned long end, pgprot_t prot, struct page **pages, int *nr)
 {
 	pud_t *pud;
 	unsigned long next;
 
+	/** 20140329    
+	 * addr에 해당하는 pud entry 위치를 받아온다.
+	 **/
 	pud = pud_alloc(&init_mm, pgd, addr);
 	if (!pud)
 		return -ENOMEM;
@@ -159,8 +189,11 @@ static int vmap_pud_range(pgd_t *pgd, unsigned long addr,
  *
  * Ie. pte at addr+N*PAGE_SIZE shall point to pfn corresponding to pages[N]
  */
-/** 20140308    
- * percpu 분석 후 추후 분석예정 ???
+/** 20140329    
+ * start ~ end까지 pgd = pud = pmd, pte 단위로 page table entry를 기록한다.
+ * start 와 end 는 상위에서 할당 받은 address space.
+ * pages는 이미 할당 받은 물리 메모리.
+ * 이 두 정보를 mapping 한다.
  **/
 static int vmap_page_range_noflush(unsigned long start, unsigned long end,
 				   pgprot_t prot, struct page **pages)
@@ -189,12 +222,21 @@ static int vmap_page_range_noflush(unsigned long start, unsigned long end,
 	return nr;
 }
 
+/** 20140329    
+ * start ~ end 사이의 영역을 vmap 시킨다(page table에 mapping 시킨다)
+ **/
 static int vmap_page_range(unsigned long start, unsigned long end,
 			   pgprot_t prot, struct page **pages)
 {
 	int ret;
 
+	/** 20140329    
+	 * start ~ end까지 pages로 할당받은 memory와 mapping 한다.
+	 **/
 	ret = vmap_page_range_noflush(start, end, prot, pages);
+	/** 20140329    
+	 * start ~ end까지 cache를 flush 해 memory에 반영시킨다.
+	 **/
 	flush_cache_vmap(start, end);
 	return ret;
 }
@@ -264,10 +306,16 @@ EXPORT_SYMBOL(vmalloc_to_pfn);
 #define VM_LAZY_FREEING	0x02
 #define VM_VM_AREA	0x04
 
+/** 20140329    
+ * alloc_vmap_area
+ **/
 struct vmap_area {
 	unsigned long va_start;
 	unsigned long va_end;
 	unsigned long flags;
+	/** 20140329    
+	 * address를 기준으로 정렬되어 rbtree로 구성될 때 사용
+	 **/
 	struct rb_node rb_node;		/* address sorted rbtree */
 	struct list_head list;		/* address sorted list */
 	struct list_head purge_list;	/* "lazy purge" list */
@@ -275,7 +323,13 @@ struct vmap_area {
 	struct rcu_head rcu_head;
 };
 
+/** 20140329    
+ * vmap_area를 위한 spinlock 선언
+ **/
 static DEFINE_SPINLOCK(vmap_area_lock);
+/** 20140329    
+ * vmap_area를 list 자료구조로 묶기 위한 list head
+ **/
 static LIST_HEAD(vmap_area_list);
 /** 20140322    
  * vmap_area에서 사용되는 rb tree
@@ -312,6 +366,9 @@ static struct vmap_area *__find_vmap_area(unsigned long addr)
 	return NULL;
 }
 
+/** 20140329    
+ * rbtree, list에 새로운 vmap_area를 등록한다.
+ **/
 static void __insert_vmap_area(struct vmap_area *va)
 {
 	/** 20140322    
@@ -322,10 +379,20 @@ static void __insert_vmap_area(struct vmap_area *va)
 	struct rb_node *parent = NULL;
 	struct rb_node *tmp;
 
+	/** 20140329    
+	 * rbtree를 rbroot에서부터 순회하며 추가할 위치를 찾는다.
+	 **/
 	while (*p) {
 		struct vmap_area *tmp_va;
 
 		parent = *p;
+		/** 20140329    
+		 * parent의 주소와 비교해
+		 *	parent의 va_end보다 작으면 rb_left
+		 *	parent의 va_start보다 크면 rb_right로 이동
+		 *
+		 * NULL에 도달하면 추가할 자리를 찾은 것이다.
+		 **/
 		tmp_va = rb_entry(parent, struct vmap_area, rb_node);
 		if (va->va_start < tmp_va->va_end)
 			p = &(*p)->rb_left;
@@ -335,6 +402,9 @@ static void __insert_vmap_area(struct vmap_area *va)
 			BUG();
 	}
 
+	/** 20140329    
+	 * rbtree에 노드를 추가한다.
+	 **/
 	rb_link_node(&va->rb_node, parent, p);
 	rb_insert_color(&va->rb_node, &vmap_area_root);
 
@@ -345,12 +415,26 @@ static void __insert_vmap_area(struct vmap_area *va)
 	 *
 	 * 전체적인 구조 파악 필요???
 	 **/
+	/** 20140329    
+	 * 새로 추가한 vmap_area에 대해
+	 * rbtree에서의 이전 rb_node를 구해와 tmp에 저장
+	 **/
 	tmp = rb_prev(&va->rb_node);
+	/** 20140329    
+	 * 이전 노드가 존재하는 경우, 그에 해당하는 struct vmap_area를 가져온다.
+	 **/
 	if (tmp) {
 		struct vmap_area *prev;
 		prev = rb_entry(tmp, struct vmap_area, rb_node);
+		/** 20140329    
+		 * rcu 매커니즘을 이용해 prev의 다음으로 va를 리스트에 추가한다.
+		 * 즉 rbtree와 list 자료구조의 순서를 맞춰주기 위한 동작이다.
+		 **/
 		list_add_rcu(&va->list, &prev->list);
 	} else
+	/** 20140329    
+	 * 이전 노드가 존재하지 않는 경우 vmap_area_list의 다음에 추가한다.
+	 **/
 		list_add_rcu(&va->list, &vmap_area_list);
 }
 
@@ -360,6 +444,12 @@ static void purge_vmap_area_lazy(void);
  * Allocate a region of KVA of the specified size and alignment, within the
  * vstart and vend.
  */
+/** 20140329    
+ * vmap_area를 할당받고,
+ * 자료구조(rbtree)를 조회해 적합한 addr를 가져온뒤,
+ * 할당받은 vmap_area에 채우고,
+ * 자료구조에 등록시킨다.
+ **/
 static struct vmap_area *alloc_vmap_area(unsigned long size,
 				unsigned long align,
 				unsigned long vstart, unsigned long vend,
@@ -375,12 +465,18 @@ static struct vmap_area *alloc_vmap_area(unsigned long size,
 	BUG_ON(size & ~PAGE_MASK);
 	BUG_ON(!is_power_of_2(align));
 
+	/** 20140329    
+	 * kmalloc으로 vmap_area를 위한 메모리를 할당
+	 **/
 	va = kmalloc_node(sizeof(struct vmap_area),
 			gfp_mask & GFP_RECLAIM_MASK, node);
 	if (unlikely(!va))
 		return ERR_PTR(-ENOMEM);
 
 retry:
+	/** 20140329    
+	 * vmap cache 전역변수는 spinlock으로 보호된다.
+	 **/
 	spin_lock(&vmap_area_lock);
 	/*
 	 * Invalidate cache if we have more permissive parameters.
@@ -405,7 +501,13 @@ nocache:
 
 	/* find starting point for our search */
 	if (free_vmap_cache) {
+		/** 20140329    
+		 * free_vmap_cache가 존재하면 vmap_area 를 가져온다.
+		 **/
 		first = rb_entry(free_vmap_cache, struct vmap_area, rb_node);
+		/** 20140329    
+		 * first에서 va_end를 가져와 align 해서 addr에 저장.
+		 **/
 		addr = ALIGN(first->va_end, align);
 		if (addr < vstart)
 			goto nocache;
@@ -413,16 +515,33 @@ nocache:
 			goto overflow;
 
 	} else {
+		/** 20140329    
+		 * free_vmap_cache가 존재하지 않으면 
+		 *  vstart를 정렬해 addr에 저장.
+		 **/
 		addr = ALIGN(vstart, align);
+		/** 20140329    
+		 * 끝주소가 addr보다 작다면 size가 커서 overflow 발생
+		 **/
 		if (addr + size - 1 < addr)
 			goto overflow;
 
+		/** 20140329    
+		 * vmap_area_root에서부터 search하기 위해 n으로 가져옴
+		 * first는 NULL로 초기화 
+		 **/
 		n = vmap_area_root.rb_node;
 		first = NULL;
 
 		while (n) {
 			struct vmap_area *tmp;
+			/** 20140329    
+			 * rbtree를 순회하며 vmap_area를 가져와
+			 **/
 			tmp = rb_entry(n, struct vmap_area, rb_node);
+			/** 20140329    
+			 * sort된 rbtree에서 addr를 각 rb_entry와 비교하며
+			 **/
 			if (tmp->va_end >= addr) {
 				first = tmp;
 				if (tmp->va_start <= addr)
@@ -432,6 +551,9 @@ nocache:
 				n = n->rb_right;
 		}
 
+		/** 20140329    
+		 * first가 NULL인 경우 found로 바로 이동
+		 **/
 		if (!first)
 			goto found;
 	}
@@ -444,21 +566,37 @@ nocache:
 		if (addr + size - 1 < addr)
 			goto overflow;
 
+		/** 20140329    
+		 * list로 연결된 vmap_area 중 first가 last entry인 경우
+		 * found로 이동
+		 **/
 		if (list_is_last(&first->list, &vmap_area_list))
 			goto found;
 
+		/** 20140329    
+		 * last가 아닌 경우, sort되어 있는 list에서 다음 entry를 first로 삼는다.
+		 **/
 		first = list_entry(first->list.next,
 				struct vmap_area, list);
 	}
 
 found:
+	/** 20140329    
+	 * 범위값 vend를 벗어나면 overflow
+	 **/
 	if (addr + size > vend)
 		goto overflow;
 
+	/** 20140329    
+	 * addr와 size를 바탕으로 vmap_area에 정보를 채운다.
+	 **/
 	va->va_start = addr;
 	va->va_end = addr + size;
 	va->flags = 0;
 	__insert_vmap_area(va);
+	/** 20140329    
+	 * 새로 추가된 va의 rb_node를 free_vmap_cache로 삼는다.
+	 **/
 	free_vmap_cache = &va->rb_node;
 	spin_unlock(&vmap_area_lock);
 
@@ -1346,12 +1484,18 @@ void unmap_kernel_range(unsigned long addr, unsigned long size)
 	flush_tlb_kernel_range(addr, end);
 }
 
+/** 20140329    
+ * vm area를 pages와 mapping한다.
+ **/
 int map_vm_area(struct vm_struct *area, pgprot_t prot, struct page ***pages)
 {
 	unsigned long addr = (unsigned long)area->addr;
 	unsigned long end = addr + area->size - PAGE_SIZE;
 	int err;
 
+	/** 20140329    
+	 * virtual address와 pages 사이 mapping (page table에 기록)
+	 **/
 	err = vmap_page_range(addr, end, prot, *pages);
 	if (err > 0) {
 		*pages += err;
@@ -1371,27 +1515,57 @@ DEFINE_RWLOCK(vmlist_lock);
  **/
 struct vm_struct *vmlist;
 
+/** 20140329    
+ * vm_struct에 매개변수로 넘어온 값을 설정한다.
+ * 
+ * va가 vm을 찾을 수 있도록 연결하는 과정을 포함한다.
+ **/
 static void setup_vmalloc_vm(struct vm_struct *vm, struct vmap_area *va,
 			      unsigned long flags, const void *caller)
 {
 	vm->flags = flags;
+	/** 20140329    
+	 * vm_start의 addr과 size정보는 vmap_area의 내용을 기록한다.
+	 **/
 	vm->addr = (void *)va->va_start;
 	vm->size = va->va_end - va->va_start;
 	vm->caller = caller;
+	/** 20140329    
+	 * vmap_area가 어떤 vm_struct에 속한 정보인지 찾기 위해 연결한다.
+	 **/
 	va->vm = vm;
+	/** 20140329    
+	 * flag에 VM_AREA가 연결되었음을 표시한다.
+	 **/
 	va->flags |= VM_VM_AREA;
 }
 
+/** 20140329    
+ * vm_struct을 vmlist에 추가한다.
+ **/
 static void insert_vmalloc_vmlist(struct vm_struct *vm)
 {
 	struct vm_struct *tmp, **p;
 
+	/** 20140329    
+	 * flags에서 VM_UNLIST를 삭제
+	 **/
 	vm->flags &= ~VM_UNLIST;
+	/** 20140329    
+	 * vmlist에 대한 동작은 rw lock으로 보호된다.
+	 * vmlist에 write 동작을 수행하는 부분이므로 write_lock을 걸고 사용한다.
+	 **/
 	write_lock(&vmlist_lock);
+	/** 20140329    
+	 * vmlist에서 정렬된 주소를 바탕으로 vm을 추가할 위치를 찾는다.
+	 **/
 	for (p = &vmlist; (tmp = *p) != NULL; p = &tmp->next) {
 		if (tmp->addr >= vm->addr)
 			break;
 	}
+	/** 20140329    
+	 * 추가할 위치에 vm을 추가한다.
+	 **/
 	vm->next = *p;
 	*p = vm;
 	write_unlock(&vmlist_lock);
@@ -1400,13 +1574,27 @@ static void insert_vmalloc_vmlist(struct vm_struct *vm)
 static void insert_vmalloc_vm(struct vm_struct *vm, struct vmap_area *va,
 			      unsigned long flags, const void *caller)
 {
+	/** 20140329    
+	 * vm_struct을 vmap_area 정보로 채우고, vmap_area가 vm_struct을 가리키게 한다.
+	 **/
 	setup_vmalloc_vm(vm, va, flags, caller);
+	/** 20140329    
+	 * vm_struct을 vmlist에 추가한다.
+	 **/
 	insert_vmalloc_vmlist(vm);
 }
-/**
-* flags : VM_IOREMAP
+/** 20130323
+ *	flags : VM_IOREMAP
 	return __get_vm_area_node(size, 1, flags, VMALLOC_START, VMALLOC_END,
 						-1, GFP_KERNEL, caller);
+
+	20140329    
+	vmalloc에서 호출한 경우
+	area = __get_vm_area_node(size, align, VM_ALLOC | VM_UNLIST,
+				  start, end, node, gfp_mask, caller);
+
+	vm_struct와 vmap_area를 할당받고 자료구조에 등록한다.
+	vmalloc에서 호출된 경우 vmlist에 등록하는 과정은 수행하지 않는다.
 */
 static struct vm_struct *__get_vm_area_node(unsigned long size,
 		unsigned long align, unsigned long flags, unsigned long start,
@@ -1415,7 +1603,13 @@ static struct vm_struct *__get_vm_area_node(unsigned long size,
 	struct vmap_area *va;
 	struct vm_struct *area;
 
+	/** 20140329    
+	 * interrupt handler 내에서는 vm area를 받아올 수 없다.
+	 **/
 	BUG_ON(in_interrupt());
+	/** 20140329    
+	 * ioremap에서 호출된 경우 align을 IOREMAP ORDER 범위 사이로 조정
+	 **/
 	if (flags & VM_IOREMAP) {
 		int bit = fls(size);
 		/** 20130323
@@ -1430,10 +1624,16 @@ static struct vm_struct *__get_vm_area_node(unsigned long size,
 		align = 1ul << bit;
 	}
 
+	/** 20140329    
+	 * page align
+	 **/
 	size = PAGE_ALIGN(size);
 	if (unlikely(!size))
 		return NULL;
 
+	/** 20140329    
+	 * struct vm_struct를 할당
+	 **/
 	area = kzalloc_node(sizeof(*area), gfp_mask & GFP_RECLAIM_MASK, node);
 	if (unlikely(!area))
 		return NULL;
@@ -1441,8 +1641,14 @@ static struct vm_struct *__get_vm_area_node(unsigned long size,
 	/*
 	 * We always allocate a guard page.
 	 */
+	/** 20140329    
+	 * PAGE_SIZE만큼을 메모리 침범을 보호하기 위한 공간으로 더한다.
+	 **/
 	size += PAGE_SIZE;
 
+	/** 20140329    
+	 * vmap_area를 할당받고 자료구조에 등록시킨다.
+	 **/
 	va = alloc_vmap_area(size, align, start, end, node, gfp_mask);
 	if (IS_ERR(va)) {
 		kfree(area);
@@ -1456,11 +1662,19 @@ static struct vm_struct *__get_vm_area_node(unsigned long size,
 	 * pages and nr_pages fields. They will be set later.
 	 * To distinguish it from others, we use a VM_UNLIST flag.
 	 */
+	/** 20140329    
+	 * vmalloc에서 호출된 경우 VM_UNLIST가 flags에 추가되어 들어온다.
+	 * VM_UNLIST인 경우 vm을 setup만 한다.
+	 * 그렇지 않다면 vmlist에 추가한다.
+	 **/
 	if (flags & VM_UNLIST)
 		setup_vmalloc_vm(area, va, flags, caller);
 	else
 		insert_vmalloc_vm(area, va, flags, caller);
 
+	/** 20140329    
+	 * 설정이 끝난 vm_struct를 리턴한다.
+	 **/
 	return area;
 }
 
@@ -1676,6 +1890,10 @@ EXPORT_SYMBOL(vmap);
 static void *__vmalloc_node(unsigned long size, unsigned long align,
 			    gfp_t gfp_mask, pgprot_t prot,
 			    int node, const void *caller);
+/** 20140329    
+ * 특정 node에서 memory를 할당(page 단위로 할당 받는다) 받아 가상 메모리 공간에
+ * mapping 한다.
+ **/
 static void *__vmalloc_area_node(struct vm_struct *area, gfp_t gfp_mask,
 				 pgprot_t prot, int node, const void *caller)
 {
@@ -1684,11 +1902,23 @@ static void *__vmalloc_area_node(struct vm_struct *area, gfp_t gfp_mask,
 	unsigned int nr_pages, array_size, i;
 	gfp_t nested_gfp = (gfp_mask & GFP_RECLAIM_MASK) | __GFP_ZERO;
 
+	/** 20140329    
+	 * area의 size를 바탕으로 실제 요구되는 size에 해당하는 page의 수를 반환
+	 **/
 	nr_pages = (area->size - PAGE_SIZE) >> PAGE_SHIFT;
 	array_size = (nr_pages * sizeof(struct page *));
 
+	/** 20140329    
+	 * vm_struct에 nr_pages를 설정한다.
+	 **/
 	area->nr_pages = nr_pages;
 	/* Please note that the recursion is strictly bounded. */
+	/** 20140329    
+	 * struct page * 배열을 할당하기 위해 page크기 이상이 필요하다면
+	 * vmalloc으로 할당.
+	 *	(이 경우 flags에 array 역시 vmalloc으로 할당되었음을 나타내가 위해 VM_VPAGES를 추가)
+	 * 그렇지 않다면 kmalloc으로 할당
+	 **/
 	if (array_size > PAGE_SIZE) {
 		pages = __vmalloc_node(array_size, 1, nested_gfp|__GFP_HIGHMEM,
 				PAGE_KERNEL, node, caller);
@@ -1696,6 +1926,9 @@ static void *__vmalloc_area_node(struct vm_struct *area, gfp_t gfp_mask,
 	} else {
 		pages = kmalloc_node(array_size, nested_gfp, node);
 	}
+	/** 20140329    
+	 * '페이지 프레임을 나타내는 struct page *' 배열의 주소 저장
+	 **/
 	area->pages = pages;
 	area->caller = caller;
 	if (!area->pages) {
@@ -1704,10 +1937,18 @@ static void *__vmalloc_area_node(struct vm_struct *area, gfp_t gfp_mask,
 		return NULL;
 	}
 
+	/** 20140329    
+	 * nr_pages만큼 한 페이지씩 페이지프레임을 할당 받는다.
+	 * pages에 저장한다.
+	 **/
 	for (i = 0; i < area->nr_pages; i++) {
 		struct page *page;
 		gfp_t tmp_mask = gfp_mask | __GFP_NOWARN;
 
+		/** 20140329    
+		 * node가 -1일 경우 특정 node를 지정하지 않고 전체 node에서 받아올 수 있다.
+		 * 물리 메모리를 할당받는다.
+		 **/
 		if (node < 0)
 			page = alloc_page(tmp_mask);
 		else
@@ -1721,6 +1962,9 @@ static void *__vmalloc_area_node(struct vm_struct *area, gfp_t gfp_mask,
 		area->pages[i] = page;
 	}
 
+	/** 20140329    
+	 * alloc 받아온 pages를 vm_struct에 저장된 va 공간과 mapping 한다.
+	 **/
 	if (map_vm_area(area, prot, &pages))
 		goto fail;
 	return area->addr;
@@ -1748,6 +1992,9 @@ fail:
  *	allocator with @gfp_mask flags.  Map them into contiguous
  *	kernel virtual space, using a pagetable protection of @prot.
  */
+/** 20140329    
+ * start ~ end 사이에 해당하는 페이지를 할당 받아 가상 주소 공간에 mapping 하는 함수
+ **/
 void *__vmalloc_node_range(unsigned long size, unsigned long align,
 			unsigned long start, unsigned long end, gfp_t gfp_mask,
 			pgprot_t prot, int node, const void *caller)
@@ -1756,15 +2003,27 @@ void *__vmalloc_node_range(unsigned long size, unsigned long align,
 	void *addr;
 	unsigned long real_size = size;
 
+	/** 20140329    
+	 * 요청 받은 크기를 page 단위로 align 한다.
+	 **/
 	size = PAGE_ALIGN(size);
 	if (!size || (size >> PAGE_SHIFT) > totalram_pages)
 		goto fail;
 
+	/** 20140329    
+	 * flags : VM_ALLOC | VM_UNLIST
+	 * vmalloc에서 호출되는 경우 vmlist에 등록시키지 않는다.
+	 *
+	 * vm_struct와 vmap_area를 할당받아 vmap_area 정보로 vm_struct을 설정해 리턴한다.
+	 **/
 	area = __get_vm_area_node(size, align, VM_ALLOC | VM_UNLIST,
 				  start, end, node, gfp_mask, caller);
 	if (!area)
 		goto fail;
 
+	/** 20140329    
+	 * vmalloc으로 메모리를 할당 받아 매핑한다.
+	 **/
 	addr = __vmalloc_area_node(area, gfp_mask, prot, node, caller);
 	if (!addr)
 		return NULL;
@@ -1773,6 +2032,9 @@ void *__vmalloc_node_range(unsigned long size, unsigned long align,
 	 * In this function, newly allocated vm_struct is not added
 	 * to vmlist at __get_vm_area_node(). so, it is added here.
 	 */
+	/** 20140329    
+	 * vmalloc으로 받아온 vm_struct을 vmlist에 등록한다.
+	 **/
 	insert_vmalloc_vmlist(area);
 
 	/*

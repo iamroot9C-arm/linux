@@ -31,12 +31,27 @@
  * the prev/next entries already!
  */
 #ifndef CONFIG_DEBUG_LIST
+/** 20140329    
+ * rcu list의 prev와 next 사이에 new node를 추가한다.
+ **/
 static inline void __list_add_rcu(struct list_head *new,
 		struct list_head *prev, struct list_head *next)
 {
+	/** 20140329    
+	 * 새로 추가할 node의 nexp와 prev를 채운다.
+	 **/
 	new->next = next;
 	new->prev = prev;
+	/** 20140329    
+	 * prev의 (rcu 변수인)next에 new를 할당한다.
+	 * 이후 prev의 next에 접근하는 명령은 갱신된 new node를 참조하게 된다.
+	 **/
 	rcu_assign_pointer(list_next_rcu(prev), new);
+	/** 20140329    
+	 * 이후 next가 prev로 new를 가리키도록 한다.
+	 * 이 때 next->prev에 대한 정보가 함께 변경되었으므로
+	 * list_del_rcu는 특별한 동작을 취하지 않는다.
+	 **/
 	next->prev = new;
 }
 #else
@@ -60,6 +75,9 @@ extern void __list_add_rcu(struct list_head *new,
  * the _rcu list-traversal primitives, such as
  * list_for_each_entry_rcu().
  */
+/** 20140329    
+ * rcu로 보호되는 list의 앞부분에 새로운 node를 추가한다.
+ **/
 static inline void list_add_rcu(struct list_head *new, struct list_head *head)
 {
 	__list_add_rcu(new, head, head->next);
@@ -111,6 +129,9 @@ static inline void list_add_tail_rcu(struct list_head *new,
  * or call_rcu() must be used to defer freeing until an RCU
  * grace period has elapsed.
  */
+/** 20140329    
+ * list_del_rcu는 일반적인 list 제거 함수를 사용한다.
+ **/
 static inline void list_del_rcu(struct list_head *entry)
 {
 	__list_del_entry(entry);
