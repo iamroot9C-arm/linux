@@ -35,7 +35,13 @@ struct vm_struct {
 	void			*addr;
 	unsigned long		size;
 	unsigned long		flags;
+	/** 20140405    
+	 * mapping 되는 물리 메모리 배열의 위치
+	 **/
 	struct page		**pages;
+	/** 20140405    
+	 * mapping 되는 pages의 수
+	 **/
 	unsigned int		nr_pages;
 	phys_addr_t		phys_addr;
 	const void		*caller;

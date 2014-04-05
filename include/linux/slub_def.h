@@ -135,6 +135,9 @@ struct kmem_cache {
 /*
  * Kmalloc subsystem.
  */
+/** 20140405    
+ * KMALLOC_MIN_SIZE는 DMA_MINALIGN (L1 CACHE SIZE => vexpress는 64)
+ **/
 #if defined(ARCH_DMA_MINALIGN) && ARCH_DMA_MINALIGN > 8
 #define KMALLOC_MIN_SIZE ARCH_DMA_MINALIGN
 #else
@@ -156,6 +159,9 @@ struct kmem_cache {
  * This should be dropped to PAGE_SIZE / 2 once the page allocator
  * "fastpath" becomes competitive with the slab allocator fastpaths.
  */
+/** 20140405    
+ * SLUB_MAX_SIZE는 페이지 2개 크기. 현재 8KB.
+ **/
 #define SLUB_MAX_SIZE (2 * PAGE_SIZE)
 
 /** 20140322    
@@ -181,16 +187,27 @@ extern struct kmem_cache *kmalloc_caches[SLUB_PAGE_SHIFT];
  * Sorry that the following has to be that ugly but some versions of GCC
  * have trouble with constant propagation and loops.
  */
+/** 20140405    
+ * 요청한 size에 따라 적절한 index를 리턴.
+ *
+ * index가 SLAB MAX 이상까지 지정되어 있는 것은 어떤 경우를 고려한 것인지???
+ **/
 static __always_inline int kmalloc_index(size_t size)
 {
 	if (!size)
 		return 0;
 
+	/** 20140405    
+	 * MIN SIZE보다 작으면 SHIFT_LOW로 index를 가장 작은 크기로 지정
+	 **/
 	if (size <= KMALLOC_MIN_SIZE)
 		return KMALLOC_SHIFT_LOW;
 
 	if (KMALLOC_MIN_SIZE <= 32 && size > 64 && size <= 96)
 		return 1;
+	/** 20140405    
+	 * 128 < size <= 192인 경우 고정된 index를 리턴.
+	 **/
 	if (KMALLOC_MIN_SIZE <= 64 && size > 128 && size <= 192)
 		return 2;
 	if (size <=          8) return 3;
@@ -235,13 +252,23 @@ static __always_inline int kmalloc_index(size_t size)
  * This ought to end up with a global pointer to the right cache
  * in kmalloc_caches.
  */
+/** 20140405    
+ * 요청한 size에 따라 kmalloc_caches에서 적합한 kmem_cache를 찾아 리턴하는 함수
+ **/
 static __always_inline struct kmem_cache *kmalloc_slab(size_t size)
 {
+	/** 20140405    
+	 * 요청한 size로 kmalloc index를 찾아온다.
+	 * kmem_cache_init 부분에서 kmalloc size별 kmem_cache를 생성해 두었다.
+	 **/
 	int index = kmalloc_index(size);
 
 	if (index == 0)
 		return NULL;
 
+	/** 20140405    
+	 * index로 kmalloc kmem_cache 하나를 찾아 리턴
+	 **/
 	return kmalloc_caches[index];
 }
 
@@ -320,6 +347,11 @@ extern void *kmem_cache_alloc_node_trace(struct kmem_cache *s,
 					   gfp_t gfpflags,
 					   int node, size_t size);
 #else
+/** 20140405    
+ * CONFIG_TRACING을 정의하지 않은 경우
+ * 
+ * kmem_cache object를 지정한 노드로부터 할당 받는다.
+ **/
 static __always_inline void *
 kmem_cache_alloc_node_trace(struct kmem_cache *s,
 			      gfp_t gfpflags,
@@ -331,6 +363,12 @@ kmem_cache_alloc_node_trace(struct kmem_cache *s,
 
 static __always_inline void *kmalloc_node(size_t size, gfp_t flags, int node)
 {
+	/** 20140405    
+	 * size가 compile time에 상수로 확인가능한 경우이며,
+	 * SLUB_MAX_SIZE보다 작거나 같고,
+	 * SLUB_DMA 요청이 아닌 경우
+	 * kmalloc slub으로부터 메모리를 할당받는다.
+	 **/
 	if (__builtin_constant_p(size) &&
 		size <= SLUB_MAX_SIZE && !(flags & SLUB_DMA)) {
 			struct kmem_cache *s = kmalloc_slab(size);

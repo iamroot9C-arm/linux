@@ -373,8 +373,14 @@ static inline void flush_cache_vmap(unsigned long start, unsigned long end)
 		dsb();
 }
 
+/** 20140405    
+ * vunmap 이후 cache flush.
+ **/
 static inline void flush_cache_vunmap(unsigned long start, unsigned long end)
 {
+	/** 20140405    
+	 * vipt nonaliasing이 아니면 cache를 모두 비워준다.
+	 **/
 	if (!cache_is_vipt_nonaliasing())
 		flush_cache_all();
 }

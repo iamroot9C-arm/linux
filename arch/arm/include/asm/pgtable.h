@@ -51,7 +51,7 @@
  **/
 #define VMALLOC_START		(((unsigned long)high_memory + VMALLOC_OFFSET) & ~(VMALLOC_OFFSET-1))
 /** 20140329    
- * VMALLOC_END
+ * VMALLOC_END : (4GB - 16MB)
  **/
 #define VMALLOC_END		0xff000000UL
 
