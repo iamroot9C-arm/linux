@@ -160,6 +160,16 @@ void synchronize_rcu(void);
 
 #else /* #ifdef CONFIG_PREEMPT_RCU */
 
+/** 20140412    
+ * CONFIG_PREEMPT_RCU 가 정의되지 않은 경우.
+ * vexpress default config에는 정의되어 있지 않음.
+ **/
+
+
+/** 20140412    
+ * lock   : 선점 불가
+ * unlock : 선점 가능
+ **/
 static inline void __rcu_read_lock(void)
 {
 	preempt_disable();
@@ -378,6 +388,9 @@ static inline int rcu_read_lock_sched_held(void)
 
 #else /* #ifdef CONFIG_DEBUG_LOCK_ALLOC */
 
+/** 20140412    
+ * debug용
+ **/
 # define rcu_lock_acquire(a)		do { } while (0)
 # define rcu_lock_release(a)		do { } while (0)
 
@@ -724,9 +737,18 @@ static inline void rcu_preempt_sleep_check(void)
  * block, but only when acquiring spinlocks that are subject to priority
  * inheritance.
  */
+/** 20140412    
+ * rcu read lock
+ **/
 static inline void rcu_read_lock(void)
 {
+	/** 20140412    
+	 * CONFIG_PREEMPT_RCU에 따른 lock
+	 **/
 	__rcu_read_lock();
+	/** 20140412    
+	 * __CHECKER__를 사용하지 않음
+	 **/
 	__acquire(RCU);
 	rcu_lock_acquire(&rcu_lock_map);
 	rcu_lockdep_assert(!rcu_is_cpu_idle(),
@@ -742,12 +764,20 @@ static inline void rcu_read_lock(void)
  * used as well.  RCU does not care how the writers keep out of each
  * others' way, as long as they do so.
  */
+/** 20140412    
+ * rcu의 개념상 rcu_write_lock은 존재하지 않는다.
+ * rcu가 빠른 성능을 보여주는 이유이다.
+ **/
 
 /**
  * rcu_read_unlock() - marks the end of an RCU read-side critical section.
  *
  * See rcu_read_lock() for more information.
  */
+/** 20140412    
+ * rcu_read_unlock.
+ * 선점불가로 critical section이 설정되었다면, 선점 가능하도록 한다.
+ **/
 static inline void rcu_read_unlock(void)
 {
 	rcu_lockdep_assert(!rcu_is_cpu_idle(),
