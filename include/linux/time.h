@@ -32,6 +32,9 @@ struct timezone {
 extern struct timezone sys_tz;
 
 /* Parameters used to convert the timespec values: */
+/** 20140419    
+ * 1 초 == 1000 밀리초 == 1000000 마이크로초
+ **/
 #define MSEC_PER_SEC	1000L
 #define USEC_PER_MSEC	1000L
 #define NSEC_PER_USEC	1000L
@@ -278,6 +281,14 @@ struct itimerval {
 /*
  * The IDs of the various system clocks (for POSIX.1b interval timers):
  */
+/** 20140419    
+ * 커널이 가질 수 있는 clock은 크게 realtime과 monotonic으로 나뉜다.
+ *
+ * REALTIME 방식은 현재 시간(시스템시간)을 기준으로 시간을 계산한다.
+ * MONOTONIC 방식은 커널이 동작한 시간을 기준으로 시간을 계산한다.
+ * 
+ * rt task인 경우 monotonic clock를 사용한다.
+ **/
 #define CLOCK_REALTIME			0
 #define CLOCK_MONOTONIC			1
 #define CLOCK_PROCESS_CPUTIME_ID	2

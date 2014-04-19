@@ -309,18 +309,33 @@ EXPORT_SYMBOL_GPL(ktime_sub_ns);
 /*
  * Divide a ktime value by a nanosecond value
  */
+/** 20140419    
+ * ktime을 ns로 나눠 그 몫을 리턴한다.
+ **/
 u64 ktime_divns(const ktime_t kt, s64 div)
 {
 	u64 dclc;
 	int sft = 0;
 
+	/** 20140419    
+	 * ktime을 ns로 변환.
+	 **/
 	dclc = ktime_to_ns(kt);
 	/* Make sure the divisor is less than 2^32: */
+	/** 20140419    
+	 * unsigned long으로 나누기 위해 sft 값을 구한다.
+	 **/
 	while (div >> 32) {
 		sft++;
 		div >>= 1;
 	}
+	/** 20140419    
+	 * 나누는 수를 shift 시킨만큼 나눠지는 수도 shift
+	 **/
 	dclc >>= sft;
+	/** 20140419    
+	 * unsigned long으로 나눈다.
+	 **/
 	do_div(dclc, (unsigned long) div);
 
 	return dclc;
@@ -330,6 +345,10 @@ u64 ktime_divns(const ktime_t kt, s64 div)
 /*
  * Add two ktime values and do a safety check for overflow:
  */
+/** 20140419    
+ * ktime 값을 더한다.
+ * overflow 된다면 SEC MAX로 지정한다.
+ **/
 ktime_t ktime_add_safe(const ktime_t lhs, const ktime_t rhs)
 {
 	ktime_t res = ktime_add(lhs, rhs);
@@ -338,6 +357,9 @@ ktime_t ktime_add_safe(const ktime_t lhs, const ktime_t rhs)
 	 * We use KTIME_SEC_MAX here, the maximum timeout which we can
 	 * return to user space in a timespec:
 	 */
+	/** 20140419    
+	 * overflow 되었다면 ktime을 SEC MAX로 지정한다.
+	 **/
 	if (res.tv64 < 0 || res.tv64 < lhs.tv64 || res.tv64 < rhs.tv64)
 		res = ktime_set(KTIME_SEC_MAX, 0);
 
@@ -824,32 +846,69 @@ void unlock_hrtimer_base(const struct hrtimer *timer, unsigned long *flags)
  * Forward the timer expiry so it will expire in the future.
  * Returns the number of overruns.
  */
+/** 20140419    
+ * timer에 interval을 더한다.
+ *
+ * sched_rt_period_timer에서 호출하였을 때 interval은 rt_period.
+ **/
 u64 hrtimer_forward(struct hrtimer *timer, ktime_t now, ktime_t interval)
 {
 	u64 orun = 1;
 	ktime_t delta;
 
+	/** 20140419    
+	 * 현재 ktime 값에서 timer의 expires를 뺀다.
+	 **/
 	delta = ktime_sub(now, hrtimer_get_expires(timer));
 
+	/** 20140419    
+	 * delta 값이 0보다 작다면, 만료가 안된 경우 0을 리턴.
+	 **/
 	if (delta.tv64 < 0)
 		return 0;
 
+	/** 20140419    
+	 * interval의 최소값을 base clock의 resolution으로 삼는다.
+	 **/
 	if (interval.tv64 < timer->base->resolution.tv64)
 		interval.tv64 = timer->base->resolution.tv64;
 
+	/** 20140419    
+	 * delta는 만료 후 얼마가 지났는지 표현.
+	 * delta가 interval보다 큰 경우에 아래 부분을 수행
+	 **/
 	if (unlikely(delta.tv64 >= interval.tv64)) {
+		/** 20140419    
+		 * interval (ktime)을 ns 단위로 변환.
+		 **/
 		s64 incr = ktime_to_ns(interval);
 
+		/** 20140419    
+		 * delta가 interval이 몇 번 지난 값인지 몫을 구해 orun에 저장.
+		 * overun된 interval 시간을 ns로 다시 변환해 expires에 저장
+		 **/
 		orun = ktime_divns(delta, incr);
+		/** 20140419    
+		 * overrun 된 ns를 timer의 expires에 반영한다.
+		 **/
 		hrtimer_add_expires_ns(timer, incr * orun);
+		/** 20140419    
+		 * expires 값이 현재 시간보다 크면 overrun 값을 리턴
+		 **/
 		if (hrtimer_get_expires_tv64(timer) > now.tv64)
 			return orun;
 		/*
 		 * This (and the ktime_add() below) is the
 		 * correction for exact:
 		 */
+		/** 20140419    
+		 * interval을 하나 더 증가시킨다.
+		 **/
 		orun++;
 	}
+	/** 20140419    
+	 * timer의 expires에 interval을 더한다.
+	 **/
 	hrtimer_add_expires(timer, interval);
 
 	return orun;

@@ -30,6 +30,9 @@ struct hrtimer_cpu_base;
 /*
  * Mode arguments of xxx_hrtimer functions:
  */
+/** 20140419    
+ * high resolution timer mode 설정
+ **/
 enum hrtimer_mode {
 	HRTIMER_MODE_ABS = 0x0,		/* Time value is absolute */
 	HRTIMER_MODE_REL = 0x1,		/* Time value is relative to now */
@@ -41,6 +44,8 @@ enum hrtimer_mode {
 /*
  * Return values for the callback function
  */
+/** 20140419    
+ **/
 enum hrtimer_restart {
 	HRTIMER_NORESTART,	/* Timer is not restarted */
 	HRTIMER_RESTART,	/* Timer must be restarted */
@@ -105,9 +110,18 @@ enum hrtimer_restart {
  *
  * The hrtimer structure must be initialized by hrtimer_init()
  */
+/** 20140419    
+ * hrtimer
+ *
+ * node : timer queue, expires값과 rb_tree의 entry point를 갖고 있음.
+ * base : clock base 정보
+ **/
 struct hrtimer {
 	struct timerqueue_node		node;
 	ktime_t				_softexpires;
+	/** 20140419    
+	 * init_rt_bandwidth 에서 지정
+	 **/
 	enum hrtimer_restart		(*function)(struct hrtimer *);
 	struct hrtimer_clock_base	*base;
 	unsigned long			state;
@@ -216,18 +230,27 @@ static inline void hrtimer_set_expires_tv64(struct hrtimer *timer, s64 tv64)
 	timer->_softexpires.tv64 = tv64;
 }
 
+/** 20140419    
+ * hrtimer의 expires 값을 time만큼 더한다. ktime_t version.
+ **/
 static inline void hrtimer_add_expires(struct hrtimer *timer, ktime_t time)
 {
 	timer->node.expires = ktime_add_safe(timer->node.expires, time);
 	timer->_softexpires = ktime_add_safe(timer->_softexpires, time);
 }
 
+/** 20140419    
+ * hrtimer의 expires와 _softexpires에 ns만큼을 증가시킨다.
+ **/
 static inline void hrtimer_add_expires_ns(struct hrtimer *timer, u64 ns)
 {
 	timer->node.expires = ktime_add_ns(timer->node.expires, ns);
 	timer->_softexpires = ktime_add_ns(timer->_softexpires, ns);
 }
 
+/** 20140419    
+ * hrtimer의 node의 expires값을 가져온다.
+ **/
 static inline ktime_t hrtimer_get_expires(const struct hrtimer *timer)
 {
 	return timer->node.expires;
@@ -238,6 +261,9 @@ static inline ktime_t hrtimer_get_softexpires(const struct hrtimer *timer)
 	return timer->_softexpires;
 }
 
+/** 20140419    
+ * hrtimer의 expires 값을 반환한다.
+ **/
 static inline s64 hrtimer_get_expires_tv64(const struct hrtimer *timer)
 {
 	return timer->node.expires.tv64;
@@ -258,6 +284,9 @@ static inline ktime_t hrtimer_expires_remaining(const struct hrtimer *timer)
 }
 
 #ifdef CONFIG_HIGH_RES_TIMERS
+/** 20140419    
+ * vexress의 default config에는 HIGH_RES_TIMERS를 사용하지 않음
+ **/
 struct clock_event_device;
 
 extern void hrtimer_interrupt(struct clock_event_device *dev);
@@ -265,6 +294,9 @@ extern void hrtimer_interrupt(struct clock_event_device *dev);
 /*
  * In high resolution mode the time reference must be read accurate
  */
+/** 20140419    
+ * hrtimer clock의 현재 time값을 가져오는 callback 함수 호출
+ **/
 static inline ktime_t hrtimer_cb_get_time(struct hrtimer *timer)
 {
 	return timer->base->get_time();
@@ -301,6 +333,9 @@ static inline void hrtimer_peek_ahead_timers(void) { }
  * In non high resolution mode the time reference is taken from
  * the base softirq time variable.
  */
+/** 20140419    
+ * softirq_time값을 리턴
+ **/
 static inline ktime_t hrtimer_cb_get_time(struct hrtimer *timer)
 {
 	return timer->base->softirq_time;

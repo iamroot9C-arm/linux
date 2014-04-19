@@ -412,6 +412,9 @@ struct rb_node *rb_next(const struct rb_node *node)
 }
 EXPORT_SYMBOL(rb_next);
 
+/** 20140419    
+ * rb tree에서 이전 값을 가진 node를 찾아 리턴한다.
+ **/
 struct rb_node *rb_prev(const struct rb_node *node)
 {
 	struct rb_node *parent;

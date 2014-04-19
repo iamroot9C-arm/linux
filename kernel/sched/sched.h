@@ -63,6 +63,9 @@ struct rt_prio_array {
 	struct list_head queue[MAX_RT_PRIO];
 };
 
+/** 20140419    
+ * init_rt_bandwidth 에서 초기화
+ **/
 struct rt_bandwidth {
 	/* nests inside the rq lock: */
 	raw_spinlock_t		rt_runtime_lock;
@@ -114,6 +117,9 @@ struct task_group {
 	atomic_t load_weight;
 #endif
 
+/** 20140419    
+ * default config에는 RT_GROUP_SCHED가 정의되어 있지 않다.
+ **/
 #ifdef CONFIG_RT_GROUP_SCHED
 	struct sched_rt_entity **rt_se;
 	struct rt_rq **rt_rq;
@@ -687,6 +693,10 @@ extern struct static_key sched_feat_keys[__SCHED_FEAT_NR];
 #define sched_feat(x) (sysctl_sched_features & (1UL << __SCHED_FEAT_##x))
 #endif /* SCHED_DEBUG && HAVE_JUMP_LABEL */
 
+/** 20140419    
+ * rt period가 us 단위이므로 ns 단위로 변환해 리턴.
+ * 1000000 * 1000
+ **/
 static inline u64 global_rt_period(void)
 {
 	return (u64)sysctl_sched_rt_period * NSEC_PER_USEC;

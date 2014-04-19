@@ -683,6 +683,9 @@ asmlinkage void __init start_kernel(void)
 	 * NULL 함수
 	 **/
 	trap_init();
+	/** 20140419    
+	 * memory management 초기화 (kernel space)
+	 **/
 	mm_init();
 
 	/*

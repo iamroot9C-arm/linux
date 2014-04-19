@@ -364,6 +364,10 @@ static inline void flush_cache_vmap(unsigned long start, unsigned long end)
 		flush_cache_all();
 	/** 20140308    
 	 * 그렇지 않다면 dsb만 호출.
+	 *
+	 * vexpress의 경우 ARMv7으로 vipt nonaliasing.
+	 * (cacheid_init에서 확인 가능)
+	 * dsb()가 호출됨.
 	 **/
 	else
 		/*

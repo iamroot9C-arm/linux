@@ -353,6 +353,9 @@ static inline void cpumask_setall(struct cpumask *dstp)
  * cpumask_clear - clear all cpus (< nr_cpu_ids) in a cpumask
  * @dstp: the cpumask pointer
  */
+/** 20140419    
+ * cpumask bitmap을 모두 0으로 초기화
+ **/
 static inline void cpumask_clear(struct cpumask *dstp)
 {
 	bitmap_zero(cpumask_bits(dstp), nr_cpumask_bits);
@@ -697,6 +700,11 @@ void free_bootmem_cpumask_var(cpumask_var_t mask);
 #else
 typedef struct cpumask cpumask_var_t[1];
 
+/** 20140419    
+ * default로 CPUMASK_OFFSTACK가 정의되어 있지 않아 true 리턴.
+ *
+ * CPUMASK_OFFSET은 CPUMASK를 stack에 저장하지 않고 동적 메모리를 할당해 저장하는 것을 의미.
+ **/
 static inline bool alloc_cpumask_var(cpumask_var_t *mask, gfp_t flags)
 {
 	return true;
@@ -708,6 +716,9 @@ static inline bool alloc_cpumask_var_node(cpumask_var_t *mask, gfp_t flags,
 	return true;
 }
 
+/** 20140419    
+ * OFFSTACK이 아니므로 주어진 mask를 0으로 클리어 한다.
+ **/
 static inline bool zalloc_cpumask_var(cpumask_var_t *mask, gfp_t flags)
 {
 	cpumask_clear(*mask);

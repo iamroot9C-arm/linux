@@ -306,6 +306,11 @@ EXPORT_SYMBOL(vmalloc_to_pfn);
 
 /*** Global kva allocator ***/
 
+/** 20140419    
+ * vmap_area에 대해 lazy free를 구분하는 매크로.
+ * VM_LAZY_FREE    : vmap_area가 lazy free 대상임을 의미
+ * VM_LAZY_FREEING : vmap_area가 lazy free 중임을 의미
+ **/
 #define VM_LAZY_FREE	0x01
 #define VM_LAZY_FREEING	0x02
 #define VM_VM_AREA	0x04
@@ -341,6 +346,10 @@ static LIST_HEAD(vmap_area_list);
 static struct rb_root vmap_area_root = RB_ROOT;
 
 /* The vmap cache globals are protected by vmap_area_lock */
+/** 20140419    
+ * alloc_vmap_area 에서 새로 추가된 vmap_area를 free_vmap_cache로 지정.
+ * 동일 함수에서 vmap_area를 찾을 때 이 cache를 이용할 수 있는지 먼저 검사한다.
+ **/
 static struct rb_node *free_vmap_cache;
 static unsigned long cached_hole_size;
 static unsigned long cached_vstart;
@@ -677,14 +686,28 @@ overflow:
 	return ERR_PTR(-EBUSY);
 }
 
+/** 20140419    
+ * 전달된 vmap_area를 자료구조(rb-tree, list)에서 제거하고,
+ * rcu 제거함수를 이용해 해제.
+ **/
 static void __free_vmap_area(struct vmap_area *va)
 {
 	BUG_ON(RB_EMPTY_NODE(&va->rb_node));
 
+	/** 20140419    
+	 * vmap_area cache가 존재하면
+	 **/
 	if (free_vmap_cache) {
+		/** 20140419    
+		 * overlap되는 부분이 없는 경우 free_vmap_cache는 NULL.
+		 **/
 		if (va->va_end < cached_vstart) {
 			free_vmap_cache = NULL;
 		} else {
+		/** 20140419    
+		 * overlap되는 부분이 있는 경우 rb_tree에서 이전 vmap_area를 가져와
+		 * 새로운 free_vmap_cache로 삼는다.
+		 **/
 			struct vmap_area *cache;
 			cache = rb_entry(free_vmap_cache, struct vmap_area, rb_node);
 			if (va->va_start <= cache->va_start) {
@@ -696,8 +719,14 @@ static void __free_vmap_area(struct vmap_area *va)
 			}
 		}
 	}
+	/** 20140419    
+	 * rb tree(vmap_area_root)에서 vmap_area를 제거한다.
+	 **/
 	rb_erase(&va->rb_node, &vmap_area_root);
 	RB_CLEAR_NODE(&va->rb_node);
+	/** 20140419    
+	 * list에서 vmap_area를 제거한다.
+	 **/
 	list_del_rcu(&va->list);
 
 	/*
@@ -706,9 +735,17 @@ static void __free_vmap_area(struct vmap_area *va)
 	 * here too, consider only end addresses which fall inside
 	 * vmalloc area proper.
 	 */
+	/** 20140419    
+	 * 삭제하는 vmap_area의 end가 VMALLOC_START ~ VMALLOC_END 사이에 존재하면
+	 * 현재의 hole과 vmap_end 중 큰 값을 vmap_area_pcpu_hole에 저장한다.
+	 **/
 	if (va->va_end > VMALLOC_START && va->va_end <= VMALLOC_END)
 		vmap_area_pcpu_hole = max(vmap_area_pcpu_hole, va->va_end);
 
+	/** 20140419    
+	 * vmap_area free.
+	 * 자세한 분석은 하지 않음???
+	 **/
 	kfree_rcu(va, rcu_head);
 }
 
@@ -819,8 +856,14 @@ void set_iounmap_nonlazy(void)
  *              *end = max(*end, highest purged address)
  */
 /** 20140405    
- * purge_vmap_area_lazy 에서 호출된 경우 sync 1.
- * try_purge_vmap_area_lazy 에서 호출된 경우 sync 0.
+ * purge_vmap_area_lazy 에서 호출된 경우 sync 1, force_flush 0
+ * try_purge_vmap_area_lazy 에서 호출된 경우 sync 0, force_flush 0
+ *
+ * 20140419
+ * lazy로 vmap_area를 방출하는 함수.
+ *		1. 미사용 중인 vmap_block을 순회하며 해제
+ *		2. lazy_free로 mark된 vmap_area를 찾아 임시리스트에 등록해 두었다가
+ *			순차적으로 해제
  **/
 static void __purge_vmap_area_lazy(unsigned long *start, unsigned long *end,
 					int sync, int force_flush)
@@ -836,6 +879,10 @@ static void __purge_vmap_area_lazy(unsigned long *start, unsigned long *end,
 	 * should not expect such behaviour. This just simplifies locking for
 	 * the case that isn't actually used at the moment anyway.
 	 */
+	/** 20140419    
+	 * sync가 아니고, force_flush 요청이 없는 경우 (try_purge_vmap_area_lazy)
+	 * purge_lock을 얻지 못한 경우 바로 리턴.
+	 **/
 	if (!sync && !force_flush) {
 		if (!spin_trylock(&purge_lock))
 			return;
@@ -844,12 +891,17 @@ static void __purge_vmap_area_lazy(unsigned long *start, unsigned long *end,
 
 	/** 20140405    
 	 * sync 가 1로 호출된 경우
+	 *   vmap_block 중 alloc 상태가 아닌 vmap_area로만 이뤄진 vmap_block을 찾아 해제
 	 **/
 	if (sync)
 		purge_fragmented_blocks_allcpus();
 
 	rcu_read_lock();
 	list_for_each_entry_rcu(va, &vmap_area_list, list) {
+		/** 20140419    
+		 * free_vmap_area_noflush에서 마크해둔 lazy free 인 vmap_area인 경우
+		 * valist에 달아주고, VM_LAZY_FREEING으로 상태 변경.
+		 **/
 		if (va->flags & VM_LAZY_FREE) {
 			if (va->va_start < *start)
 				*start = va->va_start;
@@ -863,14 +915,23 @@ static void __purge_vmap_area_lazy(unsigned long *start, unsigned long *end,
 	}
 	rcu_read_unlock();
 
+	/** 20140419    
+	 * 해제할 vmap_lazy 수에서 빼준다.
+	 **/
 	if (nr)
 		atomic_sub(nr, &vmap_lazy_nr);
 
+	/** 20140419    
+	 * 해제하는 vmap_area가 있거나 force_flush 요청이 들어온 경우 tlb flush.
+	 **/
 	if (nr || force_flush)
 		flush_tlb_kernel_range(*start, *end);
 
 	if (nr) {
 		spin_lock(&vmap_area_lock);
+		/** 20140419    
+		 * valist에 등록해 둔 vmap_area들을 순회하며 __free_vmap_area로 해제
+		 **/
 		list_for_each_entry_safe(va, n_va, &valist, purge_list)
 			__free_vmap_area(va);
 		spin_unlock(&vmap_area_lock);
@@ -882,6 +943,11 @@ static void __purge_vmap_area_lazy(unsigned long *start, unsigned long *end,
  * Kick off a purge of the outstanding lazy areas. Don't bother if somebody
  * is already purging.
  */
+/** 20140419    
+ * start ~ end 사이 주소에 lazy로 vmap_area를 방출하는 함수.
+ *
+ * purge_lock을 실행하고 있는 다른 task가 있다면 lock을 획득하지 못하고 바로 리턴된다.
+ **/
 static void try_purge_vmap_area_lazy(void)
 {
 	unsigned long start = ULONG_MAX, end = 0;
@@ -1289,7 +1355,8 @@ static void free_vmap_block(struct vmap_block *vb)
 }
 
 /** 20140419   
- * 이 함수 정리부터...
+ * 미사용 중인 (free + dirty 상태) vmap_block을 찾아 vmap_area를 제거하고 해제.
+ * lazy free의 실제 동작
  **/
 static void purge_fragmented_blocks(int cpu)
 {
@@ -1372,12 +1439,15 @@ static void purge_fragmented_blocks_thiscpu(void)
 	purge_fragmented_blocks(smp_processor_id());
 }
 
+/** 20140419    
+ * cpu 별로 존재하는 vmap_block_queue에서 미사용 중인 vmap_block을 찾아 해제
+ **/
 static void purge_fragmented_blocks_allcpus(void)
 {
 	int cpu;
 
 	/** 20140405    
-	 * possible cpu 목록을 순회하면서 purge
+	 * possible cpu 목록을 순회하면서 미사용 중인 vmap_block purge
 	 **/
 	for_each_possible_cpu(cpu)
 		purge_fragmented_blocks(cpu);
@@ -1865,6 +1935,10 @@ void __init vmalloc_init(void)
 	/** 20140322    
 	 * 현재 vmlist에 등록되어 있는 entry를 순회하며 
 	 * vmap_area를 생성해 정보를 할당하고 vmap_area 자료구조에 추가한다.
+	 * 
+	 * 20140419
+	 * vmlist에 이미 추가되어 있는 entry에 대해 vmap_area 자료구조를 구성한다.
+	 * iotable_init에서 등록한 PA/VA는 vmlist에만 존재하는 상태이다.
 	 **/
 	for (tmp = vmlist; tmp; tmp = tmp->next) {
 		/** 20140322    
@@ -2055,17 +2129,19 @@ static void insert_vmalloc_vm(struct vm_struct *vm, struct vmap_area *va,
 	insert_vmalloc_vmlist(vm);
 }
 /** 20130323
- *	flags : VM_IOREMAP
-	return __get_vm_area_node(size, 1, flags, VMALLOC_START, VMALLOC_END,
-						-1, GFP_KERNEL, caller);
-
-	20140329    
-	vmalloc에서 호출한 경우
-	area = __get_vm_area_node(size, align, VM_ALLOC | VM_UNLIST,
-				  start, end, node, gfp_mask, caller);
-
-	vm_struct와 vmap_area를 할당받고 자료구조에 등록한다.
-	vmalloc에서 호출된 경우 vmlist에 등록하는 과정은 수행하지 않는다.
+ * ioremap에서 호출한 경우
+ * flags : VM_IOREMAP
+ *
+ * return __get_vm_area_node(size, 1, flags, VMALLOC_START, VMALLOC_END,
+ *					-1, GFP_KERNEL, caller);
+ *
+ * 20140329    
+ * vmalloc에서 호출한 경우
+ * area = __get_vm_area_node(size, align, VM_ALLOC | VM_UNLIST,
+ *				  start, end, node, gfp_mask, caller);
+ *
+ * vm_struct와 vmap_area를 할당받고 자료구조에 등록한다.
+ * vmalloc에서 호출된 경우 vmlist에 등록하는 과정은 수행하지 않는다.
 */
 static struct vm_struct *__get_vm_area_node(unsigned long size,
 		unsigned long align, unsigned long flags, unsigned long start,
@@ -2180,6 +2256,11 @@ struct vm_struct *get_vm_area(unsigned long size, unsigned long flags)
 				-1, GFP_KERNEL, __builtin_return_address(0));
 }
 
+/** 20140419    
+ * VMALLOC_START ~ VMALLOC_END 사이에서 vm_struct와 vmap_area를 할당 받고 자료구조에 등록한다.
+ *
+ * mapping은 하지 않은 상태.
+ **/
 struct vm_struct *get_vm_area_caller(unsigned long size, unsigned long flags,
 				const void *caller)
 {

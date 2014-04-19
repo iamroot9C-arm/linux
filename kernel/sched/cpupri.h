@@ -3,6 +3,10 @@
 
 #include <linux/sched.h>
 
+/** 20140419    
+ * MAX_RT_PRIO <- MAX_USER_RT_PRIO <- 100
+ * +2는 무엇인지???
+ **/
 #define CPUPRI_NR_PRIORITIES	(MAX_RT_PRIO + 2)
 
 #define CPUPRI_INVALID -1
@@ -15,6 +19,9 @@ struct cpupri_vec {
 	cpumask_var_t	mask;
 };
 
+/** 20140419    
+ * cpupri_init에서 초기화.
+ **/
 struct cpupri {
 	struct cpupri_vec pri_to_cpu[CPUPRI_NR_PRIORITIES];
 	int               cpu_to_pri[NR_CPUS];

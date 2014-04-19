@@ -5,6 +5,10 @@
 #include <linux/ktime.h>
 
 
+/** 20140419    
+ * timerqueue_node
+ * expires를 기준으로 rb_tree로 구성된다.
+ **/
 struct timerqueue_node {
 	struct rb_node node;
 	ktime_t expires;

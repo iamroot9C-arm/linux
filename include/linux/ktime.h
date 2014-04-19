@@ -45,6 +45,10 @@
  */
 union ktime {
 	s64	tv64;
+	/** 20140419    
+	 * CONFIG_KTIME_SCALAR가 정의되어 있음.
+	 * 따라서 아래 구조체는 union에 포함되지 않음.
+	 **/
 #if BITS_PER_LONG != 64 && !defined(CONFIG_KTIME_SCALAR)
 	struct {
 # ifdef __BIG_ENDIAN
@@ -56,6 +60,8 @@ union ktime {
 #endif
 };
 
+/** 20140419    
+ **/
 typedef union ktime ktime_t;		/* Kill this */
 
 #define KTIME_MAX			((s64)~((u64)1 << 63))
@@ -78,20 +84,32 @@ typedef union ktime ktime_t;		/* Kill this */
  *
  * Return the ktime_t representation of the value
  */
+/** 20140419    
+ * secs에 nsecs를 더해 ktime 값을 리턴한다.
+ **/
 static inline ktime_t ktime_set(const long secs, const unsigned long nsecs)
 {
 #if (BITS_PER_LONG == 64)
 	if (unlikely(secs >= KTIME_SEC_MAX))
 		return (ktime_t){ .tv64 = KTIME_MAX };
 #endif
+	/** 20140419    
+	 * secs를 ns로 변환해 nsecs에 더한다.
+	 **/
 	return (ktime_t) { .tv64 = (s64)secs * NSEC_PER_SEC + (s64)nsecs };
 }
 
 /* Subtract two ktime_t variables. rem = lhs -rhs: */
+/** 20140419    
+ * 두 ktime_t 간의 차를 구한다
+ **/
 #define ktime_sub(lhs, rhs) \
 		({ (ktime_t){ .tv64 = (lhs).tv64 - (rhs).tv64 }; })
 
 /* Add two ktime_t variables. res = lhs + rhs: */
+/** 20140419    
+ * 두 ktime_t 의 합을 구한다.
+ **/
 #define ktime_add(lhs, rhs) \
 		({ (ktime_t){ .tv64 = (lhs).tv64 + (rhs).tv64 }; })
 
@@ -99,6 +117,9 @@ static inline ktime_t ktime_set(const long secs, const unsigned long nsecs)
  * Add a ktime_t variable and a scalar nanosecond value.
  * res = kt + nsval:
  */
+/** 20140419    
+ * kt의 tv64 값에 ns값을 더하는 매크로 함수
+ **/
 #define ktime_add_ns(kt, nsval) \
 		({ (ktime_t){ .tv64 = (kt).tv64 + (nsval) }; })
 
@@ -128,6 +149,9 @@ static inline ktime_t timeval_to_ktime(struct timeval tv)
 #define ktime_to_timeval(kt)		ns_to_timeval((kt).tv64)
 
 /* Convert ktime_t to nanoseconds - NOP in the scalar storage format: */
+/** 20140419    
+ * ktime이 scalar 값을 가질 때 ktime의 tv64를 리턴 (scalar)
+ **/
 #define ktime_to_ns(kt)			((kt).tv64)
 
 #else	/* !((BITS_PER_LONG == 64) || defined(CONFIG_KTIME_SCALAR)) */
@@ -333,8 +357,14 @@ extern void ktime_get_ts(struct timespec *ts);
 /* Get the real (wall-) time in timespec format: */
 #define ktime_get_real_ts(ts)	getnstimeofday(ts)
 
+/** 20140419    
+ * 들어온 ns 값에 ktime_zero를 더해 리턴.
+ **/
 static inline ktime_t ns_to_ktime(u64 ns)
 {
+	/** 20140419    
+	 * ktime_zero 변수는 ktime 0 초기값
+	 **/
 	static const ktime_t ktime_zero = { .tv64 = 0 };
 	return ktime_add_ns(ktime_zero, ns);
 }

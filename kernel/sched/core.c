@@ -280,6 +280,15 @@ const_debug unsigned int sysctl_sched_time_avg = MSEC_PER_SEC;
  * period over which we measure -rt task cpu usage in us.
  * default: 1s
  */
+/** 20140419    
+ * rt task의 sched rt period 값
+ *
+ * sysctl로 설정 가능한 rt period 값
+ *
+ * $ sysctl -a | grep sched_rt
+ * kernel.sched_rt_period_us = 1000000
+ * kernel.sched_rt_runtime_us = 950000
+ **/
 unsigned int sysctl_sched_rt_period = 1000000;
 
 __read_mostly int scheduler_running;
@@ -288,6 +297,9 @@ __read_mostly int scheduler_running;
  * part of the period that we allow rt tasks to run in us.
  * default: 0.95s
  */
+/** 20140419    
+ * rt task가 갖는 rt runtime 값. period의 일부분.
+ **/
 int sysctl_sched_rt_runtime = 950000;
 
 
@@ -6383,10 +6395,16 @@ static void rq_attach_root(struct rq *rq, struct root_domain *rd)
 		call_rcu_sched(&old_rd->rcu, free_rootdomain);
 }
 
+/** 20140419    
+ * rootdomain 초기화
+ **/
 static int init_rootdomain(struct root_domain *rd)
 {
 	memset(rd, 0, sizeof(*rd));
 
+	/** 20140419    
+	 * alloc_cpumask_var는 CPUMASK_OFFSTACK이 정의되지 않아 항상 true 리턴.
+	 **/
 	if (!alloc_cpumask_var(&rd->span, GFP_KERNEL))
 		goto out;
 	if (!alloc_cpumask_var(&rd->online, GFP_KERNEL))
@@ -6394,6 +6412,9 @@ static int init_rootdomain(struct root_domain *rd)
 	if (!alloc_cpumask_var(&rd->rto_mask, GFP_KERNEL))
 		goto free_online;
 
+	/** 20140419    
+	 * root_domain의 cpupri 자료구조 초기화
+	 **/
 	if (cpupri_init(&rd->cpupri) != 0)
 		goto free_rto_mask;
 	return 0;
@@ -6412,12 +6433,24 @@ out:
  * By default the system creates a single root-domain with all cpus as
  * members (mimicking the global state we have today).
  */
+/** 20140419    
+ * default로 시스템은 모든 cpu를 멤버로 가지는 하나의 root-domain을 생성한다.
+ **/
 struct root_domain def_root_domain;
 
+/** 20140419    
+ * default root domain 초기화.
+ **/
 static void init_defrootdomain(void)
 {
+	/** 20140419    
+	 * def_root_domain 자료구조 초기화.
+	 **/
 	init_rootdomain(&def_root_domain);
 
+	/** 20140419    
+	 * reference count를 1로 초기화.
+	 **/
 	atomic_set(&def_root_domain.refcount, 1);
 }
 
@@ -7735,6 +7768,9 @@ void __init sched_init(void)
 #ifdef CONFIG_CPUMASK_OFFSTACK
 	alloc_size += num_possible_cpus() * cpumask_size();
 #endif
+	/** 20140419    
+	 * alloc_size가 초기값을 가지고 있으므로 0.
+	 **/
 	if (alloc_size) {
 		ptr = (unsigned long)kzalloc(alloc_size, GFP_NOWAIT);
 
@@ -7766,14 +7802,23 @@ void __init sched_init(void)
 	init_defrootdomain();
 #endif
 
+	/** 20140419    
+	 * default rt bandwidth 구조체를 초기화 한다.
+	 **/
 	init_rt_bandwidth(&def_rt_bandwidth,
 			global_rt_period(), global_rt_runtime());
 
+/** 20140419    
+ * 수행 안 함
+ **/
 #ifdef CONFIG_RT_GROUP_SCHED
 	init_rt_bandwidth(&root_task_group.rt_bandwidth,
 			global_rt_period(), global_rt_runtime());
 #endif /* CONFIG_RT_GROUP_SCHED */
 
+/** 20140419    
+ * 수행 안 함
+ **/
 #ifdef CONFIG_CGROUP_SCHED
 	list_add(&root_task_group.list, &task_groups);
 	INIT_LIST_HEAD(&root_task_group.children);
@@ -7782,12 +7827,19 @@ void __init sched_init(void)
 
 #endif /* CONFIG_CGROUP_SCHED */
 
+/** 20140419    
+ * 수행 안 함
+ **/
 #ifdef CONFIG_CGROUP_CPUACCT
 	root_cpuacct.cpustat = &kernel_cpustat;
 	root_cpuacct.cpuusage = alloc_percpu(u64);
 	/* Too early, not expected to fail */
 	BUG_ON(!root_cpuacct.cpuusage);
 #endif
+
+	/** 20140426
+	 * 여기부터...
+	 **/
 	for_each_possible_cpu(i) {
 		struct rq *rq;
 
