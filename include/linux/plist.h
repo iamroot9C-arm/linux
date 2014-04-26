@@ -78,6 +78,9 @@
 #include <linux/kernel.h>
 #include <linux/list.h>
 
+/** 20140426    
+ * priority list head.
+ **/
 struct plist_head {
 	struct list_head node_list;
 };
@@ -113,9 +116,14 @@ struct plist_node {
  * plist_head_init - dynamic struct plist_head initializer
  * @head:	&struct plist_head pointer
  */
+/** 20140426    
+ * 동적으로 선언된 struct plist_head에 대한 초기화 함수
+ **/
 static inline void
 plist_head_init(struct plist_head *head)
 {
+	/** 20140426    
+	 **/
 	INIT_LIST_HEAD(&head->node_list);
 }
 

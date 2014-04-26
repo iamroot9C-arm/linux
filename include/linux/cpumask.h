@@ -295,6 +295,9 @@ static inline void cpumask_set_cpu(unsigned int cpu, struct cpumask *dstp)
  * @cpu: cpu number (< nr_cpu_ids)
  * @dstp: the cpumask pointer
  */
+/** 20140426    
+ * cpumask bits에서 특정 cpu를 제거.
+ **/
 static inline void cpumask_clear_cpu(int cpu, struct cpumask *dstp)
 {
 	clear_bit(cpumask_check(cpu), cpumask_bits(dstp));
@@ -309,6 +312,9 @@ static inline void cpumask_clear_cpu(int cpu, struct cpumask *dstp)
  *
  * No static inline type checking - see Subtlety (1) above.
  */
+/** 20140426    
+ * cpumask 안에 cpu에 해당하는 bit가 설정되어 있는지 검사하는 매크로
+ **/
 #define cpumask_test_cpu(cpu, cpumask) \
 	test_bit(cpumask_check(cpu), cpumask_bits((cpumask)))
 
@@ -531,6 +537,9 @@ static inline void cpumask_shift_left(struct cpumask *dstp,
  * @dstp: the result
  * @srcp: the input cpumask
  */
+/** 20140426    
+ * srcp -> dstp로 cpumask copy.
+ **/
 static inline void cpumask_copy(struct cpumask *dstp,
 				const struct cpumask *srcp)
 {
@@ -649,6 +658,9 @@ static inline int cpulist_parse(const char *buf, struct cpumask *dstp)
  *
  * This will eventually be a runtime variable, depending on nr_cpu_ids.
  */
+/** 20140426    
+ * COMPILE시 지정된 CPU의 수만큼을 처리할 수 있는 long 변수의 크기를 구함.
+ **/
 static inline size_t cpumask_size(void)
 {
 	/* FIXME: Once all cpumask assignments are eliminated, this
@@ -710,6 +722,9 @@ static inline bool alloc_cpumask_var(cpumask_var_t *mask, gfp_t flags)
 	return true;
 }
 
+/** 20140426    
+ * true 리턴
+ **/
 static inline bool alloc_cpumask_var_node(cpumask_var_t *mask, gfp_t flags,
 					  int node)
 {

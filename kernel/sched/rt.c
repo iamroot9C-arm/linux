@@ -104,12 +104,18 @@ static void start_rt_bandwidth(struct rt_bandwidth *rt_b)
 	raw_spin_unlock(&rt_b->rt_runtime_lock);
 }
 
+/** 20140426    
+ * rt_rq 자료구조를 초기화 한다.
+ **/
 void init_rt_rq(struct rt_rq *rt_rq, struct rq *rq)
 {
 	struct rt_prio_array *array;
 	int i;
 
 	array = &rt_rq->active;
+	/** 20140426    
+	 * rt_prio_array 비트맵과 queue를 초기화 한다.
+	 **/
 	for (i = 0; i < MAX_RT_PRIO; i++) {
 		INIT_LIST_HEAD(array->queue + i);
 		__clear_bit(i, array->bitmap);

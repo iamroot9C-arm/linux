@@ -4584,6 +4584,9 @@ out_unlock:
  *   needed, they will kick the idle load balancer, which then does idle
  *   load balancing for all the idle CPUs.
  */
+/** 20140426    
+ * cfs의 nohz 자료구조.
+ **/
 static struct {
 	cpumask_var_t idle_cpus_mask;
 	atomic_t nr_cpus;
@@ -5097,6 +5100,9 @@ static void set_curr_task_fair(struct rq *rq)
 	}
 }
 
+/** 20140426    
+ * cfs_rq 자료구조 초기화
+ **/
 void init_cfs_rq(struct cfs_rq *cfs_rq)
 {
 	cfs_rq->tasks_timeline = RB_ROOT;
@@ -5365,14 +5371,39 @@ void print_cfs_stats(struct seq_file *m, int cpu)
 }
 #endif
 
+/** 20140426    
+ * cfs scheduler init 함수.
+ **/
 __init void init_sched_fair_class(void)
 {
+	/** 20140426    
+	 * SMP가 아닌 경우 어떤 초기화 코드도 실행하지 않는다.
+	 **/
 #ifdef CONFIG_SMP
+	/** 20140426    
+	 * SCHED_SOFTIRQ의 action으로 run_rebalance_domains 지정.
+	 **/
 	open_softirq(SCHED_SOFTIRQ, run_rebalance_domains);
 
+	/** 20140426    
+	 * vexpress의 경우 NO_HZ가 정의되어 있지 않음.
+	 * 하지만 대부분의 kernel config가 NO_HZ를 정의하고 있음.
+	 **/
 #ifdef CONFIG_NO_HZ
+	/** 20140426    
+	 * nohz의 자료구조 초기화
+	 **/
 	nohz.next_balance = jiffies;
+	/** 20140426    
+	 * nohz.idle_cpus_mask를 저장하기 위한 cpumask 변수를 할당
+	 *	-> OFFSTACK 옵션을 사용하지 않아 null 함수. 전역변수의 멤버를 그대로 사용.
+	 **/
 	zalloc_cpumask_var(&nohz.idle_cpus_mask, GFP_NOWAIT);
+	/** 20140426    
+	 * cpu notifier block으로 지정
+	 *	fn: sched_ilb_notifier
+	 *	pri: 0
+	 **/
 	cpu_notifier(sched_ilb_notifier, 0);
 #endif
 #endif /* SMP */

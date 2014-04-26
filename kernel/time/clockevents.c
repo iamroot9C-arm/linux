@@ -25,6 +25,9 @@ static LIST_HEAD(clockevent_devices);
 static LIST_HEAD(clockevents_released);
 
 /* Notification for clock events */
+/** 20140426    
+ * clockevents_chain이라는 이름으로 clockevent notifier head를 선언한다.
+ **/
 static RAW_NOTIFIER_HEAD(clockevents_chain);
 
 /* Protection for the above */

@@ -239,6 +239,9 @@ typedef void call_rcu_func_t(struct rcu_head *head,
 			     void (*func)(struct rcu_head *head));
 void wait_rcu_gp(call_rcu_func_t crf);
 
+/** 20140426    
+ * CONFIG_TREE_RCU가 정의되어 있어 rcutree.h 가 포함된다.
+ **/
 #if defined(CONFIG_TREE_RCU) || defined(CONFIG_TREE_PREEMPT_RCU)
 #include <linux/rcutree.h>
 #elif defined(CONFIG_TINY_RCU) || defined(CONFIG_TINY_PREEMPT_RCU)

@@ -58,6 +58,10 @@ static inline int task_has_rt_policy(struct task_struct *p)
 /*
  * This is the priority-queue data structure of the RT scheduling class:
  */
+/** 20140426    
+ * priority 마다 list 형태로 큐를 가진다.
+ * PRIO 큐 별로 관리하기 위한 bitmap으로 이루어진다.
+ **/
 struct rt_prio_array {
 	DECLARE_BITMAP(bitmap, MAX_RT_PRIO+1); /* include 1 bit for delimiter */
 	struct list_head queue[MAX_RT_PRIO];
@@ -205,6 +209,12 @@ struct cfs_bandwidth { };
 #endif	/* CONFIG_CGROUP_SCHED */
 
 /* CFS-related fields in a runqueue */
+/** 20140426    
+ * init_cfs_rq로 초기화되는 자료구조
+ *		tasks_timeline
+ *		min_vruntime
+ *		min_vruntime_copy
+ **/
 struct cfs_rq {
 	struct load_weight load;
 	unsigned int nr_running, h_nr_running;
@@ -283,6 +293,9 @@ static inline int rt_bandwidth_enabled(void)
 }
 
 /* Real-Time classes' related field in a runqueue: */
+/** 20140426    
+ * init_rq_rq에서 초기화
+ **/
 struct rt_rq {
 	struct rt_prio_array active;
 	unsigned int rt_nr_running;
@@ -325,6 +338,11 @@ struct rt_rq {
  * object.
  *
  */
+/** 20140426    
+ * root_domain 관련 함수는 core.c에 위치.
+ *
+ * cpuset이 생성될 때마다 새로운 root_domain을 생성한다.
+ **/
 struct root_domain {
 	atomic_t refcount;
 	atomic_t rto_count;
@@ -351,6 +369,11 @@ extern struct root_domain def_root_domain;
  * (such as the load balancing or the thread migration code), lock
  * acquire operations must be ordered by ascending &runqueue.
  */
+/** 20140426    
+ * sched_init에서 초기화.
+ *
+ * spinlock으로 보호됨.
+ **/
 struct rq {
 	/* runqueue lock: */
 	raw_spinlock_t lock;
@@ -415,6 +438,9 @@ struct rq {
 	int push_cpu;
 	struct cpu_stop_work active_balance_work;
 	/* cpu of this runqueue: */
+	/** 20140426    
+	 * 이 runqueue가 어떤 cpu의 runqueue인지 번호 지정
+	 **/
 	int cpu;
 	int online;
 
@@ -838,6 +864,8 @@ static inline void update_load_set(struct load_weight *lw, unsigned long w)
  * slice expiry etc.
  */
 
+/** 20140426    
+ **/
 #define WEIGHT_IDLEPRIO                3
 #define WMULT_IDLEPRIO         1431655765
 
@@ -853,6 +881,10 @@ static inline void update_load_set(struct load_weight *lw, unsigned long w)
  * If a task goes up by ~10% and another task goes down by ~10% then
  * the relative distance between them is ~25%.)
  */
+/** 20140426    
+ * prio에 따른 weigth값 설정
+ * 높은 priority(낮은 값)일수록 weigth가 높게 설정된다.
+ **/
 static const int prio_to_weight[40] = {
  /* -20 */     88761,     71755,     56483,     46273,     36291,
  /* -15 */     29154,     23254,     18705,     14949,     11916,

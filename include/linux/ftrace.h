@@ -617,6 +617,9 @@ static inline void unpause_graph_tracing(void)
 
 static inline void ftrace_graph_init_task(struct task_struct *t) { }
 static inline void ftrace_graph_exit_task(struct task_struct *t) { }
+/** 20140426    
+ * CONFIG_FUNCTION_GRAPH_TRACER가 정의되어 있지 않아 NULL 함수.
+ **/
 static inline void ftrace_graph_init_idle_task(struct task_struct *t, int cpu) { }
 
 static inline int register_ftrace_graph(trace_func_graph_ret_t retfunc,

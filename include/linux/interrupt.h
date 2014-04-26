@@ -417,6 +417,9 @@ extern bool force_irqthreads;
    al. should be converted to tasklets, not to softirqs.
  */
 
+/** 20140426    
+ * 커널에서 사용되는 약속된 SOFTIRQ 번호.
+ **/
 enum
 {
 	HI_SOFTIRQ=0,

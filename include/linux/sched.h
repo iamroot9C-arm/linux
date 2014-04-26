@@ -271,6 +271,9 @@ extern char ___assert_task_state[1 - 2*!!(
 	set_mb(current->state, (state_value))
 
 /* Task command name length */
+/** 20140426    
+ * command name 길이
+ **/
 #define TASK_COMM_LEN 16
 
 #include <linux/spinlock.h>
@@ -873,6 +876,8 @@ enum cpu_idle_type {
 # define scale_load(w)		((w) << SCHED_LOAD_RESOLUTION)
 # define scale_load_down(w)	((w) >> SCHED_LOAD_RESOLUTION)
 #else
+/** 20140426    
+ **/
 # define SCHED_LOAD_RESOLUTION	0
 # define scale_load(w)		(w)
 # define scale_load_down(w)	(w)
@@ -1173,6 +1178,9 @@ struct sched_class {
 #endif
 };
 
+/** 20140426    
+ * load weigth와 inverse weigth 지정
+ **/
 struct load_weight {
 	unsigned long weight, inv_weight;
 };
@@ -1214,6 +1222,10 @@ struct sched_statistics {
 #endif
 
 struct sched_entity {
+	/** 20140426    
+	 * load-balancing을 위한 자료구조.
+	 * set_load_weight로 설정됨.
+	 **/
 	struct load_weight	load;		/* for load-balancing */
 	struct rb_node		run_node;
 	struct list_head	group_node;
@@ -1487,6 +1499,7 @@ struct task_struct {
 
 	/** 20130713    
 	 * CONFIG_RT_MUTEXES defined되어 있음
+	 * priority inheritance 관련 priority list 자료구조.
 	 **/
 #ifdef CONFIG_RT_MUTEXES
 	/* PI waiters blocked on a rt_mutex held by this task */
@@ -1666,6 +1679,11 @@ struct task_struct {
  * MAX_RT_PRIO must not be smaller than MAX_USER_RT_PRIO.
  */
 
+/** 20140426    
+ * MAX_RT_PRIO
+ *
+ * RT task가 아닌 경우 nice로 -20 ~ 19까지 값을 조절할 수 있다.
+ **/
 #define MAX_USER_RT_PRIO	100
 #define MAX_RT_PRIO		MAX_USER_RT_PRIO
 

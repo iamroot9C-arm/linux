@@ -1964,6 +1964,9 @@ __call_rcu(struct rcu_head *head, void (*func)(struct rcu_head *rcu),
 /*
  * Queue an RCU-sched callback for invocation after a grace period.
  */
+/** 20140426    
+ * 추후 분석???
+ **/
 void call_rcu_sched(struct rcu_head *head, void (*func)(struct rcu_head *rcu))
 {
 	__call_rcu(head, func, &rcu_sched_state, 0);

@@ -31,6 +31,10 @@
 #endif /* CONFIG_SMP */
 #endif
 
+/** 20140426    
+ * ".data..cacheline_aligned" section이 저장된다.
+ * 이 섹션의 데이터는 SMP_CACHE_BYTES (1<<6)으로 저장된다.
+ **/
 #ifndef __cacheline_aligned
 #define __cacheline_aligned					\
   __attribute__((__aligned__(SMP_CACHE_BYTES),			\
@@ -39,6 +43,8 @@
 
 #ifndef __cacheline_aligned_in_smp
 #ifdef CONFIG_SMP
+/** 20140426    
+ **/
 #define __cacheline_aligned_in_smp __cacheline_aligned
 #else
 #define __cacheline_aligned_in_smp

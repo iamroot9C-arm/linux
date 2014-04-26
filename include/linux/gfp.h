@@ -107,6 +107,12 @@ struct vm_area_struct;
 #define __GFP_BITS_MASK ((__force gfp_t)((1 << __GFP_BITS_SHIFT) - 1))
 
 /* This equals 0, but use constants in case they ever change */
+/** 20140426    
+ * __GFP_HIGH : The kernel is allowed to access the pool of reserved page frames.
+ * GFP_NOWAIT : GFP_ATOMIC이며, __GFP_HIGH를 사용하지는 않는다.
+ *				Like GFP_ATOMIC, except that the call will not fallback on emer- gency memory pools. This increases the liklihood of the memory
+ * allocation failing.
+ **/
 #define GFP_NOWAIT	(GFP_ATOMIC & ~__GFP_HIGH)
 /* GFP_ATOMIC means both !wait (__GFP_WAIT not set) and use emergency pool */
 #define GFP_ATOMIC	(__GFP_HIGH)

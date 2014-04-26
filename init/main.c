@@ -463,6 +463,9 @@ void __init parse_early_param(void)
  *	Activate the first processor.
  */
 
+/** 20140426    
+ * 부팅시 사용된 cpu를 cpu mask에 추가한다.
+ **/
 static void __init boot_cpu_init(void)
 {
   /** 20121208

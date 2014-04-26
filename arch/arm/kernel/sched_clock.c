@@ -26,6 +26,15 @@ struct clock_data {
 static void sched_clock_poll(unsigned long wrap_ticks);
 static DEFINE_TIMER(sched_clock_timer, sched_clock_poll, 0, 0);
 
+/** 20140426    
+ * clock data.
+ *
+ * 한 clock tick이 몇 ns인지 환산.
+ * HZ           : CONFIG_HZ에 따라 100.
+ * NSEC_PER_SEC : 10^9
+ *
+ * setup_sched_clock에서 나머지 구조체 설정.
+ **/
 static struct clock_data cd = {
 	.mult	= NSEC_PER_SEC / HZ,
 };
@@ -43,6 +52,7 @@ static u32 notrace jiffy_sched_clock_read(void)
 
 /** 20130518    
  * read_sched_clock 함수 포인터 초기화
+ * setup_sched_clock로 지정한 함수 (versatile_read_sched_clock)가 등록.
  **/
 static u32 __read_mostly (*read_sched_clock)(void) = jiffy_sched_clock_read;
 
@@ -51,6 +61,9 @@ static inline u64 cyc_to_ns(u64 cyc, u32 mult, u32 shift)
 	return (cyc * mult) >> shift;
 }
 
+/** 20140426    
+ * cyc 값을 setup_sched_clock 에서 계산한 값을 바탕으로 변환 ns로 리턴
+ **/
 static unsigned long long cyc_to_sched_clock(u32 cyc, u32 mask)
 {
 	u64 epoch_ns;
@@ -64,12 +77,18 @@ static unsigned long long cyc_to_sched_clock(u32 cyc, u32 mask)
 	 * the middle of an update, and we should repeat the load.
 	 */
 	do {
+		/** 20140426    
+		 * clock_data로부터 설정된 epoch_cyc, epoch_ns 값을 읽어온다.
+		 **/
 		epoch_cyc = cd.epoch_cyc;
 		smp_rmb();
 		epoch_ns = cd.epoch_ns;
 		smp_rmb();
 	} while (epoch_cyc != cd.epoch_cyc_copy);
 
+	/** 20140426    
+	 * epoch_ns + cyc값을 ns으로 변환한 값을 더해 sched clock 값을 리턴
+	 **/
 	return epoch_ns + cyc_to_ns((cyc - epoch_cyc) & mask, cd.mult, cd.shift);
 }
 
@@ -227,8 +246,15 @@ void __init setup_sched_clock(u32 (*read)(void), int bits, unsigned long rate)
 	pr_debug("Registered %pF as sched_clock source\n", read);
 }
 
+/** 20140426    
+ * sched clock 레지스터를 읽어 ns 단위의 값으로 리턴
+ **/
 unsigned long long notrace sched_clock(void)
 {
+	/** 20140426    
+	 * scheduling clock 값을 읽어온다.
+	 * read_sched_clock는 machine에 따라 정의된다.
+	 **/
 	u32 cyc = read_sched_clock();
 	return cyc_to_sched_clock(cyc, sched_clock_mask);
 }

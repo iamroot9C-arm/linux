@@ -14,6 +14,9 @@
  * For the hotplug case we keep the task structs around and reuse
  * them.
  */
+/** 20140426    
+ * idle_threads는 static per cpu 변수.
+ **/
 static DEFINE_PER_CPU(struct task_struct *, idle_threads);
 
 struct task_struct * __cpuinit idle_thread_get(unsigned int cpu)
@@ -26,8 +29,14 @@ struct task_struct * __cpuinit idle_thread_get(unsigned int cpu)
 	return tsk;
 }
 
+/** 20140426    
+ * boot cpu의 idle_threads를 current task (init_task)로 지정한다.
+ **/
 void __init idle_thread_set_boot_cpu(void)
 {
+	/** 20140426    
+	 * 현재 task가 실행 중인 cpu의 idle_threads를 current로 지정한다.
+	 **/
 	per_cpu(idle_threads, smp_processor_id()) = current;
 }
 

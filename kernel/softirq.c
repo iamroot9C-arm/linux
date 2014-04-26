@@ -52,6 +52,10 @@ irq_cpustat_t irq_stat[NR_CPUS] ____cacheline_aligned;
 EXPORT_SYMBOL(irq_stat);
 #endif
 
+/** 20140426    
+ * 미리 지정된 SOFTIRQ만큼의 action을 저장하는 vector (일종의 table)
+ * 저장되는 section은 __cacheline_aligned. align은 cacheline 크기 (1<<6)
+ **/
 static struct softirq_action softirq_vec[NR_SOFTIRQS] __cacheline_aligned_in_smp;
 
 DEFINE_PER_CPU(struct task_struct *, ksoftirqd);
@@ -390,6 +394,9 @@ void __raise_softirq_irqoff(unsigned int nr)
 	or_softirq_pending(1UL << nr);
 }
 
+/** 20140426    
+ * nr SOFTIRQ의 action 을 지정.
+ **/
 void open_softirq(int nr, void (*action)(struct softirq_action *))
 {
 	softirq_vec[nr].action = action;

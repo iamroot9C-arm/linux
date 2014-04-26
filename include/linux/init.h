@@ -97,6 +97,9 @@
 #define __devexitconst   __section(.devexit.rodata)
 
 /* Used for HOTPLUG_CPU */
+/** 20140426    
+ * HOTPLUG_CPU인 경우 cpuinit/cpuexit 섹션 지정
+ **/
 #define __cpuinit        __section(.cpuinit.text) __cold notrace
 #define __cpuinitdata    __section(.cpuinit.data)
 #define __cpuinitconst   __section(.cpuinit.rodata)

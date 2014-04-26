@@ -141,12 +141,23 @@ extern struct task_group root_task_group;
 # define INIT_PERF_EVENTS(tsk)
 #endif
 
+/** 20140426    
+ * init task의 이름 : swapper
+ **/
 #define INIT_TASK_COMM "swapper"
 
 /*
  *  INIT_TASK is used to set up the first task table, touch at
  * your own risk!. Base=0, limit=0x1fffff (=2MB)
  */
+/** 20140426    
+ * init_task에 대한 default 설정.
+ *
+ * MAX_PRIO : 100 + 40
+ * init task의 priority는 120이 된다.
+ *
+ * .cpus_allowed는 sched_init에서 do_set_cpus_allowed를 호출하여 변경됨.
+ **/
 #define INIT_TASK(tsk)	\
 {									\
 	.state		= 0,						\
