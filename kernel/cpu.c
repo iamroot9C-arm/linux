@@ -105,11 +105,19 @@ void get_online_cpus(void)
 }
 EXPORT_SYMBOL_GPL(get_online_cpus);
 
+/** 20140510    
+ * cpu_hotplug의 사용을 끝낸다.
+ **/
 void put_online_cpus(void)
 {
 	if (cpu_hotplug.active_writer == current)
 		return;
 	mutex_lock(&cpu_hotplug.lock);
+	/** 20140510    
+	 * cpu_hotplug가 다른 작업에 의해 참조되지 않고 (refcount),
+	 * active_write가 존재한다면 (cpu_hotplug_begin 상태에서 대기)
+	 * 해당 task를 깨운다.
+	 **/
 	if (!--cpu_hotplug.refcount && unlikely(cpu_hotplug.active_writer))
 		wake_up_process(cpu_hotplug.active_writer);
 	mutex_unlock(&cpu_hotplug.lock);

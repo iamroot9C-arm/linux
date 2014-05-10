@@ -61,6 +61,14 @@ struct kmem_cache_cpu {
 
 /** 20140222
  * kmem_cache_node는 partial object에 대해서만 관리한다.
+ *
+ * 20140510
+ * node에서 slab용으로 사용 중인 page 들을 list로 관리한다.
+ *
+ * list_lock  : lock
+ * nr_partial : partial 리스트에 추가된 항목 수
+ *   add_partial, remove_partial로 페이지 추가 제거.
+ * partial    : list head. struct page의 lru를 사용한다.
  **/
 struct kmem_cache_node {
 	spinlock_t list_lock;	/* Protect partial list and nr_partial */
@@ -89,6 +97,9 @@ struct kmem_cache_order_objects {
  * Slab cache management.
  */
 struct kmem_cache {
+	/** 20140510    
+	 * kmem_cache_cpu가 percpu변수로 존재한다.
+	 **/
 	struct kmem_cache_cpu __percpu *cpu_slab;
 	/* Used for retriving partial slabs etc */
 	unsigned long flags;
@@ -111,12 +122,18 @@ struct kmem_cache {
 	gfp_t allocflags;	/* gfp flags to use on each alloc */
 	int refcount;		/* Refcount for slab cache destroy */
 	void (*ctor)(void *);
+	/** 20140510    
+	 * object에 의해 실제 사용되는 공간. 정렬된 크기를 가져야 한다.
+	 **/
 	int inuse;		/* Offset to metadata */
 	int align;		/* Alignment */
+	/** 20140510    
+	 * rcu 등을 위해 slab에 예약된 크기(bytes 단위)
+	 **/
 	int reserved;		/* Reserved bytes at the end of slabs */
 	const char *name;	/* Name (only for display!) */
 	/** 20140322    
-	 * slab_cache로 관리하기 위한 list_head
+	 * slab_caches로 관리하기 위한 list_head
 	 **/
 	struct list_head list;	/* List of slab caches */
 #ifdef CONFIG_SYSFS

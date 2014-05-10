@@ -115,12 +115,13 @@ struct pcpu_chunk {
 	 **/
 	int			free_size;	/* free bytes in the chunk */
 	/** 20140322    
-	 * 최초 free_size가 contig_hint로 들어감
+	 * 최초 free_size가 contig_hint로 들어감.
+	 * 이후 동적으로 할당과 해제를 거치며 사용 가능한 연속적인 여유 공간의 정보가 업데이트 됨.
 	 **/
 	int			contig_hint;	/* max contiguous size hint */
 	void			*base_addr;	/* base address of this chunk */
 	/** 20140322    
-	 * 사용된 map entry를 기록하는 변수
+	 * 사용된 map entry의 수를 기록
 	 **/
 	int			map_used;	/* # of map entries used */
 	/** 20140322    
@@ -231,6 +232,9 @@ static struct pcpu_chunk *pcpu_first_chunk;
  * schunk가 pcpu_reserved_chunk가 됨
  **/
 static struct pcpu_chunk *pcpu_reserved_chunk;
+/** 20140510    
+ * pcpu_setup_first_chunk 에서 static_size와 reserved_size를 더한 크기로 설정됨
+ **/
 static int pcpu_reserved_chunk_limit;
 
 /*
@@ -268,8 +272,14 @@ static struct list_head *pcpu_slot __read_mostly; /* chunk list slots */
 
 /* reclaim work to release fully free chunks, scheduled from free path */
 static void pcpu_reclaim(struct work_struct *work);
+/** 20140510    
+ * workqueue 선언
+ **/
 static DECLARE_WORK(pcpu_reclaim_work, pcpu_reclaim);
 
+/** 20140510    
+ * addr이 pcpu_first_chunk의 unit(=cpu) 크기 안에 포함되는지 검사한다.
+ **/
 static bool pcpu_addr_in_first_chunk(void *addr)
 {
 	void *first_start = pcpu_first_chunk->base_addr;
@@ -277,6 +287,9 @@ static bool pcpu_addr_in_first_chunk(void *addr)
 	return addr >= first_start && addr < first_start + pcpu_unit_size;
 }
 
+/** 20140510    
+ * addr이 pcpu_first_chunk의 reserved 크기 안에 포함되는지 검사한다.
+ **/
 static bool pcpu_addr_in_reserved_chunk(void *addr)
 {
 	void *first_start = pcpu_first_chunk->base_addr;
@@ -334,6 +347,10 @@ static void pcpu_set_page_chunk(struct page *page, struct pcpu_chunk *pcpu)
 }
 
 /* obtain pointer to a chunk from a page struct */
+/** 20140510    
+ * pcpu용으로 사용 중인 struct page의 index에는 chunk 구조체의 주소가 저장된다.
+ * page가 매핑된 chunk (구조체)의 주소를 리턴한다.
+ **/
 static struct pcpu_chunk *pcpu_get_page_chunk(struct page *page)
 {
 	return (struct pcpu_chunk *)page->index;
@@ -854,21 +871,39 @@ static int pcpu_alloc_area(struct pcpu_chunk *chunk, int size, int align)
  * CONTEXT:
  * pcpu_lock.
  */
+/** 20140510    
+ * 해당 chunk에서 특정 offset의 object 공간을 해제한다.
+ * 실제 free가 이루어지지 않으며, map 정보를 갱신하는 것의 주요 동작이다.
+ *
+ * pcpu_lock 구간 내에서 수행되어야 한다.
+ **/
 static void pcpu_free_area(struct pcpu_chunk *chunk, int freeme)
 {
+	/** 20140510    
+	 * chunk의 slot index를 구한다.
+	 **/
 	int oslot = pcpu_chunk_slot(chunk);
 	int i, off;
 
+	/** 20140510    
+	 * chunk의 map을 보고 free할 pcpu 변수의 offset과 일치하는 entry를 찾는다.
+	 **/
 	for (i = 0, off = 0; i < chunk->map_used; off += abs(chunk->map[i++]))
 		if (off == freeme)
 			break;
 	BUG_ON(off != freeme);
 	BUG_ON(chunk->map[i] > 0);
 
+	/** 20140510    
+	 * 부호를 뒤집어 사용 중인 공간을 free로 표시하고 여유공간의 크기를 늘린다.
+	 **/
 	chunk->map[i] = -chunk->map[i];
 	chunk->free_size += chunk->map[i];
 
 	/* merge with previous? */
+	/** 20140510    
+	 * 이전 map entry가 여유공간이라면 merge 한다.
+	 **/
 	if (i > 0 && chunk->map[i - 1] >= 0) {
 		chunk->map[i - 1] += chunk->map[i];
 		chunk->map_used--;
@@ -877,6 +912,9 @@ static void pcpu_free_area(struct pcpu_chunk *chunk, int freeme)
 		i--;
 	}
 	/* merge with next? */
+	/** 20140510    
+	 * 다음 map entry가 여유공간이라면 merge 한다.
+	 **/
 	if (i + 1 < chunk->map_used && chunk->map[i + 1] >= 0) {
 		chunk->map[i] += chunk->map[i + 1];
 		chunk->map_used--;
@@ -884,12 +922,18 @@ static void pcpu_free_area(struct pcpu_chunk *chunk, int freeme)
 			(chunk->map_used - (i + 1)) * sizeof(chunk->map[0]));
 	}
 
+	/** 20140510    
+	 * merge 후 contig_hint를 갱신한다.
+	 **/
 	chunk->contig_hint = max(chunk->map[i], chunk->contig_hint);
+	/** 20140510    
+	 * 크기를 재계산 하여 적합한 slot으로 재배치한다.
+	 **/
 	pcpu_chunk_relocate(chunk, oslot);
 }
 
 /** 20140322    
- * chunk를 받아와 struct pcpu_chunk 자료구조 초기화
+ * chunk 구조체를 할당 받고 자료구조 초기화.
  *
  * size의 크기에 따라 kzalloc / vzalloc이 다르게 호출되지만,
  * size로 보아 pcpu_chunk와 map은 slub으로부터 할당될 것이다
@@ -981,11 +1025,22 @@ static int __init pcpu_verify_alloc_info(const struct pcpu_alloc_info *ai);
  * RETURNS:
  * The address of the found chunk.
  */
+/** 20140510    
+ * addr가 속한 chunk 구조체의 주소를 리턴한다.
+ **/
 static struct pcpu_chunk *pcpu_chunk_addr_search(void *addr)
 {
 	/* is it in the first chunk? */
+	/** 20140510    
+	 * addr가 first_chunk에 포함된다면
+	 **/
 	if (pcpu_addr_in_first_chunk(addr)) {
 		/* is it in the reserved area? */
+		/** 20140510    
+		 * addr가 first_chunk의 reserved 영역 안에 포함된다면
+		 *   reserved_chunk를 리턴한다.
+		 * reserved chunk에 포함되지는 않는다면 first_chunk를 리턴한다.
+		 **/
 		if (pcpu_addr_in_reserved_chunk(addr))
 			return pcpu_reserved_chunk;
 		return pcpu_first_chunk;
@@ -998,6 +1053,12 @@ static struct pcpu_chunk *pcpu_chunk_addr_search(void *addr)
 	 * space.  Note that any possible cpu id can be used here, so
 	 * there's no need to worry about preemption or cpu hotplug.
 	 */
+	/** 20140510    
+	 * booting시에 할당되는 first_chunk가 아니라면 동적으로 생성된 chunk이다.
+	 *
+	 * task가 실행 중인 cpu를 index로 unit offset을 찾아 addr에 더한다.
+	 * addr로 물리 page 주소를 찾아, 해당 page를 사용하는 chunk 구조체의 주소를 리턴한다.
+	 **/
 	addr += pcpu_unit_offsets[raw_smp_processor_id()];
 	return pcpu_get_page_chunk(pcpu_addr_to_page(addr));
 }
@@ -1276,6 +1337,9 @@ void __percpu *__alloc_reserved_percpu(size_t size, size_t align)
  * CONTEXT:
  * workqueue context.
  */
+/** 20140510    
+ * 추후 분석???
+ **/
 static void pcpu_reclaim(struct work_struct *work)
 {
 	LIST_HEAD(todo);
@@ -1314,6 +1378,9 @@ static void pcpu_reclaim(struct work_struct *work)
  * CONTEXT:
  * Can be called from atomic context.
  */
+/** 20140510    
+ * ptr가 가리키는 percpu 변수를, 변수가 속한 chunk에서 해제한다.
+ **/
 void free_percpu(void __percpu *ptr)
 {
 	void *addr;
@@ -1324,21 +1391,46 @@ void free_percpu(void __percpu *ptr)
 	if (!ptr)
 		return;
 
+	/** 20140510    
+	 * kmemleak을 사용할 경우 percpu 포인터에 대한 free 동작을 한다.
+	 **/
 	kmemleak_free_percpu(ptr);
 
+	/** 20140510    
+	 * percpu ptr을 addr로 변환
+	 **/
 	addr = __pcpu_ptr_to_addr(ptr);
 
+	/** 20140510    
+	 * atomic한 context를 만든다.
+	 **/
 	spin_lock_irqsave(&pcpu_lock, flags);
 
+	/** 20140510    
+	 * addr가 속한 chunk 구조체의 주소를 찾아온다.
+	 **/
 	chunk = pcpu_chunk_addr_search(addr);
+	/** 20140510    
+	 * 해당 chunk base 주소에서의 offset을 구하고, 
+	 * 해당 offset을 free시킨다.
+	 **/
 	off = addr - chunk->base_addr;
 
 	pcpu_free_area(chunk, off);
 
 	/* if there are more than one fully free chunks, wake up grim reaper */
+	/** 20140510    
+	 * 메모리 해제 후 free_size가 pcpu_unit_size (초기값) 만큼 되었다면
+	 * reaper를 workqueue에 넣어 대기시킨다.
+	 **/
 	if (chunk->free_size == pcpu_unit_size) {
 		struct pcpu_chunk *pos;
 
+		/** 20140510    
+		 * pcpu_slot는 list_head 들의 list.
+		 * 마지막 slot list의 chunk들을 순회하며 chunk가 아닌 경우 (???)
+		 * workqueue에 pcpu_reclaim_work 추가한다.
+		 **/
 		list_for_each_entry(pos, &pcpu_slot[pcpu_nr_slots - 1], list)
 			if (pos != chunk) {
 				schedule_work(&pcpu_reclaim_work);

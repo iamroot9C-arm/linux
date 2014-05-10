@@ -12,6 +12,11 @@
  * have the problem that the structures used for managing slab caches are
  * allocated from slab caches themselves.
  */
+/** 20140510    
+ * DOWN    : 초기 상태
+ * PARTIAL : kmem_cache_init 과정 중
+ * FULL    : initcall에 의해 slab_sysfs_init이 호출되어 나머지 초기화를 수행한 뒤
+ **/
 enum slab_state {
 	DOWN,			/* No slab functionality yet */
 	PARTIAL,		/* SLUB: kmem_cache_node available */

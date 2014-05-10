@@ -168,6 +168,12 @@ static inline int up_smp_call_function(smp_call_func_t func, void *info)
  * Preemption is disabled here to make sure the cond_func is called under the
  * same condtions in UP and SMP.
  */
+/** 20140510    
+ * 선점 불가 상태에서 cond_func을 만족할 경우
+ * atomic context (SMP인 경우 포함)에서 func을 실행한다.
+ *
+ * 0번 cpu가 조건을 만족할 경우 func 구현에 따라 각 cpu마다 동작을 수행한다.
+ **/
 #define on_each_cpu_cond(cond_func, func, info, wait, gfp_flags)\
 	do {							\
 		void *__info = (info);				\
@@ -217,7 +223,8 @@ static inline void kick_all_cpus_sync(void) {  }
 # define smp_processor_id() debug_smp_processor_id()
 #else
 /** 20130713    
- * CONFIG_DEBUG_PREEMPT 정의되어 있지 않음
+ * CONFIG_DEBUG_PREEMPT 정의되어 있지 않아 다음 매크로가 호출된다.
+ * 현재 task의 thread_info로부터 cpu번호를 리턴한다.
  **/
 # define smp_processor_id() raw_smp_processor_id()
 #endif

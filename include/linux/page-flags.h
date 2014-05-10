@@ -651,6 +651,9 @@ static inline void SetPageSlabPfmemalloc(struct page *page)
 	SetPageActive(page);
 }
 
+/** 20140510    
+ * page의 flags 중 active 속성을 제거한다.
+ **/
 static inline void __ClearPageSlabPfmemalloc(struct page *page)
 {
 	VM_BUG_ON(!PageSlab(page));

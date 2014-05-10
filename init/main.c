@@ -696,12 +696,24 @@ asmlinkage void __init start_kernel(void)
 	 * timer interrupt). Full topology setup happens at smp_init()
 	 * time - but meanwhile we still have a functioning scheduler.
 	 */
+	/** 20140510    
+	 * scheduling 관련 자료구조 초기화.
+	 *   - runqueue
+	 *   - sched class 지정
+	 **/
 	sched_init();
 	/*
 	 * Disable preemption - early bootup scheduling is extremely
 	 * fragile until we cpu_idle() for the first time.
 	 */
+	/** 20140510    
+	 * 명시적으로 선점 불가 상태로 만든다.
+	 **/
 	preempt_disable();
+	/** 20140510    
+	 * cpsr에서 irq flags를 검사해 irq가 발생 가능하다면
+	 * 경고 메시지를 출력하고 irq disable 상태로 만든다.
+	 **/
 	if (!irqs_disabled()) {
 		printk(KERN_WARNING "start_kernel(): bug: interrupts were "
 				"enabled *very* early, fixing it\n");

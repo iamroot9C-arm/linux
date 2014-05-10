@@ -17,6 +17,9 @@
  * @s: the string to duplicate
  * @gfp: the GFP mask used in the kmalloc() call when allocating memory
  */
+/** 20140510    
+ * 문자열 s를 받아 동적 메모리를 할당 받아 복사한 뒤 할당된 주소를 리턴한다.
+ **/
 char *kstrdup(const char *s, gfp_t gfp)
 {
 	size_t len;
@@ -25,7 +28,14 @@ char *kstrdup(const char *s, gfp_t gfp)
 	if (!s)
 		return NULL;
 
+	/** 20140510    
+	 * 기존 문자열의 길이로 필요한 메모리 크기를 계산한다.
+	 **/
 	len = strlen(s) + 1;
+	/** 20140510    
+	 * 생성해둔 kmem_cache로부터 object를 할당 받는다.
+	 * 성공적으로 메모리를 할당 받았다면 기존 문자열을 복사한다.
+	 **/
 	buf = kmalloc_track_caller(len, gfp);
 	if (buf)
 		memcpy(buf, s, len);

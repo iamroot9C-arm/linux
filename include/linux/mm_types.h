@@ -146,7 +146,7 @@ struct page {
 	/* Third double word block */
 	union {
 		/** 20140322    
-		 * slub에서 사용할 때 partial slub에 대한 list
+		 * slub에서 사용할 때 partial slab에 대한 list
 		 **/
 		struct list_head lru;	/* Pageout list, eg. active_list
 					 * protected by zone->lru_lock !

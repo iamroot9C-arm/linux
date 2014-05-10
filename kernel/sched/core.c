@@ -7928,7 +7928,11 @@ struct task_group root_task_group;
 DECLARE_PER_CPU(cpumask_var_t, load_balance_tmpmask);
 
 /** 20140426    
- * 20140510 여기 주석부터...
+ * scheduling 관련 자료구조 초기화. 
+ *
+ * - percpu 변수인 rq의 자료구조 초기화
+ * - sched_class의 지정 (cfs)
+ *   init 함수 호출
  **/
 void __init sched_init(void)
 {

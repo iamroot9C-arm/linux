@@ -87,6 +87,10 @@
  * ZERO_SIZE_PTR can be passed to kfree though in the same way that NULL can.
  * Both make kfree a no-op.
  */
+/** 20140510    
+ * ZERO_SIZE_PTR를 상수값 16을 사용해 zero pointer 임을 나타낸다.
+ * 만약 NULL pointer exception 발생시 이 상수값임을 확인하면 잘못된 포인터 접근을 확인할 수 있다.
+ **/
 #define ZERO_SIZE_PTR ((void *)16)
 
 #define ZERO_OR_NULL_PTR(x) ((unsigned long)(x) <= \
@@ -326,6 +330,9 @@ static inline void *kmem_cache_alloc_node(struct kmem_cache *cachep,
 #if defined(CONFIG_DEBUG_SLAB) || defined(CONFIG_SLUB) || \
 	(defined(CONFIG_SLAB) && defined(CONFIG_TRACING))
 extern void *__kmalloc_track_caller(size_t, gfp_t, unsigned long);
+/** 20140510    
+ * kmalloc 동작에 caller를 추적하는 trace를 과정을 추가한다.
+ **/
 #define kmalloc_track_caller(size, flags) \
 	__kmalloc_track_caller(size, flags, _RET_IP_)
 #else
