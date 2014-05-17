@@ -144,6 +144,9 @@ static inline void atomic_add(int i, atomic_t *v)
 	: "cc");
 }
 
+/** 20140517    
+ * ldrex/strex 로 atomic 하게 증가.
+ **/
 static inline int atomic_add_return(int i, atomic_t *v)
 {
 	unsigned long tmp;

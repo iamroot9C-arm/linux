@@ -151,6 +151,9 @@ static inline long atomic_long_read(atomic_long_t *l)
 	return (long)atomic_read(v);
 }
 
+/** 20140517    
+ * long이 32비트인 경우, long 변수에 i값을 atomic하게 저장.
+ **/
 static inline void atomic_long_set(atomic_long_t *l, long i)
 {
 	atomic_t *v = (atomic_t *)l;
@@ -218,6 +221,9 @@ static inline int atomic_long_add_negative(long i, atomic_long_t *l)
 	return atomic_add_negative(i, v);
 }
 
+/** 20140517    
+ * long 변수에 l만큼 더해 리턴하는 함수
+ **/
 static inline long atomic_long_add_return(long i, atomic_long_t *l)
 {
 	atomic_t *v = (atomic_t *)l;
@@ -257,6 +263,9 @@ static inline long atomic_long_add_unless(atomic_long_t *l, long a, long u)
 
 #define atomic_long_cmpxchg(l, old, new) \
 	(atomic_cmpxchg((atomic_t *)(l), (old), (new)))
+/** 20140517    
+ * v값을 new로 atomic하게 설정하고, 이전 값을 리턴.
+ **/
 #define atomic_long_xchg(v, new) \
 	(atomic_xchg((atomic_t *)(v), (new)))
 

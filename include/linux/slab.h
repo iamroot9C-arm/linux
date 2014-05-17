@@ -370,6 +370,9 @@ extern void *__kmalloc_node_track_caller(size_t, gfp_t, int, unsigned long);
 /*
  * Shortcuts
  */
+/** 20140517    
+ * kmem_cache로부터 0으로 초기화된 object를 할당 받는다.
+ **/
 static inline void *kmem_cache_zalloc(struct kmem_cache *k, gfp_t flags)
 {
 	return kmem_cache_alloc(k, flags | __GFP_ZERO);

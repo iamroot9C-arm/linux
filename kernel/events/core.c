@@ -638,6 +638,9 @@ void perf_pmu_enable(struct pmu *pmu)
 		pmu->pmu_enable(pmu);
 }
 
+/** 20140517    
+ * struct list_head의 percpu 변수 정적 선언
+ **/
 static DEFINE_PER_CPU(struct list_head, rotation_list);
 
 /*
@@ -4734,6 +4737,9 @@ int perf_event_overflow(struct perf_event *event,
  * Generic software event infrastructure
  */
 
+/** 20140517    
+ * sw event hash table 자료구조
+ **/
 struct swevent_htable {
 	struct swevent_hlist		*swevent_hlist;
 	struct mutex			hlist_mutex;
@@ -4743,6 +4749,9 @@ struct swevent_htable {
 	int				recursion[PERF_NR_CONTEXTS];
 };
 
+/** 20140517    
+ * struct swevent_htable의 percpu 변수 정적 선언.
+ **/
 static DEFINE_PER_CPU(struct swevent_htable, swevent_htable);
 
 /*
@@ -5660,6 +5669,9 @@ static void free_pmu_context(struct pmu *pmu)
 out:
 	mutex_unlock(&pmus_lock);
 }
+/** 20140517    
+ * pmu 를 위한 전역 idr 핸들
+ **/
 static struct idr pmu_idr;
 
 static ssize_t
@@ -5724,16 +5736,30 @@ int perf_pmu_register(struct pmu *pmu, char *name, int type)
 
 	mutex_lock(&pmus_lock);
 	ret = -ENOMEM;
+	/** 20140517    
+	 * cpu마다 disable_count를 저장할 변수 할당
+	 **/
 	pmu->pmu_disable_count = alloc_percpu(int);
 	if (!pmu->pmu_disable_count)
 		goto unlock;
 
 	pmu->type = -1;
+	/** 20140517    
+	 * name이 NULL로 주어진 경우 pmu의type을 기록하지 않는다.
+	 *
+	 * perf_cpu_clock, perf_task_clock의 경우 NULL로 전달됨.
+	 **/
 	if (!name)
 		goto skip_type;
 	pmu->name = name;
 
+	/** 20140517    
+	 * name이 존재하지만 type이 음수인 경우
+	 **/
 	if (type < 0) {
+		/** 20140517    
+		 * 20140524 reclaim 분석 후 이어서 분석 예정.
+		 **/
 		int err = idr_pre_get(&pmu_idr, GFP_KERNEL);
 		if (!err)
 			goto free_pdc;
@@ -7014,6 +7040,9 @@ int perf_event_init_task(struct task_struct *child)
 	return 0;
 }
 
+/** 20140517    
+ * per-cpu로 관리되는 sw event hash table에 대한 초기화
+ **/
 static void __init perf_event_init_all_cpus(void)
 {
 	struct swevent_htable *swhash;
@@ -7143,9 +7172,18 @@ void __init perf_event_init(void)
 {
 	int ret;
 
+	/** 20140517    
+	 * idr 핸들 초기화
+	 **/
 	idr_init(&pmu_idr);
 
+	/** 20140517    
+	 * percpu swevent_htable 초기화
+	 **/
 	perf_event_init_all_cpus();
+	/** 20140517    
+	 * srcu 초기화
+	 **/
 	init_srcu_struct(&pmus_srcu);
 	perf_pmu_register(&perf_swevent, "software", PERF_TYPE_SOFTWARE);
 	perf_pmu_register(&perf_cpu_clock, NULL, -1);

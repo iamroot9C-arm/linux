@@ -1548,6 +1548,9 @@ struct task_struct {
 #endif
 
 /* VM state */
+	/** 20140517    
+	 * __perform_reclaim 등 reclaim 한 page의 수를 기록
+	 **/
 	struct reclaim_state *reclaim_state;
 
 	struct backing_dev_info *backing_dev_info;

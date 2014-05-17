@@ -234,6 +234,9 @@ EXPORT_SYMBOL(nr_node_ids);
 EXPORT_SYMBOL(nr_online_nodes);
 #endif
 
+/** 20140517    
+ * build_all_zonelists 에서 설정
+ **/
 int page_group_by_mobility_disabled __read_mostly;
 
 /*
@@ -2183,6 +2186,7 @@ out:
  */
 /** 20140104    
  * list에 등록된 page들을 순회하며 cold 여부에 따라 page를 free한다.
+ * 실제 buddy로 이관은 bulk 단위로 이루어진다.
  **/
 void free_hot_cold_page_list(struct list_head *list, int cold)
 {
@@ -3236,6 +3240,9 @@ __alloc_pages_direct_compact(gfp_t gfp_mask, unsigned int order,
 	return NULL;
 }
 #else
+/** 20140517    
+ * CONFIG_COMPACTION이 정의되어 있지 않아 NULL
+ **/
 static inline struct page *
 __alloc_pages_direct_compact(gfp_t gfp_mask, unsigned int order,
 	struct zonelist *zonelist, enum zone_type high_zoneidx,
@@ -3256,6 +3263,9 @@ __perform_reclaim(gfp_t gfp_mask, unsigned int order, struct zonelist *zonelist,
 	struct reclaim_state reclaim_state;
 	int progress;
 
+	/** 20140517    
+	 * 스케쥴링 포인트 제공
+	 **/
 	cond_resched();
 
 	/* We now go into synchronous reclaim */
@@ -3271,8 +3281,8 @@ __perform_reclaim(gfp_t gfp_mask, unsigned int order, struct zonelist *zonelist,
 	**/
 	lockdep_set_current_reclaim_state(gfp_mask);
 	/** 20131207
-	*current task의 reclaim_state 설정(초기화???)
-	***/
+	 *current task의 reclaim_state 설정(초기화)
+	 **/
 	reclaim_state.reclaimed_slab = 0;
 	current->reclaim_state = &reclaim_state;
 
@@ -3558,6 +3568,7 @@ restart:
 	 */
 	/** 20131123    
 	 * alloc_flags에 ALLOC_CPUSET이 존재하지 않고 (CPUSET 검사 확인을 하지 않고)
+	 *   -> CPUSET을 참고해야 하므로 first_zones_zonelist를 바로 호출하지 않음
 	 * nodemask가 없다면,
 	 *   first_zones_zonelist으로 high_zoneidx보다 작은 첫번째 zone을
 	 *   preferred_zone을 가져온다.
@@ -3654,14 +3665,15 @@ rebalance:
 	 * 현재 task의 flags가 PF_MEMALLOC이 설정되어 있는 경우 바로 nopage로 이동.
 	 * PF_MEMALLOC의 의미는???
 	 *   kswapd, __perform_reclaim, shrink_all_memory 인 경우 속성이 주어진다.
+	 *   현재 task가 위 세 가지처럼 메모리 할당을 처리하기 위해 메모리를 요청한 경우, 더 이상 반복적인 과정을 수행하지 않도록 실패로 처리.
 	 **/
 	if (current->flags & PF_MEMALLOC)
 		goto nopage;
 
 	/* Avoid allocations with no watermarks from looping endlessly */
 	/** 20131130    
-	 * thread_info 의 flag(low level flag)  TIF_MEMDIE이고  gfp_mask가
-	 * __GFP_NOFAIL이 없는 경우 nopage로 goto (이때는 page가 NULL일듯..)
+	 * thread_info 의 flag(low level flag)  TIF_MEMDIE이고 (OOM Killer에 의해 제거되는 task),
+	 * '실패 없는 할당' 요청이 아닌 경우 nopage.
 	 **/
 	if (test_thread_flag(TIF_MEMDIE) && !(gfp_mask & __GFP_NOFAIL))
 		goto nopage;
@@ -3682,6 +3694,9 @@ rebalance:
 					migratetype, sync_migration,
 					&deferred_compaction,
 					&did_some_progress);
+	/** 20140517    
+	 * compaction에서 page 할당이 성공한 경우 got_pg.
+	 **/
 	if (page)
 		goto got_pg;
 	sync_migration = true;
@@ -3853,7 +3868,7 @@ retry_cpuset:
 
 	/* First allocation attempt */
 	/** 20131123    
-	 * freelist로부터 page를 받아온다.
+	 * 선호하는 zone이 채우진 경우 freelist로부터 page를 받아온다.
 	 *   gfp_mask에 __GFP_HARDWALL로 추가,
 	 *   alloc_flags에 ALLOC_WMARK_LOW | ALLOC_CPUSET 지정
 	 **/
@@ -5002,6 +5017,7 @@ void __ref build_all_zonelists(pg_data_t *pgdat, struct zone *zone)
 	 * disabled and enable it later
 	 */
 	/** 20130727    
+	 * 유효한 최대 page 수가
 	 * pageblock 단위의 migrate을 위해 필요한 갯수보다 작다면 
 	 * page_group_by_mobility_disabled을 1로 설정,
 	 * 그렇지 않다면 0으로 설정.

@@ -36,6 +36,9 @@
 #include <linux/idr.h>
 #include <linux/spinlock.h>
 
+/** 20140517    
+ * idr_init_cache 에서 slab cache 생성
+ **/
 static struct kmem_cache *idr_layer_cache;
 static DEFINE_SPINLOCK(simple_ida_lock);
 
@@ -697,6 +700,9 @@ void __init idr_init_cache(void)
  * This function is use to set up the handle (@idp) that you will pass
  * to the rest of the functions.
  */
+/** 20140517    
+ * idr handle을 초기화 하는 함수
+ **/
 void idr_init(struct idr *idp)
 {
 	memset(idp, 0, sizeof(struct idr));

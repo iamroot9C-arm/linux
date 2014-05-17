@@ -95,6 +95,9 @@ static inline void rcu_batch_move(struct rcu_batch *to, struct rcu_batch *from)
 /* single-thread state-machine */
 static void process_srcu(struct work_struct *work);
 
+/** 20140517    
+ * srcu_struct 자료구조 초기화
+ **/
 static int init_srcu_struct_fields(struct srcu_struct *sp)
 {
 	sp->completed = 0;
@@ -131,6 +134,9 @@ EXPORT_SYMBOL_GPL(__init_srcu_struct);
  * to any other function.  Each srcu_struct represents a separate domain
  * of SRCU protection.
  */
+/** 20140517    
+ * srcu_struct 초기화 
+ **/
 int init_srcu_struct(struct srcu_struct *sp)
 {
 	return init_srcu_struct_fields(sp);

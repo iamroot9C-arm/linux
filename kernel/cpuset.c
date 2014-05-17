@@ -1384,8 +1384,6 @@ static void fmeter_update(struct fmeter *fmp)
  * 즉, event 가 발생시 불려지는 함수.
  * fmeter 구조체에 값을 update해준다.
  * event는 callback 구조 아니였나??? 추후 분석 필요???
- *
- * 
  ***/
 static void fmeter_markevent(struct fmeter *fmp)
 {
@@ -2626,8 +2624,8 @@ int cpuset_memory_pressure_enabled __read_mostly;
  * (direct) page reclaim by any task attached to the cpuset.
  **/
 /** 20131207
- * cpuset의 memory pressure의 측정치을 계산후 업데이트
- * //sys/fs/cgroup/memory_pressure에서 측정 값을 확인 가능.
+ * cpuset의 memory pressure의 측정치를 계산 후 업데이트
+ * /sys/fs/cgroup/memory_pressure에서 측정 값을 확인 가능.
  ***/
 void __cpuset_memory_pressure_bump(void)
 {

@@ -46,7 +46,6 @@ static inline int cpuset_node_allowed_softwall(int node, gfp_t gfp_mask)
 }
 
 /** 20131116    
- *
  * cpuset 참고
  * https://access.redhat.com/site/documentation/ko-KR/Red_Hat_Enterprise_Linux/6/html/Resource_Management_Guide/sec-cpuset.html
  **/

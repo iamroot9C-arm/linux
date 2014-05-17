@@ -18,6 +18,8 @@
 #include <linux/rcupdate.h>
 
 #if BITS_PER_LONG == 32
+/** 20140517    
+ **/
 # define IDR_BITS 5
 # define IDR_FULL 0xfffffffful
 /* We can only use two of the bits in the top level because there is
@@ -38,11 +40,19 @@
 #define IDR_SIZE (1 << IDR_BITS)
 #define IDR_MASK ((1 << IDR_BITS)-1)
 
+/** 20140517    
+ * MAX_ID_SHIFT : 31
+ * MAX_ID_BIT   : 1U << 31
+ * MAX_ID_MASK  : (1U << 31 - 1)
+ **/
 #define MAX_ID_SHIFT (sizeof(int)*8 - 1)
 #define MAX_ID_BIT (1U << MAX_ID_SHIFT)
 #define MAX_ID_MASK (MAX_ID_BIT - 1)
 
 /* Leave the possibility of an incomplete final layer */
+/** 20140517    
+ * MAX_LEVEL :  31 + 5 - 1 / 5 = 7
+ **/
 #define MAX_LEVEL (MAX_ID_SHIFT + IDR_BITS - 1) / IDR_BITS
 
 /* Number of id_layer structs to leave in free list */
@@ -56,6 +66,9 @@ struct idr_layer {
 	struct rcu_head		 rcu_head;
 };
 
+/** 20140517    
+ * idr_initd으로 초기화
+ **/
 struct idr {
 	struct idr_layer __rcu *top;
 	struct idr_layer *id_free;

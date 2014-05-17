@@ -1078,6 +1078,9 @@ int bdi_writeback_thread(void *data)
  * Start writeback of `nr_pages' pages.  If `nr_pages' is zero, write back
  * the whole world.
  */
+/** 20140517    
+ * 추후 분석
+ **/
 void wakeup_flusher_threads(long nr_pages, enum wb_reason reason)
 {
 	struct backing_dev_info *bdi;

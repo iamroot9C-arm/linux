@@ -68,6 +68,9 @@ struct page {
 			 * slub/slob으로 사용될 경우 new_slab에서 첫번째 free object를 지정
 			 **/
 			void *freelist;		/* slub/slob first free object */
+			/** 20140517    
+			 * ALLOC_NO_WATERMARKS가 설정되어 __alloc_pages_high_priority()로 받은 경우 설정
+			 **/
 			bool pfmemalloc;	/* If set by the page allocator,
 						 * ALLOC_NO_WATERMARKS was set
 						 * and the low watermark was not

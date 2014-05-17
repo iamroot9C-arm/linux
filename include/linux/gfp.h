@@ -168,10 +168,19 @@ struct vm_area_struct;
 #define GFP_DMA32	__GFP_DMA32
 
 /* Convert GFP flags to their corresponding migrate type */
+/** 20140517    
+ * gfp_flags로부터 migrate type 추출.
+ * 리턴값의 1번비트 __GFP_MOVABLE 여부
+ *          0번비트 __GFP_RECLAIMABLE 여부
+ **/
 static inline int allocflags_to_migratetype(gfp_t gfp_flags)
 {
 	WARN_ON((gfp_flags & GFP_MOVABLE_MASK) == GFP_MOVABLE_MASK);
 
+	/** 20140517    
+	 * 전역변수 page_group_by_mobility_disabled에서 page group 단위
+	 * 이동이 제한된 경우 migrate 불가 리턴.
+	 **/
 	if (unlikely(page_group_by_mobility_disabled))
 		return MIGRATE_UNMOVABLE;
 

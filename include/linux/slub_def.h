@@ -295,6 +295,9 @@ void *__kmalloc(size_t size, gfp_t flags);
 static __always_inline void *
 kmalloc_order(size_t size, gfp_t flags, unsigned int order)
 {
+	/** 20140517    
+	 * buddy로부터 1 << order 만큼의 page를 받아온다.
+	 **/
 	void *ret = (void *) __get_free_pages(flags | __GFP_COMP, order);
 	kmemleak_alloc(ret, size, 1, flags);
 	return ret;
@@ -318,6 +321,10 @@ extern void *
 kmem_cache_alloc_trace(struct kmem_cache *s, gfp_t gfpflags, size_t size);
 extern void *kmalloc_order_trace(size_t size, gfp_t flags, unsigned int order);
 #else
+/** 20140517    
+ * tracing을 사용하지 않을 경우 kmem_cache_alloc만 호출.
+ * object를 하나 할당받아 리턴한다.
+ **/
 static __always_inline void *
 kmem_cache_alloc_trace(struct kmem_cache *s, gfp_t gfpflags, size_t size)
 {

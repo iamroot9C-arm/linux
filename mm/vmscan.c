@@ -140,6 +140,9 @@ struct scan_control {
 int vm_swappiness = 60;
 long vm_total_pages;	/* The total number of pages which the VM controls */
 
+/** 20140517    
+ * shrinker_list
+ **/
 static LIST_HEAD(shrinker_list);
 static DECLARE_RWSEM(shrinker_rwsem);
 
@@ -178,8 +181,15 @@ static unsigned long get_lru_size(struct lruvec *lruvec, enum lru_list lru)
 /*
  * Add a shrinker callback to be called from the vm
  */
+/** 20140517    
+ * shrinker를 전역변수 shrinker_list에 등록.
+ **/
 void register_shrinker(struct shrinker *shrinker)
 {
+	/** 20140517    
+	 * shrinker의 nr_in_batch를 0으로 초기화.
+	 * shrinker_list는 전역변수이므로 rw semaphore로 보호된 상태에서 저장.
+	 **/
 	atomic_long_set(&shrinker->nr_in_batch, 0);
 	down_write(&shrinker_rwsem);
 	list_add_tail(&shrinker->list, &shrinker_list);
@@ -198,10 +208,16 @@ void unregister_shrinker(struct shrinker *shrinker)
 }
 EXPORT_SYMBOL(unregister_shrinker);
 
+/** 20140517    
+ * shrinker callback의 shrink 동작 수행.
+ **/
 static inline int do_shrinker_shrink(struct shrinker *shrinker,
 				     struct shrink_control *sc,
 				     unsigned long nr_to_scan)
 {
+	/** 20140517    
+	 * scan할 shrink control에 저장해 shrink 호출.
+	 **/
 	sc->nr_to_scan = nr_to_scan;
 	return (*shrinker->shrink)(shrinker, sc);
 }
@@ -226,6 +242,9 @@ static inline int do_shrinker_shrink(struct shrinker *shrinker,
  *
  * Returns the number of slab objects which we shrunk.
  */
+/** 20140517    
+ * shrinker_list에 등록된 shrinker로 shrink하고, shrink 한 페이지 수를 리턴한다.
+ **/
 unsigned long shrink_slab(struct shrink_control *shrink,
 			  unsigned long nr_pages_scanned,
 			  unsigned long lru_pages)
@@ -242,6 +261,9 @@ unsigned long shrink_slab(struct shrink_control *shrink,
 		goto out;
 	}
 
+	/** 20140517    
+	 * shrinker_list에 등록된 각 shrinker에 대해 아래 동작 수행
+	 **/
 	list_for_each_entry(shrinker, &shrinker_list, list) {
 		unsigned long long delta;
 		long total_scan;
@@ -249,9 +271,18 @@ unsigned long shrink_slab(struct shrink_control *shrink,
 		int shrink_ret = 0;
 		long nr;
 		long new_nr;
+		/** 20140517    
+		 * shrinker가 batch 단위를 갖고 있다면 그것을 사용,
+		 * 그렇지 않다면 default로 SHRINK_BATCH 값을 사용.
+		 **/
 		long batch_size = shrinker->batch ? shrinker->batch
 						  : SHRINK_BATCH;
 
+		/** 20140517    
+		 * shrinker의 shrink 동작 수행. 
+		 * nr_to_scan에 0을 주었으므로 cache size에 대한 query.
+		 *   struct shrinker 선언부의 주석 참고.
+		 **/
 		max_pass = do_shrinker_shrink(shrinker, shrink, 0);
 		if (max_pass <= 0)
 			continue;
@@ -261,8 +292,14 @@ unsigned long shrink_slab(struct shrink_control *shrink,
 		 * and zero it so that other concurrent shrinker invocations
 		 * don't also do this scanning work.
 		 */
+		/** 20140517    
+		 * shrinker의 nr_in_batch를 0으로 설정하고 이전 값을 리턴.
+		 **/
 		nr = atomic_long_xchg(&shrinker->nr_in_batch, 0);
 
+		/** 20140517    
+		 * nr_in_batch에 scan 요구된 수를 기준으로 delta을 계산해 반영시킨다.
+		 **/
 		total_scan = nr;
 		delta = (4 * nr_pages_scanned) / shrinker->seeks;
 		delta *= max_pass;
@@ -287,6 +324,10 @@ unsigned long shrink_slab(struct shrink_control *shrink,
 		 * Hence only allow the shrinker to scan the entire cache when
 		 * a large delta change is calculated directly.
 		 */
+		/** 20140517    
+		 * delta가 max_pass의 1/4보다 작을 경우 
+		 * total_scan을 최대 max_pass의 1/2로 한다.
+		 **/
 		if (delta < max_pass / 4)
 			total_scan = min(total_scan, max_pass / 2);
 
@@ -295,6 +336,9 @@ unsigned long shrink_slab(struct shrink_control *shrink,
 		 * never try to free more than twice the estimate number of
 		 * freeable entries.
 		 */
+		/** 20140517    
+		 * total_scan을 최대 max_pass의 2배로 한다.
+		 **/
 		if (total_scan > max_pass * 2)
 			total_scan = max_pass * 2;
 
@@ -302,16 +346,29 @@ unsigned long shrink_slab(struct shrink_control *shrink,
 					nr_pages_scanned, lru_pages,
 					max_pass, delta, total_scan);
 
+		/** 20140517    
+		 * total_scan을 batch_size 단위로 수행
+		 **/
 		while (total_scan >= batch_size) {
 			int nr_before;
 
+			/** 20140517    
+			 * shrink 전 shrinker의 cache size를 조회.
+			 * shrinker의 shrink 동작 수행 후 cache size를 저장
+			 **/
 			nr_before = do_shrinker_shrink(shrinker, shrink, 0);
 			shrink_ret = do_shrinker_shrink(shrinker, shrink,
 							batch_size);
 			if (shrink_ret == -1)
 				break;
+			/** 20140517    
+			 * shrink한 숫자를 ret에 누적.
+			 **/
 			if (shrink_ret < nr_before)
 				ret += nr_before - shrink_ret;
+			/** 20140517    
+			 * SLABS_SCANNED에 반영
+			 **/
 			count_vm_events(SLABS_SCANNED, batch_size);
 			total_scan -= batch_size;
 
@@ -323,6 +380,12 @@ unsigned long shrink_slab(struct shrink_control *shrink,
 		 * manner that handles concurrent updates. If we exhausted the
 		 * scan, there is no need to do an update.
 		 */
+		/** 20140517    
+		 * total_scan이 batch_size로 나뉘어 떨어지지 않아 나머지가 생긴 경우
+		 *   남은 total_scan에 nr_in_batch를 더해 리턴
+		 * 나머지가 없는 경우
+		 *   nr_in_batch를 리턴
+		 **/
 		if (total_scan > 0)
 			new_nr = atomic_long_add_return(total_scan,
 					&shrinker->nr_in_batch);
@@ -1485,8 +1548,7 @@ static void move_active_pages_to_lru(struct lruvec *lruvec,
 /** 20140111
  * isolate실행하고 isolate된 페이지들 중 evictable하지 않은 page를 putback하고
  * file cache인 페이지이면 l_active리스트로 등록시켜 free한다.
- * file cache가 아니면서 evictable한 page는 l_inactive 리스트로
- * 등록시켜 free한다.
+ * file cache가 아니면서 evictable한 page는 l_inactive 리스트로 등록시켜 free한다.
 **/
 static void shrink_active_list(unsigned long nr_to_scan,
 			       struct lruvec *lruvec,
@@ -1769,11 +1831,12 @@ static unsigned long shrink_list(enum lru_list lru, unsigned long nr_to_scan,
 				 struct lruvec *lruvec, struct scan_control *sc)
 {
 	/** 20140104    
-	 * lru가 active인 경우 shrink_active_list를 호출
+	 * lru가 active인 경우 shrink_active_list를 호출하고 0을 리턴.
 	 **/
 	if (is_active_lru(lru)) {
 		/** 20140104    
 		 * 해당 lru의 type(file, anon)에서 inactive list의 수가 적을 때
+		 * shrink_active_list 호출
 		 **/
 		if (inactive_list_is_low(lruvec, lru))
 			shrink_active_list(nr_to_scan, lruvec, sc, lru);
@@ -1953,6 +2016,9 @@ out:
 		int file = is_file_lru(lru);
 		unsigned long scan;
 
+		/** 20140517    
+		 * lruvec에서 lru에 해당하는 stat값을 리턴한다.
+		 **/
 		scan = get_lru_size(lruvec, lru);
 		if (sc->priority || noswap || !vmscan_swappiness(sc)) {
 			scan >>= sc->priority;
@@ -2078,21 +2144,22 @@ restart:
 	 **/
 	nr_reclaimed = 0;
 	nr_scanned = sc->nr_scanned;
-/** 20131221
- * 특정 lru알고리즘을 통해서 scan할 페이지 수를 얻어온다.
- **/
+	/** 20131221
+	 * 특정 lru알고리즘을 통해서 scan할 페이지 수를 얻어와 nr에 저장한다.
+	 **/
 	get_scan_count(lruvec, sc, nr);
-/** 20131221
- * blk_plug를 초기화하는 함수 
- **/
+	/** 20131221
+	 * blk_plug를 초기화하는 함수 
+	 **/
 	blk_start_plug(&plug);
 	/** 20131221
-	 * active_anon을 제외한 lru리스트들이 존재하는 동안 shrink_list함수를 수행한다
+	 * active_anon을 제외한 lru리스트들이 존재하는 동안
+	 * shrink_list 함수를 수행한다
 	 **/
 	while (nr[LRU_INACTIVE_ANON] || nr[LRU_ACTIVE_FILE] ||
 					nr[LRU_INACTIVE_FILE]) {
 		/** 20140118    
-		 * evictable한 lru list에 대해 반복수행
+		 * evictable한 lru list에 대해 shrink_list를 수행
 		 **/
 		for_each_evictable_lru(lru) {
 			if (nr[lru]) {
@@ -2107,7 +2174,8 @@ restart:
 				nr[lru] -= nr_to_scan;
 
 				/** 20140118    
-				 * reclaimed 된 수를 누적시킨다.
+				 * lru list의 entry들을 nr_to_scan만큼 scan해 shrink하고,
+				 * reclaimed 된 페이지 수를 누적시킨다.
 				 **/
 				nr_reclaimed += shrink_list(lru, nr_to_scan,
 							    lruvec, sc);
@@ -2129,9 +2197,9 @@ restart:
 		    sc->priority < DEF_PRIORITY)
 			break;
 	}
-/** 20131221
-  blk_plug구조체를 참조한 뒤에 해제함
- **/
+	/** 20131221
+	 * blk_plug구조체를 참조한 뒤에 해제함
+	 **/
 	blk_finish_plug(&plug);
 	sc->nr_reclaimed += nr_reclaimed;
 
@@ -2171,7 +2239,8 @@ static void shrink_zone(struct zone *zone, struct scan_control *sc)
 	memcg = mem_cgroup_iter(root, NULL, &reclaim);
 	do {
 		/** 20131214    
-		 * memcg을 사용하지 않아 zone에 해당하는 lruvec을 받아옴
+		 * memcg을 사용하지 않아 zone에 해당하는 lruvec을 받아옴.
+		 * lruvec에 속한 lru list들에 대해 shrink를 수행한다.
 		 **/
 		struct lruvec *lruvec = mem_cgroup_zone_lruvec(zone, memcg);
 
@@ -2256,8 +2325,8 @@ static inline bool compaction_ready(struct zone *zone, struct scan_control *sc)
  * further reclaim.
  */
 /** 20140118    
- * scan control에 설정된 정책값에 의해 zonelist에 속하는 zone들에 대해
- * shrink를 수행한다.
+ * zonelist에 속하는 zone들에 대해 shrink_zone를 수행한다.
+ * aborted_reclaim 여부를 리턴한다.
  **/
 static bool shrink_zones(struct zonelist *zonelist, struct scan_control *sc)
 {
@@ -2281,7 +2350,7 @@ static bool shrink_zones(struct zonelist *zonelist, struct scan_control *sc)
 		sc->gfp_mask |= __GFP_HIGHMEM;
 
 	/** 20131214    
-	 * 전체 zone list들 중 gfp_zone 이하의 존들에 대해 반복
+	 * 전체 zone list들 중 gfp_zone 이하의 존들에 대해 shrink_zone 수행
 	 **/
 	for_each_zone_zonelist_nodemask(zone, z, zonelist,
 					gfp_zone(sc->gfp_mask), sc->nodemask) {
@@ -2397,6 +2466,9 @@ static bool all_unreclaimable(struct zonelist *zonelist,
  * returns:	0, if no pages reclaimed
  * 		else, the number of pages reclaimed
  */
+/** 20140517    
+ * 20140524 여기부터...
+ **/
 static unsigned long do_try_to_free_pages(struct zonelist *zonelist,
 					struct scan_control *sc,
 					struct shrink_control *shrink)
@@ -2414,12 +2486,10 @@ static unsigned long do_try_to_free_pages(struct zonelist *zonelist,
 	delayacct_freepages_start();
 
 	/** 20131214    
-	 * CONFIG_MEMCG가 설정되어 있지 않아 true.
+	 * CONFIG_MEMCG가 설정되어 있지 않은 경우
+	 * ALLOCSTALL 이벤트에 대한 count를 증가시킨다.
 	 **/
 	if (global_reclaim(sc))
-		/** 20131214    
-		 * ALLOCSTALL을 event count를 증가시킨다.
-		 **/
 		count_vm_event(ALLOCSTALL);
 
 	do {
@@ -2439,21 +2509,40 @@ static unsigned long do_try_to_free_pages(struct zonelist *zonelist,
 		 */
 		if (global_reclaim(sc)) {
 			unsigned long lru_pages = 0;
+			/** 20140517    
+			 * zonelist의 각 zone에 대해 회수 가능한 lru_pages의 수를 계산.
+			 **/
 			for_each_zone_zonelist(zone, z, zonelist,
 					gfp_zone(sc->gfp_mask)) {
+				/** 20140517    
+				 * 특정 zone에 대한 hardwall 기준을 통과하지 못한 경우 다음 zone에 대해 수행
+				 **/
 				if (!cpuset_zone_allowed_hardwall(zone, GFP_KERNEL))
 					continue;
 
+				/** 20140517    
+				 * zone stat을 조회해 회수 가능한 pages의 수를 합산
+				 **/
 				lru_pages += zone_reclaimable_pages(zone);
 			}
 
+			/** 20140517    
+			 * shrinker를 shrink를 수행하고,
+			 * scan control에 회수된 slab의 수를 합산한다.
+			 **/
 			shrink_slab(shrink, sc->nr_scanned, lru_pages);
 			if (reclaim_state) {
 				sc->nr_reclaimed += reclaim_state->reclaimed_slab;
 				reclaim_state->reclaimed_slab = 0;
 			}
 		}
+		/** 20140517    
+		 * total_scanned에 nr_scanned 된 페이지 수를 누적시킨다.
+		 **/
 		total_scanned += sc->nr_scanned;
+		/** 20140517    
+		 * 회수된 페이지 수가 reclaim할 페이지 수 이상이면 빠져나간다.
+		 **/
 		if (sc->nr_reclaimed >= sc->nr_to_reclaim)
 			goto out;
 
@@ -2464,7 +2553,13 @@ static unsigned long do_try_to_free_pages(struct zonelist *zonelist,
 		 * that's undesirable in laptop mode, where we *want* lumpy
 		 * writeout.  So in laptop mode, write out the whole world.
 		 */
+		/** 20140517    
+		 * writeback_threshold를 nr_to_reclaim의 1.5배로 한다.
+		 **/
 		writeback_threshold = sc->nr_to_reclaim + sc->nr_to_reclaim / 2;
+		/** 20140517    
+		 * 현재까지 scan된 페이지가 threshold 이상이면 flusher thread를 깨운다.
+		 **/
 		if (total_scanned > writeback_threshold) {
 			wakeup_flusher_threads(laptop_mode ? 0 : total_scanned,
 						WB_REASON_TRY_TO_FREE_PAGES);
@@ -2515,7 +2610,7 @@ out:
  *
  * 20131214
  * wmark min 이하의 메모리들은 pfmemalloc용으로 사용하기 위한 용도의
- * watermark 하한이다. 이 공간들로 다시 pfmemalloc용 watermark test를 한다.
+ * watermark 하한이다. 이 공간에 대해 watermark test를 한다.
  */
 static bool pfmemalloc_watermark_ok(pg_data_t *pgdat)
 {
@@ -2526,42 +2621,28 @@ static bool pfmemalloc_watermark_ok(pg_data_t *pgdat)
 	bool wmark_ok;
 
 	/** 20131207
-	 *0부터 ZONE_NORMAL까지의 zone의 총 water mark min값과 
-	 *free pages 값을 구한다.
+	 * ZONE_NORMAL 이하의 zone을 순회하며
+	 * min water mark 페이지 수와 free 페이지수를 각각 누적한다.
 	 */
 	for (i = 0; i <= ZONE_NORMAL; i++) {
 		zone = &pgdat->node_zones[i];
-		/** 20131207
-		 * zone에 해당하는 water mark min값을 pfmemalloc_reserve에 더함
-		 */
 		pfmemalloc_reserve += min_wmark_pages(zone);
-		/** 20131207
-		 * zone에 해당하는 free pages를 free_pages에 더함.
-		 */
 		free_pages += zone_page_state(zone, NR_FREE_PAGES);
 	}
 
 	/** 20131207
-	 * 위에서 구한 free_pages와 pfmemalloc_reserve/2값을 비교하여
-	 * wmark_ok 를 설정한다.
+	 * free_pages 수가 pfmemalloc_reserve/2 이상이면 watermark test ok.
 	 */
 	wmark_ok = free_pages > pfmemalloc_reserve / 2;
 
 	/* kswapd must be awake if processes are being throttled */
 	/** 20131207
-	 * 위에서 구한 wmark_ok가 false이고 kswapd가 waitqueue들어가 있으면
-	 * pgdat->classzone_idx 를  검사하고, swapd를 깨운다.
-	 * (free_pages가 위 조건기준으로 부족할 경우)
+	 * watermark test 실패이고, kswapd가 waitqueue들어가 있으면
+	 * pgdat->classzone_idx의 상한을 ZONE_NORMAL로 하고, swapd를 깨운다.
 	 */
 	if (!wmark_ok && waitqueue_active(&pgdat->kswapd_wait)) {
-		/** 20131207
-		 * classzone_idx를 ZONE_NORMAL을 상한선으로 정한다.
-		 */
 		pgdat->classzone_idx = min(pgdat->classzone_idx,
 						(enum zone_type)ZONE_NORMAL);
-		/** 20131207
-		 * 해당 노드의 swapd를 깨운다.
-		 */
 		wake_up_interruptible(&pgdat->kswapd_wait);
 	}
 
@@ -2594,6 +2675,9 @@ static void throttle_direct_reclaim(gfp_t gfp_mask, struct zonelist *zonelist,
 	/** 20131207
 	 * current task의 flags가 PF_KTHREAD(kernel thread)라면 리턴!
 	 * 이유는 위 주석인데...???
+	 * 
+	 * 20140517
+	 * INIT_TASK 는 PF_KTHREAD 설정되어 있음
 	 */
 	if (current->flags & PF_KTHREAD)
 		return;
@@ -2602,7 +2686,7 @@ static void throttle_direct_reclaim(gfp_t gfp_mask, struct zonelist *zonelist,
 	first_zones_zonelist(zonelist, high_zoneidx, NULL, &zone);
 	/** 20131207
 	 * zone이pgdata를 가져와서 watermark 검사를 한다.
-	 * true이면 throttle을 할 필요없다!
+	 * true이면 pfmemalloc을 위한 direct reclaim에 throttle을 할 필요없다!
 	 */
 	pgdat = zone->zone_pgdat;
 	if (pfmemalloc_watermark_ok(pgdat))
@@ -2610,8 +2694,7 @@ static void throttle_direct_reclaim(gfp_t gfp_mask, struct zonelist *zonelist,
 
 	/* Account for the throttling */
 	/** 20131207
-	 * cat /proc/vmstat  | grep -i throttle
-	 * 로 확인 가능
+	 * cat /proc/vmstat  | grep -i throttle 로 확인 가능
 	 */
 	count_vm_event(PGSCAN_DIRECT_THROTTLE);
 
@@ -2630,6 +2713,8 @@ static void throttle_direct_reclaim(gfp_t gfp_mask, struct zonelist *zonelist,
 	 * 20131214
 	 * __GFP_FS
 	 *   If clear, the kernel is not allowed to perform filesystem-dependent operations.
+	 * 메모리 할당 과정 중 file sytem에 대한 접근을 안하도록 요청된 경우
+	 * pfmemalloc watermark test가 통과할 때까지 HZ동안(1초) 기다린다.
 	 */
 	if (!(gfp_mask & __GFP_FS)) {
 		wait_event_interruptible_timeout(pgdat->pfmemalloc_wait,
@@ -2671,6 +2756,7 @@ unsigned long try_to_free_pages(struct zonelist *zonelist, int order,
 
 	/** 20131214    
 	 * reclaim 전에 throttle을 준다.
+	 * (kswapd가 메모리를 확보할 때까지 sleep할 수도 있다)
 	 **/
 	throttle_direct_reclaim(gfp_mask, zonelist, nodemask);
 
@@ -2688,6 +2774,9 @@ unsigned long try_to_free_pages(struct zonelist *zonelist, int order,
 				sc.may_writepage,
 				gfp_mask);
 
+	/** 20140517    
+	 * direct reclaim.
+	 **/
 	nr_reclaimed = do_try_to_free_pages(zonelist, &sc, &shrink);
 
 	trace_mm_vmscan_direct_reclaim_end(nr_reclaimed);
@@ -3479,8 +3568,8 @@ unsigned long global_reclaimable_pages(void)
 }
 
 /** 20130914
-zone에서 회수가능한 page의 수를 리턴.
-**/
+ * zone에서 회수가능한 page의 수를 리턴.
+ **/
 unsigned long zone_reclaimable_pages(struct zone *zone)
 {
 	int nr;

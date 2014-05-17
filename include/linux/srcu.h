@@ -40,6 +40,9 @@ struct rcu_batch {
 	struct rcu_head *head, **tail;
 };
 
+/** 20140517    
+ * init_srcu_struct_fields 함수를 이용해 초기화
+ **/
 struct srcu_struct {
 	unsigned completed;
 	struct srcu_struct_array __percpu *per_cpu_ref;
