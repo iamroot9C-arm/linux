@@ -75,6 +75,10 @@ static inline void get_anon_vma(struct anon_vma *anon_vma)
 
 void __put_anon_vma(struct anon_vma *anon_vma);
 
+/** 20140524    
+ * refcount를 atomic하게 감소시키고,
+ * 결과 refcount가 0이 되었다면 anon_vma 를 해제한다.
+ **/
 static inline void put_anon_vma(struct anon_vma *anon_vma)
 {
 	if (atomic_dec_and_test(&anon_vma->refcount))
@@ -103,11 +107,17 @@ static inline void vma_unlock_anon_vma(struct vm_area_struct *vma)
 		mutex_unlock(&anon_vma->root->mutex);
 }
 
+/** 20140524    
+ * root에 mutex lock을 건다.
+ **/
 static inline void anon_vma_lock(struct anon_vma *anon_vma)
 {
 	mutex_lock(&anon_vma->root->mutex);
 }
 
+/** 20140524    
+ * root에 mutex lock을 해제한다.
+ **/
 static inline void anon_vma_unlock(struct anon_vma *anon_vma)
 {
 	mutex_unlock(&anon_vma->root->mutex);

@@ -69,6 +69,10 @@ static inline int current_is_kswapd(void)
 #define SWP_HWPOISON_NUM 0
 #endif
 
+/** 20140524    
+ * MAX_SWAPFILES       : (1 << 5) - 0 - 0
+ * MAX_SWAPFILES_SHIFT : 5
+ **/
 #define MAX_SWAPFILES \
 	((1 << MAX_SWAPFILES_SHIFT) - SWP_MIGRATION_NUM - SWP_HWPOISON_NUM)
 

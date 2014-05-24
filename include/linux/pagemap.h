@@ -402,8 +402,14 @@ static inline void wait_on_page_locked(struct page *page)
 /* 
  * Wait for a page to complete writeback
  */
+/** 20140524    
+ * writeback page인 경우 writeback이 완료될 때까지 대기한다.
+ **/
 static inline void wait_on_page_writeback(struct page *page)
 {
+	/** 20140524    
+	 * writeback page인 경우, PG_writeback가 꺼질 때까지 대기한다.
+	 **/
 	if (PageWriteback(page))
 		wait_on_page_bit(page, PG_writeback);
 }

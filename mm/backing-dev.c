@@ -821,13 +821,23 @@ EXPORT_SYMBOL(set_bdi_congested);
  * write congestion.  If no backing_devs are congested then just wait for the
  * next write to be completed.
  */
+/** 20140524    
+ * sync/async io가 끝날 때까지 최대 timeout 시간만큼 기다린다.
+ **/
 long congestion_wait(int sync, long timeout)
 {
 	long ret;
 	unsigned long start = jiffies;
 	DEFINE_WAIT(wait);
+	/** 20140524    
+	 * congestion wait queue에서 sync/async에 따라 해당 wait queue를 가져온다.
+	 **/
 	wait_queue_head_t *wqh = &congestion_wqh[sync];
 
+	/** 20140524    
+	 * wait을 TASK_UNINTERRUPTIBLE로 설정해 wqh에 등록하고,
+	 * 최대 timeout까지 flush가 수행되기를 기다린다.
+	 **/
 	prepare_to_wait(wqh, &wait, TASK_UNINTERRUPTIBLE);
 	ret = io_schedule_timeout(timeout);
 	finish_wait(wqh, &wait);

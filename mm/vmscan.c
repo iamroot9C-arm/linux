@@ -68,9 +68,15 @@ struct scan_control {
 	/* This context's GFP mask */
 	gfp_t gfp_mask;
 
+	/** 20140524    
+	 * reclaim 중 page가 writeout될 수 있는지 여부
+	 **/
 	int may_writepage;
 
 	/* Can mapped pages be reclaimed? */
+	/** 20140524    
+	 * mapping 된 pages이 reclaim될 수 있는지 여부
+	 **/
 	int may_unmap;
 
 	/* Can pages be swapped as part of reclaim? */
@@ -95,7 +101,7 @@ struct scan_control {
 };
 
 /** 20140111
- * lrt 리스트의 맨 마지막 페이지를 리턴
+ * lru 리스트의 맨 마지막 (가장 오래된) 페이지를 리턴
  **/
 #define lru_to_page(_head) (list_entry((_head)->prev, struct page, lru))
 
@@ -729,18 +735,35 @@ static enum page_references page_check_references(struct page *page,
 	int referenced_ptes, referenced_page;
 	unsigned long vm_flags;
 
+	/** 20140524    
+	 * page의 referenced된 수를 가져온다.
+	 * vm_flags에는 referenced된 page의 상태가 채워진다.
+	 * (page table에 등록되어 있고, rmapping을 가지고 있는 경우)
+	 **/
 	referenced_ptes = page_referenced(page, 1, sc->target_mem_cgroup,
 					  &vm_flags);
+	/** 20140524    
+	 * page의 referenced flag 상태를 가져오고, clear 시킨다.
+	 **/
 	referenced_page = TestClearPageReferenced(page);
 
 	/*
 	 * Mlock lost the isolation race with us.  Let try_to_unmap()
 	 * move the page to the unevictable list.
 	 */
+	/** 20140524    
+	 * VM_LOCKED된 페이지인 경우 PAGEREF_RECLAIM 상태를 리턴.
+	 **/
 	if (vm_flags & VM_LOCKED)
 		return PAGEREF_RECLAIM;
 
+	/** 20140524    
+	 * page table에 등록된 페이지이며 rmapping인 페이지라면
+	 **/
 	if (referenced_ptes) {
+		/** 20140524    
+		 * swap을 가지고 있는 경우 PAGEREF_ACTIVATE로 리턴
+		 **/
 		if (PageSwapBacked(page))
 			return PAGEREF_ACTIVATE;
 		/*
@@ -757,20 +780,40 @@ static enum page_references page_check_references(struct page *page,
 		 * so that recently deactivated but used pages are
 		 * quickly recovered.
 		 */
+		/** 20140524    
+		 * pte에 등록된 page이며 swap backed가 아닌 경우,
+		 * 다시 referenced된 상태로 설정한다.
+		 **/
 		SetPageReferenced(page);
 
+		/** 20140524    
+		 * swapbacked가 아닌 page.
+		 * reference된 page이거나 ptes에 2이상 reference되어 있다면
+		 * PAGEREF_ACTIVATE를 리턴.
+		 **/
 		if (referenced_page || referenced_ptes > 1)
 			return PAGEREF_ACTIVATE;
 
 		/*
 		 * Activate file-backed executable pages after first usage.
 		 */
+		/** 20140524    
+		 * file-backed인 실행 가능한 페이지인 경우 PAGEREF_ACTIVATE 리턴
+		 **/
 		if (vm_flags & VM_EXEC)
 			return PAGEREF_ACTIVATE;
 
+		/** 20140524    
+		 * 그 외의 referenced_ptes는 KEEP 한다.
+		 **/
 		return PAGEREF_KEEP;
 	}
 
+	/** 20140524    
+	 * referenced_ptes 가 아닌 페이지 중
+	 * referenced 된 페이지이면서 swapbacked가 아닌 페이지인 경우
+	 * PAGEREF_RECLAIM_CLEAN 리턴
+	 **/
 	/* Reclaim if clean, defer dirty pages to writeback */
 	if (referenced_page && !PageSwapBacked(page))
 		return PAGEREF_RECLAIM_CLEAN;
@@ -798,6 +841,9 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 	cond_resched();
 
 	mem_cgroup_uncharge_start();
+	/** 20140524    
+	 * page_list가 채워져 있는동안 수행한다.
+	 **/
 	while (!list_empty(page_list)) {
 		enum page_references references;
 		struct address_space *mapping;
@@ -806,9 +852,15 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 
 		cond_resched();
 
+		/** 20140524    
+		 * page_list의 page를 오래된 것부터 가져와 list에서 제거한다.
+		 **/
 		page = lru_to_page(page_list);
 		list_del(&page->lru);
 
+		/** 20140524    
+		 * lock을 걸지 못한 경우에는 keep으로 이동
+		 **/
 		if (!trylock_page(page))
 			goto keep;
 
@@ -817,9 +869,15 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 
 		sc->nr_scanned++;
 
+		/** 20140524    
+		 * page가 evictable 하지 않다면 cull_mlocked로 이동시킨다.
+		 **/
 		if (unlikely(!page_evictable(page, NULL)))
 			goto cull_mlocked;
 
+		/** 20140524    
+		 * reclaim 중 unmap이 가능하지 않도록 설정되었는데 page가 mapping 중이라면 keep_locked로 이동
+		 **/
 		if (!sc->may_unmap && page_mapped(page))
 			goto keep_locked;
 
@@ -827,9 +885,16 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 		if (page_mapped(page) || PageSwapCache(page))
 			sc->nr_scanned++;
 
+		/** 20140524    
+		 * gfp에서 __GFP_FS가 설정되어 있거나
+		 * page가 swapcache이며 GFP_IO가 가능할 경우, fs 함수로 진입이 가능하다.
+		 **/
 		may_enter_fs = (sc->gfp_mask & __GFP_FS) ||
 			(PageSwapCache(page) && (sc->gfp_mask & __GFP_IO));
 
+		/** 20140524    
+		 * page가 writeback이라면 
+		 **/
 		if (PageWriteback(page)) {
 			/*
 			 * memcg doesn't have any dirty pages throttling so we
@@ -848,6 +913,10 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 			 * grab_cache_page_write_begin(,,AOP_FLAG_NOFS), so
 			 * testing may_enter_fs here is liable to OOM on them.
 			 */
+			/** 20140524    
+			 * global reclaim이거나 page에 reclaim이 설정되지 않았거나,
+			 * IO가 허용되지 않은 경우 writeback 완료를 대기하지 않는다.
+			 **/
 			if (global_reclaim(sc) ||
 			    !PageReclaim(page) || !(sc->gfp_mask & __GFP_IO)) {
 				/*
@@ -861,19 +930,35 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 				 * then wait_on_page_writeback() to avoid OOM;
 				 * and it's also appropriate in global reclaim.
 				 */
+				/** 20140524    
+				 * page가 writeback이므로 reclaim 대상으로 write를 대기 중임을 설정한다.
+				 **/
 				SetPageReclaim(page);
 				nr_writeback++;
 				goto keep_locked;
 			}
+			/** 20140524    
+			 * writeback 완료를 대기한다.
+			 **/
 			wait_on_page_writeback(page);
 		}
 
+		/** 20140524    
+		 * page의 reference type을 조회한다.
+		 **/
 		references = page_check_references(page, sc);
 		switch (references) {
+		/** 20140524    
+		 * PAGEREF_ACTIVATE : reclaim을 하지 않고, activate 만 시킨다.
+		 * PAGEREF_KEEP     : 
+		 **/
 		case PAGEREF_ACTIVATE:
 			goto activate_locked;
 		case PAGEREF_KEEP:
 			goto keep_locked;
+		/** 20140524    
+		 * reclaim을 진행한다.
+		 **/
 		case PAGEREF_RECLAIM:
 		case PAGEREF_RECLAIM_CLEAN:
 			; /* try to reclaim the page below */
@@ -883,20 +968,36 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 		 * Anonymous process memory has backing store?
 		 * Try to allocate it some swap space here.
 		 */
+		/** 20140524    
+		 * page가 anon이고, swapcache로 사용 중이지 않은 경우
+		 *   IO가 허용되지 않는다면 keep_locked로 간다.
+		 * page를 위한 swap 공간을 할당해 swap cache에 추가한다.
+		 * 실패한다면 activate_locked로 간다.
+		 * 성공한다면 fs으로 접근할 가능성이 있음을 표시한다.
+		 **/
 		if (PageAnon(page) && !PageSwapCache(page)) {
 			if (!(sc->gfp_mask & __GFP_IO))
 				goto keep_locked;
+			/** 20140524    
+			 * page를 위한 swap space를 할당한다.
+			 **/
 			if (!add_to_swap(page))
 				goto activate_locked;
 			may_enter_fs = 1;
 		}
 
+		/** 20140524    
+		 * page의 mapping 정보를 가져온다.
+		 **/
 		mapping = page_mapping(page);
 
 		/*
 		 * The page is mapped into the page tables of one or more
 		 * processes. Try to unmap it here.
 		 */
+		/** 20140524    
+		 * page가 page table에 mapping 되어 있고, address_space가 존재하면
+		 **/
 		if (page_mapped(page) && mapping) {
 			switch (try_to_unmap(page, TTU_UNMAP)) {
 			case SWAP_FAIL:
@@ -1039,6 +1140,9 @@ cull_mlocked:
 
 activate_locked:
 		/* Not a candidate for swapping, so reclaim swap space. */
+		/** 20140524    
+		 * page가 swapcache로 사용되는 경우면서 
+		 **/
 		if (PageSwapCache(page) && vm_swap_full())
 			try_to_free_swap(page);
 		VM_BUG_ON(PageActive(page));
@@ -1047,6 +1151,9 @@ activate_locked:
 keep_locked:
 		unlock_page(page);
 keep:
+		/** 20140524    
+		 * ret_pages에 page를 등록한다.
+		 **/
 		list_add(&page->lru, &ret_pages);
 		VM_BUG_ON(PageLRU(page) || PageUnevictable(page));
 	}
@@ -1191,7 +1298,8 @@ int __isolate_lru_page(struct page *page, isolate_mode_t mode)
  */
 /** 20140111
  * nr_to_scan개의 page중 실제 스캔한 페이지의 갯수를  nr_scanned에 저장한다.
- * lru리스트로 부터 isolate된 page의 총 개수(nr_taken)를 리턴한다.
+ * lru list로부터 isolate시켜 dst에 등록하고,
+ * isolate 한 page의 수(nr_taken)를 리턴한다.
  **/
 static unsigned long isolate_lru_pages(unsigned long nr_to_scan,
 		struct lruvec *lruvec, struct list_head *dst,
@@ -1202,12 +1310,16 @@ static unsigned long isolate_lru_pages(unsigned long nr_to_scan,
 	unsigned long nr_taken = 0;
 	unsigned long scan;
 
+	/** 20140524    
+	 * 최대 nr_to_scan만큼의 page를 스캔한다.
+	 * 그 전에 src list가 빌 경우 scan은 중단된다.
+	 **/
 	for (scan = 0; scan < nr_to_scan && !list_empty(src); scan++) {
 		struct page *page;
 		int nr_pages;
-/** 20140111
- * src 리스트로부터 맨 마지막 페이지를 page에 저장
-**/
+		/** 20140111
+		 * src 리스트로부터 맨 마지막 페이지를 page에 저장
+		 **/
 		page = lru_to_page(src);
 		/** 2014011
 		 * lru리스트의 이전페이지의 flags를 prefetch한다.
@@ -1303,12 +1415,21 @@ static int too_many_isolated(struct zone *zone, int file,
 {
 	unsigned long inactive, isolated;
 
+	/** 20140524    
+	 * direct reclaim인 경우에만 0 리턴.
+	 **/
 	if (current_is_kswapd())
 		return 0;
 
+	/** 20140524    
+	 * global reclaim이 아닌 경우 0 리턴.
+	 **/
 	if (!global_reclaim(sc))
 		return 0;
 
+	/** 20140524    
+	 * file일 때와 아닐 때를 구분히 inactive, isolated state를 조회한다.
+	 **/
 	if (file) {
 		inactive = zone_page_state(zone, NR_INACTIVE_FILE);
 		isolated = zone_page_state(zone, NR_ISOLATED_FILE);
@@ -1389,20 +1510,40 @@ shrink_inactive_list(unsigned long nr_to_scan, struct lruvec *lruvec,
 	unsigned long nr_dirty = 0;
 	unsigned long nr_writeback = 0;
 	isolate_mode_t isolate_mode = 0;
+	/** 20140524    
+	 * lru가 file 속성인지 여부를 저장한다.
+	 **/
 	int file = is_file_lru(lru);
 	struct zone *zone = lruvec_zone(lruvec);
 	struct zone_reclaim_stat *reclaim_stat = &lruvec->reclaim_stat;
 
+	/** 20140524    
+	 * isolated가 inactive보다 많다면 
+	 * BLK_RW_ASYNC에 대해 1/10초만큼 기다린다.
+	 **/
 	while (unlikely(too_many_isolated(zone, file, sc))) {
 		congestion_wait(BLK_RW_ASYNC, HZ/10);
 
 		/* We are about to die and free our memory. Return now. */
+		/** 20140524    
+		 * 현재 task가 SIGKIL을 받았다면 SWAP_CLUSTER_MAX를 리턴한다.
+		 * (nr_to_scan의 최대치)
+		 **/
 		if (fatal_signal_pending(current))
 			return SWAP_CLUSTER_MAX;
 	}
 
+	/** 20140524    
+	 * cpu의 lru list에 있던 page들을 zone으로 옮긴다.
+	 **/
 	lru_add_drain();
 
+	/** 20140524    
+	 * scan control에 따라 isolate mode를 설정한다.
+	 *
+	 * may_unmap : mapping 된 pages이 reclaim될 수 있는지 여부
+	 * may_writepage : reclaim 중 page가 writeout될 수 있는지 여부
+	 **/
 	if (!sc->may_unmap)
 		isolate_mode |= ISOLATE_UNMAPPED;
 	if (!sc->may_writepage)
@@ -1410,12 +1551,22 @@ shrink_inactive_list(unsigned long nr_to_scan, struct lruvec *lruvec,
 
 	spin_lock_irq(&zone->lru_lock);
 
+	/** 20140524    
+	 * lruvec의 lru list에서 nr_to_scan개만큼을 scan하고, isolate한 page들을
+	 * page_list에 등록한다. scan 한 개수는 nr_scanned, nr_taken은 실제 옮긴 개수.
+	 **/
 	nr_taken = isolate_lru_pages(nr_to_scan, lruvec, &page_list,
 				     &nr_scanned, sc, isolate_mode, lru);
 
+	/** 20140524    
+	 * isolate한 수만큼 lru의 수를 감소시키고, isolated의 수를 증가시킨다.
+	 **/
 	__mod_zone_page_state(zone, NR_LRU_BASE + lru, -nr_taken);
 	__mod_zone_page_state(zone, NR_ISOLATED_ANON + file, nr_taken);
 
+	/** 20140524    
+	 * scan결과를 vm events에 반영.
+	 **/
 	if (global_reclaim(sc)) {
 		zone->pages_scanned += nr_scanned;
 		if (current_is_kswapd())
@@ -1425,6 +1576,9 @@ shrink_inactive_list(unsigned long nr_to_scan, struct lruvec *lruvec,
 	}
 	spin_unlock_irq(&zone->lru_lock);
 
+	/** 20140524    
+	 * isolate된 페이지가 없다면 여기서 리턴.
+	 **/
 	if (nr_taken == 0)
 		return 0;
 
@@ -1505,33 +1659,63 @@ shrink_inactive_list(unsigned long nr_to_scan, struct lruvec *lruvec,
  * But we had to alter page->flags anyway.
  */
 
+/** 20140524    
+ * list에 등록된 active page를 zone의 lru list에 등록시킨다.
+ * 만약 page의 reference가 0이 되다면 pages_to_free 리스트에 등록시킨다.
+ **/
 static void move_active_pages_to_lru(struct lruvec *lruvec,
 				     struct list_head *list,
 				     struct list_head *pages_to_free,
 				     enum lru_list lru)
 {
+	/** 20140524    
+	 * 현재 lruvec이 속해 있는 zone을 가져온다.
+	 **/
 	struct zone *zone = lruvec_zone(lruvec);
 	unsigned long pgmoved = 0;
 	struct page *page;
 	int nr_pages;
 
+	/** 20140524    
+	 * 주어진 list가 빌 때까지 아래 작업을 수행
+	 **/
 	while (!list_empty(list)) {
+		/** 20140524    
+		 * 제공된 list에서 가장 오래된 page를 가져온다.
+		 **/
 		page = lru_to_page(list);
 		lruvec = mem_cgroup_page_lruvec(page, zone);
 
 		VM_BUG_ON(PageLRU(page));
+		/** 20140524    
+		 * page를 LRU 리스트에 추가한다고 표시한다.
+		 **/
 		SetPageLRU(page);
 
 		nr_pages = hpage_nr_pages(page);
 		mem_cgroup_update_lru_size(lruvec, lru, nr_pages);
+		/** 20140524    
+		 * page를 zone lruvec의 지정된 lru list에 등록한다.
+		 * pgmoved를 증가시킨다.
+		 **/
 		list_move(&page->lru, &lruvec->lists[lru]);
 		pgmoved += nr_pages;
 
+		/** 20140524    
+		 * page의 reference count를 감소시켰을 때 비사용 상태가 되었다면
+		 **/
 		if (put_page_testzero(page)) {
+			/** 20140524    
+			 * lru, active flags를 제거하고, lruvec에서 제거한다.
+			 **/
 			__ClearPageLRU(page);
 			__ClearPageActive(page);
 			del_page_from_lru_list(page, lruvec, lru);
 
+			/** 20140524    
+			 * 해당 page가 compound page라면, dtor를 호출해 해제하고,
+			 * 아니라면 pages_to_free에 등록한다.
+			 **/
 			if (unlikely(PageCompound(page))) {
 				spin_unlock_irq(&zone->lru_lock);
 				(*get_compound_page_dtor(page))(page);
@@ -1540,15 +1724,20 @@ static void move_active_pages_to_lru(struct lruvec *lruvec,
 				list_add(&page->lru, pages_to_free);
 		}
 	}
+	/** 20140524    
+	 * lru의 state를 갱신시킨다.
+	 **/
 	__mod_zone_page_state(zone, NR_LRU_BASE + lru, pgmoved);
 	if (!is_active_lru(lru))
 		__count_vm_events(PGDEACTIVATE, pgmoved);
 }
 
 /** 20140111
- * isolate실행하고 isolate된 페이지들 중 evictable하지 않은 page를 putback하고
- * file cache인 페이지이면 l_active리스트로 등록시켜 free한다.
- * file cache가 아니면서 evictable한 page는 l_inactive 리스트로 등록시켜 free한다.
+ * isolate 실행한다.
+ *   - isolate된 페이지들 중 evictable하지 않은 page를 putback한다.
+ *   - file cache인 페이지이면 l_active리스트로 등록시키고,
+ *   - file cache가 아니면서 evictable한 page는 l_inactive 리스트로 등록시킨다.
+ * 이후 zone의 각 lru 리스트로 옮기고, reference가 0인 페이지는 해제한다.
 **/
 static void shrink_active_list(unsigned long nr_to_scan,
 			       struct lruvec *lruvec,
@@ -1587,7 +1776,7 @@ static void shrink_active_list(unsigned long nr_to_scan,
 	spin_lock_irq(&zone->lru_lock);
 
 	/** 20140111
-	 * isolate된 페이지의 갯수를 리턴한다.
+	 * isolate를 실행하고, isolate된 페이지의 갯수를 리턴한다.
 	 **/
 	nr_taken = isolate_lru_pages(nr_to_scan, lruvec, &l_hold,
 				     &nr_scanned, sc, isolate_mode, lru);
@@ -1665,7 +1854,6 @@ static void shrink_active_list(unsigned long nr_to_scan,
 			 * 실행 가능하고 file cache인 page에 대해서는 
 			 * l_active리스트에 등록시킨다.
 			 **/
-
 			if ((vm_flags & VM_EXEC) && page_is_file_cache(page)) {
 				list_add(&page->lru, &l_active);
 				continue;
@@ -1673,6 +1861,7 @@ static void shrink_active_list(unsigned long nr_to_scan,
 		}
 
 		/** 20140111
+		 * 위 조건에서 vm_flags와 file_cache인 경우를 제외한 page들은
 		 * page의 active flag를 clear하고 l_inactive에 page를 등록시킨다. 
 		 **/
 		ClearPageActive(page);	/* we are de-activating */
@@ -1697,8 +1886,9 @@ static void shrink_active_list(unsigned long nr_to_scan,
 	reclaim_stat->recent_rotated[file] += nr_rotated;
 
 	/** 20140111
-	 * l_active 및 l_inactive의 page들을 l_hold로 옮겨준뒤, percpu의 cold page로서
-	 * free시킨다.
+	 * l_active 및 l_inactive의 page를 lru 리스트로 옮기고,
+	 * 그 과정에서 reference count가 0이 된 page는 l_hold로 옮긴 뒤
+	 * percpu의 cold page로서 free시킨다.
 	 **/
 	move_active_pages_to_lru(lruvec, &l_active, &l_hold, lru);
 	move_active_pages_to_lru(lruvec, &l_inactive, &l_hold, lru - LRU_ACTIVE);
@@ -2466,8 +2656,8 @@ static bool all_unreclaimable(struct zonelist *zonelist,
  * returns:	0, if no pages reclaimed
  * 		else, the number of pages reclaimed
  */
-/** 20140517    
- * 20140524 여기부터...
+/** 20140524
+ * 
  **/
 static unsigned long do_try_to_free_pages(struct zonelist *zonelist,
 					struct scan_control *sc,

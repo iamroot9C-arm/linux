@@ -5405,7 +5405,7 @@ void __sched io_schedule(void)
 EXPORT_SYMBOL(io_schedule);
 
 /** 20131130    
- * blk_flush를 호출하고,  timeout 시간동안 io를 대기하는 함수
+ * blk_flush를 호출하고, 최대 timeout 시간동안 io를 대기하는 함수
  **/
 long __sched io_schedule_timeout(long timeout)
 {

@@ -27,12 +27,12 @@
  */
 #if defined(CONFIG_FLATMEM)
 /** 20130504
-__pfn_to_page : pfn 에 해당하는 struct page의 주소를 반환
-__page_to_pfn : struct page에 해당하는 pfn값을 반환
-
-20130803
-	UMA에서 mem_map = NODE_DATA(0)->node_mem_map;
-**/
+ * __pfn_to_page : pfn 에 해당하는 struct page의 주소를 반환
+ * __page_to_pfn : struct page에 해당하는 pfn값을 반환
+ *
+ * 20130803
+ * UMA에서 mem_map = NODE_DATA(0)->node_mem_map;
+ **/
 #define __pfn_to_page(pfn)	(mem_map + ((pfn) - ARCH_PFN_OFFSET))
 
 #define __page_to_pfn(page)	((unsigned long)((page) - mem_map) + \
@@ -77,8 +77,8 @@ __page_to_pfn : struct page에 해당하는 pfn값을 반환
 #endif /* CONFIG_FLATMEM/DISCONTIGMEM/SPARSEMEM */
 
 /** 20130511 
-pfn을 struct page로, struct page를 pfn으로 변환하는 매크로 
-**/
+ * pfn을 struct page로, struct page를 pfn으로 변환하는 매크로 
+ **/
 #define page_to_pfn __page_to_pfn
 #define pfn_to_page __pfn_to_page
 

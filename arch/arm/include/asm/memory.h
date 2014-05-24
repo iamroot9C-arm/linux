@@ -254,10 +254,10 @@ static inline unsigned long __phys_to_virt(unsigned long x)
  * of RAM in the mem_map as well.
  */
 /** 20130511 
-PHYS_OFFSET : (__pv_phys_offset) = 0x6000 0000 (vexpress에서 커널 페이지의 offset)
-PAGE_SHIFT  : 12 
-커널 시작 주소에 대한 PFN
-**/
+ * PHYS_OFFSET : (__pv_phys_offset) = 0x6000 0000 (vexpress에서 커널 페이지의 offset)
+ * PAGE_SHIFT  : 12 
+ * 커널 시작 주소에 대한 PFN
+ **/
 #define PHYS_PFN_OFFSET	(PHYS_OFFSET >> PAGE_SHIFT)
 
 /*

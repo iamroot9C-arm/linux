@@ -114,8 +114,9 @@ int percpu_pagelist_fraction;
  * 초기값은 BOOT 중 사용할 수 있는 속성.
  **/
 /** 20130914
-#define GFP_BOOT_MASK (__GFP_BITS_MASK & ~(__GFP_WAIT|__GFP_IO|__GFP_FS))
-**/
+ * 부팅 중 sleep, IO나 filesystem에 대한 접근은 허용되지 않는다.
+ * #define GFP_BOOT_MASK (__GFP_BITS_MASK & ~(__GFP_WAIT|__GFP_IO|__GFP_FS))
+ **/
 gfp_t gfp_allowed_mask __read_mostly = GFP_BOOT_MASK;
 
 #ifdef CONFIG_PM_SLEEP
@@ -719,7 +720,7 @@ static inline void __free_one_page(struct page *page,
 
 	/** 20130921    
 	 * struct page *page가 가리키는 pfn에서,
-	 * MAX_ORDER (11)개의 하위 비트만 취해 인덱스로 삼는다.
+	 * 1 << MAX_ORDER (11)개의 하위 비트만 취해 인덱스로 삼는다.
 	 **/
 	page_idx = page_to_pfn(page) & ((1 << MAX_ORDER) - 1);
 
@@ -2081,10 +2082,10 @@ void mark_free_pages(struct zone *zone)
  * cold == 1 ? free a cold page : free a hot page
  */
 /** 20130831    
- * hot 또는 cold page인 경우에 호출되어 page를 free 한다.
+ * 0-order page를 free 한다.
  *
- * hot page : 최근 access된 page의 경우, cache에 남아 있다고 가정하고 hot page로 처리한다.
- * page를 free 해줄 때 hot page는 hot-list에 넣어주고, 그렇지 않은 경우 cold-list에 넣어 관리한다.
+ * hot page : 최근 access된 page의 경우, hw cache에 남아 있을 가능성이 높다.
+ * hot page를 free 해줄 때 list의 앞에 넣고, 그렇지 않은 경우 list의 뒤에 넣는다.
  * [참고] http://lwn.net/Articles/14768/
  **/
 void free_hot_cold_page(struct page *page, int cold)

@@ -220,6 +220,8 @@ static inline void mem_cgroup_cancel_charge_swapin(struct mem_cgroup *memcg)
 {
 }
 
+/** 20140524    
+ **/
 static inline void mem_cgroup_uncharge_start(void)
 {
 }
@@ -335,6 +337,9 @@ mem_cgroup_get_lru_size(struct lruvec *lruvec, enum lru_list lru)
 	return 0;
 }
 
+/** 20140524    
+ * MEM_CG를 사용하지 않아 정의되지 않음
+ **/
 static inline void
 mem_cgroup_update_lru_size(struct lruvec *lruvec, enum lru_list lru,
 			      int increment)

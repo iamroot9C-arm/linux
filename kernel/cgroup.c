@@ -4627,9 +4627,6 @@ int __init cgroup_init_early(void)
 			       ss->name, ss->subsys_id);
 			BUG();
 		}
-/**20121110
-여기까지 했음...
-**/
 /** 20121117
  * cpuset_subsys는 .early_init 이 켜져있음. 하드코딩됨.  
  */

@@ -38,9 +38,9 @@ static inline int page_is_file_cache(struct page *page)
 static __always_inline void add_page_to_lru_list(struct page *page,
 				struct lruvec *lruvec, enum lru_list lru)
 {
-		/** 20131221
-		  nr_pages = 1
-		 **/
+	/** 20131221
+	 * nr_pages = 1
+	 **/
 	int nr_pages = hpage_nr_pages(page);
 	mem_cgroup_update_lru_size(lruvec, lru, nr_pages);
 	/** 20131221

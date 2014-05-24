@@ -23,10 +23,16 @@
 #ifndef CONFIG_FORCE_MAX_ZONEORDER
 #define MAX_ORDER 11
 #else
+/** 20140517    
+ * zoned buddy allocator의 최대 ORDER.
+ * CONFIG_FORCE_MAX_ZONEORDER가 11로 설정됨
+ **/
 #define MAX_ORDER CONFIG_FORCE_MAX_ZONEORDER
 #endif
 /** 20130420    
  * MAX_ORDER_NR_PAGES의 의미는???
+ * 20140517
+ * MAX_ORDER를 pages의 개수로 계산한 값.
  **/
 #define MAX_ORDER_NR_PAGES (1 << (MAX_ORDER - 1))
 
@@ -36,6 +42,9 @@
  * coalesce naturally under reasonable reclaim pressure and those which
  * will not.
  */
+/** 20140517    
+ *
+ **/
 #define PAGE_ALLOC_COSTLY_ORDER 3
 
 enum {

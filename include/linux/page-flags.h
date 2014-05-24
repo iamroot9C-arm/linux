@@ -176,6 +176,9 @@ static inline void __ClearPage##uname(struct page *page)		\
 static inline int TestSetPage##uname(struct page *page)			\
 		{ return test_and_set_bit(PG_##lname, &page->flags); }
 
+/** 20140524    
+ * page flags의 특정 flags를 검사해 결과를 리턴하고, 해당 비트를 clear한다.
+ **/
 #define TESTCLEARFLAG(uname, lname)					\
 static inline int TestClearPage##uname(struct page *page)		\
 		{ return test_and_clear_bit(PG_##lname, &page->flags); }
@@ -221,6 +224,9 @@ TESTPAGEFLAG(Locked, locked)
 PAGEFLAG(Error, error) TESTCLEARFLAG(Error, error)
 PAGEFLAG(Referenced, referenced) TESTCLEARFLAG(Referenced, referenced)
 PAGEFLAG(Dirty, dirty) TESTSCFLAG(Dirty, dirty) __CLEARPAGEFLAG(Dirty, dirty)
+/** 20140524    
+ * page의 flags에 lru flag를 설정한다.
+ **/
 PAGEFLAG(LRU, lru) __CLEARPAGEFLAG(LRU, lru)
 PAGEFLAG(Active, active) __CLEARPAGEFLAG(Active, active)
 	TESTCLEARFLAG(Active, active)
@@ -261,6 +267,9 @@ PAGEFLAG(SavePinned, savepinned);			/* Xen */
 
 **/
 PAGEFLAG(Reserved, reserved) __CLEARPAGEFLAG(Reserved, reserved)
+/** 20140524    
+ * swapbacked ???
+ **/
 PAGEFLAG(SwapBacked, swapbacked) __CLEARPAGEFLAG(SwapBacked, swapbacked)
 
 __PAGEFLAG(SlobFree, slob_free)
@@ -279,10 +288,17 @@ PAGEFLAG(OwnerPriv1, owner_priv_1) TESTCLEARFLAG(OwnerPriv1, owner_priv_1)
  * Only test-and-set exist for PG_writeback.  The unconditional operators are
  * risky: they bypass page accounting.
  */
+/** 20140524    
+ * writeback page
+ **/
 TESTPAGEFLAG(Writeback, writeback) TESTSCFLAG(Writeback, writeback)
 PAGEFLAG(MappedToDisk, mappedtodisk)
 
 /* PG_readahead is only used for file reads; PG_reclaim is only for writes */
+/** 20140524    
+ * reclaim flag 관련 함수.
+ * readahead flag는 file reads, reclaim flag는 file writes에만 사용된다.
+ **/
 PAGEFLAG(Reclaim, reclaim) TESTCLEARFLAG(Reclaim, reclaim)
 PAGEFLAG(Readahead, reclaim)		/* Reminder to do async read-ahead */
 
@@ -300,6 +316,9 @@ PAGEFLAG_FALSE(HighMem)
 #endif
 
 #ifdef CONFIG_SWAP
+/** 20140524    
+ * swapcache
+ **/
 PAGEFLAG(SwapCache, swapcache)
 #else
 PAGEFLAG_FALSE(SwapCache)
@@ -614,7 +633,7 @@ static inline int PageTransTail(struct page *page)
 
 #else
 /** 20131221
- * CONFIG_TRANSPARENT_HUGEPAGE가 define되어 있지않으므로 0을 리턴한다.
+ * CONFIG_TRANSPARENT_HUGEPAGE가 define되어 있지 않으므로 0을 리턴한다.
  **/
 static inline int PageTransHuge(struct page *page)
 {

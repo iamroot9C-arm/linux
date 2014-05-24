@@ -144,6 +144,9 @@ extern void __mutex_init(struct mutex *lock, const char *name,
  *
  * Returns 1 if the mutex is locked, 0 if unlocked.
  */
+/** 20140524    
+ * mutex의 lock count가 1이 아니면 lock이다. (1->0이 lock 성공 조건)
+ **/
 static inline int mutex_is_locked(struct mutex *lock)
 {
 	return atomic_read(&lock->count) != 1;

@@ -81,8 +81,14 @@ static inline struct anon_vma *anon_vma_alloc(void)
 	return anon_vma;
 }
 
+/** 20140524    
+ * anon_vma를 해제한다.
+ **/
 static inline void anon_vma_free(struct anon_vma *anon_vma)
 {
+	/** 20140524    
+	 * refcount는 free 전에 0이 되어야 한다.
+	 **/
 	VM_BUG_ON(atomic_read(&anon_vma->refcount));
 
 	/*
@@ -102,11 +108,17 @@ static inline void anon_vma_free(struct anon_vma *anon_vma)
 	 * LOCK should suffice since the actual taking of the lock must
 	 * happen _before_ what follows.
 	 */
+	/** 20140524    
+	 * root에 lock이 걸려 있는데, 왜 lock/unlock을 호출해 주는 것일까?
+	 **/
 	if (mutex_is_locked(&anon_vma->root->mutex)) {
 		anon_vma_lock(anon_vma);
 		anon_vma_unlock(anon_vma);
 	}
 
+	/** 20140524    
+	 * slab object를 반환한다.
+	 **/
 	kmem_cache_free(anon_vma_cachep, anon_vma);
 }
 
@@ -491,6 +503,13 @@ out:
  * atomic op -- the trylock. If we fail the trylock, we fall back to getting a
  * reference like with page_get_anon_vma() and then block on the mutex.
  */
+/** 20140524    
+ * page의 anon_vma에 lock을 걸고 anon_vma를 리턴한다.
+ * 실패했다면 NULL이 리턴된다.
+ *
+ * atomic op으로 fast path로 trylock하고,
+ * 실패했을 경우 mutex lock을 시도한다.
+ **/
 struct anon_vma *page_lock_anon_vma(struct page *page)
 {
 	struct anon_vma *anon_vma = NULL;
@@ -498,20 +517,40 @@ struct anon_vma *page_lock_anon_vma(struct page *page)
 	unsigned long anon_mapping;
 
 	rcu_read_lock();
+	/** 20140524    
+	 * 현재 page의 mapping 정보를 읽어온다.
+	 **/
 	anon_mapping = (unsigned long) ACCESS_ONCE(page->mapping);
+	/** 20140524    
+	 * PAGE_MAPPING_FLAGS가 PAGE_MAPPING_ANON 이 아닌 경우 out.
+	 * page가 mapping table에 등록되지 않은 경우 out.
+	 **/
 	if ((anon_mapping & PAGE_MAPPING_FLAGS) != PAGE_MAPPING_ANON)
 		goto out;
 	if (!page_mapped(page))
 		goto out;
 
+	/** 20140524    
+	 * flag를 빼고 anon_vma 주소만 가져온다.
+	 **/
 	anon_vma = (struct anon_vma *) (anon_mapping - PAGE_MAPPING_ANON);
+	/** 20140524    
+	 * anon_vma의 root를 가져온다.
+	 **/
 	root_anon_vma = ACCESS_ONCE(anon_vma->root);
+	/** 20140524    
+	 * root anon_vma에 lock을 시도한다.
+	 **/
 	if (mutex_trylock(&root_anon_vma->mutex)) {
 		/*
 		 * If the page is still mapped, then this anon_vma is still
 		 * its anon_vma, and holding the mutex ensures that it will
 		 * not go away, see anon_vma_free().
 		 */
+		/** 20140524    
+		 * lock을 획득한 경우 goto out.
+		 * page가 mapping이 되어 있지 않다면 lock을 해제하고 anon_vma는 NULL
+		 **/
 		if (!page_mapped(page)) {
 			mutex_unlock(&root_anon_vma->mutex);
 			anon_vma = NULL;
@@ -520,12 +559,22 @@ struct anon_vma *page_lock_anon_vma(struct page *page)
 	}
 
 	/* trylock failed, we got to sleep */
+	/** 20140524    
+	 * root lock을 획득하지 못한 경우 - refcount를 증가하는데, 실패한 경우
+	 * anon_vma = NULL로 out.
+	 **/
 	if (!atomic_inc_not_zero(&anon_vma->refcount)) {
 		anon_vma = NULL;
 		goto out;
 	}
 
+	/** 20140524    
+	 * root lock을 획득하지 못한 경우 - page가 mapping 되지 않은 경우
+	 **/
 	if (!page_mapped(page)) {
+		/** 20140524    
+		 * 바로 위에서 refcount를 증가시켰으므로 put으로 refcount를 감소시킨다.
+		 **/
 		put_anon_vma(anon_vma);
 		anon_vma = NULL;
 		goto out;
@@ -533,8 +582,16 @@ struct anon_vma *page_lock_anon_vma(struct page *page)
 
 	/* we pinned the anon_vma, its safe to sleep */
 	rcu_read_unlock();
+	/** 20140524    
+	 * root lock을 획득하지 못한 경우 - anon_vma에 lock을 건다.
+	 *   그러나 내부적으로 root에 mutex lock을 거는 함수를 호출한다.
+	 **/
 	anon_vma_lock(anon_vma);
 
+	/** 20140524    
+	 * anon_vma에 refcount를 감소시켜 0이 되었다면 
+	 * unlock, put(refcount가 0이 되었을 때 memory 해제), anon_vma는 NULL.
+	 **/
 	if (atomic_dec_and_test(&anon_vma->refcount)) {
 		/*
 		 * Oops, we held the last refcount, release the lock
@@ -546,6 +603,9 @@ struct anon_vma *page_lock_anon_vma(struct page *page)
 		anon_vma = NULL;
 	}
 
+	/** 20140524
+	 * anon_vam를 리턴한다.
+	 **/
 	return anon_vma;
 
 out:
@@ -879,6 +939,7 @@ static int page_referenced_file(struct page *page,
  */
 /** 20140111
  * 추후 분석하기로 함 ???
+ * page의 referenced된 수를 누적시켜 리턴.
  **/
 int page_referenced(struct page *page,
 		    int is_locked,
@@ -889,7 +950,14 @@ int page_referenced(struct page *page,
 	int we_locked = 0;
 
 	*vm_flags = 0;
+	/** 20140524    
+	 * page가 page table에 mapping되어 있고, rmapping을 가지고 있다면
+	 **/
 	if (page_mapped(page) && page_rmapping(page)) {
+		/** 20140524    
+		 * lock이 결리지 않고, page anon이 아니라면
+		 * page의 lock을 시도하고, lock을 걸지 못했다면 referenced를 증가시키고 빠져나간다.
+		 **/
 		if (!is_locked && (!PageAnon(page) || PageKsm(page))) {
 			we_locked = trylock_page(page);
 			if (!we_locked) {
@@ -1498,6 +1566,9 @@ static int try_to_unmap_anon(struct page *page, enum ttu_flags flags)
 	struct anon_vma_chain *avc;
 	int ret = SWAP_AGAIN;
 
+	/** 20140524    
+	 * 20140531 여기부터 ...
+	 **/
 	anon_vma = page_lock_anon_vma(page);
 	if (!anon_vma)
 		return ret;
@@ -1662,6 +1733,11 @@ int try_to_unmap(struct page *page, enum ttu_flags flags)
 	BUG_ON(!PageLocked(page));
 	VM_BUG_ON(!PageHuge(page) && PageTransHuge(page));
 
+	/** 20140524    
+	 * ksm인 경우 try_to_unmap_ksm,
+	 * anon인 경우 try_to_unmap_anon,
+	 * 그 외 try_to_unmap_file로 unmap.
+	 **/
 	if (unlikely(PageKsm(page)))
 		ret = try_to_unmap_ksm(page, flags);
 	else if (PageAnon(page))
@@ -1700,13 +1776,26 @@ int try_to_munlock(struct page *page)
 		return try_to_unmap_file(page, TTU_MUNLOCK);
 }
 
+/** 20140524    
+ * anon_vma를 해제한다.
+ **/
 void __put_anon_vma(struct anon_vma *anon_vma)
 {
+	/** 20140524    
+	 * root anon_vma를 가져온다.
+	 **/
 	struct anon_vma *root = anon_vma->root;
 
+	/** 20140524    
+	 * anon_vma가 root가 아니고, root의 refcount를 감소시켜 0이라면
+	 * root를 해제한다.
+	 **/
 	if (root != anon_vma && atomic_dec_and_test(&root->refcount))
 		anon_vma_free(root);
 
+	/** 20140524    
+	 * anon_vma를 해제한다.
+	 **/
 	anon_vma_free(anon_vma);
 }
 

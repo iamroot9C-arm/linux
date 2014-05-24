@@ -97,6 +97,11 @@ static inline void list_add(struct list_head *new, struct list_head *head)
  */
 /** 20130330    
  * 가장 끝에 새로운 entry를 삽입.
+ *
+ * list_add와 동일하게 __list_add 함수를 사용해 구현.
+ * 차이점은
+ *    list_add      : head       ---- head->next
+ *    list_add_tail : head->prev ---- head
  **/
 static inline void list_add_tail(struct list_head *new, struct list_head *head)
 {

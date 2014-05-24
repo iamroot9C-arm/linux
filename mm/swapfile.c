@@ -419,6 +419,10 @@ swp_entry_t get_swap_page(void)
 	int wrapped = 0;
 
 	spin_lock(&swap_lock);
+	/** 20140524    
+	 * swap으로 사용할 페이지가 없다면 noswap으로 이동.
+	 * 성공하면 swap pages 수를 감소시킨다.
+	 **/
 	if (nr_swap_pages <= 0)
 		goto noswap;
 	nr_swap_pages--;
@@ -426,6 +430,9 @@ swp_entry_t get_swap_page(void)
 	for (type = swap_list.next; type >= 0 && wrapped < 2; type = next) {
 		si = swap_info[type];
 		next = si->next;
+		/** 20140524    
+		 * swap info의 type 순회가 끝날 때마다 wrapped를 하나 증가시킨다.
+		 **/
 		if (next < 0 ||
 		    (!wrapped && si->prio != swap_info[next]->prio)) {
 			next = swap_list.head;
