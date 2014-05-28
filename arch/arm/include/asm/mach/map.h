@@ -11,6 +11,13 @@
  */
 #include <asm/io.h>
 
+/** 20130309
+ * page table mapping을 위한 구조체
+ *   virtual : mapping될 가상 address 주소
+ *   pfn     : mapping할 물리 page frame number (physical address로 변환해 사용)
+ *   length  : mapping시킬 크기
+ *   type    : 속성 테이블 mem_types의 멤버 지정 (arch/arm/mm/mmu.c)
+ **/
 struct map_desc {
 	unsigned long virtual;
 	unsigned long pfn;

@@ -232,7 +232,7 @@
 
 #ifndef MULTI_CPU
 /** 20121208
- * 아래와 같이 됨.
+ * CPU_NAME (cpu_v7)과 동작명을 더해 아래와 같이 됨.
  * #define cpu_proc_init cpu_v7_proc_init
  * */
 #define cpu_proc_init			__glue(CPU_NAME,_proc_init)

@@ -15,6 +15,10 @@
 
 /** 20140419    
  * 세부사항 분석 생략
+ * 
+ * addr ~ end 사이 VA 영역에 대해 pte entry의 주소를 받아와
+ * (pte table이 생성되어 있지 않다면 pte table을 생성 받는다)
+ * prot 속성값으로 pte를 설정해 채운다.
  **/
 static int ioremap_pte_range(pmd_t *pmd, unsigned long addr,
 		unsigned long end, phys_addr_t phys_addr, pgprot_t prot)
@@ -35,7 +39,8 @@ static int ioremap_pte_range(pmd_t *pmd, unsigned long addr,
 }
 
 /** 20140419    
- * 세부사항 분석 생략
+ * 세부사항 분석 생략.
+ * addr ~ end까지 pmd table을 할당받아 pte entry를 채운다.
  **/
 static inline int ioremap_pmd_range(pud_t *pud, unsigned long addr,
 		unsigned long end, phys_addr_t phys_addr, pgprot_t prot)
@@ -77,12 +82,12 @@ static inline int ioremap_pud_range(pgd_t *pgd, unsigned long addr,
 }
 
 /** 20140419    
+ * ioremap용 addr(VA)와 phys_addr(PA)를 받아 page table에 mapping 하는 함수.
+ * 속성은 prot로 전달 받는다.
+ *
  * vmalloc, vmap에서 page를 mapping하는 함수인 vmap_page_range_noflush와 다른 점은
  * ioremap의 경우 phys_addr를 받아와 page table entry를 생성하고,
  * vmap 함수의 경우 할당 받은 (struct page *) 배열을 받아와 page table entry를 생성한다.
- *
- * ioremap용 addr(VA)와 phys_addr(PA)를 받아 page table에 mapping 하는 함수.
- * 속성은 prot로 전달 받는다.
  **/
 int ioremap_page_range(unsigned long addr,
 		       unsigned long end, phys_addr_t phys_addr, pgprot_t prot)

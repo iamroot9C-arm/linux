@@ -40,7 +40,7 @@ static struct map_desc ct_ca9x4_io_desc[] __initdata = {
 };
 
 /** 20130330    
- * ct_ca9x4의 io_desc를 vmlist에 추가
+ * ct_ca9x4의 io_desc 항목에 대해 page table에 등록하고 vmlist에 추가
  **/
 static void __init ct_ca9x4_map_io(void)
 {

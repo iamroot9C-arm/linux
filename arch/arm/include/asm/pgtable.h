@@ -239,7 +239,7 @@ static inline pte_t *pmd_page_vaddr(pmd_t pmd)
  *   pte_index             : pte table에서의 index
  **/
 /** 20131019
-* 해당 pmd에서 index(addr를 변환)에 해당되는 pte주소를 추출
+* 해당 pmd에서 index(addr를 변환)에 해당되는 pte entry주소를 추출
  **/
 #define pte_offset_kernel(pmd,addr)	(pmd_page_vaddr(*(pmd)) + pte_index(addr))
 
@@ -295,7 +295,7 @@ static inline void set_pte_at(struct mm_struct *mm, unsigned long addr,
 	/** 20131102    
 	 * user space address라면 icache, dcache를 sync해주고
 	 * ptep가 가리키는 pte entry의 값을 pteval로 채움
-	 * PTE_EXT_NG : user process용으로 사용되는 page를 의미함
+	 * PTE_EXT_NG : 특정 process용으로 사용되는 page를 의미함 (user 영역)
 	 **/
 	else {
 		__sync_icache_dcache(pteval);

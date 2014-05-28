@@ -616,7 +616,7 @@ int __pte_alloc(struct mm_struct *mm, struct vm_area_struct *vma,
 }
 
 /** 20140329    
- * pte table을 할당받아 kernel prot을 적용해 pmd entry에 기록한다.
+ * pte table을 할당받아 kernel prot을 추가해 pmd entry에 기록한다.
  **/
 int __pte_alloc_kernel(pmd_t *pmd, unsigned long address)
 {

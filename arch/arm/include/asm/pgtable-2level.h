@@ -217,8 +217,8 @@ static inline pmd_t *pmd_offset(pud_t *pud, unsigned long addr)
 #define pmd_addr_end(addr,end) (end)
 
 /** 20130309    
- * cpu_v7_set_pte_ext가 호출됨.
  * ptep의 linux 속성 및  h/w 속성 부분을 각각 채움
+ * cpu_v7_set_pte_ext가 호출됨.
  **/
 #define set_pte_ext(ptep,pte,ext) cpu_set_pte_ext(ptep,pte,ext)
 

@@ -75,6 +75,12 @@ ENDPROC(cpu_v7_switch_mm)
  *	- pte   - PTE value to store
  *	- ext	- value for extended PTE bits
  */
+/** 20140526
+ * page table entry의 Linux, HW 부분을 각각 채운다.
+ * r0 : ptep - level 2 변환 테이블의 위치
+ * r1 : pte  - 저장할 pte 값
+ * r2 : ext  - HW pt에 추가할 속성
+ **/
 ENTRY(cpu_v7_set_pte_ext)
 #ifdef CONFIG_MMU
 	/** 20130309    
@@ -155,7 +161,7 @@ ENTRY(cpu_v7_set_pte_ext)
 	moveq	r3, #0
 
 /** 20130309    
-	pte의 h/w pt에 설정한 r3값을 저장. r0의 값이 +2048로 업데이트
+	pte의 h/w pt 위치에 위에서 설정한 r3값을 저장. r0의 값이 +2048로 업데이트
 **/
  ARM(	str	r3, [r0, #2048]! )
  THUMB(	add	r0, r0, #2048 )

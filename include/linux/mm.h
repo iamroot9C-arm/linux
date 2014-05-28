@@ -1468,10 +1468,10 @@ static inline void pgtable_page_dtor(struct page *page)
 		NULL: pte_offset_map_lock(mm, pmd, address, ptlp))
 
 /** 20140329    
- * pmd가 비어있다면, pte table을 할당받아 pmd 위치에 기록해
- *		address에 해당하는 pte entry를 가져오고,
+ * pmd가 비어있다면, pte table을 할당받아 pmd entry에 기록하고
+ *		address에 해당하는 pte entry 주소를 가져온다,
  * pmd가 비어있지 않다면
- *		address에 해당하는 pte entry를 가져온다.
+ *		address에 해당하는 pte entry 주소를 가져온다.
  **/
 #define pte_alloc_kernel(pmd, address)			\
 	((unlikely(pmd_none(*(pmd))) && __pte_alloc_kernel(pmd, address))? \

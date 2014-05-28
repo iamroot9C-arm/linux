@@ -191,8 +191,8 @@ remap_area_supersections(unsigned long virt, unsigned long pfn,
 #endif
 
 /** 20140419    
- * vm_struct, vmap_area를 할당 받고 (VA),
- * page table에 MT_DEVICE type으로 등록시키는 함수
+ * page frame을 mapping할 vm_struct, vmap_area를 할당 받고 (VA),
+ * page table에 MT_DEVICE에 해당하는 속성으로 등록시키는 함수
  **/
 void __iomem * __arm_ioremap_pfn_caller(unsigned long pfn,
 	unsigned long offset, size_t size, unsigned int mtype, void *caller)
@@ -335,7 +335,8 @@ void __iomem * __arm_ioremap_pfn_caller(unsigned long pfn,
 }
 
 /** 20140419    
- * ioremap 함수.
+ * architecture specific ioremap 함수.
+ * pfn을 매핑할 VA를 할당 받아 page table에 매핑한다.
  **/
 void __iomem *__arm_ioremap_caller(unsigned long phys_addr, size_t size,
 	unsigned int mtype, void *caller)
@@ -395,6 +396,8 @@ void __iomem * (*arch_ioremap_caller)(unsigned long, size_t,
  *  20140419
  *  ioremap 부분 분석 완료.
  *  caller는 vm_struct에 등록된다.
+ *
+ *  phys_addr를 매핑할 VA를 할당 받아 page table에 매핑한다.
  */
 void __iomem *
 __arm_ioremap(unsigned long phys_addr, size_t size, unsigned int mtype)

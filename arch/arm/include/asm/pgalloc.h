@@ -183,7 +183,7 @@ static inline void __pmd_populate(pmd_t *pmdp, phys_addr_t pte,
  */
 /** 20140329    
  * pmdp (pmd entry)에
- *	ptep의 위치와 _PAGE_KERNEL_TABLE 속성을 결합시켜 저장한다.
+ *	ptep의 위치(pte table)와 _PAGE_KERNEL_TABLE 속성을 결합시켜 저장한다.
  **/
 static inline void
 pmd_populate_kernel(struct mm_struct *mm, pmd_t *pmdp, pte_t *ptep)

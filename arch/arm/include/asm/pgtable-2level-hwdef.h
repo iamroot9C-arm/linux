@@ -83,6 +83,9 @@
 #define PTE_EXT_APX		(_AT(pteval_t, 1) << 9)		/* v6 */
 #define PTE_EXT_COHERENT	(_AT(pteval_t, 1) << 9)		/* XScale3 */
 #define PTE_EXT_SHARED		(_AT(pteval_t, 1) << 10)	/* v6 */
+/** 20140526
+ * The nG bit defines the page as being global (applies to all processes) or non-global (used by a specific process).
+ **/
 #define PTE_EXT_NG		(_AT(pteval_t, 1) << 11)	/* v6 */
 
 /*

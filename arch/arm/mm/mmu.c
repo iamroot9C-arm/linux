@@ -203,17 +203,18 @@ void adjust_cr(unsigned long mask, unsigned long set)
 #define PROT_SECT_DEVICE	PMD_TYPE_SECT|PMD_SECT_AP_WRITE
 
 /** 20130202
-* arm linux page table 은 2개로 관리되는데, Hardware용과 Linux용 2가지이다.
-* L_PTE_xxx 매크로의 경우 리눅스용 페이지 테이블의 설정값이다.
-* PMD_xxx 매크로의 경우 하드웨어용 페이지 테이블의 설정값이다.
-* .prot_pte 필드는 리눅스용 pte값을 저장하는 곳이다.
-* .prot_l1, .prot_sect 는 하드웨어용 pte값을 저장하는 곳이다.
-* 	20130216
-* 		ARM CortexA PG. Figure 10-3 Level 1 page table entry format
-* 		.prot_l1 : Pointer to 2nd level page table
-* 		.prot_sect : Section
-* ???
-*/
+ * arm linux page table 은 2개로 관리되는데, Hardware용과 Linux용 2가지이다.
+ * 
+ * .prot_pte 필드는 리눅스용 pte값을 저장하는 곳이다.
+ *   L_PTE_xxx 매크로는 리눅스용 페이지 테이블의 설정값이다.
+ *   PMD_xxx 매크로는 하드웨어용 페이지 테이블의 설정값이다.
+ * .prot_l1, .prot_sect 는 하드웨어용 pte값을 저장하는 곳이다.
+ * 	20130216
+ * 		ARM CortexA PG. Figure 10-3 Level 1 page table entry format
+ * 		.prot_l1 : Pointer to 2nd level page table
+ * 		.prot_sect : Section
+ * ???
+ */
 static struct mem_type mem_types[] = {
 	[MT_DEVICE] = {		  /* Strongly ordered / ARMv6 shared device */
 		.prot_pte	= PROT_PTE_DEVICE | L_PTE_MT_DEV_SHARED |
@@ -324,6 +325,9 @@ static struct mem_type mem_types[] = {
 	},
 };
 
+/** 20130323
+ * mem_types에서 type에 해당하는 mem_type 구조체를 조회하여 리턴
+ **/
 const struct mem_type *get_mem_type(unsigned int type)
 {
 	return type < ARRAY_SIZE(mem_types) ? &mem_types[type] : NULL;
@@ -935,12 +939,10 @@ static void __init create_mapping(struct map_desc *md)
 	pgd_t *pgd;
 
 	/** 20130223
-	 * md->virtual이 low vector가 아니면서 TASK_SIZE보다 작은 영역으로 변환된 virtual 주소일 경우
-	 * md->virtual이 high vector가 아니면서 TASK_SIZE보다 작은 영역으로 변환된 virtual 주소일 경우
-	 * mapping table을 생성하지 않음. ???
+	 * user space에 대해서는 mapping table을 생성하지 않는다.
 	 *
 	 * vectors_base() : vector tables의 시작 주소
-	 * TASK_SIZE : user space task의 최대 크기 (0x80000000 - 0x01000000 in vexpress)
+	 * TASK_SIZE      : user space task의 최대 크기 (0x80000000 - 0x01000000 in vexpress)
 	 **/
 	if (md->virtual != vectors_base() && md->virtual < TASK_SIZE) {
 		printk(KERN_WARNING "BUG: not creating mapping for 0x%08llx"
@@ -1000,7 +1002,7 @@ static void __init create_mapping(struct map_desc *md)
 	}
 
 	/** 20130223    
-	 * addr를 포함하는 page table entry의 주소
+	 * 가상주소 addr를 포함하는 영역에 대한 page table entry의 주소
 	 **/
 	pgd = pgd_offset_k(addr);
 	end = addr + length;
@@ -1574,13 +1576,14 @@ static void __init devicemaps_init(struct machine_desc *mdesc)
 	create_mapping(&map);
 #endif
 
-/** 20130323 여기부터..
-**/
 	/*
 	 * Create a mapping for the machine vectors at the high-vectors
 	 * location (0xffff0000).  If we aren't using high-vectors, also
 	 * create a mapping at the low-vectors virtual address.
 	 */
+	/** 20130323
+	 * vector table에 대한 mapping을 생성한다.
+	 **/
 	map.pfn = __phys_to_pfn(virt_to_phys(vectors));
 	map.virtual = 0xffff0000;
 	map.length = PAGE_SIZE;
@@ -1596,9 +1599,9 @@ static void __init devicemaps_init(struct machine_desc *mdesc)
 	/*
 	 * Ask the machine support to map in the statically mapped devices.
 	 */
-/** 20130323
-* In the case of vexpress, map_io = v2m_map_io from v2m.c
-*/
+	/** 20130323
+	 * In the case of vexpress, map_io = v2m_map_io from v2m.c
+	 */
 	if (mdesc->map_io)
 		mdesc->map_io();
 	fill_pmd_gaps();
@@ -1617,7 +1620,9 @@ static void __init devicemaps_init(struct machine_desc *mdesc)
 }
 
 /** 20130330    
- *  PKMAP_BASE 영역에 대한 pte table을 생성하고, 전역변수 초기화
+ *  PKMAP_BASE 영역(2MB)에 대한 pte table을 생성하고, 전역변수 초기화
+ *
+ *  이 영역은 kmap (interrupt context에서 사용 불가) 함수에 의해 mapping될 page table 영역이다.
  **/
 static void __init kmap_init(void)
 {
@@ -1627,7 +1632,7 @@ static void __init kmap_init(void)
 	 *	-> PAGE_OFFSET - PMD_SIZE (0x80000000 - 0x200000)에 대한 pmd entry의 주소
 	 **/
 	/** 20131026    
-	 * PKMAP_BASE 영역에 해당하는 pmd entry에, pte table을 생성해 주소를 지정한다.
+	 * PKMAP_BASE 영역에 해당하는 pmd entry에, pte table을 할당받은 주소와 속성을 함께 저장한다.
 	 **/
 	pkmap_page_table = early_pte_alloc(pmd_off_k(PKMAP_BASE),
 		PKMAP_BASE, _PAGE_KERNEL_TABLE);
@@ -1673,9 +1678,6 @@ static void __init map_lowmem(void)
 
 		/** 20130309    
 		 * 해당 memblock 영역에 대한 page table을 채운다.
-		 **/
-		 /** 20130824
-		 다음주 create_mapping 정리 필요.
 		 **/
 		create_mapping(&map);
 	}
