@@ -44,6 +44,9 @@ struct anon_vma {
 	 * is serialized by a system wide lock only visible to
 	 * mm_take_all_locks() (mm_all_locks_mutex).
 	 */
+	/** 20140531    
+	 * struct anon_vma_chain 정보를 가져온다.
+	 **/
 	struct list_head head;	/* Chain of private "related" vmas */
 };
 
@@ -181,6 +184,9 @@ enum ttu_flags {
 	TTU_IGNORE_ACCESS = (1 << 9),	/* don't age */
 	TTU_IGNORE_HWPOISON = (1 << 10),/* corrupted page is recoverable */
 };
+/** 20140531    
+ * flags에서 TTU_ACTION에 해당하는 비트만 추출한다.
+ **/
 #define TTU_ACTION(x) ((x) & TTU_ACTION_MASK)
 
 int try_to_unmap(struct page *, enum ttu_flags flags);

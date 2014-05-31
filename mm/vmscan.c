@@ -980,6 +980,7 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 				goto keep_locked;
 			/** 20140524    
 			 * page를 위한 swap space를 할당한다.
+			 * page를 swap시키지 못한다면 activate_locked로 이동.
 			 **/
 			if (!add_to_swap(page))
 				goto activate_locked;
@@ -988,6 +989,8 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 
 		/** 20140524    
 		 * page의 mapping 정보를 가져온다.
+		 *
+		 * PAGE_MAPPING_ANON인 경우 NULL이 리턴된다. 
 		 **/
 		mapping = page_mapping(page);
 
@@ -996,7 +999,7 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 		 * processes. Try to unmap it here.
 		 */
 		/** 20140524    
-		 * page가 page table에 mapping 되어 있고, address_space가 존재하면
+		 * page가 page table에 mapping 되어 있고, mapping 정보가 존재하면
 		 **/
 		if (page_mapped(page) && mapping) {
 			switch (try_to_unmap(page, TTU_UNMAP)) {

@@ -182,6 +182,9 @@ static int wait_for_discard(void *word)
 #define SWAPFILE_CLUSTER	256
 #define LATENCY_LIMIT		256
 
+/** 20140531    
+ * 추후 분석 ???
+ **/
 static unsigned long scan_swap_map(struct swap_info_struct *si,
 				   unsigned char usage)
 {
@@ -411,6 +414,10 @@ no_page:
 	return 0;
 }
 
+/** 20140531    
+ * how page slots are reserved in swap areas.
+ * returns the number of the page slot to be used next.
+ **/
 swp_entry_t get_swap_page(void)
 {
 	struct swap_info_struct *si;
@@ -421,7 +428,7 @@ swp_entry_t get_swap_page(void)
 	spin_lock(&swap_lock);
 	/** 20140524    
 	 * swap으로 사용할 페이지가 없다면 noswap으로 이동.
-	 * 성공하면 swap pages 수를 감소시킨다.
+	 * 성공하면 swap pages 수를 하나 감소시킨다.
 	 **/
 	if (nr_swap_pages <= 0)
 		goto noswap;
@@ -444,11 +451,17 @@ swp_entry_t get_swap_page(void)
 		if (!(si->flags & SWP_WRITEOK))
 			continue;
 
+		/** 20140531    
+		 * index update.
+		 **/
 		swap_list.next = next;
 		/* This is called for allocating swap entry for cache */
 		offset = scan_swap_map(si, SWAP_HAS_CACHE);
 		if (offset) {
 			spin_unlock(&swap_lock);
+			/** 20140531    
+			 * 성공적으로 swap entry를 리턴하는 부분.
+			 **/
 			return swp_entry(type, offset);
 		}
 		next = swap_list.next;
@@ -2133,6 +2146,10 @@ void si_swapinfo(struct sysinfo *val)
  * - swap-cache reference is requested but the entry is not used. -> ENOENT
  * - swap-mapped reference requested but needs continued swap count. -> ENOMEM
  */
+/** 20140531    
+ * swap entry를 검증하고, 정상인 경우 swap map count를 증가시킨다.
+ * 자세한 내용은 추후 분석 ???
+ **/
 static int __swap_duplicate(swp_entry_t entry, unsigned char usage)
 {
 	struct swap_info_struct *p;
@@ -2210,6 +2227,10 @@ void swap_shmem_alloc(swp_entry_t entry)
  * if __swap_duplicate() fails for another reason (-EINVAL or -ENOENT), which
  * might occur if a page table entry has got corrupted.
  */
+/** 20140531    
+ * swap entry의 reference count (map)를 1 증가시킨다.
+ * 자세한 내용은 추후 분석???
+ **/
 int swap_duplicate(swp_entry_t entry)
 {
 	int err = 0;

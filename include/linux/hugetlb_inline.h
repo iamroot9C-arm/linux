@@ -12,6 +12,9 @@ static inline int is_vm_hugetlb_page(struct vm_area_struct *vma)
 
 #else
 
+/** 20140531    
+ * vexpress config에서 HUGETLB PAGE를 사용하지 않는다.
+ **/
 static inline int is_vm_hugetlb_page(struct vm_area_struct *vma)
 {
 	return 0;

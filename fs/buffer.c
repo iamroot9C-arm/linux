@@ -610,12 +610,18 @@ EXPORT_SYMBOL(mark_buffer_dirty_inode);
  * If warn is true, then emit a warning if the page is not uptodate and has
  * not been truncated.
  */
+/** 20140531    
+ * 추후 분석 ???
+ **/
 static void __set_page_dirty(struct page *page,
 		struct address_space *mapping, int warn)
 {
 	spin_lock_irq(&mapping->tree_lock);
 	if (page->mapping) {	/* Race with truncate? */
 		WARN_ON_ONCE(warn && !PageUptodate(page));
+		/** 20140531    
+		 * page mapping 정보를 따라가 CAP을 조회해 dirty account가 가능하면 호출한다.
+		 **/
 		account_page_dirtied(page, mapping);
 		radix_tree_tag_set(&mapping->page_tree,
 				page_index(page), PAGECACHE_TAG_DIRTY);
@@ -649,27 +655,55 @@ static void __set_page_dirty(struct page *page,
  * FIXME: may need to call ->reservepage here as well.  That's rather up to the
  * address_space though.
  */
+/** 20140531    
+ * page를 dirty page로 설정한다.
+ * buffer_head를 가지고 있다면 각각에 대해 모두 dirty로 설정한다.
+ * 새롭게 dirty로 설정되었는지 여부를 리턴한다.
+ **/
 int __set_page_dirty_buffers(struct page *page)
 {
 	int newly_dirty;
 	struct address_space *mapping = page_mapping(page);
 
+	/** 20140531    
+	 * mapping이 존재하지 않는 경우 struct page flags에 Dirty를 설정하고 설정되어 있던 값을 리턴한다.
+	 **/
 	if (unlikely(!mapping))
 		return !TestSetPageDirty(page);
 
 	spin_lock(&mapping->private_lock);
+	/** 20140531    
+	 * page가 buffer_head를 가지고 있다면 각각을 따라가 dirty로 설정한다.
+	 **/
 	if (page_has_buffers(page)) {
+		/** 20140531    
+		 * page의 private에 저장된 buffer_head를 가져온다.
+		 **/
 		struct buffer_head *head = page_buffers(page);
 		struct buffer_head *bh = head;
 
 		do {
+			/** 20140531    
+			 * buffer_head에 dirty속성을 설정한다.
+			 **/
 			set_buffer_dirty(bh);
+			/** 20140531    
+			 * 다음 buffer_head로 이동.
+			 * 환형 buffer이므로 head와 같다면 한 바퀴 순회한 것이다.
+			 **/
 			bh = bh->b_this_page;
 		} while (bh != head);
 	}
+	/** 20140531    
+	 * 현재 설정된 page의 dirty상태를 리턴하고 새로 dirty로 설정한다.
+	 * 이전 값이 0이었다면 새롭게 dirty로 표시된 것이다.
+	 **/
 	newly_dirty = !TestSetPageDirty(page);
 	spin_unlock(&mapping->private_lock);
 
+	/** 20140531    
+	 * page가 새롭게 dirty로 설정되었다면, __set_page_dirty를 호출한다.
+	 **/
 	if (newly_dirty)
 		__set_page_dirty(page, mapping, 1);
 	return newly_dirty;

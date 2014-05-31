@@ -133,8 +133,8 @@
  */
 /** 20131102    
  * struct mem_type을 보면
- * L_PTE_PRESENT
- *   항상 매핑되어 있는 vector table, memory, 매핑된 kernel 또는 user entry 등
+ * L_PTE_PRESENT	: 해당 페이지가 현재 메모리상에 존재하는지 여부
+ *   항상 매핑되어 있는 vector table, memory, 매핑된 kernel 또는 user entry 등에 지정.
  *
  * L_PTE_USER
  *   

@@ -99,8 +99,10 @@
  * store exclusive to ensure that these are atomic.  We may loop
  * to ensure that the update happens.
  */
-/**20121110
-참조 사이트 
+/** 20121110
+ *
+ * UP/ SMP에서 모두 사용할 수 있는 원자적 명령 (atomic operation)
+  참조 사이트 
 http://www.ethernut.de/en/documents/arm-inline-asm.html
 http://ibiblio.org/gferg/ldp/GCC-Inline-Assembly-HOWTO.html#ss5.3
 
@@ -117,17 +119,17 @@ Q :  (arm specific) ???
 o : 오프셋화 가능한 주소를 나타난다???
 r : general register ( r0 ~ r15)
 I : Immediate value in data processing instructions(Arm state)
-	e.g. ORR R0, R0, #operand
-	Ir 같이 쓰이고 있는데 어떤 의미일까???
+e.g. ORR R0, R0, #operand
+Ir 같이 쓰이고 있는데 어떤 의미일까???
 
 cc : 명령어가 condition 코드 레지스터를 변경할 경우에 사용한다.
-	eg) teq,subs 
+eg) teq,subs 
 
 +Qo : 만들어놓고 안쓰고 있다 어떤 의미가 있을까???
 
- http://gcc.gnu.org/onlinedocs/gcc/Machine-Constraints.html#Machine-Constraints
+http://gcc.gnu.org/onlinedocs/gcc/Machine-Constraints.html#Machine-Constraints
 
-**/
+ **/
 static inline void atomic_add(int i, atomic_t *v)
 {
 	unsigned long tmp;
@@ -145,7 +147,9 @@ static inline void atomic_add(int i, atomic_t *v)
 }
 
 /** 20140517    
- * ldrex/strex 로 atomic 하게 증가.
+ * ldrex/strex 로 atomic 하게 증가시키고 이전 값 리턴.
+ *
+ * 연산 전,후로 memory barrier를 두어 메모리 접근 연산의 순서를 보장한다.
  **/
 static inline int atomic_add_return(int i, atomic_t *v)
 {

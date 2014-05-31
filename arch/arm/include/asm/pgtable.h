@@ -203,7 +203,7 @@ extern pgd_t swapper_pg_dir[PTRS_PER_PGD];
 #define pmd_present(pmd)	(pmd_val(pmd))
 
 /** 20130309    
- * pmd entry에 들어있는 pte의 주소(PA)에 대한 VA를 리턴하는 함수
+ * pmd entry에 들어있는 pte table의 주소(PA)에 대한 커널 VA를 리턴하는 함수
  **/
 static inline pte_t *pmd_page_vaddr(pmd_t pmd)
 {
@@ -218,9 +218,20 @@ static inline pte_t *pmd_page_vaddr(pmd_t pmd)
 	return __va(pmd_val(pmd) & PHYS_MASK & (s32)PAGE_MASK);
 }
 
+/** 20140531    
+ * pmd entry값이 가리키는 페이지 프레임에 대한 descriptor (struct page)의 주소를 리턴
+ *
+ * pmd_val(pmd) & PHYS_MASK	: pmd 의 값을 physical 주소로 mask.
+ * __phys_to_pfn(x)			: pmd 의 값에 해당하는 page frame number (속성값은 사라짐)
+ * pfn_to_page(x)			: pfn에 해당하는 page descriptor의 주소
+ **/
 #define pmd_page(pmd)		pfn_to_page(__phys_to_pfn(pmd_val(pmd) & PHYS_MASK))
 
 #ifndef CONFIG_HIGHPTE
+/** 20140531    
+ * __pte_map	: pmd에 들어있는 pte table의 가상 주소를 구한다.
+ * __pte_unmap	: NULL.
+ **/
 #define __pte_map(pmd)		pmd_page_vaddr(*(pmd))
 #define __pte_unmap(pte)	do { } while (0)
 #else
@@ -243,6 +254,10 @@ static inline pte_t *pmd_page_vaddr(pmd_t pmd)
  **/
 #define pte_offset_kernel(pmd,addr)	(pmd_page_vaddr(*(pmd)) + pte_index(addr))
 
+/** 20140531    
+ * pte_offset_map	: pmd에서 addr에 해당하는 pte entry의 주소를 리턴한다.
+ * pte_unmap		: pte entry unmap. CONFIG에 따라 NULL.
+ **/
 #define pte_offset_map(pmd,addr)	(__pte_map(pmd) + pte_index(addr))
 #define pte_unmap(pte)			__pte_unmap(pte)
 
@@ -304,7 +319,10 @@ static inline void set_pte_at(struct mm_struct *mm, unsigned long addr,
 }
 
 /** 20131026    
- * pte_val이 0인 경우 pte_none이다.
+ * pte - pte entry의 주소
+ *
+ * pte_none		: pte entry가 비어 있다.
+ * pte_presend	: pte entry에 값이 들어 있고, 매핑된 페이지가 메모리에 존재한다.
  **/
 #define pte_none(pte)		(!pte_val(pte))
 #define pte_present(pte)	(pte_val(pte) & L_PTE_PRESENT)
@@ -326,6 +344,10 @@ static inline void set_pte_at(struct mm_struct *mm, unsigned long addr,
 	((pte_val(pte) & (L_PTE_PRESENT | L_PTE_USER)) == \
 	 (L_PTE_PRESENT | L_PTE_USER))
 
+/** 20140531    
+ * pte bit 조작 함수 생성 매크로.
+ *		- pte_mkold 등
+ **/
 #define PTE_BIT_FUNC(fn,op) \
 static inline pte_t pte_##fn(pte_t pte) { pte_val(pte) op; return pte; }
 

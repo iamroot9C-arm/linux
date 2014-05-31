@@ -367,6 +367,9 @@ static inline void mmu_notifier_mm_destroy(struct mm_struct *mm)
 {
 }
 
+/** 20140531    
+ * CONFIG_MMU_NOTIFIER 가 정의되어 있지 않아 다음 부분이 호출됨.
+ **/
 #define ptep_clear_flush_young_notify ptep_clear_flush_young
 #define pmdp_clear_flush_young_notify pmdp_clear_flush_young
 #define ptep_clear_flush_notify ptep_clear_flush

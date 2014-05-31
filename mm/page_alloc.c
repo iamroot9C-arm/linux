@@ -695,7 +695,7 @@ static inline int page_is_buddy(struct page *page, struct page *buddy,
  **/
 /** 20130921
  * buddy allocator를 이용해 page를 order개만큼 해제하는 함수.
- * buddy가 free인동안 상위 order를 따라가며 묶음 단위로 free 하는 concept.
+ * 가능한 연속적인 묶음을 만들기 위해 buddy page가 free이면 상위 order로 올라가 free.
 **/
 static inline void __free_one_page(struct page *page,
 		struct zone *zone, unsigned int order,

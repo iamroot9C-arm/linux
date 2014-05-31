@@ -20,6 +20,10 @@ extern int pmdp_set_access_flags(struct vm_area_struct *vma,
 #endif
 
 #ifndef __HAVE_ARCH_PTEP_TEST_AND_CLEAR_YOUNG
+/** 20140531    
+ * pte entry의 값을 가져와 L_PTE_YOUNG 속성이 없다면 0을,
+ * 있다면 속성을 제거한 값으로 갱신시킨다.
+ **/
 static inline int ptep_test_and_clear_young(struct vm_area_struct *vma,
 					    unsigned long address,
 					    pte_t *ptep)
@@ -70,6 +74,9 @@ int pmdp_clear_flush_young(struct vm_area_struct *vma,
 #endif
 
 #ifndef __HAVE_ARCH_PTEP_GET_AND_CLEAR
+/** 20140531    
+ * pte 값을 가져오고, pte entry를 clear 시킨다.
+ **/
 static inline pte_t ptep_get_and_clear(struct mm_struct *mm,
 				       unsigned long address,
 				       pte_t *ptep)
@@ -185,6 +192,9 @@ static inline int pmd_same(pmd_t pmd_a, pmd_t pmd_b)
 #endif
 
 #ifndef __HAVE_ARCH_PAGE_TEST_AND_CLEAR_DIRTY
+/** 20140531    
+ * page_test_and_clear_dirty (0)
+ **/
 #define page_test_and_clear_dirty(pfn, mapped)	(0)
 #endif
 

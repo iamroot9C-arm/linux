@@ -951,7 +951,7 @@ extern struct address_space swapper_space;
 /** 20131109
  * page의 속성이 
    1. swapcache일 경우 swapper_space의 주소를 리턴하고
-   2. anonymouse일 경우 NULL을 리턴한다.
+   2. PAGE_MAPPING_ANON이 설정된 경우(anon_vma 주소) NULL을 리턴한다.
    3. 그 이외일 경우 page->mapping을 리턴한다.
  **/
 static inline struct address_space *page_mapping(struct page *page)
@@ -1026,7 +1026,7 @@ static inline pgoff_t page_file_index(struct page *page)
  * Return true if this page is mapped into pagetables.
  */
 /** 20140104    
- * page가 pagetables에 mapping되는지 리턴.
+ * page가 pagetables에 mapping되어 있는지 리턴.
  **/
 static inline int page_mapped(struct page *page)
 {
@@ -1266,6 +1266,9 @@ int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
 /*
  * per-process(per-mm_struct) statistics.
  */
+/** 20140531    
+ * mm_struct의 rss_stat에서 member에 해당하는 page count를 조회한다.
+ **/
 static inline unsigned long get_mm_counter(struct mm_struct *mm, int member)
 {
 	long val = atomic_long_read(&mm->rss_stat.count[member]);
@@ -1296,6 +1299,9 @@ static inline void dec_mm_counter(struct mm_struct *mm, int member)
 	atomic_long_dec(&mm->rss_stat.count[member]);
 }
 
+/** 20140531    
+ * mm_struct에서 현재 memory를 점유하고 있는 filepage + anonpage 수를 리턴한다.
+ **/
 static inline unsigned long get_mm_rss(struct mm_struct *mm)
 {
 	return get_mm_counter(mm, MM_FILEPAGES) +
@@ -1312,10 +1318,19 @@ static inline unsigned long get_mm_hiwater_vm(struct mm_struct *mm)
 	return max(mm->hiwater_vm, mm->total_vm);
 }
 
+/** 20140531    
+ * mm의 rss high-watermark의 상한선을 올려준다.
+ **/
 static inline void update_hiwater_rss(struct mm_struct *mm)
 {
+	/** 20140531    
+	 * mm에서 filepage와 anonpage의 수를 가져온다.
+	 **/
 	unsigned long _rss = get_mm_rss(mm);
 
+	/** 20140531    
+	 * hiwater_rss가 더 적게 설정되어 있다면 _rss로 늘려준다.
+	 **/
 	if ((mm)->hiwater_rss < _rss)
 		(mm)->hiwater_rss = _rss;
 }
@@ -1416,11 +1431,17 @@ static inline pmd_t *pmd_alloc(struct mm_struct *mm, pud_t *pud, unsigned long a
  * overflow into the next struct page (as it might with DEBUG_SPINLOCK).
  * When freeing, reset page->mapping so free_pages_check won't complain.
  */
+/** 20140531    
+ * page 내의 ptl 주소를 가져온다.
+ **/
 #define __pte_lockptr(page)	&((page)->ptl)
 #define pte_lock_init(_page)	do {					\
 	spin_lock_init(__pte_lockptr(_page));				\
 } while (0)
 #define pte_lock_deinit(page)	((page)->mapping = NULL)
+/** 20140531    
+ * pmd entry에 해당하는 페이지에 대한 lock 변수 주소를 리턴.
+ **/
 #define pte_lockptr(mm, pmd)	({(void)(mm); __pte_lockptr(pmd_page(*(pmd)));})
 #else	/* !USE_SPLIT_PTLOCKS */
 /*
@@ -1452,6 +1473,9 @@ static inline void pgtable_page_dtor(struct page *page)
 	__pte;						\
 })
 
+/** 20140531    
+ * ptl을 unlock 하고, pte 를 mapping을 해제(실제로 NULL)하는 매크로
+ **/
 #define pte_unmap_unlock(pte, ptl)	do {		\
 	spin_unlock(ptl);				\
 	pte_unmap(pte);					\

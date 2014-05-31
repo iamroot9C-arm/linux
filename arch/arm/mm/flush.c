@@ -103,8 +103,14 @@ void flush_cache_range(struct vm_area_struct *vma, unsigned long start, unsigned
 		__flush_icache_all();
 }
 
+/** 20140531    
+ * cache type에 따라 cache를 flush한다.
+ **/
 void flush_cache_page(struct vm_area_struct *vma, unsigned long user_addr, unsigned long pfn)
 {
+	/** 20140531    
+	 * vexpress는 CACHEID_VIPT_NONALIASING.
+	 **/
 	if (cache_is_vivt()) {
 		vivt_flush_cache_page(vma, user_addr, pfn);
 		return;
@@ -115,6 +121,9 @@ void flush_cache_page(struct vm_area_struct *vma, unsigned long user_addr, unsig
 		__flush_icache_all();
 	}
 
+	/** 20140531    
+	 * vma가 VM_EXEC일 때 icache를 flush한다.
+	 **/
 	if (vma->vm_flags & VM_EXEC && icache_is_vivt_asid_tagged())
 		__flush_icache_all();
 }

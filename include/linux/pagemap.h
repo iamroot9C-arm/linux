@@ -80,12 +80,16 @@ static inline void mapping_set_gfp_mask(struct address_space *m, gfp_t mask)
  *
  * Or rather, it _will_ be done in larger chunks.
  */
+/** 20140531    
+ * PAGE CACHE를 한 페이지 이상으로 설정할 수 있다. 기본값으로 PAGE 단위로 한다.
+ **/
 #define PAGE_CACHE_SHIFT	PAGE_SHIFT
 #define PAGE_CACHE_SIZE		PAGE_SIZE
 #define PAGE_CACHE_MASK		PAGE_MASK
 #define PAGE_CACHE_ALIGN(addr)	(((addr)+PAGE_CACHE_SIZE-1)&PAGE_CACHE_MASK)
 
 /** 20140111
+ * _count (usage count)를 증가, 감소시키는 방법으로 page cache를 가져오고 해제한다.
  **/
 #define page_cache_get(page)		get_page(page)
 #define page_cache_release(page)	put_page(page)
@@ -300,10 +304,16 @@ static inline loff_t page_file_offset(struct page *page)
 extern pgoff_t linear_hugepage_index(struct vm_area_struct *vma,
 				     unsigned long address);
 
+/** 20140531    
+ * vma에서 page가 mapping 된 page index를 리턴한다.
+ **/
 static inline pgoff_t linear_page_index(struct vm_area_struct *vma,
 					unsigned long address)
 {
 	pgoff_t pgoff;
+	/** 20140531    
+	 * hugepage를 사용한다면 hugepage index를 구해 리턴한다.
+	 **/
 	if (unlikely(is_vm_hugetlb_page(vma)))
 		return linear_hugepage_index(vma, address);
 	pgoff = (address - vma->vm_start) >> PAGE_SHIFT;

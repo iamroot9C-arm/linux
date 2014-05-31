@@ -313,6 +313,9 @@ static inline bool bdi_cap_writeback_dirty(struct backing_dev_info *bdi)
 	return !(bdi->capabilities & BDI_CAP_NO_WRITEBACK);
 }
 
+/** 20140531    
+ * bdi의 capabilities에 CAP_NO_ACCT_DIRTY가 아니면 dirty account 가능하다.
+ **/
 static inline bool bdi_cap_account_dirty(struct backing_dev_info *bdi)
 {
 	return !(bdi->capabilities & BDI_CAP_NO_ACCT_DIRTY);
@@ -340,6 +343,9 @@ static inline bool mapping_cap_writeback_dirty(struct address_space *mapping)
 	return bdi_cap_writeback_dirty(mapping->backing_dev_info);
 }
 
+/** 20140531    
+ * backing_dev_inf에서 account dirty CAP을 조회한다.
+ **/
 static inline bool mapping_cap_account_dirty(struct address_space *mapping)
 {
 	return bdi_cap_account_dirty(mapping->backing_dev_info);

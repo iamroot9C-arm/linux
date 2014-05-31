@@ -23,6 +23,9 @@
 
 struct address_space;
 
+/** 20140531    
+ * USE_SPLIT_PTLOCKS은 참.
+ **/
 #define USE_SPLIT_PTLOCKS	(NR_CPUS >= CONFIG_SPLIT_PTLOCK_CPUS)
 
 /*
@@ -50,6 +53,10 @@ struct page {
 	 **/
 	unsigned long flags;		/* Atomic flags, some possibly
 					 * updated asynchronously */
+	/** 20140531    
+	 * anonymous page가 user VMA에 매핑되었을 때, anon_vma 가 저장된다.
+	 * PAGE_MAPPING_ANON 비트를 추가해 구분한다.
+	 **/
 	struct address_space *mapping;	/* If low bit clear, points to
 					 * inode address_space, or NULL.
 					 * If page mapped as anonymous
@@ -117,14 +124,17 @@ struct page {
 					 */
 					/** 20140104    
 					 * pagetables에 의해 참조되는 page인 경우
-					 *   referencing 때마다 1씩 증가.
+					 *   referencing 때마다 1씩 증가 (공유 count).
 					 *
-					 * reset value는 -1.
+					 * reset value -1.
 					 *
-					 * 아래 함수에서 include.
+					 * 아래 함수에서 increment.
 					 * page_add_new_anon_rmap,
 					 * page_add_file_rmap
 					 * [참고] http://studyfoss.egloos.com/5512112
+					 *
+					 * buddy에 free상태로 존재할 때는
+					 * PAGE_BUDDY_MAPCOUNT_VALUE 값을 가진다.
 					 **/
 					atomic_t _mapcount;
 
@@ -174,6 +184,12 @@ struct page {
 
 	/* Remainder is not double word aligned */
 	union {
+		/** 20140531    
+		 * page flags에 따라 용도가 달라진다.
+		 * private이 설정된 경우, block device의 buffer_heads 포인터가 저장.
+		 * swapcache가 설정된 경우, swap entry의 value가 들어간다.
+		 * buddy에서 사용될 경우, buddy의 order가 들어간다.
+		 **/
 		unsigned long private;		/* Mapping-private opaque data:
 					 	 * usually used for buffer_heads
 						 * if PagePrivate set; used for
@@ -182,6 +198,9 @@ struct page {
 						 * system if PG_buddy is set.
 						 */
 #if USE_SPLIT_PTLOCKS
+		/** 20140531    
+		 * SPLIT PTLOCK을 사용하므로 spinlock을 포함함.
+		 **/
 		spinlock_t ptl;
 #endif
 		/** 20140322    
@@ -264,6 +283,9 @@ struct vm_region {
  * space that has a special rule for the page-fault handlers (ie a shared
  * library, the executable area etc).
  */
+/** 20140531    
+ * task의 VM영역 하나에 대한 자료구조.
+ **/
 struct vm_area_struct {
 	struct mm_struct * vm_mm;	/* The address space we belong to. */
 	unsigned long vm_start;		/* Our start address within vm_mm. */
@@ -332,6 +354,9 @@ struct core_state {
 	struct completion startup;
 };
 
+/** 20140531    
+ * file/anon/swap 별로 counting.
+ **/
 enum {
 	MM_FILEPAGES,
 	MM_ANONPAGES,
@@ -340,8 +365,16 @@ enum {
 };
 
 #if USE_SPLIT_PTLOCKS && defined(CONFIG_MMU)
+/** 20140531    
+ * SPLIT_RSS_COUNTING 정의됨
+ **/
 #define SPLIT_RSS_COUNTING
 /* per-thread cached information, */
+/** 20140531    
+ * task의 rss를 page 종류별로 counting.
+ *
+ * RSS stands for "Resident Set Size." It explains how many of the allocated blocks owned by the task currently reside in RAM
+ **/
 struct task_rss_stat {
 	int events;	/* for synchronization threshold */
 	int count[NR_MM_COUNTERS];
@@ -374,12 +407,18 @@ struct mm_struct {
 	spinlock_t page_table_lock;		/* Protects page tables and some counters */
 	struct rw_semaphore mmap_sem;
 
+	/** 20140531    
+	 * try_to_unmap_one에서 swapout 시킨 mm을 등록시키는 list head.
+	 **/
 	struct list_head mmlist;		/* List of maybe swapped mm's.	These are globally strung
 						 * together off init_mm.mmlist, and are protected
 						 * by mmlist_lock
 						 */
 
 
+	/** 20140531    
+	 * rss 사용량에 대한 high-watermark.
+	 **/
 	unsigned long hiwater_rss;	/* High-watermark of RSS usage */
 	unsigned long hiwater_vm;	/* High-water virtual memory usage */
 

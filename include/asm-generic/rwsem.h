@@ -37,10 +37,17 @@ static inline void __down_read(struct rw_semaphore *sem)
 		rwsem_down_read_failed(sem);
 }
 
+/** 20140531    
+ * rwsem의 reader side에서 lock을 시도하는 함수
+ * lock을 소유했다면 1이 리턴된다.
+ **/
 static inline int __down_read_trylock(struct rw_semaphore *sem)
 {
 	long tmp;
 
+	/** 20140531    
+	 * count가 0보다 크다면 reader만 있으므로 lock을 획득 가능하다.
+	 **/
 	while ((tmp = sem->count) >= 0) {
 		if (tmp == cmpxchg(&sem->count, tmp,
 				   tmp + RWSEM_ACTIVE_READ_BIAS)) {

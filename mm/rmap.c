@@ -623,14 +623,26 @@ void page_unlock_anon_vma(struct anon_vma *anon_vma)
  * Returns virtual address or -EFAULT if page's index/offset is not
  * within the range mapped the @vma.
  */
+/** 20140531    
+ * page가 주어진 vm_area_struct에 매핑된 주소를 가져온다.
+ **/
 inline unsigned long
 vma_address(struct page *page, struct vm_area_struct *vma)
 {
+	/** 20140531    
+	 * page의 mapping index 정보를 가져온다.
+	 **/
 	pgoff_t pgoff = page->index << (PAGE_CACHE_SHIFT - PAGE_SHIFT);
 	unsigned long address;
 
+	/** 20140531    
+	 * hugetlb page인 경우 pgoff을 보정한다.
+	 **/
 	if (unlikely(is_vm_hugetlb_page(vma)))
 		pgoff = page->index << huge_page_order(page_hstate(page));
+	/** 20140531    
+	 * vm area의 시작 주소에서 page의 offset을 더해 page에 해당하는 VA를 리턴한다.
+	 **/
 	address = vma->vm_start + ((pgoff - vma->vm_pgoff) << PAGE_SHIFT);
 	if (unlikely(address < vma->vm_start || address >= vma->vm_end)) {
 		/* page should be within @vma mapping range */
@@ -672,6 +684,11 @@ unsigned long page_address_in_vma(struct page *page, struct vm_area_struct *vma)
  *
  * On success returns with pte mapped and locked.
  */
+/** 20140531    
+ * page descriptor가 가리키는 page frame 번호와
+ * address에 대한 pte entry가 가리키는 page frame 번호가 같은지 검사해,
+ * 일치할 경우 pte에 대한 lock을 획득한 상태에서 pte entry를 리턴하는 함수.
+ **/
 pte_t *__page_check_address(struct page *page, struct mm_struct *mm,
 			  unsigned long address, spinlock_t **ptlp, int sync)
 {
@@ -681,12 +698,18 @@ pte_t *__page_check_address(struct page *page, struct mm_struct *mm,
 	pte_t *pte;
 	spinlock_t *ptl;
 
+	/** 20140531    
+	 * hugepage는 설정되어 있지 않아 분석 제외
+	 **/
 	if (unlikely(PageHuge(page))) {
 		pte = huge_pte_offset(mm, address);
 		ptl = &mm->page_table_lock;
 		goto check;
 	}
 
+	/** 20140531    
+	 * mm_struct을 참고하여 process영역 address가 mapping 된 pagetable entry 를 찾는다.
+	 **/
 	pgd = pgd_offset(mm, address);
 	if (!pgd_present(*pgd))
 		return NULL;
@@ -701,16 +724,33 @@ pte_t *__page_check_address(struct page *page, struct mm_struct *mm,
 	if (pmd_trans_huge(*pmd))
 		return NULL;
 
+	/** 20140531    
+	 * 위 단계를 거쳐 최종적으로 pte entry의 주소를 가져온다.
+	 **/
 	pte = pte_offset_map(pmd, address);
 	/* Make a quick check before getting the lock */
+	/** 20140531    
+	 * pte entry가 가리키는 page가 메모리 상에 존재하지 않을 경우 NULL을 리턴.
+	 **/
 	if (!sync && !pte_present(*pte)) {
 		pte_unmap(pte);
 		return NULL;
 	}
 
+	/** 20140531    
+	 * pmd가 가리키는 페이지에 대한 descriptor의 lock  변수 주소를 가져온다.
+	 **/
 	ptl = pte_lockptr(mm, pmd);
 check:
+	/** 20140531    
+	 **/
 	spin_lock(ptl);
+	/** 20140531    
+	 * pte entry가 가리키는 page가 메모리 상에 위치해 있고,
+	 * 전달된 page의 pfn과 pte entry에 저장된 pfn이 같은지 검사.
+	 *
+	 * pte lock을 획득한 상태로, pte entry의 위치를 넘겨준다.
+	 **/
 	if (pte_present(*pte) && page_to_pfn(page) == pte_pfn(*pte)) {
 		*ptlp = ptl;
 		return pte;
@@ -1230,6 +1270,9 @@ void page_add_file_rmap(struct page *page)
  *
  * The caller needs to hold the pte lock.
  */
+/** 20140531    
+ * page의 rmap을 하나 제거하고, stat에 반영한다.
+ **/
 void page_remove_rmap(struct page *page)
 {
 	bool anon = PageAnon(page);
@@ -1242,9 +1285,15 @@ void page_remove_rmap(struct page *page)
 	 * we hold the lock against page_stat move: so avoid it on anon.
 	 */
 	if (!anon)
+		/** 20140531    
+		 * MEM_CG를 설정하지 않아 NULL 함수
+		 **/
 		mem_cgroup_begin_update_page_stat(page, &locked, &flags);
 
 	/* page still mapped by someone else? */
+	/** 20140531    
+	 * _mapcount를 하나 감소시키고, 그 결과 0보다 작다면 out.
+	 **/
 	if (!atomic_add_negative(-1, &page->_mapcount))
 		goto out;
 
@@ -1255,6 +1304,9 @@ void page_remove_rmap(struct page *page)
 	 * not if it's in swapcache - there might be another pte slot
 	 * containing the swap entry, but page not yet written to swap.
 	 */
+	/** 20140531    
+	 * page_test_and_clear_dirty가 항상 0을 리턴.
+	 **/
 	if ((!anon || PageSwapCache(page)) &&
 	    page_test_and_clear_dirty(page_to_pfn(page), 1))
 		set_page_dirty(page);
@@ -1262,16 +1314,29 @@ void page_remove_rmap(struct page *page)
 	 * Hugepages are not counted in NR_ANON_PAGES nor NR_FILE_MAPPED
 	 * and not charged by memcg for now.
 	 */
+	/** 20140531    
+	 * page가 huge page인 경우 out.
+	 **/
 	if (unlikely(PageHuge(page)))
 		goto out;
+	/** 20140531    
+	 * page가 hugepage가 아니고 anon인 경우
+	 **/
 	if (anon) {
 		mem_cgroup_uncharge_page(page);
+		/** 20140531    
+		 * transparent huge가 아닐 경우 NR_ANON_PAGES 갱신.
+		 * transparent huge일 경우 NR_ANON_TRANSPARENT_HUGEPAGES 갱신.
+		 **/
 		if (!PageTransHuge(page))
 			__dec_zone_page_state(page, NR_ANON_PAGES);
 		else
 			__dec_zone_page_state(page,
 					      NR_ANON_TRANSPARENT_HUGEPAGES);
 	} else {
+		/** 20140531    
+		 * file mapped 갱신
+		 **/
 		__dec_zone_page_state(page, NR_FILE_MAPPED);
 		mem_cgroup_dec_page_stat(page, MEMCG_NR_FILE_MAPPED);
 	}
@@ -1296,12 +1361,19 @@ out:
 int try_to_unmap_one(struct page *page, struct vm_area_struct *vma,
 		     unsigned long address, enum ttu_flags flags)
 {
+	/** 20140531    
+	 * vma로부터 mm 정보를 가져온다.
+	 **/
 	struct mm_struct *mm = vma->vm_mm;
 	pte_t *pte;
 	pte_t pteval;
 	spinlock_t *ptl;
 	int ret = SWAP_AGAIN;
 
+	/** 20140531    
+	 * 전달받은 page와 address의 정보로 찾은 page가 일치할 경우
+	 * lock을 걸어 mm의 pte entry를 받아온다.
+	 **/
 	pte = page_check_address(page, mm, address, &ptl, 0);
 	if (!pte)
 		goto out;
@@ -1311,13 +1383,27 @@ int try_to_unmap_one(struct page *page, struct vm_area_struct *vma,
 	 * If it's recently referenced (perhaps page_referenced
 	 * skipped over this mm) then we should reactivate it.
 	 */
+	/** 20140531    
+	 * mlock을 무시하도로 지정되지 않은 경우
+	 **/
 	if (!(flags & TTU_IGNORE_MLOCK)) {
+		/** 20140531    
+		 * vma에 LOCK이 걸려 있다면 unmap 하지 못한다.
+		 **/
 		if (vma->vm_flags & VM_LOCKED)
 			goto out_mlock;
 
+		/** 20140531    
+		 * TTU_MUNLOCK 속성이 요청된 경우 out_unmap 로 바로 이동한다.
+		 **/
 		if (TTU_ACTION(flags) == TTU_MUNLOCK)
 			goto out_unmap;
 	}
+	/** 20140531    
+	 * TTU_IGNORE_ACCESS (YOUNG)요청이 없었다면
+	 * pte 값에 YOUNG이 셋되어 있었다면(accessed) 클리어하고 tlb를 flush 한다.
+	 * YOUNG이 설정되어 있었다면 SWAP_FAIL로 out_unmap으로 이동한다.
+	 **/
 	if (!(flags & TTU_IGNORE_ACCESS)) {
 		if (ptep_clear_flush_young_notify(vma, address, pte)) {
 			ret = SWAP_FAIL;
@@ -1327,15 +1413,28 @@ int try_to_unmap_one(struct page *page, struct vm_area_struct *vma,
 
 	/* Nuke the page table entry. */
 	flush_cache_page(vma, address, page_to_pfn(page));
+	/** 20140531    
+	 * pte를 clear시킨다.
+	 * 해당되는 tlb를 flush 하고, 이전 값을 가져온다.
+	 **/
 	pteval = ptep_clear_flush_notify(vma, address, pte);
 
 	/* Move the dirty bit to the physical page now the pte is gone. */
+	/** 20140531    
+	 * pte 값이 dirty였다면, struct page에 dirty를 설정한다.
+	 **/
 	if (pte_dirty(pteval))
 		set_page_dirty(page);
 
 	/* Update high watermark before we lower rss */
+	/** 20140531    
+	 * rss hiwatermark 갱신.
+	 **/
 	update_hiwater_rss(mm);
 
+	/** 20140531    
+	 * CONFIG_MEMORY_FAILURE가 정의되지 않아 HWPoison은 항상 0을 리턴한다.
+	 **/
 	if (PageHWPoison(page) && !(flags & TTU_IGNORE_HWPOISON)) {
 		if (PageAnon(page))
 			dec_mm_counter(mm, MM_ANONPAGES);
@@ -1343,27 +1442,49 @@ int try_to_unmap_one(struct page *page, struct vm_area_struct *vma,
 			dec_mm_counter(mm, MM_FILEPAGES);
 		set_pte_at(mm, address, pte,
 				swp_entry_to_pte(make_hwpoison_entry(page)));
+	/** 20140531    
+	 * page가 anon인 경우
+	 **/
 	} else if (PageAnon(page)) {
+		/** 20140531    
+		 * page의 private 값을 저장하는 entry를 선언.
+		 **/
 		swp_entry_t entry = { .val = page_private(page) };
 
+		/** 20140531    
+		 * page가 swapcache인 경우 (add_to_swap된 경우)
+		 **/
 		if (PageSwapCache(page)) {
 			/*
 			 * Store the swap location in the pte.
 			 * See handle_pte_fault() ...
 			 */
+			/** 20140531    
+			 * swap entry의 reference count를 하나 증가시킨다.
+			 * 실패할 경우 다시 page table에 mapping 시키고, out_unmap으로 이동.
+			 **/
 			if (swap_duplicate(entry) < 0) {
 				set_pte_at(mm, address, pte, pteval);
 				ret = SWAP_FAIL;
 				goto out_unmap;
 			}
+			/** 20140531    
+			 * 현재 mm의 mmlist가 비어있다면, init_mm의 mmlist에 추가한다.
+			 **/
 			if (list_empty(&mm->mmlist)) {
 				spin_lock(&mmlist_lock);
 				if (list_empty(&mm->mmlist))
 					list_add(&mm->mmlist, &init_mm.mmlist);
 				spin_unlock(&mmlist_lock);
 			}
+			/** 20140531    
+			 * mm의 anonpages를 감소시키고, swapents는 증가시킨다.
+			 **/
 			dec_mm_counter(mm, MM_ANONPAGES);
 			inc_mm_counter(mm, MM_SWAPENTS);
+		/** 20140531    
+		 * CONFIG_MIGRATION 정의되지 않음.
+		 **/
 		} else if (IS_ENABLED(CONFIG_MIGRATION)) {
 			/*
 			 * Store the pfn of the page in a special migration
@@ -1375,6 +1496,9 @@ int try_to_unmap_one(struct page *page, struct vm_area_struct *vma,
 		}
 		set_pte_at(mm, address, pte, swp_entry_to_pte(entry));
 		BUG_ON(pte_file(*pte));
+	/** 20140531    
+	 * CONFIG_MIGRATION 정의되지 않음.
+	 **/
 	} else if (IS_ENABLED(CONFIG_MIGRATION) &&
 		   (TTU_ACTION(flags) == TTU_MIGRATION)) {
 		/* Establish migration entry for a file page */
@@ -1382,17 +1506,33 @@ int try_to_unmap_one(struct page *page, struct vm_area_struct *vma,
 		entry = make_migration_entry(page, pte_write(pteval));
 		set_pte_at(mm, address, pte, swp_entry_to_pte(entry));
 	} else
+	/** 20140531    
+	 * 그 외에는 filepages에 해당한다.
+	 * mm counter만 감소시킨다.
+	 **/
 		dec_mm_counter(mm, MM_FILEPAGES);
 
+	/** 20140531    
+	 * rmap을 하나 감소시킨다.
+	 **/
 	page_remove_rmap(page);
+	/** 20140531    
+	 * page cache의 usage count를 하나 감소시킨다.
+	 **/
 	page_cache_release(page);
 
 out_unmap:
+	/** 20140531    
+	 * pte의 lock을 해제한다. (unmap에 해당하는 부분은 NULL)
+	 **/
 	pte_unmap_unlock(pte, ptl);
 out:
 	return ret;
 
 out_mlock:
+	/** 20140531    
+	 * mlock 되어 unmap하지 못하는 경우, lock을 해제한다.
+	 **/
 	pte_unmap_unlock(pte, ptl);
 
 
@@ -1404,6 +1544,9 @@ out_mlock:
 	 * vmscan could retry to move the page to unevictable lru if the
 	 * page is actually mlocked.
 	 */
+	/** 20140531    
+	 * 20140607 여기부터...
+	 **/
 	if (down_read_trylock(&vma->vm_mm->mmap_sem)) {
 		if (vma->vm_flags & VM_LOCKED) {
 			mlock_vma_page(page);
@@ -1566,13 +1709,17 @@ static int try_to_unmap_anon(struct page *page, enum ttu_flags flags)
 	struct anon_vma_chain *avc;
 	int ret = SWAP_AGAIN;
 
-	/** 20140524    
-	 * 20140531 여기부터 ...
+	/** 20140531    
+	 * page에 lock을 걸고, page->mapping에서 anon_vma 주소만 가져온다.
+	 * anon_vma가 아닌 경우 리턴한다.
 	 **/
 	anon_vma = page_lock_anon_vma(page);
 	if (!anon_vma)
 		return ret;
 
+	/** 20140531    
+	 * anon_vma의 same_anon_vma를 순회한다.
+	 **/
 	list_for_each_entry(avc, &anon_vma->head, same_anon_vma) {
 		struct vm_area_struct *vma = avc->vma;
 		unsigned long address;
@@ -1585,10 +1732,16 @@ static int try_to_unmap_anon(struct page *page, enum ttu_flags flags)
 		 * locking requirements of exec(), migration skips
 		 * temporary VMAs until after exec() completes.
 		 */
+		/** 20140531    
+		 * migration이 활성화 되어 있고, migration mode로 unmap_anon이 호출된 경우
+		 **/
 		if (IS_ENABLED(CONFIG_MIGRATION) && (flags & TTU_MIGRATION) &&
 				is_vma_temporary_stack(vma))
 			continue;
 
+		/** 20140531    
+		 * page가 mapping된 process 영역의 VA를 가져온다.
+		 **/
 		address = vma_address(page, vma);
 		if (address == -EFAULT)
 			continue;
@@ -1730,6 +1883,9 @@ int try_to_unmap(struct page *page, enum ttu_flags flags)
 {
 	int ret;
 
+	/** 20140531    
+	 * 페이지는 잠금 상태여야 한다.
+	 **/
 	BUG_ON(!PageLocked(page));
 	VM_BUG_ON(!PageHuge(page) && PageTransHuge(page));
 

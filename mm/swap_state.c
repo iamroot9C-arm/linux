@@ -75,6 +75,11 @@ static int __add_to_swap_cache(struct page *page, swp_entry_t entry)
 	VM_BUG_ON(PageSwapCache(page));
 	VM_BUG_ON(!PageSwapBacked(page));
 
+	/** 20140531    
+	 * page를 page cache 용으로 가져온다. (usage만 증가된다)
+	 * page flags에는 swapcache 용으로 사용 중임을 표시한다.
+	 * private 멤버에 entry.val을 설정한다.
+	 **/
 	page_cache_get(page);
 	SetPageSwapCache(page);
 	set_page_private(page, entry.val);
@@ -149,6 +154,10 @@ int add_to_swap(struct page *page)
 	VM_BUG_ON(!PageLocked(page));
 	VM_BUG_ON(!PageUptodate(page));
 
+	/** 20140531    
+	 * 현재 swap page로부터 swap page를 할당받아 entry를 리턴한다.
+	 * 실패한다면 swap area가 찬 경우이므로 page를 swap으로 추가하지 못하고 0이 리턴된다.
+	 **/
 	entry = get_swap_page();
 	if (!entry.val)
 		return 0;

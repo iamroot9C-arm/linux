@@ -86,6 +86,15 @@ void flush_tlb_mm(struct mm_struct *mm)
 		local_flush_tlb_mm(mm);
 }
 
+/** 20140531    
+ * uaddr에 해당하는 tlb entry를 flush 한다.
+ * 상세 내용은 SMP init 후 추후 분석 ???
+ *
+ * SMP에서 다른 프로세서의 MMU page table을 갱신할 필요가 있는 경우
+ *		- IPI 메시지를 생성해 interrupt를 전달한다.
+ * 그렇지 않은 경우
+ *		- local tlb만 flush 한다.
+ **/
 void flush_tlb_page(struct vm_area_struct *vma, unsigned long uaddr)
 {
 	if (tlb_ops_need_broadcast()) {

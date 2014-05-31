@@ -194,8 +194,8 @@ static inline int __TestClearPage##uname(struct page *page)		\
 	__SETPAGEFLAG(uname, lname)  __CLEARPAGEFLAG(uname, lname)
 
 /** 20130511 
-uname에 해당하는 page flag를 0으로 리턴해주는 매크로.
-**/
+ * uname에 해당하는 page flag를 0으로 리턴해주는 매크로.
+ **/
 #define PAGEFLAG_FALSE(uname) 						\
 static inline int Page##uname(const struct page *page)			\
 			{ return 0; }
@@ -438,6 +438,9 @@ PAGEFLAG(HWPoison, hwpoison)
 TESTSCFLAG(HWPoison, hwpoison)
 #define __PG_HWPOISON (1UL << PG_hwpoison)
 #else
+/** 20140531    
+ * HWPoison은 항상 0을 리턴한다.
+ **/
 PAGEFLAG_FALSE(HWPoison)
 #define __PG_HWPOISON 0
 #endif
