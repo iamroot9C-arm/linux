@@ -44,6 +44,8 @@ struct address_space;
 struct page {
 	/* First double word block */
 	/** 20130831    
+	 * page-flags.h에 flags의 enum type 선언.
+	 *
 	 * set_page_section으로 flags에 section 정보를 기록,
 	 * set_page_zone으로 flags에 zone 정보를 기록,
 	 * set_page_node으로 flags에 node id를 기록
@@ -163,6 +165,8 @@ struct page {
 	union {
 		/** 20140322    
 		 * slub에서 사용할 때 partial slab에 대한 list
+		 *
+		 * compound page인 경우, 두번째 page의 .lru.next에 destructor를 등록시킨다.
 		 **/
 		struct list_head lru;	/* Pageout list, eg. active_list
 					 * protected by zone->lru_lock !

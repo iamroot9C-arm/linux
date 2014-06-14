@@ -147,7 +147,7 @@ int vm_swappiness = 60;
 long vm_total_pages;	/* The total number of pages which the VM controls */
 
 /** 20140517    
- * shrinker_list
+ * shrinker_list : register_shrinker를 통해 fs 등에서 등록.
  **/
 static LIST_HEAD(shrinker_list);
 static DECLARE_RWSEM(shrinker_rwsem);
@@ -285,7 +285,7 @@ unsigned long shrink_slab(struct shrink_control *shrink,
 						  : SHRINK_BATCH;
 
 		/** 20140517    
-		 * shrinker의 shrink 동작 수행. 
+		 * shrinker의 shrink를 호출해 
 		 * nr_to_scan에 0을 주었으므로 cache size에 대한 query.
 		 *   struct shrinker 선언부의 주석 참고.
 		 **/
@@ -309,6 +309,10 @@ unsigned long shrink_slab(struct shrink_control *shrink,
 		total_scan = nr;
 		delta = (4 * nr_pages_scanned) / shrinker->seeks;
 		delta *= max_pass;
+		/** 20140614    
+		 * delta를 zone의 회수가능한 page수로 나눠
+		 * slab reclaim과page reclaim 의 balancing을 유지한다.
+		 **/
 		do_div(delta, lru_pages + 1);
 		total_scan += delta;
 		if (total_scan < 0) {
@@ -368,7 +372,7 @@ unsigned long shrink_slab(struct shrink_control *shrink,
 			if (shrink_ret == -1)
 				break;
 			/** 20140517    
-			 * shrink한 숫자를 ret에 누적.
+			 * shrink한 object 숫자를 ret에 누적.
 			 **/
 			if (shrink_ret < nr_before)
 				ret += nr_before - shrink_ret;
@@ -1192,6 +1196,11 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 					 * increment nr_reclaimed here (and
 					 * leave it off the LRU).
 					 */
+					/** 20140614    
+					 * speculative reference에서 사용 중인 경우,
+					 * 그곳에서 곧 해제할 것이라 판단하고 회수된 개수로 카운팅 하고 넘어간다.
+					 * lru list에서는 제거된 상태이다.
+					 **/
 					nr_reclaimed++;
 					continue;
 				}
@@ -1516,6 +1525,8 @@ static unsigned long isolate_lru_pages(unsigned long nr_to_scan,
  */
 /** 20140607    
  * page를 lru list로부터 제거한다.
+ * 
+ * isolate된 page의 usage count를 증가시킨다.
  **/
 int isolate_lru_page(struct page *page)
 {
@@ -1588,6 +1599,11 @@ static int too_many_isolated(struct zone *zone, int file,
 	return isolated > inactive;
 }
 
+
+/** 20140614    
+ * page_list에 남아있는 page를 가져와 evictable 하지 않은 페이지를 lruvec에 되돌린다.
+ * 해제할 페이지는 page_list에 다시 추가된다.
+ **/
 static noinline_for_stack void
 putback_inactive_pages(struct lruvec *lruvec, struct list_head *page_list)
 {
@@ -1603,7 +1619,13 @@ putback_inactive_pages(struct lruvec *lruvec, struct list_head *page_list)
 		int lru;
 
 		VM_BUG_ON(PageLRU(page));
+		/** 20140614    
+		 * lru list 정보 삭제.
+		 **/
 		list_del(&page->lru);
+		/** 20140614    
+		 * page가 evictable하지 않을 경우 page를 lruvec에 추가.
+		 **/
 		if (unlikely(!page_evictable(page, NULL))) {
 			spin_unlock_irq(&zone->lru_lock);
 			putback_lru_page(page);
@@ -1613,20 +1635,37 @@ putback_inactive_pages(struct lruvec *lruvec, struct list_head *page_list)
 
 		lruvec = mem_cgroup_page_lruvec(page, zone);
 
+		/** 20140614    
+		 * page가 lru에 등록됨을 표시하고, 속할 lru를 찾아
+		 * 해당 lruvec의 lru 리스트에 추가한다.
+		 **/
 		SetPageLRU(page);
 		lru = page_lru(page);
 		add_page_to_lru_list(page, lruvec, lru);
 
+		/** 20140614    
+		 * active lru인 경우 reclaim_stat에 recent_rotated에 추가.
+		 **/
 		if (is_active_lru(lru)) {
 			int file = is_file_lru(lru);
 			int numpages = hpage_nr_pages(page);
 			reclaim_stat->recent_rotated[file] += numpages;
 		}
+		/** 20140614    
+		 * page를 감소시켜 더 이상 reference 되지 않는다면
+		 * lru, Active 관련 flags를 정리하고, lru에서 제거한다.
+		 *
+		 * isolate 과정에서 get_page로 usage count를 증가시켰었다.
+		 **/
 		if (put_page_testzero(page)) {
 			__ClearPageLRU(page);
 			__ClearPageActive(page);
 			del_page_from_lru_list(page, lruvec, lru);
 
+			/** 20140614    
+			 * compound page인 경우 해당 destructor를 호출해 해제한다.
+			 * 그렇지 않은 경우 pages_to_free에 임시로 등록시킨다.
+			 **/
 			if (unlikely(PageCompound(page))) {
 				spin_unlock_irq(&zone->lru_lock);
 				(*get_compound_page_dtor(page))(page);
@@ -1639,6 +1678,9 @@ putback_inactive_pages(struct lruvec *lruvec, struct list_head *page_list)
 	/*
 	 * To save our caller's stack, now use input list for pages to free.
 	 */
+	/** 20140614    
+	 * page_list에 pages_to_free를 합친다.
+	 **/
 	list_splice(&pages_to_free, page_list);
 }
 
@@ -1646,6 +1688,13 @@ putback_inactive_pages(struct lruvec *lruvec, struct list_head *page_list)
  * shrink_inactive_list() is a helper for shrink_zone().  It returns the number
  * of reclaimed pages
  */
+/** 20140614    
+ * lruvec에서 inactive 상태의 page를 isolate하여 shrink_page_list로 reclaim한다.
+ * evictable 하지 않은 page list는 다시 putback으로 lru에 추가하고,
+ * 그 중 더 사용하지 않는 페이지들은 free시킨다.
+ *
+ * reclaim된 페이지 수를 리턴한다.
+ **/
 static noinline_for_stack unsigned long
 shrink_inactive_list(unsigned long nr_to_scan, struct lruvec *lruvec,
 		     struct scan_control *sc, enum lru_list lru)
@@ -1713,6 +1762,17 @@ shrink_inactive_list(unsigned long nr_to_scan, struct lruvec *lruvec,
 
 	/** 20140524    
 	 * scan결과를 vm events에 반영.
+	 *
+	 * $ cat /proc/vmstat  | grep pgscan_
+	 * pgscan_kswapd_dma 0
+	 * pgscan_kswapd_dma32 2364911
+	 * pgscan_kswapd_normal 2290694
+	 * pgscan_kswapd_movable 0
+	 * pgscan_direct_dma 0
+	 * pgscan_direct_dma32 12957
+	 * pgscan_direct_normal 318117
+	 * pgscan_direct_movable 0
+	 * pgscan_direct_throttle 0
 	 **/
 	if (global_reclaim(sc)) {
 		zone->pages_scanned += nr_scanned;
@@ -1729,14 +1789,39 @@ shrink_inactive_list(unsigned long nr_to_scan, struct lruvec *lruvec,
 	if (nr_taken == 0)
 		return 0;
 
+	/** 20140614    
+	 * page_list에 대해 shrink 수행.
+	 *
+	 * 리턴값
+	 * nr_reclaimed : reclaim(free)된 페이지 수
+	 * nr_dirty     : dirty로 표시된 페이지 수
+	 * nr_writeback : writeback 대기 중인 페이지 수
+	 **/
 	nr_reclaimed = shrink_page_list(&page_list, zone, sc,
 						&nr_dirty, &nr_writeback);
 
 	spin_lock_irq(&zone->lru_lock);
 
+	/** 20140614    
+	 * 최근 scanned 한 개수에 isolate된 페이지 수 누적.
+	 **/
 	reclaim_stat->recent_scanned[file] += nr_taken;
 
 	if (global_reclaim(sc)) {
+		/** 20140614    
+		 * kswapd에서 수행하는 중이라면 PGSTEAL_KSWAPD,
+		 * direct reclaim이라면 PGSTEAL_DIRECT 에 회수된 페이지 수 증가.
+		 *
+		 * $ cat /proc/vmstat  | grep pgsteal
+		 * pgsteal_kswapd_dma 0
+		 * pgsteal_kswapd_dma32 2313559
+		 * pgsteal_kswapd_normal 2215438
+		 * pgsteal_kswapd_movable 0
+		 * pgsteal_direct_dma 0
+		 * pgsteal_direct_dma32 12845
+		 * pgsteal_direct_normal 306777
+		 * pgsteal_direct_movable 0
+		 **/
 		if (current_is_kswapd())
 			__count_zone_vm_events(PGSTEAL_KSWAPD, zone,
 					       nr_reclaimed);
@@ -1745,12 +1830,22 @@ shrink_inactive_list(unsigned long nr_to_scan, struct lruvec *lruvec,
 					       nr_reclaimed);
 	}
 
+	/** 20140614    
+	 * page_list에서 evictable하지 않은 페이지를 lru에 다시 추가한다.
+	 * 해제할 페이지는 page_list에 다시 추가되어 리턴된다.
+	 **/
 	putback_inactive_pages(lruvec, &page_list);
 
+	/** 20140614    
+	 * ISOLATED 통계를 정정.
+	 **/
 	__mod_zone_page_state(zone, NR_ISOLATED_ANON + file, -nr_taken);
 
 	spin_unlock_irq(&zone->lru_lock);
 
+	/** 20140614    
+	 * page_list에 freeable한 페이지들을 cold로 해제한다.
+	 **/
 	free_hot_cold_page_list(&page_list, 1);
 
 	/*
@@ -1776,6 +1871,11 @@ shrink_inactive_list(unsigned long nr_to_scan, struct lruvec *lruvec,
 	 * DEF_PRIORITY-6 For SWAP_CLUSTER_MAX isolated pages, throttle if any
 	 *                     isolated page is PageWriteback
 	 */
+	/** 20140614    
+	 * shrink_page_list에서 writeback을 수행할 페이지의 수를 리턴받고,
+	 * isolate한 page 수인 nr_taken에 priority를 기준으로 한 rating을 적용하여
+	 * writeback 할 페이지 수가 이상 되면 BLK_RW_ASYNC로 기다린다.
+	 **/
 	if (nr_writeback && nr_writeback >=
 			(nr_taken >> (DEF_PRIORITY - sc->priority)))
 		wait_iff_congested(zone, BLK_RW_ASYNC, HZ/10);
@@ -1807,7 +1907,7 @@ shrink_inactive_list(unsigned long nr_to_scan, struct lruvec *lruvec,
  */
 
 /** 20140524    
- * list에 등록된 active page를 zone의 lru list에 등록시킨다.
+ * list에 등록된 active page를 lruvec의 해당 lru list에 등록시킨다.
  * 만약 page의 reference가 0이 되다면 pages_to_free 리스트에 등록시킨다.
  **/
 static void move_active_pages_to_lru(struct lruvec *lruvec,
@@ -1885,7 +1985,7 @@ static void move_active_pages_to_lru(struct lruvec *lruvec,
  *   - file cache인 페이지이면 l_active리스트로 등록시키고,
  *   - file cache가 아니면서 evictable한 page는 l_inactive 리스트로 등록시킨다.
  * 이후 zone의 각 lru 리스트로 옮기고, reference가 0인 페이지는 해제한다.
-**/
+ **/
 static void shrink_active_list(unsigned long nr_to_scan,
 			       struct lruvec *lruvec,
 			       struct scan_control *sc,
@@ -1983,7 +2083,13 @@ static void shrink_active_list(unsigned long nr_to_scan,
 		}
 
 		/** 20140111
-		 * rmap관련 내용이므로 추후 분석하기로 함 ???
+		 * page가 reference 되고 있는지 체크.
+		 *
+		 * 그 중 code나 data 영역에 속하고 file cache인 page는 
+		 * l_active리스트에 등록시킨다.
+		 *
+		 * 즉, 실행 가능한 코드에 대해서는 memory에 계속 올려두는 것이 메모리 부하를 줄인다.
+		 * rmap관련은 추후 분석하기로 함 ???
 		 **/
 		if (page_referenced(page, 0, sc->target_mem_cgroup,
 				    &vm_flags)) {
@@ -1997,10 +2103,6 @@ static void shrink_active_list(unsigned long nr_to_scan,
 			 * IO, plus JVM can create lots of anon VM_EXEC pages,
 			 * so we ignore them here.
 			 */
-			/** 20140111
-			 * 실행 가능하고 file cache인 page에 대해서는 
-			 * l_active리스트에 등록시킨다.
-			 **/
 			if ((vm_flags & VM_EXEC) && page_is_file_cache(page)) {
 				list_add(&page->lru, &l_active);
 				continue;
@@ -2008,8 +2110,8 @@ static void shrink_active_list(unsigned long nr_to_scan,
 		}
 
 		/** 20140111
-		 * 위 조건에서 vm_flags와 file_cache인 경우를 제외한 page들은
-		 * page의 active flag를 clear하고 l_inactive에 page를 등록시킨다. 
+		 * 위 조건에서 'VM_EXEC이면서 file_cache인 경우'를 제외한 page들은
+		 * active flag를 clear하고 l_inactive에 page를 등록시킨다. 
 		 **/
 		ClearPageActive(page);	/* we are de-activating */
 
@@ -2033,7 +2135,7 @@ static void shrink_active_list(unsigned long nr_to_scan,
 	reclaim_stat->recent_rotated[file] += nr_rotated;
 
 	/** 20140111
-	 * l_active 및 l_inactive의 page를 lru 리스트로 옮기고,
+	 * l_active 및 l_inactive의 page를 lruvec의 해당 lru 리스트로 옮기고,
 	 * 그 과정에서 reference count가 0이 된 page는 l_hold로 옮긴 뒤
 	 * percpu의 cold page로서 free시킨다.
 	 **/
@@ -2078,7 +2180,7 @@ static int inactive_anon_is_low_global(struct zone *zone)
  */
 /** 20131221
  * lruvec에 해당하는 zone에서
- * inactive anon 페이지가 적으면 true를 리턴한다
+ * inactive anon 페이지 수가 상대적으로 적으면 true를 리턴한다
  **/
 static int inactive_anon_is_low(struct lruvec *lruvec)
 {
@@ -2163,6 +2265,11 @@ static int inactive_list_is_low(struct lruvec *lruvec, enum lru_list lru)
  *
  * active lru인 경우 reclaim 여부와 상관없이 항상 0을 리턴,
  * inactive lru인 경우 reclaim한 페이지 수를 리턴 (왜???)
+ *
+ * 일반적으로 shrink_list 시
+ * active lru에 있던 페이지는 inactive lru로 옮겨진다.
+ * 1. shrink_active_list  : 일반적인 경우 active page -> inactive page
+ * 2. shrink_inactive_list: 일반적인 경우 inactive page -> recliam (free)
  **/
 static unsigned long shrink_list(enum lru_list lru, unsigned long nr_to_scan,
 				 struct lruvec *lruvec, struct scan_control *sc)
@@ -2181,7 +2288,7 @@ static unsigned long shrink_list(enum lru_list lru, unsigned long nr_to_scan,
 	}
 
 	/** 20140104    
-	 * lru가 inactive인 경우 shrink_inactive_list를 호출
+	 * lru가 inactive인 경우 shrink_inactive_list를 호출.
 	 **/
 	return shrink_inactive_list(nr_to_scan, lruvec, sc, lru);
 }
@@ -2512,7 +2619,7 @@ restart:
 
 				/** 20140118    
 				 * lru list의 entry들을 nr_to_scan만큼 scan해 shrink하고,
-				 * reclaimed 된 페이지 수를 누적시킨다.
+				 * inactive lru의 reclaimed 된 페이지 수를 누적시킨다.
 				 **/
 				nr_reclaimed += shrink_list(lru, nr_to_scan,
 							    lruvec, sc);
@@ -2581,6 +2688,9 @@ static void shrink_zone(struct zone *zone, struct scan_control *sc)
 		 **/
 		struct lruvec *lruvec = mem_cgroup_zone_lruvec(zone, memcg);
 
+		/** 20140614    
+		 * lruvec의 lru list 들에 대해 shrink를 수행한다.
+		 **/
 		shrink_lruvec(lruvec, sc);
 
 		/*
@@ -2844,6 +2954,10 @@ static unsigned long do_try_to_free_pages(struct zonelist *zonelist,
 		 * Don't shrink slabs when reclaiming memory from
 		 * over limit cgroups
 		 */
+		/** 20140614    
+		 * glabal_reclaim일 때,
+		 * shrink_slab을 통해 shrinker의 shrink를 수행한다.
+		 **/
 		if (global_reclaim(sc)) {
 			unsigned long lru_pages = 0;
 			/** 20140517    
@@ -2878,7 +2992,7 @@ static unsigned long do_try_to_free_pages(struct zonelist *zonelist,
 		 **/
 		total_scanned += sc->nr_scanned;
 		/** 20140517    
-		 * 회수된 페이지 수가 reclaim할 페이지 수 이상이면 빠져나간다.
+		 * 회수된 페이지 수가 회수할 페이지 수 이상이면 빠져나간다.
 		 **/
 		if (sc->nr_reclaimed >= sc->nr_to_reclaim)
 			goto out;
@@ -2895,7 +3009,8 @@ static unsigned long do_try_to_free_pages(struct zonelist *zonelist,
 		 **/
 		writeback_threshold = sc->nr_to_reclaim + sc->nr_to_reclaim / 2;
 		/** 20140517    
-		 * 현재까지 scan된 페이지가 threshold 이상이면 flusher thread를 깨운다.
+		 * 현재까지 scan된 페이지가 writeback_threshold 이상이면
+		 * flusher thread를 깨운다.
 		 **/
 		if (total_scanned > writeback_threshold) {
 			wakeup_flusher_threads(laptop_mode ? 0 : total_scanned,
@@ -2904,6 +3019,14 @@ static unsigned long do_try_to_free_pages(struct zonelist *zonelist,
 		}
 
 		/* Take a nap, wait for some writeback to complete */
+		/** 20140614    
+		 * scan control에 hibernation_mode가 지정되지 않고,
+		 * scan한 페이지가 존재하고,
+		 * scan control의 priority가 DEF_PRIORITY - 2 보다 작아지면,
+		 * 즉 DEF_PRIORITY로 호출되었을 때 세번째 실행에서 io flush를 실행시킨다.
+		 *
+		 * 20140621 여기부터...
+		 **/
 		if (!sc->hibernation_mode && sc->nr_scanned &&
 		    sc->priority < DEF_PRIORITY - 2) {
 			struct zone *preferred_zone;
@@ -2918,6 +3041,9 @@ static unsigned long do_try_to_free_pages(struct zonelist *zonelist,
 out:
 	delayacct_freepages_end();
 
+	/** 20140614    
+	 * reclaimed된 페이지수가 있다면 리턴한다.
+	 **/
 	if (sc->nr_reclaimed)
 		return sc->nr_reclaimed;
 

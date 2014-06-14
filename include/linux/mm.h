@@ -544,6 +544,9 @@ static inline void set_compound_page_dtor(struct page *page,
 	page[1].lru.next = (void *)dtor;
 }
 
+/** 20140614    
+ * compound_page의 desctructor 함수 포인터를 리턴한다.
+ **/
 static inline compound_page_dtor *get_compound_page_dtor(struct page *page)
 {
 	return (compound_page_dtor *)page[1].lru.next;

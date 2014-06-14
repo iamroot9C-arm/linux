@@ -18,7 +18,8 @@
  */
 /** 20140104    
  * page가 file LRU / anon LRU에 속하는 것인지 리턴.
- * cache page가 file system에 근거한 것이라면 1, 그렇지 않다면 0을 리턴
+ * page가 regular filesystem에 근거한 page cache page라면 1,
+ * 그렇지 않고 anonymous, tmpfs나 ram/swap backed에 근거한 page라면 0을 리턴
  **/
 static inline int page_is_file_cache(struct page *page)
 {
@@ -128,7 +129,7 @@ static __always_inline enum lru_list page_off_lru(struct page *page)
  * into the array of LRU lists.
  */
 /** 20140607    
- * page가 속해 있는 lru type을 리턴.
+ * page의 flag로 해당하는 lru type을 리턴.
  **/
 static __always_inline enum lru_list page_lru(struct page *page)
 {

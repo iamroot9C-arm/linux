@@ -396,6 +396,10 @@ out:
  * This usage means that zero-order pages may not be compound.
  */
 
+/** 20140614    
+ * compound page에 대한 default destructor.
+ * 일반적인 page free 함수를 호출한다.
+ **/
 static void free_compound_page(struct page *page)
 {
 	__free_pages_ok(page, compound_order(page));

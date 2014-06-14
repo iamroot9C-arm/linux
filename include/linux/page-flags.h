@@ -274,7 +274,10 @@ PAGEFLAG(SavePinned, savepinned);			/* Xen */
 **/
 PAGEFLAG(Reserved, reserved) __CLEARPAGEFLAG(Reserved, reserved)
 /** 20140524    
- * swapbacked ???
+ * handle_pte_fault
+ *		do_anonymous_page
+ *			page_add_new_anon_rmap
+ *				SetPageSwapBacked
  **/
 PAGEFLAG(SwapBacked, swapbacked) __CLEARPAGEFLAG(SwapBacked, swapbacked)
 

@@ -195,6 +195,10 @@ enum zone_stat_item {
  * EVICTABLE한 LRU list는
  *	먼저 ANON / FLIE로 구분되고, 다시 ACTIVE / INACTIVE 상태에 따라 구분된다.
  * UNEVICTABLE 한 LRU list도 존재한다.
+ *
+ * for_each_evictable_lru에서 이 순서로 loop을 도는데,
+ * INACTIVE와 ACTIVE의 순서가 변경되면 메모리 부족시
+ * active 상태인 page가 inactive로 바뀌고, 바로 inactive를 shrink 해 메모리에서 해제될 수도 있다.
  **/
 enum lru_list {
 	LRU_INACTIVE_ANON = LRU_BASE,

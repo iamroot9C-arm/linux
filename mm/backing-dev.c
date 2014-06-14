@@ -868,6 +868,8 @@ EXPORT_SYMBOL(congestion_wait);
  * returned. return_value == timeout implies the function did not sleep.
  */
 /** 20131130    
+ * congested인 상황에서 timeout만큼 sleep 하며 io 완료를 대기하는  함수.
+ *
  * sync가 BLK_RW_ASYNC 인 경우 호출.
  * 1. congested 상황인지 검사해서 congested 상황이 아니라면 바로 return.
  * 2. congested라면 blk_flush_plug()를 호출하고 timeout 시간동안 대기한다.

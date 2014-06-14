@@ -322,7 +322,7 @@ static inline void set_pte_at(struct mm_struct *mm, unsigned long addr,
  * pte - pte entry의 주소
  *
  * pte_none		: pte entry가 비어 있다.
- * pte_presend	: pte entry에 값이 들어 있고, 매핑된 페이지가 메모리에 존재한다.
+ * pte_present	: pte entry에 값이 들어 있고, 매핑된 페이지가 메모리에 존재한다.
  **/
 #define pte_none(pte)		(!pte_val(pte))
 #define pte_present(pte)	(pte_val(pte) & L_PTE_PRESENT)
