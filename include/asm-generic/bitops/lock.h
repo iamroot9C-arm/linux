@@ -18,6 +18,10 @@
  *
  * This operation is atomic and provides release barrier semantics.
  */
+/** 20140607    
+ * atmoic operation으로 lock 비트를 제거한다.
+ * unlock 전 smp barrier를 두어 lock 구간에 의해 보호되어야 하는 데이터의 access 순서를 보장한다.
+ **/
 #define clear_bit_unlock(nr, addr)	\
 do {					\
 	smp_mb__before_clear_bit();	\

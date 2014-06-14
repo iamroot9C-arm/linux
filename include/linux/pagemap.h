@@ -36,11 +36,19 @@ static inline void mapping_set_error(struct address_space *mapping, int error)
 	}
 }
 
+/** 20140607    
+ * mapping을 unevictable로 설정한다.
+ * address_space의 flags에 AS_UNEVICTABLE를 설정.
+ **/
 static inline void mapping_set_unevictable(struct address_space *mapping)
 {
 	set_bit(AS_UNEVICTABLE, &mapping->flags);
 }
 
+/** 20140607    
+ * mapping을 evictable로 설정한다.
+ * address_space의 flags에 AS_UNEVICTABLE를 제거.
+ **/
 static inline void mapping_clear_unevictable(struct address_space *mapping)
 {
 	clear_bit(AS_UNEVICTABLE, &mapping->flags);
@@ -332,6 +340,10 @@ static inline void __set_page_locked(struct page *page)
 	__set_bit(PG_locked, &page->flags);
 }
 
+/** 20140607    
+ * page flags에서 locked 비트를 클리어시켜 unlock 상태로 만든다.
+ * non-atomic 함수.
+ **/
 static inline void __clear_page_locked(struct page *page)
 {
 	__clear_bit(PG_locked, &page->flags);

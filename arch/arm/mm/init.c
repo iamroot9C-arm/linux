@@ -581,7 +581,7 @@ void __init bootmem_init(void)
 }
 
 /** 20130907    
- * pfn부터 end 사이 영역을 free시키는 함수
+ * pfn부터 end 사이 영역을 free시키고 해제된 페이지 수를 리턴하는 함수
  **/
 static inline int free_area(unsigned long pfn, unsigned long end, char *s)
 {
@@ -600,7 +600,8 @@ static inline int free_area(unsigned long pfn, unsigned long end, char *s)
 		 **/
 		ClearPageReserved(page);
 		/** 20130907    
-		 * reference count를 초기화
+		 * reference count를 초기화하고,
+		 * page를 해제한다.
 		 **/
 		init_page_count(page);
 		__free_page(page);

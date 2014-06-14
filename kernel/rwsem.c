@@ -28,6 +28,9 @@ EXPORT_SYMBOL(down_read);
 /*
  * trylock for reading -- returns 1 if successful, 0 if contention
  */
+/** 20140531    
+ * rwsem의 reader side에서 lock을 시도한다.
+ **/
 int down_read_trylock(struct rw_semaphore *sem)
 {
 	int ret = __down_read_trylock(sem);

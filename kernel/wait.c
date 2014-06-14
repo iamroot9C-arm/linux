@@ -334,8 +334,15 @@ int __sched out_of_line_wait_on_bit_lock(void *word, int bit,
 }
 EXPORT_SYMBOL(out_of_line_wait_on_bit_lock);
 
+/** 20140607    
+ * wait queue에서 task 하나를 wake up 시킨다.
+ **/
 void __wake_up_bit(wait_queue_head_t *wq, void *word, int bit)
 {
+	/** 20140607    
+	 * wait bit key를 생성한다.
+	 * waitqueue에 대기 중인 task가 있으면 하나 wake up 시킨다.
+	 **/
 	struct wait_bit_key key = __WAIT_BIT_KEY_INITIALIZER(word, bit);
 	if (waitqueue_active(wq))
 		__wake_up(wq, TASK_NORMAL, 1, &key);

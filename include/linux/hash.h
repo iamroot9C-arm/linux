@@ -72,6 +72,9 @@ static inline u32 hash_32(u32 val, unsigned int bits)
 	return hash >> (32 - bits);
 }
 
+/** 20140607    
+ * ptr로 hash 값을 생성하고, 요구되는 bits 만큼 가져온다.
+ **/
 static inline unsigned long hash_ptr(const void *ptr, unsigned int bits)
 {
 	return hash_long((unsigned long)ptr, bits);

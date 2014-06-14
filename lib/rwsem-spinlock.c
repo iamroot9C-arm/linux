@@ -183,16 +183,32 @@ void __sched __down_read(struct rw_semaphore *sem)
 /*
  * trylock for reading -- returns 1 if successful, 0 if contention
  */
+/** 20140531    
+ * rw semaphore에서 reader size의 lock을 시도한다.
+ * writer가 lock을 소유 중이거나 wait_list에 대기 중이지 않은 경우 lock을 획득할 수 있다.
+ * 
+ * 성공하면 1을 리턴, 실패시 0을 리턴
+ **/
 int __down_read_trylock(struct rw_semaphore *sem)
 {
 	unsigned long flags;
 	int ret = 0;
 
 
+	/** 20140531    
+	 * interrupt를 막은 상태에서 spinlock을 건다.
+	 **/
 	raw_spin_lock_irqsave(&sem->wait_lock, flags);
 
+	/** 20140531    
+	 * activity가 양수이면 writer가 lock을 소유하지 않은 상태이므로 reader는
+	 * lock을 소유할 수 있다. writer가 대기하는 wait_list 역시 비어 있어야 한다.
+	 **/
 	if (sem->activity >= 0 && list_empty(&sem->wait_list)) {
 		/* granted */
+		/** 20140531    
+		 * activity를 하나 증가시키고, return 값을 설정한다.
+		 **/
 		sem->activity++;
 		ret = 1;
 	}

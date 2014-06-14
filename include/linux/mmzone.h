@@ -192,7 +192,9 @@ enum zone_stat_item {
 #define LRU_FILE 2
 
 /** 20130427    
- * 순서대로 0, 1, 2, 3, 4, 5
+ * EVICTABLE한 LRU list는
+ *	먼저 ANON / FLIE로 구분되고, 다시 ACTIVE / INACTIVE 상태에 따라 구분된다.
+ * UNEVICTABLE 한 LRU list도 존재한다.
  **/
 enum lru_list {
 	LRU_INACTIVE_ANON = LRU_BASE,

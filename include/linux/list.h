@@ -356,6 +356,9 @@ static inline void list_cut_position(struct list_head *list,
 		__list_cut_position(list, head, entry);
 }
 
+/** 20140607    
+ * prev와 next 사이에 list를 추가시킨다.
+ **/
 static inline void __list_splice(const struct list_head *list,
 				 struct list_head *prev,
 				 struct list_head *next)
@@ -375,6 +378,10 @@ static inline void __list_splice(const struct list_head *list,
  * @list: the new list to add.
  * @head: the place to add it in the first list.
  */
+/** 20140607    
+ * 두 list를 합친다.
+ * head와 head->next 사이에 list를 추가한다.
+ **/
 static inline void list_splice(const struct list_head *list,
 				struct list_head *head)
 {

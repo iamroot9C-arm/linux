@@ -104,7 +104,7 @@ void flush_cache_range(struct vm_area_struct *vma, unsigned long start, unsigned
 }
 
 /** 20140531    
- * cache type에 따라 cache를 flush한다.
+ * cache type에 따라 적합한 함수를 호출해 HW cache를 flush한다.
  **/
 void flush_cache_page(struct vm_area_struct *vma, unsigned long user_addr, unsigned long pfn)
 {

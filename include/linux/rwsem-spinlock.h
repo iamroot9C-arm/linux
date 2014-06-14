@@ -20,6 +20,14 @@
  * - if activity is -1 then there is one active writer
  * - if wait_list is not empty, then there are processes waiting for the semaphore
  */
+/** 20140531    
+ * reader writer lock에서 lock이 가능한지 여부를 activity 값을 통해 판단한다.
+ *
+ * activity
+ *		0   no active readers or writers
+ *		+ve active readers
+ *		-1  one active writer
+ **/
 struct rw_semaphore {
 	__s32			activity;
 	raw_spinlock_t		wait_lock;

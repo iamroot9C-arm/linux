@@ -200,6 +200,12 @@ static inline int __TestClearPage##uname(struct page *page)		\
 static inline int Page##uname(const struct page *page)			\
 			{ return 0; }
 
+/** 20140607    
+ * flags 조작 함수 생성 macro.
+ *
+ * TestSetPage[uname]
+ * TestClearPage[uname]
+ **/
 #define TESTSCFLAG(uname, lname)					\
 	TESTSETFLAG(uname, lname) TESTCLEARFLAG(uname, lname)
 
@@ -225,7 +231,7 @@ PAGEFLAG(Error, error) TESTCLEARFLAG(Error, error)
 PAGEFLAG(Referenced, referenced) TESTCLEARFLAG(Referenced, referenced)
 PAGEFLAG(Dirty, dirty) TESTSCFLAG(Dirty, dirty) __CLEARPAGEFLAG(Dirty, dirty)
 /** 20140524    
- * page의 flags에 lru flag를 설정한다.
+ * page의 flags에 lru 속성을 설정, 해제하는 함수 선언.
  **/
 PAGEFLAG(LRU, lru) __CLEARPAGEFLAG(LRU, lru)
 PAGEFLAG(Active, active) __CLEARPAGEFLAG(Active, active)
@@ -289,7 +295,13 @@ PAGEFLAG(OwnerPriv1, owner_priv_1) TESTCLEARFLAG(OwnerPriv1, owner_priv_1)
  * risky: they bypass page accounting.
  */
 /** 20140524    
- * writeback page
+ * writeback flag.
+ *
+ * PageWriteback
+ * TestSetPageWriteback
+ * TestClearPageWriteback
+ *
+ * ex) ext4_bio_write_page 에서 호출하는 set_page_writeback를 통해 설정됨.
  **/
 TESTPAGEFLAG(Writeback, writeback) TESTSCFLAG(Writeback, writeback)
 PAGEFLAG(MappedToDisk, mappedtodisk)
@@ -325,6 +337,9 @@ PAGEFLAG_FALSE(SwapCache)
 	SETPAGEFLAG_NOOP(SwapCache) CLEARPAGEFLAG_NOOP(SwapCache)
 #endif
 
+/** 20140607    
+ * Unevictable 관련 flags 조작함수 생성 매크로.
+ **/
 PAGEFLAG(Unevictable, unevictable) __CLEARPAGEFLAG(Unevictable, unevictable)
 	TESTCLEARFLAG(Unevictable, unevictable)
 

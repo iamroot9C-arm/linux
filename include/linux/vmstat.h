@@ -45,6 +45,8 @@ static inline void count_vm_event(enum vm_event_item item)
 
 /** 20130831    
  * percpu 변수인 vm_event_states 의 event 중 item에 해당하는 값에 delta 만큼을 더한다.
+ * __count_vm_events : non-atomic 버전
+ * count_vm_events : atomic 버전
  **/
 static inline void __count_vm_events(enum vm_event_item item, long delta)
 {

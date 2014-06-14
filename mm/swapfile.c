@@ -415,6 +415,8 @@ no_page:
 }
 
 /** 20140531    
+ * active swap area를 검색해 free page slot을 찾아 swap entry를 리턴한다.
+ *
  * how page slots are reserved in swap areas.
  * returns the number of the page slot to be used next.
  **/
@@ -670,6 +672,10 @@ int reuse_swap_page(struct page *page)
  * If swap is getting full, or if there are no more mappings of this page,
  * then try_to_free_swap is called to free its swap space.
  */
+/** 20140607    
+ * swap space를 free 하는 함수.
+ * 추후 분석 ???
+ **/
 int try_to_free_swap(struct page *page)
 {
 	VM_BUG_ON(!PageLocked(page));

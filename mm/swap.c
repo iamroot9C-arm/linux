@@ -68,7 +68,8 @@ static void __page_cache_release(struct page *page)
 }
 
 /** 20140111
- * order가 0인(single page)를 lru리스트로 부터 해제하고 percpu에 달아준다. 
+ * order가 0인(single page)를 lru리스트에서 제거하고,
+ * free_hot_cold_page로 해제한다.
  **/
 static void __put_single_page(struct page *page)
 {
@@ -168,11 +169,17 @@ skip_lock_tail:
 }
 
 /** 20140111
- * page를 lru리스트에서 해제하는 함수???
+ * page의 usage count를 감소.
+ * 감소 결과 0이 되면 page를 해제한다.
+ *
  * 자세한 분석은 생략???
  **/
 void put_page(struct page *page)
 {
+	/** 20140607    
+	 * compound page인 경우 put_compound_page로 해제.
+	 * put page를 해 usage count가 0인 경우 __put_single_page로 해제.
+	 **/
 	if (unlikely(PageCompound(page)))
 		put_compound_page(page);
 	else if (put_page_testzero(page))
@@ -542,8 +549,10 @@ void mark_page_accessed(struct page *page)
 EXPORT_SYMBOL(mark_page_accessed);
 
 /** 20140111
- * page를 percpu의 lru리스트에 하나씩 등록시키고 pagevec에 page에 남은 슬롯이 없으면 
- * pagevec의 lru리스트를 zone의 lru리스트에 등록시킨다.
+ * page를 lru cache (percpu)에 추가한다.
+ *
+ * page를 percpu의 lru pagevec에 추가시키고,
+ * lru pagevec이 다 찼으면 pagevec을 zone에 등록시킨다.
  **/
 void __lru_cache_add(struct page *page, enum lru_list lru)
 {
@@ -562,9 +571,8 @@ EXPORT_SYMBOL(__lru_cache_add);
  * @lru: the LRU list to which the page is added.
  */
 /** 20140111
- * page가 active하다면 active속성을 clear하고,
- * 그렇지 않으면서 unevictable 하다면 unevictable속성을 clear한다.
- * page를 lru리스트에 추가한다.
+ * page의 active 속성과 unevictable 속성을 제거하여
+ * lru cache에 추가한다.
  **/
 void lru_cache_add_lru(struct page *page, enum lru_list lru)
 {

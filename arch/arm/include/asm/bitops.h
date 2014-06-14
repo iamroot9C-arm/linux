@@ -26,6 +26,9 @@
 #include <linux/compiler.h>
 #include <linux/irqflags.h>
 
+/** 20140607    
+ * clear bit 전후의 smp barrier.
+ **/
 #define smp_mb__before_clear_bit()	smp_mb()
 #define smp_mb__after_clear_bit()	smp_mb()
 

@@ -322,6 +322,10 @@ do {									\
 # define this_cpu_read(pcp)	__pcpu_size_call_return(this_cpu_read_, (pcp))
 #endif
 
+/** 20140607    
+ * percpu 변수에 대한 operation을 수행하는 매크로.
+ * atomic 버전으로 spin_lock 과 irq disable로 보호된다.
+ **/
 #define _this_cpu_generic_to_op(pcp, val, op)				\
 do {									\
 	unsigned long flags;						\
@@ -346,6 +350,10 @@ do {									\
 # define this_cpu_write(pcp, val)	__pcpu_size_call(this_cpu_write_, (pcp), (val))
 #endif
 
+/** 20140607    
+ * 공통함수 this_cpu_add.
+ * size에 따라 _1, _2, _4, _8 버전이 호출된다.
+ **/
 #ifndef this_cpu_add
 # ifndef this_cpu_add_1
 #  define this_cpu_add_1(pcp, val)	_this_cpu_generic_to_op((pcp), (val), +=)
@@ -577,7 +585,7 @@ do {									\
 #  define __this_cpu_read_8(pcp)	(*__this_cpu_ptr(&(pcp)))
 # endif
 /** 20130831    
- * pcp의 크기에 따라 각각 다른 __this_cpu_read_##n을 호출하는 매크
+ * pcp의 크기에 따라 각각 다른 __this_cpu_read_##n을 호출하는 매크로.
  **/
 # define __this_cpu_read(pcp)	__pcpu_size_call_return(__this_cpu_read_, (pcp))
 #endif

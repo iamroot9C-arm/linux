@@ -54,8 +54,8 @@ struct page {
 	unsigned long flags;		/* Atomic flags, some possibly
 					 * updated asynchronously */
 	/** 20140531    
-	 * anonymous page가 user VMA에 매핑되었을 때, anon_vma 가 저장된다.
-	 * PAGE_MAPPING_ANON 비트를 추가해 구분한다.
+	 * anonymous page가 user VMA에 매핑되었을 때, 
+	 * anon_vma 구조체 주소와 PAGE_MAPPING_ANON 비트로 구성된 값이 저장된다.
 	 **/
 	struct address_space *mapping;	/* If low bit clear, points to
 					 * inode address_space, or NULL.
@@ -123,9 +123,7 @@ struct page {
 					 * pages.
 					 */
 					/** 20140104    
-					 * pagetables에 의해 참조되는 page인 경우
-					 *   referencing 때마다 1씩 증가 (공유 count).
-					 *
+					 * page tables에 mapping될 때마다 1씩 증가 (공유 count).
 					 * reset value -1.
 					 *
 					 * 아래 함수에서 increment.
@@ -151,6 +149,11 @@ struct page {
 					};
 					int units;	/* SLOB */
 				};
+				/** 20140607    
+				 * usage count.
+				 *
+				 * get_page에 의해 증가된다.
+				 **/
 				atomic_t _count;		/* Usage count, see below. */
 			};
 		};

@@ -17,7 +17,8 @@
  * could be as far down as __page_cache_release.
  */
 /** 20140104    
- * page가 file system에 해당하는 것이라면 1, 그렇지 않다면 0을 리턴
+ * page가 file LRU / anon LRU에 속하는 것인지 리턴.
+ * cache page가 file system에 근거한 것이라면 1, 그렇지 않다면 0을 리턴
  **/
 static inline int page_is_file_cache(struct page *page)
 {
@@ -85,6 +86,8 @@ static __always_inline void del_page_from_lru_list(struct page *page,
 /** 20140104    
  * page가 file에 의한 cache라면 LRU_INACTIVE_FILE을 리턴,
  * 아니라면 LRU_INACTIVE_ANON을 리턴
+ *
+ * 이후 active 속성을 추가로 설정하는 방법이 주로 사용됨.
  **/
 static inline enum lru_list page_lru_base_type(struct page *page)
 {
@@ -124,13 +127,22 @@ static __always_inline enum lru_list page_off_lru(struct page *page)
  * Returns the LRU list a page should be on, as an index
  * into the array of LRU lists.
  */
+/** 20140607    
+ * page가 속해 있는 lru type을 리턴.
+ **/
 static __always_inline enum lru_list page_lru(struct page *page)
 {
 	enum lru_list lru;
 
+	/** 20140607    
+	 * unevictable인 경우 LRU_UNEVICTABLE 리턴.
+	 **/
 	if (PageUnevictable(page))
 		lru = LRU_UNEVICTABLE;
 	else {
+		/** 20140607    
+		 * file, anon 속성을 가져와 active 여부를 추가한다.
+		 **/
 		lru = page_lru_base_type(page);
 		if (PageActive(page))
 			lru += LRU_ACTIVE;

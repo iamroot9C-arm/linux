@@ -2084,6 +2084,9 @@ void mark_free_pages(struct zone *zone)
 /** 20130831    
  * 0-order page를 free 한다.
  *
+ * 해제시 바로 buddy로 이관하지 않고, percpu의 리스트의 해당 type에 달아준다.
+ * percpu의 list에 high watermark 이상의 페이지가 등록된 경우 buddy로 이관한다.
+ *
  * hot page : 최근 access된 page의 경우, hw cache에 남아 있을 가능성이 높다.
  * hot page를 free 해줄 때 list의 앞에 넣고, 그렇지 않은 경우 list의 뒤에 넣는다.
  * [참고] http://lwn.net/Articles/14768/

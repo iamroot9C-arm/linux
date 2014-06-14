@@ -522,13 +522,25 @@ EXPORT_SYMBOL(__page_cache_alloc);
  * at a cost of "thundering herd" phenomena during rare hash
  * collisions.
  */
+/** 20140607    
+ * page에 해당하는 wait queue를 wait_table에서 찾아 리턴한다.
+ **/
 static wait_queue_head_t *page_waitqueue(struct page *page)
 {
 	const struct zone *zone = page_zone(page);
 
+	/** 20140607    
+	 * page 주소로 hash 값을 구해 index 삼아 zone의 wait_table에서
+	 * wait queue를 찾아 리턴한다.
+	 *
+	 * wait_table은 zone_wait_table_init에서 구성한다.
+	 **/
 	return &zone->wait_table[hash_ptr(page, zone->wait_table_bits)];
 }
 
+/** 20140607    
+ * page에 대한 wait queue에서 task 하나를 깨운다.
+ **/
 static inline void wake_up_page(struct page *page, int bit)
 {
 	__wake_up_bit(page_waitqueue(page), &page->flags, bit);
@@ -588,9 +600,17 @@ EXPORT_SYMBOL_GPL(add_page_wait_queue);
  * The mb is necessary to enforce ordering between the clear_bit and the read
  * of the waitqueue (to avoid SMP races with a parallel wait_on_page_locked()).
  */
+/** 20140607    
+ * page를 unlock 시키고, wait_on_page_locked로 sleep 중인 task가 있다면 깨운다.
+ **/
 void unlock_page(struct page *page)
 {
 	VM_BUG_ON(!PageLocked(page));
+	/** 20140607    
+	 * PG_locked 비트를 atomic하게 clear시킨다 (smp_mb 동작 포함).
+	 * clear 이후에도 smp_mb를 호출한다.
+	 * unlock 후 page를 대기하던 wait queue에서 task를 하나 깨운다.
+	 **/
 	clear_bit_unlock(PG_locked, &page->flags);
 	smp_mb__after_clear_bit();
 	wake_up_page(page, PG_locked);
@@ -2571,14 +2591,31 @@ EXPORT_SYMBOL(generic_file_aio_write);
  * this page (__GFP_IO), and whether the call may block (__GFP_WAIT & __GFP_FS).
  *
  */
+/** 20140607    
+ * fs-specific한 속성이 있다면 콜백을 호출해 정보를 제거하고,
+ * 없다면 page cache이므로 해제한다.
+ * 성공시 1을 리턴, 실패시 0을 리턴.
+ *
+ * 자세한 내용은 추후 분석 ??? 
+ **/
 int try_to_release_page(struct page *page, gfp_t gfp_mask)
 {
 	struct address_space * const mapping = page->mapping;
 
 	BUG_ON(!PageLocked(page));
+	/** 20140607    
+	 * page가 writeback인 경우 write_page 중이므로 리턴.
+	 * ex) ext4_bio_write_page 에서 호출하는 set_page_writeback를 통해 설정됨.
+	 **/
 	if (PageWriteback(page))
 		return 0;
 
+	/** 20140607    
+	 * mapping이 존재하고 releasepage callback이 존재하면 호출하고,
+	 * 그렇지 않다면 try_to_free_buffers를 호출한다.
+	 *
+	 * swapper_space의 a_ops에 releasepage는 지정되어 있지 않다.
+	 **/
 	if (mapping && mapping->a_ops->releasepage)
 		return mapping->a_ops->releasepage(page, gfp_mask);
 	return try_to_free_buffers(page);

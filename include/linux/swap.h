@@ -217,6 +217,9 @@ struct swap_list_t {
 };
 
 /* Swap 50% full? Release swapcache more aggressively.. */
+/** 20140607    
+ * 전체 swap page 중에 현재 swap pages가 50% 이상 사용 중이면 full이라 판단한다.
+ **/
 #define vm_swap_full() (nr_swap_pages*2 < total_swap_pages)
 
 /* linux/mm/page_alloc.c */

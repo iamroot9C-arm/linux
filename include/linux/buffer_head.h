@@ -136,8 +136,9 @@ BUFFER_FNS(Unwritten, unwritten)
 
 /* If we *know* page->private refers to buffer_heads */
 /** 20140531    
- * 디스크 블록에 사용되는 경우, page->private에 buffer_heads 정보를 기록하고,
- * flags에 PG_Private를 설정한다.
+ * 디스크 블록에 사용되는 경우,
+ * page->private에 buffer_heads 정보를 기록하고 flags에 PG_Private를 설정한다.
+ * 
  **/
 #define page_buffers(page)					\
 	({							\

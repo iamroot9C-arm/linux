@@ -292,8 +292,8 @@ static inline int put_page_testzero(struct page *page)
  * that is the case.
  */
 /** 20140111
- * page의 _count의 이전 값이 0이 아닌 경우에만 페이지를 가져오고 
- * true를 리턴한다.
+ * page의 _count (usage count)의 이전 값이 0이 아닌 경우에만
+ * 페이지를 가져오고 true를 리턴한다.
  **/
 static inline int get_page_unless_zero(struct page *page)
 {
@@ -424,7 +424,9 @@ static inline void get_huge_page_tail(struct page *page)
 
 extern bool __get_page_tail(struct page *page);
 /** 20140111
- * page가 compount page일 경우 PageTail의 count를 증가시키고,
+ * page의 usage count (reference 횟수)를 증가시킨다.
+ *
+ * page가 compound page일 경우 PageTail의 count를 증가시키고,
  * normal page일 경우 page->_count를 증가시킨다.
  **/
 static inline void get_page(struct page *page)
@@ -455,12 +457,11 @@ static inline struct page *virt_to_head_page(const void *x)
  * the first time (boot or memory hotplug)
  */
 /** 20130504
-page struct의 _count(atomic_t.counter)를 1로 설정
-**/
-/** 20130511 
-
-커널내에서만 사용하는 lock 방식. 
-**/
+ * page struct의 _count(atomic_t.counter)를 1로 설정
+ *
+ * 20130511 
+ * 커널내에서만 사용하는 lock 방식 (reference가 존재하므로 이용이 제약된다.). 
+ **/
 static inline void init_page_count(struct page *page)
 {
 	atomic_set(&page->_count, 1);
@@ -1319,7 +1320,7 @@ static inline unsigned long get_mm_hiwater_vm(struct mm_struct *mm)
 }
 
 /** 20140531    
- * mm의 rss high-watermark의 상한선을 올려준다.
+ * mm의 rss high-watermark가 새로 계산한 값보다 작다면 올려준다.
  **/
 static inline void update_hiwater_rss(struct mm_struct *mm)
 {
@@ -1329,7 +1330,7 @@ static inline void update_hiwater_rss(struct mm_struct *mm)
 	unsigned long _rss = get_mm_rss(mm);
 
 	/** 20140531    
-	 * hiwater_rss가 더 적게 설정되어 있다면 _rss로 늘려준다.
+	 * hiwater_rss가 더 작게 설정되어 있다면 _rss로 늘려준다.
 	 **/
 	if ((mm)->hiwater_rss < _rss)
 		(mm)->hiwater_rss = _rss;

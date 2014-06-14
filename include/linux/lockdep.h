@@ -548,6 +548,9 @@ static inline void print_irqtrace_events(struct task_struct *curr)
 # endif
 # define rwsem_release(l, n, i)			lock_release(l, n, i)
 #else
+/** 20140531    
+ * LOCK ALLOC DEBUGGING을 사용하지 않는다.
+ **/
 # define rwsem_acquire(l, s, t, i)		do { } while (0)
 # define rwsem_acquire_read(l, s, t, i)		do { } while (0)
 # define rwsem_release(l, n, i)			do { } while (0)
