@@ -346,6 +346,9 @@ void __init set_smp_cross_call(void (*fn)(const struct cpumask *, unsigned int))
 	smp_cross_call = fn;
 }
 
+/** 20140621    
+ * smp_cross_call 함수로 IPI_CALL_FUNC irq를 mask에 해당하는 cpu에 날린다. 
+ **/
 void arch_send_call_function_ipi_mask(const struct cpumask *mask)
 {
 	/** 20130713    
@@ -354,6 +357,10 @@ void arch_send_call_function_ipi_mask(const struct cpumask *mask)
 	smp_cross_call(mask, IPI_CALL_FUNC);
 }
 
+/** 20140621    
+ * cpu에게 smp_cross_call (vexpress의 경우 gic_raise_softirq)을 통해
+ * IPI_CALL_FUNC_SINGLE irq를 날린다.
+ **/
 void arch_send_call_function_single_ipi(int cpu)
 {
 	smp_cross_call(cpumask_of(cpu), IPI_CALL_FUNC_SINGLE);
@@ -530,12 +537,18 @@ void handle_IPI(int ipinr, struct pt_regs *regs)
 		scheduler_ipi();
 		break;
 
+	/** 20140621    
+	 * 여러 cpu들이 동시에 수행해야 하는 함수를 전달하는 IPI인 경우.
+	 **/
 	case IPI_CALL_FUNC:
 		irq_enter();
 		generic_smp_call_function_interrupt();
 		irq_exit();
 		break;
 
+	/** 20140621    
+	 * 하나의 cpu가 수행해야 하는 함수를 전달하는 IPI인 경우.
+	 **/
 	case IPI_CALL_FUNC_SINGLE:
 		irq_enter();
 		generic_smp_call_function_single_interrupt();

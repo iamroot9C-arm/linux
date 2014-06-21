@@ -188,7 +188,10 @@ static inline unsigned int cpumask_first(const struct cpumask *srcp)
  * Returns >= nr_cpu_ids if no further cpus set.
  */
 /** 20130608    
- * NR_CPUS = 4 이므로 이 부분 수행
+ * 제공된 cpu 마스크에서 index n 이후 처음으로 세팅된 bit를 찾아 인덱스를 리턴.
+ * 최초 호출시에는 n에 -1을 넣는다.
+ *
+ * NR_CPUS = 4 (SMP) 이므로 이 부분 수행
  **/
 static inline unsigned int cpumask_next(int n, const struct cpumask *srcp)
 {
@@ -341,6 +344,9 @@ static inline int cpumask_test_and_set_cpu(int cpu, struct cpumask *cpumask)
  *
  * test_and_clear_bit wrapper for cpumasks.
  */
+/** 20140621    
+ * cpu가 cpumask에 속했는지 검사해 리턴하고, 설정되어 있다면 clear 한다.
+ **/
 static inline int cpumask_test_and_clear_cpu(int cpu, struct cpumask *cpumask)
 {
 	return test_and_clear_bit(cpumask_check(cpu), cpumask_bits(cpumask));
@@ -375,6 +381,10 @@ static inline void cpumask_clear(struct cpumask *dstp)
  *
  * If *@dstp is empty, returns 0, else returns 1
  */
+/** 20140621    
+ * 두 개의 cpumask 에서 공통 비트를 추출해 새로운 cpumask를 만듦.
+ * *dstp = *src1p & *src2p.
+ **/
 static inline int cpumask_and(struct cpumask *dstp,
 			       const struct cpumask *src1p,
 			       const struct cpumask *src2p)
@@ -561,6 +571,9 @@ static inline void cpumask_copy(struct cpumask *dstp,
  *
  * Returns >= nr_cpu_ids if no cpus set in both.  See also cpumask_next_and().
  */
+/** 20140621    
+ * 두 개의 cpumask에 모두 포함되는 첫번째 cpu를 찾아 리턴한다.
+ **/
 #define cpumask_first_and(src1p, src2p) cpumask_next_and(-1, (src1p), (src2p))
 
 /**

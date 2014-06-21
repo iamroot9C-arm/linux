@@ -306,6 +306,9 @@ static inline void list_splice_init_rcu(struct list_head *list,
  * the _rcu list-mutation primitives such as list_add_rcu()
  * as long as the traversal is guarded by rcu_read_lock().
  */
+/** 20140621    
+ * rcu로 보호된 list의 각 entry에 대한 loop.
+ **/
 #define list_for_each_entry_rcu(pos, head, member) \
 	for (pos = list_entry_rcu((head)->next, typeof(*pos), member); \
 		&pos->member != (head); \

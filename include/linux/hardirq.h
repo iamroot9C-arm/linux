@@ -53,6 +53,11 @@
  * SOFTIRQ_MASK: 0x0000ff00
  * HARDIRQ_MASK: 0x03ff0000
  *     NMI_MASK: 0x04000000
+ *
+ * PREEMPT_OFFSET: 1
+ * SOFTIRQ_OFFSET: 1<<8
+ * HARDIRQ_OFFSET: 1<<16
+ * NMI_OFFSET    : 1<<26
  **/
 #define __IRQ_MASK(x)	((1UL << (x))-1)
 

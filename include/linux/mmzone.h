@@ -307,6 +307,12 @@ enum zone_watermarks {
 #define low_wmark_pages(z) (z->watermark[WMARK_LOW])
 #define high_wmark_pages(z) (z->watermark[WMARK_HIGH])
 
+/** 20140621    
+ * count : list에 있는 페이지의 수
+ * high  : high watermark (이 이상되면 buddy로 page를 반환하겠다)
+ * batch : buddy로부터 할당/반환할 페이지 묶음 단위
+ * list  : migrate type별로 page들을 등록시켜 놓을 리스트.
+ **/
 struct per_cpu_pages {
 	int count;		/* number of pages in the list */
 	int high;		/* high watermark, emptying needed */
@@ -577,6 +583,10 @@ struct zone {
 	 * frequently read in proximity to zone->lock.  It's good to
 	 * give them a chance of being in the same cacheline.
 	 */
+	/** 20140621    
+	 * spanned_pages : 홀을 포함한 보유 중인 전체 페이지 개수
+	 * present_pages : 홀을 제외한 보유 중인 페이지 개수
+	 **/
 	unsigned long		spanned_pages;	/* total size, including holes */
 	unsigned long		present_pages;	/* amount of memory (excluding holes) */
 
@@ -943,7 +953,9 @@ zone 의 인덱스를 구함
 #define zone_idx(zone)		((zone) - (zone)->zone_pgdat->node_zones)
 
 /** 20130629    
- * zone의 present_pages의 값이 설정되었는지 검사
+ * zone에 page가 존재하는지 여부를 리턴한다.
+ *
+ * zone의 present_pages의 값이 설정되었는지 검사.
  **/
 static inline int populated_zone(struct zone *zone)
 {
@@ -1102,6 +1114,10 @@ extern struct zone *next_zone(struct zone *zone);
 	     zone;					\
 	     zone = next_zone(zone))
 
+/** 20140621    
+ * first_online_pgdat (node_data)의 zones를 순회하며
+ * page를 보유한 zone에 대한 루프.
+ **/
 #define for_each_populated_zone(zone)		        \
 	for (zone = (first_online_pgdat())->node_zones; \
 	     zone;					\

@@ -9,6 +9,9 @@
 #include <linux/mm.h>
 #include <linux/mmzone.h>
 
+/** 20140621    
+ * UMA 구조에서는 &contig_page_data가 리턴된다.
+ **/
 struct pglist_data *first_online_pgdat(void)
 {
 	return NODE_DATA(first_online_node);

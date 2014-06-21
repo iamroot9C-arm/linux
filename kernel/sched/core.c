@@ -3991,6 +3991,10 @@ int mutex_spin_on_owner(struct mutex *lock, struct task_struct *owner)
  * off of preempt_enable. Kernel preemptions off return from interrupt
  * occur there and call schedule directly.
  */
+/** 20140622    
+ * 선점 카운트가 0이 아니거나 인터럽트 금지 상태가 아닌 경우에
+ * 현재 task를 선점하여 스케쥴러를 호출한다.
+ **/
 asmlinkage void __sched notrace preempt_schedule(void)
 {
 	struct thread_info *ti = current_thread_info();
@@ -3999,10 +4003,18 @@ asmlinkage void __sched notrace preempt_schedule(void)
 	 * If there is a non-zero preempt_count or interrupts are disabled,
 	 * we do not want to preempt the current task. Just return..
 	 */
+	/** 20140622    
+	 * 현재 task의 thread_info의 선점 카운트가 남아 있거나 (선점 상태)
+	 * cpsr의 인터럽트가 꺼진 상태일 때 schedule을 호출하지 않고 리턴.
+	 **/
 	if (likely(ti->preempt_count || irqs_disabled()))
 		return;
 
 	do {
+		/** 20140622    
+		 * 현재 task의 preempt_count에 선점 중임을 기록하고, 
+		 * __shcedule 을 호출해 스케쥴링 한다.
+		 **/
 		add_preempt_count_notrace(PREEMPT_ACTIVE);
 		__schedule();
 		sub_preempt_count_notrace(PREEMPT_ACTIVE);
@@ -4011,6 +4023,10 @@ asmlinkage void __sched notrace preempt_schedule(void)
 		 * Check again in case we missed a preemption opportunity
 		 * between schedule and now.
 		 */
+		/** 20140622    
+		 * schedule 함수에서 돌아와 resched가 필요한지 검사한다.
+		 * 명령 순서를 보장하기 위해 compiler barrier를 둔다.
+		 **/
 		barrier();
 	} while (need_resched());
 }

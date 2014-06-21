@@ -166,6 +166,9 @@ extern void list_del(struct list_head *entry);
  *
  * If @old was empty, it will be overwritten.
  */
+/** 20140621    
+ * list의 old entry를 new entry로 변경한다.
+ **/
 static inline void list_replace(struct list_head *old,
 				struct list_head *new)
 {
@@ -175,6 +178,11 @@ static inline void list_replace(struct list_head *old,
 	new->prev->next = new;
 }
 
+/** 20140621    
+ * list의 old entry를 new entry로 변경하고, old를 초기화 시킨다.
+ *
+ * 예를 들어 percpu list를 local 변수 list에 옮길 때 사용된다.
+ **/
 static inline void list_replace_init(struct list_head *old,
 					struct list_head *new)
 {

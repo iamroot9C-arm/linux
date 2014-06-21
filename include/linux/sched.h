@@ -2202,6 +2202,9 @@ extern struct task_struct *idle_task(int cpu);
  * is_idle_task - is the specified task an idle task?
  * @p: the task in question.
  */
+/** 20140621    
+ * 현재 task가 idle_task인지 확인한다.
+ **/
 static inline bool is_idle_task(const struct task_struct *p)
 {
 	return p->pid == 0;

@@ -121,13 +121,23 @@ static void __local_bh_disable(unsigned long ip, unsigned int cnt)
 		trace_preempt_off(CALLER_ADDR0, get_parent_ip(CALLER_ADDR1));
 }
 #else /* !CONFIG_TRACE_IRQFLAGS */
+/** 20140622    
+ * 선점 count를 이용한 bottom half disable.
+ **/
 static inline void __local_bh_disable(unsigned long ip, unsigned int cnt)
 {
+	/** 20140622    
+	 * preempt_count에 cnt (SOFTIRQ_DISABLE_OFFSET)를 증가시키고
+	 * compiler barrier를 둔다.
+	 **/
 	add_preempt_count(cnt);
 	barrier();
 }
 #endif /* CONFIG_TRACE_IRQFLAGS */
 
+/** 20140622    
+ * 현재 cpu의 bottom half를 막는다.
+ **/
 void local_bh_disable(void)
 {
 	__local_bh_disable((unsigned long)__builtin_return_address(0),
@@ -305,11 +315,20 @@ asmlinkage void do_softirq(void)
 /*
  * Enter an interrupt context.
  */
+/** 20140622    
+ * 추후 분석
+ **/
 void irq_enter(void)
 {
+	/** 20140621    
+	 * 현재 processor의 id를 가져온다.
+	 **/
 	int cpu = smp_processor_id();
 
 	rcu_irq_enter();
+	/** 20140621    
+	 * 현재 task가 idle task이고, interrupt context가 아닐 때
+	 **/
 	if (is_idle_task(current) && !in_interrupt()) {
 		/*
 		 * Prevent raise_softirq from needlessly waking up ksoftirqd
@@ -342,6 +361,9 @@ static inline void invoke_softirq(void)
 /*
  * Exit an interrupt context. Process softirqs if needed and possible:
  */
+/** 20140622    
+ * 추후 분석
+ **/
 void irq_exit(void)
 {
 	account_system_vtime(current);

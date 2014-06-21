@@ -15,6 +15,9 @@
 extern void cpu_idle(void);
 
 typedef void (*smp_call_func_t)(void *info);
+/** 20140621    
+ * call_function_data의 member이기도 함.
+ **/
 struct call_single_data {
 	struct list_head list;
 	smp_call_func_t func;
@@ -233,7 +236,7 @@ static inline void kick_all_cpus_sync(void) {  }
  **/
 #define get_cpu()		({ preempt_disable(); smp_processor_id(); })
 /** 20131221
- * 선점 가능으로 만듬
+ * 선점 가능으로 만들고, task 선점이 대기 중이라면 __schedule 함수를 실행한다.
  **/
 #define put_cpu()		preempt_enable()
 

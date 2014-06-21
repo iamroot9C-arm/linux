@@ -529,8 +529,13 @@ void cpu_init(void)
 	    : "r14");
 }
 
+/** 20140621    
+ **/
 int __cpu_logical_map[NR_CPUS];
 
+/** 20140621    
+ * 논리 cpu번호를 설정한다.
+ **/
 void __init smp_setup_processor_id(void)
 {
 	int i;

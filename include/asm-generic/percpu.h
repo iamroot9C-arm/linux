@@ -124,6 +124,9 @@ extern void setup_per_cpu_areas(void);
 #define PER_CPU_SHARED_ALIGNED_SECTION ""
 #define PER_CPU_ALIGNED_SECTION ""
 #else
+/** 20140621    
+ * percpu shared aligned section 이름
+ **/
 #define PER_CPU_SHARED_ALIGNED_SECTION "..shared_aligned"
 #define PER_CPU_ALIGNED_SECTION "..shared_aligned"
 #endif

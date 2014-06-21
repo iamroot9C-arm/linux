@@ -1972,15 +1972,25 @@ void drain_zone_pages(struct zone *zone, struct per_cpu_pages *pcp)
  * thread pinned to the current processor or a processor that
  * is not online.
  */
+/** 20140622    
+ * 해당 cpu가 보유 중인 percpu pages를 버디 할당자로 되돌린다.
+ **/
 static void drain_pages(unsigned int cpu)
 {
 	unsigned long flags;
 	struct zone *zone;
 
+	/** 20140622    
+	 * page를 보유한 zone들을 순회하며
+	 **/
 	for_each_populated_zone(zone) {
 		struct per_cpu_pageset *pset;
 		struct per_cpu_pages *pcp;
 
+		/** 20140622    
+		 * 인터럽트를 막은 상태에서 zone의 percpu 변수 pageset에 접근해
+		 * percpu pages를 보유 중이라면 percpu 해제 함수를 호출한다.
+		 **/
 		local_irq_save(flags);
 		pset = per_cpu_ptr(zone->pageset, cpu);
 
@@ -1996,6 +2006,9 @@ static void drain_pages(unsigned int cpu)
 /*
  * Spill all of this CPU's per-cpu pages back into the buddy allocator.
  */
+/** 20140622    
+ * 현재 cpu가 per-cpu용으로 가지고 있는 페이지들을 buddy allocator로 이관한다.
+ **/
 void drain_local_pages(void *arg)
 {
 	drain_pages(smp_processor_id());
@@ -2010,6 +2023,10 @@ void drain_local_pages(void *arg)
  * nothing keeps CPUs from showing up after we populated the cpumask and
  * before the call to on_each_cpu_mask().
  */
+/** 20140622    
+ * cpu가 zone에 대해 cpu캐시용으로 별도의 페이지를 보유하고 있다면
+ * drain_local_pages를 호출해 per-cpu 페이지들을 buddy로 반납하도록 한다.
+ **/
 void drain_all_pages(void)
 {
 	int cpu;
@@ -2028,20 +2045,37 @@ void drain_all_pages(void)
 	 * cpu to drain that CPU pcps and on_each_cpu_mask
 	 * disables preemption as part of its processing
 	 */
+	/** 20140621    
+	 * 각 cpu를 순회하며 cpu가 percpu로 페이지를 보유 중이라면
+	 * cpu mask를 설정한다.
+	 **/
 	for_each_online_cpu(cpu) {
 		bool has_pcps = false;
+		/** 20140621    
+		 * cpu별로 보유 중인 zone의 pageset 값을 가져와
+		 **/
 		for_each_populated_zone(zone) {
 			pcp = per_cpu_ptr(zone->pageset, cpu);
+			/** 20140621    
+			 * 해당 zone에 대해 cpu가 percpu로 페이지를 보유 중이면
+			 * true로 설정하고 빠져 나간다.
+			 **/
 			if (pcp->pcp.count) {
 				has_pcps = true;
 				break;
 			}
 		}
+		/** 20140621    
+		 * cpus_with_pcps 에 cpu가 pcps를 보유 중임을 설정한다.
+		 **/
 		if (has_pcps)
 			cpumask_set_cpu(cpu, &cpus_with_pcps);
 		else
 			cpumask_clear_cpu(cpu, &cpus_with_pcps);
 	}
+	/** 20140622    
+	 * 위에서 설정한 마스크에 속한 cpu들이 drain_local_pages 함수를 실행하도록 한다. 다른 cpu가 함수 호출을 하도록 기다린 뒤에 리턴된다.
+	 **/
 	on_each_cpu_mask(&cpus_with_pcps, drain_local_pages, NULL, 1);
 }
 
@@ -3264,6 +3298,9 @@ __alloc_pages_direct_compact(gfp_t gfp_mask, unsigned int order,
 #endif /* CONFIG_COMPACTION */
 
 /* Perform direct synchronous page reclaim */
+/** 20140621    
+ * 메모리 부족시에 확보를 위해 page 회수를 동기적으로 실행한다.
+ **/
 static int
 __perform_reclaim(gfp_t gfp_mask, unsigned int order, struct zonelist *zonelist,
 		  nodemask_t *nodemask)
@@ -3294,18 +3331,36 @@ __perform_reclaim(gfp_t gfp_mask, unsigned int order, struct zonelist *zonelist,
 	reclaim_state.reclaimed_slab = 0;
 	current->reclaim_state = &reclaim_state;
 
+	/** 20140621    
+	 * order만큼의 page회수를 시도하고, 회수된 페이지의 수가 리턴된다.
+	 *
+	 * 만약 회수된 페이지가 존재하지 않거나, zonelist의 zone들이 메모리 회수가
+	 * 불가능한 상황이라면 0이 리턴.
+	 **/
 	progress = try_to_free_pages(zonelist, order, gfp_mask, nodemask);
 
+	/** 20140621    
+	 * 호출이 끝나고
+	 *		현재 task의 reclaim 진행 중이 아님을 표시.
+	 *		PF_MEMALLOC를 지운다.
+	 **/
 	current->reclaim_state = NULL;
 	lockdep_clear_current_reclaim_state();
 	current->flags &= ~PF_MEMALLOC;
 
+	/** 20140621    
+	 * page 확보가 끝나고 리스케줄링 포인트를 확보한다.
+	 **/
 	cond_resched();
 
 	return progress;
 }
 
 /* The really slow allocator path where we enter direct reclaim */
+/** 20140622    
+ * direct reclaim으로 호출되어 메모리 확보를 시도하고 재시도 한다.
+ * 만약 또다시 실패한 경우에는 per-cpu용 pages까지 비운다.
+ **/
 static inline struct page *
 __alloc_pages_direct_reclaim(gfp_t gfp_mask, unsigned int order,
 	struct zonelist *zonelist, enum zone_type high_zoneidx,
@@ -3315,6 +3370,10 @@ __alloc_pages_direct_reclaim(gfp_t gfp_mask, unsigned int order,
 	struct page *page = NULL;
 	bool drained = false;
 
+	/** 20140621    
+	 * order 만큼의 메모리 확보를 시도하고, 메모리가 회수되지 못했다면
+	 * 0이 리턴된다.
+	 **/
 	*did_some_progress = __perform_reclaim(gfp_mask, order, zonelist,
 					       nodemask);
 	if (unlikely(!(*did_some_progress)))
@@ -3325,6 +3384,9 @@ __alloc_pages_direct_reclaim(gfp_t gfp_mask, unsigned int order,
 		zlc_clear_zones_full(zonelist);
 
 retry:
+	/** 20140621    
+	 * ALLOC_NO_WATERMARKS 를 제거하고 페이지를 다시 요청한다.
+	 **/
 	page = get_page_from_freelist(gfp_mask, nodemask, order,
 					zonelist, high_zoneidx,
 					alloc_flags & ~ALLOC_NO_WATERMARKS,
@@ -3334,6 +3396,10 @@ retry:
 	 * If an allocation failed after direct reclaim, it could be because
 	 * pages are pinned on the per-cpu lists. Drain them and try again
 	 */
+	/** 20140621    
+	 * 만약 page 확보 후 다시 시도한 뒤에도 메모리를 확보하지 못했다면
+	 * per-cpu용으로 보유 중인 page를 해제하고 다시 시도한다.
+	 **/
 	if (!page && !drained) {
 		drain_all_pages();
 		drained = true;
@@ -3671,7 +3737,9 @@ rebalance:
 	/* Avoid recursion of direct reclaim */
 	/** 20131130    
 	 * 현재 task의 flags가 PF_MEMALLOC이 설정되어 있는 경우 바로 nopage로 이동.
-	 * PF_MEMALLOC의 의미는???
+	 *
+	 * PF_MEMALLOC를 검사해 현재 다른 메모리 할당 요청에 의해 메모리 해제가 진행 중이라면 nopage로 빠져나간다.
+	 *
 	 *   kswapd, __perform_reclaim, shrink_all_memory 인 경우 속성이 주어진다.
 	 *   현재 task가 위 세 가지처럼 메모리 할당을 처리하기 위해 메모리를 요청한 경우, 더 이상 반복적인 과정을 수행하지 않도록 실패로 처리.
 	 **/
@@ -3722,6 +3790,9 @@ rebalance:
 		goto nopage;
 
 	/* Try direct reclaim and then allocating */
+	/** 20140629    
+	 * 할 차례...
+	 **/
 	page = __alloc_pages_direct_reclaim(gfp_mask, order,
 					zonelist, high_zoneidx,
 					nodemask,

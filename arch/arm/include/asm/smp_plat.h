@@ -72,6 +72,9 @@ static inline int cache_ops_need_broadcast(void)
 /*
  * Logical CPU mapping.
  */
+/** 20140621    
+ * cpu 번호로 logical map에서 physical 번호를 가져온다.
+ **/
 extern int __cpu_logical_map[];
 #define cpu_logical_map(cpu)	__cpu_logical_map[cpu]
 

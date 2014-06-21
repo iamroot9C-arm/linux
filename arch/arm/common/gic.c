@@ -739,6 +739,9 @@ void gic_raise_softirq(const struct cpumask *mask, unsigned int irq)
 	unsigned long map = 0;
 
 	/* Convert our logical CPU mask into a physical one. */
+	/** 20140621    
+	 * cpumask에 표시된 각 논리 cpu에 대해 물리 cpu 번호로 변환해 기록한다.
+	 **/
 	for_each_cpu(cpu, mask)
 		map |= 1 << cpu_logical_map(cpu);
 
@@ -746,6 +749,9 @@ void gic_raise_softirq(const struct cpumask *mask, unsigned int irq)
 	 * Ensure that stores to Normal memory are visible to the
 	 * other CPUs before issuing the IPI.
 	 */
+	/** 20140621    
+	 * IPI를 날리기 전에 sync memory barrir를 둔다.
+	 **/
 	dsb();
 
 	/* this always happens on GIC0 */

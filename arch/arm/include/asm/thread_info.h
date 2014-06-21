@@ -96,12 +96,13 @@ struct thread_info {
  */
 
 /** 20121208
-__attribute_const__ : 컴파일러에게 전역 변수를 access 하지 않는다고 알려줌 
+ * __attribute_const__ : 컴파일러에게 전역 변수를 access 하지 않는다고 알려줌 
  **/
 static inline struct thread_info *current_thread_info(void) __attribute_const__;
 
 /** 20121208
-Kernel stack(8KB)의 thread_info의 첫 주소를 추출한다
+ * thread_info는 stack에 overlay 된다.
+ * Kernel stack(8KB)의 첫 주소를 추출해 thread_info구조체로 리턴한다.
  **/
 static inline struct thread_info *current_thread_info(void)
 {
@@ -147,6 +148,9 @@ extern int vfp_restore_user_hwstate(struct user_vfp __user *,
  * We use bit 30 of the preempt_count to indicate that kernel
  * preemption is occurring.  See <asm/hardirq.h>.
  */
+/** 20140622    
+ * kernel premption 중임을 나타내기 위한 상수값. preempt_count에 저장된다.
+ **/
 #define PREEMPT_ACTIVE	0x40000000
 
 /*

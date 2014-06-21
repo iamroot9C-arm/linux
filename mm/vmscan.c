@@ -2878,6 +2878,12 @@ static bool zone_reclaimable(struct zone *zone)
 }
 
 /* All zones in zonelist are unreclaimable? */
+/** 20140621    
+ * zone list를 순회하며, 모든 zone이 unreclaimable하면 true를 리턴한다.
+ *
+ * pages를 제공하지 못하는 zone일 경우 skip.
+ * hardwall에 의해 허용되지 않은 zone은 skip.
+ **/
 static bool all_unreclaimable(struct zonelist *zonelist,
 		struct scan_control *sc)
 {
@@ -2914,7 +2920,12 @@ static bool all_unreclaimable(struct zonelist *zonelist,
  * 		else, the number of pages reclaimed
  */
 /** 20140524
- * 
+ * page가 부족할 때 직접 호출되어 요청한 페이지만큼 페이지를 확보를 시도한다.
+ *		1. shrink_zones
+ *		2. shrink_slab
+ * scan 된 페이지가 writeback_threshold 이상이 되면 flusher thread를 실행시킨다.
+ *
+ *	0 :  oom_killer_disabled, 또는 
  **/
 static unsigned long do_try_to_free_pages(struct zonelist *zonelist,
 					struct scan_control *sc,
@@ -3025,7 +3036,11 @@ static unsigned long do_try_to_free_pages(struct zonelist *zonelist,
 		 * scan control의 priority가 DEF_PRIORITY - 2 보다 작아지면,
 		 * 즉 DEF_PRIORITY로 호출되었을 때 세번째 실행에서 io flush를 실행시킨다.
 		 *
-		 * 20140621 여기부터...
+		 * 20140621
+		 * loop을 돌면서  priority가 낮아지면,
+		 * io를 실행하여 writeback을 기다리는 함수.
+		 *
+		 * 잦은 호출은 시스템 성능을 저하시키므로 DEF_PRIORITY-2 조건을 준 듯???
 		 **/
 		if (!sc->hibernation_mode && sc->nr_scanned &&
 		    sc->priority < DEF_PRIORITY - 2) {
@@ -3052,14 +3067,23 @@ out:
 	 * the zone into all_unreclaimable. Thus bypassing all_unreclaimable
 	 * check.
 	 */
+	/** 20140621    
+	 * OOM killer가 해제되어 있다면 0을 리턴.
+	 **/
 	if (oom_killer_disabled)
 		return 0;
 
 	/* Aborted reclaim to try compaction? don't OOM, then */
+	/** 20140621    
+	 * reclaim이 abort 되었다면 1을 리턴.
+	 **/
 	if (aborted_reclaim)
 		return 1;
 
 	/* top priority shrink_zones still had more to do? don't OOM, then */
+	/** 20140621    
+	 * zonelist가 zonelist의 zone이 모두 unreclaimable 하지 않으면 1을 리턴.
+	 **/
 	if (global_reclaim(sc) && !all_unreclaimable(zonelist, sc))
 		return 1;
 
@@ -3198,6 +3222,9 @@ static void throttle_direct_reclaim(gfp_t gfp_mask, struct zonelist *zonelist,
 		pfmemalloc_watermark_ok(pgdat));
 }
 
+/** 20140621    
+ * 메모리 부족시 호출되어 order만큼의 페이지를 확보하도록 회수를 시도한다.
+ **/
 unsigned long try_to_free_pages(struct zonelist *zonelist, int order,
 				gfp_t gfp_mask, nodemask_t *nodemask)
 {
@@ -3238,7 +3265,7 @@ unsigned long try_to_free_pages(struct zonelist *zonelist, int order,
 				gfp_mask);
 
 	/** 20140517    
-	 * direct reclaim.
+	 * direct reclaim 하여 회수된 결과를 리턴 받는다.
 	 **/
 	nr_reclaimed = do_try_to_free_pages(zonelist, &sc, &shrink);
 

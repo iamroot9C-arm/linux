@@ -15,7 +15,8 @@
   extern void sub_preempt_count(int val);
 #else
 /** 20130413
- * preempt count 를 val만큼 증가/감소 시킨다.
+ * DEBUG_PREEMPT나 PREEMPT_TRACER를 사용하지 않은 경우,
+ * 단순히 preempt count 를 val만큼 증가/감소 시킨다.
  */
 # define add_preempt_count(val)	do { preempt_count() += (val); } while (0)
 # define sub_preempt_count(val)	do { preempt_count() -= (val); } while (0)
@@ -37,6 +38,10 @@
 
 asmlinkage void preempt_schedule(void);
 
+/** 20140622    
+ * current thread의 thread_info를 검사해 flag가 설정되어 있다면
+ * preempt_schedule 을 호출한다.
+ **/
 #define preempt_check_resched() \
 do { \
 	if (unlikely(test_thread_flag(TIF_NEED_RESCHED))) \
@@ -77,6 +82,10 @@ do { \
 
 #define preempt_enable_no_resched()	sched_preempt_enable_no_resched()
 
+/** 20140622    
+ * 선점 count를 감소시켜 선점가능 상태로 만들고, barrier를 둔다.
+ * 선점이 필요한지 체크해 필요하다면 preempt_schedule 함수를 호출한다.
+ **/
 #define preempt_enable() \
 do { \
 	preempt_enable_no_resched(); \
@@ -85,6 +94,9 @@ do { \
 } while (0)
 
 /* For debugging and tracer internals only! */
+/** 20140622    
+ * 선점 카운트에 val 을 더하거나 뺀다.
+ **/
 #define add_preempt_count_notrace(val)			\
 	do { preempt_count() += (val); } while (0)
 #define sub_preempt_count_notrace(val)			\

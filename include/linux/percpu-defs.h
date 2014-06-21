@@ -73,6 +73,9 @@
 	extern __PCPU_DUMMY_ATTRS char __pcpu_scope_##name;		\
 	extern __PCPU_ATTRS(sec) __typeof__(type) name
 
+/** 20140621    
+ * 지정된 섹션에 percpu 변수를 선언한다.
+ **/
 #define DEFINE_PER_CPU_SECTION(type, name, sec)				\
 	__PCPU_DUMMY_ATTRS char __pcpu_scope_##name;			\
 	extern __PCPU_DUMMY_ATTRS char __pcpu_unique_##name;		\
@@ -134,6 +137,10 @@ Per CPU section (.data..percpu)에 변수를
 	DECLARE_PER_CPU_SECTION(type, name, PER_CPU_SHARED_ALIGNED_SECTION) \
 	____cacheline_aligned_in_smp
 
+/** 20140621    
+ * PER_CPU_SHARED_ALIGNED_SECTION 섹션에 cache align된
+ * type percpu변수 name을 선언하는 매크로.
+ **/
 #define DEFINE_PER_CPU_SHARED_ALIGNED(type, name)			\
 	DEFINE_PER_CPU_SECTION(type, name, PER_CPU_SHARED_ALIGNED_SECTION) \
 	____cacheline_aligned_in_smp
