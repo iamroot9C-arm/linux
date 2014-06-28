@@ -25,6 +25,10 @@
 #define RWSEM_UNLOCKED_VALUE		0x00000000L
 #define RWSEM_ACTIVE_BIAS		0x00000001L
 #define RWSEM_WAITING_BIAS		(-RWSEM_ACTIVE_MASK-1)
+/** 20140628    
+ * READ BIAS는 양수 1.
+ * Write BIAS는 큰 음수.
+ **/
 #define RWSEM_ACTIVE_READ_BIAS		RWSEM_ACTIVE_BIAS
 #define RWSEM_ACTIVE_WRITE_BIAS		(RWSEM_WAITING_BIAS + RWSEM_ACTIVE_BIAS)
 
@@ -53,12 +57,22 @@ static inline int __down_read_trylock(struct rw_semaphore *sem)
 /*
  * lock for writing
  */
+/** 20140628    
+ * 추후 분석.
+ **/
 static inline void __down_write_nested(struct rw_semaphore *sem, int subclass)
 {
 	long tmp;
 
+	/** 20140628    
+	 * RWSEM_ACTIVE_WRITE_BIAS를 count에 더한다.
+	 **/
 	tmp = atomic_long_add_return(RWSEM_ACTIVE_WRITE_BIAS,
 				     (atomic_long_t *)&sem->count);
+	/** 20140628    
+	 * RWSEM_ACTIVE_WRITE_BIAS를 더한 결과가 RWSEM_ACTIVE_WRITE_BIAS가 아니라면
+	 * rwsem_down_write_failed을 수행한다.
+	 **/
 	if (unlikely(tmp != RWSEM_ACTIVE_WRITE_BIAS))
 		rwsem_down_write_failed(sem);
 }

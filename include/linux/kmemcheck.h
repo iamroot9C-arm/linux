@@ -110,6 +110,9 @@ static inline void kmemcheck_slab_free(struct kmem_cache *s, void *object,
 {
 }
 
+/** 20140628    
+ * CONFIG_KMEMCHECK 선언되지 않음.
+ **/
 static inline void kmemcheck_pagealloc_alloc(struct page *p,
 	unsigned int order, gfp_t gfpflags)
 {

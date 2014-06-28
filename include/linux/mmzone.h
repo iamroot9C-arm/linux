@@ -612,6 +612,9 @@ typedef enum {
 					 */
 } zone_flags_t;
 
+/** 20140628    
+ * zone의 flags에 특정 bit를 설정한다. atomic.
+ **/
 static inline void zone_set_flag(struct zone *zone, zone_flags_t flag)
 {
 	set_bit(flag, &zone->flags);
@@ -622,13 +625,16 @@ static inline int zone_test_and_set_flag(struct zone *zone, zone_flags_t flag)
 	return test_and_set_bit(flag, &zone->flags);
 }
 
+/** 20140628    
+ * zone의 flags에 특정 bit를 제거한다. atomic.
+ **/
 static inline void zone_clear_flag(struct zone *zone, zone_flags_t flag)
 {
 	clear_bit(flag, &zone->flags);
 }
 
 /** 20131123    
- * zone flags에서 ZONE_CONGESTED 비트를 검사
+ * zone flags에서 ZONE_CONGESTED 비트를 검사. non-atomic.
  *   ZONE_CONGESTED: zone has many dirty pages backed by a congested BDI
  **/
 static inline int zone_is_reclaim_congested(const struct zone *zone)
@@ -641,6 +647,9 @@ static inline int zone_is_reclaim_locked(const struct zone *zone)
 	return test_bit(ZONE_RECLAIM_LOCKED, &zone->flags);
 }
 
+/** 20140628    
+ * zone에 대해 OOM이 진행되어 oom이 lock되었는지 검사한다.
+ **/
 static inline int zone_is_oom_locked(const struct zone *zone)
 {
 	return test_bit(ZONE_OOM_LOCKED, &zone->flags);

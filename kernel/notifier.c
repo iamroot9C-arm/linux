@@ -224,6 +224,10 @@ int blocking_notifier_chain_register(struct blocking_notifier_head *nh,
 	 * not yet working and interrupts must remain disabled.  At
 	 * such times we must not call down_write().
 	 */
+	/** 20140628    
+	 * 시스템 부팅 중에는 semaphore 관련 부분이 초기화 되지 않았으므로
+	 * notifier_chain_register만 호출.
+	 **/
 	if (unlikely(system_state == SYSTEM_BOOTING))
 		return notifier_chain_register(&nh->head, n);
 
@@ -305,6 +309,10 @@ EXPORT_SYMBOL_GPL(blocking_notifier_chain_unregister);
  *	Otherwise the return value is the return value
  *	of the last notifier function called.
  */
+/** 20140628    
+ * notifier_call_chain의 nb를 nr_to_call만큼 호출.
+ * 추후분석???
+ **/
 int __blocking_notifier_call_chain(struct blocking_notifier_head *nh,
 				   unsigned long val, void *v,
 				   int nr_to_call, int *nr_calls)
@@ -326,6 +334,9 @@ int __blocking_notifier_call_chain(struct blocking_notifier_head *nh,
 }
 EXPORT_SYMBOL_GPL(__blocking_notifier_call_chain);
 
+/** 20140628    
+ * blocking_notifier_head에 등록된 nb를 호출한다.
+ **/
 int blocking_notifier_call_chain(struct blocking_notifier_head *nh,
 		unsigned long val, void *v)
 {

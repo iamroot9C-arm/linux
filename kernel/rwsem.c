@@ -47,9 +47,15 @@ EXPORT_SYMBOL(down_read_trylock);
  */
 void __sched down_write(struct rw_semaphore *sem)
 {
+	/** 20140628    
+	 * resched가 필요하다면 schedule 함수를 호출할 수 있다.
+	 **/
 	might_sleep();
 	rwsem_acquire(&sem->dep_map, 0, 0, _RET_IP_);
 
+	/** 20140628    
+	 * __down_write (__down_write_trylock)
+	 **/
 	LOCK_CONTENDED(sem, __down_write_trylock, __down_write);
 }
 

@@ -124,6 +124,9 @@ static bool has_intersects_mems_allowed(struct task_struct *tsk,
 	return false;
 }
 #else
+/** 20140628    
+ * 항상 참.
+ **/
 static bool has_intersects_mems_allowed(struct task_struct *tsk,
 					const nodemask_t *mask)
 {
@@ -152,6 +155,10 @@ struct task_struct *find_lock_task_mm(struct task_struct *p)
 }
 
 /* return true if the task is not adequate as candidate victim task. */
+/** 20140628    
+ * init, thread, 다른 cgroup에 속해있는 경우 등인 경우 oom에 의한
+ * 제거 대상이 아니다.
+ **/
 static bool oom_unkillable_task(struct task_struct *p,
 		const struct mem_cgroup *memcg, const nodemask_t *nodemask)
 {
@@ -161,6 +168,9 @@ static bool oom_unkillable_task(struct task_struct *p,
 		return true;
 
 	/* When mem_cgroup_out_of_memory() and p is not member of the group */
+	/** 20140628    
+	 * 다른 memcg에 속해 있는 경우
+	 **/
 	if (memcg && !task_in_mem_cgroup(p, memcg))
 		return true;
 
@@ -279,6 +289,10 @@ static enum oom_constraint constrained_alloc(struct zonelist *zonelist,
 	return CONSTRAINT_NONE;
 }
 #else
+/** 20140628    
+ * CONFIG_NUMA가 정의되지 않아 CONSTRAINT_NONE 리턴.
+ * totalpages만 계산해 리턴한다.
+ **/
 static enum oom_constraint constrained_alloc(struct zonelist *zonelist,
 				gfp_t gfp_mask, nodemask_t *nodemask,
 				unsigned long *totalpages)
@@ -445,6 +459,9 @@ static void dump_header(struct task_struct *p, gfp_t gfp_mask, int order,
  * Must be called while holding a reference to p, which will be released upon
  * returning.
  */
+/** 20140628    
+ * 추후분석 ???
+ **/
 void oom_kill_process(struct task_struct *p, gfp_t gfp_mask, int order,
 		      unsigned int points, unsigned long totalpages,
 		      struct mem_cgroup *memcg, nodemask_t *nodemask,
@@ -462,6 +479,9 @@ void oom_kill_process(struct task_struct *p, gfp_t gfp_mask, int order,
 	 * If the task is already exiting, don't alarm the sysadmin or kill
 	 * its children or threads, just set TIF_MEMDIE so it can die quickly
 	 */
+	/** 20140628    
+	 * 이미 종료 중인 task인 경우 TIF_MEMDIE를 설정.
+	 **/
 	if (p->flags & PF_EXITING) {
 		set_tsk_thread_flag(p, TIF_MEMDIE);
 		put_task_struct(p);
@@ -575,8 +595,14 @@ void check_panic_on_oom(enum oom_constraint constraint, gfp_t gfp_mask,
 		sysctl_panic_on_oom == 2 ? "compulsory" : "system-wide");
 }
 
+/** 20140628    
+ * oom_notify_list 선언.
+ **/
 static BLOCKING_NOTIFIER_HEAD(oom_notify_list);
 
+/** 20140628    
+ * blocking_notifier_chain_register 를 사용해 oom_notify_list에 nb 등록
+ **/
 int register_oom_notifier(struct notifier_block *nb)
 {
 	return blocking_notifier_chain_register(&oom_notify_list, nb);
@@ -594,13 +620,25 @@ EXPORT_SYMBOL_GPL(unregister_oom_notifier);
  * if a parallel OOM killing is already taking place that includes a zone in
  * the zonelist.  Otherwise, locks all zones in the zonelist and returns 1.
  */
+/** 20140628    
+ * zonelist의 gfp_mask에 해당하는 zone에 대해
+ * 이미 oom locked 되어 있지 않다면, 즉 oom killer가 이미 수행 중이 아니라면
+ * oom lock을 건다.
+ **/
 int try_set_zonelist_oom(struct zonelist *zonelist, gfp_t gfp_mask)
 {
 	struct zoneref *z;
 	struct zone *zone;
 	int ret = 1;
 
+	/** 20140628    
+	 * zone scan lock으로 context를 보호한다.
+	 **/
 	spin_lock(&zone_scan_lock);
+	/** 20140628    
+	 * zone list를 순회하며 zone이 oom lock 되었는지 검사한다.
+	 * 하나라도 oom lock이 걸려 있다면 빠져나간다.
+	 **/
 	for_each_zone_zonelist(zone, z, zonelist, gfp_zone(gfp_mask)) {
 		if (zone_is_oom_locked(zone)) {
 			ret = 0;
@@ -608,6 +646,9 @@ int try_set_zonelist_oom(struct zonelist *zonelist, gfp_t gfp_mask)
 		}
 	}
 
+	/** 20140628    
+	 * zone을 순회하며 ZONE_OOM_LOCKED를 설정한다.
+	 **/
 	for_each_zone_zonelist(zone, z, zonelist, gfp_zone(gfp_mask)) {
 		/*
 		 * Lock each zone in the zonelist under zone_scan_lock so a
@@ -627,6 +668,9 @@ out:
  * allocation attempts with zonelists containing them may now recall the OOM
  * killer, if necessary.
  */
+/** 20140628    
+ * zonelist 중 gfp_mask에 해당하는 각 zone을 순회하며 OOM_LOCKED flags를 삭제한다.
+ **/
 void clear_zonelist_oom(struct zonelist *zonelist, gfp_t gfp_mask)
 {
 	struct zoneref *z;
@@ -689,6 +733,10 @@ static void clear_system_oom(void)
  * OR try to be smart about which process to kill. Note that we
  * don't have to be perfect here, we just have to be good.
  */
+/** 20140628    
+ * victim task 를 선정해 SIGKIL을 날린다.
+ * 자세한 사항은 추후분석???
+ **/
 void out_of_memory(struct zonelist *zonelist, gfp_t gfp_mask,
 		int order, nodemask_t *nodemask, bool force_kill)
 {
@@ -700,6 +748,9 @@ void out_of_memory(struct zonelist *zonelist, gfp_t gfp_mask,
 	enum oom_constraint constraint = CONSTRAINT_NONE;
 	int killed = 0;
 
+	/** 20140628    
+	 * oom_notify_list에 등록된 nb를 호출한다.
+	 **/
 	blocking_notifier_call_chain(&oom_notify_list, 0, &freed);
 	if (freed > 0)
 		/* Got some memory back in the last second. */
@@ -710,6 +761,10 @@ void out_of_memory(struct zonelist *zonelist, gfp_t gfp_mask,
 	 * goal is to allow it to allocate so that it may quickly exit and free
 	 * its memory.
 	 */
+	/** 20140628    
+	 * 현재 task에 SIGKILL이 pending되어 있다면
+	 * TIF_MEMDIE를 설정하고 리턴.
+	 **/
 	if (fatal_signal_pending(current)) {
 		set_thread_flag(TIF_MEMDIE);
 		return;
@@ -719,11 +774,19 @@ void out_of_memory(struct zonelist *zonelist, gfp_t gfp_mask,
 	 * Check if there were limitations on the allocation (only relevant for
 	 * NUMA) that may require different handling.
 	 */
+	/** 20140628    
+	 * NUMA가 아닌 경우 totalpages만 계산해 CONSTRAINT_NONE 리턴.
+	 **/
 	constraint = constrained_alloc(zonelist, gfp_mask, nodemask,
 						&totalpages);
 	mpol_mask = (constraint == CONSTRAINT_MEMORY_POLICY) ? nodemask : NULL;
 	check_panic_on_oom(constraint, gfp_mask, order, mpol_mask);
 
+	/** 20140628    
+	 * sysctl에 의해 sysctl_oom_kill_allocating_task이 설정된 경우이며,
+	 * current가 oom에 의해 종료될 수 있는 task인 경우
+	 * 현재 task에 대해 oom kill을 호출한다.
+	 **/
 	if (sysctl_oom_kill_allocating_task && current->mm &&
 	    !oom_unkillable_task(current, NULL, nodemask) &&
 	    current->signal->oom_score_adj != OOM_SCORE_ADJ_MIN) {

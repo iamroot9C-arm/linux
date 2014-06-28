@@ -205,6 +205,7 @@ extern int _cond_resched(void);
   static inline void __might_sleep(const char *file, int line,
 				   int preempt_offset) { }
 /** 20130706    
+ * resched가 필요하다면 voluntary하게 schedule를 호출할 수 있다.
  * CONFIG_DEBUG_ATOMIC_SLEEP config가 꺼져 있어 아래 함수 실행
  **/
 # define might_sleep() do { might_resched(); } while (0)

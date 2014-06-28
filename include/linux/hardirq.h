@@ -43,12 +43,12 @@
 #error HARDIRQ_BITS too high!
 #endif
 
-#define PREEMPT_SHIFT	0
-#define SOFTIRQ_SHIFT	(PREEMPT_SHIFT + PREEMPT_BITS)
-#define HARDIRQ_SHIFT	(SOFTIRQ_SHIFT + SOFTIRQ_BITS)
-#define NMI_SHIFT	(HARDIRQ_SHIFT + HARDIRQ_BITS)
-
 /** 20131123    
+ * PREEMPT_SHIFT : 0
+ * SOFTIRQ_SHIFT : 8
+ * HARDIRQ_SHIFT : 16
+ * NMI_OFFSET    : 26
+ *
  * PREEMPT_MASK: 0x000000ff
  * SOFTIRQ_MASK: 0x0000ff00
  * HARDIRQ_MASK: 0x03ff0000
@@ -59,6 +59,11 @@
  * HARDIRQ_OFFSET: 1<<16
  * NMI_OFFSET    : 1<<26
  **/
+#define PREEMPT_SHIFT	0
+#define SOFTIRQ_SHIFT	(PREEMPT_SHIFT + PREEMPT_BITS)
+#define HARDIRQ_SHIFT	(SOFTIRQ_SHIFT + SOFTIRQ_BITS)
+#define NMI_SHIFT	(HARDIRQ_SHIFT + HARDIRQ_BITS)
+
 #define __IRQ_MASK(x)	((1UL << (x))-1)
 
 #define PREEMPT_MASK	(__IRQ_MASK(PREEMPT_BITS) << PREEMPT_SHIFT)
@@ -71,6 +76,9 @@
 #define HARDIRQ_OFFSET	(1UL << HARDIRQ_SHIFT)
 #define NMI_OFFSET	(1UL << NMI_SHIFT)
 
+/** 20140628    
+ * softirq disable을 위한 상수.
+ **/
 #define SOFTIRQ_DISABLE_OFFSET	(2 * SOFTIRQ_OFFSET)
 
 #ifndef PREEMPT_ACTIVE
@@ -89,8 +97,7 @@
  **/
 #define softirq_count()	(preempt_count() & SOFTIRQ_MASK)
 /** 20131005    
- * vexpress_defconfig에서
- * preempt_count는 CONFIG_PREEMPT_COUNT가 정의되지 않아 0을 리턴.
+ * preempt_count()에서 interrupt 관련 비트를 추출한다.
  **/
 #define irq_count()	(preempt_count() & (HARDIRQ_MASK | SOFTIRQ_MASK \
 				 | NMI_MASK))
@@ -104,11 +111,11 @@
 #define in_irq()		(hardirq_count())
 #define in_softirq()		(softirq_count())
 /** 20131005    
- * 추후 분석 ???
+ * preempt_count 중 interrupt 관련 비트를 추출해 현재 interrupt context인지 판단한다.
  **/
 #define in_interrupt()		(irq_count())
 /** 20131123    
- * softirq_count()에서 SOFTIRQ_OFFSET 비트들을 (0x0000ff00) 검사해
+ * softirq_count()에서 SOFTIRQ_OFFSET 비트를 (1<<8) 검사해
  * 현재 softirq 중인지 판단한다.
  **/
 #define in_serving_softirq()	(softirq_count() & SOFTIRQ_OFFSET)

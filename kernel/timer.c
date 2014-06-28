@@ -567,6 +567,9 @@ static void __init_timer(struct timer_list *timer,
 			 const char *name,
 			 struct lock_class_key *key);
 
+/** 20140628    
+ * timer를 name과 key로 초기화 한다.
+ **/
 void init_timer_on_stack_key(struct timer_list *timer,
 			     const char *name,
 			     struct lock_class_key *key)
@@ -583,6 +586,9 @@ void destroy_timer_on_stack(struct timer_list *timer)
 EXPORT_SYMBOL_GPL(destroy_timer_on_stack);
 
 #else
+/** 20140628    
+ * CONFIG_DEBUG_OBJECTS_TIMERS가 정의되지 않음.
+ **/
 static inline void debug_timer_init(struct timer_list *timer) { }
 static inline void debug_timer_activate(struct timer_list *timer) { }
 static inline void debug_timer_deactivate(struct timer_list *timer) { }
@@ -608,11 +614,16 @@ static inline void debug_deactivate(struct timer_list *timer)
 	trace_timer_cancel(timer);
 }
 
+/** 20140628    
+ **/
 static inline void debug_assert_init(struct timer_list *timer)
 {
 	debug_timer_assert_init(timer);
 }
 
+/** 20140628    
+ * timer를 name과 key로 초기화 한다.
+ **/
 static void __init_timer(struct timer_list *timer,
 			 const char *name,
 			 struct lock_class_key *key)
@@ -716,6 +727,9 @@ static int detach_if_pending(struct timer_list *timer, struct tvec_base *base,
  * possible to set timer->base = NULL and drop the lock: the timer remains
  * locked.
  */
+/** 20140628    
+ * 추후 분석???
+ **/
 static struct tvec_base *lock_timer_base(struct timer_list *timer,
 					unsigned long *flags)
 	__acquires(timer->base->lock)
@@ -736,6 +750,9 @@ static struct tvec_base *lock_timer_base(struct timer_list *timer,
 	}
 }
 
+/** 20140628    
+ * 추후 분석???
+ **/
 static inline int
 __mod_timer(struct timer_list *timer, unsigned long expires,
 						bool pending_only, int pinned)
@@ -745,6 +762,9 @@ __mod_timer(struct timer_list *timer, unsigned long expires,
 	int ret = 0 , cpu;
 
 	timer_stats_timer_set_start_info(timer);
+	/** 20140628    
+	 * timer에는 function이 지정되어야 한다.
+	 **/
 	BUG_ON(!timer->function);
 
 	base = lock_timer_base(timer, &flags);
@@ -1073,6 +1093,10 @@ int del_timer_sync(struct timer_list *timer)
 	 * don't use it in hardirq context, because it
 	 * could lead to deadlock.
 	 */
+	/** 20140628    
+	 * deadlock에 빠질 수 있으므로
+	 * hardirq context에서 실행되었을 때는 경고를 발생시킨다.
+	 **/
 	WARN_ON(in_irq());
 	for (;;) {
 		int ret = try_to_del_timer_sync(timer);
@@ -1471,6 +1495,9 @@ SYSCALL_DEFINE0(getegid)
 
 #endif
 
+/** 20140628    
+ * process(__data)를 timeout시켜 깨우는 함수.
+ **/
 static void process_timeout(unsigned long __data)
 {
 	wake_up_process((struct task_struct *)__data);
@@ -1502,6 +1529,14 @@ static void process_timeout(unsigned long __data)
  *
  * In all cases the return value is guaranteed to be non-negative.
  */
+/** 20140628    
+ * timer를 등록하고, schedule을 호출해 timeout 전까지 sleep 하는 함수.
+ *
+ * TASK_UNINTERRUPTIBLE - timeout 이 될때까지 sleep 상태로 대기. 0을 리턴.
+ * TASK_INTERRUPTIBLE   - timeout 전에 signal이 도착하면 깨어난다.
+ *						  timeout으로 깨어난 경우 0이 리턴, signal을 받아 깨어난 경우 남은 timeout값을 리턴.
+ *
+ **/
 signed long __sched schedule_timeout(signed long timeout)
 {
 	struct timer_list timer;
@@ -1538,17 +1573,31 @@ signed long __sched schedule_timeout(signed long timeout)
 
 	expire = timeout + jiffies;
 
+	/** 20140628    
+	 * timer 만료시 process_timeout으로 current를 깨우도록 timer를 설정하고, 등록시킨다.
+	 * scheduler를 호출한다.
+	 **/
 	setup_timer_on_stack(&timer, process_timeout, (unsigned long)current);
 	__mod_timer(&timer, expire, false, TIMER_NOT_PINNED);
 	schedule();
+	/** 20140628    
+	 * 돌아와 timer를 제거한다.
+	 **/
 	del_singleshot_timer_sync(&timer);
 
 	/* Remove the timer from the object tracker */
 	destroy_timer_on_stack(&timer);
 
+	/** 20140628    
+	 * expire에서 현재 jiffies를 빼 완료 상태를 검사한다.
+	 **/
 	timeout = expire - jiffies;
 
  out:
+	/** 20140628    
+	 * timeout으로 깨어난 경우 0이 리턴. 
+	 * timeout 전에 깨어난 경우 timeout을 리턴.
+	 **/
 	return timeout < 0 ? 0 : timeout;
 }
 EXPORT_SYMBOL(schedule_timeout);
@@ -1571,6 +1620,12 @@ signed long __sched schedule_timeout_killable(signed long timeout)
 }
 EXPORT_SYMBOL(schedule_timeout_killable);
 
+/** 20140628    
+ * 현재 task의 상태를 TASK_UNINTERRUPTIBLE로 변경하고
+ * timeout만큼 sleep 한다.
+ *
+ * 내부적으로 timer를 사용한다.
+ **/
 signed long __sched schedule_timeout_uninterruptible(signed long timeout)
 {
 	__set_current_state(TASK_UNINTERRUPTIBLE);

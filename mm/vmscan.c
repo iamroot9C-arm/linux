@@ -664,6 +664,8 @@ int remove_mapping(struct address_space *mapping, struct page *page)
  */
 
 /** 20140111
+ * isolate 했던 page를 적합한 lru list에 다시 등록시킨다.
+ *
  * page가 evictable할 경우 percpu의 lru리스트에 page를 다시 등록시키고
  * unevictable할 경우 zone의 lru리스트에 page를 등록시킨다.
  **/
@@ -677,13 +679,14 @@ void putback_lru_page(struct page *page)
 
 redo:
 	/** 20140614    
-	 * page를 evictable 속성으로 만든다.
+	 * page의 unevictable 속성을 제거한다.
 	 **/
 	ClearPageUnevictable(page);
 
 	/** 20140111
-	 * lru_list가 LRU_INACTIVE_ANON, LRU_ACTIVE_ANON, 
-	 * LRU_INACTIVE_FILE, LRU_ACTIVE_FILE 일 경우 실행
+	 * page가 evictable 한지 검사한다.
+	 *
+	 * ramdisk처럼 특정 용도로 사용되거나, mlocked 되었다면 unevictable이다.
 	 **/
 	if (page_evictable(page, NULL)) {
 		/*
@@ -741,6 +744,10 @@ redo:
 	else if (!was_unevictable && lru == LRU_UNEVICTABLE)
 		count_vm_event(UNEVICTABLE_PGCULLED);
 
+	/** 20140628    
+	 * isolate 과정에서 get_page_unless_zero 로 usage count를 증가했었다.
+	 * 다시 lru로 추가하면서 reference를 감소시킨다.
+	 **/
 	put_page(page);		/* drop ref from isolate */
 }
 
@@ -1356,10 +1363,14 @@ int __isolate_lru_page(struct page *page, isolate_mode_t mode)
 	 * that it is possible to migrate without blocking
 	 */
 	/** 20140111
-	 * ISOLATE_CLEAN 및 ISOLATE_ASYNC_MIGRATE 모드에 따라 에러를 리턴한다
+	 * ISOLATE_CLEAN 및 ISOLATE_ASYNC_MIGRATE 모드에 따라 동작한다.
+	 * ISOLATE_CLEAN : Dirty page는 isolate 하지 않는다.
 	**/
 	if (mode & (ISOLATE_CLEAN|ISOLATE_ASYNC_MIGRATE)) {
 		/* All the caller can do on PageWriteback is block */
+		/** 20140628    
+		 * Writeback page는 isolate 하지 않고, block되지 않도록 바로 리턴한다.
+		 **/
 		if (PageWriteback(page))
 			return ret;
 
@@ -1980,11 +1991,11 @@ static void move_active_pages_to_lru(struct lruvec *lruvec,
 }
 
 /** 20140111
- * isolate 실행한다.
- *   - isolate된 페이지들 중 evictable하지 않은 page를 putback한다.
- *   - file cache인 페이지이면 l_active리스트로 등록시키고,
- *   - file cache가 아니면서 evictable한 page는 l_inactive 리스트로 등록시킨다.
- * 이후 zone의 각 lru 리스트로 옮기고, reference가 0인 페이지는 해제한다.
+ * - isolate 실행한다.
+ * - isolate된 페이지들 중 evictable하지 않은 page를 putback한다.
+ * - file cache인 페이지이면 l_active리스트로 등록시키고,
+ * - file cache가 아니면서 evictable한 page는 l_inactive 리스트로 등록시킨다.
+ * - 이후 zone의 각 lru 리스트로 옮기고(putback), reference가 0인 페이지는 해제한다.
  **/
 static void shrink_active_list(unsigned long nr_to_scan,
 			       struct lruvec *lruvec,
@@ -2023,7 +2034,8 @@ static void shrink_active_list(unsigned long nr_to_scan,
 	spin_lock_irq(&zone->lru_lock);
 
 	/** 20140111
-	 * isolate를 실행하고, isolate된 페이지의 갯수를 리턴한다.
+	 * scan할 개수만큼 isolate를 실행하고,
+	 * isolate된 페이지의 갯수를 리턴한다.
 	 **/
 	nr_taken = isolate_lru_pages(nr_to_scan, lruvec, &l_hold,
 				     &nr_scanned, sc, isolate_mode, lru);
@@ -2258,10 +2270,10 @@ static int inactive_list_is_low(struct lruvec *lruvec, enum lru_list lru)
 }
 
 /** 20140118    
- * 주어진 lru가 active lru인 경우,
- *   inactive lru의 target ratio 아래로 page수가 떨어졌을 경우 shrink 수행
- * 주어진 lru가 inactive lru인 경우,
- *   inactive shrink 수행
+ * active lru에 대해 호출된 경우,
+ *   inactive lru의 target ratio 이하인 경우 active lru에 대해 shrink 수행
+ * inactive lru에 대해 호출된 경우,
+ *   inactive shrink만 수행
  *
  * active lru인 경우 reclaim 여부와 상관없이 항상 0을 리턴,
  * inactive lru인 경우 reclaim한 페이지 수를 리턴 (왜???)
@@ -2269,7 +2281,7 @@ static int inactive_list_is_low(struct lruvec *lruvec, enum lru_list lru)
  * 일반적으로 shrink_list 시
  * active lru에 있던 페이지는 inactive lru로 옮겨진다.
  * 1. shrink_active_list  : 일반적인 경우 active page -> inactive page
- * 2. shrink_inactive_list: 일반적인 경우 inactive page -> recliam (free)
+ * 2. shrink_inactive_list: 일반적인 경우 inactive page -> reclaim (free)
  **/
 static unsigned long shrink_list(enum lru_list lru, unsigned long nr_to_scan,
 				 struct lruvec *lruvec, struct scan_control *sc)
@@ -3265,7 +3277,7 @@ unsigned long try_to_free_pages(struct zonelist *zonelist, int order,
 				gfp_mask);
 
 	/** 20140517    
-	 * direct reclaim 하여 회수된 결과를 리턴 받는다.
+	 * direct reclaim 하여 회수된 페이지수를 리턴 받는다.
 	 **/
 	nr_reclaimed = do_try_to_free_pages(zonelist, &sc, &shrink);
 
@@ -4429,6 +4441,7 @@ int zone_reclaim(struct zone *zone, gfp_t gfp_mask, unsigned int order)
  */
 /** 20140111
  * page가 evictable한지 검사.
+ * page의 flags 속성을 보고 검사하지 않고 실제 evictable한지 파악한다.
  *
  * page의 mapping이 unevictable하거나 (ramdisk나 shmem lock인 경우), 
  * page가 mlocked로 flags 설정되어 있다면 0을 리턴한다.

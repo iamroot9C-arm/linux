@@ -47,6 +47,8 @@
  * runtime initialization.
  */
 
+/** 20140628    
+ **/
 struct notifier_block {
 	int (*notifier_call)(struct notifier_block *, unsigned long, void *);
 	struct notifier_block __rcu *next;
@@ -58,6 +60,9 @@ struct atomic_notifier_head {
 	struct notifier_block __rcu *head;
 };
 
+/** 20140628    
+ * rwsem으로 보호되는 notifier_block head 구조체.
+ **/
 struct blocking_notifier_head {
 	struct rw_semaphore rwsem;
 	struct notifier_block __rcu *head;
@@ -93,6 +98,8 @@ extern void srcu_init_notifier_head(struct srcu_notifier_head *nh);
 #define ATOMIC_NOTIFIER_INIT(name) {				\
 		.lock = __SPIN_LOCK_UNLOCKED(name.lock),	\
 		.head = NULL }
+/** 20140628    
+ **/
 #define BLOCKING_NOTIFIER_INIT(name) {				\
 		.rwsem = __RWSEM_INITIALIZER((name).rwsem),	\
 		.head = NULL }
@@ -103,6 +110,9 @@ extern void srcu_init_notifier_head(struct srcu_notifier_head *nh);
 #define ATOMIC_NOTIFIER_HEAD(name)				\
 	struct atomic_notifier_head name =			\
 		ATOMIC_NOTIFIER_INIT(name)
+/** 20140628    
+ * BLOCKING_NOTIFIER_INIT로 초기화 notifier head 선언.
+ **/
 #define BLOCKING_NOTIFIER_HEAD(name)				\
 	struct blocking_notifier_head name =			\
 		BLOCKING_NOTIFIER_INIT(name)

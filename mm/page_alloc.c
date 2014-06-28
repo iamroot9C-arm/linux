@@ -148,6 +148,9 @@ void pm_restrict_gfp_mask(void)
 	gfp_allowed_mask &= ~GFP_IOFS;
 }
 
+/** 20140628    
+ * 허용된 mask에 IOFS가 남아 있다면 suspended_storage 상태는 아니다.
+ **/
 bool pm_suspended_storage(void)
 {
 	if ((gfp_allowed_mask & GFP_IOFS) == GFP_IOFS)
@@ -2582,7 +2585,7 @@ static inline bool should_fail_alloc_page(gfp_t gfp_mask, unsigned int order)
 /** 20130914
 __zone_watermark_ok(z, order, mark, classzone_idx, alloc_flags,
 					zone_page_state(z, NR_FREE_PAGES));
-watermark 범위안에 있으면 return true, 아니면  return false;
+watermark test를 통과하면 true, 실패하면 false; 리턴.
 다음주에 다시 확인???
 **/
 static bool __zone_watermark_ok(struct zone *z, int order, unsigned long mark,
@@ -2621,6 +2624,8 @@ static bool __zone_watermark_ok(struct zone *z, int order, unsigned long mark,
 	free_pages 가 watermark 이하로 떨어지면 return false
 	단, 위와 같이 alloc_flags에따라(ALLOC_HIGH,ALLOC_HARDER 일경우)
 	비교되는 watermark(min)은 조정된다.
+
+	HARDER가 HIGH보다 큰 값이 되므로 더욱 엄격한 기준이 된다.
 	**/
 	if (alloc_flags & ALLOC_HIGH)
 		min -= min / 2;
@@ -2912,11 +2917,15 @@ zonelist_scan:
 	for_each_zone_zonelist_nodemask(zone, z, zonelist,
 						high_zoneidx, nodemask) {
 		/** 20130914
-		NUMA가 아니므로 다음 if는 거짓
-		**/
+		 * NUMA가 아니므로 다음 if는 거짓
+		 **/
 		if (NUMA_BUILD && zlc_active &&
 			!zlc_zone_worth_trying(zonelist, z, allowednodes))
 				continue;
+		/** 20140628    
+		 * NUMA인 경우, ALLOC_CPUSET이 지정되면
+		 * process에게 허용된 CPUs에 할당된 memory로부터만 page를 받아올 수 있다.
+		 **/
 		if ((alloc_flags & ALLOC_CPUSET) &&
 			!cpuset_zone_allowed_softwall(zone, gfp_mask))
 				continue;
@@ -3122,16 +3131,25 @@ void warn_alloc_failed(gfp_t gfp_mask, int order, const char *fmt, ...)
 		show_mem(filter);
 }
 
+/** 20140628    
+ * alloc을 재시도 해야 하는지 검사한다.
+ **/
 static inline int
 should_alloc_retry(gfp_t gfp_mask, unsigned int order,
 				unsigned long did_some_progress,
 				unsigned long pages_reclaimed)
 {
 	/* Do not loop if specifically requested */
+	/** 20140628    
+	 * retry 시도 금지인 경우 retry 하지 않는다.
+	 **/
 	if (gfp_mask & __GFP_NORETRY)
 		return 0;
 
 	/* Always retry if specifically requested */
+	/** 20140628    
+	 * NOFAIL인 경우 retry.
+	 **/
 	if (gfp_mask & __GFP_NOFAIL)
 		return 1;
 
@@ -3140,6 +3158,9 @@ should_alloc_retry(gfp_t gfp_mask, unsigned int order,
 	 * making forward progress without invoking OOM. Suspend also disables
 	 * storage devices so kswapd will not help. Bail if we are suspending.
 	 */
+	/** 20140628    
+	 * 마지막 시도에서 reclaim 한 page가 없고, suspended_storage 상태라면 retry 하지 않는다.
+	 **/
 	if (!did_some_progress && pm_suspended_storage())
 		return 0;
 
@@ -3148,6 +3169,9 @@ should_alloc_retry(gfp_t gfp_mask, unsigned int order,
 	 * means __GFP_NOFAIL, but that may not be true in other
 	 * implementations.
 	 */
+	/** 20140628    
+	 * order가 PAGE_ALLOC_COSTLY_ORDER 보다 작다면 재시도.
+	 **/
 	if (order <= PAGE_ALLOC_COSTLY_ORDER)
 		return 1;
 
@@ -3158,12 +3182,20 @@ should_alloc_retry(gfp_t gfp_mask, unsigned int order,
 	 * large as the allocation's order. In both cases, if the
 	 * allocation still fails, we stop retrying.
 	 */
+	/** 20140628    
+	 * __GFP_REPEAT가 설정되어 있고,
+	 * 지금까지 회수한 page가 요구한 order 보다 작은 경우 재시도.
+	 **/
 	if (gfp_mask & __GFP_REPEAT && pages_reclaimed < (1 << order))
 		return 1;
 
 	return 0;
 }
 
+/** 20140628    
+ * order만큼 high watermark로 page alloc을 시도하고,
+ * 실패했을 경우 oom kill을 동작 시킨다.
+ **/
 static inline struct page *
 __alloc_pages_may_oom(gfp_t gfp_mask, unsigned int order,
 	struct zonelist *zonelist, enum zone_type high_zoneidx,
@@ -3173,6 +3205,10 @@ __alloc_pages_may_oom(gfp_t gfp_mask, unsigned int order,
 	struct page *page;
 
 	/* Acquire the OOM killer lock for the zones in zonelist */
+	/** 20140628    
+	 * zonelist의 zone들에 대해 oom killer lock 획득을 시도하고,
+	 * 실패하면 1 jiffie 만큼 sleep하여 schedule 한다.
+	 **/
 	if (!try_set_zonelist_oom(zonelist, gfp_mask)) {
 		schedule_timeout_uninterruptible(1);
 		return NULL;
@@ -3183,6 +3219,10 @@ __alloc_pages_may_oom(gfp_t gfp_mask, unsigned int order,
 	 * here, this is only to catch a parallel oom killing, we must fail if
 	 * we're still under heavy pressure.
 	 */
+	/** 20140628    
+	 * high watermark로 page 할당을 시도한다.
+	 * oom killing 동시에 진행 중이라면 page 할당이 성공해 out으로 빠져나갈 것이다.
+	 **/
 	page = get_page_from_freelist(gfp_mask|__GFP_HARDWALL, nodemask,
 		order, zonelist, high_zoneidx,
 		ALLOC_WMARK_HIGH|ALLOC_CPUSET,
@@ -3190,6 +3230,12 @@ __alloc_pages_may_oom(gfp_t gfp_mask, unsigned int order,
 	if (page)
 		goto out;
 
+	/** 20140628    
+	 * 메모리 할당 실패불가가 아니라면 몇 가지 실패 조건을 검사한다.
+	 *		- PAGE_ALLOC_COSTLY_ORDER 이상의 order에 대한 요청인 경우.
+	 *		- ZONE_NORMAL 이하 영역에 대한 요청인 경우.
+	 *		- NUMA에서 현재 NODE에서의 할당 요청인 경우.
+	 **/
 	if (!(gfp_mask & __GFP_NOFAIL)) {
 		/* The OOM killer will not help higher order allocs */
 		if (order > PAGE_ALLOC_COSTLY_ORDER)
@@ -3359,7 +3405,7 @@ __perform_reclaim(gfp_t gfp_mask, unsigned int order, struct zonelist *zonelist,
 /* The really slow allocator path where we enter direct reclaim */
 /** 20140622    
  * direct reclaim으로 호출되어 메모리 확보를 시도하고 재시도 한다.
- * 만약 또다시 실패한 경우에는 per-cpu용 pages까지 비운다.
+ * 만약 또다시 실패한 경우에는 per-cpu용 pages까지 한 번더 비운다.
  **/
 static inline struct page *
 __alloc_pages_direct_reclaim(gfp_t gfp_mask, unsigned int order,
@@ -3385,7 +3431,8 @@ __alloc_pages_direct_reclaim(gfp_t gfp_mask, unsigned int order,
 
 retry:
 	/** 20140621    
-	 * ALLOC_NO_WATERMARKS 를 제거하고 페이지를 다시 요청한다.
+	 * reclaim이 완료됐으므로 ALLOC_NO_WATERMARKS 를 제거하고(watermark 체크 안 함)
+	 * 다시 페이지를 요청한다.
 	 **/
 	page = get_page_from_freelist(gfp_mask, nodemask, order,
 					zonelist, high_zoneidx,
@@ -3398,7 +3445,7 @@ retry:
 	 */
 	/** 20140621    
 	 * 만약 page 확보 후 다시 시도한 뒤에도 메모리를 확보하지 못했다면
-	 * per-cpu용으로 보유 중인 page를 해제하고 다시 시도한다.
+	 * per-cpu용으로 보유 중인 page를 해제하고 한 번 더 시도한다.
 	 **/
 	if (!page && !drained) {
 		drain_all_pages();
@@ -3406,6 +3453,9 @@ retry:
 		goto retry;
 	}
 
+	/** 20140628    
+	 * 받아온 페이지를 리턴.
+	 **/
 	return page;
 }
 
@@ -3569,6 +3619,24 @@ bool gfp_pfmemalloc_allowed(gfp_t gfp_mask)
 	return !!(gfp_to_alloc_flags(gfp_mask) & ALLOC_NO_WATERMARKS);
 }
 
+/** 20140628    
+ * slowpath로 메모리 할당을 시도한다.
+ * disk IO가 이뤄질 수 있으므로 block 될 수 있다.
+ *
+ * 1. kswapd를 깨운다.
+ * 2. get_page_from_freelist (alloc_flags & ~ALLOC_NO_WATERMARKS)로 시도.
+ * 3. if (alloc_flags & ALLOC_NO_WATERMARKS)
+ *		 __alloc_pages_high_priority
+ *			get_page_from_freelist (ALLOC_NO_WATERMARKS)로 시도.
+ *			(NOFAIL인 경우 받아올 때까지 시도)
+ * 4. __alloc_pages_direct_reclaim
+ *		__perform_reclaim() 후
+ *		get_page_from_freelist (~ALLOC_NO_WATERMARKS)로 시도.
+ * 5. NORETRY인 경우 __alloc_pages_may_oom
+ *		get_page_from_freelist (ALLOC_WMARK_HIGH|ALLOC_CPUSET)로 시도.
+ *		out_of_memory().
+ * 6. should retry?
+ **/
 static inline struct page *
 __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
 	struct zonelist *zonelist, enum zone_type high_zoneidx,
@@ -3593,7 +3661,9 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
 	 * too large.
 	 */
 	/** 20131116    
-	 * order는 MAX_ORDER보다 크면 안 된다.
+	 * order는 MAX_ORDER 이상이면 실패한다.
+	 * 현재 MAX_ORDER는 2^10, 즉 buddy로부터 한 번에 할당할 수 있는 최대 크기는
+	 * 4MB.
 	 *
 	 * 20131214
 	 * __GFP_NO_WARN 옵션이 주어지면 메모리 할당실패시 경고 메시지를 발생시키지 않는다.
@@ -3619,8 +3689,10 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
 
 restart:
 	/** 20131116    
-	 * 명시적으로 __GFP_NO_KSWAPD가 속성으로 지정되어 있지 않은 경우
+	 * __GFP_NO_KSWAPD가 속성으로 지정되어 있지 않은 경우
 	 * zonelist를 순회하며 watermark low 보다 free page가 낮은 zone에 대해 kswap을 실행시킨다.
+	 *
+	 * kswapd는 node별로 생성되므로, NUMA가 아닌 경우 하나만 생성된다.
 	 **/
 	if (!(gfp_mask & __GFP_NO_KSWAPD))
 		wake_all_kswapd(order, zonelist, high_zoneidx,
@@ -3791,7 +3863,7 @@ rebalance:
 
 	/* Try direct reclaim and then allocating */
 	/** 20140629    
-	 * 할 차례...
+	 * direct reclaim을 수행하고, 할당이 성공하면 page를 리턴받는다.
 	 **/
 	page = __alloc_pages_direct_reclaim(gfp_mask, order,
 					zonelist, high_zoneidx,
@@ -3805,14 +3877,31 @@ rebalance:
 	 * If we failed to make any progress reclaiming, then we are
 	 * running out of options and have to consider going OOM
 	 */
+	/** 20140628    
+	 * __perform_reclaim으로 회수된 페이지가 없다면
+	 **/
 	if (!did_some_progress) {
+		/** 20140628    
+		 * low-level FS 접근이 허용되었고, 재시도 금지가 아닐 경우
+		 **/
 		if ((gfp_mask & __GFP_FS) && !(gfp_mask & __GFP_NORETRY)) {
+			/** 20140628    
+			 * oom killer가 비활성화 되었다면 nopage. (hibernate 중)
+			 **/
 			if (oom_killer_disabled)
 				goto nopage;
 			/* Coredumps can quickly deplete all memory reserves */
+			/** 20140628    
+			 * 현재 coredump 되었다면 memory를 사용해 버릴 것이므로 (???)
+			 * NOFAIL이 아니라면 nopage로 이동한다.
+			 **/
 			if ((current->flags & PF_DUMPCORE) &&
 			    !(gfp_mask & __GFP_NOFAIL))
 				goto nopage;
+			/** 20140628    
+			 * page 할당을 시도하고, 실패시 oom kill을 동작시킨다.
+			 * 마지막으로 page 할당이 성공한 경우 got_pg로 이동.
+			 **/
 			page = __alloc_pages_may_oom(gfp_mask, order,
 					zonelist, high_zoneidx,
 					nodemask, preferred_zone,
@@ -3820,6 +3909,11 @@ rebalance:
 			if (page)
 				goto got_pg;
 
+			/** 20140628    
+			 * page 할당 실패. oom이 동작한 상태.
+			 * NOFAIL이 아닌 경우 order가 PAGE_ALLOC_COSTLY_ORDER 이상이거나
+			 * ZONE_NORMAL 이하에 대한 요청인 경우 할당실패로 이동.
+			 **/
 			if (!(gfp_mask & __GFP_NOFAIL)) {
 				/*
 				 * The oom killer is not called for high-order
@@ -3838,15 +3932,26 @@ rebalance:
 					goto nopage;
 			}
 
+			/** 20140628    
+			 * slowpath를 처음부터 재시도 한다.
+			 **/
 			goto restart;
 		}
 	}
 
 	/* Check if we should retry the allocation */
+	/** 20140628    
+	 * 회수된 페이지를 pages_reclaimed에 누적하고,
+	 * 재시도 해야할지 여부를 검사한다.
+	 **/
 	pages_reclaimed += did_some_progress;
 	if (should_alloc_retry(gfp_mask, order, did_some_progress,
 						pages_reclaimed)) {
 		/* Wait for some write requests to complete then retry */
+		/** 20140628    
+		 * io 완료를 BLK_RW_ASYNC로 HZ/50동안 기다린다.
+		 * rebalance 부터 다시 시작한다.
+		 **/
 		wait_iff_congested(preferred_zone, BLK_RW_ASYNC, HZ/50);
 		goto rebalance;
 	} else {
@@ -3855,6 +3960,9 @@ rebalance:
 		 * direct reclaim and reclaim/compaction depends on compaction
 		 * being called after reclaim so call directly if necessary
 		 */
+		/** 20140628    
+		 * direct compaction으로 통해 page를 확보하면 got_pg로 이동.
+		 **/
 		page = __alloc_pages_direct_compact(gfp_mask, order,
 					zonelist, high_zoneidx,
 					nodemask,
@@ -3974,6 +4082,9 @@ out:
 	 * the mask is being updated. If a page allocation is about to fail,
 	 * check if the cpuset changed during allocation and if so, retry.
 	 */
+	/** 20140705
+	 * 여기부터...
+	 **/
 	if (unlikely(!put_mems_allowed(cpuset_mems_cookie) && !page))
 		goto retry_cpuset;
 

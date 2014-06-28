@@ -1385,6 +1385,10 @@ struct task_struct {
 	unsigned sched_contributes_to_load:1;
 
 	pid_t pid;
+	/** 20140628    
+	 * fork    생성-> 부모 자식 간의 tgid는 각각 다르다.
+	 * pthread 생성-> 부모 자식 간의 tgid는 같다.
+	 **/
 	pid_t tgid;
 
 #ifdef CONFIG_CC_STACKPROTECTOR
@@ -1836,6 +1840,9 @@ static inline int pid_alive(struct task_struct *p)
  *
  * Check if a task structure is the first user space task the kernel created.
  */
+/** 20140628    
+ * task가 pid 1인 경우.
+ **/
 static inline int is_global_init(struct task_struct *tsk)
 {
 	return tsk->pid == 1;
@@ -1854,6 +1861,9 @@ extern void free_task(struct task_struct *tsk);
 
 extern void __put_task_struct(struct task_struct *t);
 
+/** 20140628    
+ * task_struct 의 사용을 반납한다.
+ **/
 static inline void put_task_struct(struct task_struct *t)
 {
 	if (atomic_dec_and_test(&t->usage))
@@ -2478,6 +2488,9 @@ static inline int has_group_leader_pid(struct task_struct *p)
 	return p->pid == p->tgid;
 }
 
+/** 20140628    
+ * 두 task가 같은 thread group에 있는지 검사.
+ **/
 static inline
 int same_thread_group(struct task_struct *p1, struct task_struct *p2)
 {
@@ -2723,7 +2736,7 @@ static inline int __fatal_signal_pending(struct task_struct *p)
 }
 
 /** 20131207
- * signal_pending 과 SIGKILL 가 모두 만족하면 true (어떤 경우인지???)
+ * signal이 pending되어 있고, pending된 signal이 SIGKILL인 경우.
  */
 static inline int fatal_signal_pending(struct task_struct *p)
 {

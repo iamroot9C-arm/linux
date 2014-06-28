@@ -56,7 +56,7 @@ static inline int cpuset_node_allowed_hardwall(int node, gfp_t gfp_mask)
 }
 
 /** 20130928    
- * 추후 보기로 함
+ * 추후 보기로 함 ???
  **/
 static inline int cpuset_zone_allowed_softwall(struct zone *z, gfp_t gfp_mask)
 {
