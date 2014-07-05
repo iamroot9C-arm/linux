@@ -719,6 +719,9 @@ asmlinkage void __init start_kernel(void)
 				"enabled *very* early, fixing it\n");
 		local_irq_disable();
 	}
+	/** 20140705
+	 * idr_layer용 kmem_cache 생성
+	 */
 	idr_init_cache();
 	perf_event_init();
 	rcu_init();

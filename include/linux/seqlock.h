@@ -116,6 +116,7 @@ static __always_inline int read_seqretry(const seqlock_t *sl, unsigned start)
  * after the write_seqcount_end().
  */
 
+
 typedef struct seqcount {
 	unsigned sequence;
 } seqcount_t;
@@ -226,6 +227,10 @@ static inline unsigned raw_seqcount_begin(const seqcount_t *s)
  *
  * Use carefully, only in critical code, and comment how the barrier is
  * provided.
+ */ 
+
+/** 20140705
+ * 현재 seqcount값과 초기값과 다른지 검사한다.
  */
 static inline int __read_seqcount_retry(const seqcount_t *s, unsigned start)
 {
@@ -242,6 +247,10 @@ static inline int __read_seqcount_retry(const seqcount_t *s, unsigned start)
  * If the critical section was invalid, it must be ignored (and typically
  * retried).
  */
+
+/** 20140705
+ * 메모리 배리어를 설정하고 현재 seqcount값과 다를 경우 seqcount를 다시 읽어야 한다.
+ */
 static inline int read_seqcount_retry(const seqcount_t *s, unsigned start)
 {
 	smp_rmb();
@@ -254,12 +263,17 @@ static inline int read_seqcount_retry(const seqcount_t *s, unsigned start)
  * Sequence counter only version assumes that callers are using their
  * own mutexing.
  */
+/** 20140705
+ * writer의 critical section이 시작할 때 seqence값을 증가시키고 write memory barrier를 설정한다.
+ */
 static inline void write_seqcount_begin(seqcount_t *s)
 {
 	s->sequence++;
 	smp_wmb();
 }
-
+/** 20140705
+ * writer의 critical section이 끝날때 write memory barrier이후 sequence값을 증가시킨다.
+ */
 static inline void write_seqcount_end(seqcount_t *s)
 {
 	smp_wmb();

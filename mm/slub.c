@@ -3986,6 +3986,11 @@ static struct kmem_cache *get_slab(size_t size, gfp_t flags)
 	return kmalloc_caches[index];
 }
 
+/** 20140705 
+ * size가 SLUB_MAX_SIZE보다 클 경우 buddy로부터 size만큼의 page할당을 시도하며,
+ * 그렇지 않을 경우 kmem_cache 테이블로부터 size로 적함한 kmem_cache를 찾아서
+ * object 하나를 리턴한다.
+ */
 void *__kmalloc(size_t size, gfp_t flags)
 {
 	struct kmem_cache *s;

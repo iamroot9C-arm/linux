@@ -377,6 +377,9 @@ struct page *
 __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
 		       struct zonelist *zonelist, nodemask_t *nodemask);
 
+/** 20140705
+ * nodemask를 설정하지 않고 2^order만큼 page할당을 시도한다.
+ */
 static inline struct page *
 __alloc_pages(gfp_t gfp_mask, unsigned int order,
 		struct zonelist *zonelist)
@@ -397,6 +400,9 @@ static inline struct page *alloc_pages_node(int nid, gfp_t gfp_mask,
 	/** 20130907    
 	 * nid 에 해당하는 node에서 gfp_mask와 일치하는 zonelist를 가져와 __alloc_pages에 전달.
 	 **/
+	/** 20140705 
+	 * nid에 해당하는 zonelist로부터 zone을 선택한 후 page할당을 시도한다.
+	 */
 	return __alloc_pages(gfp_mask, order, node_zonelist(nid, gfp_mask));
 }
 
@@ -427,6 +433,9 @@ extern struct page *alloc_pages_vma(gfp_t gfp_mask, int order,
  * NUMA가 아니므로 이 함수가 실행됨.
  * numa_node_id()는 0을 반환.
  **/
+/** 20140705
+ * 2^order만큼의 page할당을 시도한다.
+ */
 #define alloc_pages(gfp_mask, order) \
 		alloc_pages_node(numa_node_id(), gfp_mask, order)
 #define alloc_pages_vma(gfp_mask, order, vma, addr, node)	\

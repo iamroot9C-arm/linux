@@ -3990,6 +3990,16 @@ got_pg:
 /*
  * This is the 'heart' of the zoned buddy allocator.
  */
+/** 20140705 
+ * sequence락을 걸고 cpu_mems_allowed값을 읽어서 선호하는 존을 설정하고
+ * 선호하는 존으로부터 watermark를 low 설정하여 freepage를 얻어온다.
+ * 처음에는 watermark low로 설정하여 dirty page가 limit을 초과하지 않는
+ * zone에서 할당을 시도한다
+ * 
+ * get_page_from_freelist로 부터 freepage를 얻어오는데 실패하면
+ * slowpath를 통해 page할당을 재시도한다.
+ */
+
 struct page *
 __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
 			struct zonelist *zonelist, nodemask_t *nodemask)
@@ -4083,7 +4093,8 @@ out:
 	 * check if the cpuset changed during allocation and if so, retry.
 	 */
 	/** 20140705
-	 * 여기부터...
+	 * get_mems_allowed로 가져온 값과 seqcount현재 값이 다르고, 
+	 * page할당에 실패하면 다시한번 retry_cpuset으로 돌아가서 메모리 할당을 다시 시도한다. 
 	 **/
 	if (unlikely(!put_mems_allowed(cpuset_mems_cookie) && !page))
 		goto retry_cpuset;
@@ -4094,6 +4105,11 @@ EXPORT_SYMBOL(__alloc_pages_nodemask);
 
 /*
  * Common helper functions.
+ */
+/** 20140705
+ * 1. 메모리 할당을 하기 위한 인터페이스로 사용됨 (kmalloc으로도 호출됨)
+ * 2. buddy로부터 물리적으로 연속적으로 2^order만큼 할당하여
+ * 가상메모리주소를 반환한다
  */
 unsigned long __get_free_pages(gfp_t gfp_mask, unsigned int order)
 {

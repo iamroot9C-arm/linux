@@ -292,12 +292,12 @@ static __always_inline struct kmem_cache *kmalloc_slab(size_t size)
 void *kmem_cache_alloc(struct kmem_cache *, gfp_t);
 void *__kmalloc(size_t size, gfp_t flags);
 
+/** 20140705
+ * buddy로부터 1 << order 만큼의 page를 받아온다.
+ */
 static __always_inline void *
 kmalloc_order(size_t size, gfp_t flags, unsigned int order)
 {
-	/** 20140517    
-	 * buddy로부터 1 << order 만큼의 page를 받아온다.
-	 **/
 	void *ret = (void *) __get_free_pages(flags | __GFP_COMP, order);
 	kmemleak_alloc(ret, size, 1, flags);
 	return ret;
@@ -331,6 +331,9 @@ kmem_cache_alloc_trace(struct kmem_cache *s, gfp_t gfpflags, size_t size)
 	return kmem_cache_alloc(s, gfpflags);
 }
 
+/** 20140705
+ * kmalloc_order를 바로 호출 
+ */
 static __always_inline void *
 kmalloc_order_trace(size_t size, gfp_t flags, unsigned int order)
 {
@@ -338,12 +341,30 @@ kmalloc_order_trace(size_t size, gfp_t flags, unsigned int order)
 }
 #endif
 
+/** 20140705
+ * size를 page의 order로 계산하여 kmalloc_order를 호출한다.
+ */
 static __always_inline void *kmalloc_large(size_t size, gfp_t flags)
 {
 	unsigned int order = get_order(size);
 	return kmalloc_order_trace(size, flags, order);
 }
 
+/** 20140705
+ *
+ * kmalloc : 물리적으로 연속적인 메모리 할당을 시도하는 함수
+ *
+ * size가 compile시에 결정되는 상수일 경우
+ * 1. size가 SLUB_MAX_SIZE보다 클 경우 kmalloc_large를 통해 buddy에서 page를
+ *    order만큼 받아오고
+ * 2. 그렇지 않고 SLUB_DMA가 설정되어 있지 않은 경우 
+ *    slab으로부터 page를 받아온다.
+ * =>
+ *
+ * size가 compile시 결정되지 않는 상수이면 __kmalloc을 호출한다
+ * => get_slab함수 호출시 size를 지정하여 kmem_cache로부터 
+ *    적함한 object를 할당한다.
+ */
 static __always_inline void *kmalloc(size_t size, gfp_t flags)
 {
 	if (__builtin_constant_p(size)) {

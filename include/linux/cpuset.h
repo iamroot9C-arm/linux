@@ -126,11 +126,18 @@ static inline unsigned int get_mems_allowed(void)
  * may have failed. It is up to the caller to retry the operation if
  * appropriate.
  */
+/** 20140705 
+ * get_mems_allowed의 seq값을 기준으로 현재 메모리 허용 여부를  검사하는 함수
+ */
 static inline bool put_mems_allowed(unsigned int seq)
 {
 	return !read_seqcount_retry(&current->mems_allowed_seq, seq);
 }
 
+/** 20140705
+ * 현재 task의 mems_allowed를 변경하기 위해 task lock을 걸고 
+ * write sequence 락을 걸고 seqcount를 증가시키는 함수
+ */
 static inline void set_mems_allowed(nodemask_t nodemask)
 {
 	task_lock(current);

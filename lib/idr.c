@@ -42,6 +42,9 @@
 static struct kmem_cache *idr_layer_cache;
 static DEFINE_SPINLOCK(simple_ida_lock);
 
+/** 20140705
+ * id_free 리스트로부터 idr_layer하나를 꺼내온다.
+ */
 static struct idr_layer *get_from_free_list(struct idr *idp)
 {
 	struct idr_layer *p;
@@ -70,6 +73,16 @@ static inline void free_layer(struct idr_layer *p)
 	call_rcu(&p->rcu_head, idr_layer_rcu_free);
 }
 
+/** 20140705
+ * idp의 id_free에 idr_layer를 추가시킨다.
+ *
+ * [ before ]
+ * idr->id_free --> old idr_layer
+ *
+ * [ after ]
+ * idr->id_free --> new idr_layer->ary[0] --> old idr_layer
+ */
+
 /* only called when idp->lock is held */
 static void __move_to_free_list(struct idr *idp, struct idr_layer *p)
 {
@@ -78,6 +91,10 @@ static void __move_to_free_list(struct idr *idp, struct idr_layer *p)
 	idp->id_free_cnt++;
 }
 
+/** 20140705
+ * spin lock을 한번만 걸어주기 위해 __move_to_free_list와 별도로
+ * 만들어준 함수
+ */
 static void move_to_free_list(struct idr *idp, struct idr_layer *p)
 {
 	unsigned long flags;
@@ -90,6 +107,11 @@ static void move_to_free_list(struct idr *idp, struct idr_layer *p)
 	spin_unlock_irqrestore(&idp->lock, flags);
 }
 
+/** 20140705 
+ * id값에 대한 idr_layer의 bitmap을 세팅하고,
+ * 현재 레이어가 IDR_FULL인 경우 
+ * 상위레이어의 루프를 계속 돌면서 상위 레이어의 bitmap을 세팅한다.
+ */
 static void idr_mark_full(struct idr_layer **pa, int id)
 {
 	struct idr_layer *p = pa[0];
@@ -123,6 +145,9 @@ static void idr_mark_full(struct idr_layer **pa, int id)
  * If the system is REALLY out of memory this function returns %0,
  * otherwise %1.
  */
+/** 20140705
+ * IDR_FREE_MAX갯수만큼 idr_layer를 할당받아서 idr의 id_free에 채워넣는다
+ */
 int idr_pre_get(struct idr *idp, gfp_t gfp_mask)
 {
 	while (idp->id_free_cnt < IDR_FREE_MAX) {
@@ -136,6 +161,10 @@ int idr_pre_get(struct idr *idp, gfp_t gfp_mask)
 }
 EXPORT_SYMBOL(idr_pre_get);
 
+/** 20140705 
+ * starting_id값 이상의 id값을 가지고 idr_layer의 ary를 구성하는 함수???
+ * 추후분석 ???
+ */
 static int sub_alloc(struct idr *idp, int *starting_id, struct idr_layer **pa)
 {
 	int n, m, sh;
@@ -205,6 +234,9 @@ static int sub_alloc(struct idr *idp, int *starting_id, struct idr_layer **pa)
 	return id;
 }
 
+/** 20140705
+ * starting id값보다 큰, 비어있는 slot에 해당하는 id값을 하나 가져온다
+ */
 static int idr_get_empty_slot(struct idr *idp, int starting_id,
 			      struct idr_layer **pa)
 {
@@ -214,6 +246,10 @@ static int idr_get_empty_slot(struct idr *idp, int starting_id,
 
 	id = starting_id;
 build_up:
+	/** 20140705
+	 * idr->top이 존재하지 않을 경우 id_free의 리스트로부터
+	 * idr_layer하나를 가져와 idr->top으로 한다
+	 */
 	p = idp->top;
 	layers = idp->layers;
 	if (unlikely(!p)) {
@@ -226,8 +262,17 @@ build_up:
 	 * Add a new layer to the top of the tree if the requested
 	 * id is larger than the currently allocated space.
 	 */
+	/** 20130705 
+	 * id값이 현재 레이어의 구성된 값보다 클경우 새로운 레이어를 추가한다
+	 */
 	while ((layers < (MAX_LEVEL - 1)) && (id >= (1 << (layers*IDR_BITS)))) {
 		layers++;
+		/** 20140705
+		 * idr_layer->layer : leaf로부터의 거리
+		 * idr->layers : idr_layer의 계층수
+		 * idr_layer가 비어있을 경우 idr_layer->layer 값을 1증가시켜 
+		 * 레이어를 상위로 올려준다
+		 */
 		if (!p->count) {
 			/* special case: if the tree is currently empty,
 			 * then we grow the tree by moving the top node
@@ -236,6 +281,12 @@ build_up:
 			p->layer++;
 			continue;
 		}
+
+		/** 20140705 
+		 * id_free 리스트에서 idr_layer를 가져오는 데 실패했을 경우
+		 * idr_layer의 p가 가리키고있는 id_layer부터 leaf까지의 계층의 
+		 * ary[0] 을 id_free에 넣어주고 -1을 리턴한다. 
+		 */
 		if (!(new = get_from_free_list(idp))) {
 			/*
 			 * The allocation failed.  If we built part of
@@ -251,6 +302,10 @@ build_up:
 			spin_unlock_irqrestore(&idp->lock, flags);
 			return -1;
 		}
+		/** 20140705
+		 * id_free 리스트에서 idr_layer를 가져온뒤 최상위 레이어로 한다.
+		 * p->bitmap(ary[0]에 해당됨)이 FULL인 경우 0번 비트를 켜준다.
+		 */
 		new->ary[0] = p;
 		new->count = 1;
 		new->layer = layers-1;
@@ -258,14 +313,32 @@ build_up:
 			__set_bit(0, &new->bitmap);
 		p = new;
 	}
+	/** 20140705
+	 * idp->top이 p를 가리키도록 rcu포인터 값을 할당한다.
+	 */
 	rcu_assign_pointer(idp->top, p);
+	/** 20140705
+	 * idp->layers를 갱신한다.
+	 */
 	idp->layers = layers;
+	/** 20140705
+	 * 추후분석 ???
+	 */
 	v = sub_alloc(idp, &id, pa);
+
+	/** 20140705
+	 * id값이 현재 idr_layer로 제공할 수 있는 값보다 크다면 
+	 * build_up으로 가서 idr_layer를 추가한다.
+	 */
 	if (v == IDR_NEED_TO_GROW)
 		goto build_up;
 	return(v);
 }
 
+/** 20140705
+ * 비어있는 id값을 정상적으로 가져왔다면, 
+ * ptr을 pa[0]->ary[id & IDR_MASK]에 rcu포인터로 등록시킨다 
+ */
 static int idr_get_new_above_int(struct idr *idp, void *ptr, int starting_id)
 {
 	struct idr_layer *pa[MAX_LEVEL];

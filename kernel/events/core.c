@@ -5757,13 +5757,16 @@ int perf_pmu_register(struct pmu *pmu, char *name, int type)
 	 * name이 존재하지만 type이 음수인 경우
 	 **/
 	if (type < 0) {
-		/** 20140517    
-		 * 20140524 reclaim 분석 후 이어서 분석 예정.
-		 **/
+		/** 20140705
+		 * pmu_idr의 resource를 할당한다.
+		 * (idr_layer구조체를 id_free에 리스트로 채워넣는다)
+		 */
 		int err = idr_pre_get(&pmu_idr, GFP_KERNEL);
 		if (!err)
 			goto free_pdc;
-
+	/** 20140712 
+	 * 여기부터 ....
+	 */
 		err = idr_get_new_above(&pmu_idr, pmu, PERF_TYPE_MAX, &type);
 		if (err) {
 			ret = err;
