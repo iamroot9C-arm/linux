@@ -143,6 +143,9 @@ static atomic_t nr_mmap_events __read_mostly;
 static atomic_t nr_comm_events __read_mostly;
 static atomic_t nr_task_events __read_mostly;
 
+/** 20140712    
+ * pmu list. perf_pmu_register에서 pmu를 등록.
+ **/
 static LIST_HEAD(pmus);
 static DEFINE_MUTEX(pmus_lock);
 static struct srcu_struct pmus_srcu;
@@ -624,13 +627,26 @@ perf_cgroup_mark_enabled(struct perf_event *event,
 }
 #endif
 
+/** 20140712    
+ * pmu 중 현재 cpu에 해당하는 disable count를 가져와
+ * 0인 경우 pmu_disable callback을 호출한다.
+ * disable count를 하나 증가시킨다.
+ **/
 void perf_pmu_disable(struct pmu *pmu)
 {
+	/** 20140712    
+	 * 현재 cpu의 pmu_disable_count 포인터를 받아온다.
+	 **/
 	int *count = this_cpu_ptr(pmu->pmu_disable_count);
 	if (!(*count)++)
 		pmu->pmu_disable(pmu);
 }
 
+/** 20140712    
+ * pmu 중 현재 cpu에 해당하는 disable count를 가져와
+ * disable count를 하나 감소시킨다.
+ * 0인 경우 pmu_enable callback을 호출한다.
+ **/
 void perf_pmu_enable(struct pmu *pmu)
 {
 	int *count = this_cpu_ptr(pmu->pmu_disable_count);
@@ -2704,6 +2720,9 @@ static u64 perf_event_read(struct perf_event *event)
 /*
  * Initialize the perf_event context in a task_struct:
  */
+/** 20140712    
+ * perf_event_context 자료구조를 초기화 한다.
+ **/
 static void __perf_event_init_context(struct perf_event_context *ctx)
 {
 	raw_spin_lock_init(&ctx->lock);
@@ -5587,6 +5606,9 @@ static struct pmu perf_task_clock = {
 	.event_idx	= perf_swevent_event_idx,
 };
 
+/** 20140712    
+ * nop. placeholder 용.
+ **/
 static void perf_pmu_nop_void(struct pmu *pmu)
 {
 }
@@ -5596,6 +5618,9 @@ static int perf_pmu_nop_int(struct pmu *pmu)
 	return 0;
 }
 
+/** 20140712    
+ * transaction 구간동안 pmu disable을 해둔다.
+ **/
 static void perf_pmu_start_txn(struct pmu *pmu)
 {
 	perf_pmu_disable(pmu);
@@ -5612,6 +5637,9 @@ static void perf_pmu_cancel_txn(struct pmu *pmu)
 	perf_pmu_enable(pmu);
 }
 
+/** 20140712    
+ * hw.idx 값 리턴.
+ **/
 static int perf_event_idx_default(struct perf_event *event)
 {
 	return event->hw.idx + 1;
@@ -5621,6 +5649,10 @@ static int perf_event_idx_default(struct perf_event *event)
  * Ensures all contexts with the same task_ctx_nr have the same
  * pmu_cpu_context too.
  */
+/** 20140712    
+ * pmu list를 순회하며 주어진 pmu context number를 가진 pmu context를 받아온다.
+ * pmu context가 존재하지 않는 경우 NULL이 리턴.
+ **/
 static void *find_pmu_context(int ctxn)
 {
 	struct pmu *pmu;
@@ -5698,14 +5730,25 @@ static void pmu_dev_release(struct device *dev)
 	kfree(dev);
 }
 
+/** 20140712    
+ * pmu device을 할당받고, 초기화 시킨 후에 등록시킨다.
+ **/
 static int pmu_dev_alloc(struct pmu *pmu)
 {
 	int ret = -ENOMEM;
 
+	/** 20140712    
+	 * device 구조체 메모리를 할당해 pmu 구조체에 저장
+	 **/
 	pmu->dev = kzalloc(sizeof(struct device), GFP_KERNEL);
 	if (!pmu->dev)
 		goto out;
 
+	/** 20140712    
+	 * pmu->dev의 초기화 하고, 속성을 저장하고, device를 등록한다.
+	 *
+	 * device의 이름은 perf_pmu_register 호출시 지정한 이름으로 한다.
+	 **/
 	pmu->dev->groups = pmu->attr_groups;
 	device_initialize(pmu->dev);
 	ret = dev_set_name(pmu->dev, "%s", pmu->name);
@@ -5745,7 +5788,8 @@ int perf_pmu_register(struct pmu *pmu, char *name, int type)
 
 	pmu->type = -1;
 	/** 20140517    
-	 * name이 NULL로 주어진 경우 pmu의type을 기록하지 않는다.
+	 * name이 NULL로 주어진 경우 pmu의 type을 기록하지 않는다.
+	 * pmu device 등록도 이뤄지지 않는다.
 	 *
 	 * perf_cpu_clock, perf_task_clock의 경우 NULL로 전달됨.
 	 **/
@@ -5764,17 +5808,25 @@ int perf_pmu_register(struct pmu *pmu, char *name, int type)
 		int err = idr_pre_get(&pmu_idr, GFP_KERNEL);
 		if (!err)
 			goto free_pdc;
-	/** 20140712 
-	 * 여기부터 ....
-	 */
+		/** 20140712 
+		 * pmu를 PERF_TYPE_MAX 이상의 정수값에 매핑하고,
+		 * type에 얻어온 handle을 받아온다.
+		 */
 		err = idr_get_new_above(&pmu_idr, pmu, PERF_TYPE_MAX, &type);
 		if (err) {
 			ret = err;
 			goto free_pdc;
 		}
 	}
+	/** 20140712    
+	 * 받아온 idr handle을 pmu의 type에 저장.
+	 **/
 	pmu->type = type;
 
+	/** 20140712    
+	 * pmu bus가 동작 중일 경우 (perf_event_sysfs_init에서 true로 만듦)
+	 * pmu device를 할당받고 등록시킨다.
+	 **/
 	if (pmu_bus_running) {
 		ret = pmu_dev_alloc(pmu);
 		if (ret)
@@ -5782,6 +5834,13 @@ int perf_pmu_register(struct pmu *pmu, char *name, int type)
 	}
 
 skip_type:
+	/** 20140712    
+	 * pmu task context number에 해당하는 pmu를 찾아
+	 * pmu_cpu_context에 저장한다.
+	 *
+	 * 이미 pmu_cpu_context가 존재하는 경우 받아온 perf_cpu_context를 반환.
+	 * 존재하지 않는 경우 cpu별로 perf_cpu_context를 저장할 공간을 할당 받는다.
+	 **/
 	pmu->pmu_cpu_context = find_pmu_context(pmu->task_ctx_nr);
 	if (pmu->pmu_cpu_context)
 		goto got_cpu_context;
@@ -5790,9 +5849,18 @@ skip_type:
 	if (!pmu->pmu_cpu_context)
 		goto free_dev;
 
+	/** 20140712    
+	 * 각 cpu마다 순회하며 할당받은 pmu_cpu_context를 초기화 한다.
+	 **/
 	for_each_possible_cpu(cpu) {
 		struct perf_cpu_context *cpuctx;
 
+		/** 20140712    
+		 * cpu에 해당하는 pmu_cpu_context 변수 공간을 가져와 
+		 * perf_event_context를 초기화 한다.
+		 *
+		 * perf cpu context의 context pmu와 active pmu를 등록할 pmu로 지정한다.
+		 **/
 		cpuctx = per_cpu_ptr(pmu->pmu_cpu_context, cpu);
 		__perf_event_init_context(&cpuctx->ctx);
 		lockdep_set_class(&cpuctx->ctx.mutex, &cpuctx_mutex);
@@ -5805,6 +5873,10 @@ skip_type:
 	}
 
 got_cpu_context:
+	/** 20140712    
+	 * pmu의 start transaction이 존재하지 않으면, 즉 새로 생성한 pmu_cpu_context라면
+	 * pmu_enable 상태에 따라 transaction 동작관련 callback을 등록한다.
+	 **/
 	if (!pmu->start_txn) {
 		if (pmu->pmu_enable) {
 			/*
@@ -5822,14 +5894,24 @@ got_cpu_context:
 		}
 	}
 
+	/** 20140712    
+	 * pmu_enable이 설정되지 않은 경우 (optional임)
+	 * pmu_enable과 pmu_disable callback을 초기화.
+	 **/
 	if (!pmu->pmu_enable) {
 		pmu->pmu_enable  = perf_pmu_nop_void;
 		pmu->pmu_disable = perf_pmu_nop_void;
 	}
 
+	/** 20140712    
+	 * event_idx 콜백 지정.
+	 **/
 	if (!pmu->event_idx)
 		pmu->event_idx = perf_event_idx_default;
 
+	/** 20140712    
+	 * pmus 리스트에 등록.
+	 **/
 	list_add_rcu(&pmu->entry, &pmus);
 	ret = 0;
 unlock:
@@ -5846,6 +5928,9 @@ free_idr:
 		idr_remove(&pmu_idr, pmu->type);
 
 free_pdc:
+	/** 20140712    
+	 * percpu 해제.
+	 **/
 	free_percpu(pmu->pmu_disable_count);
 	goto unlock;
 }

@@ -730,6 +730,9 @@ struct perf_event;
 /**
  * struct pmu - generic performance monitoring unit
  */
+/** 20140712    
+ * type		: type에 해당하는 idr handle.
+ **/
 struct pmu {
 	struct list_head		entry;
 

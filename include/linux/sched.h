@@ -1277,6 +1277,9 @@ struct sched_rt_entity {
 
 struct rcu_node;
 
+/** 20140712    
+ * perf event task context
+ **/
 enum perf_event_task_context {
 	perf_invalid_context = -1,
 	perf_hw_context = 0,

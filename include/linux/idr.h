@@ -58,6 +58,21 @@
 /* Number of id_layer structs to leave in free list */
 #define IDR_FREE_MAX MAX_LEVEL + MAX_LEVEL
 
+/** 20140712    
+ * integer ID와 pointer를 저장하는 자료구조 (tree의 node에 해당)
+ *
+ *		bitmap		현재 layer에서 비어있는 곳은 0, 채워진 곳은 1.
+ *					leaf node일 경우, 각 비트는 정수 ID되어 있는지 여부를 나타냄.
+ *					non-leaf node일 경우, 각 비트는 하위 layer 공간이 모두 차 있는지 여부를 나타냄.
+ *		ary			leaf node일 경우, 해당 ID에 대응하는 pointer 값.
+ *					non-leaf node일 경우, 하위 idr_layer에 대한 pointer.
+ *		count		leaf node일 경우, 현재 layer에서 할당된 idr의 수.
+ *					non-leaf node일 경우, 할당된 하위 layer의 수.
+ *		layer		leaf node일 경우 0부터 시작한 index.
+ *		rcu_head	idr_layer 제거시 사용
+ *
+ *		[정리출처] http://studyfoss.egloos.com/5187192
+ **/
 struct idr_layer {
 	unsigned long		 bitmap; /* A zero bit means "space here" */
 	struct idr_layer __rcu	*ary[1<<IDR_BITS];
@@ -67,7 +82,13 @@ struct idr_layer {
 };
 
 /** 20140517    
- * idr_initd으로 초기화
+ * idr_init으로 초기화
+ *
+ *		top		- IDR layer의 가장 윗단. tree의 root.
+ *		id_free	- 예비용으로 보관 중인 여유 idr_layer의 list. (single list)
+ *		layers	- IDR layer의 수. tree의 height.
+ *		id_free_cnt - id_free 리스트에 연결된 idr_layer의 수.
+ *		lock	- idr 구조체에 대한 lock.
  **/
 struct idr {
 	struct idr_layer __rcu *top;
@@ -91,6 +112,10 @@ struct idr {
 #define IDR_NEED_TO_GROW -2
 #define IDR_NOMORE_SPACE -3
 
+/** 20140712    
+ * idr code를 errno 로 변환.
+ * 위의 error code는 _idr_sub_alloc가 리턴하는 경우.
+ **/
 #define _idr_rc_to_errno(rc) ((rc) == -1 ? -EAGAIN : -ENOSPC)
 
 /**
