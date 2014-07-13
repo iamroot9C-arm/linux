@@ -5924,6 +5924,9 @@ free_dev:
 	put_device(pmu->dev);
 
 free_idr:
+	/** 20140712    
+	 * PERF_TYPE_MAX 이후의 pmu->type이라면 idr mapping을 해제한다.
+	 **/
 	if (pmu->type >= PERF_TYPE_MAX)
 		idr_remove(&pmu_idr, pmu->type);
 
