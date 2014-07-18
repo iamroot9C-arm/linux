@@ -2055,6 +2055,7 @@ EXPORT_SYMBOL_GPL(map_vm_area);
 DEFINE_RWLOCK(vmlist_lock);
 
 /** 20140322    
+ *
  * vmalloc_init 전 vmlist에 추가하는 부분
  *		vm_area_add_early
  **/
@@ -2210,9 +2211,10 @@ static struct vm_struct *__get_vm_area_node(unsigned long size,
 	 * To distinguish it from others, we use a VM_UNLIST flag.
 	 */
 	/** 20140329    
-	 * vmalloc에서 호출된 경우 VM_UNLIST가 flags에 추가되어 들어온다.
 	 * VM_UNLIST인 경우 vm을 setup만 한다.
 	 * 그렇지 않다면 vmlist에 추가한다.
+	 * 
+	 * vmalloc에서 호출된 경우 flags에 VM_UNLIST가 추가된다.
 	 **/
 	if (flags & VM_UNLIST)
 		setup_vmalloc_vm(area, va, flags, caller);

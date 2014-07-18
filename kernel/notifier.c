@@ -20,7 +20,7 @@ BLOCKING_NOTIFIER_HEAD(reboot_notifier_list);
 
 /** 20121201
  * notifier_block을 단일 링크리스트로 등록해 준다.
- * 높은priority 순서로 정렬된다.
+ * 높은 priority 순서로 정렬된다.
  **/
 static int notifier_chain_register(struct notifier_block **nl,
 		struct notifier_block *n)
@@ -31,9 +31,9 @@ static int notifier_chain_register(struct notifier_block **nl,
 		nl = &((*nl)->next);
 	}
 	n->next = *nl;
-/** 20121201
- * Read Copy Update(추후 찾아봐야함) ???
- **/
+	/** 20140718
+	 * RCU로 보호되는 포인터 변수에 값을 할당함.
+	 **/
 	rcu_assign_pointer(*nl, n);
 	return 0;
 }

@@ -62,12 +62,17 @@ struct atomic_notifier_head {
 
 /** 20140628    
  * rwsem으로 보호되는 notifier_block head 구조체.
+ * rcu 함수로 access 해야한다.
  **/
 struct blocking_notifier_head {
 	struct rw_semaphore rwsem;
 	struct notifier_block __rcu *head;
 };
 
+/** 20140718
+ * raw notifier_block head 구조체.
+ * rcu 함수로 access 해야한다.
+ **/
 struct raw_notifier_head {
 	struct notifier_block __rcu *head;
 };

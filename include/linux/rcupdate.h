@@ -492,7 +492,9 @@ static inline void rcu_preempt_sleep_check(void)
 		((typeof(*p) __force __kernel *)(_________p1)); \
 	})
 /** 20130413 
- * rcu_xxx, smp_read... null .... ???
+ * RCU로 보호받는 변수를 읽어 리턴한다.
+ *
+ * lockdep, sparse를 사용하는 경우, 적절한 상황에서 참조가 이뤄졌는지 검사한다.
  */
 #define __rcu_dereference_check(p, c, space) \
 	({ \
@@ -616,6 +618,10 @@ static inline void rcu_preempt_sleep_check(void)
 	__rcu_dereference_check((p), rcu_read_lock_sched_held() || (c), \
 				__rcu)
 
+/** 20140718
+ * RCU로 보호받는 포인터 변수를 읽는다.
+ * 이 동작을 수행하는 thread가 rcu reader이다.
+ **/
 #define rcu_dereference_raw(p) rcu_dereference_check(p, 1) /*@@@ needed? @@@*/
 
 /**
@@ -680,6 +686,9 @@ static inline void rcu_preempt_sleep_check(void)
  *
  * This is a simple wrapper around rcu_dereference_check().
  */
+/** 20140718
+ * RCU로 보호받는 포인터를 읽어온다.
+ **/
 #define rcu_dereference(p) rcu_dereference_check(p, 0)
 
 /**
@@ -904,8 +913,8 @@ static inline notrace void rcu_read_unlock_sched_notrace(void)
  * See the RCU_INIT_POINTER() comment header for details.
  */
 /** 20140329    
- * rcu 포인터에 새로운 값을 할당.
- * write barrier 명령을 수반한다.
+ * RCU로 보호받는 pointer에 새로운 값을 할당한다.
+ * write barrier 명령을 수반하여, 이전 reader의 RCU 포인터 접근이 영향을 받지 않도록 한다.
  **/
 #define rcu_assign_pointer(p, v) \
 	__rcu_assign_pointer((p), (v), __rcu)
