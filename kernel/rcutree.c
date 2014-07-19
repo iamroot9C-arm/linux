@@ -2751,6 +2751,10 @@ static void __init rcu_init_one(struct rcu_state *rsp,
  * replace the definitions in rcutree.h because those are needed to size
  * the ->node array in the rcu_state structure.
  */
+/** 20140719
+ * rcu_fanout_leaf값이 CONFIG_RCU_FANOUT_LEAF값과 다르다면
+ * rcu에 대한 geometry를 갱신시킨다.
+ */
 static void __init rcu_init_geometry(void)
 {
 	int i;
@@ -2810,8 +2814,16 @@ void __init rcu_init(void)
 {
 	int cpu;
 
+	/** 20140719
+	 * RCU 옵션에 대한 메세지 표시
+	 **/
 	rcu_bootup_announce();
+	/** 20140719
+	 * rcu의 geometry에 대한 설정 초기화
+	 **/
 	rcu_init_geometry();
+	/** 20140719
+	 ***/	
 	rcu_init_one(&rcu_sched_state, &rcu_sched_data);
 	rcu_init_one(&rcu_bh_state, &rcu_bh_data);
 	__rcu_init_preempt();

@@ -193,8 +193,15 @@ static int sub_alloc(struct idr *idp, int *starting_id, struct idr_layer **pa)
 	/** 20140712    
 	 * top에서 id를 mapping할 leaf 까지 순회한다.
 	 * pa	top에서 leaf까지 각 level의 idr_layer를 저장.
-	 *		[TOP ][layer N-2]...[layer 1][layer 0][NULL]
+	 *		[layer 0][layer 1]...[layer Top-1][TOP][NULL]
 	 **/
+	/** 20140719
+	 * m이 IDR_SIZE와 같은 경우(layer안의 비트맵이 꽉 차 있을 경우), 
+	 * 		현재 layer와 동일한 레벨의 다음 layer를 찾고,
+	 * m이 IDR_SIZE와 같지 않은 경우(layer안에서 비트맵이 차 있지 않는 경우),
+	 * 루프문을 통해 TOP으로부터 하위레이어로 이동하면서 leaf노드까지 이동하여
+	 * id를 리턴한다.
+	 */
 	p = idp->top;
 	l = idp->layers;
 	pa[l--] = NULL;
@@ -415,7 +422,7 @@ build_up:
 
 /** 20140705
  * 비어있는 id값을 정상적으로 가져왔다면, 
- * ptr을 pa[0]->ary[id & IDR_MASK]에 rcu포인터로 등록시킨다 
+ * ptr을 pa[0]->ary[id & IDR_MASK]에 rcu포인터로 등록시킨다. 
  */
 static int idr_get_new_above_int(struct idr *idp, void *ptr, int starting_id)
 {
@@ -437,6 +444,9 @@ static int idr_get_new_above_int(struct idr *idp, void *ptr, int starting_id)
 		rcu_assign_pointer(pa[0]->ary[id & IDR_MASK],
 				(struct idr_layer *)ptr);
 		pa[0]->count++;
+		/** 20140719
+		 * layer가 full일때 id값에 대한 bitmap값을 설정한다
+		 */
 		idr_mark_full(pa, id);
 	}
 

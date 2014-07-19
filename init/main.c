@@ -723,6 +723,9 @@ asmlinkage void __init start_kernel(void)
 	 * idr_layer용 kmem_cache 생성
 	 */
 	idr_init_cache();
+	/** 20140719
+	 * perf_event 관련 자료 구조 초기화
+	 **/
 	perf_event_init();
 	rcu_init();
 	radix_tree_init();

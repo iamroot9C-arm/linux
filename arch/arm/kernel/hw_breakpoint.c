@@ -168,6 +168,9 @@ static int get_num_wrp_resources(void)
 }
 
 /* Determine number of BRP registers available. */
+/** 20140719
+ * coprocessor로부터 정의된 하드웨어 brp의 갯수를 얻어온다.
+ */
 static int get_num_brp_resources(void)
 {
 	u32 didr;
@@ -176,6 +179,9 @@ static int get_num_brp_resources(void)
 }
 
 /* Does this core support mismatch breakpoints? */
+/** 20140719
+ * mismatch breakpoint를 지원가능 여부를 리턴
+ */
 static int core_has_mismatch_brps(void)
 {
 	return (get_debug_arch() >= ARM_DEBUG_ARCH_V7_ECP14 &&
@@ -210,6 +216,9 @@ static int get_num_wrps(void)
 }
 
 /* Determine number of usable BRPs available. */
+/** 20140719
+ * 현재 cpu에서 지원가능한 breakpoint의 갯수를 리턴
+ */
 static int get_num_brps(void)
 {
 	int brps = get_num_brp_resources();
@@ -264,6 +273,9 @@ out:
 	return ret;
 }
 
+/** 20140719 
+ * instruction 또는 data slot 에서 지원하는 breakpoint의 갯수를 리턴한다.
+ */
 int hw_breakpoint_slots(int type)
 {
 	if (!debug_arch_supported())

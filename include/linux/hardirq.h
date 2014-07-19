@@ -123,6 +123,9 @@
 /*
  * Are we in NMI context?
  */
+/** 20140719
+ * 현재 NMI(Non Maskable Interrupt) 컨텍스트인지 여부 확인
+ **/
 #define in_nmi()	(preempt_count() & NMI_MASK)
 
 #if defined(CONFIG_PREEMPT_COUNT)

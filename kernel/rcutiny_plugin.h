@@ -546,15 +546,25 @@ void rcu_read_unlock_special(struct task_struct *t)
 	 * NMI handlers cannot block and cannot safely manipulate state.
 	 * They therefore cannot possibly be special, so just leave.
 	 */
+	/** 20140719
+	 * nmi루틴이면 아무 처리 없이 바로 리턴한다.
+	 **/
 	if (in_nmi())
 		return;
 
+	/** 20140719
+	 * irq flag를 저장한다.
+	 **/
 	local_irq_save(flags);
 
 	/*
 	 * If RCU core is waiting for this CPU to exit critical section,
 	 * let it know that we have done so.
 	 */
+	/** 20140726
+	 * 여기 부터 ... 
+	 **/
+
 	special = t->rcu_read_unlock_special;
 	if (special & RCU_READ_UNLOCK_NEED_QS)
 		rcu_preempt_cpu_qs();

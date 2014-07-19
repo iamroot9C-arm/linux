@@ -1199,6 +1199,10 @@ group_sched_out(struct perf_event *group_event,
  * We disable the event on the hardware level first. After that we
  * remove it from the context list.
  */
+
+/** 140719 
+ * cpu context로부터 event context부분을 제거한다.
+ */
 static int __perf_remove_from_context(void *info)
 {
 	struct perf_event *event = info;
@@ -5029,7 +5033,7 @@ static void perf_swevent_del(struct perf_event *event, int flags)
 	hlist_del_rcu(&event->hlist_entry);
 }
 
-static void perf_swevent_start(struct perf_event *event, int flags)
+static void perf_pswevent_start(struct perf_event *event, int flags)
 {
 	event->hw.state = 0;
 }
@@ -5040,6 +5044,10 @@ static void perf_swevent_stop(struct perf_event *event, int flags)
 }
 
 /* Deref the hlist from the update side */
+/** 20140719
+ * swevent의 hash테이블에서 hash리스트를 얻어온다.
+ * RCU관련 내용은 추후분석 ???
+ */
 static inline struct swevent_hlist *
 swevent_hlist_deref(struct swevent_htable *swhash)
 {
@@ -5047,6 +5055,9 @@ swevent_hlist_deref(struct swevent_htable *swhash)
 					 lockdep_is_held(&swhash->hlist_mutex));
 }
 
+/** 20140719
+ * swhash테이블에서 hash 리스트에 대한 RCU포인터를 해제하고 메모리 해제한다.
+ */
 static void swevent_hlist_release(struct swevent_htable *swhash)
 {
 	struct swevent_hlist *hlist = swevent_hlist_deref(swhash);
@@ -5773,6 +5784,10 @@ free_dev:
 static struct lock_class_key cpuctx_mutex;
 static struct lock_class_key cpuctx_lock;
 
+
+/** 20140719
+ * pmu 리스트에 pmu를 등록시킨다.
+ */
 int perf_pmu_register(struct pmu *pmu, char *name, int type)
 {
 	int cpu, ret;
@@ -7146,6 +7161,9 @@ static void __init perf_event_init_all_cpus(void)
 	}
 }
 
+/** 20140719 
+ * cpu에 대한 hash 리스트용 메모리를 할당하고 0으로 초기화 한다.
+ */
 static void __cpuinit perf_event_init_cpu(int cpu)
 {
 	struct swevent_htable *swhash = &per_cpu(swevent_htable, cpu);
@@ -7162,6 +7180,10 @@ static void __cpuinit perf_event_init_cpu(int cpu)
 }
 
 #if defined CONFIG_HOTPLUG_CPU || defined CONFIG_KEXEC
+
+/** 20140719 
+ * cpu context의 rotation_list를 리스트에서 삭제하고 초기화한다.
+ */
 static void perf_pmu_rotate_stop(struct pmu *pmu)
 {
 	struct perf_cpu_context *cpuctx = this_cpu_ptr(pmu->pmu_cpu_context);
@@ -7171,6 +7193,11 @@ static void perf_pmu_rotate_stop(struct pmu *pmu)
 	list_del_init(&cpuctx->rotation_list);
 }
 
+/** 20140719
+ * ctx->pmu를 cpuctx->rotation_list로 부터 삭제하고
+ * ctx->pinned_groups와 ctx->flexible_groups를 순회하면서 
+ * event context부분을 ````제거한다 
+ */
 static void __perf_event_exit_context(void *__info)
 {
 	struct perf_event_context *ctx = __info;
@@ -7201,6 +7228,9 @@ static void perf_event_exit_cpu_context(int cpu)
 	srcu_read_unlock(&pmus_srcu, idx);
 }
 
+/** 20140719
+ * cpu에 대한 hash리스트를 해제하고 cpu context로부터 event context를 제거한다.
+ */
 static void perf_event_exit_cpu(int cpu)
 {
 	struct swevent_htable *swhash = &per_cpu(swevent_htable, cpu);
@@ -7215,6 +7245,9 @@ static void perf_event_exit_cpu(int cpu)
 static inline void perf_event_exit_cpu(int cpu) { }
 #endif
 
+/** 20140719
+ * online cpu를 순회하면서 perf_event_exit_cpu 함수를 호출한다 
+ */
 static int
 perf_reboot(struct notifier_block *notifier, unsigned long val, void *v)
 {
@@ -7230,11 +7263,18 @@ perf_reboot(struct notifier_block *notifier, unsigned long val, void *v)
  * Run the perf reboot notifier at the very last possible moment so that
  * the generic watchdog code runs as long as possible.
  */
+/** 20140719 
+ * perf_reboot_notifier 블록을 정의하고, priority는 가장 작은 값으로 세팅
+ */
 static struct notifier_block perf_reboot_notifier = {
 	.notifier_call = perf_reboot,
 	.priority = INT_MIN,
 };
 
+/** 20140719 
+ * cpu_notify가 발생했을 때 action에 따라 
+ * hcpu의 perf_event를 초기화 및 해제한다.
+ */
 static int __cpuinit
 perf_cpu_notify(struct notifier_block *self, unsigned long action, void *hcpu)
 {
@@ -7259,6 +7299,10 @@ perf_cpu_notify(struct notifier_block *self, unsigned long action, void *hcpu)
 	return NOTIFY_OK;
 }
 
+/** 20140719
+ * pmu 및 reboot_notifier, breakpoint 관련 자료구조를 초기화 및 등록.
+ ***/
+
 void __init perf_event_init(void)
 {
 	int ret;
@@ -7276,13 +7320,26 @@ void __init perf_event_init(void)
 	 * srcu 초기화
 	 **/
 	init_srcu_struct(&pmus_srcu);
+	/** 20140719
+	 * perf_swevent, perf_cpu_clock, perf_task_clock를 추가로
+	 * pmu 리스트에 등록시킨다.
+	 */
 	perf_pmu_register(&perf_swevent, "software", PERF_TYPE_SOFTWARE);
 	perf_pmu_register(&perf_cpu_clock, NULL, -1);
 	perf_pmu_register(&perf_task_clock, NULL, -1);
+	
 	perf_tp_register();
+	/** 20140719
+	 * purf_cpu_notify함수에 대한 notify 블록을 등록시킨다.
+	 */
 	perf_cpu_notifier(perf_cpu_notify);
+	/** 20140719
+	 * perf_reboot_notifer함수를 reboot_notifier리스트에 등록시킨다.
+	 */
 	register_reboot_notifier(&perf_reboot_notifier);
-
+	/** 20140719
+	 * breakpoint 관련 자료 초기화
+	 */
 	ret = init_hw_breakpoint();
 	WARN(ret, "hw_breakpoint initialization failed with: %d", ret);
 

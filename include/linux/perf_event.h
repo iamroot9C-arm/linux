@@ -1351,6 +1351,9 @@ static inline void perf_event_task_tick(void)				{ }
 /*
  * This has to have a higher priority than migration_notifier in sched.c.
  */
+/** 20140719
+ * CPU_PRI_PERF로 priority를 설정한 cpu_notifier를 초기화 하고 등록시킨다.
+ */
 #define perf_cpu_notifier(fn)						\
 do {									\
 	static struct notifier_block fn##_nb __cpuinitdata =		\

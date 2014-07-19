@@ -124,6 +124,11 @@ static int __kprobes notifier_call_chain(struct notifier_block **nl,
  *
  *	Currently always returns zero.
  */
+
+/** 20140719
+ * atomic notify chain에 notifier block을 atomic하게 추가한다.
+ *
+ */
 int atomic_notifier_chain_register(struct atomic_notifier_head *nh,
 		struct notifier_block *n)
 {
@@ -213,6 +218,9 @@ EXPORT_SYMBOL_GPL(atomic_notifier_call_chain);
  *	Must be called in process context.
  *
  *	Currently always returns zero.
+ */
+/** 20140719
+ * 세마포어를 통해 block가능한 notifier함수를 notifier head에 등록시키는 함수
  */
 int blocking_notifier_chain_register(struct blocking_notifier_head *nh,
 		struct notifier_block *n)
@@ -562,6 +570,9 @@ int notrace __kprobes notify_die(enum die_val val, const char *str,
 	return atomic_notifier_call_chain(&die_chain, val, &args);
 }
 
+/** 20140719
+ * die_chain에 notifier를 등록시킨다. 
+ */
 int register_die_notifier(struct notifier_block *nb)
 {
 	vmalloc_sync_all();

@@ -39,6 +39,9 @@
  * messages about anything out of the ordinary.  If you like #ifdef, you
  * will love this function.
  */
+/** 20140719
+ * kernel config 옵션에 따른 printk 메세지 출력
+ **/
 static void __init rcu_bootup_announce_oddness(void)
 {
 #ifdef CONFIG_RCU_TRACE
@@ -88,6 +91,9 @@ static int rcu_preempted_readers_exp(struct rcu_node *rnp);
 /*
  * Tell them what RCU they are running.
  */
+/** 20140719
+ * CONFIG_TREE_PREEMPT_RCU 옵션이 켜져 있으면 printk 메세지 표시
+ **/
 static void __init rcu_bootup_announce(void)
 {
 	printk(KERN_INFO "Preemptible hierarchical RCU implementation.\n");

@@ -637,6 +637,10 @@ static struct pmu perf_breakpoint = {
 	.event_idx	= hw_breakpoint_event_idx,
 };
 
+/** 20140719
+ * hardware breakpoint 관련 자료구조를 초기화 한다. 
+ **/
+
 int __init init_hw_breakpoint(void)
 {
 	unsigned int **task_bp_pinned;
@@ -646,6 +650,10 @@ int __init init_hw_breakpoint(void)
 	for (i = 0; i < TYPE_MAX; i++)
 		nr_slots[i] = hw_breakpoint_slots(i);
 
+	/** 20140719
+	 * cpu를 순회하면 percpu변수의 nr_task_bp_pinned의 위치를 가져오고,
+	 * 메모리를 새로할당하여 초기화한다.
+	 */
 	for_each_possible_cpu(cpu) {
 		for (i = 0; i < TYPE_MAX; i++) {
 			task_bp_pinned = &per_cpu(nr_task_bp_pinned[i], cpu);
@@ -658,8 +666,14 @@ int __init init_hw_breakpoint(void)
 
 	constraints_initialized = 1;
 
+	/** 20140719
+	 * perf_breakpoint를 pmu리스트에 등록시킨다. 
+	 */
 	perf_pmu_register(&perf_breakpoint, "breakpoint", PERF_TYPE_BREAKPOINT);
 
+	/** 20140719
+	 * die_chain에 hw_breakpoint_exceptions를 notifier block으로 등록시킨다.
+	 **/
 	return register_die_notifier(&hw_breakpoint_exceptions_nb);
 
  err_alloc:
