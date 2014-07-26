@@ -69,6 +69,13 @@ extern void do_trace_rcu_torture_read(char *rcutorturename,
 #endif
 #endif
 
+/** 20140726    
+ * UINT와 ULONG의 비교 매크로.
+ * GE : a >= b
+ * LT : a <  b
+ *
+ * a-b가 음수가 되었다면 LONG_MAX(ULONG_MAX/2)보다 큰 절대값을 갖는다.
+ **/
 #define UINT_CMP_GE(a, b)	(UINT_MAX / 2 >= (a) - (b))
 #define UINT_CMP_LT(a, b)	(UINT_MAX / 2 < (a) - (b))
 #define ULONG_CMP_GE(a, b)	(ULONG_MAX / 2 >= (a) - (b))

@@ -76,6 +76,12 @@ static struct lock_class_key rcu_node_class[RCU_NUM_LVLS];
 	.name = #sname, \
 }
 
+/** 20140726    
+ * rcu_sched_state는 initialize된 값.
+ * rcu_sched_data는 percpu 변수로 정의되어 각 state와 연결된다.
+ *
+ * call_rcu() callback을 call_rcu_sched로 지정.
+ **/
 struct rcu_state rcu_sched_state =
 	RCU_STATE_INITIALIZER(rcu_sched, call_rcu_sched);
 DEFINE_PER_CPU(struct rcu_data, rcu_sched_data);
@@ -84,11 +90,18 @@ struct rcu_state rcu_bh_state = RCU_STATE_INITIALIZER(rcu_bh, call_rcu_bh);
 DEFINE_PER_CPU(struct rcu_data, rcu_bh_data);
 
 static struct rcu_state *rcu_state;
+/** 20140726    
+ * list head.
+ **/
 LIST_HEAD(rcu_struct_flavors);
 
 /* Increase (but not decrease) the CONFIG_RCU_FANOUT_LEAF at boot time. */
 static int rcu_fanout_leaf = CONFIG_RCU_FANOUT_LEAF;
 module_param(rcu_fanout_leaf, int, 0);
+/** 20140726    
+ * rcu level의 수는 config에 따라 1이 됨.
+ * num_rcu_lvl는 각 레벨의 rcu_nodes의 수로 1, 4, 0, 0, 0
+ **/
 int rcu_num_lvls __read_mostly = RCU_NUM_LVLS;
 static int num_rcu_lvl[] = {  /* Number of rcu_nodes at specified level. */
 	NUM_RCU_LVL_0,
@@ -944,6 +957,9 @@ check_for_new_grace_period(struct rcu_state *rsp, struct rcu_data *rdp)
 /*
  * Initialize the specified rcu_data structure's callback list to empty.
  */
+/** 20140726    
+ * callback list를 각각 초기화 한다.
+ **/
 static void init_callback_list(struct rcu_data *rdp)
 {
 	int i;
@@ -1729,6 +1745,10 @@ static void force_qs_rnp(struct rcu_state *rsp, int (*f)(struct rcu_data *))
  * Force quiescent states on reluctant CPUs, and also detect which
  * CPUs are in dyntick-idle mode.
  */
+/** 20140726    
+ * [참고] RCU STATE MACHINE
+ *		http://lwn.net/Articles/305782/
+ **/
 static void force_quiescent_state(struct rcu_state *rsp, int relaxed)
 {
 	unsigned long flags;
@@ -1773,8 +1793,7 @@ static void force_quiescent_state(struct rcu_state *rsp, int relaxed)
 		break;
 
 	case RCU_FORCE_QS:
-
-		/* Check dyntick-idle state, send IPI to laggarts. */
+/* Check dyntick-idle state, send IPI to laggarts. */
 		raw_spin_unlock(&rnp->lock);  /* irqs remain disabled */
 		force_qs_rnp(rsp, rcu_implicit_dynticks_qs);
 
@@ -1806,6 +1825,9 @@ static void
 __rcu_process_callbacks(struct rcu_state *rsp)
 {
 	unsigned long flags;
+	/** 20140726    
+	 * 현재 cpu의 rcu_data 변수에 접근해 data를 가져온다.
+	 **/
 	struct rcu_data *rdp = __this_cpu_ptr(rsp->rda);
 
 	WARN_ON_ONCE(rdp->beenonline == 0);
@@ -1814,6 +1836,13 @@ __rcu_process_callbacks(struct rcu_state *rsp)
 	 * If an RCU GP has gone long enough, go check for dyntick
 	 * idle CPUs and, if needed, send resched IPIs.
 	 */
+	/** 20140726    
+	 * RCU GP가 충분히 길어진 상태라면, dyntick idle CPU를 체크하고,
+	 * 필요하다면 resched IPI를 날린다.
+	 * 
+	 * rcu_state의 jiffies_force_qs로 지정한 값이 현재 지피보다 작다면,
+	 * 강제로 quiescent_state(CPU not using RCU)로 진입한다.
+	 **/
 	if (ULONG_CMP_LT(ACCESS_ONCE(rsp->jiffies_force_qs), jiffies))
 		force_quiescent_state(rsp, 1);
 
@@ -1868,6 +1897,9 @@ static void invoke_rcu_callbacks(struct rcu_state *rsp, struct rcu_data *rdp)
 	invoke_rcu_callbacks_kthread();
 }
 
+/** 20140726    
+ * RCU_SOFTIRQ를 raise.
+ **/
 static void invoke_rcu_core(void)
 {
 	raise_softirq(RCU_SOFTIRQ);
@@ -2490,6 +2522,9 @@ EXPORT_SYMBOL_GPL(rcu_barrier_sched);
 /*
  * Do boot-time initialization of a CPU's per-CPU RCU data.
  */
+/** 20140726    
+ * boot-time에 percpu rcu_data를 초기화 한다.
+ **/
 static void __init
 rcu_boot_init_percpu_data(int cpu, struct rcu_state *rsp)
 {
@@ -2664,6 +2699,11 @@ static void __init rcu_init_levelspread(struct rcu_state *rsp)
 	rsp->levelspread[0] = rcu_fanout_leaf;
 }
 #else /* #ifdef CONFIG_RCU_FANOUT_EXACT */
+/** 20140726    
+ * CONFIG_RCU_FANOUT_EXACT가 정의되지 않음.
+ *
+ * 각 레벨에서 node에 할당된 하위 레벨 node의 수를 계산해 넣는다.
+ **/
 static void __init rcu_init_levelspread(struct rcu_state *rsp)
 {
 	int ccur;
@@ -2671,6 +2711,22 @@ static void __init rcu_init_levelspread(struct rcu_state *rsp)
 	int i;
 
 	cprv = NR_CPUS;
+	/** 20140726    
+	 * 하위 레벨부터 상위레벨로 올라가며 해당 레벨의 spread 값을 계산한다.
+	 *
+	 * 하위 레벨 노드의 수와 현재 레벨 노드의 수를 현재 레벨 노드로 나눈다.
+	 * 최초 하위 레벨의 spread값은 cpu의 개수를 균등히 분할한 값이다.
+	 *
+	 * ccur = rsp->levelcnt[0] = 1;
+	 * rsp->levelspread[0] = (4 + 1 - 1)/1 = 4;
+	 *
+	 * cprv : cpu prev, cpu의 개수로 시작, 다음 레벨에서는 하위 레벨 노드의 수.
+	 * ccur : cpu current, 현재 레벨의 노드의 수.
+	 *
+	 * 예) cpu의 개수가 20이라 가정하면 level의 수는 2.
+	 *     levelspread[0] = (2  + 1 - 1) / 2 = 1;
+	 *     levelspread[1] = (20 + 2 - 1) / 2 = 10;
+	 **/
 	for (i = rcu_num_lvls - 1; i >= 0; i--) {
 		ccur = rsp->levelcnt[i];
 		rsp->levelspread[i] = (cprv + ccur - 1) / ccur;
@@ -2682,6 +2738,9 @@ static void __init rcu_init_levelspread(struct rcu_state *rsp)
 /*
  * Helper function for rcu_init() that initializes one rcu_state structure.
  */
+/** 20140726    
+ * rcu_state와 rcu_data를 전달받아 초기화 한다.
+ **/
 static void __init rcu_init_one(struct rcu_state *rsp,
 		struct rcu_data __percpu *rda)
 {
@@ -2698,17 +2757,35 @@ static void __init rcu_init_one(struct rcu_state *rsp,
 
 	/* Initialize the level-tracking arrays. */
 
+	/** 20140726    
+	 * 각 레벨에 속하는 nodes의 수를 초기화.
+	 *
+	 * levelcnt[0] = num_rcu_lvl[0] = 1;
+	 **/
 	for (i = 0; i < rcu_num_lvls; i++)
 		rsp->levelcnt[i] = num_rcu_lvl[i];
+	/** 20140726    
+	 * level은 배열로 이루어진 rcu_node에서 각 레벨에 해당하는
+	 * 시작 노드의 주소를 할당한다.
+	 **/
 	for (i = 1; i < rcu_num_lvls; i++)
 		rsp->level[i] = rsp->level[i - 1] + rsp->levelcnt[i - 1];
 	rcu_init_levelspread(rsp);
 
 	/* Initialize the elements themselves, starting from the leaves. */
 
+	/** 20140726    
+	 * 하위 level에서부터 순회하며 level의 모든 node를 순회하며 초기화 시킨다.
+	 **/
 	for (i = rcu_num_lvls - 1; i >= 0; i--) {
+		/** 20140726    
+		 * cpustride = 4;
+		 **/
 		cpustride *= rsp->levelspread[i];
 		rnp = rsp->level[i];
+		/** 20140726    
+		 * 해당 레벨의 모든 노드를 순회한다.
+		 **/
 		for (j = 0; j < rsp->levelcnt[i]; j++, rnp++) {
 			raw_spin_lock_init(&rnp->lock);
 			lockdep_set_class_and_name(&rnp->lock,
@@ -2735,6 +2812,12 @@ static void __init rcu_init_one(struct rcu_state *rsp,
 		}
 	}
 
+	/** 20140726    
+	 * rcu_state의 data는 전달받은 data.
+	 *
+	 * rnp은 leaf노드의 시작 위치로 지정하고,
+	 * cpu를 순회하며 rcu_data에 percpu data에 해당하는 node 위치를 연결한다.
+	 **/
 	rsp->rda = rda;
 	rnp = rsp->level[rcu_num_lvls - 1];
 	for_each_possible_cpu(i) {
@@ -2743,6 +2826,9 @@ static void __init rcu_init_one(struct rcu_state *rsp,
 		per_cpu_ptr(rsp->rda, i)->mynode = rnp;
 		rcu_boot_init_percpu_data(i, rsp);
 	}
+	/** 20140726    
+	 * 초기화된 rcu_state를 rcu_struct_flavors 라는 리스트에 연결시킨다.
+	 **/
 	list_add(&rsp->flavors, &rcu_struct_flavors);
 }
 
@@ -2823,10 +2909,17 @@ void __init rcu_init(void)
 	 **/
 	rcu_init_geometry();
 	/** 20140719
-	 ***/	
+	 * rcu_sched_state, rcu_bh_state 를 초기화 한다.
+	 **/	
 	rcu_init_one(&rcu_sched_state, &rcu_sched_data);
 	rcu_init_one(&rcu_bh_state, &rcu_bh_data);
+	/** 20140726    
+	 * RCU INIT PREEMPT.
+	 **/
 	__rcu_init_preempt();
+	/** 20140726    
+	 * RCU softirq를 vector에 등록시킨다.
+	 **/
 	 open_softirq(RCU_SOFTIRQ, rcu_process_callbacks);
 
 	/*

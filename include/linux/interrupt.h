@@ -393,6 +393,10 @@ extern bool force_irqthreads;
 #define force_irqthreads	(0)
 #endif
 
+/** 20140726    
+ * ARCH에서 별도로 SOFTIRQ PENDING을 기록하는 함수가 지정되지 않을 때
+ * 현재 cpu의 softirq pending 상태를 덮어쓰거나, or로 추가하는 함수.
+ **/
 #ifndef __ARCH_SET_SOFTIRQ_PENDING
 #define set_softirq_pending(x) (local_softirq_pending() = (x))
 #define or_softirq_pending(x)  (local_softirq_pending() |= (x))
@@ -431,6 +435,9 @@ enum
 	TASKLET_SOFTIRQ,
 	SCHED_SOFTIRQ,
 	HRTIMER_SOFTIRQ,
+	/** 20140726    
+	 * RCU는 우선순위가 가장 낮아야 하므로 마지막에 배치시킨다.
+	 **/
 	RCU_SOFTIRQ,    /* Preferable RCU should always be the last softirq */
 
 	NR_SOFTIRQS

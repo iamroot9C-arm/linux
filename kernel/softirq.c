@@ -58,6 +58,9 @@ EXPORT_SYMBOL(irq_stat);
  **/
 static struct softirq_action softirq_vec[NR_SOFTIRQS] __cacheline_aligned_in_smp;
 
+/** 20140726    
+ * percpu로 ksoftirqd 용 task를 가리키는 포인터를 정의한다.
+ **/
 DEFINE_PER_CPU(struct task_struct *, ksoftirqd);
 
 char *softirq_to_name[NR_SOFTIRQS] = {
@@ -71,6 +74,9 @@ char *softirq_to_name[NR_SOFTIRQS] = {
  * to the pending events, so lets the scheduler to balance
  * the softirq load for us.
  */
+/** 20140726    
+ * 현재 cpu의 ksoftirqd가 동작 중이지 않다면 깨운다.
+ **/
 static void wakeup_softirqd(void)
 {
 	/* Interrupts are disabled: no need to stop preemption */
@@ -384,8 +390,15 @@ void irq_exit(void)
 /*
  * This function must run with irqs disabled!
  */
+/** 20140726    
+ * irq가 금지된 상태에서 softirq를 발생시킨다.
+ * pending 후 interrupt context가 아니라면 바로 ksoftirqd를 깨운다.
+ **/
 inline void raise_softirq_irqoff(unsigned int nr)
 {
+	/** 20140726    
+	 * nr번 softirq의 발생을 기록한다(pending)
+	 **/
 	__raise_softirq_irqoff(nr);
 
 	/*
@@ -397,10 +410,17 @@ inline void raise_softirq_irqoff(unsigned int nr)
 	 * Otherwise we wake up ksoftirqd to make sure we
 	 * schedule the softirq soon.
 	 */
+	/** 20140726    
+	 * 현재 interrupt context가 아니라면 softirqd를 깨운다.
+	 **/
 	if (!in_interrupt())
 		wakeup_softirqd();
 }
 
+/** 20140726    
+ * local cpu interrupt를 disable한 상태에서
+ * nr에 해당하는 softirq를 발생시킨다.
+ **/
 void raise_softirq(unsigned int nr)
 {
 	unsigned long flags;
@@ -410,6 +430,10 @@ void raise_softirq(unsigned int nr)
 	local_irq_restore(flags);
 }
 
+/** 20140726    
+ * nr번 softirq의 pending을 추가(or) 기록한다.
+ * 즉, 처리가 동기적으로 이뤄지지 않고 pending만을 기록한다.
+ **/
 void __raise_softirq_irqoff(unsigned int nr)
 {
 	trace_softirq_raise(nr);

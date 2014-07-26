@@ -35,12 +35,24 @@
  * In practice, this did work well going from three levels to four.
  * Of course, your mileage may vary.
  */
+/** 20140726    
+ * vexpress config로
+ * CONFIG_RCU_FANOUT_LEAF			16
+ * CONFIG_RCU_FANOUT				32
+ **/
 #define MAX_RCU_LVLS 4
 #define RCU_FANOUT_1	      (CONFIG_RCU_FANOUT_LEAF)
 #define RCU_FANOUT_2	      (RCU_FANOUT_1 * CONFIG_RCU_FANOUT)
 #define RCU_FANOUT_3	      (RCU_FANOUT_2 * CONFIG_RCU_FANOUT)
 #define RCU_FANOUT_4	      (RCU_FANOUT_3 * CONFIG_RCU_FANOUT)
 
+/** 20140726    
+ * CPU 개수에 따라 LEVEL의 수와 각 레벨에 속하는 노드의 개수를 결정한다.
+ * 사용하는 마지막 레벨의 노드의 개수는 CPU의 수 (???)
+ *
+ * vexpress의 경우 NR_CPUS는 4이므로 첫번째 case에 해당되어
+ * LEVEL의 수는 1, LEVEL 0에는 1개의 RCU node가 속한다.
+ **/
 #if NR_CPUS <= RCU_FANOUT_1
 #  define RCU_NUM_LVLS	      1
 #  define NUM_RCU_LVL_0	      1
@@ -73,6 +85,13 @@
 # error "CONFIG_RCU_FANOUT insufficient for NR_CPUS"
 #endif /* #if (NR_CPUS) <= RCU_FANOUT_1 */
 
+/** 20140726    
+ * 각 레벨이 가지는 RCU의 합을 계산.
+ *
+ * 현재 설정에서
+ * RCU_SUM :		1 + NR_CPUS + 0 + 0 + 0.
+ * NUM_RCU_NODES :	5 - NR_CPUS
+ **/
 #define RCU_SUM (NUM_RCU_LVL_0 + NUM_RCU_LVL_1 + NUM_RCU_LVL_2 + NUM_RCU_LVL_3 + NUM_RCU_LVL_4)
 #define NUM_RCU_NODES (RCU_SUM - NR_CPUS)
 
@@ -232,6 +251,10 @@ struct rcu_node {
 	     (rnp) < &(rsp)->node[rcu_num_nodes]; (rnp)++)
 
 /* Index values for nxttail array in struct rcu_data. */
+/** 20140726    
+ * rcu_data의 nxttail의 TYPE. SIZE는 4개.
+ * 각 type별로 list가 구성된다.
+ **/
 #define RCU_DONE_TAIL		0	/* Also RCU_WAIT head. */
 #define RCU_WAIT_TAIL		1	/* Also RCU_NEXT_READY head. */
 #define RCU_NEXT_READY_TAIL	2	/* Also RCU_NEXT head. */
@@ -283,6 +306,9 @@ struct rcu_data {
 	 *	Note that the value of *nxttail[RCU_NEXT_TAIL] will
 	 *	always be NULL, as this is the end of the list.
 	 */
+	/** 20140726    
+	 * nxttail은 type 별로 nxtlist의 위치를 저장한다.
+	 **/
 	struct rcu_head *nxtlist;
 	struct rcu_head **nxttail[RCU_NEXT_SIZE];
 	long		qlen_lazy;	/* # of lazy queued callbacks */
@@ -426,6 +452,9 @@ struct rcu_state {
 	struct list_head flavors;		/* List of RCU flavors. */
 };
 
+/** 20140726    
+ * rcu_struct_flavors 리스트를 순회한다.
+ **/
 extern struct list_head rcu_struct_flavors;
 #define for_each_rcu_flavor(rsp) \
 	list_for_each_entry((rsp), &rcu_struct_flavors, flavors)

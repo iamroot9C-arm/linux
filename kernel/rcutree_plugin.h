@@ -79,6 +79,10 @@ static void __init rcu_bootup_announce_oddness(void)
 		printk(KERN_INFO "\tRCU restricting CPUs from NR_CPUS=%d to nr_cpu_ids=%d.\n", NR_CPUS, nr_cpu_ids);
 }
 
+/** 20140726    
+ * vexpress는 CONFIG_PREEMPT가 꺼져 있지만,
+ * 보편적인 경우 해당하므로 CONFIG_TREE_PREEMPT_RCU를 분석함.
+ **/
 #ifdef CONFIG_TREE_PREEMPT_RCU
 
 struct rcu_state rcu_preempt_state =
@@ -869,6 +873,9 @@ EXPORT_SYMBOL_GPL(rcu_barrier);
 /*
  * Initialize preemptible RCU's state structures.
  */
+/** 20140726    
+ * rcu_preempt_state를 초기화 한다.
+ **/
 static void __init __rcu_init_preempt(void)
 {
 	rcu_init_one(&rcu_preempt_state, &rcu_preempt_data);

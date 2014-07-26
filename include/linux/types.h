@@ -263,6 +263,10 @@ struct ustat {
  * @next: next update requests in a list
  * @func: actual update function to call after the grace period.
  */
+/** 20140726    
+ * rcu_head는 callback_head로 정의.
+ * 단일 리스트 연결을 위한 next와 func포인터를 갖고 있다.
+ **/
 struct callback_head {
 	struct callback_head *next;
 	void (*func)(struct callback_head *head);
