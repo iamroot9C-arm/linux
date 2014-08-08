@@ -46,6 +46,7 @@ struct page {
 	/** 20130831    
 	 * page-flags.h에 flags의 enum type 선언.
 	 *
+	 * memmap_init_zone 에서
 	 * set_page_section으로 flags에 section 정보를 기록,
 	 * set_page_zone으로 flags에 zone 정보를 기록,
 	 * set_page_node으로 flags에 node id를 기록

@@ -187,7 +187,7 @@ void __init vexpress_dt_smp_prepare_cpus(unsigned int max_cpus)
  * which may be present or become present in the system.
  */
 /** 20130518    
- * system에서 사용가능한 cpu 개수를 구하고 bitmap 설정.
+ * SMP cpu인 경우 system에서 사용가능한 cpu 개수를 구하고 bitmap 설정.
  **/
 void __init smp_init_cpus(void)
 {

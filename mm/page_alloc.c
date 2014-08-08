@@ -249,8 +249,8 @@ int page_group_by_mobility_disabled __read_mostly;
  * Instead, use {un}set_pageblock_isolate.
  */
 /** 20130504
-해당 page에 대한 pageblock의 migratetype을 설정
-**/
+ * 해당 page에 대한 pageblock의 migratetype을 설정
+ **/
 void set_pageblock_migratetype(struct page *page, int migratetype)
 {
 
@@ -5453,13 +5453,11 @@ static void setup_zone_migrate_reserve(struct zone *zone)
  * done. Non-atomic initialization, single-pass.
  */
 /** 20130504
-		1. 각 page에 대한 flags 설정
-		2. 모든 page(pfn 단위)에 PG_reserved  비트를 설정 
-		3. PFN이 1024의 배수인 page에 대해서 migrate type을 MIGRATE_MOVABLE 설정
-
-	20130907    
-	여기서 reserved 된 page들은 free_all_bootmem()에서 PG_reserved flags를 해제 해준다.
-**/
+ * zone에 속한 각 page frame들을 순회하며 struct page 구조체를 초기화하고 reserved 상태로 만든다.
+ *
+ * 20130907    
+ * 여기서 reserved 된 page들은 free_all_bootmem()에서 PG_reserved flags를 해제 해준다.
+ **/
 void __meminit memmap_init_zone(unsigned long size, int nid, unsigned long zone,
 		unsigned long start_pfn, enum memmap_context context)
 {
@@ -5469,21 +5467,22 @@ void __meminit memmap_init_zone(unsigned long size, int nid, unsigned long zone,
 	struct zone *z;
 
 	/** 20130504
-	highest_memmap_pfn 전역 변수 초기화
-	**/
+	 * highest_memmap_pfn 전역 변수 초기화
+	 **/
 	if (highest_memmap_pfn < end_pfn - 1)
 		highest_memmap_pfn = end_pfn - 1;
 	/** 20130504
-	zone에 해당하는 struct zone을 가져와서 z에 저장
-	**/
+	 * node의 pglist_data에서 zone에 해당하는 struct zone을 가져온다.
+	 **/
 	z = &NODE_DATA(nid)->node_zones[zone];
 
 	/** 20130504
-		1. 각 page에 대한 flags 설정
-		2. 모든 page(pfn 단위)에 PG_reserved  비트를 설정 
-		3. PFN이 1024의 배수인 page에 대해서 migrate type을 MIGRATE_MOVABLE 설정
-
-	**/
+	 * start_pfn ~ end_pfn을 순회하며, 각 page에 대해
+	 * 1. flags 설정 (zone과 node 정보 저장, reserved 표시)
+	 * 2. usage count, mapping count 초기화
+	 * 3. PFN이 1024의 배수인 page에 대해서 migrate type을 MIGRATE_MOVABLE 설정
+	 * 4. lru list_head 초기화
+	 **/
 	for (pfn = start_pfn; pfn < end_pfn; pfn++) {
 		/*
 		 * There can be holes in boot-time mem_map[]s
@@ -5492,9 +5491,9 @@ void __meminit memmap_init_zone(unsigned long size, int nid, unsigned long zone,
 		 */
 		 
 		if (context == MEMMAP_EARLY) {
-		/** 20130504
-		 early_pfn_valid,early_pfn_in_nid  모두 1 로 define 되어 있어 있음
-		 **/
+			/** 20130504
+			 * early_pfn_valid, early_pfn_in_nid  모두 1 로 define 되어 있어 있음
+			 **/
 			if (!early_pfn_valid(pfn))
 				continue;
 			if (!early_pfn_in_nid(pfn, nid))
@@ -5502,15 +5501,18 @@ void __meminit memmap_init_zone(unsigned long size, int nid, unsigned long zone,
 		}
 		page = pfn_to_page(pfn);
 		/** 20130504
-			page struct 의 flags에 해당 zone과 node 세팅
-		**/
+		 * page struct 의 flags에 해당 zone과 node 정보 저장.
+		 **/
 		set_page_links(page, zone, nid, pfn);
 		mminit_verify_page_links(page, zone, nid, pfn);
+		/** 20130504
+		 * page의 _count (usage count), _mapcount (page table mapping count) 초기화.
+		 **/
 		init_page_count(page);
 		reset_page_mapcount(page);
 		/** 20130504
-		 page struct 의 flags에서 PG_reserved 번째 비트를 셋한다. 	
-		**/
+		 * page struct 의 flags에서 PG_reserved 번째 비트를 셋한다. 	
+		 **/
 		SetPageReserved(page);
 		/*
 		 * Mark the block movable so that blocks are reserved for
@@ -5527,13 +5529,16 @@ void __meminit memmap_init_zone(unsigned long size, int nid, unsigned long zone,
 		 * pfn out of zone.
 		 */
 		 /** 20130504
-			PFN이 1024의 배수인 page에 대해서 migrate type을 MIGRATE_MOVABLE 설정
-		 **/
+		  * PFN이 1024의 배수인 page에 대해서 migrate type을 MIGRATE_MOVABLE 설정
+		  **/
 		if ((z->zone_start_pfn <= pfn)
 		    && (pfn < z->zone_start_pfn + z->spanned_pages)
 		    && !(pfn & (pageblock_nr_pages - 1)))
 			set_pageblock_migratetype(page, MIGRATE_MOVABLE);
 
+		/** 20140504
+		 * lru list head 초기화
+		 **/
 		INIT_LIST_HEAD(&page->lru);
 #ifdef WANT_PAGE_VIRTUAL
 		/* The shift won't overflow because ZONE_NORMAL is below 4G. */
@@ -5542,21 +5547,25 @@ void __meminit memmap_init_zone(unsigned long size, int nid, unsigned long zone,
 #endif
 	}
 }
+
 /** 20130504
-free area 를 MAX_ORDER만큼 돌면서 list를 초기화 
-**/
+ * zoned buddy allocator를 위한 구조체 초기화.
+ *
+ * free area 를 MAX_ORDER만큼 돌면서 list를 초기화 
+ **/
 static void __meminit zone_init_free_lists(struct zone *zone)
 {
 	int order, t;
 	/** 20130504
-	#define for_each_migratetype_order(order, type) \
-	for (order = 0; order < MAX_ORDER; order++) \
-		for (type = 0; type < MIGRATE_TYPES; type++)
-	MAX_ORDER : 11
-	MIGRATE_TYPE : enum MIGRATE_TYPE의 마지막(총갯수)
-	
-	free list 초기화 
-	**/
+	 * #define for_each_migratetype_order(order, type) \
+	 * for (order = 0; order < MAX_ORDER; order++) \
+	 *	for (type = 0; type < MIGRATE_TYPES; type++)
+	 *
+	 * MAX_ORDER : 11
+	 * MIGRATE_TYPE : enum MIGRATE_TYPE의 마지막(총갯수)
+	 *
+	 * free list 초기화 
+	 **/
 	for_each_migratetype_order(order, t) {
 		INIT_LIST_HEAD(&zone->free_area[order].free_list[t]);
 		zone->free_area[order].nr_free = 0;
@@ -5782,11 +5791,13 @@ static __meminit void zone_pcp_init(struct zone *zone)
 			zone->name, zone->present_pages,
 					 zone_batchsize(zone));
 }
+
 /** 20130504
-1. zone wait hash table 초기화
-2. zone 전역 변수의 free_area 필드 초기화
-왜 이름이 currently_empty_zone인지???
-**/
+ * 1. zone wait hash table 초기화
+ * 2. zone 의 free_area 구조체 초기화
+ * 왜 이름이 currently_empty_zone인지???
+ *    => 아직 zone의 free_area[o].free_list[t]가 채워지지 않았다.
+ **/
 int __meminit init_currently_empty_zone(struct zone *zone,
 					unsigned long zone_start_pfn,
 					unsigned long size,
@@ -5795,14 +5806,14 @@ int __meminit init_currently_empty_zone(struct zone *zone,
 	struct pglist_data *pgdat = zone->zone_pgdat;
 	int ret;
 	/** 20130427    
-	 * zone wait table init()이 성공하면 0 리턴
+	 * zone wait table init은 성공시 0 리턴
 	 **/
 	ret = zone_wait_table_init(zone, size);
 	if (ret)
 		return ret;
 	/** 20130504
-	zone 의 총 갯수를 저장
-	**/
+	 * zone 의 총 갯수를 저장
+	 **/
 	pgdat->nr_zones = zone_idx(zone) + 1;
 	zone->zone_start_pfn = zone_start_pfn;
 
@@ -6076,7 +6087,7 @@ static unsigned long __meminit zone_absent_pages_in_node(int nid,
 #else /* CONFIG_HAVE_MEMBLOCK_NODE_MAP */
 /** 20130413
  * zone_type에 해당하는 zone 의 size를 리턴.
- */
+ **/
 static inline unsigned long __meminit zone_spanned_pages_in_node(int nid,
 					unsigned long zone_type,
 					unsigned long *zones_size)
@@ -6086,7 +6097,7 @@ static inline unsigned long __meminit zone_spanned_pages_in_node(int nid,
 
 /** 20130413
  * zone_type에 해당하는 hole size를 리턴.
- */
+ **/
 static inline unsigned long __meminit zone_absent_pages_in_node(int nid,
 						unsigned long zone_type,
 						unsigned long *zholes_size)
@@ -6142,42 +6153,41 @@ static void __meminit calculate_node_totalpages(struct pglist_data *pgdat,
  * bytes.
  */
 /** 20130504
-	zonesize에 해당하는 pageblock을 비트맵으로 표현할때
-	필요한 바이트단위 크기
-**/
+ * zonesize에 해당하는 pageblock을 비트맵으로 표현할때
+ * 필요한 바이트단위 크기
+ **/
 static unsigned long __init usemap_size(unsigned long zonesize)
 {
 	unsigned long usemapsize;
 	
 	/** 20130504
-	zonesize를 pageblock_nr_pages(1024)단위로 올림
-	**/
+	 * zonesize를 pageblock_nr_pages(1024)단위로 올림
+	 **/
 	usemapsize = roundup(zonesize, pageblock_nr_pages);
-	/**
-	pageblock_order로 나눈다.
-	**/
+	/** 20130504
+	 * pageblock_order로 나눈다.
+	 **/
 	usemapsize = usemapsize >> pageblock_order;
 	/** 20130504
-	3으로 곱한다.
-	pageblock 을 나타내기 위한 비트수가 3개 인듯???
-	그래서pageblock를 표현하기위해서 필요한 총 비트수를 구한다???
-	**/
+	 * 3으로 곱한다.
+	 * pageblock 을 나타내기 위한 비트수가 3개 인듯???
+	 * 그래서pageblock를 표현하기위해서 필요한 총 비트수를 구한다???
+	 **/
 	usemapsize *= NR_PAGEBLOCK_BITS;
 	/** 20130504
-	32단위로 올림한다.
-	unsigned long단위로 정렬한다.
-	**/
+	 * unsigned long단위로 올림한다.
+	 **/
 	usemapsize = roundup(usemapsize, 8 * sizeof(unsigned long));
 
 	/** 20130504
-	8로 나눠서 바이트 단위로 usemap size를 리턴
-	**/
+	 * 바이트 단위로 usemap size를 리턴
+	 **/
 	return usemapsize / 8;
 }
 /** 20130504
-zonesize에 해당하는 pageblock의 크기를 비트맵메모리로(bootmem) 할당하여
-pageblock_flags에 저장한다.
-**/
+ * zonesize에 해당하는 pageblock의 크기를 bootmem으로 할당하여
+ * pageblock_flags에 저장한다.
+ **/
 static void __init setup_usemap(struct pglist_data *pgdat,
 				struct zone *zone, unsigned long zonesize)
 {
@@ -6239,11 +6249,11 @@ void __init set_pageblock_order(void)
  */
 
 /** 20130511 
- 각 zone 별 구조체를 초기화한다.
-- 모든 페이지들을 reserved로 설정한다.
-- waitqueue 초기화???
-- 메모리 비트맵을 클리어한다.???	
-**/
+ * 각 zone 별 구조체를 초기화한다.
+ *  - 모든 페이지들을 reserved로 설정한다.
+ *  - waitqueue 초기화???
+ *  - 메모리 비트맵을 클리어한다.???	
+ **/
 static void __paginginit free_area_init_core(struct pglist_data *pgdat,
 		unsigned long *zones_size, unsigned long *zholes_size)
 {
@@ -6270,11 +6280,11 @@ static void __paginginit free_area_init_core(struct pglist_data *pgdat,
 	pgdat_page_cgroup_init(pgdat);
 
 	/** 20130511 
-	zone의 모든 영역을 순회하면서 zone 구조체의 내용을 채운다. 
-
-	20131214
-	node에 속한 zone들을 순회하면서 zone 자료구조를 채운다. node_zones는 array.
-	**/
+	 * zone의 모든 영역을 순회하면서 zone 구조체의 내용을 채운다. 
+	 *
+	 * 20131214
+	 * node에 속한 zone들을 순회하면서 zone 자료구조를 채운다. node_zones는 array.
+	 **/
 	for (j = 0; j < MAX_NR_ZONES; j++) {
 		struct zone *zone = pgdat->node_zones + j;
 		unsigned long size, realsize, memmap_pages;
@@ -6285,7 +6295,7 @@ static void __paginginit free_area_init_core(struct pglist_data *pgdat,
 		 **/
 		size = zone_spanned_pages_in_node(nid, j, zones_size);
 		/** 20130427    
-		 * spanned_pages - absent_pages로 실제 크기를 구한다.
+		 * spanned_pages - absent_pages로 hole을 제외한 실제 크기를 구한다.
 		 **/
 		realsize = size - zone_absent_pages_in_node(nid, j,
 								zholes_size);
@@ -6386,39 +6396,36 @@ static void __paginginit free_area_init_core(struct pglist_data *pgdat,
 		 **/
 		set_pageblock_order();	
 		/** 20130504
-		zone에 해당하는 크기를 비트맵메모리로(bootmem) 할당하여
-		pageblock_flags에 저장한다.
-		**/
+		 * zone에 해당하는 크기를 비트맵메모리로(bootmem) 할당하여
+		 * pageblock_flags에 저장한다.
+		 **/
 		/** 20130511 
-		해당 zone을 페이지블록 단위로 표현하기 위한 byte를 구하고 시작 주소를
-		pageblock_flags에 저장한다.	
-		**/
+		 * 해당 zone을 페이지블록 단위로 표현하기 위한 byte를 구하고 시작 주소를
+		 * pageblock_flags에 저장한다.	
+		 **/
 		setup_usemap(pgdat, zone, size);
 		ret = init_currently_empty_zone(zone, zone_start_pfn,
 						size, MEMMAP_EARLY);
 		BUG_ON(ret);
 		/** 20130504
-		해당 zone에 속한 PFN속성을 설정한다.
-		**/
+		 * zone의 각 page frame 각각에 대해 struct page 구조체를 초기화하고 reserved 상태로 만든다.
+		 **/
 		memmap_init(size, nid, j, zone_start_pfn);
 		/** 20130504
-		각 zone size 를 zone_start_pfn에 누적한다
-		**/
+		 * 다음 zone의 시작 pfn을 설정한다.
+		 **/
 		zone_start_pfn += size;
 
 		/** 20130511
-		위의 for 으로 가서 다음 zone 인 MOVABLE을 보자!!
-		**/
-
-		/** 20130511 
-		zones_size의 MOVABLE 영역은 size가 0이므로 초기화하거나 할당되어지는 부분이 없다.
-		**/
+		 * zones_size의 MOVABLE 영역은 size가 0이므로 초기화하거나 할당되어지는 부분이 없다.
+		 **/
 	}
 }
 
 /** 20130427    
- * 전체 메모리를 struct page로 관리하기 위한 공간을 할당하고,
- * 할당된 영역에 대한 비트맵에 사용 중임을 표시. (전역변수 mem_map을 NODE_DATA(0)->node_mem_map로 설정)
+ * node에 속한 물리 메모리를 struct page로 관리하기 위한 공간을 할당받는 함수.
+ *
+ * 전역변수 mem_map을 NODE_DATA(0)->node_mem_map로 설정.
  **/
 static void __init_refok alloc_node_mem_map(struct pglist_data *pgdat)
 {
@@ -6441,24 +6448,27 @@ static void __init_refok alloc_node_mem_map(struct pglist_data *pgdat)
 		 * for the buddy allocator to function correctly.
 		 */
 		/** 20130413 
-		 * start 는 1KB	단위로 align
-		 * end 는 round up 하여 1 KB 단위로 align
-		 */
+		 * zone의 끝은 MAX_ORDER로 align될 필요가 없지만,
+		 * node_mem_map의 끝은 buddy allocator가 정상적으로 동작하기 위해 order 단위로 align되어야 한다.
+		 * 
+		 * start pfn은 round down, end pfn은 hole을 포함한 크기를 계산하여 round up.
+		 **/
 		start = pgdat->node_start_pfn & ~(MAX_ORDER_NR_PAGES - 1);
 		end = pgdat->node_start_pfn + pgdat->node_spanned_pages;
 		end = ALIGN(end, MAX_ORDER_NR_PAGES);
 		/** 20130420    
-		 * size는 page frame을 관리하기 위한 struct page의 전체 공간
+		 * size는 pfn 수만큼 struct page를 저장하기 위한 크기 계산.
 		 **/
 		size =  (end - start) * sizeof(struct page);
 		/** 20130413
-		 * alloc_remap 은 널 리턴.
+		 * alloc_remap 은 NULL 리턴.
+		 * size만큼의 메모리를 bootmem을 통해 할당.
 		 */
 		map = alloc_remap(pgdat->node_id, size);
 		if (!map)
 			map = alloc_bootmem_node_nopanic(pgdat, size);
 		/** 20130420    
-		 * map은 page frame을 관리하기 위한 page 구조체의 시작 위치.
+		 * map은 정렬된 크기로 할당받은 메모리의 시작 위치.
 		 * 정렬시킨 위치에서 정렬되지 않은 영역까지는 실제 사용 가능한
 		 * page frame들이 존재하지 않으므로 node_mem_map에 저장되는 주소를 조정.
 		 **/
@@ -6468,8 +6478,11 @@ static void __init_refok alloc_node_mem_map(struct pglist_data *pgdat)
 	/*
 	 * With no DISCONTIG, the global mem_map is just set as node 0's
 	 */
-	/** 20130427 여기부터
-	 * 
+	/** 20130420
+	 * 전역변수 mem_map 설정.
+	 * memory model이 DISCONTIG가 아닐 경우(FLATMEM), 단순히 NODE 0의 node_mem_map이 설정.
+	 *
+	 * __page_to_pfn, __pfn_to_page 에서 사용.
 	 **/
 	if (pgdat == NODE_DATA(0)) {
 		mem_map = NODE_DATA(0)->node_mem_map;
@@ -6486,38 +6499,40 @@ static void __init_refok alloc_node_mem_map(struct pglist_data *pgdat)
 }
 
 /** 20130511
-1. nid해당하는 pgdat를 가져와서 해당 node에 필요한 총 페이지수를 구한다.
-2. 그 페이지를 관리하기 위한 구조체페이지에 공간(bitmap)을 할당하고 그 시작주소를 저장한다.
-3. 각 node에 해당되는 zone을 초기화한다. 
-**/
+ * node의 free_area를 초기화 한다.
+ *
+ * 1. nid해당하는 pgdat를 가져와서 해당 node에 필요한 총 페이지수를 구한다.
+ * 2. 그 페이지를 관리하기 위한 구조체페이지에 공간(bitmap)을 할당하고 그 시작주소를 저장한다.
+ * 3. 각 node에 해당되는 zone(zone 구조체와 zone에 속하는 page 구조체 정보)을 초기화한다. 
+ **/
 void __paginginit free_area_init_node(int nid, unsigned long *zones_size,
 		unsigned long node_start_pfn, unsigned long *zholes_size)
 {
 	/** 20130413
-	 *  *pgdat 는 contig_page_data의 주소
-	 */
+	 * pgdat 는 UMA에서 contig_page_data의 주소
+	 **/
 	pg_data_t *pgdat = NODE_DATA(nid);
 
 	/* pg_data_t should be reset to zero when it's allocated */
 	/** 20130413
 	 * nr_zones, classzone_idx 는 아직 설정되지 않은 상태로 초기값 0 으로 추측. ???
-	 */
+	 **/
 	WARN_ON(pgdat->nr_zones || pgdat->classzone_idx);
 
 	/** 20130413
 	 * nid = 0
-	 */
+	 **/
 	pgdat->node_id = nid;
 	pgdat->node_start_pfn = node_start_pfn;
 
 	
 	/** 20130413
 	 * totalpages (*pgdat->node_spanned_pages), realtotalpages ( pgdat->node_present_pages) 를 구한다. 
-	 */
+	 **/
 	calculate_node_totalpages(pgdat, zones_size, zholes_size);
 
 	/** 20130427    
-	 * mem_map 전역변수 설정
+	 * node에 속하는 물리 메모리에 대한 descriptor인 struct page들을 저장할 공간을 할당 받는다.
 	 **/
 	alloc_node_mem_map(pgdat);
 #ifdef CONFIG_FLAT_NODE_MEM_MAP
@@ -6526,9 +6541,9 @@ void __paginginit free_area_init_node(int nid, unsigned long *zones_size,
 		(unsigned long)pgdat->node_mem_map);
 #endif
 
-/** 20130511 
-각 zone을 초기화 시켜준다.
-**/
+	/** 20130511 
+	 * 각 zone을 초기화 시켜준다.
+	 **/
 	free_area_init_core(pgdat, zones_size, zholes_size);
 }
 
@@ -7525,8 +7540,8 @@ void *__init alloc_large_system_hash(const char *tablename,
 
 /* Return a pointer to the bitmap storing bits affecting a block of pages */
 /** 20130504
-zone 구조체의 pageblock_flags를 반환 
-**/
+ * zone 구조체의 pageblock_flags를 반환 
+ **/
 static inline unsigned long *get_pageblock_bitmap(struct zone *zone,
 							unsigned long pfn)
 {
@@ -7537,8 +7552,8 @@ static inline unsigned long *get_pageblock_bitmap(struct zone *zone,
 #endif /* CONFIG_SPARSEMEM */
 }
 /** 20130504
-	pfn이 속한 pageblock_flags의 인덱스를 반환 
-**/
+ * pfn이 속한 pageblock_flags의 인덱스를 반환 
+ **/
 static inline int pfn_to_bitidx(struct zone *zone, unsigned long pfn)
 {
 #ifdef CONFIG_SPARSEMEM
@@ -7597,8 +7612,8 @@ unsigned long get_pageblock_flags_group(struct page *page,
  * @flags: The flags to set
  */
 /** 20130504
-pageblock bitmap의 속성을 설정한다.
-**/
+ * pageblock bitmap 중 pfn에 해당하는 bits들 중, flags에 해당하는 비트를 설정한다.
+ **/
 void set_pageblock_flags_group(struct page *page, unsigned long flags,
 					int start_bitidx, int end_bitidx)
 {
@@ -7610,34 +7625,37 @@ void set_pageblock_flags_group(struct page *page, unsigned long flags,
 	zone = page_zone(page);
 	pfn = page_to_pfn(page);
 	/** 20130504
-	zone의 pageblock_flags(zonesize) 를 bitmap에 저장
-	**/
+	 * zone의 pageblock_flags를 pageblock bitmap을 가져옴.
+	 **/
 	bitmap = get_pageblock_bitmap(zone, pfn);
 	/** 20130504
-	pfn이 속한 pageblock_flags의 인덱스를 bitidx를 저장
-	**/
+	 * pfn이 속한 pageblock_flags의 인덱스를 bitidx를 저장
+	 **/
 	bitidx = pfn_to_bitidx(zone, pfn);
 	VM_BUG_ON(pfn < zone->zone_start_pfn);
 	VM_BUG_ON(pfn >= zone->zone_start_pfn + zone->spanned_pages);
 	/** 20130504
-	flag에 해당하는 영역을 1로 세팅을 하고 나머지는 0으로 clear한다.
-	/linux/include/linux/mmzone.h 참조
-	MIGRATE_UNMOVABLE = 0,
-	MIGRATE_RECLAIMABLE = 1,
-	MIGRATE_MOVABLE = 2,
-	MIGRATE_CMA = 4
-	
-	value에 값에 따라
-	MIGRATE_UNMOVABLE을 제외한 다른 MIGRATE들은
-	flags의 값에 따라 set_bit이 된다.
-	모든 비트가 clear되었을 경우 MIGRATE_UNMOVABLE로 판단하는듯??? 
-	**/
-	/** 20130511 
-	init_page_count에서 page 구조체의 _count를 1로 set했기 때문에 
-	not-atomic 버전의 set_bit, clear_bit 사용한듯 ???
-	같은 페이지 구조체 안에 있는 필드내의 값에 대한 동시성을 지키기 위해
-	not-atomic으로 충분하다는 판단하에 사용됨???
-	**/
+	 * 예를 들어  PB_migrate ~ PB_migrate_end 사이의 3개의 비트 중, 
+	 * MIGRATE_MOVABLE에 해당하는 bit만 1로 설정해 type을 지정한다.
+	 *
+	 * flag에 해당하는 영역을 1로 세팅을 하고 나머지는 0으로 clear한다.
+	 * /linux/include/linux/mmzone.h 참조
+	 * MIGRATE_UNMOVABLE = 0,
+	 * MIGRATE_RECLAIMABLE = 1,
+	 * MIGRATE_MOVABLE = 2,
+	 * MIGRATE_CMA = 4
+	 *
+	 * value에 값에 따라
+	 * MIGRATE_UNMOVABLE을 제외한 다른 MIGRATE들은
+	 * flags의 값에 따라 set_bit이 된다.
+	 * 모든 비트가 clear되었을 경우 MIGRATE_UNMOVABLE로 판단하는듯??? 
+	 *
+	 * 20130511 
+	 * init_page_count에서 page 구조체의 _count를 1로 set했기 때문에 
+	 * not-atomic 버전의 set_bit, clear_bit 사용한듯 ???
+	 * 같은 페이지 구조체 안에 있는 필드내의 값에 대한 동시성을 지키기 위해
+	 * not-atomic으로 충분하다는 판단하에 사용됨???
+	 **/
 	for (; start_bitidx <= end_bitidx; start_bitidx++, value <<= 1)
 		if (flags & value)
 			__set_bit(bitidx + start_bitidx, bitmap);

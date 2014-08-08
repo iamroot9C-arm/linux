@@ -388,8 +388,8 @@ static inline struct page *compound_head(struct page *page)
  * and atomic_add_negative(-1).
  */
 /** 20130504
-page struct의 _mapcount(atomic_t.counter)를 -1로 설정
-**/
+ * page struct의 _mapcount(atomic_t.counter)를 -1로 설정
+ **/
 static inline void reset_page_mapcount(struct page *page)
 {
 	atomic_set(&(page)->_mapcount, -1);
@@ -479,7 +479,7 @@ static inline void init_page_count(struct page *page)
 #define PAGE_BUDDY_MAPCOUNT_VALUE (-128)
 
 /** 20130921    
- * page의 _mapcount가 PAGE_BUDDY_MAPCOUNT_VALUE면 page가 buddy에 들어 있는 page이다.
+ * page의 _mapcount가 PAGE_BUDDY_MAPCOUNT_VALUE면 buddy에 들어 있는 page이다.
  **/
 static inline int PageBuddy(struct page *page)
 {
@@ -840,36 +840,35 @@ static inline unsigned long page_to_section(const struct page *page)
 }
 #endif
 /** 20130504
-page struct의 flag에 zone type을 설정
-**/
+ * struct page의 flags에 zone type 저장.
+ **/
 static inline void set_page_zone(struct page *page, enum zone_type zone)
 {
 	/** 20130504
-	ZONES_MASK : 1
-	ZONES_PGSHIFT : 31
-	page->flags &= (~(1<<31) -> 0x7fffffff)
-	
-	**/
+	 * ZONES_MASK : 1
+	 * ZONES_PGSHIFT : 31
+	 * page->flags &= (~(1<<31) -> 0x7fffffff)
+	 **/
 	page->flags &= ~(ZONES_MASK << ZONES_PGSHIFT);
 	page->flags |= (zone & ZONES_MASK) << ZONES_PGSHIFT;
 }
 /** 20130504
-page struct의flags의node id을 설정
-**/
+ * struct page의 flags에 node id 저장.
+ **/
 static inline void set_page_node(struct page *page, unsigned long node)
 {
 	/** 20130504
-	NODES_MASK : 0
-	NODES_PGSHIFT : 0
-	page->flags &= ~(0<<0) : 0xffffffff
-	**/
+	 * NODES_MASK : 0
+	 * NODES_PGSHIFT : 0
+	 * page->flags &= ~(0<<0) : 0xffffffff
+	 **/
 	page->flags &= ~(NODES_MASK << NODES_PGSHIFT);
 	page->flags |= (node & NODES_MASK) << NODES_PGSHIFT;
 }
 /** 20130504
-page struct 의 flags에 해당 zone과 node 세팅
-page->flags layout 참고 : ~/linux/include/linux/mm.h 
-**/
+ * page struct 의 flags에 해당 zone과 node 세팅
+ * page->flags layout 참고 : include/linux/mm.h 
+ **/
 static inline void set_page_links(struct page *page, enum zone_type zone,
 	unsigned long node, unsigned long pfn)
 {

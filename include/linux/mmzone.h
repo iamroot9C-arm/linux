@@ -30,9 +30,9 @@
 #define MAX_ORDER CONFIG_FORCE_MAX_ZONEORDER
 #endif
 /** 20130420    
- * MAX_ORDER_NR_PAGES의 의미는???
+ * MAX_ORDER_NR_PAGES의 의미는?
  * 20140517
- * MAX_ORDER를 pages의 개수로 계산한 값.
+ *   ==> MAX_ORDER를 pages의 개수로 계산한 값.
  **/
 #define MAX_ORDER_NR_PAGES (1 << (MAX_ORDER - 1))
 
@@ -830,7 +830,8 @@ typedef struct pglist_data {
 	int nr_zones;
 #ifdef CONFIG_FLAT_NODE_MEM_MAP	/* means !SPARSEMEM */
 	/** 20130420    
-	 * alloc_node_mem_map에서 할당
+	 * node에 속한 page frame 각각을 관리하기 위한 struct page 배열의 시작 위치.
+	 * alloc_node_mem_map에서 할당.
 	 **/
 	struct page *node_mem_map;
 #ifdef CONFIG_MEMCG
@@ -1088,7 +1089,8 @@ extern char numa_zonelist_order[];
 
 extern struct pglist_data contig_page_data;
 /** 20130330    
- * NODE가 1개라면 항상 contig_page_data 구조체의 시작 주소를 리턴
+ * NODE의 struct pglist_data 를 리턴.
+ * NODE가 1개이므로 항상 contig_page_data 구조체의 시작 주소를 리턴
  **/
 #define NODE_DATA(nid)		(&contig_page_data)
 #define NODE_MEM_MAP(nid)	mem_map

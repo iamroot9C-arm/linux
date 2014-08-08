@@ -1700,9 +1700,6 @@ void __init paging_init(struct machine_desc *mdesc)
 
 	build_mem_type_table();
 	prepare_page_table();
-	/** 20130817
-	다시보기중 : 다음주 이어서 시작
-	**/
 	map_lowmem();
 	dma_contiguous_remap();
 	devicemaps_init(mdesc);
@@ -1719,13 +1716,13 @@ void __init paging_init(struct machine_desc *mdesc)
 	 **/
 	zero_page = early_alloc(PAGE_SIZE);
 	/** 20130511 
-	부팅시 사용할 메모리 초기화
-	**/
+	 * 부팅시 사용할 메모리 초기화
+	 **/
 	bootmem_init();
 
 	/** 20130511 
-	위에서 할당한 zero_page를 관리하는 struct page의 위치를 가져온다.
-	**/	
+	 * 위에서 할당한 zero_page를 관리하는 struct page의 위치를 전역변수에 저장한다.
+	 **/	
 	empty_zero_page = virt_to_page(zero_page);
 	/** 20130518    
 	 * empty_zero_page 영역에 대해 flush를 수행한다.

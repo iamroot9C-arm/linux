@@ -729,7 +729,10 @@ const struct cpumask *const cpu_active_mask = to_cpumask(cpu_active_bits);
 EXPORT_SYMBOL(cpu_active_mask);
 
 /** 20130518    
- * cpu번째 bit cpu에 대해 possible에 따라 set 또는 clear 하는 함수
+ * cpu possible bitmap mask 설정.
+ *
+ * cpu: n번째 cpu bit.
+ * possible : true - set, false - clear
  **/
 void set_cpu_possible(unsigned int cpu, bool possible)
 {

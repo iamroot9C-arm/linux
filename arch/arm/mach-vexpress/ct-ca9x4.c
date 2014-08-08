@@ -181,7 +181,12 @@ static void __init ct_ca9x4_init(void)
 static void *ct_ca9x4_scu_base __initdata;
 
 /** 20130518    
- * 초기화할 cpu의 개수를 mapping 하는 함수
+ * SMP core 관련 초기화
+ *     vexpress의 경우 CPU board가 Cortex-A9 MPcore로 존재. 관련 내용은 Cortex-A9 MPcore TRM 참고.
+ * 
+ * - SMP MPcore SCU를 page table mapping.
+ * - SCU에서 cpu 개수 정보를 읽어와 possible bitmap table을 설정.
+ * - smp_cross_call로 gic_raise_softirq 지정 (GIC를 통해 IPI 전달)
  **/
 static void __init ct_ca9x4_init_cpu_map(void)
 {

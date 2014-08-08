@@ -299,8 +299,10 @@ void __init setup_dma_zone(struct machine_desc *mdesc)
 }
 
 /** 20130511 
-zone size 계산하고 저장한 후 0번 node에 대해서 초기화 작업을 수행한다.
-**/
+ * lowmem pfn의 최소, 최대, highmem pfn의 최대값을 받아
+ * 각 zone의 크기(pfn수)를 계산하고 (hole을 포함한 것과 포함하지 않은 것 계산),
+ * 0번 node에 대해서 free 상태로 초기화 작업을 수행한다.
+ **/
 static void __init arm_bootmem_free(unsigned long min, unsigned long max_low,
 	unsigned long max_high)
 {
@@ -318,7 +320,7 @@ static void __init arm_bootmem_free(unsigned long min, unsigned long max_low,
 	 * to the zones, now is the time to do it.
 	 */
 	/** 20130413
-	 * ZONE_NORMAL (0) 에 size를 저장.
+	 * ZONE_NORMAL (0) 에 pfn의 수를 저장 (lowmem의 최대값 - lowmem의 최소값)
 	 * vexperss 에서는 2개 ZONE 존재 (ZONE_NORMAL, ZONE_MOVABLE)
 	 */
 	zone_size[0] = max_low - min;
@@ -360,6 +362,9 @@ static void __init arm_bootmem_free(unsigned long min, unsigned long max_low,
 			arm_dma_zone_size >> PAGE_SHIFT);
 #endif
 
+	/** 20140511
+	 * node 0의 zone 정보를 채우고, page 구조체 정보를 초기화하고 예약상태로 표시한다.
+	 **/
 	free_area_init_node(0, zone_size, min, zhole_size);
 }
 
@@ -514,10 +519,10 @@ initrd지정된 영역이 region memory에 존재 하지 않을경우
 }
 
 /** 20130511 
-1. meminfo로부터 pfn 구간을 구한다.
-2. 물리 영역에 대해 bootmem bitmap을 초기화하고 설정한다.
- 페이징이 시작되기 전에 boot time에서 메모리를 사용하기 위한 초기화 작업.
-**/
+ * 1. meminfo로부터 pfn 구간을 구한다.
+ * 2. 물리 영역에 대해 bootmem bitmap을 초기화하고 설정한다.
+ *    페이징이 시작되기 전에 boot time에서 메모리를 사용하기 위한 초기화 작업.
+ **/
 void __init bootmem_init(void)
 {
 	unsigned long min, max_low, max_high;
@@ -557,8 +562,9 @@ void __init bootmem_init(void)
 	 * for memmap_init_zone(), otherwise all PFNs are invalid.
 	 */
 	/** 20130511
-	zone size 계산하고 저장한 후 0번 node에 대해서 초기화 작업을 수행한다.
-	**/
+	 * zone size 계산하고 저장한 후 0번 node에 대해서 초기화 작업을 수행한다.
+	 * (zone과 zone에 속하는 page frame의 page 구조체 등 초기화)
+	 **/
 	arm_bootmem_free(min, max_low, max_high);
 
 	/*
@@ -571,11 +577,11 @@ void __init bootmem_init(void)
 	 */
 
 	/** 20130511 
-	커널이 사용하는 물리 주소의 pfn 수
-	max_low_pfn : 커널이 사용하는 (low memory 내에서의)pfn의 수
-	max_pfn : max_low_pfn+highmem pfn의 수(	만약 highmem이 없을 경우는 max_low_pfn
-	과 max_pfn는 같다. )
-	**/	
+	 * 커널이 사용하는 물리 주소의 pfn 수
+	 * max_low_pfn : 커널이 사용하는 (low memory 내에서의)pfn의 수
+	 * max_pfn : max_low_pfn+highmem pfn의 수
+	 *   (만약 highmem이 없을 경우는 max_low_pfn과 max_pfn는 같다. )
+	 **/	
 	max_low_pfn = max_low - PHYS_PFN_OFFSET;
 	max_pfn = max_high - PHYS_PFN_OFFSET;
 }

@@ -26,6 +26,8 @@ extern unsigned long max_pfn;
  */
 typedef struct bootmem_data {
 	/** 20130420    
+	 * node에 속한 모든 물리 메모리를 bits로 표현하기 위한 자료구조.
+	 *
 	 * node_min_pfn  : 노드의 물리 메모리의 시작 주소에 대한 pfn
 	 * node_low_pfn  : 노드의 물리 메모리의(lowmem) 끝 주소에 대한 pfn
 	 * node_bootmem_map : bitmap이 위치한 virtual memory 주소

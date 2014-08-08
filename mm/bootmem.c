@@ -461,14 +461,15 @@ static void __init __free(bootmem_data_t *bdata,
 	for (idx = sidx; idx < eidx; idx++)
 		/** 20130406    
 		 * sidx ~ eidx 영역에 해당하는 bit를 clear.
-		 * 이전 비트값이 0일 때 BUG() 호출
+		 * 설정되지 않은 비트에 대한 클리어 요청이라면 BUG() 호출
 		 **/
 		if (!test_and_clear_bit(idx, bdata->node_bootmem_map))
 			BUG();
 }
 
 /** 20130406    
- * sidx ~ eidx 사이의 pfn에 대해 1로 설정하는 함수
+ * sidx ~ eidx 사이 pfn 영역에 해당하는 비트를 1로 설정해 reserve 되었음을 표시.
+ * BOOTMEM_EXCLUSIVE일 경우 이미 예약된 공간을 해제한 뒤에 사용한다.
  **/
 static int __init __reserve(bootmem_data_t *bdata, unsigned long sidx,
 			unsigned long eidx, int flags)
@@ -484,7 +485,7 @@ static int __init __reserve(bootmem_data_t *bdata, unsigned long sidx,
 
 	for (idx = sidx; idx < eidx; idx++)
 		/** 20130406    
-		 * idx에 해당하는 bit를 1로 설정하고, 이전 상태를 리턴
+		 * idx에 해당하는 bit를 1로 설정하고, 이전 상태가 0이 아니라면 1이 리턴된다.
 		 **/
 		if (test_and_set_bit(idx, bdata->node_bootmem_map)) {
 			/** 20130406
@@ -740,8 +741,10 @@ static unsigned long __init align_off(struct bootmem_data *bdata,
 }
 
 /** 20130420    
- * page frame을 관리하는 struct page 들을 저장하는 영역을
- * binary map 부분에서 할당 (bitmap에 사용 중으로 표시하고, 해당 영역은 초기화)
+ * bootmem allocator로 물리적으로 연속적인 메모리를 할당.
+ *
+ * bitmap node_bootmem_map 에서 요청한 크기만큼 할당할 수 있는 pfn 영역을 찾고,
+ * bitmap에 사용 중임을 표시한 뒤 해당 영역을 0으로 초기화 하여 가상 주소를 리턴한다.
  **/
 static void * __init alloc_bootmem_bdata(struct bootmem_data *bdata,
 					unsigned long size, unsigned long align,
@@ -897,8 +900,8 @@ find_block:
 			BUG();
 
 		/** 20130420    
-		 * region은 page frame을 관리하는 (struct page) 배열 시작 주소 (va)
-		 * 해당 영역을 0으로 초기화
+		 * node의 시작 pfn에 할당받은 pfn의 시작 index를 더해 pfn을 구한뒤, VA로 변환.
+		 * 할당받은 메모리를 0으로 초기화.
 		 **/
 		region = phys_to_virt(PFN_PHYS(bdata->node_min_pfn) +
 				start_off);
@@ -908,7 +911,7 @@ find_block:
 		 * are never reported as leaks.
 		 */
 		/** 20130420    
-		 * vexpress에서는 NULL. (memory leak을 관리하기 위한 debug용 옵션인듯)
+		 * vexpress에서는 NULL. (memory leak을 관리하기 위한 debug용 옵션)
 		 **/
 		kmemleak_alloc(region, size, 0, 0);
 		return region;
@@ -928,6 +931,8 @@ find_block:
 }
 
 /** 20130420    
+ * bootmem 할당시 arch에서 선호하는 방식이 있다면 해당 함수를 호출.
+ * VEXPRESS의 경우 없으므로 NULL 리턴.
  **/
 static void * __init alloc_arch_preferred_bootmem(bootmem_data_t *bdata,
 					unsigned long size, unsigned long align,
@@ -935,14 +940,14 @@ static void * __init alloc_arch_preferred_bootmem(bootmem_data_t *bdata,
 {
 	/** 20130420    
 	 * 초기화 하지 않은 상태이므로 slab이 사용 가능하다면 비정상임.
-	 * 그럴 경우 경고를 출력
+	 * 그럴 경우 경고를 출력하고 kzalloc으로 할당 받아 리턴.
 	 **/
 	if (WARN_ON_ONCE(slab_is_available()))
 		return kzalloc(size, GFP_NOWAIT);
 
-/** 20130420    
- * vexpress 에서 정의되어 있지 않음
- **/
+	/** 20130420    
+	 * vexpress 에서 정의되어 있지 않음
+	 **/
 #ifdef CONFIG_HAVE_ARCH_BOOTMEM
 	{
 		bootmem_data_t *p_bdata;
@@ -976,7 +981,8 @@ static void * __init alloc_bootmem_core(unsigned long size,
 		return region;
 
 	/** 20130420    
-	 * NUMA인 경우 bdata_list를 순회하며 alloc_bootmem_bdata를 시도
+	 * bootmem_data_t 리스트의 각 멤버(node마다 존재)를 순회하며 alloc_bootmem_bdata를 시도.
+	 * UMA인 경우 리스트에 하나만 존재한다.
 	 **/
 	list_for_each_entry(bdata, &bdata_list, list) {
 		/** 20130420    
@@ -1084,11 +1090,10 @@ void * __init __alloc_bootmem(unsigned long size, unsigned long align,
 }
 
 /** 20130420    
- * node 상에 존재하는 page frame 들만큼을 관리하기 위한 page영역을 할당하는 함수
+ * node에서 대한 bootmem 영역을 실패없이 할당하는 함수.
  *
  * 20130831    
  * bootmem에 의해 관리되는 메모리를 할당 받는 함수. 메모리 부족으로 실패시 panic을 발생시키지 않는다.
- * 20130420 주석은 함수가 호출되는 특별한 경우에 대한 주석임.
  **/
 void * __init ___alloc_bootmem_node_nopanic(pg_data_t *pgdat,
 				unsigned long size, unsigned long align,
@@ -1111,7 +1116,7 @@ again:
 		limit = 0;
 
 	/** 20130420    
-	 * 영역을 성공적으로 할당했다면 ptr을 리턴
+	 * bootmem allocator로 요청한 크기만큼 성공적으로 할당했다면 ptr을 리턴
 	 **/
 	ptr = alloc_bootmem_bdata(pgdat->bdata, size, align, goal, limit);
 	if (ptr)
@@ -1133,12 +1138,17 @@ again:
 }
 
 /** 20130420    
- * slab이 초기화 되지 않은 상태에서 memory를 할당하는 함수
+ * bootmem에 의해 관리되는 영역을 통해 size만큼 물리적으로 연속적인 메모리를 할당 받는 함수.
+ * slab이 이미 활성화 되어 있다면 kzalloc으로 할당 받는다.
  **/
 void * __init __alloc_bootmem_node_nopanic(pg_data_t *pgdat, unsigned long size,
 				   unsigned long align, unsigned long goal)
 {
 	/** 20130413
+	 * bootmem에 의한 메모리 할당시 slab이 활성화 되지 않은 경우가 일반적이다.
+	 * 만약 slab이 사용가능하다면 경고메시지를 출력하고 kzalloc으로 할당 받는다.
+	 * 물리적으로 연속적인 메모리를 할당 받으면 되므로 사용 가능하다.
+	 *
 	 * slab 초기화 안되어 있으므로 false 
 	 */
 	if (WARN_ON_ONCE(slab_is_available()))

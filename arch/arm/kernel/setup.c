@@ -1219,7 +1219,7 @@ static int __init meminfo_cmp(const void *_a, const void *_b)
 	4. meminfo와 mdesc를 바탕으로 memblock 정보를 채움
 	5. page table 생성 및 부팅시 사용할 메모리 할당자 생성
 	6. iomem_resource를 root로 하는 resources 메모리 계층 생성 (kernel code 등)
-	7. smp에서 사용하는 cpu를 bitmap에 사용함을 셋업
+	7. smp에서 사용가능한 cpu를 possible bitmap에 셋업
 	8. machine에 따른 init_early 함수 실행
 	   (vexpress의 경우 sched clock 초기화)
 **/
@@ -1280,82 +1280,82 @@ void __init setup_arch(char **cmdline_p)
 
 	parse_early_param();
 
-/** 20130112
-	meminfo 의 각bank의 start주소를 페이지프레임 인덱스로 변환해 비교하는
-	meminfo_cmp 결과를 기준으로 정렬한다. 	
-**/
+	/** 20130112
+	 * meminfo 의 각bank의 start주소를 페이지프레임 인덱스로 변환해 비교하는
+	 * meminfo_cmp 결과를 기준으로 정렬한다. 	
+	 **/
 	sort(&meminfo.bank, meminfo.nr_banks, sizeof(meminfo.bank[0]), meminfo_cmp, NULL);
-/** 20130119
-  메모리 뱅크들에 대한 적정한 설정이 되어 있는지 조사하고 수정한다
-**/
+	/** 20130119
+	 * 메모리 뱅크들에 대한 적정한 설정이 되어 있는지 조사하고 수정한다
+	 **/
     sanity_check_meminfo();
-/** 20130126    
- * memblock 자료구조 초기화
-**/
+	/** 20130126    
+	 * memblock 자료구조 초기화
+	 **/
 	arm_memblock_init(&meminfo, mdesc);
 
-/** 20130518    
- * page table 생성 및 bootmem_init
- **/
+	/** 20130518    
+	 * page table 생성 및 bootmem_init
+	 **/
 	paging_init(mdesc);
-/** 20130518    
- * machine에 대한 resource 계층도 생성
- **/
+	/** 20130518    
+	 * machine에 대한 resource 계층도 생성
+	 **/
 	request_standard_resources(mdesc);
 
-/** 20130518    
- * restart 함수 포인터가 정의되어 있으면 arm_pm_restart 전역변수에 저장
- * vexpress의 경우 v2m_restart 함수.
- **/
+	/** 20130518    
+	 * restart 함수 포인터가 정의되어 있으면 arm_pm_restart 전역변수에 저장
+	 * vexpress의 경우 v2m_restart 함수.
+	 **/
 	if (mdesc->restart)
 		arm_pm_restart = mdesc->restart;
 
-/** 20130518    
- * vexpress의 경우 NULL 함수.
- **/
+	/** 20130518    
+	 * vexpress의 경우 NULL 함수.
+	 **/
 	unflatten_device_tree();
 
 #ifdef CONFIG_SMP
 	if (is_smp())
 		smp_init_cpus();
 #endif
-/** 20130518    
- * vepress에서 NULL 함수.
- **/
+	/** 20130518    
+	 * vepress에서 NULL 함수.
+	 **/
 	reserve_crashkernel();
 
-/** 20130518    
- * vexpress에서 NULL 함수.
- **/
+	/** 20130518    
+	 * vexpress에서 NULL 함수.
+	 **/
 	tcm_init();
 
 #ifdef CONFIG_MULTI_IRQ_HANDLER
-/** 20130518    
- * vexpress의 경우 .handle_irq = gic_handle_irq 가 등록
- **/
+	/** 20130518    
+	 * vexpress의 경우 .handle_irq = gic_handle_irq 가 등록
+	 **/
 	handle_arch_irq = mdesc->handle_irq;
 #endif
 
-/** 20130518    
- * VIRTUAL TERMINAL 함수 등록
- **/
+	/** 20130518    
+	 * VIRTUAL TERMINAL 함수 등록
+	 **/
 #ifdef CONFIG_VT
 #if defined(CONFIG_VGA_CONSOLE)
 	conswitchp = &vga_con;
 #elif defined(CONFIG_DUMMY_CONSOLE)
-/** 20130518    
- * console switcher 지정.
- * vexpress의 경우 dummy_con.
- **/
+	/** 20130518    
+	 * console switcher 지정.
+	 * vexpress의 경우 dummy_con.
+	 **/
 	conswitchp = &dummy_con;
 #endif
 #endif
 
-/** 20130518    
- * vexpress의 경우
- * .init_early = v2m_init_early,
- * 함수 실행
- **/
+	/** 20130518    
+	 * vexpress의 경우
+	 * .init_early = v2m_init_early,
+	 * 함수 실행
+	 **/
 	if (mdesc->init_early)
 		mdesc->init_early();
 }
