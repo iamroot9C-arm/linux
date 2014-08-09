@@ -158,6 +158,8 @@ do_raw_spin_lock_flags(raw_spinlock_t *lock, unsigned long *flags) __acquires(lo
 	arch_spin_lock_flags(&lock->raw_lock, *flags);
 }
 
+/** 20140809    
+ **/
 static inline int do_raw_spin_trylock(raw_spinlock_t *lock)
 {
 	return arch_spin_trylock(&(lock)->raw_lock);
@@ -179,6 +181,8 @@ static inline void do_raw_spin_unlock(raw_spinlock_t *lock) __releases(lock)
  * various methods are defined as nops in the case they are not
  * required.
  */
+/** 20140809    
+ **/
 #define raw_spin_trylock(lock)	__cond_lock(lock, _raw_spin_trylock(lock))
 
 /** 20130706    

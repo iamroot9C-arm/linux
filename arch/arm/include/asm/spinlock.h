@@ -146,11 +146,23 @@ static inline void arch_spin_lock(arch_spinlock_t *lock)
 	smp_mb();
 }
 
+/** 20140809    
+ * asm 분석은 하지 않았음.
+ **/
 static inline int arch_spin_trylock(arch_spinlock_t *lock)
 {
 	unsigned long tmp;
 	u32 slock;
 
+	/** 20140809    
+	 *  ldrex/strex 쌍을 이용해 구현
+	 *  %0: slock
+	 *  %1: tmp
+	 *  %2: &lock->slock
+	 *  %3: (1 << TICK_SHIFT)
+	 *
+	 *  newval = lockval + (1 << TICKET_SHIFT)
+	 **/
 	__asm__ __volatile__(
 "	ldrex	%0, [%2]\n"
 "	subs	%1, %0, %0, ror #16\n"

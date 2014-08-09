@@ -96,6 +96,10 @@ _raw_spin_unlock_irqrestore(raw_spinlock_t *lock, unsigned long flags)
 #define _raw_spin_unlock_irqrestore(lock, flags) __raw_spin_unlock_irqrestore(lock, flags)
 #endif
 
+/** 20140809    
+ * 선점불가 상태에서 lock 획득을 시도.
+ * 성공시 1 리턴. 실패시 0 리턴.
+ **/
 static inline int __raw_spin_trylock(raw_spinlock_t *lock)
 {
 	preempt_disable();

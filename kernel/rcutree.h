@@ -95,6 +95,9 @@
 #define RCU_SUM (NUM_RCU_LVL_0 + NUM_RCU_LVL_1 + NUM_RCU_LVL_2 + NUM_RCU_LVL_3 + NUM_RCU_LVL_4)
 #define NUM_RCU_NODES (RCU_SUM - NR_CPUS)
 
+/** 20140809    
+ * rcu_init_geometry 에서 level의 수와 node의 수를 설정.
+ **/
 extern int rcu_num_lvls;
 extern int rcu_num_nodes;
 
@@ -105,6 +108,9 @@ struct rcu_dynticks {
 	long long dynticks_nesting; /* Track irq/process nesting level. */
 				    /* Process level is worth LLONG_MAX/2. */
 	int dynticks_nmi_nesting;   /* Track NMI nesting level. */
+	/** 20140809    
+	 * 짝수: idle일 때 사용, 홀수: 그 외.
+	 **/
 	atomic_t dynticks;	    /* Even value for idle, else odd. */
 #ifdef CONFIG_RCU_FAST_NO_HZ
 	int dyntick_drain;	    /* Prepare-for-idle state variable. */
@@ -143,6 +149,10 @@ struct rcu_node {
 	unsigned long completed; /* Last GP completed for this node. */
 				/*  This will either be equal to or one */
 				/*  behind the root rcu_node's gpnum. */
+	/** 20140809    
+	 * 현재의 grace period 를 진행할 cpu/group에 대한 mask.
+	 * dyntick에서 결과를 확인하기 위한 대상이 속해 있는지 표시.
+	 **/
 	unsigned long qsmask;	/* CPUs or groups that need to switch in */
 				/*  order for current grace period to proceed.*/
 				/*  In leaf rcu_node, each bit corresponds to */
@@ -227,6 +237,9 @@ struct rcu_node {
  * Do a full breadth-first scan of the rcu_node structures for the
  * specified rcu_state structure.
  */
+/** 20140809    
+ * rcu의 각 node를 너비 우선 순회한다.
+ **/
 #define rcu_for_each_node_breadth_first(rsp, rnp) \
 	for ((rnp) = &(rsp)->node[0]; \
 	     (rnp) < &(rsp)->node[rcu_num_nodes]; (rnp)++)
@@ -246,6 +259,9 @@ struct rcu_node {
  * one rcu_node structure, this loop -will- visit the rcu_node structure.
  * It is still a leaf node, even if it is also the root node.
  */
+/** 20140809    
+ * leaf node들을 순회한다.
+ **/
 #define rcu_for_each_leaf_node(rsp, rnp) \
 	for ((rnp) = (rsp)->level[rcu_num_lvls - 1]; \
 	     (rnp) < &(rsp)->node[rcu_num_nodes]; (rnp)++)
@@ -274,6 +290,9 @@ struct rcu_data {
 	bool		qs_pending;	/* Core waits for quiesc state. */
 	bool		beenonline;	/* CPU online at least once. */
 	bool		preemptible;	/* Preemptible RCU? */
+	/** 20140809    
+	 * 현재 cpu가 속해 있는 leaf node.
+	 **/
 	struct rcu_node *mynode;	/* This CPU's leaf of hierarchy */
 	unsigned long grpmask;		/* Mask to apply to leaf qsmask. */
 #ifdef CONFIG_RCU_CPU_STALL_INFO
@@ -327,6 +346,9 @@ struct rcu_data {
 	int dynticks_snap;		/* Per-GP tracking for dynticks. */
 
 	/* 4) reasons this CPU needed to be kicked by force_quiescent_state */
+	/** 20140809    
+	 * dynticks, offline 같은 상태에 의해서 force qs 상태가 되었음을 표시.
+	 **/
 	unsigned long dynticks_fqs;	/* Kicked due to dynticks idle. */
 	unsigned long offline_fqs;	/* Kicked due to being offline. */
 
@@ -349,14 +371,24 @@ struct rcu_data {
 };
 
 /* Values for fqs_state field in struct rcu_state. */
+/** 20140809    
+ * fqs_state의 설정값들.
+ * gp의 상태에 따라 달라진다.
+ **/
 #define RCU_GP_IDLE		0	/* No grace period in progress. */
 #define RCU_GP_INIT		1	/* Grace period being initialized. */
 #define RCU_SAVE_DYNTICK	2	/* Need to scan dyntick state. */
 #define RCU_FORCE_QS		3	/* Need to force quiescent state. */
 #define RCU_SIGNAL_INIT		RCU_SAVE_DYNTICK
 
+/** 20140809    
+ * force_qs까지 몇 개의 jiffies를 허용할 것인가.
+ **/
 #define RCU_JIFFIES_TILL_FORCE_QS	 3	/* for rsp->jiffies_force_qs */
 
+/** 20140809    
+ * CONFIG_PROVE_RCU이므로 DELAY_DELTA는 0.
+ **/
 #ifdef CONFIG_PROVE_RCU
 #define RCU_STALL_DELAY_DELTA	       (5 * HZ)
 #else
@@ -401,14 +433,24 @@ struct rcu_state {
 
 	u8	fqs_state ____cacheline_internodealigned_in_smp;
 						/* Force QS state. */
+	/** 20140809    
+	 * force qs가 동작 중임을 표시.
+	 **/
 	u8	fqs_active;			/* force_quiescent_state() */
 						/*  is running. */
+	/** 20140809    
+	 * rcu_start_gp에서, force qs 동작 중이어서 gp를 시작하지 못한 경우 기록.
+	 **/
 	u8	fqs_need_gp;			/* A CPU was prevented from */
 						/*  starting a new grace */
 						/*  period because */
 						/*  force_quiescent_state() */
 						/*  was running. */
 	u8	boost;				/* Subject to priority boost. */
+	/** 20140809    
+	 * gpnum : 현재 gp number
+	 * completed: 마지막 완료된 gp number
+	 **/
 	unsigned long gpnum;			/* Current gp number. */
 	unsigned long completed;		/* # of last completed gp. */
 
@@ -432,20 +474,31 @@ struct rcu_state {
 	struct completion barrier_completion;	/* Wake at barrier end. */
 	unsigned long n_barrier_done;		/* ++ at start and end of */
 						/*  _rcu_barrier(). */
+	/** 20140809    
+	 * force quiescent_state lock
+	 **/
 	raw_spinlock_t fqslock;			/* Only one task forcing */
 						/*  quiescent states. */
 	unsigned long jiffies_force_qs;		/* Time at which to invoke */
 						/*  force_quiescent_state(). */
+	/** 20140809    
+	 * force qs를 진행한 횟수.
+	 **/
 	unsigned long n_force_qs;		/* Number of calls to */
 						/*  force_quiescent_state(). */
 	unsigned long n_force_qs_lh;		/* ~Number of calls leaving */
 						/*  due to lock unavailable. */
+	/** 20140809    
+	 **/
 	unsigned long n_force_qs_ngp;		/* Number of calls leaving */
 						/*  due to no GP active. */
 	unsigned long gp_start;			/* Time at which GP started, */
 						/*  but in jiffies. */
 	unsigned long jiffies_stall;		/* Time at which to check */
 						/*  for CPU stalls. */
+	/** 20140809    
+	 * gp 중 가장 큰 duration을 가졌던 값을 기록한다.
+	 **/
 	unsigned long gp_max;			/* Maximum GP duration in */
 						/*  jiffies. */
 	char *name;				/* Name of structure. */

@@ -251,6 +251,10 @@ static void rcu_preempt_note_context_switch(int cpu)
  * for the specified rcu_node structure.  If the caller needs a reliable
  * answer, it must hold the rcu_node's ->lock.
  */
+/** 20140809    
+ * 선점된 RCU reader들이 현재 gp를 block 시켰는지 검사.
+ * gp_tasks가 NULL이 아니라면 block된 task 가 존재한다.
+ **/
 static int rcu_preempt_blocked_readers_cgp(struct rcu_node *rnp)
 {
 	return rnp->gp_tasks != NULL;
@@ -1692,6 +1696,9 @@ static void __cpuinit rcu_prepare_kthreads(int cpu)
 
 #else /* #ifdef CONFIG_RCU_BOOST */
 
+/** 20140809    
+ * CONFIG_RCU_BOOST가 정의되지 않아 lock과 irq 상태만 복원해준다.
+ **/
 static void rcu_initiate_boost(struct rcu_node *rnp, unsigned long flags)
 {
 	raw_spin_unlock_irqrestore(&rnp->lock, flags);
@@ -2231,6 +2238,9 @@ static void print_cpu_stall_info_end(void)
 	printk(KERN_CONT "} ");
 }
 
+/** 20140809    
+ * CONFIG_RCU_CPU_STALL_INFO가 선언되어 있지 않아 NULL 함수.
+ **/
 static void zero_cpu_stall_ticks(struct rcu_data *rdp)
 {
 }

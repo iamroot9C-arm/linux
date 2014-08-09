@@ -841,6 +841,9 @@ static inline const struct cpumask *get_cpu_mask(unsigned int cpu)
 	return to_cpumask(p);
 }
 
+/** 20140809    
+ * 주어진 cpu가 online mask에 속해있지 않으면 offline.
+ **/
 #define cpu_is_offline(cpu)	unlikely(!cpu_online(cpu))
 
 #if NR_CPUS <= BITS_PER_LONG

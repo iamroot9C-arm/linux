@@ -173,6 +173,9 @@ unsigned long rcutorture_vernum;
  * permit this function to be invoked without holding the root rcu_node
  * structure's ->lock, but of course results can be subject to change.
  */
+/** 20140809    
+ * 현재 gpnum이 완료된 gp인지 확인한다.
+ **/
 static int rcu_gp_in_progress(struct rcu_state *rsp)
 {
 	return ACCESS_ONCE(rsp->completed) != ACCESS_ONCE(rsp->gpnum);
@@ -222,6 +225,10 @@ EXPORT_SYMBOL_GPL(rcu_note_context_switch);
 
 /** 20140621    
  * struct rcu_dynticks percpu 변수 선언.
+ * dynticks은 최초에 1로 설정.
+ *
+ * dynticks 홀수: dynticks not idle.
+ * dynticks 짝수: dynticks idle.
  **/
 DEFINE_PER_CPU(struct rcu_dynticks, rcu_dynticks) = {
 	.dynticks_nesting = DYNTICK_TASK_EXIT_IDLE,
@@ -318,6 +325,12 @@ cpu_has_callbacks_ready_to_invoke(struct rcu_data *rdp)
 /*
  * Does the current CPU require a yet-as-unscheduled grace period?
  */
+/** 20140809    
+ * 현재 cpu가 아직 schedule 되지 않은 gp에 대한 처리가 필요한지 판단한다.
+ *
+ * RCU_WAIT 상태의 리스트에 대기 중인 rdp가 존재하고,
+ * rsp의 gp가 진행 중이지 않을 경우.
+ **/
 static int
 cpu_needs_another_gp(struct rcu_state *rsp, struct rcu_data *rdp)
 {
@@ -327,6 +340,11 @@ cpu_needs_another_gp(struct rcu_state *rsp, struct rcu_data *rdp)
 /*
  * Return the root node of the specified rcu_state structure.
  */
+/** 20140809    
+ * rcu_state로부터 root node 를 가져온다.
+ *
+ * 계층구조 http://lwn.net/Articles/305782/
+ **/
 static struct rcu_node *rcu_get_root(struct rcu_state *rsp)
 {
 	return &rsp->node[0];
@@ -343,6 +361,10 @@ static struct rcu_node *rcu_get_root(struct rcu_state *rsp)
  * period has been delayed rather than checking each and every CPU
  * each and every time we start a new grace period.
  */
+/** 20140809    
+ * cpu가 offline 상태이고, gp_start 후 3개의 tick 이상 경과했다면
+ * offline 상태에 의한 fqs 임을 표시하고 1을 리턴.
+ **/
 static int rcu_implicit_offline_qs(struct rcu_data *rdp)
 {
 	/*
@@ -352,6 +374,10 @@ static int rcu_implicit_offline_qs(struct rcu_data *rdp)
 	 * handle CPUs initializing on the way up and finding their way
 	 * to the idle loop on the way down.
 	 */
+	/** 20140809    
+	 * offline 상태 이후 두 지피가 지났다면, quiescent state이므로 qs로 진행한다.
+	 * (Quiescent state = CPU not using RCU)
+	 **/
 	if (cpu_is_offline(rdp->cpu) &&
 	    ULONG_CMP_LT(rdp->rsp->gp_start + 2, jiffies)) {
 		trace_rcu_fqs(rdp->rsp->name, rdp->gpnum, rdp->cpu, "ofl");
@@ -682,6 +708,12 @@ int rcu_is_cpu_rrupt_from_idle(void)
  * credit them with an implicit quiescent state.  Return 1 if this CPU
  * is in dynticks idle mode, which is an extended quiescent state.
  */
+/** 20140809    
+ * 현재 dynticks 값을 dynticks_snap에 저장한다.
+ *
+ * 특정 CPU의 dyncticks counter를 읽어와 추후 묵시적인 qs 상태에 사용한다.
+ * dynticks idle 모드 중일 때는 1을 리턴해 extended qs 상태임을 나타낸다.
+ **/
 static int dyntick_save_progress_counter(struct rcu_data *rdp)
 {
 	rdp->dynticks_snap = atomic_add_return(0, &rdp->dynticks->dynticks);
@@ -694,11 +726,21 @@ static int dyntick_save_progress_counter(struct rcu_data *rdp)
  * idle state since the last call to dyntick_save_progress_counter()
  * for this same CPU.
  */
+/** 20140809    
+ * true를 리턴하는 조건
+ * 1. dynticks idle 상태이거나, idle/nmi를 거쳤을 경우
+ * 2. offline 상태로 3개 이상의 tick이 지난 경우
+ **/
 static int rcu_implicit_dynticks_qs(struct rcu_data *rdp)
 {
 	unsigned int curr;
 	unsigned int snap;
 
+	/** 20140809    
+	 * rcu data에서 현재 dynticks값과 snap을 떠둔 dynticks값을 가져온다.
+	 *
+	 * snap은 dyntick_save_progress_counter에서 찍어둔다.
+	 **/
 	curr = (unsigned int)atomic_add_return(0, &rdp->dynticks->dynticks);
 	snap = (unsigned int)rdp->dynticks_snap;
 
@@ -710,6 +752,11 @@ static int rcu_implicit_dynticks_qs(struct rcu_data *rdp)
 	 * read-side critical section that started before the beginning
 	 * of the current RCU grace period.
 	 */
+	/** 20140809    
+	 * 현재 상태가 idle 상태이거나, idle 상태는 아니지만 snap + 2 이상이라면
+	 * (idle이나 nmi를 한 번 이상 거쳤을 때)
+	 * dynticks에 의한 fqs가 진행되었음을 표시.
+	 **/
 	if ((curr & 0x1) == 0 || UINT_CMP_GE(curr, snap + 2)) {
 		trace_rcu_fqs(rdp->rsp->name, rdp->gpnum, rdp->cpu, "dti");
 		rdp->dynticks_fqs++;
@@ -720,6 +767,10 @@ static int rcu_implicit_dynticks_qs(struct rcu_data *rdp)
 	return rcu_implicit_offline_qs(rdp);
 }
 
+/** 20140809    
+ * rcu_cpu_stall_timeout (초)를 jiffies 로 변환.
+ * 3~300초 사이로 조정.
+ **/
 static int jiffies_till_stall_check(void)
 {
 	int till_stall_check = ACCESS_ONCE(rcu_cpu_stall_timeout);
@@ -738,6 +789,9 @@ static int jiffies_till_stall_check(void)
 	return till_stall_check * HZ + RCU_STALL_DELAY_DELTA;
 }
 
+/** 20140809    
+ * gp_start, gp stall(칸막이) check time을 기록한다.
+ **/
 static void record_gp_stall_check_time(struct rcu_state *rsp)
 {
 	rsp->gp_start = jiffies;
@@ -898,16 +952,33 @@ static void __init check_cpu_stall_init(void)
  * ->lock of the leaf rcu_node structure corresponding to the current CPU,
  *  and must have irqs disabled.
  */
+/** 20140809    
+ * 새로운 rnp의 gpnum을 rdp에 기록한다.
+ **/
 static void __note_new_gpnum(struct rcu_state *rsp, struct rcu_node *rnp, struct rcu_data *rdp)
 {
+	/** 20140809    
+	 * rdp와 rnp의 gpnum (현재 # of gp)이 다를 때만 해당
+	 **/
 	if (rdp->gpnum != rnp->gpnum) {
 		/*
 		 * If the current grace period is waiting for this CPU,
 		 * set up to detect a quiescent state, otherwise don't
 		 * go looking for one.
 		 */
+		/** 20140809    
+		 * rnp의 gpnum을 cpu gpnum으로 기록한다.
+		 **/
 		rdp->gpnum = rnp->gpnum;
 		trace_rcu_grace_period(rsp->name, rdp->gpnum, "cpustart");
+		/** 20140809    
+		 * 현재 cpu가 node의 qs state 관찰 대상에 포함되어 있다면
+		 * 현재 cpu가 qs를 pending 시키고 있고,
+		 * 통과한 quiesce가 없음을 표시하여 quiescent state를 검출하도록 한다.
+		 *
+		 * 현재 cpu가 node의 qs state 관찰 대상에 포함되지 않았다면
+		 * qs를 pending 중이지 않음을 표시한다.
+		 **/
 		if (rnp->qsmask & rdp->grpmask) {
 			rdp->qs_pending = 1;
 			rdp->passed_quiesce = 0;
@@ -918,13 +989,23 @@ static void __note_new_gpnum(struct rcu_state *rsp, struct rcu_node *rnp, struct
 	}
 }
 
+/** 20140809    
+ * 현재 cpu가 속한 leaf node의 gpnum을 현재 cpu의 rdp에 기록한다.
+ **/
 static void note_new_gpnum(struct rcu_state *rsp, struct rcu_data *rdp)
 {
 	unsigned long flags;
 	struct rcu_node *rnp;
 
 	local_irq_save(flags);
+	/** 20140809    
+	 * 현재 cpu가 속한 leaf node를 가져온다.
+	 **/
 	rnp = rdp->mynode;
+	/** 20140809    
+	 * rdp와 rnp의 gpnum가 이미 같거나 (lock을 벗어났다)
+	 * spinlock 획득에 실패했다면 벗어난다.
+	 **/
 	if (rdp->gpnum == ACCESS_ONCE(rnp->gpnum) || /* outside lock. */
 	    !raw_spin_trylock(&rnp->lock)) { /* irqs already off, so later. */
 		local_irq_restore(flags);
@@ -939,6 +1020,10 @@ static void note_new_gpnum(struct rcu_state *rsp, struct rcu_data *rdp)
  * checked?  Update local state appropriately if so.  Must be called
  * on the CPU corresponding to rdp.
  */
+/** 20140809    
+ * 현재 cpu의 rdp가 인식하지 못한 새로운 gp가 있는지 검사하고,
+ * 있다면 새로운 gpnum을 복사한다.
+ **/
 static int
 check_for_new_grace_period(struct rcu_state *rsp, struct rcu_data *rdp)
 {
@@ -946,6 +1031,11 @@ check_for_new_grace_period(struct rcu_state *rsp, struct rcu_data *rdp)
 	int ret = 0;
 
 	local_irq_save(flags);
+	/** 20140809    
+	 * rdp의 gpnum과 rsp의 gpnum이 같지 않다면,
+	 * 현재 cpu가 인식하지 못한 새로운 gp가 있으므로
+	 * 새로운 gpnum을 기록하고 1을 리턴한다.
+	 **/
 	if (rdp->gpnum != rsp->gpnum) {
 		note_new_gpnum(rsp, rdp);
 		ret = 1;
@@ -975,18 +1065,30 @@ static void init_callback_list(struct rcu_data *rdp)
  * belongs.  In addition, the corresponding leaf rcu_node structure's
  * ->lock must be held by the caller, with irqs disabled.
  */
+/** 20140809    
+ * 현재 gp가 끝났을 때 이 cpu에 대한 callback을 진행해 gp가 끝났음을 표시한다.
+ **/
 static void
 __rcu_process_gp_end(struct rcu_state *rsp, struct rcu_node *rnp, struct rcu_data *rdp)
 {
 	/* Did another grace period end? */
+	/** 20140809    
+	 * rdp와 rnp의 completed (# of gp)가 같지 않다면
+	 **/
 	if (rdp->completed != rnp->completed) {
 
 		/* Advance callbacks.  No harm if list empty. */
+		/** 20140809    
+		 * batch 단위로 nxtlist를 이동시킨다.
+		 **/
 		rdp->nxttail[RCU_DONE_TAIL] = rdp->nxttail[RCU_WAIT_TAIL];
 		rdp->nxttail[RCU_WAIT_TAIL] = rdp->nxttail[RCU_NEXT_READY_TAIL];
 		rdp->nxttail[RCU_NEXT_READY_TAIL] = rdp->nxttail[RCU_NEXT_TAIL];
 
 		/* Remember that we saw this grace-period completion. */
+		/** 20140809    
+		 * rnp의 completed (마지막 완료된 # of gp)를 rdp에 복사.
+		 **/
 		rdp->completed = rnp->completed;
 		trace_rcu_grace_period(rsp->name, rdp->gpnum, "cpuend");
 
@@ -998,6 +1100,12 @@ __rcu_process_gp_end(struct rcu_state *rsp, struct rcu_node *rnp, struct rcu_dat
 		 * has started, then rnp->gpnum will have advanced, so
 		 * we will detect this later on.
 		 */
+		/** 20140809    
+		 * rdp의 gpnum이 completed보다 작다면 completed로 설정.
+		 *
+		 * cpu가 extended qs state (IDLE)였다면 gp를 놓쳤을 수 있다.
+		 * 다른 gp가 사직되었다면, gpnum이 증가되어 나중에 이것을 파악할 수 있다.
+		 **/
 		if (ULONG_CMP_LT(rdp->gpnum, rdp->completed))
 			rdp->gpnum = rdp->completed;
 
@@ -1005,6 +1113,10 @@ __rcu_process_gp_end(struct rcu_state *rsp, struct rcu_node *rnp, struct rcu_dat
 		 * If RCU does not need a quiescent state from this CPU,
 		 * then make sure that this CPU doesn't go looking for one.
 		 */
+		/** 20140809    
+		 * RCU가 현재 cpu로부터의 qs state가 필요없다면 (rnp->qsmask는 관찰대상)
+		 * rdp에 qs_pending을 클리어한다.
+		 **/
 		if ((rnp->qsmask & rdp->grpmask) == 0)
 			rdp->qs_pending = 0;
 	}
@@ -1015,6 +1127,9 @@ __rcu_process_gp_end(struct rcu_state *rsp, struct rcu_node *rnp, struct rcu_dat
  * has ended.  This may be called only from the CPU to whom the rdp
  * belongs.
  */
+/** 20140809    
+ * 현재 gp가 끝났을 때 이 cpu에 대한 callback을 진행해 gp가 끝났음을 표시한다.
+ **/
 static void
 rcu_process_gp_end(struct rcu_state *rsp, struct rcu_data *rdp)
 {
@@ -1022,7 +1137,14 @@ rcu_process_gp_end(struct rcu_state *rsp, struct rcu_data *rdp)
 	struct rcu_node *rnp;
 
 	local_irq_save(flags);
+	/** 20140809    
+	 * 현재 cpu가 속해 있는 leaf node를 가져온다.
+	 **/
 	rnp = rdp->mynode;
+	/** 20140809    
+	 * rdp와 rnp가 같은 completed (# of gp)이거나,
+	 * lock을 획득하지 못했다면 벗어난다.
+	 **/
 	if (rdp->completed == ACCESS_ONCE(rnp->completed) || /* outside lock. */
 	    !raw_spin_trylock(&rnp->lock)) { /* irqs already off, so later. */
 		local_irq_restore(flags);
@@ -1071,6 +1193,11 @@ rcu_start_gp_per_cpu(struct rcu_state *rsp, struct rcu_node *rnp, struct rcu_dat
  * invoke this function.  This can happen when the dying CPU reports its
  * quiescent state.
  */
+/** 20140809    
+ * 새로운 gp를 시작한다.
+ *
+ * 하나의 gp를 마친 뒤 호출될 수도 있고, removal phase 이후 시작될 수도 있다.
+ **/
 static void
 rcu_start_gp(struct rcu_state *rsp, unsigned long flags)
 	__releases(rcu_get_root(rsp)->lock)
@@ -1078,6 +1205,10 @@ rcu_start_gp(struct rcu_state *rsp, unsigned long flags)
 	struct rcu_data *rdp = this_cpu_ptr(rsp->rda);
 	struct rcu_node *rnp = rcu_get_root(rsp);
 
+	/** 20140809    
+	 * rcu scheduler가 완전히 active 되어 있지 않거나 (early_initcall에서 active로 만듦)
+	 * cpu가 다른 gp가 필요하지 않다면 벗어난다.
+	 **/
 	if (!rcu_scheduler_fully_active ||
 	    !cpu_needs_another_gp(rsp, rdp)) {
 		/*
@@ -1090,6 +1221,10 @@ rcu_start_gp(struct rcu_state *rsp, unsigned long flags)
 		return;
 	}
 
+	/** 20140809    
+	 * force qs가 동작 중이라면,
+	 * gp가 필요함을 표시하고 벗어난다.
+	 **/
 	if (rsp->fqs_active) {
 		/*
 		 * This CPU needs a grace period, but force_quiescent_state()
@@ -1101,6 +1236,12 @@ rcu_start_gp(struct rcu_state *rsp, unsigned long flags)
 	}
 
 	/* Advance to a new grace period and initialize state. */
+	/** 20140809    
+	 * 현재 gp 번호를 증가시켜 새로운 gp 번호로 삼는다.
+	 * fqs_state를 RCU_GP_INIT로 만든다.
+	 * 현재 jiffies 이후 3개의 jiffies를 force qs의 시작점으로 삼는다.
+	 * cpu stall check time을 저장한다.
+	 **/
 	rsp->gpnum++;
 	trace_rcu_grace_period(rsp->name, rsp->gpnum, "start");
 	WARN_ON_ONCE(rsp->fqs_state == RCU_GP_INIT);
@@ -1129,11 +1270,20 @@ rcu_start_gp(struct rcu_state *rsp, unsigned long flags)
 	 * one corresponding to this CPU, due to the fact that we have
 	 * irqs disabled.
 	 */
+	/** 20140809    
+	 * 새로 설정한 rcu state를 기준으로 각 node의 값들을 새로 설정한다.
+	 **/
 	rcu_for_each_node_breadth_first(rsp, rnp) {
 		raw_spin_lock(&rnp->lock);	/* irqs already disabled. */
 		rcu_preempt_check_blocked_tasks(rnp);
+		/** 20140809    
+		 * qsmask를 qsmaskinit으로 설정한다.
+		 **/
 		rnp->qsmask = rnp->qsmaskinit;
 		rnp->gpnum = rsp->gpnum;
+		/** 20140809    
+		 * rsp의 completed 값을 모든 rnp의 completed에 넣어준다.
+		 **/
 		rnp->completed = rsp->completed;
 		if (rnp == rdp->mynode)
 			rcu_start_gp_per_cpu(rsp, rnp, rdp);
@@ -1146,6 +1296,10 @@ rcu_start_gp(struct rcu_state *rsp, unsigned long flags)
 
 	rnp = rcu_get_root(rsp);
 	raw_spin_lock(&rnp->lock);		/* irqs already disabled. */
+	/** 20140809    
+	 * fqs_state를 RCU_SIGNAL_INIT로 만들어 동작 가능 상태로 만든다.
+	 * (= RCU_SAVE_DYNTICK)
+	 **/
 	rsp->fqs_state = RCU_SIGNAL_INIT; /* force_quiescent_state now OK. */
 	raw_spin_unlock(&rnp->lock);		/* irqs remain disabled. */
 	raw_spin_unlock_irqrestore(&rsp->onofflock, flags);
@@ -1172,6 +1326,10 @@ static void rcu_report_qs_rsp(struct rcu_state *rsp, unsigned long flags)
 	 * is seen before the assignment to rsp->completed.
 	 */
 	smp_mb(); /* See above block comment. */
+	/** 20140809    
+	 * 현재 jiffies에서 gp_start를 빼 gp_duration를 계산한다.
+	 * gp_max 최대값을 갱신한다.
+	 **/
 	gp_duration = jiffies - rsp->gp_start;
 	if (gp_duration > rsp->gp_max)
 		rsp->gp_max = gp_duration;
@@ -1191,6 +1349,9 @@ static void rcu_report_qs_rsp(struct rcu_state *rsp, unsigned long flags)
 	 * callbacks are waiting on the grace period that just now
 	 * completed.
 	 */
+	/** 20140809    
+	 * RCU_WAIT_TAIL 리스트가 비어있다면
+	 **/
 	if (*rdp->nxttail[RCU_WAIT_TAIL] == NULL) {
 		raw_spin_unlock(&rnp->lock);	 /* irqs remain disabled. */
 
@@ -1199,6 +1360,11 @@ static void rcu_report_qs_rsp(struct rcu_state *rsp, unsigned long flags)
 		 * so that other CPUs don't have to wait until the start
 		 * of the next grace period to process their callbacks.
 		 */
+		/** 20140809    
+		 * 모든 node를 순회하며
+		 *   atomic context 하에서
+		 *   node의 completed에 현재 gp 번호를 기록한다.
+		 **/
 		rcu_for_each_node_breadth_first(rsp, rnp) {
 			raw_spin_lock(&rnp->lock); /* irqs already disabled. */
 			rnp->completed = rsp->gpnum;
@@ -1208,6 +1374,11 @@ static void rcu_report_qs_rsp(struct rcu_state *rsp, unsigned long flags)
 		raw_spin_lock(&rnp->lock); /* irqs already disabled. */
 	}
 
+	/** 20140809    
+	 * rsp의 completed에 현재 gp 번호를 기록한다.
+	 * force qs 상태가 끝났으므로 RCU_GP_IDLE로 만든다.
+	 * 새로운 gp를 시작한다.
+	 **/
 	rsp->completed = rsp->gpnum;  /* Declare the grace period complete. */
 	trace_rcu_grace_period(rsp->name, rsp->completed, "end");
 	rsp->fqs_state = RCU_GP_IDLE;
@@ -1222,6 +1393,12 @@ static void rcu_report_qs_rsp(struct rcu_state *rsp, unsigned long flags)
  * a leaf rcu_node structure, though it often will be).  That structure's
  * lock must be held upon entry, and it is released before return.
  */
+/** 20140809    
+ * 특정 rcu node에 대해 qs를 기록한다.
+ *
+ * 그룹에 속한 모든 CPU들은 동일한 rcu_node 구조체로 표현되어야 하지만,
+ * 하나에서 시작된 qs 상태의 기록을 허용한다.
+ **/
 static void
 rcu_report_qs_rnp(unsigned long mask, struct rcu_state *rsp,
 		  struct rcu_node *rnp, unsigned long flags)
@@ -1230,18 +1407,34 @@ rcu_report_qs_rnp(unsigned long mask, struct rcu_state *rsp,
 	struct rcu_node *rnp_c;
 
 	/* Walk up the rcu_node hierarchy. */
+	/** 20140809    
+	 * rcu_node hierarchy를 따라올라가 
+	 **/
 	for (;;) {
+		/** 20140809    
+		 * mask가 qsmask에 해당하지 않는다면 진행할 이유가 없다.
+		 * 아래에서 관찰대상에서 제외되었을 경우에 해당하는 듯.
+		 **/
 		if (!(rnp->qsmask & mask)) {
 
 			/* Our bit has already been cleared, so done. */
 			raw_spin_unlock_irqrestore(&rnp->lock, flags);
 			return;
 		}
+		/** 20140809    
+		 * mask는 qsmask에서 제외시킨다. (이 함수의 핵심 동작.)
+		 **/
 		rnp->qsmask &= ~mask;
 		trace_rcu_quiescent_state_report(rsp->name, rnp->gpnum,
 						 mask, rnp->qsmask, rnp->level,
 						 rnp->grplo, rnp->grphi,
 						 !!rnp->gp_tasks);
+		/** 20140809    
+		 * node에 qsmask가 남아 있거나, block된 readers가 존재한다면 벗어난다.
+		 *
+		 * leaf노드의 경우 qsmask는 달려 있는 cpu에 대한 완료를 검사하는 의미이고,
+		 * leaf노드가 아닐 경우 qsmask는 달려 있는 node에 대한 완료를 검사하는 의미이다.
+		 **/
 		if (rnp->qsmask != 0 || rcu_preempt_blocked_readers_cgp(rnp)) {
 
 			/* Other bits still set at this level, so done. */
@@ -1249,6 +1442,9 @@ rcu_report_qs_rnp(unsigned long mask, struct rcu_state *rsp,
 			return;
 		}
 		mask = rnp->grpmask;
+		/** 20140809    
+		 * 최상위 레벨까지 올라왔다면 break
+		 **/
 		if (rnp->parent == NULL) {
 
 			/* No more levels.  Exit loop holding root lock. */
@@ -1256,6 +1452,9 @@ rcu_report_qs_rnp(unsigned long mask, struct rcu_state *rsp,
 			break;
 		}
 		raw_spin_unlock_irqrestore(&rnp->lock, flags);
+		/** 20140809    
+		 * 현재 node를 자식 node로 저장하고 상위 level의 node로 이동한다.
+		 **/
 		rnp_c = rnp;
 		rnp = rnp->parent;
 		raw_spin_lock_irqsave(&rnp->lock, flags);
@@ -1267,6 +1466,11 @@ rcu_report_qs_rnp(unsigned long mask, struct rcu_state *rsp,
 	 * state for this grace period.  Invoke rcu_report_qs_rsp()
 	 * to clean up and start the next grace period if one is needed.
 	 */
+	/** 20140809    
+	 * 해당 node에 대한 report가 끝난 상태로 도달했다면
+	 * 현재 gp에 대한 qs 상태 검사를 모두 통과했다.
+	 * 따라서 rsp를 clean 시키고, 필요하다면 새로운 gp를 시작한다.
+	 **/
 	rcu_report_qs_rsp(rsp, flags); /* releases rnp->lock. */
 }
 
@@ -1279,6 +1483,9 @@ rcu_report_qs_rnp(unsigned long mask, struct rcu_state *rsp,
  * grace period of interest.  We don't want to end the current grace period
  * based on quiescent states detected in an earlier grace period!
  */
+/** 20140809    
+ * qs state를 특정 cpu의 rdp에 기록한다.
+ **/
 static void
 rcu_report_qs_rdp(int cpu, struct rcu_state *rsp, struct rcu_data *rdp, long lastgp)
 {
@@ -1286,8 +1493,16 @@ rcu_report_qs_rdp(int cpu, struct rcu_state *rsp, struct rcu_data *rdp, long las
 	unsigned long mask;
 	struct rcu_node *rnp;
 
+	/** 20140809    
+	 * 현재 cpu가 속한 leaf node를 가져온다.
+	 **/
 	rnp = rdp->mynode;
 	raw_spin_lock_irqsave(&rnp->lock, flags);
+	/** 20140809    
+	 * lastgp (rdp->passed_quiesce_gpnum가 전달됨)과 node의 gpnum이 같지 않거나,
+	 * node의 gpnum이 완료된 gp라면
+	 * 새로운 gp를 위한 qs가 필요하므로 기록하지 않고 벗어난다.
+	 **/
 	if (lastgp != rnp->gpnum || rnp->completed == rnp->gpnum) {
 
 		/*
@@ -1300,18 +1515,30 @@ rcu_report_qs_rdp(int cpu, struct rcu_state *rsp, struct rcu_data *rdp, long las
 		raw_spin_unlock_irqrestore(&rnp->lock, flags);
 		return;
 	}
+	/** 20140809    
+	 * 현재 cpu가 node의 qsmask (qs 관찰 대상)에 속하는 경우
+	 **/
 	mask = rdp->grpmask;
 	if ((rnp->qsmask & mask) == 0) {
 		raw_spin_unlock_irqrestore(&rnp->lock, flags);
 	} else {
+		/** 20140809    
+		 * qs가 더이상 pending 되어 있지 않다.
+		 **/
 		rdp->qs_pending = 0;
 
 		/*
 		 * This GP can't end until cpu checks in, so all of our
 		 * callbacks can be processed during the next GP.
 		 */
+		/** 20140809    
+		 * rdp를 NEXT_TAIL을 NEXT_READY_TAIL로 옮긴다.
+		 **/
 		rdp->nxttail[RCU_NEXT_READY_TAIL] = rdp->nxttail[RCU_NEXT_TAIL];
 
+		/** 20140809    
+		 * node에 qs state를 기록한다.
+		 **/
 		rcu_report_qs_rnp(mask, rsp, rnp, flags); /* rlses rnp->lock */
 	}
 }
@@ -1326,6 +1553,9 @@ static void
 rcu_check_quiescent_state(struct rcu_state *rsp, struct rcu_data *rdp)
 {
 	/* If there is now a new grace period, record and return. */
+	/** 20140809    
+	 * 새로운 gp가 존재한다면 그것을 기록하고 리턴한다.
+	 **/
 	if (check_for_new_grace_period(rsp, rdp))
 		return;
 
@@ -1333,6 +1563,10 @@ rcu_check_quiescent_state(struct rcu_state *rsp, struct rcu_data *rdp)
 	 * Does this CPU still need to do its part for current grace period?
 	 * If no, return and let the other CPUs do their part as well.
 	 */
+	/** 20140809    
+	 * cpu의 rdp가 현재 gp에 대해 qs_pending에 해당하지 않으므로
+	 * qs 상태를 볼 필요 없이 리턴한다. (note_new_gpnum에서 1로 설정됨)
+	 **/
 	if (!rdp->qs_pending)
 		return;
 
@@ -1340,6 +1574,9 @@ rcu_check_quiescent_state(struct rcu_state *rsp, struct rcu_data *rdp)
 	 * Was there a quiescent state since the beginning of the grace
 	 * period? If no, then exit and wait for the next call.
 	 */
+	/** 20140809    
+	 * gp 시작 이후로 qs state가 없었다면 벗어난다.
+	 **/
 	if (!rdp->passed_quiesce)
 		return;
 
@@ -1700,6 +1937,10 @@ void rcu_check_callbacks(int cpu, int user)
  *
  * The caller must have suppressed start of new grace periods.
  */
+/** 20140809    
+ * leaf node를 scan해 아직 qs state가 거치지 않은 node에 주어진 함수를 수행한다.
+ * caller는 새로운 gp를 막아 놓아야 한다. (rsp->fqs_active를 1로 표시)
+ **/
 static void force_qs_rnp(struct rcu_state *rsp, int (*f)(struct rcu_data *))
 {
 	unsigned long bit;
@@ -1708,24 +1949,57 @@ static void force_qs_rnp(struct rcu_state *rsp, int (*f)(struct rcu_data *))
 	unsigned long mask;
 	struct rcu_node *rnp;
 
+	/** 20140809    
+	 * 모든 leaf node를 순회한다.
+	 *
+	 * 모든 node를 순회하는 동안 lock을 걸어두지 않고,
+	 * node사이를 이동할 때마다 lock/unlock을 반복한다.
+	 **/
 	rcu_for_each_leaf_node(rsp, rnp) {
 		mask = 0;
 		raw_spin_lock_irqsave(&rnp->lock, flags);
+		/** 20140809    
+		 * 현재 rcu의 gp가 진행 중이지 않을 경우 벗어난다.
+		 **/
 		if (!rcu_gp_in_progress(rsp)) {
 			raw_spin_unlock_irqrestore(&rnp->lock, flags);
 			return;
 		}
+		/** 20140809    
+		 * 현재 node의 qsmask가 0이라면 rcu_initiate_boost호출 후
+		 * 다음 node로 이동한다.
+		 **/
 		if (rnp->qsmask == 0) {
 			rcu_initiate_boost(rnp, flags); /* releases rnp->lock */
 			continue;
 		}
+		/** 20140809    
+		 * 현재 node의 low부터 high까지 순회한다.
+		 * bit 1부터 다음 cpu로증가할 때마다 비트 역시 하나씩 shift.
+		 * cpu:     3210
+		 * bit: 00001111
+		 *           
+		 **/
 		cpu = rnp->grplo;
 		bit = 1;
+		/** 20140809    
+		 * 현재 cpu가 qsmask에 속해 있고, 전달받은 함수의 호출 결과가 참이라면
+		 * mask에 현재 cpu에 해당하는 bit를 표시한다.
+		 **/
 		for (; cpu <= rnp->grphi; cpu++, bit <<= 1) {
 			if ((rnp->qsmask & bit) != 0 &&
 			    f(per_cpu_ptr(rsp->rda, cpu)))
 				mask |= bit;
 		}
+		/** 20140809    
+		 * mask가 하나라도 표시되어 있다면 rcu_report_qs_rnp 를 수행한다.
+		 *
+		 * dyntick_save_progress_counter가 전달되었을 경우,
+		 * 하나라도 idle mode일 경우 해당한다.
+		 *
+		 * rcu_implicit_dynticks_qs가 전달되었을 경우,
+		 * 현재 상태가 idle 상태가 아니거나, idle/nmi 상태를 거쳤을 경우
+		 **/
 		if (mask != 0) {
 
 			/* rcu_report_qs_rnp() releases rnp->lock. */
@@ -1734,6 +2008,9 @@ static void force_qs_rnp(struct rcu_state *rsp, int (*f)(struct rcu_data *))
 		}
 		raw_spin_unlock_irqrestore(&rnp->lock, flags);
 	}
+	/** 20140809    
+	 * root의 qsmask가 0이라면 rcu_initiate_boost를 호출한다.
+	 **/
 	rnp = rcu_get_root(rsp);
 	if (rnp->qsmask == 0) {
 		raw_spin_lock_irqsave(&rnp->lock, flags);
@@ -1746,8 +2023,15 @@ static void force_qs_rnp(struct rcu_state *rsp, int (*f)(struct rcu_data *))
  * CPUs are in dyntick-idle mode.
  */
 /** 20140726    
+ * 강제로 qs state를 진행시킬 필요가 있는지 검사하고,
+ * 필요하다면 force qs를 진행한다.
+ *
+ * force qs state-machine을 돌린다.
+ *
  * [참고] RCU STATE MACHINE
  *		http://lwn.net/Articles/305782/
+ *
+ *	Quiescent state = CPU not using RCU
  **/
 static void force_quiescent_state(struct rcu_state *rsp, int relaxed)
 {
@@ -1755,25 +2039,50 @@ static void force_quiescent_state(struct rcu_state *rsp, int relaxed)
 	struct rcu_node *rnp = rcu_get_root(rsp);
 
 	trace_rcu_utilization("Start fqs");
+	/** 20140809    
+	 * rcu가 진행 중이 아니라면 강제로 qs상태로 진입할 필요가 없다.
+	 **/
 	if (!rcu_gp_in_progress(rsp)) {
 		trace_rcu_utilization("End fqs");
 		return;  /* No grace period in progress, nothing to force. */
 	}
+	/** 20140809    
+	 * fqslock을 획득하지 못했다면 변수를 증가시키고 나간다.
+	 **/
 	if (!raw_spin_trylock_irqsave(&rsp->fqslock, flags)) {
 		rsp->n_force_qs_lh++; /* Inexact, can lose counts.  Tough! */
 		trace_rcu_utilization("End fqs");
 		return;	/* Someone else is already on the job. */
 	}
+	/** 20140809    
+	 * relaxed이면서(no emergency) force_qs가 jiffies 보다 커졌다면
+	 *   (즉, jiffies_force_qs에 도달하지 못했다면)
+	 * 이전 체크 후 완료되었고, lock을 해제하고 벗어난다.
+	 **/
 	if (relaxed && ULONG_CMP_GE(rsp->jiffies_force_qs, jiffies))
 		goto unlock_fqs_ret; /* no emergency and done recently. */
+	/** 20140809    
+	 * n_force_qs 증가.
+	 **/
 	rsp->n_force_qs++;
 	raw_spin_lock(&rnp->lock);  /* irqs already disabled */
+	/** 20140809    
+	 * jiffies_force_qs를 update.
+	 **/
 	rsp->jiffies_force_qs = jiffies + RCU_JIFFIES_TILL_FORCE_QS;
+	/** 20140809    
+	 * rcu gp가 진행 중이 아니라면 no GP active를 증가시키고 벗어난다.
+	 **/
 	if(!rcu_gp_in_progress(rsp)) {
 		rsp->n_force_qs_ngp++;
 		raw_spin_unlock(&rnp->lock);  /* irqs remain disabled */
 		goto unlock_fqs_ret;  /* no GP in progress, time updated. */
 	}
+	/** 20140809    
+	 * force qs가 동작 중임을 표시.
+	 *
+	 * force qs state인 경우 rcu_start_gp에서 새로운 gp를 시작하지 못한다.
+	 **/
 	rsp->fqs_active = 1;
 	switch (rsp->fqs_state) {
 	case RCU_GP_IDLE:
@@ -1781,13 +2090,23 @@ static void force_quiescent_state(struct rcu_state *rsp, int relaxed)
 
 		break; /* grace period idle or initializing, ignore. */
 
+	/** 20140809    
+	 * rcu_start_gp 에서 RCU_SAVE_DYNTICK 상태로 만든다.
+	 * SAVE_DYNTICK: Need to scan dyntick state. 
+	 **/
 	case RCU_SAVE_DYNTICK:
 
 		raw_spin_unlock(&rnp->lock);  /* irqs remain disabled */
 
 		/* Record dyntick-idle state. */
+		/** 20140809    
+		 * 현재 dynticks counter를 저장한다.
+		 **/
 		force_qs_rnp(rsp, dyntick_save_progress_counter);
 		raw_spin_lock(&rnp->lock);  /* irqs already disabled */
+		/** 20140809    
+		 * gp 진행 중일 경우, fqs_state를 RCU_FORCE_QS로 만든다.
+		 **/
 		if (rcu_gp_in_progress(rsp))
 			rsp->fqs_state = RCU_FORCE_QS;
 		break;
@@ -1802,7 +2121,14 @@ static void force_quiescent_state(struct rcu_state *rsp, int relaxed)
 		raw_spin_lock(&rnp->lock);  /* irqs already disabled */
 		break;
 	}
+	/** 20140809    
+	 * fqs 동작이 완료되었으므로 fqs가 동작 중이지 않음을 표시.
+	 **/
 	rsp->fqs_active = 0;
+	/** 20140809    
+	 * force qs에 의해 새로운 gp 시작이 block되어 있었다면
+	 * fqs_need_gp를 지우고 새로운 gp를 시작하고 리턴한다..
+	 **/
 	if (rsp->fqs_need_gp) {
 		raw_spin_unlock(&rsp->fqslock); /* irqs remain disabled */
 		rsp->fqs_need_gp = 0;
@@ -1842,6 +2168,8 @@ __rcu_process_callbacks(struct rcu_state *rsp)
 	 * 
 	 * rcu_state의 jiffies_force_qs로 지정한 값이 현재 지피보다 작다면,
 	 * 강제로 quiescent_state(CPU not using RCU)로 진입한다.
+	 *
+	 * jiffies_force_qs는 rcu_start_gp()에서 지정.
 	 **/
 	if (ULONG_CMP_LT(ACCESS_ONCE(rsp->jiffies_force_qs), jiffies))
 		force_quiescent_state(rsp, 1);
@@ -1850,6 +2178,9 @@ __rcu_process_callbacks(struct rcu_state *rsp)
 	 * Advance callbacks in response to end of earlier grace
 	 * period that some other CPU ended.
 	 */
+	/** 20140809    
+	 * 다른 CPU가 끝낸 이전 gp에 대한 완료를 처리한다.
+	 **/
 	rcu_process_gp_end(rsp, rdp);
 
 	/* Update RCU state based on any recent quiescent states. */
