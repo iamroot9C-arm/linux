@@ -37,6 +37,11 @@
  */
 	.macro	irq_handler
 #ifdef CONFIG_MULTI_IRQ_HANDLER
+	/** 20140816    
+	 * handle_arch_irq에 저장된 irq handler의 주소를 가져와 실행한다.
+	 * 핸들러에 stack의 시작 주소를 인자로 전달한다.
+	 * 복귀주소는 이 매크로를 호출한 다음 명령의 주소이다.
+	 **/
 	ldr	r1, =handle_arch_irq
 	mov	r0, sp
 	adr	lr, BSYM(9997f)
@@ -214,6 +219,12 @@ __irq_svc:
 	irq_handler
 
 #ifdef CONFIG_PREEMPT
+	/** 20140816    
+	 * tsk에 thread_info를 받아와 선점 카운트와 flags를 추출한다.
+	 * 선점 카운트가 0이 아니라면, 즉 선점불가라면 flags를 0으로 초기화 시킨다.
+	 *
+	 * flags에 TIF_NEED_RESCHED가 켜있다면 svc_preempt 루틴을 실행하고 돌아온다.
+	 **/
 	get_thread_info tsk
 	ldr	r8, [tsk, #TI_PREEMPT]		@ get preempt count
 	ldr	r0, [tsk, #TI_FLAGS]		@ get flags
@@ -235,6 +246,12 @@ ENDPROC(__irq_svc)
 	.ltorg
 
 #ifdef CONFIG_PREEMPT
+	/** 20140816    
+	 * bl이 호출되어 lr이 변경되기 전에 백업을 받아둔다.
+	 * preempt_schedule_irq를 호출해 처리한 뒤, 다시 flags를 가져와
+	 * _TIF_NEED_RESCHED가 켜있다면 다시 선점함수를 호출하고,
+	 * 그렇지 않다면 복귀한다.
+	 **/
 svc_preempt:
 	mov	r8, lr
 1:	bl	preempt_schedule_irq		@ irq en/disable is done inside
@@ -775,8 +792,8 @@ ENDPROC(__switch_to)
  * See Documentation/arm/kernel_user_helpers.txt for formal definitions.
  */
 /** 20130316
-	kuser_helper 동작을 끝내고 user_space로 return	
-**/
+ * kuser_helper 동작을 끝내고 user_space로 return	
+ **/
  THUMB(	.arm	)
 
 	.macro	usr_ret, reg
@@ -787,9 +804,9 @@ ENDPROC(__switch_to)
 #endif
 	.endm
 
-/** 20130309    
-	cache line align
-**/
+	/** 20130309    
+	 * instruction의 align 조정 (cache line)
+	 **/
 	.align	5
 	.globl	__kuser_helper_start
 __kuser_helper_start:
@@ -903,8 +920,8 @@ __kuser_cmpxchg:				@ 0xffff0fc0
 	 * A special ghost syscall is used for that (see traps.c).
 	 */
 	/** 20130309    
-		이전 버전 architecture 에서는 memory barrier instruction이 지원되지 않으므로
-		software interrupt를 발생시켜 처리한다.
+	 * 이전 버전 architecture 에서는 memory barrier instruction이 지원되지 않으므로
+	 * software interrupt를 발생시켜 처리한다.
 	**/
 	stmfd	sp!, {r7, lr}
 	ldr	r7, 1f			@ it's 20 bits
@@ -956,15 +973,16 @@ kuser_cmpxchg32_fixup:
 #else
 
 	/** 20130309    
-		__kuser_cmpxchg 에 대해
-		CONFIG_NEEDS_SYSCALL_FOR_CMPXCHG 도 아니고, 
-		v6 이상일 경우 실행
-
-	20130316
-		 r2 메모리 값과 r0 레지스터 값이 같을 때까지 비교하고 같을 때 r1 메모리
-                값을 r2 메모리 값에 저장.		 
-		
-		 ldrex, strex 는 atomic 동작을 보장하기 위한 명령어.		
+	 * __kuser_cmpxchg 에 대해
+	 * CONFIG_NEEDS_SYSCALL_FOR_CMPXCHG 도 아니고, 
+	 * v6 이상일 경우 실행
+	 *
+	 * 20130316
+	 * r2 메모리 값과 r0 레지스터 값이 같을 때까지 비교하고 같을 때 r1 메모리
+	 * 값을 r2 메모리 값에 저장.		 
+	 *
+	 * ldrex, strex 는 atomic 동작을 보장하기 위한 명령어.		
+	 * [참고] http://en.wikipedia.org/wiki/Load-link/store-conditional
 	 **/
 
 	smp_dmb	arm
@@ -976,8 +994,8 @@ kuser_cmpxchg32_fixup:
 	rsbs	r0, r3, #0
 	/* beware -- each __kuser slot must be 8 instructions max */
 	/** 20130316 
-		memory_barrier 함수 호출하고 user_space로 복귀.
-	**/
+	 * memory_barrier 함수 호출하고 user_space로 복귀.
+	 **/
 	ALT_SMP(b	__kuser_memory_barrier)
 	ALT_UP(usr_ret	lr)
 
@@ -985,21 +1003,19 @@ kuser_cmpxchg32_fixup:
 
 	.align	5
 	/** 20130316 
-
-		get_tls의 return value (r0)는 tls value가 된다. 
-	
-	 	ldr	r0, [pc, #(16 - 8)]	@ read TLS, set in kuser_get_tls_init
-		usr_ret	lr
-		mrc	p15, 0, r0, c13, c0, 3	@ 0xffff0fe8 hardware TLS code
-		.word	0
-		.word	0  <- ldr r0, ... 실행시 pc+8 위치.
-		.word	0
-		.word	0
-		
-		hardware TLS code는
- 		ARM 참조 - B4.1.151 TPIDRURO, User Read-Only Thread ID Register, VMSA
-	
-	**/
+	 * get_tls의 return value (r0)는 tls value가 된다. 
+	 *
+	 * ldr	r0, [pc, #(16 - 8)]	@ read TLS, set in kuser_get_tls_init
+	 * usr_ret	lr
+	 * mrc	p15, 0, r0, c13, c0, 3	@ 0xffff0fe8 hardware TLS code
+	 * .word	0
+	 * .word	0  <- ldr r0, ... 실행시 pc+8 위치.
+	 * .word	0
+	 * .word	0
+	 *
+	 * hardware TLS code는
+	 * ARM 참조 - B4.1.151 TPIDRURO, User Read-Only Thread ID Register, VMSA
+	 **/
 __kuser_get_tls:				@ 0xffff0fe0
 	ldr	r0, [pc, #(16 - 8)]	@ read TLS, set in kuser_get_tls_init
 	usr_ret	lr
@@ -1029,20 +1045,38 @@ __kuser_helper_end:
  * SP points to a minimal amount of processor-private memory, the address
  * of which is copied into r0 for the mode specific abort handler.
  */
-/** 20130309    
-	각 vector mode에 대한 공통 코드
-**/
+	/** 20130309    
+	 * 각 vector mode에 대한 공통 코드
+	 *
+	 *   name : exception mode 이름. __vector_start에서 호출. 예) irq, dabt, ...
+	 *   mode : macro로 정의하고자 하는 mode
+	 *   correction : exception에 따른 복귀 주소 보정
+	 *
+	 *   -----------------------------------------------------------------
+	 *   Exception               Address    Use
+	 *   -----------------------------------------------------------------
+	 *   Reset                   -          -
+	 *   Data Abort              lr-8       Data Abort 유발 명령으로 복귀
+	 *   FIQ                     lr-4       FIQ 발생 후 실행예정 명령으로 복귀
+	 *   IRQ                     lr-4       IRQ 발생 후 실행예정 명령으로 복귀
+	 *   Prefetch Abort          lr-4       Prefetch Abort 유발 명령으로 복귀
+	 *   SWI                     lr         SWI(svc) 다음 명령으로 복귀
+	 *   Undefined Instruction   lr         undefined instruction 다음 명령으로 복귀
+	 *   -----------------------------------------------------------------
+	 *     [출처] ARM System Developer's Guide
+	 *       9.1 Exception Handling
+	 **/
 	.macro	vector_stub, name, mode, correction=0
 	/** 20130309    
-	2^5 (cache line 단위) align
-	**/
+	 * 2^5 (cache line 단위) align
+	 **/
 	.align	5
 
 vector_\name:
 	.if \correction
 	/** 20130309    
-		복귀 주소에 대한 correction 보상
-	**/
+	 * 복귀 주소에 대한 correction 보상
+	 **/
 	sub	lr, lr, #\correction
 	.endif
 
@@ -1051,20 +1085,20 @@ vector_\name:
 	@ (parent CPSR)
 	@
 	/** 20130309    
-		r0와 lr을 해당 모드의 stack에 저장 (sp는 증가하지 않은 상태)
-	**/
+	 * r0와 lr을 해당 모드의 stack에 저장 (sp는 증가하지 않은 상태)
+	 **/
 	stmia	sp, {r0, lr}		@ save r0, lr
 	/** 20130309    
-		이전 모드의 cpsr을 sp+8 위치에 저장
-		|     |   
-		+-----+    <- sp
-		| r0  |
-		+-----+
-		| lr  |
-		+-----+    <- sp + 8
-		| spsr|
-		+-----+
-	**/
+	 * 이전 모드의 cpsr을 sp+8 위치에 저장
+	 *  |      |   
+	 *  +------+    <- sp
+	 *  | r0   |
+	 *  +------+
+	 *  | lr   |
+	 *  +------+    <- sp + 8
+	 *  | spsr |
+	 *  +------+
+	 **/
 	mrs	lr, spsr
 	str	lr, [sp, #8]		@ save spsr
 
@@ -1073,9 +1107,9 @@ vector_\name:
 	@
 	mrs	r0, cpsr
 	/** 20130309    
-		해당 \mode를 clear하고, SVC_MODE로 전환
-		spsr_cxsr에 저장하는 이유는 movs pc, lr시에 cpsr로 채우기 위함
-	**/
+	 * 해당 \mode를 clear하고, SVC_MODE로 전환
+	 * spsr_cxsr에 저장하는 이유는 movs pc, lr시에 cpsr로 채우기 위함
+	 **/
 	eor	r0, r0, #(\mode ^ SVC_MODE | PSR_ISETSTATE)
 	msr	spsr_cxsf, r0
 
@@ -1083,26 +1117,31 @@ vector_\name:
 	@ the branch table must immediately follow this code
 	@
 	/** 20130309    
-		spsr로부터 이전 모드를 추출한다.
+	 * spsr로부터 이전 모드를 추출한다.
 	 **/
 	and	lr, lr, #0x0f
  THUMB(	adr	r0, 1f			)
  THUMB(	ldr	lr, [r0, lr, lsl #2]	)
 	/** 20130309    
-		sp를 r0에 복사
+	 * sp를 r0에 복사
 	 **/
 	mov	r0, sp
 	/** 20130309    
-		lr <- pc + (mode * 4)	; pc는 vector_stub 아래 instruction을 가리키고 있다.
-		실행할 instruction을 lr에 저장
+	 * exception 발생 당시의 mode에 따라 호출할 routine을 찾는다.
+	 *
+	 * lr <- pc + (mode * 4)	; pc는 vector_stub macro 호출 다음 instruction을 가리키고 있다.
+	 * 실행할 instruction을 lr에 저장
 	 **/
  ARM(	ldr	lr, [pc, lr, lsl #2]	)
 	/** 20130309    
-		pc로 찾은 instruction으로 이동하면서 spsr이 cpsr로 복사됨.
-	**/
+	 * 찾은 routine으로 이동하면서 s접미사로 pc를 변경하므로 spsr이 cpsr로 복사됨.
+	 **/
 	movs	pc, lr			@ branch to handler in SVC mode
 ENDPROC(vector_\name)
 
+	/** 20130309    
+	 * 2^2 (4 byte) align
+	 **/
 	.align	2
 	@ handler addresses follow this label
 1:
@@ -1114,10 +1153,10 @@ __stubs_start:
  * Interrupt dispatcher
  */
  /** 20130309    
-	각 interrupt handler를 정의하는 부분.
-	각 모드에 대한 공통 부분은 vector_stub macro로 작성해준다.
-
-	entry가 16개인 이유는 4비트로 16개의 mode가 가능하기 때문이다.
+  * vector_stub macro에 irq 관련 argument를 이용해 exception handler를 정의.
+  * 이후 exception 발생시점의 mode에 따라 exception handler table을 나열한다.
+  *
+  * entry가 16개인 이유는 4비트로 16개의 mode가 가능하기 때문이다.
   **/
 	vector_stub	irq, IRQ_MODE, 4
 
@@ -1246,9 +1285,22 @@ __stubs_end:
 
 	.equ	stubs_offset, __vectors_start + 0x200 - __stubs_start
 
-/** 20130309    
-	vector table 선언 
-**/
+	/** 20130309    
+	 * vector table 선언 
+	 *
+	 *   - Exception과 연관된 Processor Mode
+	 *   -----------------------------------------------------------------
+	 *   Exception                Mode         Main purpose
+	 *   -----------------------------------------------------------------
+	 *   Fast Interrupt Request   FIQ          fast interrupt request handling 
+	 *   Interrupt Request        IRQ          interrupt request handling
+	 *   SWI and Reset            SVC          protected mode for operating systems
+	 *   Prefetch/Data Abort      abort        virtual memory and/or memory protection handling
+	 *   Undefined Instruction    undefined    software emulation of hardware coprocessors
+	 *   -----------------------------------------------------------------
+	 *     [출처] ARM System Developer's Guide
+	 *       9.1 Exception Handling
+	 **/
 	.globl	__vectors_start
 __vectors_start:
  ARM(	swi	SYS_ERROR0	)
@@ -1279,6 +1331,10 @@ cr_no_alignment:
 	.space	4
 
 #ifdef CONFIG_MULTI_IRQ_HANDLER
+	/** 20140816    
+	 * architecture의 irq 핸들러의 위치를 저장할 전역변수.
+	 * setup_arch에서 할당한다.
+	 **/
 	.globl	handle_arch_irq
 handle_arch_irq:
 	.space	4

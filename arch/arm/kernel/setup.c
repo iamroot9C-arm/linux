@@ -1331,7 +1331,9 @@ void __init setup_arch(char **cmdline_p)
 
 #ifdef CONFIG_MULTI_IRQ_HANDLER
 	/** 20130518    
-	 * vexpress의 경우 .handle_irq = gic_handle_irq 가 등록
+	 * interrupt 발생시 호출할 architecture의 irq handler 지정.
+	 *
+	 * vexpress의 경우 MACHINE_START에서 .handle_irq = gic_handle_irq 가 등록
 	 **/
 	handle_arch_irq = mdesc->handle_irq;
 #endif

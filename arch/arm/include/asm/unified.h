@@ -42,6 +42,9 @@
 
 #else	/* !CONFIG_THUMB2_KERNEL */
 
+/** 20140816    
+ * ARM일 때.
+ **/
 /* The CPSR bit describing the instruction set (ARM) */
 #define PSR_ISETSTATE	0
 

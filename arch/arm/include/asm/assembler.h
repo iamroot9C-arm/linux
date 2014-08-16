@@ -246,8 +246,8 @@
 
 
 /** 20130316  
-	아키텍처 7이상에서는 dmb 호출.
-*/
+ * 아키텍처 7이상에서는 dmb 호출.
+ **/
 
 	.macro	smp_dmb mode
 #ifdef CONFIG_SMP

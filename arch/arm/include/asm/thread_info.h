@@ -163,6 +163,9 @@ extern int vfp_restore_user_hwstate(struct user_vfp __user *,
  *  TIF_USEDFPU		- FPU was used by this task this quantum (SMP)
  *  TIF_POLLING_NRFLAG	- true if poll_idle() is polling TIF_NEED_RESCHED
  */
+/** 20140816    
+ * thread info의 flags 속성값
+ **/
 #define TIF_SIGPENDING		0
 #define TIF_NEED_RESCHED	1
 #define TIF_NOTIFY_RESUME	2	/* callback before returning to user */

@@ -108,6 +108,10 @@
 	movs	pc, lr				@ return & move spsr_svc into cpsr
 	.endm
 
+	/** 20140816    
+	 * thread_info는 stack에 overlay된다.
+	 * sp를 8KB로 내림해 thread_info의 위치를 rd에 받아온다.
+	 **/
 	.macro	get_thread_info, rd
 	mov	\rd, sp, lsr #13
 	mov	\rd, \rd, lsl #13
