@@ -328,6 +328,15 @@ struct rcu_data {
 	/** 20140726    
 	 * nxttail은 type 별로 nxtlist의 위치를 저장한다.
 	 **/
+	/** 20140816
+	 * nxtlist	rcu head를 가리키는 1차원 리스트 
+	 * 		[]->[]->[]->...->[]
+	 * *nxttail[x]  rcu head안의 포인터를 가리키는 리스트
+	 * 		(파티션을 나눠주기 위한 용도)	
+	 * 		->[*]->[*]->[*]->...->[*]->
+	 * (*:rcu head)
+	 **/
+
 	struct rcu_head *nxtlist;
 	struct rcu_head **nxttail[RCU_NEXT_SIZE];
 	long		qlen_lazy;	/* # of lazy queued callbacks */

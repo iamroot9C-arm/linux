@@ -759,6 +759,11 @@ static inline void rcu_preempt_sleep_check(void)
 /** 20140412    
  * rcu read lock
  **/
+/** 20140816
+ * non real time RCU : RCU read-side critical section block불가능
+ * real-time RCU : RCU read-side critical section block가능
+ **/
+
 static inline void rcu_read_lock(void)
 {
 	/** 20140412    
@@ -975,6 +980,10 @@ static inline notrace void rcu_read_unlock_sched_notrace(void)
  * Does the specified offset indicate that the corresponding rcu_head
  * structure can be handled by kfree_rcu()?
  */
+/** 20140816
+ * 
+ **/
+
 #define __is_kfree_rcu_offset(offset) ((offset) < 4096)
 
 /*
@@ -1012,6 +1021,10 @@ static inline notrace void rcu_read_unlock_sched_notrace(void)
  * The BUILD_BUG_ON check must not involve any function calls, hence the
  * checks are done in macros here.
  */
+/** 20140816
+ * rcu_head구조체를 포함하고 있는 구조체에서 
+ **/
+
 #define kfree_rcu(ptr, rcu_head)					\
 	__kfree_rcu(&((ptr)->rcu_head), offsetof(typeof(*(ptr)), rcu_head))
 

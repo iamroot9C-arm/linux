@@ -316,6 +316,10 @@ EXPORT_SYMBOL_GPL(rcu_sched_force_quiescent_state);
 /*
  * Does the CPU have callbacks ready to be invoked?
  */
+/** 20140816
+ * gp가 끝나서 호출해야 하는 callback이 있는지를 검사
+ * 있으면 1을 리턴
+ **/
 static int
 cpu_has_callbacks_ready_to_invoke(struct rcu_data *rdp)
 {
@@ -1549,6 +1553,11 @@ rcu_report_qs_rdp(int cpu, struct rcu_state *rsp, struct rcu_data *rdp, long las
  * Otherwise, see if this CPU has just passed through its first
  * quiescent state for this grace period, and record that fact if so.
  */
+/** 20140816
+ * 새로운 gp가 존재하면 rcu_data를 갱신후 리턴하고, 
+ * 그렇지 않고 qs 상태이면 report 한다.
+ **/
+
 static void
 rcu_check_quiescent_state(struct rcu_state *rsp, struct rcu_data *rdp)
 {
@@ -1563,7 +1572,7 @@ rcu_check_quiescent_state(struct rcu_state *rsp, struct rcu_data *rdp)
 	 * Does this CPU still need to do its part for current grace period?
 	 * If no, return and let the other CPUs do their part as well.
 	 */
-	/** 20140809    
+	/** 20140809
 	 * cpu의 rdp가 현재 gp에 대해 qs_pending에 해당하지 않으므로
 	 * qs 상태를 볼 필요 없이 리턴한다. (note_new_gpnum에서 1로 설정됨)
 	 **/
@@ -1802,6 +1811,9 @@ static void rcu_do_batch(struct rcu_state *rsp, struct rcu_data *rdp)
 	struct rcu_head *next, *list, **tail;
 	int bl, count, count_lazy, i;
 
+	/** 20140816
+	 * 호출해야 하는 callback이 없으면 바로 리턴 
+	 **/
 	/* If no callbacks are ready, just return.*/
 	if (!cpu_has_callbacks_ready_to_invoke(rdp)) {
 		trace_rcu_batch_start(rsp->name, rdp->qlen_lazy, rdp->qlen, 0);
@@ -1820,6 +1832,10 @@ static void rcu_do_batch(struct rcu_state *rsp, struct rcu_data *rdp)
 	bl = rdp->blimit;
 	trace_rcu_batch_start(rsp->name, rdp->qlen_lazy, rdp->qlen, bl);
 	list = rdp->nxtlist;
+	/** 20140816
+	 * [nxtlist,*nxttail[RCU_DONE_TAIL])부분을 nxtlist로부터 분리하고
+	 * 만약 nxttail[i]이 빈 파티션일 경우 nxtlist의 주소를 가리키도록 한다.
+	 **/
 	rdp->nxtlist = *rdp->nxttail[RCU_DONE_TAIL];
 	*rdp->nxttail[RCU_DONE_TAIL] = NULL;
 	tail = rdp->nxttail[RCU_DONE_TAIL];
@@ -1828,16 +1844,30 @@ static void rcu_do_batch(struct rcu_state *rsp, struct rcu_data *rdp)
 			rdp->nxttail[i] = &rdp->nxtlist;
 	local_irq_restore(flags);
 
+	/** 20140816
+	 * list가 존재할 경우 list를 하나씩 분리한다. 
+	 */
 	/* Invoke callbacks. */
 	count = count_lazy = 0;
 	while (list) {
+ 		/** 20140816
+		 * 다음에 실행될 rcu head를 prefetch한다.
+	 	**/
 		next = list->next;
 		prefetch(next);
 		debug_rcu_head_unqueue(list);
+		/** 20140816
+		 * rcu head의 function이 offset이면 count_lazy를 1증가시킨다.
+		 **/
 		if (__rcu_reclaim(rsp->name, list))
 			count_lazy++;
 		list = next;
 		/* Stop only if limit reached and CPU has something to do. */
+		/** 20140816
+		 * batch limit을 초과하면서 
+		 * rescheduling이 필요하거나 현재 task가 idle태스크가 아니라면 
+		 * 루프를 빠져나온다
+		 **/
 		if (++count >= bl &&
 		    (need_resched() ||
 		     (!is_idle_task(current) && !rcu_is_callbacks_kthread())))
@@ -1850,6 +1880,9 @@ static void rcu_do_batch(struct rcu_state *rsp, struct rcu_data *rdp)
 			    rcu_is_callbacks_kthread());
 
 	/* Update count, and requeue any remaining callbacks. */
+	/** 20140816
+	 * 처리하고 남은 list에 대해서 다시 붙여주고 nxttail 배열을 갱신시킨다.
+	 ***/
 	if (list != NULL) {
 		*tail = rdp->nxtlist;
 		rdp->nxtlist = list;
@@ -2184,8 +2217,14 @@ __rcu_process_callbacks(struct rcu_state *rsp)
 	rcu_process_gp_end(rsp, rdp);
 
 	/* Update RCU state based on any recent quiescent states. */
+	/** 20140816
+	 * qs상태 여부를 판단하여 rdp 업데이트 및 rnp, rsp에 리포트한다.
+	 **/
 	rcu_check_quiescent_state(rsp, rdp);
 
+	/** 20140816
+	 * 새롭게 실행되어야 할 gp가 존재하면 gp를 시작한다
+	 **/
 	/* Does this CPU require a not-yet-started grace period? */
 	if (cpu_needs_another_gp(rsp, rdp)) {
 		raw_spin_lock_irqsave(&rcu_get_root(rsp)->lock, flags);
