@@ -405,10 +405,7 @@ static int tick_notify(struct notifier_block *nb, unsigned long reason,
 }
 
 /** 20121201
- * tick_notifier 생성
- * notifier_call = tick_notify으로 초기화
- * struct notifier_block __rcu *next = NULL 으로 초기화
- * int priority = 0 으로 초기화
+ * tick_notifier 선언.
  **/
 static struct notifier_block tick_notifier = {
 	.notifier_call = tick_notify,
@@ -419,6 +416,9 @@ static struct notifier_block tick_notifier = {
  *
  * Register the notifier with the clockevents framework
  */
+/** 20140825    
+ * tick notifier 등록.
+ **/
 void __init tick_init(void)
 {
 	clockevents_register_notifier(&tick_notifier);

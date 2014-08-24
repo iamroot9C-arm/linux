@@ -170,10 +170,7 @@ void synchronize_rcu(void);
 /** 20140412    
  * CONFIG_PREEMPT_RCU 가 정의되지 않은 경우.
  * vexpress default config에는 정의되어 있지 않음.
- **/
-
-
-/** 20140412    
+ *
  * lock   : 선점 불가
  * unlock : 선점 가능
  **/
@@ -627,7 +624,7 @@ static inline void rcu_preempt_sleep_check(void)
 
 /** 20140718
  * RCU로 보호받는 포인터 변수를 읽는다.
- * 이 동작을 수행하는 thread가 rcu reader이다.
+ * rcu reader가 이 동작을 수행한다.
  **/
 #define rcu_dereference_raw(p) rcu_dereference_check(p, 1) /*@@@ needed? @@@*/
 
@@ -981,9 +978,8 @@ static inline notrace void rcu_read_unlock_sched_notrace(void)
  * structure can be handled by kfree_rcu()?
  */
 /** 20140816
- * 
+ * rcu_head의 func이 4096보다 작으면 offset이다.
  **/
-
 #define __is_kfree_rcu_offset(offset) ((offset) < 4096)
 
 /*
@@ -1022,9 +1018,8 @@ static inline notrace void rcu_read_unlock_sched_notrace(void)
  * checks are done in macros here.
  */
 /** 20140816
- * rcu_head구조체를 포함하고 있는 구조체에서 
+ * ptr에서 rcu_head의 주소와 rcu_head의 offset을 구해 __kfree_rcu 호출.
  **/
-
 #define kfree_rcu(ptr, rcu_head)					\
 	__kfree_rcu(&((ptr)->rcu_head), offsetof(typeof(*(ptr)), rcu_head))
 

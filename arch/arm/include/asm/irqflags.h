@@ -168,7 +168,7 @@ static inline void arch_local_irq_restore(unsigned long flags)
 		: "memory", "cc");
 }
 /** 20121201
- *  IRQ mask bit가 검출되면 disable을 리턴
+ *  IRQ mask bit가 검출되면 interrupt disable 상태.
  **/
 static inline int arch_irqs_disabled_flags(unsigned long flags)
 {

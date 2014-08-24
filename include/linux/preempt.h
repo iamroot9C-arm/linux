@@ -39,7 +39,8 @@
 asmlinkage void preempt_schedule(void);
 
 /** 20140622    
- * current thread의 thread_info를 검사해 flag가 설정되어 있다면
+ * preempt_enable에서 호출되어,
+ * current thread의 thread_info에 resched flag가 설정되어 있다면
  * preempt_schedule 을 호출한다.
  **/
 #define preempt_check_resched() \

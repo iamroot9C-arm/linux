@@ -15,16 +15,16 @@
  */
 
 /** 20131012
-* preempt_count의 증가와 pagefault handler disable 과의 관계 ???
- **/
-/** 20131019
-  preemp_count가 0이 아니면 선점불가.
+ * preempt_count의 증가와 pagefault handler disable 과의 관계 ???
+ *
+ * 20131019
+ * preemp_count가 0이 아니면 선점불가.
  **/
 static inline void pagefault_disable(void)
 {
     /** 20131012
-    * 커널 스택의 current_thread_info()->preempt_count를 +1증가시킨다.
-   **/
+	 * 현재 thread_info에 preempt_count를 증가시켜 선점불가 상태로 만든다.
+	 **/
 	inc_preempt_count();
 	/*
 	 * make sure to have issued the store before a pagefault

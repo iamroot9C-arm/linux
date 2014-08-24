@@ -174,7 +174,7 @@ static void cpu_hotplug_done(void) {}
 
 /* Need to know about CPUs going up/down? */
 /** 20130727    
- * cpu_notifier를 등록한다.
+ * cpu_chain이라는 notifier head에 nb를 등록한다.
  **/
 int __ref register_cpu_notifier(struct notifier_block *nb)
 {

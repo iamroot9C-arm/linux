@@ -222,7 +222,6 @@ __irq_svc:
 	/** 20140816    
 	 * tsk에 thread_info를 받아와 선점 카운트와 flags를 추출한다.
 	 * 선점 카운트가 0이 아니라면, 즉 선점불가라면 flags를 0으로 초기화 시킨다.
-	 *
 	 * flags에 TIF_NEED_RESCHED가 켜있다면 svc_preempt 루틴을 실행하고 돌아온다.
 	 **/
 	get_thread_info tsk
@@ -248,7 +247,7 @@ ENDPROC(__irq_svc)
 #ifdef CONFIG_PREEMPT
 	/** 20140816    
 	 * bl이 호출되어 lr이 변경되기 전에 백업을 받아둔다.
-	 * preempt_schedule_irq를 호출해 처리한 뒤, 다시 flags를 가져와
+	 * preempt_schedule_irq를 호출해 선점한 뒤, 다시 flags를 가져와
 	 * _TIF_NEED_RESCHED가 켜있다면 다시 선점함수를 호출하고,
 	 * 그렇지 않다면 복귀한다.
 	 **/

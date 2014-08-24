@@ -59,6 +59,7 @@
  * if we block.
  */
 /** 20140719
+ * CONFIG_PREEMPT_RCU인 경우
  * 현재 태스크의 rcu_read_lock_nesting카운트를 증가시킨다.
  **/
 void __rcu_read_lock(void)

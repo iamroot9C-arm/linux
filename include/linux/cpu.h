@@ -115,7 +115,7 @@ enum {
 /* Need to know about CPUs going up/down? */
 #if defined(CONFIG_HOTPLUG_CPU) || !defined(MODULE)
 /** 20130727    
- * notifier_block 자료구조를 선언하고, register_cpu_notifier를 통해 등록
+ * notifier_block을 하나 선언하고, register_cpu_notifier를 통해 cpu_chain에 등록.
  * HOTPLUG_CPU인 경우 cpu event에 따라 호출할 notifier block을 등록
  **/
 #define cpu_notifier(fn, pri) {					\

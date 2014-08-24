@@ -276,6 +276,9 @@ struct module
 	void *module_init;
 
 	/* Here is the actual code + data, vfree'd on unload. */
+	/** 20140823    
+	 * module의 code + data 영역의 위치. unload 시 해제된다.
+	 **/
 	void *module_core;
 
 	/* Here are the sizes of the init and core sections */
@@ -388,12 +391,18 @@ bool is_module_address(unsigned long addr);
 bool is_module_percpu_address(unsigned long addr);
 bool is_module_text_address(unsigned long addr);
 
+/** 20140823    
+ * address가 module의 core 영역(code + data)에 속하는지 검사한다.
+ **/
 static inline int within_module_core(unsigned long addr, struct module *mod)
 {
 	return (unsigned long)mod->module_core <= addr &&
 	       addr < (unsigned long)mod->module_core + mod->core_size;
 }
 
+/** 20140823    
+ * address가 module의 init 영역에 속하는지 검사한다.
+ **/
 static inline int within_module_init(unsigned long addr, struct module *mod)
 {
 	return (unsigned long)mod->module_init <= addr &&

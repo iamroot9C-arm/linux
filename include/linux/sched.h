@@ -2766,7 +2766,7 @@ static inline int signal_pending_state(long state, struct task_struct *p)
 }
 
 /** 20130706    
- * resched flag를 검사해 scheduling이 필요한지 검사하는 함수
+ * resched flag를 보고 scheduling이 필요한지 판단하는 함수
  **/
 static inline int need_resched(void)
 {

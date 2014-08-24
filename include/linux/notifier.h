@@ -100,11 +100,12 @@ extern void srcu_init_notifier_head(struct srcu_notifier_head *nh);
 #define srcu_cleanup_notifier_head(name)	\
 		cleanup_srcu_struct(&(name)->srcu);
 
+/** 20140823    
+ * 각 type의 notifier block head의 초기화값.
+ **/
 #define ATOMIC_NOTIFIER_INIT(name) {				\
 		.lock = __SPIN_LOCK_UNLOCKED(name.lock),	\
 		.head = NULL }
-/** 20140628    
- **/
 #define BLOCKING_NOTIFIER_INIT(name) {				\
 		.rwsem = __RWSEM_INITIALIZER((name).rwsem),	\
 		.head = NULL }
@@ -112,6 +113,9 @@ extern void srcu_init_notifier_head(struct srcu_notifier_head *nh);
 		.head = NULL }
 /* srcu_notifier_heads cannot be initialized statically */
 
+/** 20140823    
+ * 각 type의 notifier block head를 선언과 동시에 초기화.
+ **/
 #define ATOMIC_NOTIFIER_HEAD(name)				\
 	struct atomic_notifier_head name =			\
 		ATOMIC_NOTIFIER_INIT(name)
@@ -169,6 +173,9 @@ extern int srcu_notifier_call_chain(struct srcu_notifier_head *nh,
 extern int __srcu_notifier_call_chain(struct srcu_notifier_head *nh,
 	unsigned long val, void *v, int nr_to_call, int *nr_calls);
 
+/** 20140823    
+ * notifier_call의 리턴값.
+ **/
 #define NOTIFY_DONE		0x0000		/* Don't care */
 #define NOTIFY_OK		0x0001		/* Suits me */
 #define NOTIFY_STOP_MASK	0x8000		/* Don't call further */

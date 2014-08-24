@@ -142,9 +142,6 @@ int kernel_text_address(unsigned long addr)
 {
 	if (core_kernel_text(addr))
 		return 1;
-	/** 20130420
-	 * 여기서 부터...
-	 */
 	return is_module_text_address(addr);
 }
 
@@ -155,6 +152,10 @@ int kernel_text_address(unsigned long addr)
  * pointer is part of the kernel text, we need to do some
  * special dereferencing first.
  */
+/** 20140823    
+ * function pointer가 kernel text 영역에 속하는지 검사.
+ * core인지, 또는 module로 추가되었는지 확인한다.
+ **/
 int func_ptr_is_kernel_text(void *ptr)
 {
 	unsigned long addr;

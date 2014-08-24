@@ -608,15 +608,15 @@ asmlinkage void __init start_kernel(void)
  * enable them
  */
     /** 20121208
-    TICK 초기화 함수
+	 * TICK 초기화 함수
      **/
 	tick_init();
     /** 20121208
-    boot시 사용된 cpu 비트맵 변수들을 초기화
+	 * boot시 사용된 cpu 비트맵 변수들을 초기화
      **/
 	boot_cpu_init();
     /** 20121208
-    vexpress에서는 NULL함수임
+	 * vexpress에서는 NULL함수임
      **/
 	/** 20131026    
 	 * CONFIG_HIGHMEM인 경우 호출됨

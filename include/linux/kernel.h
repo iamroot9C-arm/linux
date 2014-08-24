@@ -171,7 +171,7 @@ struct pt_regs;
 struct user;
 
 /** 20130706    
- *  "explicit preepption points"를 더 많이 두어 latency를 줄이고자 할 때 사용.
+ *  "explicit preemption points"를 더 많이 두어 latency를 줄이고자 할 때 사용.
  *  vexpress config에서 설정되어 있지 않음.
  *
  *  might_resched는 might_sleep에서 호출.

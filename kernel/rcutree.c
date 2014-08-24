@@ -62,6 +62,9 @@
 
 static struct lock_class_key rcu_node_class[RCU_NUM_LVLS];
 
+/** 20140823    
+ * rcu_state 초기값.
+ **/
 #define RCU_STATE_INITIALIZER(sname, cr) { \
 	.level = { &sname##_state.node[0] }, \
 	.call = cr, \
@@ -77,10 +80,11 @@ static struct lock_class_key rcu_node_class[RCU_NUM_LVLS];
 }
 
 /** 20140726    
- * rcu_sched_state는 initialize된 값.
- * rcu_sched_data는 percpu 변수로 정의되어 각 state와 연결된다.
+ * rcu 전역 상태인 rcu_sched_state, rcu_bh_state 선언 및 초기화.
+ * 각 state가 사용할 percpu data를 선언. (rcu_init_one에서 연결)
  *
- * call_rcu() callback을 call_rcu_sched로 지정.
+ * call_rcu(block되지 않고 read-side critical section이 모두 완료되었을 때 호출)
+ *  callback을 call_rcu_sched, call_rcu_bh로 지정.
  **/
 struct rcu_state rcu_sched_state =
 	RCU_STATE_INITIALIZER(rcu_sched, call_rcu_sched);
@@ -91,7 +95,7 @@ DEFINE_PER_CPU(struct rcu_data, rcu_bh_data);
 
 static struct rcu_state *rcu_state;
 /** 20140726    
- * list head.
+ * 초기화된 rcu_state들의 list.
  **/
 LIST_HEAD(rcu_struct_flavors);
 
@@ -187,6 +191,12 @@ static int rcu_gp_in_progress(struct rcu_state *rsp)
  * one since the start of the grace period, this just sets a flag.
  * The caller must have disabled preemption.
  */
+/** 20140823    
+ * scheduler 동작에 의한 qs를 기록한다.
+ *
+ * gp 시작 이후로 qs가 한 번이라도 발생했는지 정보만 알면 되므로,
+ * 호출될 때마다 현재 gpnum과 passed_quiesce 상태값을 업데이트 한다.
+ **/
 void rcu_sched_qs(int cpu)
 {
 	struct rcu_data *rdp = &per_cpu(rcu_sched_data, cpu);
@@ -214,6 +224,9 @@ void rcu_bh_qs(int cpu)
  * and requires special handling for preemptible RCU.
  * The caller must have disabled preemption.
  */
+/** 20140824    
+ * context switch 발생을 기록한다.
+ **/
 void rcu_note_context_switch(int cpu)
 {
 	trace_rcu_utilization("Start context switch");
@@ -235,6 +248,9 @@ DEFINE_PER_CPU(struct rcu_dynticks, rcu_dynticks) = {
 	.dynticks = ATOMIC_INIT(1),
 };
 
+/** 20140823    
+ * batch limit과 queue의 hi/low 값 선언.
+ **/
 static int blimit = 10;		/* Maximum callbacks per rcu_do_batch. */
 static int qhimark = 10000;	/* If this many pending, ignore blimit. */
 static int qlowmark = 100;	/* Once only this many pending, use blimit. */
@@ -243,6 +259,10 @@ module_param(blimit, int, 0);
 module_param(qhimark, int, 0);
 module_param(qlowmark, int, 0);
 
+/** 20140823    
+ * rcu에서 cpu stall 경고 메시지를 막을 것인지 여부.
+ * rcu에서 cpu stall 타임아웃으로 취급할 시간을 지정.
+ **/
 int rcu_cpu_stall_suppress __read_mostly; /* 1 = suppress stall warnings. */
 int rcu_cpu_stall_timeout __read_mostly = CONFIG_RCU_CPU_STALL_TIMEOUT;
 
@@ -641,6 +661,9 @@ void rcu_nmi_exit(void)
  * If the current CPU is in its idle loop and is neither in an interrupt
  * or NMI handler, return true.
  */
+/** 20140823    
+ * 선점불가 상태에서 현재 cpu에 해당하는 dynticks를 검사해 idle(짝수) 상태인지 검사한다.
+ **/
 int rcu_is_cpu_idle(void)
 {
 	int ret;
@@ -917,6 +940,10 @@ static void check_cpu_stall(struct rcu_state *rsp, struct rcu_data *rdp)
 	}
 }
 
+/** 20140823    
+ * panic시 notifier chain이 의해 호출될 callback 함수.
+ * stall warning 메시지를 막는다.
+ **/
 static int rcu_panic(struct notifier_block *this, unsigned long ev, void *ptr)
 {
 	rcu_cpu_stall_suppress = 1;
@@ -940,10 +967,16 @@ void rcu_cpu_stall_reset(void)
 		rsp->jiffies_stall = jiffies + ULONG_MAX / 2;
 }
 
+/** 20140823    
+ * rcu_panic을 callback 함수로 지정하는 nb.
+ **/
 static struct notifier_block rcu_panic_block = {
 	.notifier_call = rcu_panic,
 };
 
+/** 20140823    
+ * panic_notifier_list에 rcu_panic_block 등록.
+ **/
 static void __init check_cpu_stall_init(void)
 {
 	atomic_notifier_chain_register(&panic_notifier_list, &rcu_panic_block);
@@ -1201,6 +1234,7 @@ rcu_start_gp_per_cpu(struct rcu_state *rsp, struct rcu_node *rnp, struct rcu_dat
  * 새로운 gp를 시작한다.
  *
  * 하나의 gp를 마친 뒤 호출될 수도 있고, removal phase 이후 시작될 수도 있다.
+ * 다음 gp를 detect하기 위한 준비과정으로 hierarchy를 재초기화 한다.
  **/
 static void
 rcu_start_gp(struct rcu_state *rsp, unsigned long flags)
@@ -1805,6 +1839,12 @@ static void rcu_cleanup_dead_cpu(int cpu, struct rcu_state *rsp)
  * Invoke any RCU callbacks that have made it to the end of their grace
  * period.  Thottle as specified by rdp->blimit.
  */
+/** 20140824   
+ * GP가 끝나 호출해야 하는 RCU 콜백들이 있으면 호출한다.
+ *
+ * RCU 콜백은 rdp->nxtlist에 연결되어 있으며, nxttail[]에 의해 조정된다.
+ * 완료된 콜백을 리스트에서 제거해 호출한다. blimit 설정값으로 throttle을 준다.
+ **/
 static void rcu_do_batch(struct rcu_state *rsp, struct rcu_data *rdp)
 {
 	unsigned long flags;
@@ -1858,6 +1898,7 @@ static void rcu_do_batch(struct rcu_state *rsp, struct rcu_data *rdp)
 		debug_rcu_head_unqueue(list);
 		/** 20140816
 		 * rcu head의 function이 offset이면 count_lazy를 1증가시킨다.
+		 * 콜백이면 호출한다.
 		 **/
 		if (__rcu_reclaim(rsp->name, list))
 			count_lazy++;
@@ -1893,15 +1934,31 @@ static void rcu_do_batch(struct rcu_state *rsp, struct rcu_data *rdp)
 				break;
 	}
 	smp_mb(); /* List handling before counting for rcu_barrier(). */
+	/** 20140823    
+	 * rcu_head의 func이 offset인 경우의 수만큼 qlen_lazy를 감소시킨다.
+	 * queue된 callback 수를 처리한 콜백 수만큼 감소시킨다.
+	 * invoke된 cbs 수를 처리한 콜백 수만큼 증가시킨다.
+	 **/
 	rdp->qlen_lazy -= count_lazy;
 	ACCESS_ONCE(rdp->qlen) -= count;
 	rdp->n_cbs_invoked += count;
 
 	/* Reinstate batch limit if we have worked down the excess. */
+	/** 20140823    
+	 * batch limit이 변경된 상태이고, qlen이 lowmark 이하로 떨어지면
+	 * batch limit을 복원한다. 왜???
+	 **/
 	if (rdp->blimit == LONG_MAX && rdp->qlen <= qlowmark)
 		rdp->blimit = blimit;
 
 	/* Reset ->qlen_last_fqs_check trigger if enough CBs have drained. */
+	/** 20140823    
+	 * 현재 queue에 CBs가 0이고, fqs시 마지막 check한 개수가 0이 아니라면
+	 *   qlen_last_fqs_check를 초기화하고,
+	 *   rcu_state의 force_qs 수를 snap으로 저장해 둔다.
+	 * 그렇지 않고, qlen이 (qlen_last_fqs_check - qhimark) 보다 작다면
+	 *   qlen_last_fqs_check를 현재 qlen으로 갱신시킨다.
+	 **/
 	if (rdp->qlen == 0 && rdp->qlen_last_fqs_check != 0) {
 		rdp->qlen_last_fqs_check = 0;
 		rdp->n_force_qs_snap = rsp->n_force_qs;
@@ -2334,6 +2391,9 @@ __call_rcu(struct rcu_head *head, void (*func)(struct rcu_head *rcu),
 
 	WARN_ON_ONCE((unsigned long)head & 0x3); /* Misaligned rcu_head! */
 	debug_rcu_head_queue(head);
+	/** 20140823    
+	 * rcu_head에 reclaim용 CB 지정.
+	 **/
 	head->func = func;
 	head->next = NULL;
 
@@ -2349,12 +2409,23 @@ __call_rcu(struct rcu_head *head, void (*func)(struct rcu_head *rcu),
 	rdp = this_cpu_ptr(rsp->rda);
 
 	/* Add the callback to our list. */
+	/** 20140823    
+	 * qlen은 CBs의 수. lazy 포함.
+	 **/
 	ACCESS_ONCE(rdp->qlen)++;
+	/** 20140823    
+	 * lazy인 경우 qlen_lazy 증가.
+	 * 아닌 경우
+	 **/
 	if (lazy)
 		rdp->qlen_lazy++;
 	else
 		rcu_idle_count_callbacks_posted();
 	smp_mb();  /* Count before adding callback for rcu_barrier(). */
+	/** 20140823    
+	 * 새로운 rcu_head를 nxtlist의 끝(nxttail[RCU_NEXT_TAIL]이 가리키는 위치)에
+	 * 등록시키고, 새로운 nxttail[RCU_NEXT_TAIL]로 등록.
+	 **/
 	*rdp->nxttail[RCU_NEXT_TAIL] = head;
 	rdp->nxttail[RCU_NEXT_TAIL] = &head->next;
 
@@ -2922,6 +2993,9 @@ rcu_boot_init_percpu_data(int cpu, struct rcu_state *rsp)
  * can accept some slop in the rsp->completed access due to the fact
  * that this CPU cannot possibly have any RCU callbacks in flight yet.
  */
+/** 20140823    
+ * per-cpu data인 rcu_data 변수를 초기화 한다.
+ **/
 static void __cpuinit
 rcu_init_percpu_data(int cpu, struct rcu_state *rsp, int preemptible)
 {
@@ -2931,6 +3005,9 @@ rcu_init_percpu_data(int cpu, struct rcu_state *rsp, int preemptible)
 	struct rcu_node *rnp = rcu_get_root(rsp);
 
 	/* Set up local state, ensuring consistent view of global state. */
+	/** 20140823    
+	 * rcu_node에 lock을 걸고, rcu_data 변수를 초기화 한다.
+	 **/
 	raw_spin_lock_irqsave(&rnp->lock, flags);
 	rdp->beenonline = 1;	 /* We have now been online. */
 	rdp->preemptible = preemptible;
@@ -2938,6 +3015,9 @@ rcu_init_percpu_data(int cpu, struct rcu_state *rsp, int preemptible)
 	rdp->n_force_qs_snap = rsp->n_force_qs;
 	rdp->blimit = blimit;
 	rdp->dynticks->dynticks_nesting = DYNTICK_TASK_EXIT_IDLE;
+	/** 20140823    
+	 * dynticks를 홀수값으로 만들어 idel 상태가 아니도록 한다.
+	 **/
 	atomic_set(&rdp->dynticks->dynticks,
 		   (atomic_read(&rdp->dynticks->dynticks) & ~0x1) + 1);
 	rcu_prepare_for_idle_init(cpu);
@@ -2952,23 +3032,45 @@ rcu_init_percpu_data(int cpu, struct rcu_state *rsp, int preemptible)
 	raw_spin_lock(&rsp->onofflock);		/* irqs already disabled. */
 
 	/* Add CPU to rcu_node bitmasks. */
+	/** 20140823    
+	 * rcu_data가 속한 node를 가져옴
+	 * grpmask를 가져옴.
+	 **/
 	rnp = rdp->mynode;
 	mask = rdp->grpmask;
+	/** 20140823    
+	 * rcu_data가 등록된 node에 대해 한 번 수행하고,
+	 * parent로 올라가면서 NULL이 아니고, node의 gsmaskinit에 등록되지 않은 경우 수행.
+	 **/
 	do {
 		/* Exclude any attempts to start a new GP on small systems. */
 		raw_spin_lock(&rnp->lock);	/* irqs already disabled. */
+		/** 20140823    
+		 * node의 qsmaskinit에 추가.
+		 **/
 		rnp->qsmaskinit |= mask;
 		mask = rnp->grpmask;
+		/** 20140823    
+		 * node hierarchy의 parent를 올라갈 때,
+		 * rdp의 mynode일 때만 수행하는 동작.
+		 **/
 		if (rnp == rdp->mynode) {
 			/*
 			 * If there is a grace period in progress, we will
 			 * set up to wait for it next time we run the
 			 * RCU core code.
 			 */
+			/** 20140823    
+			 * node가 갖고 있는 completed (마지막 완료된 gp num)을 rdp에 복사.
+			 **/
 			rdp->gpnum = rnp->completed;
 			rdp->completed = rnp->completed;
 			rdp->passed_quiesce = 0;
 			rdp->qs_pending = 0;
+			/** 20140823    
+			 * 현재 node가 알고 있는 gpnum - 1로 초기화.
+			 * 0으로 초기화 하지 않는 이유는???
+			 **/
 			rdp->passed_quiesce_gpnum = rnp->gpnum - 1;
 			trace_rcu_grace_period(rsp->name, rdp->gpnum, "cpuonl");
 		}
@@ -2979,10 +3081,19 @@ rcu_init_percpu_data(int cpu, struct rcu_state *rsp, int preemptible)
 	raw_spin_unlock_irqrestore(&rsp->onofflock, flags);
 }
 
+/** 20140823    
+ * 특정 cpu가 rcu로 동작하도록 준비하는 과정.
+ * 예를 들어 HOTPLUG cpu가 새로운 online 된 경우. 
+ **/
 static void __cpuinit rcu_prepare_cpu(int cpu)
 {
 	struct rcu_state *rsp;
 
+	/** 20140823    
+	 * flavor list에 등록된 rsp를 순회하며
+	 *		cpu로 지정된 cpu의 rcu_data를 초기화 한다.
+	 *		rsp가 "rcu_preempt"인 경우 preemptible.
+	 **/
 	for_each_rcu_flavor(rsp)
 		rcu_init_percpu_data(cpu, rsp,
 				     strcmp(rsp->name, "rcu_preempt") == 0);
@@ -2991,6 +3102,12 @@ static void __cpuinit rcu_prepare_cpu(int cpu)
 /*
  * Handle CPU online/offline notification events.
  */
+/** 20140823    
+ * rcu cpu notify callback 함수.
+ * CPU online/offline notification에 대해 처리한다.
+ *
+ * CPU_UP_PREPARE에 해당하는 action만 분석한 상태.
+ **/
 static int __cpuinit rcu_cpu_notify(struct notifier_block *self,
 				    unsigned long action, void *hcpu)
 {
@@ -3266,6 +3383,15 @@ static void __init rcu_init_geometry(void)
 	rcu_num_nodes -= n;
 }
 
+/** 20140823    
+ * rcu를 사용하기 위한 초기화.
+ *
+ * - cpu의 개수대로 geometry를 구성하고,
+ * - rcu_sched_state, rcu_bh_state, rcu_preempt_state를 초기화 한다.
+ * - RCU_SOFTIRQ를 처리할 softirq 콜백을 등록한다.
+ * - cpu notify chain에 rcu_cpu_notify를 등록하고, CPU_UP_PREPARE를 보내
+ *   rcu_data 관련 자료구조를 초기화 시킨다.
+ **/
 void __init rcu_init(void)
 {
 	int cpu;
@@ -3297,9 +3423,18 @@ void __init rcu_init(void)
 	 * this is called early in boot, before either interrupts
 	 * or the scheduler are operational.
 	 */
+	/** 20140823    
+	 * cpu_notifier에 새로운 nb rcu_cpu_notify를 가장 낮은 우선순위로 등록.
+	 **/
 	cpu_notifier(rcu_cpu_notify, 0);
+	/** 20140823    
+	 * 각 online cpu를 순회하며 rcu_cpu_notify를 CPU_UP_PREPARE로 호출
+	 **/
 	for_each_online_cpu(cpu)
 		rcu_cpu_notify(NULL, CPU_UP_PREPARE, (void *)(long)cpu);
+	/** 20140823    
+	 * rcu cpu stall 체크관련 초기화.
+	 **/
 	check_cpu_stall_init();
 }
 

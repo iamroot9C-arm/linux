@@ -157,7 +157,7 @@
  /** 20130105
   * 1. status register의 flag를 백업
   * 2. interrupt flag가 켜져 있는지(disabled) 확인.
-  * 켜져 있으면 1, 꺼져 있으면 0 리턴
+  * 꺼져 있으면 1, 켜져 있으면 0 리턴
   * */
 #define irqs_disabled()					\
 	({						\

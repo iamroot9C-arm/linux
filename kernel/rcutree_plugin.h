@@ -167,6 +167,13 @@ static void rcu_preempt_qs(int cpu)
  *
  * Caller must disable preemption.
  */
+/** 20140823    
+ * 이제 scheduler로 진입한 상태이고, 현재 task는 context-switch 되어버릴 것이다.
+ * 만약 현재 task가 RCU read-side 임계구역 내에 있다면, CPU의 기록에 의지할 수 없으므로
+ * task를 blkd_tasks list에 넣는다. 가장 바깥 read-side 임계구역을 벗어날 때 dequeue된다.
+ * 그러므로, 현재 gp는 blkd_tasks list 엔트리가 현재 gp의 drain을 막고 있어 gp의 완료가 허용되지 않는다.
+ * (rnp->gp_taks가 NULL이 될 때까지)
+ **/
 static void rcu_preempt_note_context_switch(int cpu)
 {
 	struct task_struct *t = current;
@@ -174,13 +181,24 @@ static void rcu_preempt_note_context_switch(int cpu)
 	struct rcu_data *rdp;
 	struct rcu_node *rnp;
 
+	/** 20140823    
+	 * 임계구역에 진입하면 __rcu_read_lock에서 rcu_read_lock_nesting를 증가시킨다.
+	 * 현재 임계구역이며, RCU_READ_UNLOCK_BLOCKED가 기록되지 않은 상태라면
+	 **/
 	if (t->rcu_read_lock_nesting > 0 &&
 	    (t->rcu_read_unlock_special & RCU_READ_UNLOCK_BLOCKED) == 0) {
 
 		/* Possibly blocking in an RCU read-side critical section. */
+		/** 20140823    
+		 * rcu_preempt_state에서 rcu_data와 rcu_data가 연결된 rcu_node를 가져온다.
+		 **/
 		rdp = per_cpu_ptr(rcu_preempt_state.rda, cpu);
 		rnp = rdp->mynode;
 		raw_spin_lock_irqsave(&rnp->lock, flags);
+		/** 20140823    
+		 * rcu_read_unlock_special에 RCU_READ_UNLOCK_BLOCKED를 기록한다.
+		 * blocked된 node에 rnp를 기록한다.
+		 **/
 		t->rcu_read_unlock_special |= RCU_READ_UNLOCK_BLOCKED;
 		t->rcu_blocked_node = rnp;
 
@@ -204,6 +222,11 @@ static void rcu_preempt_note_context_switch(int cpu)
 		 */
 		WARN_ON_ONCE((rdp->grpmask & rnp->qsmaskinit) == 0);
 		WARN_ON_ONCE(!list_empty(&t->rcu_node_entry));
+		/** 20140823    
+		 * rnp의 qsmask에 rdp의 grpmask가 포함되어 있고,
+		 * gp_tasks에 이미 등록된 entry가 있다면
+		 * 현재 task를 rcu_node의 gp_tasks 앞에 추가하고 gp_tasks를 갱신한다.
+		 **/
 		if ((rnp->qsmask & rdp->grpmask) && rnp->gp_tasks != NULL) {
 			list_add(&t->rcu_node_entry, rnp->gp_tasks->prev);
 			rnp->gp_tasks = &t->rcu_node_entry;
@@ -212,7 +235,14 @@ static void rcu_preempt_note_context_switch(int cpu)
 				rnp->boost_tasks = rnp->gp_tasks;
 #endif /* #ifdef CONFIG_RCU_BOOST */
 		} else {
+			/** 20140823    
+			 * rcu_node의 blkd_tasks에 현재 task를 등록한다.
+			 **/
 			list_add(&t->rcu_node_entry, &rnp->blkd_tasks);
+			/** 20140823    
+			 * rcu_node의 qsmask에 등록되어 있다면 현재 task를
+			 * rnp의 gp_tasks로 지정한다.
+			 **/
 			if (rnp->qsmask & rdp->grpmask)
 				rnp->gp_tasks = &t->rcu_node_entry;
 		}
@@ -1741,6 +1771,9 @@ static int __init rcu_scheduler_really_started(void)
 }
 early_initcall(rcu_scheduler_really_started);
 
+/** 20140823    
+ * CONFIG_RCU_BOOST가 정의되지 않은 경우 NULL 함수.
+ **/
 static void __cpuinit rcu_prepare_kthreads(int cpu)
 {
 }
@@ -1767,6 +1800,9 @@ int rcu_needs_cpu(int cpu, unsigned long *delta_jiffies)
 /*
  * Because we do not have RCU_FAST_NO_HZ, don't bother initializing for it.
  */
+/** 20140823    
+ * CONFIG_RCU_FAST_NO_HZ가 정의되어 있지 않은 경우.
+ **/
 static void rcu_prepare_for_idle_init(int cpu)
 {
 }
@@ -1791,6 +1827,9 @@ static void rcu_prepare_for_idle(int cpu)
  * Don't bother keeping a running count of the number of RCU callbacks
  * posted because CONFIG_RCU_FAST_NO_HZ=n.
  */
+/** 20140823    
+ * CONFIG_RCU_FAST_NO_HZ가 정의되지 않아 NULL 함수.
+ **/
 static void rcu_idle_count_callbacks_posted(void)
 {
 }

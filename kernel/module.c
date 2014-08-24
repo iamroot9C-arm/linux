@@ -114,6 +114,10 @@ static BLOCKING_NOTIFIER_HEAD(module_notify_list);
 
 /* Bounds of module allocation, for speeding __module_address.
  * Protected by module_mutex. */
+/** 20140823    
+ * __module_address의 min,  max.
+ * init_module이 호출되었을 때 module_alloc_update_bounds에서 갱신된다.
+ **/
 static unsigned long module_addr_min = -1UL, module_addr_max = 0;
 
 int register_module_notifier(struct notifier_block * nb)
@@ -3457,13 +3461,24 @@ bool is_module_address(unsigned long addr)
  * Must be called with preempt disabled or module mutex held so that
  * module doesn't get freed during this.
  */
+/** 20140823    
+ * address가 속하는 module의 위치를 리턴한다.
+ **/
 struct module *__module_address(unsigned long addr)
 {
 	struct module *mod;
 
+	/** 20140823    
+	 * addr가 module용으로 할당 boundary 사이에 있는지 검사한다.
+	 **/
 	if (addr < module_addr_min || addr > module_addr_max)
 		return NULL;
 
+	/** 20140823    
+	 * 등록된 module들을 순회하며
+	 *		address가 module의 core 또는 init 영역에 속한다면
+	 *		해당 모듈 위치를 리턴한다.
+	 **/
 	list_for_each_entry_rcu(mod, &modules, list)
 		if (within_module_core(addr, mod)
 		    || within_module_init(addr, mod))
@@ -3480,6 +3495,9 @@ EXPORT_SYMBOL_GPL(__module_address);
  * anywhere in a module.  See kernel_text_address() for testing if an
  * address corresponds to kernel or module code.
  */
+/** 20140823    
+ * address가 module의 text address 영역에 속하는지 리턴한다.
+ **/
 bool is_module_text_address(unsigned long addr)
 {
 	bool ret;
@@ -3498,6 +3516,9 @@ bool is_module_text_address(unsigned long addr)
  * Must be called with preempt disabled or module mutex held so that
  * module doesn't get freed during this.
  */
+/** 20140823    
+ * address를 포함하는 module을 리턴한다.
+ **/
 struct module *__module_text_address(unsigned long addr)
 {
 	struct module *mod = __module_address(addr);

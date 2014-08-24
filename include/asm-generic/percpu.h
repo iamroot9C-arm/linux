@@ -84,6 +84,7 @@ extern unsigned long __per_cpu_offset[NR_CPUS];
 #define this_cpu_ptr(ptr) __this_cpu_ptr(ptr)
 #endif
 /** 20140111
+ * percpu 변수에서 현재 cpu에 해당하는 값.
  **/
 #define __get_cpu_var(var) (*this_cpu_ptr(&(var)))
 /** 20131130    

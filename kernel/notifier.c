@@ -32,6 +32,8 @@ static int notifier_chain_register(struct notifier_block **nl,
 	}
 	n->next = *nl;
 	/** 20140718
+	 * 현재 nl이 가리키는 포인터에 n이 가리키는 위치 저장.
+	 *
 	 * RCU로 보호되는 포인터 변수에 값을 할당함.
 	 **/
 	rcu_assign_pointer(*nl, n);
@@ -78,6 +80,11 @@ static int notifier_chain_unregister(struct notifier_block **nl,
  *	@returns:	notifier_call_chain returns the value returned by the
  *			last notifier function called.
  */
+/** 20140823    
+ * notifier list를 순회하며
+ * nr_to_call만큼 호출했거나 callback 함수가 STOP_MASK를 리턴할 때까지
+ * 등록된 callback 함수를 호출한다.
+ **/
 static int __kprobes notifier_call_chain(struct notifier_block **nl,
 					unsigned long val, void *v,
 					int nr_to_call,	int *nr_calls)
@@ -85,9 +92,19 @@ static int __kprobes notifier_call_chain(struct notifier_block **nl,
 	int ret = NOTIFY_DONE;
 	struct notifier_block *nb, *next_nb;
 
+	/** 20140823    
+	 * rcu 변수인 *nl에 접근해 가리키는 head의 위치를 가져온다. 
+	 **/
 	nb = rcu_dereference_raw(*nl);
 
+	/** 20140823    
+	 * nb이 존재하고, 호출할 개수가 0이 아닌동안 반복 수행.
+	 **/
 	while (nb && nr_to_call) {
+		/** 20140823    
+		 * 다음 nb.
+		 * debug에서 다음 nb로 이동할 때 사용하기 위해 먼저 가져옴.
+		 **/
 		next_nb = rcu_dereference_raw(nb->next);
 
 #ifdef CONFIG_DEBUG_NOTIFIERS
@@ -97,11 +114,21 @@ static int __kprobes notifier_call_chain(struct notifier_block **nl,
 			continue;
 		}
 #endif
+		/** 20140823    
+		 * 해당 nb에 지정된 notifier_call (callback)을 호출한다.
+		 * 호출시 전달할 value와 pointer를 지정할 수 있다.
+		 **/
 		ret = nb->notifier_call(nb, val, v);
 
+		/** 20140823    
+		 * 필요하다면 호출된 개수를 증가시킨다.
+		 **/
 		if (nr_calls)
 			(*nr_calls)++;
 
+		/** 20140823    
+		 * callback 함수의 리턴값에 STOP_MASK가 되어 있다면 중지.
+		 **/
 		if ((ret & NOTIFY_STOP_MASK) == NOTIFY_STOP_MASK)
 			break;
 		nb = next_nb;

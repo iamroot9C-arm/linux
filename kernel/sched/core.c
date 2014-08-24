@@ -3994,6 +3994,10 @@ int mutex_spin_on_owner(struct mutex *lock, struct task_struct *owner)
 /** 20140622    
  * 선점 카운트가 0이 아니거나 인터럽트 금지 상태가 아닌 경우에
  * 현재 task를 선점하여 스케쥴러를 호출한다.
+ *
+ * comment:
+ * preempt_enable의 in-kernel 선점금지로부터 schedule()을 호출하는 진입점.
+ * 인터럽트 발생에서부터 복귀해서 커널 선점은 금지되어 있고, 
  **/
 asmlinkage void __sched notrace preempt_schedule(void)
 {
@@ -4004,7 +4008,8 @@ asmlinkage void __sched notrace preempt_schedule(void)
 	 * we do not want to preempt the current task. Just return..
 	 */
 	/** 20140622    
-	 * 현재 task의 thread_info의 선점 카운트가 남아 있거나 (선점 상태)
+	 * 선점불가 상태이거나 irq routine 등이 실행 중일 경우
+	 *   (현재 thread_info의 preempt_count가 0이 아니다)
 	 * cpsr의 인터럽트가 꺼진 상태일 때 schedule을 호출하지 않고 리턴.
 	 **/
 	if (likely(ti->preempt_count || irqs_disabled()))
@@ -4014,6 +4019,7 @@ asmlinkage void __sched notrace preempt_schedule(void)
 		/** 20140622    
 		 * 현재 task의 preempt_count에 선점 중임을 기록하고, 
 		 * __shcedule 을 호출해 스케쥴링 한다.
+		 * 복귀 후 선점 중 표시를 해제한다.
 		 **/
 		add_preempt_count_notrace(PREEMPT_ACTIVE);
 		__schedule();
@@ -4038,6 +4044,11 @@ EXPORT_SYMBOL(preempt_schedule);
  * Note, that this is called and return with irqs disabled. This will
  * protect us against recursive calling from irq.
  */
+/** 20140824    
+ * 인터럽트 컨텍스트의 커널 선점금지로부터 schedule()을 호출하는 진입점.
+ * 인터럽트 금지 상태에서 호출되어 인터럽트 금지 상태로 복귀하므로,
+ * 인터럽트로부터 재귀적 호출을 막는다.
+ **/
 asmlinkage void __sched preempt_schedule_irq(void)
 {
 	struct thread_info *ti = current_thread_info();
@@ -4046,6 +4057,10 @@ asmlinkage void __sched preempt_schedule_irq(void)
 	BUG_ON(ti->preempt_count || !irqs_disabled());
 
 	do {
+		/** 20140824    
+		 * 선점 중 상태로 만들고, interrupt 가능 상태에서
+		 * schedule 함수를 호출해 선점시킨다.
+		 **/
 		add_preempt_count(PREEMPT_ACTIVE);
 		local_irq_enable();
 		__schedule();
@@ -4056,6 +4071,9 @@ asmlinkage void __sched preempt_schedule_irq(void)
 		 * Check again in case we missed a preemption opportunity
 		 * between schedule and now.
 		 */
+		/** 20140824    
+		 * schedule 이후 다시 선점이 필요한지 검사한다.
+		 **/
 		barrier();
 	} while (need_resched());
 }
@@ -5233,14 +5251,17 @@ SYSCALL_DEFINE0(sched_yield)
 	return 0;
 }
 /** 20131207
- * 스캐쥴이 필요하고, PREEMPT_ACTIVE가 증가 되지 않았을 경우
- * 밑 add_preempt_count 참조
+ * 스캐쥴이 필요하고, 선점 중인 상태가 아닐 경우 resched 호출 판단.
+ * 아래 add_preempt_count 참조
  ***/
 static inline int should_resched(void)
 {
 	return need_resched() && !(preempt_count() & PREEMPT_ACTIVE);
 }
 
+/** 20140824    
+ * 현재 task를 선점 중 상태로 표시하고 스케쥴러를 호출.
+ **/
 static void __cond_resched(void)
 {
 	add_preempt_count(PREEMPT_ACTIVE);
@@ -5250,7 +5271,7 @@ static void __cond_resched(void)
 /** 20131207
  * should_resched가 true이면
  * (need_reched()가 true이고 preempt_count()가 PREEMPT_ACTIVE 상태가 아니면)
- * __cond_resched() 호출(즉 __schedule 호출)
+ * 선점상태를 표시하고 __schedule를 호출한다.
  ***/
 int __sched _cond_resched(void)
 {

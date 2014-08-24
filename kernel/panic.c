@@ -36,6 +36,10 @@ static DEFINE_SPINLOCK(pause_on_oops_lock);
 int panic_timeout;
 EXPORT_SYMBOL_GPL(panic_timeout);
 
+/** 20140823    
+ * 새로운 notifier list 선언.
+ * panic_notifier_list
+ **/
 ATOMIC_NOTIFIER_HEAD(panic_notifier_list);
 
 EXPORT_SYMBOL(panic_notifier_list);

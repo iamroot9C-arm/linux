@@ -105,6 +105,9 @@ extern int rcu_num_nodes;
  * Dynticks per-CPU state.
  */
 struct rcu_dynticks {
+	/** 20140823    
+	 * dynticks_nesting 추후분석 ???
+	 **/
 	long long dynticks_nesting; /* Track irq/process nesting level. */
 				    /* Process level is worth LLONG_MAX/2. */
 	int dynticks_nmi_nesting;   /* Track NMI nesting level. */
@@ -179,6 +182,9 @@ struct rcu_node {
 				/* Tasks blocked in RCU read-side critical */
 				/*  section.  Tasks are placed at the head */
 				/*  of this list and age towards the tail. */
+	/** 20140823    
+	 * 현재 gp를 block 시키는 첫번째 task를 저장한다.
+	 **/
 	struct list_head *gp_tasks;
 				/* Pointer to the first task blocking the */
 				/*  current grace period, or NULL if there */
@@ -284,6 +290,14 @@ struct rcu_data {
 					/*  in order to detect GP end. */
 	unsigned long	gpnum;		/* Highest gp number that this CPU */
 					/*  is aware of having started. */
+	/** 20140823    
+	 * passed_quiesce_gpnum
+	 *   quiescent state가 될 때의 gpnum.
+	 *   초기화시 rnp->gnum - 1을 대입함.
+	 *
+	 * rcu_sched_qs, rcu_hb_qs (preempt는 추후 분석) 가 호출되면
+	 * qs된 것이므로 gpnum과 passed_quiesce를 저장한다.
+	 **/
 	unsigned long	passed_quiesce_gpnum;
 					/* gpnum at time of quiescent state. */
 	bool		passed_quiesce;	/* User-mode/idle loop etc. */
@@ -294,6 +308,9 @@ struct rcu_data {
 	 * 현재 cpu가 속해 있는 leaf node.
 	 **/
 	struct rcu_node *mynode;	/* This CPU's leaf of hierarchy */
+	/** 20140823    
+	 * leaf node의 qsmask에 적용하기 위한 mask.
+	 **/
 	unsigned long grpmask;		/* Mask to apply to leaf qsmask. */
 #ifdef CONFIG_RCU_CPU_STALL_INFO
 	unsigned long	ticks_this_gp;	/* The number of scheduling-clock */
@@ -341,11 +358,18 @@ struct rcu_data {
 	struct rcu_head **nxttail[RCU_NEXT_SIZE];
 	long		qlen_lazy;	/* # of lazy queued callbacks */
 	long		qlen;		/* # of queued callbacks, incl lazy */
+	/** 20140823    
+	 * force QS를 위해 마지막 check했을 때의 queue되어 있는 CB의 수.
+	 **/
 	long		qlen_last_fqs_check;
 					/* qlen at last check for QS forcing */
 	unsigned long	n_cbs_invoked;	/* count of RCU cbs invoked. */
 	unsigned long   n_cbs_orphaned; /* RCU cbs orphaned by dying CPU */
 	unsigned long   n_cbs_adopted;  /* RCU cbs adopted from dying CPU */
+	/** 20140823    
+	 * 최근에 force QS가 몇 개의 cpu에서 있었는지 저장.
+	 * rcu_data init 시점에 rsp->n_force_qs를 가져온다.
+	 **/
 	unsigned long	n_force_qs_snap;
 					/* did other CPU force QS recently? */
 	long		blimit;		/* Upper limit on a processed batch */
@@ -430,6 +454,10 @@ do {									\
  * consisting of a single rcu_node.
  */
 struct rcu_state {
+	/** 20140823    
+	 * rcu_node는 cpu의 개수에 따라 hierarchy로 구성되고, 
+	 * root node는 rcu_get_root로 가져올 수 있다.
+	 **/
 	struct rcu_node node[NUM_RCU_NODES];	/* Hierarchy. */
 	struct rcu_node *level[RCU_NUM_LVLS];	/* Hierarchy levels. */
 	u32 levelcnt[MAX_RCU_LVLS + 1];		/* # nodes in each level. */
@@ -465,6 +493,10 @@ struct rcu_state {
 
 	/* End of fields guarded by root rcu_node's lock. */
 
+	/** 20140823    
+	 * cpu online, offline시 원자성을 보호하기 위한 lock.
+	 * 새로운 gp를 시작할 때에도 사용.
+	 **/
 	raw_spinlock_t onofflock;		/* exclude on/offline and */
 						/*  starting new GP. */
 	struct rcu_head *orphan_nxtlist;	/* Orphaned callbacks that */
@@ -516,6 +548,9 @@ struct rcu_state {
 
 /** 20140726    
  * rcu_struct_flavors 리스트를 순회한다.
+ *
+ * 20140823    
+ * 생성된 rsp들이 등록되는 list.
  **/
 extern struct list_head rcu_struct_flavors;
 #define for_each_rcu_flavor(rsp) \

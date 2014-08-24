@@ -74,6 +74,11 @@
 	.endm
 
 #ifndef CONFIG_THUMB2_KERNEL
+	/** 20140824    
+	 * exception에서 복귀하여 supervisor mode로 진입하는 매크로.
+	 *
+	 * spsr에 백업받아 놓은 상태 레지스터를 복원한다.
+	 **/
 	.macro	svc_exit, rpsr
 	msr	spsr_cxsf, \rpsr
 #if defined(CONFIG_CPU_V6)
@@ -81,6 +86,10 @@
 	strex	r1, r2, [sp]			@ clear the exclusive monitor
 	ldmib	sp, {r1 - pc}^			@ load r1 - pc, cpsr
 #elif defined(CONFIG_CPU_32v6K)
+	/** 20140824
+	 * clrex로 exclusive monitor를 초기화 해준다.
+	 * stack에 저장해둔 r0 - pc 레지스터를 복원하고, spsr을 cpsr로 복사한다.
+	 **/
 	clrex					@ clear the exclusive monitor
 	ldmia	sp, {r0 - pc}^			@ load r0 - pc, cpsr
 #else

@@ -240,6 +240,8 @@ int clockevents_program_event(struct clock_event_device *dev, ktime_t expires,
  */
 /** 20121208
  * clockevents_chain에 새로운 struct notifier_block nb를 등록해준다
+ *
+ * 이 함수로 등록된 nb은 clockevents_do_notify에서 호출한다.
  **/
 int clockevents_register_notifier(struct notifier_block *nb)
 {
