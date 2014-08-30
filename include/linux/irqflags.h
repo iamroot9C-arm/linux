@@ -149,6 +149,9 @@
 		raw_local_save_flags(flags);		\
 	} while (0)
 
+/** 20140831    
+ * flags에 irq가 disabled인지 검사한다.
+ **/
 #define irqs_disabled_flags(flags)			\
 	({						\
 		raw_irqs_disabled_flags(flags);		\

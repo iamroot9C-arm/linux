@@ -3780,6 +3780,10 @@ need_resched:
 	preempt_disable();
 	cpu = smp_processor_id();
 	rq = cpu_rq(cpu);
+	/** 20140830    
+	 * rcu를 위해 context switch를 기록한다.
+	 *   (quiescent state로 진행함을 의미)
+	 **/
 	rcu_note_context_switch(cpu);
 	prev = rq->curr;
 

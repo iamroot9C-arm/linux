@@ -333,7 +333,7 @@ void __init smp_prepare_cpus(unsigned int max_cpus)
 }
 
 /** 20130518    
- * vexpress의 경우 ct_ca9x4_init_cpu_map 에서 등록
+ * vexpress의 경우 ct_ca9x4_init_cpu_map 에서 gic_raise_softirq 등록
  **/
 static void (*smp_cross_call)(const struct cpumask *, unsigned int);
 
@@ -406,9 +406,19 @@ u64 smp_irq_stat_cpu(unsigned int cpu)
  */
 static DEFINE_PER_CPU(struct clock_event_device, percpu_clockevent);
 
+/** 20140830    
+ * IPI_TIMER 발생시 호출 함수.
+ *
+ * clock_event_device를 가져와 처리한다.
+ **/
 static void ipi_timer(void)
 {
 	struct clock_event_device *evt = &__get_cpu_var(percpu_clockevent);
+	/** 20140830    
+	 * event_handler 호출.
+	 *
+	 * tick_handle_periodic가 지정되어 있음.
+	 **/
 	evt->event_handler(evt);
 }
 

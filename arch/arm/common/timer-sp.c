@@ -114,6 +114,9 @@ static irqreturn_t sp804_timer_interrupt(int irq, void *dev_id)
 	/* clear the interrupt */
 	writel(1, clkevt_base + TIMER_INTCLR);
 
+	/** 20140830    
+	 * event_handler 호출.
+	 **/
 	evt->event_handler(evt);
 
 	return IRQ_HANDLED;
@@ -165,6 +168,9 @@ static struct clock_event_device sp804_clockevent = {
 	.cpumask	= cpu_all_mask,
 };
 
+/** 20140830    
+ * handler는 sp804_timer_interrupt.
+ **/
 static struct irqaction sp804_timer_irq = {
 	.name		= "timer",
 	.flags		= IRQF_DISABLED | IRQF_TIMER | IRQF_IRQPOLL,
@@ -186,6 +192,9 @@ void __init sp804_clockevents_init(void __iomem *base, unsigned int irq,
 	evt->name = name;
 	evt->irq = irq;
 
+	/** 20140830    
+	 * irq action 등록.
+	 **/
 	setup_irq(irq, &sp804_timer_irq);
 	clockevents_config_and_register(evt, rate, 0xf, 0xffffffff);
 }

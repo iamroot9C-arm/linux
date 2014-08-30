@@ -1378,6 +1378,8 @@ unsigned long get_next_timer_interrupt(unsigned long now)
  * Called from the timer interrupt handler to charge one tick to the current
  * process.  user_tick is 1 if the tick is user time, 0 for system.
  */
+/** 20140830    
+ **/
 void update_process_times(int user_tick)
 {
 	struct task_struct *p = current;
@@ -1385,7 +1387,12 @@ void update_process_times(int user_tick)
 
 	/* Note: this timer irq context must be accounted for as well. */
 	account_process_tick(p, user_tick);
+	/** 20140830    
+	 **/
 	run_local_timers();
+	/** 20140830    
+	 * rcu callback을 check 한다.
+	 **/
 	rcu_check_callbacks(cpu, user_tick);
 	printk_tick();
 #ifdef CONFIG_IRQ_WORK
@@ -1415,6 +1422,9 @@ static void run_timer_softirq(struct softirq_action *h)
 void run_local_timers(void)
 {
 	hrtimer_run_queues();
+	/** 20140830    
+	 * TIMER_SOFTIRQ 발생.
+	 **/
 	raise_softirq(TIMER_SOFTIRQ);
 }
 

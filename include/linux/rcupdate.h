@@ -98,12 +98,19 @@ extern void do_trace_rcu_torture_read(char *rcutorturename,
  * sections are delimited by rcu_read_lock() and rcu_read_unlock(),
  * and may be nested.
  */
+/** 20140830    
+ * CONFIG_PREEMPT_RCU인 경우 extern 선언.
+ * rcutree_plugin.h
+ **/
 extern void call_rcu(struct rcu_head *head,
 			      void (*func)(struct rcu_head *head));
 
 #else /* #ifdef CONFIG_PREEMPT_RCU */
 
 /* In classic RCU, call_rcu() is just call_rcu_sched(). */
+/** 20140830    
+ * CONFIG_PREEMPT_RCU가 아닌 경우 call_rcu_sched 호출.
+ **/
 #define	call_rcu	call_rcu_sched
 
 #endif /* #else #ifdef CONFIG_PREEMPT_RCU */

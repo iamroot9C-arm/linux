@@ -39,6 +39,8 @@ EXPORT_SYMBOL_GPL(panic_timeout);
 /** 20140823    
  * 새로운 notifier list 선언.
  * panic_notifier_list
+ *
+ * 이 notifier chain은 panic() 호출시 atomic_notifier_call_chain에서 호출됨.
  **/
 ATOMIC_NOTIFIER_HEAD(panic_notifier_list);
 

@@ -295,7 +295,7 @@ struct rcu_data {
 	 *   quiescent state가 될 때의 gpnum.
 	 *   초기화시 rnp->gnum - 1을 대입함.
 	 *
-	 * rcu_sched_qs, rcu_hb_qs (preempt는 추후 분석) 가 호출되면
+	 * rcu_sched_qs, rcu_bh_qs (preempt는 추후 분석) 가 호출되면
 	 * qs된 것이므로 gpnum과 passed_quiesce를 저장한다.
 	 **/
 	unsigned long	passed_quiesce_gpnum;

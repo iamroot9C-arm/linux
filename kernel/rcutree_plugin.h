@@ -1734,6 +1734,9 @@ static void rcu_initiate_boost(struct rcu_node *rnp, unsigned long flags)
 	raw_spin_unlock_irqrestore(&rnp->lock, flags);
 }
 
+/** 20140830    
+ * CONFIG_RCU_BOOST가 정의되지 않았다.
+ **/
 static void invoke_rcu_callbacks_kthread(void)
 {
 	WARN_ON_ONCE(1);
@@ -2284,6 +2287,9 @@ static void zero_cpu_stall_ticks(struct rcu_data *rdp)
 {
 }
 
+/** 20140809    
+ * CONFIG_RCU_CPU_STALL_INFO가 선언되어 있지 않아 NULL 함수.
+ **/
 static void increment_cpu_stall_ticks(void)
 {
 }

@@ -178,7 +178,7 @@ unsigned long rcutorture_vernum;
  * structure's ->lock, but of course results can be subject to change.
  */
 /** 20140809    
- * 현재 gpnum이 완료된 gp인지 확인한다.
+ * 현재 gpnum이 완료된 gpnum이 아니라면 grace period가 진행 중이다.
  **/
 static int rcu_gp_in_progress(struct rcu_state *rsp)
 {
@@ -1111,6 +1111,7 @@ __rcu_process_gp_end(struct rcu_state *rsp, struct rcu_node *rnp, struct rcu_dat
 	/* Did another grace period end? */
 	/** 20140809    
 	 * rdp와 rnp의 completed (# of gp)가 같지 않다면
+	 * 처리 안 된 gp가 존재한다 판단해 처리한다.
 	 **/
 	if (rdp->completed != rnp->completed) {
 
@@ -1923,7 +1924,7 @@ static void rcu_do_batch(struct rcu_state *rsp, struct rcu_data *rdp)
 	/* Update count, and requeue any remaining callbacks. */
 	/** 20140816
 	 * 처리하고 남은 list에 대해서 다시 붙여주고 nxttail 배열을 갱신시킨다.
-	 ***/
+	 **/
 	if (list != NULL) {
 		*tail = rdp->nxtlist;
 		rdp->nxtlist = list;
@@ -1969,6 +1970,9 @@ static void rcu_do_batch(struct rcu_state *rsp, struct rcu_data *rdp)
 	local_irq_restore(flags);
 
 	/* Re-invoke RCU core processing if there are callbacks remaining. */
+	/** 20140830    
+	 * 다시 남아 있는 CB이 있는지 검사해 남아 있다면 invoke 한다.
+	 **/
 	if (cpu_has_callbacks_ready_to_invoke(rdp))
 		invoke_rcu_core();
 }
@@ -1982,6 +1986,10 @@ static void rcu_do_batch(struct rcu_state *rsp, struct rcu_data *rdp)
  * invoked from the scheduling-clock interrupt.  If rcu_pending returns
  * false, there is no point in invoking rcu_check_callbacks().
  */
+/** 20140830    
+ * callbacks 가 존재하면 처리한다.
+ * 자세한 분석은 곧???
+ **/
 void rcu_check_callbacks(int cpu, int user)
 {
 	trace_rcu_utilization("Start scheduler-tick");
@@ -2015,6 +2023,9 @@ void rcu_check_callbacks(int cpu, int user)
 		rcu_bh_qs(cpu);
 	}
 	rcu_preempt_check_callbacks(cpu);
+	/** 20140830    
+	 * rcu 관련 작업이 cpu에 pending되어 있다면 softirq를 raise 해 처리한다.
+	 **/
 	if (rcu_pending(cpu))
 		invoke_rcu_core();
 	trace_rcu_utilization("End scheduler-tick");
@@ -2289,6 +2300,9 @@ __rcu_process_callbacks(struct rcu_state *rsp)
 	}
 
 	/* If there are callbacks ready, invoke them. */
+	/** 20140830    
+	 * callback 리스트에 대기 중인 CB들이 있다면 콜백들을 호출한다.
+	 **/
 	if (cpu_has_callbacks_ready_to_invoke(rdp))
 		invoke_rcu_callbacks(rsp, rdp);
 }
@@ -2313,10 +2327,21 @@ static void rcu_process_callbacks(struct softirq_action *unused)
  * are running on the current CPU with interrupts disabled, the
  * rcu_cpu_kthread_task cannot disappear out from under us.
  */
+/** 20140830    
+ * grace period 완료를 대기 중인 rcu callback들을 처리한다.
+ * boost가 아닌 경우 rcu_do_batch로 처리하고,
+ * 그렇지 않은 경우 kthread로 처리한다.
+ **/
 static void invoke_rcu_callbacks(struct rcu_state *rsp, struct rcu_data *rdp)
 {
+	/** 20140830    
+	 * rcu scheduler가 아직 완전히 동작 중이지 않은 경우 return 한다.
+	 **/
 	if (unlikely(!ACCESS_ONCE(rcu_scheduler_fully_active)))
 		return;
+	/** 20140830    
+	 * rcu boost가 아닌 경우 rcu_do_batch로 일정 개수만큼 CB을 호출한다.
+	 **/
 	if (likely(!rsp->boost)) {
 		rcu_do_batch(rsp, rdp);
 		return;
@@ -2335,6 +2360,12 @@ static void invoke_rcu_core(void)
 /*
  * Handle any core-RCU processing required by a call_rcu() invocation.
  */
+/** 20140831    
+ * call_rcu에 의해 호출되며, RCU core 처리가 필요한 경우 처리한다.
+ *
+ * extended qs인 경우, SOFTIRQ를 발생시켜 CBs를 처리한다.
+ * 너무 많은 CBs가 대기 중이거나 충분히 오랜시간이 흘렀다면 강제로 qs state로 처리한다.
+ **/
 static void __call_rcu_core(struct rcu_state *rsp, struct rcu_data *rdp,
 			    struct rcu_head *head, unsigned long flags)
 {
@@ -2342,10 +2373,19 @@ static void __call_rcu_core(struct rcu_state *rsp, struct rcu_data *rdp,
 	 * If called from an extended quiescent state, invoke the RCU
 	 * core in order to force a re-evaluation of RCU's idleness.
 	 */
+	/** 20140830    
+	 * rcu가 cpu idle 상태이고 현재 cpu가 online인 경우,
+	 * (userspace의 extended qs에 해당)
+	 * RCU_SOFTIRQ를 raise 한다.
+	 **/
 	if (rcu_is_cpu_idle() && cpu_online(smp_processor_id()))
 		invoke_rcu_core();
 
 	/* If interrupts were disabled or CPU offline, don't invoke RCU core. */
+	/** 20140830    
+	 * call_rcu가 irq disabled 상태에서 호출되었거나 cpu가 offline이면
+	 * RCU core를 호출하지 않고 바로 리턴.
+	 **/
 	if (irqs_disabled_flags(flags) || cpu_is_offline(smp_processor_id()))
 		return;
 
@@ -2357,13 +2397,22 @@ static void __call_rcu_core(struct rcu_state *rsp, struct rcu_data *rdp,
 	 * is the only one waiting for a grace period to complete.
 	 */
 	if (unlikely(rdp->qlen > rdp->qlen_last_fqs_check + qhimark)) {
+		/** 20140830    
+		 * queue되어 있는 CBs의 수가 마지막 check 이후 qhimark 수를 넘는다면
+		 **/
 
 		/* Are we ignoring a completed grace period? */
+		/** 20140830    
+		 * 현재 gp가 끝났다고 표시하고, 새로운 gp가 있는지 검사한다.
+		 **/
 		rcu_process_gp_end(rsp, rdp);
 		check_for_new_grace_period(rsp, rdp);
 
 		/* Start a new grace period if one not already started. */
 		if (!rcu_gp_in_progress(rsp)) {
+			/** 20140831    
+			 * gp가 진행 중이 아닐 경우, 새로운 gp를 시작한다.
+			 **/
 			unsigned long nestflag;
 			struct rcu_node *rnp_root = rcu_get_root(rsp);
 
@@ -2371,17 +2420,35 @@ static void __call_rcu_core(struct rcu_state *rsp, struct rcu_data *rdp,
 			rcu_start_gp(rsp, nestflag);  /* rlses rnp_root->lock */
 		} else {
 			/* Give the grace period a kick. */
+			/** 20140831    
+			 * gp가 진행 중일 경우, 필요한 경우 강제로 qs state로 진행한다.
+			 **/
 			rdp->blimit = LONG_MAX;
+			/** 20140831    
+			 * 진행한 force qs 수가 snap의 수와 같고,
+			 * head가 WAIT head가 아니라면 ???
+			 *   force qs로 진입한다.
+			 **/
 			if (rsp->n_force_qs == rdp->n_force_qs_snap &&
 			    *rdp->nxttail[RCU_DONE_TAIL] != head)
 				force_quiescent_state(rsp, 0);
+			/** 20140831    
+			 * qs state 관련 정보를 갱신한다.
+			 **/
 			rdp->n_force_qs_snap = rsp->n_force_qs;
 			rdp->qlen_last_fqs_check = rdp->qlen;
 		}
 	} else if (ULONG_CMP_LT(ACCESS_ONCE(rsp->jiffies_force_qs), jiffies))
+		/** 20140831    
+		 * qlen이 qhimark를 초과하지는 않지만,
+		 * force qs 진입할 시간이 초과된 경우 강제로 qs 상태로 진입한다.
+		 **/
 		force_quiescent_state(rsp, 1);
 }
 
+/** 20140831    
+ * func을 CB 리스트에 등록한다. 필요한 경우 RCU core를 처리한다.
+ **/
 static void
 __call_rcu(struct rcu_head *head, void (*func)(struct rcu_head *rcu),
 	   struct rcu_state *rsp, bool lazy)
@@ -2405,17 +2472,21 @@ __call_rcu(struct rcu_head *head, void (*func)(struct rcu_head *rcu),
 	 * end, but never vice versa, since this CPU has to pass through
 	 * a quiescent state betweentimes.
 	 */
+	/** 20140830    
+	 * 현재 cpu의 irq를 막고 상태를 저장해
+	 * 원자적으로 실행가능하도록 한다.
+	 **/
 	local_irq_save(flags);
 	rdp = this_cpu_ptr(rsp->rda);
 
 	/* Add the callback to our list. */
 	/** 20140823    
-	 * qlen은 CBs의 수. lazy 포함.
+	 * qlen을 증가시킨다. qlen은 CBs의 수. lazy 포함.
 	 **/
 	ACCESS_ONCE(rdp->qlen)++;
 	/** 20140823    
 	 * lazy인 경우 qlen_lazy 증가.
-	 * 아닌 경우
+	 * 아닌 경우 ???
 	 **/
 	if (lazy)
 		rdp->qlen_lazy++;
@@ -2436,6 +2507,9 @@ __call_rcu(struct rcu_head *head, void (*func)(struct rcu_head *rcu),
 		trace_rcu_callback(rsp->name, head, rdp->qlen_lazy, rdp->qlen);
 
 	/* Go handle any RCU core processing required. */
+	/** 20140831    
+	 * RCU core 처리가 필요한 경우 처리한다.
+	 **/
 	__call_rcu_core(rsp, rdp, head, flags);
 	local_irq_restore(flags);
 }
@@ -2734,6 +2808,10 @@ static int __rcu_pending(struct rcu_state *rsp, struct rcu_data *rdp)
  * by the current CPU, returning 1 if so.  This function is part of the
  * RCU implementation; it is -not- an exported member of the RCU API.
  */
+/** 20140830    
+ * 현재 cpu에 RCU 관련 작업이 pending되어 있다면 1을 리턴한다.
+ * __rcu_pending은 아직 분석하지 않음. 곧???
+ **/
 static int rcu_pending(int cpu)
 {
 	struct rcu_state *rsp;

@@ -81,6 +81,9 @@ static void __init v2m_sp804_init(void __iomem *base, unsigned int irq)
 	writel(0, base + TIMER_2_BASE + TIMER_CTRL);
 
 	sp804_clocksource_init(base + TIMER_2_BASE, "v2m-timer1");
+	/** 20140830    
+	 * periodic tick발생용 timer.
+	 **/
 	sp804_clockevents_init(base + TIMER_1_BASE, irq, "v2m-timer0");
 }
 
@@ -443,6 +446,9 @@ static void __init v2m_timer_init(void)
 	v2m_sp804_init(ioremap(V2M_TIMER01, SZ_4K), IRQ_V2M_TIMER0);
 }
 
+/** 20140830    
+ * timer init 콜백함수 지정.
+ **/
 static struct sys_timer v2m_timer = {
 	.init	= v2m_timer_init,
 };
@@ -552,6 +558,9 @@ static void __init v2m_init(void)
 	ct_desc->init_tile();
 }
 
+/** 20140830    
+ * vexpress용 MACHINE 정의.
+ **/
 MACHINE_START(VEXPRESS, "ARM-Versatile Express")
 	.atag_offset	= 0x100,
 	.map_io		= v2m_map_io,

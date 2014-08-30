@@ -820,6 +820,10 @@ static int run_ksoftirqd(void * __bind_cpu)
 			sched_preempt_enable_no_resched();
 			cond_resched();
 			preempt_disable();
+			/** 20140830    
+			 * __bind_cpu에 대해 context switch를 note 한다.
+			 * ddd로 수행시 호출되지 않는데, 왜???
+			 **/
 			rcu_note_context_switch((long)__bind_cpu);
 		}
 		preempt_enable();
