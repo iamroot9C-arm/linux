@@ -142,6 +142,9 @@ EXPORT_SYMBOL_GPL(rcu_force_quiescent_state);
  * must disable irqs in order to protect the assignment to
  * ->rcu_read_unlock_special.
  */
+/** 20140906    
+ * preemptible-RCU의 qs state를 기록한다.
+ **/
 static void rcu_preempt_qs(int cpu)
 {
 	struct rcu_data *rdp = &per_cpu(rcu_preempt_data, cpu);
@@ -151,6 +154,9 @@ static void rcu_preempt_qs(int cpu)
 	if (rdp->passed_quiesce == 0)
 		trace_rcu_grace_period("rcu_preempt", rdp->gpnum, "cpuqs");
 	rdp->passed_quiesce = 1;
+	/** 20140906    
+	 * unlock시 qs state 진행에 대한 속성을 제거한다.
+	 **/
 	current->rcu_read_unlock_special &= ~RCU_READ_UNLOCK_NEED_QS;
 }
 
@@ -183,7 +189,7 @@ static void rcu_preempt_note_context_switch(int cpu)
 
 	/** 20140823    
 	 * 임계구역에 진입하면 __rcu_read_lock에서 rcu_read_lock_nesting를 증가시킨다.
-	 * 현재 임계구역이며, RCU_READ_UNLOCK_BLOCKED가 기록되지 않은 상태라면
+	 * 현재 rcu read 임계구역이며, 아직 RCU_READ_UNLOCK_BLOCKED가 아닌 상태라면
 	 **/
 	if (t->rcu_read_lock_nesting > 0 &&
 	    (t->rcu_read_unlock_special & RCU_READ_UNLOCK_BLOCKED) == 0) {
@@ -223,9 +229,9 @@ static void rcu_preempt_note_context_switch(int cpu)
 		WARN_ON_ONCE((rdp->grpmask & rnp->qsmaskinit) == 0);
 		WARN_ON_ONCE(!list_empty(&t->rcu_node_entry));
 		/** 20140823    
-		 * rnp의 qsmask에 rdp의 grpmask가 포함되어 있고,
-		 * gp_tasks에 이미 등록된 entry가 있다면
-		 * 현재 task를 rcu_node의 gp_tasks 앞에 추가하고 gp_tasks를 갱신한다.
+		 * rcu_node의 현재 gp 참여 대상에 rdp의 grpmask가 포함되어 있고,
+		 * gp_tasks에 이미 현재 gp를 block시키는 task가 있다면
+		 * 현재 task를 gp_tasks 앞에 추가하고 gp_tasks를 갱신한다.
 		 **/
 		if ((rnp->qsmask & rdp->grpmask) && rnp->gp_tasks != NULL) {
 			list_add(&t->rcu_node_entry, rnp->gp_tasks->prev);
@@ -236,7 +242,8 @@ static void rcu_preempt_note_context_switch(int cpu)
 #endif /* #ifdef CONFIG_RCU_BOOST */
 		} else {
 			/** 20140823    
-			 * rcu_node의 blkd_tasks에 현재 task를 등록한다.
+			 * rcu_node의 read-side critical section에서 block된 task 리스트에
+			 * 현재 task를 등록한다.
 			 **/
 			list_add(&t->rcu_node_entry, &rnp->blkd_tasks);
 			/** 20140823    
@@ -651,14 +658,24 @@ static int rcu_preempt_offline_tasks(struct rcu_state *rsp,
  *
  * Caller must disable hard irqs.
  */
+/** 20140906    
+ * 현재 CPU에서 preempt RCU의 qs 에 대한 check를 수행한다.
+ **/
 static void rcu_preempt_check_callbacks(int cpu)
 {
 	struct task_struct *t = current;
 
+	/** 20140906    
+	 * read lock이 nesting 되어 있지 않다면 preempt qs를 기록하고 리턴.
+	 **/
 	if (t->rcu_read_lock_nesting == 0) {
 		rcu_preempt_qs(cpu);
 		return;
 	}
+	/** 20140906    
+	 * read lock이 nesting 되어 있고, qs_pending되어 있다면
+	 * unlock시 QS 상태로 만들어 줘야 함을 표시한다.
+	 **/
 	if (t->rcu_read_lock_nesting > 0 &&
 	    per_cpu(rcu_preempt_data, cpu).qs_pending)
 		t->rcu_read_unlock_special |= RCU_READ_UNLOCK_NEED_QS;
@@ -908,7 +925,7 @@ EXPORT_SYMBOL_GPL(rcu_barrier);
  * Initialize preemptible RCU's state structures.
  */
 /** 20140726    
- * rcu_preempt_state를 초기화 한다.
+ * PREEMPT RCU인 경우 rcu state인 rcu_preempt_state를 추가로 초기화 한다.
  **/
 static void __init __rcu_init_preempt(void)
 {

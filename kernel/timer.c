@@ -1391,7 +1391,7 @@ void update_process_times(int user_tick)
 	 **/
 	run_local_timers();
 	/** 20140830    
-	 * rcu callback을 check 한다.
+	 * tick handler를 통해 rcu 관련된 작업을 처리한다.
 	 **/
 	rcu_check_callbacks(cpu, user_tick);
 	printk_tick();

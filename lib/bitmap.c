@@ -276,13 +276,28 @@ int __bitmap_weight(const unsigned long *bitmap, int bits)
 }
 EXPORT_SYMBOL(__bitmap_weight);
 
+/** 20140906    
+ * bitmap에서 start부터 nr개만큼을 set 한다.
+ *		MSB  .......... LSB
+ *		1 1 1 1 ..... 0 0 0
+ *		   <----------- map 방향
+ **/
 void bitmap_set(unsigned long *map, int start, int nr)
 {
+	/** 20140906    
+	 * bitmap 처리를 위한 시작 위치.
+	 **/
 	unsigned long *p = map + BIT_WORD(start);
 	const int size = start + nr;
 	int bits_to_set = BITS_PER_LONG - (start % BITS_PER_LONG);
+	/** 20140906    
+	 * start가 포함된 WORD에 적용할 set mask를 구한다.
+	 **/
 	unsigned long mask_to_set = BITMAP_FIRST_WORD_MASK(start);
 
+	/** 20140906    
+	 * WORD 단위로 nr개만큼 mask를 적용한다.
+	 **/
 	while (nr - bits_to_set >= 0) {
 		*p |= mask_to_set;
 		nr -= bits_to_set;
@@ -290,6 +305,9 @@ void bitmap_set(unsigned long *map, int start, int nr)
 		mask_to_set = ~0UL;
 		p++;
 	}
+	/** 20140906    
+	 * 마지막 WORD에 대한 mask를 구해 설정한다.
+	 **/
 	if (nr) {
 		mask_to_set &= BITMAP_LAST_WORD_MASK(size);
 		*p |= mask_to_set;
@@ -330,6 +348,9 @@ EXPORT_SYMBOL(bitmap_clear);
  * the bit offset of all zero areas this function finds is multiples of that
  * power of 2. A @align_mask of 0 means no alignment is required.
  */
+/** 20140906    
+ * start부터 nr개의 연속적인 0이 나오는 위치를 찾아 리턴한다.
+ **/
 unsigned long bitmap_find_next_zero_area(unsigned long *map,
 					 unsigned long size,
 					 unsigned long start,
@@ -338,14 +359,26 @@ unsigned long bitmap_find_next_zero_area(unsigned long *map,
 {
 	unsigned long index, end, i;
 again:
+	/** 20140906    
+	 * bitmap에서 start부터 size까지 찾아 zero bit의 위치를 리턴한다.
+	 **/
 	index = find_next_zero_bit(map, size, start);
 
 	/* Align allocation */
 	index = __ALIGN_MASK(index, align_mask);
 
+	/** 20140906    
+	 * index에서 nr개만큼 확보해야 하므로 end를 잡는다.
+	 * size보다 크다면 end가 리턴된다.
+	 **/
 	end = index + nr;
 	if (end > size)
 		return end;
+	/** 20140906    
+	 * map에서 index부터 end까지 찾아 bit 1인 위치를 찾는다.
+	 * end까지 연속적인 0들을 찾아야 하므로 중간에 1이 발견되면
+	 * 그 이후부터 다시 찾기 시작한다.
+	 **/
 	i = find_next_bit(map, end, index);
 	if (i < end) {
 		start = i + 1;

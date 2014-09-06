@@ -10,6 +10,9 @@
 #ifdef CONFIG_SPARSE_IRQ
 # define IRQ_BITMAP_BITS	(NR_IRQS + 8196)
 #else
+/** 20140906    
+ * bitmap bits는 IRQ의 개수.
+ **/
 # define IRQ_BITMAP_BITS	NR_IRQS
 #endif
 
@@ -105,6 +108,9 @@ extern int irq_do_set_affinity(struct irq_data *data,
 			       const struct cpumask *dest, bool force);
 
 /* Inline functions for support of irq chips on slow busses */
+/** 20140906    
+ * irq chip의 irq_bus_lock callback함수를 호출해 bus lock을 건다.
+ **/
 static inline void chip_bus_lock(struct irq_desc *desc)
 {
 	if (unlikely(desc->irq_data.chip->irq_bus_lock))
@@ -140,12 +146,18 @@ irq_put_desc_busunlock(struct irq_desc *desc, unsigned long flags)
 	__irq_put_desc_unlock(desc, flags, true);
 }
 
+/** 20140906    
+ * irq_desc에 lock을 걸고 리턴한다.
+ **/
 static inline struct irq_desc *
 irq_get_desc_lock(unsigned int irq, unsigned long *flags, unsigned int check)
 {
 	return __irq_get_desc_lock(irq, flags, false, check);
 }
 
+/** 20140906    
+ * irq_desc의 spinlock을 해제하며 사용을 완료한다.
+ **/
 static inline void
 irq_put_desc_unlock(struct irq_desc *desc, unsigned long flags)
 {

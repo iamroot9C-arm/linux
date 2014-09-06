@@ -17,6 +17,9 @@ enum {
 	_IRQF_MODIFY_MASK	= IRQF_MODIFY_MASK,
 };
 
+/** 20140906    
+ * 이후 IRQ_PER_CPU와 같은 매크로는 사용할 수 없다.
+ **/
 #define IRQ_PER_CPU		GOT_YOU_MORON
 #define IRQ_NO_BALANCING	GOT_YOU_MORON
 #define IRQ_LEVEL		GOT_YOU_MORON
@@ -36,11 +39,20 @@ irq_settings_clr_and_set(struct irq_desc *desc, u32 clr, u32 set)
 	desc->status_use_accessors |= (set & _IRQF_MODIFY_MASK);
 }
 
+/** 20140906    
+ * irq_desc의 status를 보고 현재 상태를 파악한다.
+ * 각 속성은 include/linux/irq.h의 'IRQ line status' 참고.
+ **/
+
+
 static inline bool irq_settings_is_per_cpu(struct irq_desc *desc)
 {
 	return desc->status_use_accessors & _IRQ_PER_CPU;
 }
 
+/** 20140906    
+ * irq_desc의 status를 보고 dev_id가 percpu 변수인지 판단한다.
+ **/
 static inline bool irq_settings_is_per_cpu_devid(struct irq_desc *desc)
 {
 	return desc->status_use_accessors & _IRQ_PER_CPU_DEVID;

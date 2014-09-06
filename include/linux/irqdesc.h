@@ -37,6 +37,12 @@ struct module;
  * @dir:		/proc/irq/ procfs entry
  * @name:		flow handler name for /proc/interrupts output
  */
+/** 20140906    
+ * interrupt descriptor.
+ *   irq_data               : irq chip에 관련된 irq data.
+ *   handle_irq             : irq handler
+ *   status_use_accessors   : irq status
+ **/
 struct irq_desc {
 	struct irq_data		irq_data;
 	unsigned int __percpu	*kstat_irqs;

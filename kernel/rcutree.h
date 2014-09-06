@@ -178,12 +178,16 @@ struct rcu_node {
 	u8	grpnum;		/* CPU/group number for next level up. */
 	u8	level;		/* root is at level 0. */
 	struct rcu_node *parent;
+	/** 20140906    
+	 * RCU read-side critical section에서 block된 task들의 list.
+	 * 먼저 들어오면 task에 tail 방향에 위치한다.
+	 **/
 	struct list_head blkd_tasks;
 				/* Tasks blocked in RCU read-side critical */
 				/*  section.  Tasks are placed at the head */
 				/*  of this list and age towards the tail. */
 	/** 20140823    
-	 * 현재 gp를 block 시키는 첫번째 task를 저장한다.
+	 * 현재 gp를 block 시키는 task들의 리스트.
 	 **/
 	struct list_head *gp_tasks;
 				/* Pointer to the first task blocking the */
@@ -300,7 +304,13 @@ struct rcu_data {
 	 **/
 	unsigned long	passed_quiesce_gpnum;
 					/* gpnum at time of quiescent state. */
+	/** 20140823    
+	 * gp 시작 이후 quiescent state를 한 번이라도 거쳤는지 기록.
+	 **/
 	bool		passed_quiesce;	/* User-mode/idle loop etc. */
+	/** 20140906    
+	 * qs state를 기다리는 중이다.
+	 **/
 	bool		qs_pending;	/* Core waits for quiesc state. */
 	bool		beenonline;	/* CPU online at least once. */
 	bool		preemptible;	/* Preemptible RCU? */
@@ -535,6 +545,9 @@ struct rcu_state {
 						/*  due to no GP active. */
 	unsigned long gp_start;			/* Time at which GP started, */
 						/*  but in jiffies. */
+	/** 20140906    
+	 * CPU stall이라 판단할 jiffies.
+	 **/
 	unsigned long jiffies_stall;		/* Time at which to check */
 						/*  for CPU stalls. */
 	/** 20140809    

@@ -62,6 +62,10 @@ static void __init ca9x4_twd_init(void)
 
 static void __init ct_ca9x4_init_irq(void)
 {
+	/** 20140906    
+	 * A9_MPCORE_GIC_DIST, A9_MPCORE_GIC_CPU는 Physical address.
+	 * virtual address로 mapping 시켜 주소를 전달한다.
+	 **/
 	gic_init(0, 29, ioremap(A9_MPCORE_GIC_DIST, SZ_4K),
 		 ioremap(A9_MPCORE_GIC_CPU, SZ_256));
 	ca9x4_twd_init();
@@ -233,6 +237,9 @@ static void __init ct_ca9x4_smp_enable(unsigned int max_cpus)
 }
 #endif
 
+/** 20140906    
+ * coretile cortex-a9 quad용 descriptor.
+ **/
 struct ct_desc ct_ca9x4_desc __initdata = {
 	.id		= V2M_CT_ID_CA9,
 	.name		= "CA9x4",

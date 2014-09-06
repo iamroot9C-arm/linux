@@ -192,7 +192,7 @@ static int rcu_gp_in_progress(struct rcu_state *rsp)
  * The caller must have disabled preemption.
  */
 /** 20140823    
- * scheduler 동작에 의한 qs를 기록한다.
+ * scheduler 동작에 의한 qs state를 기록한다.
  *
  * gp 시작 이후로 qs가 한 번이라도 발생했는지 정보만 알면 되므로,
  * 호출될 때마다 현재 gpnum과 passed_quiesce 상태값을 업데이트 한다.
@@ -208,6 +208,9 @@ void rcu_sched_qs(int cpu)
 	rdp->passed_quiesce = 1;
 }
 
+/** 20140906    
+ * interrupt bh 동작에 의한 qs를 기록한다.
+ **/
 void rcu_bh_qs(int cpu)
 {
 	struct rcu_data *rdp = &per_cpu(rcu_bh_data, cpu);
@@ -825,6 +828,8 @@ static void record_gp_stall_check_time(struct rcu_state *rsp)
 	rsp->jiffies_stall = jiffies + jiffies_till_stall_check();
 }
 
+/** 20140906    
+ **/
 static void print_other_cpu_stall(struct rcu_state *rsp)
 {
 	int cpu;
@@ -889,6 +894,9 @@ static void print_other_cpu_stall(struct rcu_state *rsp)
 	force_quiescent_state(rsp, 0);  /* Kick them all. */
 }
 
+/** 20140906    
+ * cpu stall message를 출력한다.
+ **/
 static void print_cpu_stall(struct rcu_state *rsp)
 {
 	unsigned long flags;
@@ -916,17 +924,26 @@ static void print_cpu_stall(struct rcu_state *rsp)
 	set_need_resched();  /* kick ourselves to get things going. */
 }
 
+/** 20140906    
+ * cpu stall을 체크하고, message를 출력한다.
+ **/
 static void check_cpu_stall(struct rcu_state *rsp, struct rcu_data *rdp)
 {
 	unsigned long j;
 	unsigned long js;
 	struct rcu_node *rnp;
 
+	/** 20140906    
+	 * rcu cpu stall message 출력이 금지되어 있다면 리턴.
+	 **/
 	if (rcu_cpu_stall_suppress)
 		return;
 	j = ACCESS_ONCE(jiffies);
 	js = ACCESS_ONCE(rsp->jiffies_stall);
 	rnp = rdp->mynode;
+	/** 20140906    
+	 * 현재 jiffies가 jiffies_stall 이상이라면 cpu stall 메시지를 출력한다.
+	 **/
 	if ((ACCESS_ONCE(rnp->qsmask) & rdp->grpmask) && ULONG_CMP_GE(j, js)) {
 
 		/* We haven't checked in, so go dump stack. */
@@ -934,6 +951,10 @@ static void check_cpu_stall(struct rcu_state *rsp, struct rcu_data *rdp)
 
 	} else if (rcu_gp_in_progress(rsp) &&
 		   ULONG_CMP_GE(j, js + RCU_STALL_RAT_DELAY)) {
+	/** 20140906    
+	 * gp가 진행 중이고, clock irq에 대한 시간을 감안값까지 초과 했다면
+	 * cpu stall 메시지를 출력한다.
+	 **/
 
 		/* They had a few time units to dump stack, so complain. */
 		print_other_cpu_stall(rsp);
@@ -1987,13 +2008,22 @@ static void rcu_do_batch(struct rcu_state *rsp, struct rcu_data *rdp)
  * false, there is no point in invoking rcu_check_callbacks().
  */
 /** 20140830    
- * callbacks 가 존재하면 처리한다.
- * 자세한 분석은 곧???
+ * tick interrupt handler에 의해 호출되어
+ * 'Note Quiescent State'와 softirq를 통한 'Complete grace period' 처리가 이루어 지는 곳.
+ *   => 'StatusOfLinuxDynaticks.pdf' 참고.
+ *
+ * user: user tick. user mode에서 timer interrupt에 의해 진입을 표시
  **/
 void rcu_check_callbacks(int cpu, int user)
 {
 	trace_rcu_utilization("Start scheduler-tick");
 	increment_cpu_stall_ticks();
+	/** 20140906    
+	 * user mode나 idle loop 상태에서 인터럽트 발생(nested 제외)으로 호출된 경우,
+	 * CPU는 QS state다. (read-side에서 preempt_disable을 하기 때문)
+	 *
+	 * 따라 qs state를 기록한다.
+	 **/
 	if (user || rcu_is_cpu_rrupt_from_idle()) {
 
 		/*
@@ -2020,11 +2050,19 @@ void rcu_check_callbacks(int cpu, int user)
 		 * critical section, so note it.
 		 */
 
+		/** 20140906    
+		 * timer interrupt handler를 통해 들어온 상태이다.
+		 *
+		 * softirq가 아닌 상태에서 진입한 경우라면, rcu_bh read-side critical
+		 * section이 방해받지 않았으므로 정상적으로 rcu_bh가 qs라 표시한다.
+		 **/
 		rcu_bh_qs(cpu);
 	}
 	rcu_preempt_check_callbacks(cpu);
 	/** 20140830    
 	 * rcu 관련 작업이 cpu에 pending되어 있다면 softirq를 raise 해 처리한다.
+	 *
+	 * 'Complete grace period' 수행 동작 포함.
 	 **/
 	if (rcu_pending(cpu))
 		invoke_rcu_core();
@@ -2739,16 +2777,26 @@ EXPORT_SYMBOL_GPL(synchronize_sched_expedited);
  * carried out against CPU-local state are performed first.  However,
  * we must check for CPU stalls first, else we might not get a chance.
  */
+/** 20140906    
+ * rcu 관련된 작업이 현재 cpu에 pending되어 있다면 1이 리턴된다.
+ **/
 static int __rcu_pending(struct rcu_state *rsp, struct rcu_data *rdp)
 {
 	struct rcu_node *rnp = rdp->mynode;
 
+	/** 20140906    
+	 * trace용 변수.
+	 **/
 	rdp->n_rcu_pending++;
 
 	/* Check for CPU stalls, if enabled. */
 	check_cpu_stall(rsp, rdp);
 
 	/* Is the RCU core waiting for a quiescent state from this CPU? */
+	/** 20140906    
+	 * rcu scheduler가 완전히 동작 중인 상태에서, qs가 pending되어 있고,
+	 * quiesce가 한 번도 이뤄지지 않은 경우
+	 **/
 	if (rcu_scheduler_fully_active &&
 	    rdp->qs_pending && !rdp->passed_quiesce) {
 
@@ -2763,11 +2811,18 @@ static int __rcu_pending(struct rcu_state *rsp, struct rcu_data *rdp)
 				 jiffies))
 			set_need_resched();
 	} else if (rdp->qs_pending && rdp->passed_quiesce) {
+	/** 20140906    
+	 * qs state를 기다리고 있고, passed_quiesce가 존재하면
+	 * rcu가 pending되어 있다.
+	 **/
 		rdp->n_rp_report_qs++;
 		return 1;
 	}
 
 	/* Does this CPU have callbacks ready to invoke? */
+	/** 20140906    
+	 * 호출을 기다리는 cb 함수들이 존재할 경우 pending이다.
+	 **/
 	if (cpu_has_callbacks_ready_to_invoke(rdp)) {
 		rdp->n_rp_cb_ready++;
 		return 1;
@@ -2810,7 +2865,6 @@ static int __rcu_pending(struct rcu_state *rsp, struct rcu_data *rdp)
  */
 /** 20140830    
  * 현재 cpu에 RCU 관련 작업이 pending되어 있다면 1을 리턴한다.
- * __rcu_pending은 아직 분석하지 않음. 곧???
  **/
 static int rcu_pending(int cpu)
 {
@@ -3483,7 +3537,7 @@ void __init rcu_init(void)
 	 **/
 	rcu_init_geometry();
 	/** 20140719
-	 * rcu_sched_state, rcu_bh_state 를 초기화 한다.
+	 * 기본 rcu_state인 rcu_sched_state, rcu_bh_state 를 초기화 한다.
 	 **/	
 	rcu_init_one(&rcu_sched_state, &rcu_sched_data);
 	rcu_init_one(&rcu_bh_state, &rcu_bh_data);

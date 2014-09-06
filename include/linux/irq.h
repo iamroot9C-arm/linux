@@ -99,6 +99,9 @@ enum {
 	IRQ_PER_CPU_DEVID	= (1 << 17),
 };
 
+/** 20140906    
+ * IRQF_MODIFY_MASK
+ **/
 #define IRQF_MODIFY_MASK	\
 	(IRQ_TYPE_SENSE_MASK | IRQ_NOPROBE | IRQ_NOREQUEST | \
 	 IRQ_NOAUTOEN | IRQ_MOVE_PCNTXT | IRQ_LEVEL | IRQ_NO_BALANCING | \
@@ -140,6 +143,12 @@ struct irq_domain;
  * cleaned up the direct references and switched everything over to
  * irq_data.
  */
+/** 20140906    
+ * irq마다 사용되는 irq chip data.
+ *
+ *	hwirq  : interrupt domain에서 사용되는 hwirq의 번호.
+ *	domain : interrupt 변환 도메인. hwirq 번호와 linux irq 번호 사이의 mapping, 변환을 결정한다.
+ **/
 struct irq_data {
 	unsigned int		irq;
 	unsigned long		hwirq;
@@ -300,6 +309,12 @@ static inline irq_hw_number_t irqd_to_hwirq(struct irq_data *d)
  * @irq_print_chip:	optional to print special chip info in show_interrupts
  * @flags:		chip specific flags
  */
+/** 20140906    
+ * irq chip 하드웨어 추상화 자료구조.
+ *
+ *	irq_ack  : interrupt에 대해 응답 처리 한다 (새로운 interrupt를 받는다)
+ *	irq_mask : interrupt source를 mask 한다.
+ **/
 struct irq_chip {
 	const char	*name;
 	unsigned int	(*irq_startup)(struct irq_data *data);
@@ -455,11 +470,17 @@ irq_set_chained_handler(unsigned int irq, irq_flow_handler_t handle)
 
 void irq_modify_status(unsigned int irq, unsigned long clr, unsigned long set);
 
+/** 20140906    
+ * irq_desc, irq_data의 status에 속성을 설정한다.
+ **/
 static inline void irq_set_status_flags(unsigned int irq, unsigned long set)
 {
 	irq_modify_status(irq, 0, set);
 }
 
+/** 20140906    
+ * irq_desc, irq_data의 status에 속성을 제거한다.
+ **/
 static inline void irq_clear_status_flags(unsigned int irq, unsigned long clr)
 {
 	irq_modify_status(irq, clr, 0);
@@ -493,6 +514,9 @@ static inline void irq_set_nested_thread(unsigned int irq, bool nest)
 		irq_clear_status_flags(irq, IRQ_NESTED_THREAD);
 }
 
+/** 20140906    
+ * irq의 irq_desc의 status에 devid가 per_cpu임을 설정한다.
+ **/
 static inline void irq_set_percpu_devid_flags(unsigned int irq)
 {
 	irq_set_status_flags(irq,
@@ -571,6 +595,11 @@ int __irq_alloc_descs(int irq, unsigned int from, unsigned int cnt, int node,
 		struct module *owner);
 
 /* use macros to avoid needing export.h for THIS_MODULE */
+/** 20140906    
+ * from부터 cnt개의 연속적인 irq descriptor를 할당하고 초기화 한다.
+ *
+ * irq 할당 시작번호
+ **/
 #define irq_alloc_descs(irq, from, cnt, node)	\
 	__irq_alloc_descs(irq, from, cnt, node, THIS_MODULE)
 
@@ -591,6 +620,9 @@ static inline void irq_free_desc(unsigned int irq)
 	irq_free_descs(irq, 1);
 }
 
+/** 20140906    
+ * irq 하나를 할당되었다고 표시한다.
+ **/
 static inline int irq_reserve_irq(unsigned int irq)
 {
 	return irq_reserve_irqs(irq, 1);

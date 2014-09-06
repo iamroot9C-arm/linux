@@ -531,6 +531,10 @@ static void __init v2m_map_io(void)
 	ct_desc->map_io();
 }
 
+/** 20140906    
+ * vexpress는 cpu daughter board의 init_irq를 호출한다.
+ *  => ct_ca9x4_init_irq
+ **/
 static void __init v2m_init_irq(void)
 {
 	ct_desc->init_irq();
@@ -560,6 +564,8 @@ static void __init v2m_init(void)
 
 /** 20140830    
  * vexpress용 MACHINE 정의.
+ *
+ * handle_irq는 gic_handle_irq.
  **/
 MACHINE_START(VEXPRESS, "ARM-Versatile Express")
 	.atag_offset	= 0x100,

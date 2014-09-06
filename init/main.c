@@ -727,7 +727,13 @@ asmlinkage void __init start_kernel(void)
 	 * perf_event 관련 자료 구조 초기화
 	 **/
 	perf_event_init();
+	/** 20140906    
+	 * rcu_state 생성 등 rcu 초기화
+	 **/
 	rcu_init();
+	/** 20140906    
+	 * radix tree 자료구조 관련 초기화 - page cache용.
+	 **/
 	radix_tree_init();
 	/* init some links before init_ISA_irqs() */
 	early_irq_init();

@@ -170,6 +170,9 @@ void synchronize_rcu(void);
  * nesting depth, but makes sense only if CONFIG_PREEMPT_RCU -- in other
  * types of kernel builds, the rcu_read_lock() nesting depth is unknowable.
  */
+/** 20140906    
+ * preempt rcu인 경우, read-side critical section이 중첩된 depth를 저장한다.
+ **/
 #define rcu_preempt_depth() (current->rcu_read_lock_nesting)
 
 #else /* #ifdef CONFIG_PREEMPT_RCU */

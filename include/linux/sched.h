@@ -1338,11 +1338,17 @@ struct task_struct {
 	cpumask_t cpus_allowed;
 
 #ifdef CONFIG_PREEMPT_RCU
+	/** 20140906    
+	 * rcu read-side critical section의 중첩(선점)된 수를 저장한다.
+	 **/
 	int rcu_read_lock_nesting;
 	char rcu_read_unlock_special;
 	struct list_head rcu_node_entry;
 #endif /* #ifdef CONFIG_PREEMPT_RCU */
 #ifdef CONFIG_TREE_PREEMPT_RCU
+	/** 20140906    
+	 * rcu read-side 임계구역을 block시키는 rcu_node를 기록한다.
+	 **/
 	struct rcu_node *rcu_blocked_node;
 #endif /* #ifdef CONFIG_TREE_PREEMPT_RCU */
 #ifdef CONFIG_RCU_BOOST
@@ -1966,7 +1972,14 @@ extern void task_clear_jobctl_pending(struct task_struct *task,
 
 #ifdef CONFIG_PREEMPT_RCU
 
+/** 20140906    
+ * 선점형 RCU인 경우, RCU read-side에 진입한 뒤로,
+ * 마지막 unlock 함수가 호출될 떄까지 UNLOCK이 block 되어야 할 필요가 있다.
+ **/
 #define RCU_READ_UNLOCK_BLOCKED (1 << 0) /* blocked while in RCU read-side. */
+/** 20140906    
+ * RCU read-side unlock시 qs state 상태가 되어야 함을 표시한다.
+ **/
 #define RCU_READ_UNLOCK_NEED_QS (1 << 1) /* RCU core needs CPU response. */
 
 static inline void rcu_copy_process(struct task_struct *p)

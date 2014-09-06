@@ -12,8 +12,8 @@
 #include <linux/bug.h>
 
 /** 20121208
-DECLARE_BITMAP(bits, NR_CPUS)
-=> unsigned long bits[1]   (NR_CPUS=4일경우)
+ * DECLARE_BITMAP(bits, NR_CPUS)
+ * => unsigned long bits[1]   (NR_CPUS=4일경우)
  **/
 typedef struct cpumask { DECLARE_BITMAP(bits, NR_CPUS); } cpumask_t;
 
@@ -728,7 +728,7 @@ typedef struct cpumask cpumask_var_t[1];
 /** 20140419    
  * default로 CPUMASK_OFFSTACK가 정의되어 있지 않아 true 리턴.
  *
- * CPUMASK_OFFSET은 CPUMASK를 stack에 저장하지 않고 동적 메모리를 할당해 저장하는 것을 의미.
+ * CPUMASK_OFFSTACK은 CPUMASK를 stack에 저장하지 않고 동적 메모리를 할당해 저장하는 것을 의미.
  **/
 static inline bool alloc_cpumask_var(cpumask_var_t *mask, gfp_t flags)
 {
@@ -753,6 +753,9 @@ static inline bool zalloc_cpumask_var(cpumask_var_t *mask, gfp_t flags)
 	return true;
 }
 
+/** 20140906    
+ * UMA인 경우 일반적인 cpumask clear.
+ **/
 static inline bool zalloc_cpumask_var_node(cpumask_var_t *mask, gfp_t flags,
 					  int node)
 {

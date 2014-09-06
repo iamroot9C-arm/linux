@@ -22,6 +22,9 @@
 #define IRQ_DOMAIN_MAP_LINEAR 2 /* linear map of interrupts */
 #define IRQ_DOMAIN_MAP_TREE 3 /* radix tree */
 
+/** 20140906    
+ * 전역 irq domian list와 mutex.
+ **/
 static LIST_HEAD(irq_domain_list);
 static DEFINE_MUTEX(irq_domain_mutex);
 
@@ -39,6 +42,13 @@ static struct irq_domain *irq_default_domain;
  * register allocated irq_domain with irq_domain_register().  Returns pointer
  * to IRQ domain, or NULL on failure.
  */
+/** 20140906    
+ * irq_domain 구조체를 할당하고 초기화 한다.
+ *
+ *	revmap_type : reverse mapping을 사용하기 위한 type.
+ *	ops         : domain map/unmap, 변환용 CB 함수.
+ *	host_data   : Controller에 따른 개별 데이터.
+ **/
 static struct irq_domain *irq_domain_alloc(struct device_node *of_node,
 					   unsigned int revmap_type,
 					   const struct irq_domain_ops *ops,
@@ -46,6 +56,9 @@ static struct irq_domain *irq_domain_alloc(struct device_node *of_node,
 {
 	struct irq_domain *domain;
 
+	/** 20140906    
+	 * irq_domain 구조체를 저장하기 위해 특정 node의 메모리에 할당한다.
+	 **/
 	domain = kzalloc_node(sizeof(*domain), GFP_KERNEL,
 			      of_node_to_nid(of_node));
 	if (WARN_ON(!domain))
@@ -66,6 +79,10 @@ static void irq_domain_free(struct irq_domain *domain)
 	kfree(domain);
 }
 
+/** 20140906    
+ * irq domain 전역 리스트 irq_domain_list에 지정한 domain을 추가한다.
+ * irq_domain_list의 조작시 mutex로 동기화가 이뤄져야 한다.
+ **/
 static void irq_domain_add(struct irq_domain *domain)
 {
 	mutex_lock(&irq_domain_mutex);
@@ -194,16 +211,25 @@ struct irq_domain *irq_domain_add_legacy(struct device_node *of_node,
 	struct irq_domain *domain;
 	unsigned int i;
 
+	/** 20140906    
+	 * IRQ_DOMAIN_MAP_LEGACY용 domain을 할당하고 초기화 한다.
+	 **/
 	domain = irq_domain_alloc(of_node, IRQ_DOMAIN_MAP_LEGACY, ops, host_data);
 	if (!domain)
 		return NULL;
 
+	/** 20140906    
+	 * irq_domain의 revmap_data 부분을 legacy domain용으로 설정한다.
+	 **/
 	domain->revmap_data.legacy.first_irq = first_irq;
 	domain->revmap_data.legacy.first_hwirq = first_hwirq;
 	domain->revmap_data.legacy.size = size;
 
 	mutex_lock(&irq_domain_mutex);
 	/* Verify that all the irqs are available */
+	/** 20140906    
+	 * irq에 해당하는 irq_data를 받아와 domain 관련 항목이 비어 있는지 검사한다.
+	 **/
 	for (i = 0; i < size; i++) {
 		int irq = first_irq + i;
 		struct irq_data *irq_data = irq_get_irq_data(irq);
@@ -216,6 +242,9 @@ struct irq_domain *irq_domain_add_legacy(struct device_node *of_node,
 	}
 
 	/* Claim all of the irqs before registering a legacy domain */
+	/** 20140906    
+	 * irq에 해당하는 irq_data의 hwirq와 domain을 설정한다.
+	 **/
 	for (i = 0; i < size; i++) {
 		struct irq_data *irq_data = irq_get_irq_data(first_irq + i);
 		irq_data->hwirq = first_hwirq + i;
@@ -235,13 +264,25 @@ struct irq_domain *irq_domain_add_legacy(struct device_node *of_node,
 		 * one can then use irq_create_mapping() to
 		 * explicitly change them
 		 */
+		/** 20140906    
+		 * domain mapping용 CBs이 지정된 경우, 해당 operation 함수를 호출해
+		 * linux irq number와 hwirq number 을 mapping 시킨다.
+		 *
+		 * gic의 경우 gic_irq_domain_ops의 gic_irq_domain_map이 호출된다.
+		 **/
 		if (ops->map)
 			ops->map(domain, irq, hwirq);
 
 		/* Clear norequest flags */
+		/** 20140906    
+		 * interrupt가 request_irq로 할당받을 수 있도록 IRQ_NOREQUEST를 제거한다.
+		 **/
 		irq_clear_status_flags(irq, IRQ_NOREQUEST);
 	}
 
+	/** 20140906    
+	 * 설정한 domain을 전역 list에 추가한다.
+	 **/
 	irq_domain_add(domain);
 	return domain;
 }

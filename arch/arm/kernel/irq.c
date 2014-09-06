@@ -110,8 +110,14 @@ void set_irq_flags(unsigned int irq, unsigned int iflags)
 	irq_modify_status(irq, clr, set & ~clr);
 }
 
+/** 20140906    
+ * IRQ 관련 초기화.
+ **/
 void __init init_IRQ(void)
 {
+	/** 20140906    
+	 * MACHINE specific init_irq handle 함수를 호출한다.
+	 **/
 	machine_desc->init_irq();
 }
 

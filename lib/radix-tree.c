@@ -1584,6 +1584,9 @@ static __init unsigned long __maxindex(unsigned int height)
 	return ~0UL >> shift;
 }
 
+/** 20140906    
+ * 추후분석
+ **/
 static __init void radix_tree_init_maxindex(void)
 {
 	unsigned int i;
@@ -1612,12 +1615,23 @@ static int radix_tree_callback(struct notifier_block *nfb,
        return NOTIFY_OK;
 }
 
+/** 20140906    
+ * radix tree 관련 초기화 한다.
+ * 
+ * kernel에서 page cache를 radix tree로 관리하므로, 빈번한 할당이 필요하다.
+ **/
 void __init radix_tree_init(void)
 {
+	/** 20140906    
+	 * radix_tree_node용 kmem cache(SLUB)을 생성한다.
+	 **/
 	radix_tree_node_cachep = kmem_cache_create("radix_tree_node",
 			sizeof(struct radix_tree_node), 0,
 			SLAB_PANIC | SLAB_RECLAIM_ACCOUNT,
 			radix_tree_node_ctor);
 	radix_tree_init_maxindex();
+	/** 20140906    
+	 * hotcpu notifier 콜백을 등록한다.
+	 **/
 	hotcpu_notifier(radix_tree_callback, 0);
 }

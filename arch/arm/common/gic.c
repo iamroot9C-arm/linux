@@ -45,6 +45,10 @@
 #include <asm/mach/irq.h>
 #include <asm/hardware/gic.h>
 
+/** 20140906    
+ * CONFIG_GIC_NON_BANKED인 경우 percpu_base,
+ * 그렇지 않은 경우 common_base를 사용.
+ **/
 union gic_base {
 	void __iomem *common_base;
 	void __percpu __iomem **percpu_base;
@@ -86,6 +90,9 @@ struct irq_chip gic_arch_extn = {
 #define MAX_GIC_NR	1
 #endif
 
+/** 20140906    
+ * GIC 개수만큼 gic_data를 선언.
+ **/
 static struct gic_chip_data gic_data[MAX_GIC_NR] __read_mostly;
 
 #ifdef CONFIG_GIC_NON_BANKED
@@ -115,6 +122,11 @@ static inline void gic_set_base_accessor(struct gic_chip_data *data,
 	data->get_base = f;
 }
 #else
+/** 20140906    
+ * CONFIG_GIC_NON_BANKED가 설정되지 않았다.
+ * distributor, cpu base address는 common_base를 사용한다.
+ * base_accessor 함수는 지정되지 않는다.
+ **/
 #define gic_data_dist_base(d)	((d)->dist_base.common_base)
 #define gic_data_cpu_base(d)	((d)->cpu_base.common_base)
 #define gic_set_base_accessor(d,f)
@@ -597,10 +609,16 @@ static void __init gic_pm_init(struct gic_chip_data *gic)
 }
 #endif
 
+/** 20140913
+ * 여기부터...    
+ **/
 static int gic_irq_domain_map(struct irq_domain *d, unsigned int irq,
 				irq_hw_number_t hw)
 {
 	if (hw < 32) {
+		/** 20140906    
+		 * 해당 irq가 per_cpu devid를 갖도록 한다.
+		 **/
 		irq_set_percpu_devid(irq);
 		irq_set_chip_and_handler(irq, &gic_chip,
 					 handle_percpu_devid_irq);
@@ -635,6 +653,11 @@ static int gic_irq_domain_xlate(struct irq_domain *d,
 	return 0;
 }
 
+/** 20140906    
+ * gic의 irq_domain용 CBs 함수.
+ *
+ *  mapping과 translate만 지정한다.
+ **/
 const struct irq_domain_ops gic_irq_domain_ops = {
 	.map = gic_irq_domain_map,
 	.xlate = gic_irq_domain_xlate,
@@ -650,7 +673,14 @@ void __init gic_init_bases(unsigned int gic_nr, int irq_start,
 
 	BUG_ON(gic_nr >= MAX_GIC_NR);
 
+	/** 20140906    
+	 * gic_nr에 해당하는 gic_data 변수를 가져온다.
+	 * vexpress의 경우 1개만 사용.
+	 **/
 	gic = &gic_data[gic_nr];
+	/** 20140906    
+	 * 설정 안 되어 있음.
+	 **/
 #ifdef CONFIG_GIC_NON_BANKED
 	if (percpu_offset) { /* Frankein-GIC without banked registers... */
 		unsigned int cpu;
@@ -677,6 +707,9 @@ void __init gic_init_bases(unsigned int gic_nr, int irq_start,
 		WARN(percpu_offset,
 		     "GIC_NON_BANKED not enabled, ignoring %08x offset!",
 		     percpu_offset);
+		/** 20140906    
+		 * distributor, cpu의 base address와 base address 접근자 설정.
+		 **/
 		gic->dist_base.common_base = dist_base;
 		gic->cpu_base.common_base = cpu_base;
 		gic_set_base_accessor(gic, gic_get_common_base);
@@ -686,6 +719,16 @@ void __init gic_init_bases(unsigned int gic_nr, int irq_start,
 	 * For primary GICs, skip over SGIs.
 	 * For secondary GICs, skip over PPIs, too.
 	 */
+	/** 20140906    
+	 * GIC irq number는 type에 따라 다른 range의 ID를 사용한다.
+	 *   ID0  - ID15   : SGI
+	 *   ID16 - ID31   : PPI
+	 *   ID32 - ID1019 : SPI
+	 *
+	 * GIC 0번, 즉 primary GIC의 경우 hwirq_base는 16부터(SGI skip)이다.
+	 *   irq_start 최소값은 PPI부터이다.
+	 * 그 외 secondary GIC의 경우 hwirq_base는 32부터(SGI, PPI skip)이다.
+	 **/
 	if (gic_nr == 0 && (irq_start & 31) > 0) {
 		hwirq_base = 16;
 		if (irq_start != -1)
@@ -698,6 +741,14 @@ void __init gic_init_bases(unsigned int gic_nr, int irq_start,
 	 * Find out how many interrupts are supported.
 	 * The GIC only supports up to 1020 interrupt sources.
 	 */
+	/** 20140906    
+	 * GICD_TYPER register에서 ITLinesNumber값을 읽어와 irq 개수를 구한다.
+	 * 최대 1020개까지 사용 가능하다.
+	 *
+	 * 자세한 내용은 IHI0048B GIC 문서 참고.
+	 *
+	 * vexpress qemu에서는 레지스터에서 2가 읽히고, 결국 (2+1)*32 = 96이 된다.
+	 **/
 	gic_irqs = readl_relaxed(gic_data_dist_base(gic) + GIC_DIST_CTR) & 0x1f;
 	gic_irqs = (gic_irqs + 1) * 32;
 	if (gic_irqs > 1020)
@@ -705,6 +756,12 @@ void __init gic_init_bases(unsigned int gic_nr, int irq_start,
 	gic->gic_irqs = gic_irqs;
 
 	gic_irqs -= hwirq_base; /* calculate # of irqs to allocate */
+	/** 20140906    
+	 * irq_start부터 gic_irqs 수만큼 irq descriptor를 할당하고 초기화 한다.
+	 * 16은 PPI 시작 번호이고, 이 번호부터 검색을 시작한다.
+	 *
+	 * 할당받은 첫번째 irq number를 irq_base에 저장한다.
+	 **/
 	irq_base = irq_alloc_descs(irq_start, 16, gic_irqs, numa_node_id());
 	if (IS_ERR_VALUE(irq_base)) {
 		WARN(1, "Cannot allocate irq_descs @ IRQ%d, assuming pre-allocated\n",
