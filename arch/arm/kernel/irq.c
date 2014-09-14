@@ -91,6 +91,9 @@ asm_do_IRQ(unsigned int irq, struct pt_regs *regs)
 	handle_IRQ(irq, regs);
 }
 
+/** 20140913    
+ * irq_desc의 status에 지정된 flags 값에 따라 속성을 설정한다. 
+ **/
 void set_irq_flags(unsigned int irq, unsigned int iflags)
 {
 	unsigned long clr = 0, set = IRQ_NOREQUEST | IRQ_NOPROBE | IRQ_NOAUTOEN;
@@ -117,6 +120,8 @@ void __init init_IRQ(void)
 {
 	/** 20140906    
 	 * MACHINE specific init_irq handle 함수를 호출한다.
+	 *
+	 * vexpress의 경우 v2m_init_irq
 	 **/
 	machine_desc->init_irq();
 }

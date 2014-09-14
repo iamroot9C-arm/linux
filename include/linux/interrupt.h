@@ -103,6 +103,9 @@ typedef irqreturn_t (*irq_handler_t)(int, void *);
  * @thread_mask:	bitmask for keeping track of @thread activity
  * @dir:	pointer to the proc/irq/NN/name entry
  */
+/** 20140913    
+ * interrupt의 action descriptor.
+ **/
 struct irqaction {
 	irq_handler_t		handler;
 	void			*dev_id;

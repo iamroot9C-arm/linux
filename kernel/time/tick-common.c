@@ -62,6 +62,9 @@ int tick_is_oneshot_available(void)
  */
 static void tick_periodic(int cpu)
 {
+	/** 20140913    
+	 * do_timer를 호출하도록 지정된 cpu만 jiffies를 증가시킨다.
+	 **/
 	if (tick_do_timer_cpu == cpu) {
 		write_seqlock(&xtime_lock);
 
@@ -359,6 +362,9 @@ static void tick_resume(void)
 /*
  * Notification about clock event devices
  */
+/** 20140913    
+ * tick_notify event handler.
+ **/
 static int tick_notify(struct notifier_block *nb, unsigned long reason,
 			       void *dev)
 {

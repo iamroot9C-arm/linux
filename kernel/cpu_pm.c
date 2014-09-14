@@ -45,6 +45,9 @@ static int cpu_pm_notify(enum cpu_pm_event event, int nr_to_call, int *nr_calls)
  * This function may sleep, and has the same return conditions as
  * raw_notifier_chain_register.
  */
+/** 20140913    
+ * cpu_pm_notifier_chain에 write lock을 걸고 nb를 등록한다.
+ **/
 int cpu_pm_register_notifier(struct notifier_block *nb)
 {
 	unsigned long flags;

@@ -201,6 +201,11 @@ struct irq_domain *irq_domain_add_simple(struct device_node *of_node,
  * for all legacy interrupts except 0 (which is always the invalid irq for
  * a legacy controller).
  */
+/** 20140913    
+ * irq_domain을 할당하고, legacy mapping으로 추가한다.
+ *
+ * host_data : gic_chip_data, 즉 gic controller 구조체
+ **/
 struct irq_domain *irq_domain_add_legacy(struct device_node *of_node,
 					 unsigned int size,
 					 unsigned int first_irq,
@@ -220,6 +225,8 @@ struct irq_domain *irq_domain_add_legacy(struct device_node *of_node,
 
 	/** 20140906    
 	 * irq_domain의 revmap_data 부분을 legacy domain용으로 설정한다.
+	 *
+	 * vexpress는 first_irq = 16, first_hwirq = 16, size = 80
 	 **/
 	domain->revmap_data.legacy.first_irq = first_irq;
 	domain->revmap_data.legacy.first_hwirq = first_hwirq;
@@ -244,6 +251,8 @@ struct irq_domain *irq_domain_add_legacy(struct device_node *of_node,
 	/* Claim all of the irqs before registering a legacy domain */
 	/** 20140906    
 	 * irq에 해당하는 irq_data의 hwirq와 domain을 설정한다.
+	 *
+	 * vexpress의 경우 16 ~ (16+80)
 	 **/
 	for (i = 0; i < size; i++) {
 		struct irq_data *irq_data = irq_get_irq_data(first_irq + i);
@@ -281,7 +290,7 @@ struct irq_domain *irq_domain_add_legacy(struct device_node *of_node,
 	}
 
 	/** 20140906    
-	 * 설정한 domain을 전역 list에 추가한다.
+	 * 설정한 domain을 전역 list(irq_domain_list)에 추가한다.
 	 **/
 	irq_domain_add(domain);
 	return domain;

@@ -20,10 +20,17 @@
 
 #include <linux/ioport.h>
 
+/** 20140913    
+ * TWD resource.
+ * MEM, IRQ 두 가지 정보를 저장한다.
+ **/
 struct twd_local_timer {
 	struct resource	res[2];
 };
 
+/** 20140913    
+ * TWD local timer 전역변수 선언.
+ **/
 #define DEFINE_TWD_LOCAL_TIMER(name,base,irq)	\
 struct twd_local_timer name __initdata = {	\
 	.res	= {				\

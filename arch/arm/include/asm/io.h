@@ -47,6 +47,9 @@ extern void __raw_readsb(const void __iomem *addr, void *data, int bytelen);
 extern void __raw_readsw(const void __iomem *addr, void *data, int wordlen);
 extern void __raw_readsl(const void __iomem *addr, void *data, int longlen);
 
+/** 20140913    
+ * lowlevel io read/write 함수.
+ **/
 #define __raw_writeb(v,a)	((void)(__chk_io_ptr(a), *(volatile unsigned char __force  *)(a) = (v)))
 #define __raw_writew(v,a)	((void)(__chk_io_ptr(a), *(volatile unsigned short __force *)(a) = (v)))
 #define __raw_writel(v,a)	((void)(__chk_io_ptr(a), *(volatile unsigned int __force   *)(a) = (v)))
@@ -229,6 +232,11 @@ extern void _memset_io(volatile void __iomem *, int, size_t);
 #define readl_relaxed(c) ({ u32 __r = le32_to_cpu((__force __le32) \
 					__raw_readl(c)); __r; })
 
+/** 20140913    
+ * io read/write macro.
+ *
+ * register 등에 값을 쓰거나 읽을 때 주로 사용된다.
+ **/
 #define writeb_relaxed(v,c)	__raw_writeb(v,c)
 #define writew_relaxed(v,c)	__raw_writew((__force u16) cpu_to_le16(v),c)
 #define writel_relaxed(v,c)	__raw_writel((__force u32) cpu_to_le32(v),c)

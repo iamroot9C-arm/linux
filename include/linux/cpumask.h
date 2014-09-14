@@ -356,6 +356,9 @@ static inline int cpumask_test_and_clear_cpu(int cpu, struct cpumask *cpumask)
  * cpumask_setall - set all cpus (< nr_cpu_ids) in a cpumask
  * @dstp: the cpumask pointer
  */
+/** 20140913    
+ * 전달받은 cpumask를 nr_cpumask_bits (CPU 개수)만큼 1로 채워 설정한다.
+ **/
 static inline void cpumask_setall(struct cpumask *dstp)
 {
 	bitmap_fill(cpumask_bits(dstp), nr_cpumask_bits);

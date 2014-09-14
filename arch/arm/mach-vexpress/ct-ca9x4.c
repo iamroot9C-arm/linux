@@ -48,6 +48,10 @@ static void __init ct_ca9x4_map_io(void)
 }
 
 #ifdef CONFIG_HAVE_ARM_TWD
+/** 20140913    
+ * TWD local timer 정의.
+ * localtimer IRQ 지정.
+ **/
 static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, A9_MPCORE_TWD, IRQ_LOCALTIMER);
 
 static void __init ca9x4_twd_init(void)

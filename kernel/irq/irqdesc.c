@@ -26,6 +26,8 @@ static struct lock_class_key irq_desc_lock_class;
 /** 20140906    
  * irq_default_affinity를 위한 cpumask를 생성하고,
  * default로 전체 mask를 지정한다.
+ *
+ * irq_default_affinity를 모든 cpu에서 받아 처리하도록 설정한다.
  **/
 static void __init init_irq_default_affinity(void)
 {
@@ -290,6 +292,8 @@ int __init early_irq_init(void)
 	/** 20140906    
 	 * IRQS 개수 출력.
 	 *   - architecture마다 다르다.
+	 *
+	 *   vexpress의 경우 256 출력
 	 **/
 	printk(KERN_INFO "NR_IRQS:%d\n", NR_IRQS);
 

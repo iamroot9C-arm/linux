@@ -77,6 +77,9 @@ static DEFINE_RAW_SPINLOCK(irq_controller_lock);
  * Supported arch specific GIC irq extension.
  * Default make them NULL.
  */
+/** 20140913    
+ * arch specific한 GIC chip 정보 구조체.
+ **/
 struct irq_chip gic_arch_extn = {
 	.irq_eoi	= NULL,
 	.irq_mask	= NULL,
@@ -333,6 +336,9 @@ static void gic_handle_cascade_irq(unsigned int irq, struct irq_desc *desc)
 	chained_irq_exit(chip, desc);
 }
 
+/** 20140913    
+ * GIC의 irq_chip 추상화 자료구조.
+ **/
 static struct irq_chip gic_chip = {
 	.name			= "GIC",
 	.irq_mask		= gic_mask_irq,
@@ -355,6 +361,10 @@ void __init gic_cascade_irq(unsigned int gic_nr, unsigned int irq)
 	irq_set_chained_handler(irq, gic_handle_cascade_irq);
 }
 
+/** 20140913    
+ * gic distribute를 설정한다.
+ * 자세한 내용은 DataSheet 참조.
+ **/
 static void __init gic_dist_init(struct gic_chip_data *gic)
 {
 	unsigned int i;
@@ -397,6 +407,10 @@ static void __init gic_dist_init(struct gic_chip_data *gic)
 	writel_relaxed(1, base + GIC_DIST_CTRL);
 }
 
+/** 20140913    
+ * gic cpu 관련 레지스터를 설정한다.
+ * 자세한 내용은 DataSheet 참조.
+ **/
 static void __cpuinit gic_cpu_init(struct gic_chip_data *gic)
 {
 	void __iomem *dist_base = gic_data_dist_base(gic);
@@ -498,6 +512,10 @@ static void gic_dist_restore(unsigned int gic_nr)
 	writel_relaxed(1, dist_base + GIC_DIST_CTRL);
 }
 
+/** 20140913    
+ * PM ENTER 진입시, notifier에 의해 동작하는 함수.
+ * SLEEP 상태로 진입하기 전 cpu 관련 정보를 준비해둔 percpu 변수에 저장한다.
+ **/
 static void gic_cpu_save(unsigned int gic_nr)
 {
 	int i;
@@ -524,6 +542,10 @@ static void gic_cpu_save(unsigned int gic_nr)
 
 }
 
+/** 20140913    
+ * PM EXIT 호출시, notifier에 의해 동작하는 함수.
+ * SUSPEND에서 깨어나 RESUME 과정에서 저장해둔 percpu 변수의 정보를 꺼내 gic register에 설정한다.
+ **/
 static void gic_cpu_restore(unsigned int gic_nr)
 {
 	int i;
@@ -555,6 +577,15 @@ static void gic_cpu_restore(unsigned int gic_nr)
 	writel_relaxed(1, cpu_base + GIC_CPU_CTRL);
 }
 
+/** 20140913    
+ * gic notifier.
+ *
+ * CPU_CLUSTER PM 관련 message일 때 dist 레지스터를 저장/복원하고,
+ * CPU PM 관련 message일 때 cpu 레지스터를 저장/복원한다.
+ *
+ * SUSPEND 순서 : CPU -> CPU CLUSTER
+ * RESUME  순서 : CPU CLUSTER -> CPU
+ **/
 static int gic_notifier(struct notifier_block *self, unsigned long cmd,	void *v)
 {
 	int i;
@@ -586,12 +617,21 @@ static int gic_notifier(struct notifier_block *self, unsigned long cmd,	void *v)
 	return NOTIFY_OK;
 }
 
+/** 20140913    
+ * gic notifier block 구조체.
+ **/
 static struct notifier_block gic_notifier_block = {
 	.notifier_call = gic_notifier,
 };
 
+/** 20140913    
+ * gic의 PM 관련 init 함수.
+ **/
 static void __init gic_pm_init(struct gic_chip_data *gic)
 {
+	/** 20140913    
+	 * ppi enable, conf 용 변수를 percpu로 할당한다.
+	 **/
 	gic->saved_ppi_enable = __alloc_percpu(DIV_ROUND_UP(32, 32) * 4,
 		sizeof(u32));
 	BUG_ON(!gic->saved_ppi_enable);
@@ -600,6 +640,9 @@ static void __init gic_pm_init(struct gic_chip_data *gic)
 		sizeof(u32));
 	BUG_ON(!gic->saved_ppi_conf);
 
+	/** 20140913    
+	 * gic_notifier_block을 cpu_pm_notifier에 등록한다.
+	 **/
 	if (gic == &gic_data[0])
 		cpu_pm_register_notifier(&gic_notifier_block);
 }
@@ -610,11 +653,15 @@ static void __init gic_pm_init(struct gic_chip_data *gic)
 #endif
 
 /** 20140913
- * 여기부터...    
+ * irq_domain의 irq_desc에 gic 관련 구조체 정보를 채운다.
  **/
 static int gic_irq_domain_map(struct irq_domain *d, unsigned int irq,
 				irq_hw_number_t hw)
 {
+	/** 20140913    
+	 * hw번호 32부터는 SPI이고, 그 이전은 PPI에 해당한다.
+	 * 각각 다른 속성으로 설정한다.
+	 **/
 	if (hw < 32) {
 		/** 20140906    
 		 * 해당 irq가 per_cpu devid를 갖도록 한다.
@@ -628,6 +675,9 @@ static int gic_irq_domain_map(struct irq_domain *d, unsigned int irq,
 					 handle_fasteoi_irq);
 		set_irq_flags(irq, IRQF_VALID | IRQF_PROBE);
 	}
+	/** 20140913    
+	 * chip_data에 gic_chip_data를 저장한다.
+	 **/
 	irq_set_chip_data(irq, d->host_data);
 	return 0;
 }
@@ -663,6 +713,11 @@ const struct irq_domain_ops gic_irq_domain_ops = {
 	.xlate = gic_irq_domain_xlate,
 };
 
+/** 20140913    
+ * gic init 함수. dist, cpu의 base address를 전달받아 초기화 한다.
+ *
+ * gic register 설정과 kernel irq domain 설정을 진행한다.
+ **/
 void __init gic_init_bases(unsigned int gic_nr, int irq_start,
 			   void __iomem *dist_base, void __iomem *cpu_base,
 			   u32 percpu_offset, struct device_node *node)
@@ -704,11 +759,14 @@ void __init gic_init_bases(unsigned int gic_nr, int irq_start,
 	} else
 #endif
 	{			/* Normal, sane GIC... */
+		/** 20140913    
+		 * percpu_offset은 GIC_NON_BANKED일 때 항상 0이어야 함.
+		 **/
 		WARN(percpu_offset,
 		     "GIC_NON_BANKED not enabled, ignoring %08x offset!",
 		     percpu_offset);
 		/** 20140906    
-		 * distributor, cpu의 base address와 base address 접근자 설정.
+		 * distributor, cpu의 common_base address와 base address 접근자 설정.
 		 **/
 		gic->dist_base.common_base = dist_base;
 		gic->cpu_base.common_base = cpu_base;
@@ -726,7 +784,7 @@ void __init gic_init_bases(unsigned int gic_nr, int irq_start,
 	 *   ID32 - ID1019 : SPI
 	 *
 	 * GIC 0번, 즉 primary GIC의 경우 hwirq_base는 16부터(SGI skip)이다.
-	 *   irq_start 최소값은 PPI부터이다.
+	 *   irq_start 최소값은 PPI (16)부터이다.
 	 * 그 외 secondary GIC의 경우 hwirq_base는 32부터(SGI, PPI skip)이다.
 	 **/
 	if (gic_nr == 0 && (irq_start & 31) > 0) {
@@ -746,8 +804,10 @@ void __init gic_init_bases(unsigned int gic_nr, int irq_start,
 	 * 최대 1020개까지 사용 가능하다.
 	 *
 	 * 자세한 내용은 IHI0048B GIC 문서 참고.
+	 * 4.3.2 Interrupt Controller Type Register, GICD_TYPER
 	 *
-	 * vexpress qemu에서는 레지스터에서 2가 읽히고, 결국 (2+1)*32 = 96이 된다.
+	 * vexpress qemu에서는 레지스터에서 2가 읽히고, (2+1)*32 = 96이 된다.
+	 * hwirq_base만큼 빼서 결국 gic_irqs는 80.
 	 **/
 	gic_irqs = readl_relaxed(gic_data_dist_base(gic) + GIC_DIST_CTR) & 0x1f;
 	gic_irqs = (gic_irqs + 1) * 32;
@@ -768,11 +828,18 @@ void __init gic_init_bases(unsigned int gic_nr, int irq_start,
 		     irq_start);
 		irq_base = irq_start;
 	}
+	/** 20140913    
+	 * irq_domain을 할당하고, LEGACY 로 추가한다.
+	 * 생성된 domain을 gic에 기록한다.
+	 **/
 	gic->domain = irq_domain_add_legacy(node, gic_irqs, irq_base,
 				    hwirq_base, &gic_irq_domain_ops, gic);
 	if (WARN_ON(!gic->domain))
 		return;
 
+	/** 20140913    
+	 * architecture specific한 flags를 gic_chip에 적용한다.
+	 **/
 	gic_chip.flags |= gic_arch_extn.flags;
 	gic_dist_init(gic);
 	gic_cpu_init(gic);
@@ -789,6 +856,11 @@ void __cpuinit gic_secondary_init(unsigned int gic_nr)
 #ifdef CONFIG_SMP
 /** 20130713    
  * smp_cross_call 로 등록된 cb으로 호출
+ *
+ * 20140913    
+ * GIC의 SGI를 통해 IPI message를 전송한다.
+ * IHI0048B_GICv2.0.pdf
+ * 4.3.15 Software Generated Interrupt Register, GICD_SGIR 참고.
  **/
 void gic_raise_softirq(const struct cpumask *mask, unsigned int irq)
 {

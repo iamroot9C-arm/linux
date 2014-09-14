@@ -108,6 +108,9 @@ struct resource {
 
 
 /* helpers to define resources */
+/** 20140913    
+ * resource 선언 관련 helper 매크로
+ **/
 #define DEFINE_RES_NAMED(_start, _size, _name, _flags)			\
 	{								\
 		.start = (_start),					\

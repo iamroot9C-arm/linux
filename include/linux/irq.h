@@ -144,9 +144,9 @@ struct irq_domain;
  * irq_data.
  */
 /** 20140906    
- * irq마다 사용되는 irq chip data.
+ * irq마다 사용되는 irq chip specific data.
  *
- *	hwirq  : interrupt domain에서 사용되는 hwirq의 번호.
+ *	hwirq  : interrupt domain에서 사용되는 hwirq의 번호. (irq_data 자신의 hwirq 번호값)
  *	domain : interrupt 변환 도메인. hwirq 번호와 linux irq 번호 사이의 mapping, 변환을 결정한다.
  **/
 struct irq_data {
@@ -439,6 +439,9 @@ extern void
 irq_set_chip_and_handler_name(unsigned int irq, struct irq_chip *chip,
 			      irq_flow_handler_t handle, const char *name);
 
+/** 20140913    
+ * irq에 해당하는 irq_desc에 chip과 handler를 기록한다.
+ **/
 static inline void irq_set_chip_and_handler(unsigned int irq, struct irq_chip *chip,
 					    irq_flow_handler_t handle)
 {

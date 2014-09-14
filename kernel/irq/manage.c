@@ -633,6 +633,9 @@ static irqreturn_t irq_default_primary_handler(int irq, void *dev_id)
  * Primary handler for nested threaded interrupts. Should never be
  * called.
  */
+/** 20140913    
+ * 중첩된 threaded interrupt에 대한 primary handler.
+ **/
 static irqreturn_t irq_nested_primary_handler(int irq, void *dev_id)
 {
 	WARN(1, "Primary handler called for nested irq %d\n", irq);
@@ -1609,6 +1612,8 @@ int setup_percpu_irq(unsigned int irq, struct irqaction *act)
  *	the handler gets called with the interrupted CPU's instance of
  *	that variable.
  */
+/** 20140920 여기부터...
+ **/
 int request_percpu_irq(unsigned int irq, irq_handler_t handler,
 		       const char *devname, void __percpu *dev_id)
 {
@@ -1619,15 +1624,25 @@ int request_percpu_irq(unsigned int irq, irq_handler_t handler,
 	if (!dev_id)
 		return -EINVAL;
 
+	/** 20140913    
+	 * irq_desc를 가져와 request 가능하고, per_cpu devid인지 판단한다.
+	 **/
 	desc = irq_to_desc(irq);
 	if (!desc || !irq_settings_can_request(desc) ||
 	    !irq_settings_is_per_cpu_devid(desc))
 		return -EINVAL;
 
+	/** 20140913    
+	 * action을 위한 공간 할당.
+	 **/
 	action = kzalloc(sizeof(struct irqaction), GFP_KERNEL);
 	if (!action)
 		return -ENOMEM;
 
+	/** 20140913    
+	 * irqaction 구조체를 채운다.
+	 * flag에 IRQF_PERCPU가 주어진다.
+	 **/
 	action->handler = handler;
 	action->flags = IRQF_PERCPU | IRQF_NO_SUSPEND;
 	action->name = devname;

@@ -2,6 +2,9 @@
  * Internal header to deal with irq_desc->status which will be renamed
  * to irq_desc->settings.
  */
+/** 20140913    
+ * include/linux/irq.h 참고
+ **/
 enum {
 	_IRQ_DEFAULT_INIT_FLAGS	= IRQ_DEFAULT_INIT_FLAGS,
 	_IRQ_PER_CPU		= IRQ_PER_CPU,
@@ -18,6 +21,7 @@ enum {
 };
 
 /** 20140906    
+ * internal 버전 설정 이후 재정의되어
  * 이후 IRQ_PER_CPU와 같은 매크로는 사용할 수 없다.
  **/
 #define IRQ_PER_CPU		GOT_YOU_MORON
@@ -100,6 +104,9 @@ static inline void irq_settings_set_level(struct irq_desc *desc)
 	desc->status_use_accessors |= _IRQ_LEVEL;
 }
 
+/** 20140913    
+ * irq_desc를 조회해 request가 가능한지 검사한다.
+ **/
 static inline bool irq_settings_can_request(struct irq_desc *desc)
 {
 	return !(desc->status_use_accessors & _IRQ_NOREQUEST);
@@ -155,6 +162,9 @@ static inline bool irq_settings_can_autoenable(struct irq_desc *desc)
 	return !(desc->status_use_accessors & _IRQ_NOAUTOEN);
 }
 
+/** 20140913    
+ *
+ **/
 static inline bool irq_settings_is_nested_thread(struct irq_desc *desc)
 {
 	return desc->status_use_accessors & _IRQ_NESTED_THREAD;

@@ -126,6 +126,9 @@ int irq_set_msi_desc(unsigned int irq, struct msi_desc *entry)
  *
  *	Set the hardware irq chip data for an irq
  */
+/** 20140913    
+ * irq_desc에 spinlock을 걸고 irq_desc의 irq_data에 chip_data를 지정한다.
+ **/
 int irq_set_chip_data(unsigned int irq, void *data)
 {
 	unsigned long flags;

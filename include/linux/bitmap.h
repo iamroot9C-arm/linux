@@ -173,15 +173,15 @@ static inline void bitmap_zero(unsigned long *dst, int nbits)
 	}
 }
 /** 20130622
-nbit의 갯수 만큼 비트맵을 1로 채워주는 함수.
+  nbit의 갯수 만큼 비트맵을 1로 채워주는 함수.
 
-만약 nbits : 68  라면
-nlongs 는 3이 되고
-if 이 참이 되고 
-dst[0] = 0xffffffff ,dst[1] = 0xffffffff
-으로 설정되고
-마지막 dst[2] = 0x0000000f
-**/
+  만약 nbits : 68  라면
+  nlongs 는 3이 되고
+  if 이 참이 되고 
+  dst[0] = 0xffffffff ,dst[1] = 0xffffffff
+  으로 설정되고
+  마지막 dst[2] = 0x0000000f
+ **/
 static inline void bitmap_fill(unsigned long *dst, int nbits)
 {
 	size_t nlongs = BITS_TO_LONGS(nbits);

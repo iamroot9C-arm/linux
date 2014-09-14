@@ -109,7 +109,7 @@ extern int irq_do_set_affinity(struct irq_data *data,
 
 /* Inline functions for support of irq chips on slow busses */
 /** 20140906    
- * irq chip의 irq_bus_lock callback함수를 호출해 bus lock을 건다.
+ * irq chip의 irq_bus_lock callback함수를 호출해 lock을 건다.
  **/
 static inline void chip_bus_lock(struct irq_desc *desc)
 {
@@ -117,6 +117,9 @@ static inline void chip_bus_lock(struct irq_desc *desc)
 		desc->irq_data.chip->irq_bus_lock(&desc->irq_data);
 }
 
+/** 20140913    
+ * irq chip의 irq_bus_sync_unlock callback함수를 호출해 lock을 해제한다.
+ **/
 static inline void chip_bus_sync_unlock(struct irq_desc *desc)
 {
 	if (unlikely(desc->irq_data.chip->irq_bus_sync_unlock))

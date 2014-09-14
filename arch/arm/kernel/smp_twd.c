@@ -33,6 +33,9 @@ static void __iomem *twd_base;
 static struct clk *twd_clk;
 static unsigned long twd_timer_rate;
 
+/** 20140913    
+ * clock event device 선언.
+ **/
 static struct clock_event_device __percpu **twd_evt;
 static int twd_ppi;
 
@@ -266,6 +269,9 @@ static int __init twd_local_timer_common_register(void)
 {
 	int err;
 
+	/** 20140913    
+	 * clock_event_device용 percpu 변수 할당.
+	 **/
 	twd_evt = alloc_percpu(struct clock_event_device *);
 	if (!twd_evt) {
 		err = -ENOMEM;
@@ -299,8 +305,14 @@ int __init twd_local_timer_register(struct twd_local_timer *tlt)
 	if (twd_base || twd_evt)
 		return -EBUSY;
 
+	/** 20140913    
+	 * twd irq resource를 가져와 twd_ppi에 저장한다.
+	 **/
 	twd_ppi	= tlt->res[1].start;
 
+	/** 20140913    
+	 * twd mem resource에 지정된 메모리를 page table에 매핑.
+	 **/
 	twd_base = ioremap(tlt->res[0].start, resource_size(&tlt->res[0]));
 	if (!twd_base)
 		return -ENOMEM;
