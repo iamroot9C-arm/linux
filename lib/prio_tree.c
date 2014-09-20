@@ -66,12 +66,20 @@ static void get_index(const struct prio_tree_root *root,
 	}
 }
 
+/** 20140920    
+ **/
 static unsigned long index_bits_to_maxindex[BITS_PER_LONG];
 
+/** 20140920    
+ * prio tree를 초기화 한다.
+ **/
 void __init prio_tree_init(void)
 {
 	unsigned int i;
 
+	/** 20140920    
+	 * index bits가 가질 수 있는 최대 index의 값.
+	 **/
 	for (i = 0; i < ARRAY_SIZE(index_bits_to_maxindex) - 1; i++)
 		index_bits_to_maxindex[i] = (1UL << (i + 1)) - 1;
 	index_bits_to_maxindex[ARRAY_SIZE(index_bits_to_maxindex) - 1] = ~0UL;

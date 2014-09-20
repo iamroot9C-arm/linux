@@ -552,7 +552,8 @@ static inline void init_hrtick(void)
 
 #ifndef tsk_is_polling
 /** 20130713    
- * task t의 thread_info의 flags 중 TIF_POLLING_NRFLAG가 켜져 있는지 검사
+ * task의 thread_info의 flags 중 TIF_POLLING_NRFLAG가 켜져 있는지 검사
+ * NEED_RESCHED를 polling으로 검사한다.
  **/
 #define tsk_is_polling(t) test_tsk_thread_flag(t, TIF_POLLING_NRFLAG)
 #endif
@@ -661,6 +662,9 @@ unlock:
  * account when the CPU goes back to idle and evaluates the timer
  * wheel for the next timer event.
  */
+/** 20140920    
+ * IDLE을 수행 중인 cpu에게 need_resched를 수행하도록 한다.
+ **/
 void wake_up_idle_cpu(int cpu)
 {
 	struct rq *rq = cpu_rq(cpu);
@@ -683,10 +687,20 @@ void wake_up_idle_cpu(int cpu)
 	 * lockless. The worst case is that the other CPU runs the
 	 * idle task through an additional NOOP schedule()
 	 */
+	/** 20140920    
+	 * 해당 rq의 idle task에 RESCHED flag를 켜준다.
+	 **/
 	set_tsk_need_resched(rq->idle);
 
 	/* NEED_RESCHED must be visible before we test polling */
+	/** 20140920    
+	 * resched flag를 반영시키기 위해 memory barrier를 둔다.
+	 **/
 	smp_mb();
+	/** 20140920    
+	 * poll_idle()이 폴링으로 NEED_RESCHED를 검사하지 않는다면
+	 * IPI로 reschedule을 통보한다.
+	 **/
 	if (!tsk_is_polling(rq->idle))
 		smp_send_reschedule(cpu);
 }

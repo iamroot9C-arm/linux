@@ -114,7 +114,7 @@ void set_irq_flags(unsigned int irq, unsigned int iflags)
 }
 
 /** 20140906    
- * IRQ 관련 초기화.
+ * machine의 IRQ 초기화 함수
  **/
 void __init init_IRQ(void)
 {

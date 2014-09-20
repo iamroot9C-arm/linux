@@ -559,6 +559,9 @@ static void __init v2m_init(void)
 
 	pm_power_off = v2m_power_off;
 
+	/** 20140920    
+	 * ct_ca9x4_init 호출.
+	 **/
 	ct_desc->init_tile();
 }
 

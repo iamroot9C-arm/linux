@@ -19,6 +19,9 @@
 #define __read_mostly
 #endif
 
+/** 20140920    
+ * SMP cache bytes로 align시켜 데이터가 하나의 cacheline에 들어올 수 있도록 한다.
+ **/
 #ifndef ____cacheline_aligned
 #define ____cacheline_aligned __attribute__((__aligned__(SMP_CACHE_BYTES)))
 #endif

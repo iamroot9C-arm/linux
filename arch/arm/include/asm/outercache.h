@@ -96,6 +96,10 @@ static inline void outer_disable(void) { }
 #endif
 
 #ifdef CONFIG_OUTER_CACHE_SYNC
+/** 20140920    
+ * 외부 cache가 존재하는 경우 sync 명령을 내린다.
+ * vexpress는 l2x0_cache_sync가 호출됨.
+ **/
 static inline void outer_sync(void)
 {
 	if (outer_cache.sync)

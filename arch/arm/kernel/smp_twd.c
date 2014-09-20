@@ -83,6 +83,9 @@ static int twd_set_next_event(unsigned long evt,
  * If a local timer interrupt has occurred, acknowledge and return 1.
  * Otherwise, return 0.
  */
+/** 20140920    
+ * timer watchdog interrupt가 떴다면 1로 ack를 주고, 1을 리턴한다.
+ **/
 static int twd_timer_ack(void)
 {
 	if (__raw_readl(twd_base + TWD_TIMER_INTSTAT)) {
@@ -184,10 +187,22 @@ static void __cpuinit twd_calibrate_rate(void)
 	}
 }
 
+/** 20140920    
+ * twd interrupt handler.
+ * clock_event_device에 지정한 event_handler를 호출한다.
+ **/
 static irqreturn_t twd_handler(int irq, void *dev_id)
 {
+	/** 20140920    
+	 * clock event device를 받아온다.
+	 **/
 	struct clock_event_device *evt = *(struct clock_event_device **)dev_id;
 
+	/** 20140920    
+	 * twd interrupt 발생시 응답하고, event_handler를 호출해 interrupt를 처리한다.
+	 * 
+	 * tick_handle_periodic는 tick_handle_periodic.
+	 **/
 	if (twd_timer_ack()) {
 		evt->event_handler(evt);
 		return IRQ_HANDLED;
@@ -260,11 +275,17 @@ static int __cpuinit twd_timer_setup(struct clock_event_device *clk)
 	return 0;
 }
 
+/** 20140920    
+ * timer watchdog local timer operations.
+ **/
 static struct local_timer_ops twd_lt_ops __cpuinitdata = {
 	.setup	= twd_timer_setup,
 	.stop	= twd_timer_stop,
 };
 
+/** 20140920    
+ * twd를 percpu irq로 등록하고, local timer로 등록한다.
+ **/
 static int __init twd_local_timer_common_register(void)
 {
 	int err;
@@ -278,12 +299,20 @@ static int __init twd_local_timer_common_register(void)
 		goto out_free;
 	}
 
+	/** 20140920    
+	 * percpu irq로 twd_ppi(IRQ_LOCALTIMER, 29) 등록.
+	 * handler는 twd_handler
+	 * dev_id는 twd_evt
+	 **/
 	err = request_percpu_irq(twd_ppi, twd_handler, "twd", twd_evt);
 	if (err) {
 		pr_err("twd: can't register interrupt %d (%d)\n", twd_ppi, err);
 		goto out_free;
 	}
 
+	/** 20140920    
+	 * twd_lt_ops를 local timer operations (lt_ops)로 지정한다.
+	 **/
 	err = local_timer_register(&twd_lt_ops);
 	if (err)
 		goto out_irq;
@@ -300,6 +329,9 @@ out_free:
 	return err;
 }
 
+/** 20140920    
+ * twd local timer를 등록한다.
+ **/
 int __init twd_local_timer_register(struct twd_local_timer *tlt)
 {
 	if (twd_base || twd_evt)
@@ -317,6 +349,11 @@ int __init twd_local_timer_register(struct twd_local_timer *tlt)
 	if (!twd_base)
 		return -ENOMEM;
 
+	/** 20140920    
+	 * twd를 local timer로 등록한다.
+	 *   - interrupt 등록(핸들러 지정)
+	 *   - register 설정
+	 **/
 	return twd_local_timer_common_register();
 }
 

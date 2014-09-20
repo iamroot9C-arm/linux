@@ -1041,6 +1041,9 @@ static struct init_tags {
 static int __init customize_machine(void)
 {
 	/* customizes platform devices, or adds new ones */
+	/** 20140920    
+	 * v2m_init 호출.
+	 **/
 	if (machine_desc->init_machine)
 		machine_desc->init_machine();
 	return 0;

@@ -87,6 +87,9 @@ void tick_handle_periodic(struct clock_event_device *dev)
 	int cpu = smp_processor_id();
 	ktime_t next;
 
+	/** 20140920    
+	 * 현재 cpu에 대해 tick_periodic 실행
+	 **/
 	tick_periodic(cpu);
 
 	if (dev->mode != CLOCK_EVT_MODE_ONESHOT)

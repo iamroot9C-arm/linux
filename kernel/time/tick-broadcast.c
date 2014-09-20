@@ -281,6 +281,12 @@ void tick_broadcast_on_off(unsigned long reason, int *oncpu)
 /*
  * Set the periodic handler depending on broadcast on/off
  */
+/** 20140920    
+ * tick periodic handler를 지정한다.
+ *
+ * 최초 sp804_clockevent, broadcast 0으로 호출.
+ * 이후 twd_timer_setup에서 "local_timer"를 지정해 broadcast 0으로 호출.
+ **/
 void tick_set_periodic_handler(struct clock_event_device *dev, int broadcast)
 {
 	if (!broadcast)

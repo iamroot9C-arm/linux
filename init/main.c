@@ -737,6 +737,9 @@ asmlinkage void __init start_kernel(void)
 	radix_tree_init();
 	/* init some links before init_ISA_irqs() */
 	early_irq_init();
+	/** 20140920    
+	 * machine의 irq 초기화 함수를 호출한다.
+	 **/
 	init_IRQ();
 	prio_tree_init();
 	init_timers();

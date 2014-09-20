@@ -181,6 +181,10 @@ device_initcall(timer_init_syscore_ops);
 
 void __init time_init(void)
 {
+	/** 20140920    
+	 * system_timer = v2m_timer;
+	 * .init = v2m_timer_init
+	 **/
 	system_timer = machine_desc->timer;
 	system_timer->init();
 	sched_clock_postinit();

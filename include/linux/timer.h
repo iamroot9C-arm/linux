@@ -270,6 +270,9 @@ static inline void timer_stats_timer_clear_start_info(struct timer_list *timer)
 	timer->start_site = NULL;
 }
 #else
+/** 20140920    
+ * CONFIG_TIMER_STATS 가 선언되지 않아 NULL 함수.
+ **/
 static inline void init_timer_stats(void)
 {
 }

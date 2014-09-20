@@ -51,6 +51,13 @@
 struct secondary_data secondary_data;
 
 /** 20130713    
+ * IPI_RESCHEDULE 사용 예)
+ * load_balance()로부터 시작해서 resched_task까지 도달해 smp_cross_call로 전송
+ *
+ * IPI_CALL_FUNC_SINGLE 사용 예)
+ * flush_tlb_page()로부터 시작해서 smp_call_function_single에서 func으로
+ * ipi_flush_tlb_page 지정해 함수가 호출되도록 한다.
+ *
  * [참고] http://en.wikipedia.org/wiki/Inter-processor_interrupt
  **/
 enum ipi_msg_type {
@@ -449,9 +456,15 @@ static void __cpuinit broadcast_timer_setup(struct clock_event_device *evt)
 	clockevents_register_device(evt);
 }
 
+/** 20140920    
+ * vexpress의 twd의 경우 twd_lt_ops가 등록됨.
+ **/
 static struct local_timer_ops *lt_ops;
 
 #ifdef CONFIG_LOCAL_TIMERS
+/** 20140920    
+ * 전달받은 local timer ops를 등록한다.
+ **/
 int local_timer_register(struct local_timer_ops *ops)
 {
 	if (!is_smp() || !setup_max_cpus)

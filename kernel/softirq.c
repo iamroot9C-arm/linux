@@ -48,6 +48,10 @@
  */
 
 #ifndef __ARCH_IRQ_STAT
+/** 20140920    
+ * ARM은 __ARCH_IRQ_STAT이 지정되지 않아 전역변수 irq_stat으로 irq의 상태를 관리한다.
+ * 빠른 성능을 위해 cacheline으로 정렬시킨다.
+ **/
 irq_cpustat_t irq_stat[NR_CPUS] ____cacheline_aligned;
 EXPORT_SYMBOL(irq_stat);
 #endif
@@ -392,7 +396,7 @@ void irq_exit(void)
  */
 /** 20140726    
  * irq가 금지된 상태에서 softirq를 발생시킨다.
- * pending 후 interrupt context가 아니라면 바로 ksoftirqd를 깨운다.
+ * softirq를 pendinga 시킨 후 interrupt context가 아니라면 ksoftirqd를 깨운다.
  **/
 inline void raise_softirq_irqoff(unsigned int nr)
 {
@@ -442,6 +446,8 @@ void __raise_softirq_irqoff(unsigned int nr)
 
 /** 20140426    
  * nr SOFTIRQ의 action 을 지정.
+ *
+ * raise_softirq로 등록된 softirq를 발생시킨다.
  **/
 void open_softirq(int nr, void (*action)(struct softirq_action *))
 {
@@ -451,12 +457,28 @@ void open_softirq(int nr, void (*action)(struct softirq_action *))
 /*
  * Tasklets
  */
+/** 20140920    
+ * tasklet_head 구조체.
+ * 
+ * tasklet_vec                                           --------
+ * +-----------+  +-----------+  +-----------+  +-------|---+   |
+ * | head (*) -|->| next (*) -|->| next (*) -|->| next (*) -|   |
+ * | tail (**) |  | func()    |  | func()    |  | func()    |   |
+ * +-----------+  | data      |  | data      |  | data      |   |
+ *         |      | ...       |  | ...       |  | ...       |   |
+ *         |      +-----------+  +-----------+  +-----------+   |
+ *         |      tasklet_struct tasklet_struct tasklet_struct  |
+ *         ------------------------------------------------------
+ **/
 struct tasklet_head
 {
 	struct tasklet_struct *head;
 	struct tasklet_struct **tail;
 };
 
+/** 20140920    
+ * per-cpu로 tasklet_vec, tasklet_hi_vec라는 tasklet_head를 선언한다.
+ **/
 static DEFINE_PER_CPU(struct tasklet_head, tasklet_vec);
 static DEFINE_PER_CPU(struct tasklet_head, tasklet_hi_vec);
 
@@ -653,6 +675,10 @@ EXPORT_SYMBOL_GPL(tasklet_hrtimer_init);
  * Remote softirq bits
  */
 
+/** 20140920    
+ * per-cpu 변수 softirq_work_list를 정의한다.
+ * 각 cpu마다 NR_SOFTIRQS의 개수만큼 list_head를 보유한다.
+ **/
 DEFINE_PER_CPU(struct list_head [NR_SOFTIRQS], softirq_work_list);
 EXPORT_PER_CPU_SYMBOL(softirq_work_list);
 
@@ -741,6 +767,9 @@ void send_remote_softirq(struct call_single_data *cp, int cpu, int softirq)
 }
 EXPORT_SYMBOL(send_remote_softirq);
 
+/** 20140927
+ * 여기부터...
+ **/
 static int __cpuinit remote_softirq_cpu_notify(struct notifier_block *self,
 					       unsigned long action, void *hcpu)
 {
@@ -752,14 +781,30 @@ static int __cpuinit remote_softirq_cpu_notify(struct notifier_block *self,
 		int cpu = (unsigned long) hcpu;
 		int i;
 
+		/** 20140920    
+		 * local cpu의 irq를 금지시킨 상태에서 수행한다.
+		 **/
 		local_irq_disable();
+		/** 20140920    
+		 * 각각의 softirq에 대해
+		 **/
 		for (i = 0; i < NR_SOFTIRQS; i++) {
+			/** 20140920    
+			 * cpu에 해당하는 softirq_work_list를 가져와서
+			 **/
 			struct list_head *head = &per_cpu(softirq_work_list[i], cpu);
 			struct list_head *local_head;
 
+			/** 20140920    
+			 * softirq_work_list가 비어 있다면 다음 SOFTIRQ로 넘어간다.
+			 **/
 			if (list_empty(head))
 				continue;
 
+			/** 20140920    
+			 * 현재 cpu의 softirq_work_list를 가져오고,
+			 * local_head 다음에 head를 추가한다.
+			 **/
 			local_head = &__get_cpu_var(softirq_work_list[i]);
 			list_splice_init(head, local_head);
 			raise_softirq_irqoff(i);
@@ -770,6 +815,9 @@ static int __cpuinit remote_softirq_cpu_notify(struct notifier_block *self,
 	return NOTIFY_OK;
 }
 
+/** 20140920    
+ * remote_softirq_cpu_notifier NB 정의.
+ **/
 static struct notifier_block __cpuinitdata remote_softirq_cpu_notifier = {
 	.notifier_call	= remote_softirq_cpu_notify,
 };
@@ -778,17 +826,31 @@ void __init softirq_init(void)
 {
 	int cpu;
 
+	/** 20140920    
+	 * softirq는 per-cpu 기반으로 동작시킨다.
+	 * possible cpu mask의 각 cpu에 대해 다음 동작을 수행한다.
+	 **/
 	for_each_possible_cpu(cpu) {
 		int i;
 
+		/** 20140920    
+		 * tasklet_vec, tasklet_hi_vec 구조체를 초기화 한다.
+		 * struct tasklet_head 위의 ascii 참고.
+		 **/
 		per_cpu(tasklet_vec, cpu).tail =
 			&per_cpu(tasklet_vec, cpu).head;
 		per_cpu(tasklet_hi_vec, cpu).tail =
 			&per_cpu(tasklet_hi_vec, cpu).head;
+		/** 20140920    
+		 * SOFTIRQS 각각의 softirq_work_list를 초기화 한다.
+		 **/
 		for (i = 0; i < NR_SOFTIRQS; i++)
 			INIT_LIST_HEAD(&per_cpu(softirq_work_list[i], cpu));
 	}
 
+	/** 20140920    
+	 * hotcpu notifier chain에 remote_softirq_cpu_notifier를 등록시킨다.
+	 **/
 	register_hotcpu_notifier(&remote_softirq_cpu_notifier);
 
 	open_softirq(TASKLET_SOFTIRQ, tasklet_action);
@@ -800,13 +862,31 @@ static int run_ksoftirqd(void * __bind_cpu)
 	set_current_state(TASK_INTERRUPTIBLE);
 
 	while (!kthread_should_stop()) {
+		/** 20140920    
+		 * 선점 불가 상태로 만들어 scheduling이 발생하지 않도록 한다.
+		 **/
 		preempt_disable();
+		/** 20140920    
+		 * softirq가 pending되어 있지 않다면 schedule_preempt_disabled를 호출한다.
+		 * 즉, 특별한 동작을 하지 않고 schedule out 한다.
+		 *
+		 * 이후 softirq가 raise 되어야 할 때 wakeup_softirqd에 의해 깨어난다.
+		 * 깨어난 이후에는 다시 선점불가 상태가 된다.
+		 **/
 		if (!local_softirq_pending()) {
 			schedule_preempt_disabled();
 		}
 
+		/** 20140920    
+		 * task의 상태를 TASK_RUNNING으로 만든다.
+		 **/
 		__set_current_state(TASK_RUNNING);
 
+		/** 20140920    
+		 * local softirq(현재 cpu)가 pending 되어 있는동안 irq를 막은 상태에서
+		 * __do_softirq로 pending된 softirq를 처리한다.
+		 *
+		 **/
 		while (local_softirq_pending()) {
 			/* Preempt disable stops cpu going offline.
 			   If already offline, we'll be on wrong CPU:
@@ -818,6 +898,9 @@ static int run_ksoftirqd(void * __bind_cpu)
 				__do_softirq();
 			local_irq_enable();
 			sched_preempt_enable_no_resched();
+			/** 20140920    
+			 * rescheduling point를 둔다.
+			 **/
 			cond_resched();
 			preempt_disable();
 			/** 20140830    

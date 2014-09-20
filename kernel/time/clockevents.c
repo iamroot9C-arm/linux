@@ -343,6 +343,10 @@ void clockevents_config(struct clock_event_device *dev, u32 freq)
  *
  * min/max_delta can be 0 for devices which do not support oneshot mode.
  */
+/** 20140920    
+ * clock event device를 설정하고 등록한다.
+ * twd_timer_setup에서는 "local_timer"를 지정해 호출한다.
+ **/
 void clockevents_config_and_register(struct clock_event_device *dev,
 				     u32 freq, unsigned long min_delta,
 				     unsigned long max_delta)

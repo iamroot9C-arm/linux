@@ -50,10 +50,14 @@ static void __init ct_ca9x4_map_io(void)
 #ifdef CONFIG_HAVE_ARM_TWD
 /** 20140913    
  * TWD local timer 정의.
- * localtimer IRQ 지정.
+ * resource mem : A9_MPCORE_TWD
+ * resource irq : IRQ_LOCALTIMER(29)
  **/
 static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, A9_MPCORE_TWD, IRQ_LOCALTIMER);
 
+/** 20140920    
+ * twd_local_timer를 local timer로 등록한다.
+ **/
 static void __init ca9x4_twd_init(void)
 {
 	int err = twd_local_timer_register(&twd_local_timer);
@@ -64,6 +68,11 @@ static void __init ca9x4_twd_init(void)
 #define ca9x4_twd_init()	do {} while(0)
 #endif
 
+/** 20140920    
+ * CoreTile ca9x4의 irq를 초기화 한다.
+ *   - gic 초기화
+ *   - twd를 local timer로 지정(irq 29)
+ **/
 static void __init ct_ca9x4_init_irq(void)
 {
 	/** 20140906    
@@ -166,6 +175,9 @@ static void __init ct_ca9x4_init(void)
 	struct clk *clk;
 
 #ifdef CONFIG_CACHE_L2X0
+	/** 20140920    
+	 * L2C register를 page table에 mapping 한다.
+	 **/
 	void __iomem *l2x0_base = ioremap(CT_CA9X4_L2CC, SZ_4K);
 
 	/* set RAM latencies to 1 cycle for this core tile. */

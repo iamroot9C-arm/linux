@@ -516,6 +516,9 @@ extern void __send_remote_softirq(struct call_single_data *cp, int cpu,
      he makes it with spinlocks.
  */
 
+/** 20140920    
+ * tasklet_struct
+ **/
 struct tasklet_struct
 {
 	struct tasklet_struct *next;

@@ -5033,7 +5033,7 @@ static void perf_swevent_del(struct perf_event *event, int flags)
 	hlist_del_rcu(&event->hlist_entry);
 }
 
-static void perf_pswevent_start(struct perf_event *event, int flags)
+static void perf_swevent_start(struct perf_event *event, int flags)
 {
 	event->hw.state = 0;
 }

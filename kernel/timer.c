@@ -57,6 +57,18 @@ EXPORT_SYMBOL(jiffies_64);
 /*
  * per-CPU timer vector definitions:
  */
+/** 20140920    
+ * tvec의 base가 small인 경우 4, 그렇지 않은 경우 6.
+ * vexpress의 경우 CONFIG_BASE_SMALL은 0.
+ *
+ * TVN : Timer Vector Number
+ * TVR : Timer Vector Root
+ *
+ * TVN_BITS : 6
+ * TVR_BITS : 8
+ * TVN_SIZE : 1<<6 = 64
+ * TVR_SIZE : 1<<8 = 256
+ **/
 #define TVN_BITS (CONFIG_BASE_SMALL ? 4 : 6)
 #define TVR_BITS (CONFIG_BASE_SMALL ? 6 : 8)
 #define TVN_SIZE (1 << TVN_BITS)
@@ -85,11 +97,17 @@ struct tvec_base {
 	struct tvec tv5;
 } ____cacheline_aligned;
 
+/** 20140920    
+ * boot_tvec_bases를 percpu 포인터변수 tvec_bases의 초기값으로 지정한다.
+ **/
 struct tvec_base boot_tvec_bases;
 EXPORT_SYMBOL(boot_tvec_bases);
 static DEFINE_PER_CPU(struct tvec_base *, tvec_bases) = &boot_tvec_bases;
 
 /* Functions below help us manage 'deferrable' flag */
+/** 20140920    
+ * tvec_base 속성을 보고 deferrable 한지 검사한다.
+ **/
 static inline unsigned int tbase_get_deferrable(struct tvec_base *base)
 {
 	return ((unsigned int)(unsigned long)base & TBASE_DEFERRABLE_FLAG);
@@ -1181,6 +1199,9 @@ static void call_timer_fn(struct timer_list *timer, void (*fn)(unsigned long),
  * This function cascades all vectors and executes all expired timer
  * vectors.
  */
+/** 20140920    
+ * 추후 분석???
+ **/
 static inline void __run_timers(struct tvec_base *base)
 {
 	struct timer_list *timer;
@@ -1406,12 +1427,22 @@ void update_process_times(int user_tick)
 /*
  * This function runs timers and the timer-tq in bottom half context.
  */
+/** 20140920    
+ * TIMER_SOFTIRQ가 raise 되었을 때 수행되는 action.
+ **/
 static void run_timer_softirq(struct softirq_action *h)
 {
+	/** 20140920    
+	 * percpu 포인터를 통해 현재 cpu의 tvec_base를 가져온다.
+	 **/
 	struct tvec_base *base = __this_cpu_read(tvec_bases);
 
 	hrtimer_run_pending();
 
+	/** 20140920    
+	 * 현재 jiffies가 base의 timer_jiffies 이상인 경우
+	 * __run_timers로 timer를 동작시킨다.
+	 **/
 	if (time_after_eq(jiffies, base->timer_jiffies))
 		__run_timers(base);
 }
@@ -1419,6 +1450,10 @@ static void run_timer_softirq(struct softirq_action *h)
 /*
  * Called by the local, per-CPU timer interrupt on SMP.
  */
+/** 20140920    
+ * SMP에서 local timer를 실행시킨다.
+ * vexpress의 경우 twd.
+ **/
 void run_local_timers(void)
 {
 	hrtimer_run_queues();
@@ -1728,12 +1763,18 @@ SYSCALL_DEFINE1(sysinfo, struct sysinfo __user *, info)
 	return 0;
 }
 
+/** 20140920    
+ * percpu별로 존재하는 tvec_base를 설정한다.
+ **/
 static int __cpuinit init_timers_cpu(int cpu)
 {
 	int j;
 	struct tvec_base *base;
 	static char __cpuinitdata tvec_base_done[NR_CPUS];
 
+	/** 20140920    
+	 * 전달된 cpu의 tvec_base_done이 초기화 안 되어 있다면 실행.
+	 **/
 	if (!tvec_base_done[cpu]) {
 		static char boot_done;
 
@@ -1741,6 +1782,10 @@ static int __cpuinit init_timers_cpu(int cpu)
 			/*
 			 * The APs use this path later in boot
 			 */
+			/** 20140920    
+			 * boot_done 이후에 호출된 경우 (smp에서 boot cpu외인 경우)
+			 * base를 위한 메모리 공간 할당.
+			 **/
 			base = kmalloc_node(sizeof(*base),
 						GFP_KERNEL | __GFP_ZERO,
 						cpu_to_node(cpu));
@@ -1748,11 +1793,18 @@ static int __cpuinit init_timers_cpu(int cpu)
 				return -ENOMEM;
 
 			/* Make sure that tvec_base is 2 byte aligned */
+			/** 20140920    
+			 * tbase가 deferrable ???
+			 **/
 			if (tbase_get_deferrable(base)) {
 				WARN_ON(1);
 				kfree(base);
 				return -ENOMEM;
 			}
+			/** 20140920    
+			 * boot_done 이후 진입시 tvec_bases에서 cpu에 해당하는 위치를
+			 * 할당받은 메모리 주소로설정한다.
+			 **/
 			per_cpu(tvec_bases, cpu) = base;
 		} else {
 			/*
@@ -1761,25 +1813,50 @@ static int __cpuinit init_timers_cpu(int cpu)
 			 * ready yet and because the memory allocators are not
 			 * initialised either.
 			 */
+			/** 20140920    
+			 * boot CPU 과정에서 boot_done을 설정하면서 boot_tvec_bases를 base로 지정한다.
+			 **/
 			boot_done = 1;
 			base = &boot_tvec_bases;
 		}
+		/** 20140920    
+		 * tvec base의 설정이 완료되었다.
+		 **/
 		tvec_base_done[cpu] = 1;
 	} else {
+		/** 20140920    
+		 * tvec_bases가 설정된 뒤에는 cpu에 해당하는 값을 가져와 base에 저장한다.
+		 **/
 		base = per_cpu(tvec_bases, cpu);
 	}
 
+	/** 20140920    
+	 * boot 중에는 base에 boot_tvec_bases가 들어 있다.
+	 *
+	 * spin_lock을 초기화 한다.
+	 **/
 	spin_lock_init(&base->lock);
 
+	/** 20140920    
+	 * TVN_SIZE 수만큼 base의 각 timer vector의 list head를 초기화 한다.
+	 * TVN_SIZE = 64.
+	 **/
 	for (j = 0; j < TVN_SIZE; j++) {
 		INIT_LIST_HEAD(base->tv5.vec + j);
 		INIT_LIST_HEAD(base->tv4.vec + j);
 		INIT_LIST_HEAD(base->tv3.vec + j);
 		INIT_LIST_HEAD(base->tv2.vec + j);
 	}
+	/** 20140920    
+	 * TVR_SIZE 수만큼 base의 tv1 timer vecotr의 list head를 초기화 한다.
+	 * TVR_SIZE = 256
+	 **/
 	for (j = 0; j < TVR_SIZE; j++)
 		INIT_LIST_HEAD(base->tv1.vec + j);
 
+	/** 20140920    
+	 * base의 jiffies, next_timer, active_timers를 설정 한다.
+	 **/
 	base->timer_jiffies = jiffies;
 	base->next_timer = base->timer_jiffies;
 	base->active_timers = 0;
@@ -1833,6 +1910,9 @@ static void __cpuinit migrate_timers(int cpu)
 }
 #endif /* CONFIG_HOTPLUG_CPU */
 
+/** 20140920    
+ * hcpu에 timer관련 notify를 발생시키는 함수.
+ **/
 static int __cpuinit timer_cpu_notify(struct notifier_block *self,
 				unsigned long action, void *hcpu)
 {
@@ -1858,20 +1938,38 @@ static int __cpuinit timer_cpu_notify(struct notifier_block *self,
 	return NOTIFY_OK;
 }
 
+/** 20140920    
+ * percpu timers notify block
+ **/
 static struct notifier_block __cpuinitdata timers_nb = {
 	.notifier_call	= timer_cpu_notify,
 };
 
 
+/** 20140920    
+ * CPU_UP_PREPARE를 자신에게 보내 tvec_base를 초기화 한다.
+ * timers_nb를 cpu notifier로 등록시킨다.
+ * TIMER_SOFTIRQ softirq를 등록한다.
+ **/
 void __init init_timers(void)
 {
+	/** 20140920    
+	 * timer cpu notify (CPU_UP_PREPARE)를 boot 중인 자기 자신에게 전송한다.
+	 * 이 notify를 받아 tvec_base를 초기화 한다.
+	 **/
 	int err = timer_cpu_notify(&timers_nb, (unsigned long)CPU_UP_PREPARE,
 				(void *)(long)smp_processor_id());
 
 	init_timer_stats();
 
 	BUG_ON(err != NOTIFY_OK);
+	/** 20140920    
+	 * cpu notifier로 timer_nb를 등록한다.
+	 **/
 	register_cpu_notifier(&timers_nb);
+	/** 20140920    
+	 * TIMER_SOFTIRQ에 대한 action으로 run_timer_softirq를 등록한다.
+	 **/
 	open_softirq(TIMER_SOFTIRQ, run_timer_softirq);
 }
 

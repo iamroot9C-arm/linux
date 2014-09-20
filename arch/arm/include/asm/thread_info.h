@@ -165,6 +165,14 @@ extern int vfp_restore_user_hwstate(struct user_vfp __user *,
  */
 /** 20140816    
  * thread info의 flags 속성값
+ *  TIF_SYSCALL_TRACE	- syscall trace가 활성화 되어 있다.
+ *  TIF_SYSCAL_AUDIT	- syscall 감사가 활성화 되어 있다.
+ *  TIF_SIGPENDING		- 시그널이 대기(펜딩) 중이다.
+ *  TIF_NEED_RESCHED	- rescheduling이 필요하다.
+ *  TIF_NOTIFY_RESUME	- user mode 진입 전 콜백함수 호출이 필요하다.
+ *  TIF_USEDFPU			- FPU was used by this task this quantum (SMP)
+ *  TIF_POLLING_NRFLAG	- poll_idle()이 폴링으로 TIF_NEED_RESCHED를 검사한다.
+
  **/
 #define TIF_SIGPENDING		0
 #define TIF_NEED_RESCHED	1

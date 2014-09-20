@@ -104,15 +104,17 @@ static inline u64 get_jiffies_64(void)
  * wouldn't care). Gcc is currently neither.
  */
 /** 20130824    
- * a가 b보다 이후인 경우 참
+ * jiffies 값 비교 매크로.
+ *
+ * time_after(a,b)    : a가 b보다 큰 경우 참
+ * time_before(a,b)   : a가 b보다 작은 경우 참
+ * time_after_eq(a,b) : a가 b보다 크거나 같은 경우 참
+ * time_before_eq(a,b): a가 b보다 작거나 같은 경우 참
  **/
 #define time_after(a,b)		\
 	(typecheck(unsigned long, a) && \
 	 typecheck(unsigned long, b) && \
 	 ((long)(b) - (long)(a) < 0))
-/** 20130824    
- * a가 b보다 이전인 경우 참
- **/
 #define time_before(a,b)	time_after(b,a)
 
 #define time_after_eq(a,b)	\

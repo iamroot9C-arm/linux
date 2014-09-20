@@ -751,6 +751,9 @@ void clock_was_set_delayed(void)
 
 #else
 
+/** 20140920    
+ * CONFIG_HIGH_RES_TIMERS가 정의되지 않았다.
+ **/
 static inline int hrtimer_hres_active(void) { return 0; }
 static inline int hrtimer_is_hres_enabled(void) { return 0; }
 static inline int hrtimer_switch_to_hres(void) { return 0; }
@@ -1491,6 +1494,10 @@ static inline void __hrtimer_peek_ahead_timers(void) { }
  * softirq context in case the hrtimer initialization failed or has
  * not been done yet.
  */
+/** 20140920    
+ * vexpress의 경우 high resolution timer가 config되어 있지 않다.
+ * 추후 분석???
+ **/
 void hrtimer_run_pending(void)
 {
 	if (hrtimer_hres_active())
@@ -1814,6 +1821,9 @@ static struct notifier_block __cpuinitdata hrtimers_nb = {
 	.notifier_call = hrtimer_cpu_notify,
 };
 
+/** 20140920    
+ * 추후 분석???
+ **/
 void __init hrtimers_init(void)
 {
 	hrtimer_cpu_notify(&hrtimers_nb, (unsigned long)CPU_UP_PREPARE,

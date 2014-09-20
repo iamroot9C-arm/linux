@@ -96,6 +96,11 @@ extern struct cpumask *tick_get_broadcast_oneshot_mask(void);
 
 # endif /* BROADCAST */
 
+/** 20140920    
+ * vexpress config에서
+ * CONFIG_GENERIC_CLOCKEVENTS 선언이 되어 있고,
+ * CONFIG_TICK_ONESHOT 선언은 안 되어 있다.
+ **/
 # ifdef CONFIG_TICK_ONESHOT
 extern void tick_clock_notify(void);
 extern int tick_check_oneshot_change(int allow_nohz);
