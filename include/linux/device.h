@@ -497,6 +497,9 @@ ssize_t device_show_int(struct device *dev, struct device_attribute *attr,
 ssize_t device_store_int(struct device *dev, struct device_attribute *attr,
 			 const char *buf, size_t count);
 
+/** 20140927    
+ * sys devices 아래 _name 이름을 _mode로 생성, _show, _store 함수 지정
+ **/
 #define DEVICE_ATTR(_name, _mode, _show, _store) \
 	struct device_attribute dev_attr_##_name = __ATTR(_name, _mode, _show, _store)
 #define DEVICE_ULONG_ATTR(_name, _mode, _var) \

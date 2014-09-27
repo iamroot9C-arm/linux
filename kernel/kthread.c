@@ -59,6 +59,9 @@ struct kthread {
  * and this will return true.  You should then return, and your return
  * value will be passed through to kthread_stop().
  */
+/** 20140927    
+ * kthread_stop() 등에 의해 현재 thread가 멈춰야 한다면 참이 리턴된다.
+ **/
 int kthread_should_stop(void)
 {
 	return to_kthread(current)->should_stop;
@@ -232,6 +235,10 @@ EXPORT_SYMBOL(kthread_create_on_node);
  * except that @cpu doesn't need to be online, and the thread must be
  * stopped (i.e., just returned from kthread_create()).
  */
+/** 20140927    
+ * task를 특정 cpu에서 실행하도록 설정한다.
+ * kthread를 생성한 뒤에 run 상태가 아닐 때 설정한다.
+ **/
 void kthread_bind(struct task_struct *p, unsigned int cpu)
 {
 	/* Must have done schedule() in kthread() before we set_task_cpu */

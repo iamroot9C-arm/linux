@@ -34,14 +34,22 @@ static ssize_t show_online(struct device *dev,
 	return sprintf(buf, "%u\n", !!cpu_online(cpu->dev.id));
 }
 
+/** 20140927    
+ **/
 static ssize_t __ref store_online(struct device *dev,
 				  struct device_attribute *attr,
 				  const char *buf, size_t count)
 {
+	/** 20140927    
+	 * dev 항목을 포함하는 cpu 구조체를 가져온다.
+	 **/
 	struct cpu *cpu = container_of(dev, struct cpu, dev);
 	ssize_t ret;
 
 	cpu_hotplug_driver_lock();
+	/** 20140927    
+	 * echo '0', '1' 항목에 따라 cpu_down, cpu_up 호출
+	 **/
 	switch (buf[0]) {
 	case '0':
 		ret = cpu_down(cpu->dev.id);
@@ -62,6 +70,10 @@ static ssize_t __ref store_online(struct device *dev,
 		ret = count;
 	return ret;
 }
+
+/** 20140927    
+ * /sys/devices/system/cpu
+ **/
 static DEVICE_ATTR(online, 0644, show_online, store_online);
 
 static void __cpuinit register_cpu_control(struct cpu *cpu)

@@ -193,6 +193,9 @@ int __ref register_cpu_notifier(struct notifier_block *nb)
 	return ret;
 }
 
+/** 20140927    
+ * cpu_chain에 등록된 notifier_block을 호출한다.
+ **/
 static int __cpu_notify(unsigned long val, void *v, int nr_to_call,
 			int *nr_calls)
 {
@@ -204,6 +207,8 @@ static int __cpu_notify(unsigned long val, void *v, int nr_to_call,
 	return notifier_to_errno(ret);
 }
 
+/** 20140927    
+ **/
 static int cpu_notify(unsigned long val, void *v)
 {
 	return __cpu_notify(val, v, -1, NULL);
@@ -211,6 +216,8 @@ static int cpu_notify(unsigned long val, void *v)
 
 #ifdef CONFIG_HOTPLUG_CPU
 
+/** 20140927    
+ **/
 static void cpu_notify_nofail(unsigned long val, void *v)
 {
 	BUG_ON(cpu_notify(val, v));
@@ -353,6 +360,9 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen)
 	__cpu_die(cpu);
 
 	/* CPU is completely dead: tell everyone.  Too late to complain. */
+	/** 20140927    
+	 * hcpu가 정상적으로 죽은 경우 CPU_DEAD message를 보낸다.
+	 **/
 	cpu_notify_nofail(CPU_DEAD | mod, hcpu);
 
 	check_for_tasks(cpu);

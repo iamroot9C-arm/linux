@@ -390,6 +390,9 @@ static inline int disable_irq_wake(unsigned int irq)
 #endif /* CONFIG_GENERIC_HARDIRQS */
 
 
+/** 20140927    
+ * force_irqthreads는 0.
+ **/
 #ifdef CONFIG_IRQ_FORCED_THREADING
 extern bool force_irqthreads;
 #else
@@ -399,6 +402,9 @@ extern bool force_irqthreads;
 /** 20140726    
  * ARCH에서 별도로 SOFTIRQ PENDING을 기록하는 함수가 지정되지 않을 때
  * 현재 cpu의 softirq pending 상태를 덮어쓰거나, or로 추가하는 함수.
+ *
+ * 20140926
+ * 여기서 설정한 비트값을 보고 __do_softirq pending되어 있음을 식별하고 처리한다.
  **/
 #ifndef __ARCH_SET_SOFTIRQ_PENDING
 #define set_softirq_pending(x) (local_softirq_pending() = (x))
@@ -518,6 +524,11 @@ extern void __send_remote_softirq(struct call_single_data *cp, int cpu,
 
 /** 20140920    
  * tasklet_struct
+ *
+ * tasklet은 softirq로 구현되며, interrupt context에서 실행된다.
+ *
+ * tasklet은 softirq와 달리 한 시점에 하나의 CPU에서만 수행된다.
+ * 반면, 다른 BH와 달리 각기 다른 taslket은 다른 CPU들에서 각각 실행될 수 있다.
  **/
 struct tasklet_struct
 {

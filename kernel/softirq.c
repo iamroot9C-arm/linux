@@ -99,6 +99,9 @@ static void wakeup_softirqd(void)
  * This lets us distinguish between whether we are currently processing
  * softirq and whether we just have bh disabled.
  */
+/** 20140927    
+ * hardirq.h에 preempt_count를 나누는 비트 설정이 정의되어 있다.
+ **/
 
 /*
  * This one is for softirq.c-internal use,
@@ -133,12 +136,15 @@ static void __local_bh_disable(unsigned long ip, unsigned int cnt)
 #else /* !CONFIG_TRACE_IRQFLAGS */
 /** 20140622    
  * 선점 count를 이용한 bottom half disable.
+ *
+ * local_bh_disable에서는 SOFTIRQ_DISABLE_OFFSET
+ * __do_softirq에서는 SOFTIRQ_OFFSET를 전달.
  **/
 static inline void __local_bh_disable(unsigned long ip, unsigned int cnt)
 {
 	/** 20140622    
-	 * preempt_count에 cnt (SOFTIRQ_DISABLE_OFFSET)를 증가시키고
-	 * compiler barrier를 둔다.
+	 * preempt_count에 cnt를 증가시키고 compiler barrier를 둔다.
+	 * (cnt: SOFTIRQ_OFFSET, SOFTIRQ_DISABLE_OFFSET)
 	 **/
 	add_preempt_count(cnt);
 	barrier();
@@ -156,6 +162,10 @@ void local_bh_disable(void)
 
 EXPORT_SYMBOL(local_bh_disable);
 
+/** 20140927    
+ * preempt_count에서 cnt를 감소시킨다.
+ * cnt가 SOFTIRQ_OFFSET으로 온 경우, SOFTIRQ가 끝났음을 표시한다.
+ **/
 static void __local_bh_enable(unsigned int cnt)
 {
 	WARN_ON_ONCE(in_irq());
@@ -226,8 +236,16 @@ EXPORT_SYMBOL(local_bh_enable_ip);
  * we want to handle softirqs as soon as possible, but they
  * should not be able to lock up the box.
  */
+/** 20140927    
+ * softirq의 action을 호출하고, 다시 검사해 softirq가 pending되어 있다면
+ * restart하는데, 이 수치를 넘는다면 softirqd로 실행한다.
+ **/
 #define MAX_SOFTIRQ_RESTART 10
 
+/** 20140927    
+ * softirq가 pending되어 있는지 검사해 LSB부터 action을 수행한다.
+ * action은 SOFTIRQ interrupt context에서 local interrupt가 활성화된 상태로 실행된다.
+ **/
 asmlinkage void __do_softirq(void)
 {
 	struct softirq_action *h;
@@ -241,32 +259,65 @@ asmlinkage void __do_softirq(void)
 	 * softirq. A softirq handled such as network RX might set PF_MEMALLOC
 	 * again if the socket is related to swap
 	 */
+	/** 20140927    
+	 * flags에서 PF_MEMALLOC을 지워 별도의 memory allocating을 하지 않고,
+	 * softirq를 위한 메모리에서 빌려오도록 한다.
+	 **/
 	current->flags &= ~PF_MEMALLOC;
 
+	/** 20140927    
+	 * 현재 cpu의 softirq의 pending 상태를 가져온다.
+	 **/
 	pending = local_softirq_pending();
+	/** 20140927    
+	 * 추후분석 ???
+	 **/
 	account_system_vtime(current);
 
+	/** 20140927    
+	 * __local_bh_disable을 이용해 preempt_count에 SOFTIRQ_OFFSET를 기록한다.
+	 * SOFTIRQ 진행 중임을 표시한다. 즉, interrupt context에서 이후를 실행한다.
+	 **/
 	__local_bh_disable((unsigned long)__builtin_return_address(0),
 				SOFTIRQ_OFFSET);
 	lockdep_softirq_enter();
 
+	/** 20140927    
+	 * 현재 cpu의 번호를 가져온다.
+	 **/
 	cpu = smp_processor_id();
 restart:
 	/* Reset the pending bitmask before enabling irqs */
+	/** 20140927    
+	 * irq 할성화 전에 pending bitmask를 0으로 설정한다.
+	 *
+	 * 인터럽트가 발생한다면 기존의 pending 된 softirq에 의해 irq_exit에서
+	 * 다시 softirq handling을 시도할 것이다.
+	 **/
 	set_softirq_pending(0);
 
 	local_irq_enable();
 
 	h = softirq_vec;
 
+	/** 20140927    
+	 * 즉, softirq action은 SOFTIRQ interrupt context에서, interrupt를 활성화한 상태로 실행한다.
+	 * softirq action 은 우선 순위에 따라 LSB에서부터 실행한다.
+	 **/
 	do {
 		if (pending & 1) {
 			unsigned int vec_nr = h - softirq_vec;
 			int prev_count = preempt_count();
 
+			/** 20140927    
+			 * kstat 값 증가.
+			 **/
 			kstat_incr_softirqs_this_cpu(vec_nr);
 
 			trace_softirq_entry(vec_nr);
+			/** 20140927    
+			 * softirq의 action호출. softirq_action이 argument로 넘어간다.
+			 **/
 			h->action(h);
 			trace_softirq_exit(vec_nr);
 			if (unlikely(prev_count != preempt_count())) {
@@ -278,25 +329,45 @@ restart:
 				preempt_count() = prev_count;
 			}
 
+			/** 20140927    
+			 * softirq action 호출 이후에, rcu_bh에 대한 QS가 되었음을 기록한다.
+			 * interrupt enable 상태이므로 각 softirq 하나를 처리할 때마다 QS를 기록한다.
+			 **/
 			rcu_bh_qs(cpu);
 		}
+		/** 20140927    
+		 * 다음 softirq 항목으로 이동.
+		 **/
 		h++;
 		pending >>= 1;
 	} while (pending);
 
 	local_irq_disable();
 
+	/** 20140927    
+	 * 다시 softirq pending 값을 가져온다.
+	 * 그 사이에 softirq가 들어왔다면 max_restart까지만 실행한다.
+	 **/
 	pending = local_softirq_pending();
 	if (pending && --max_restart)
 		goto restart;
 
+	/** 20140927    
+	 * max_restart만큼 실행한 뒤에 pending되어 있다면 softirq daemon을 깨운다.
+	 **/
 	if (pending)
 		wakeup_softirqd();
 
 	lockdep_softirq_exit();
 
 	account_system_vtime(current);
+	/** 20140927    
+	 * SOFTIRQ_OFFSET
+	 **/
 	__local_bh_enable(SOFTIRQ_OFFSET);
+	/** 20140927    
+	 * 현재 task의 PF_MEMALLOC이 설정되어 있었다면 복원한다.
+	 **/
 	tsk_restore_flags(current, old_flags, PF_MEMALLOC);
 }
 
@@ -352,15 +423,30 @@ void irq_enter(void)
 	__irq_enter();
 }
 
+/** 20140927    
+ * softirq를 실행한다.
+ **/
 static inline void invoke_softirq(void)
 {
 	if (!force_irqthreads) {
 #ifdef __ARCH_IRQ_EXIT_IRQS_DISABLED
+		/** 20140927    
+		 * architecture가 irq exit에서 irq disabled로 처리하는지 여부에 따라
+		 * local_irq_save 여부가 결정된다.
+		 *
+		 * local_irq_save를 호출하지 않는 __do_softirq로 처리
+		 **/
 		__do_softirq();
 #else
 		do_softirq();
 #endif
 	} else {
+		/** 20140927    
+		 * softirq를 강제로 irqthread로 처리하도록 지정되어 있다면
+		 * 항상 softirqd를 깨워 실행시킨다.
+		 *
+		 * __local_bh_disable를 이용해 현재 상태를 SOFTIRQ 실행 중임을 표시한다.
+		 **/
 		__local_bh_disable((unsigned long)__builtin_return_address(0),
 				SOFTIRQ_OFFSET);
 		wakeup_softirqd();
@@ -379,6 +465,10 @@ void irq_exit(void)
 	account_system_vtime(current);
 	trace_hardirq_exit();
 	sub_preempt_count(IRQ_EXIT_OFFSET);
+	/** 20140927    
+	 * interrupt context가 아니고, local cpu에 softirq가 pending 되어 있다면 (__raise_softirq 함수로 pending됨)
+	 * softirq를 처리시킨다.
+	 **/
 	if (!in_interrupt() && local_softirq_pending())
 		invoke_softirq();
 
@@ -387,6 +477,8 @@ void irq_exit(void)
 	if (idle_cpu(smp_processor_id()) && !in_interrupt() && !need_resched())
 		tick_nohz_irq_exit();
 #endif
+	/** 20141004 여기부터...
+	 **/
 	rcu_irq_exit();
 	sched_preempt_enable_no_resched();
 }
@@ -396,7 +488,7 @@ void irq_exit(void)
  */
 /** 20140726    
  * irq가 금지된 상태에서 softirq를 발생시킨다.
- * softirq를 pendinga 시킨 후 interrupt context가 아니라면 ksoftirqd를 깨운다.
+ * softirq를 pending 시킨 후 interrupt context가 아니라면 ksoftirqd를 깨운다.
  **/
 inline void raise_softirq_irqoff(unsigned int nr)
 {
@@ -422,8 +514,8 @@ inline void raise_softirq_irqoff(unsigned int nr)
 }
 
 /** 20140726    
- * local cpu interrupt를 disable한 상태에서
- * nr에 해당하는 softirq를 발생시킨다.
+ * local cpu interrupt를 disable한 상태에서 nr에 해당하는 softirq를 발생시킨다.
+ * 실제로는 local_softirq_pending()에서 해당 비트 위치에 pending만을 표시한다.
  **/
 void raise_softirq(unsigned int nr)
 {
@@ -447,7 +539,7 @@ void __raise_softirq_irqoff(unsigned int nr)
 /** 20140426    
  * nr SOFTIRQ의 action 을 지정.
  *
- * raise_softirq로 등록된 softirq를 발생시킨다.
+ * 등록된 softirq를 발생시킬 때는 raise_softirq를 사용한다.
  **/
 void open_softirq(int nr, void (*action)(struct softirq_action *))
 {
@@ -768,7 +860,7 @@ void send_remote_softirq(struct call_single_data *cp, int cpu, int softirq)
 EXPORT_SYMBOL(send_remote_softirq);
 
 /** 20140927
- * 여기부터...
+ * softirq 관련 cpu notify.
  **/
 static int __cpuinit remote_softirq_cpu_notify(struct notifier_block *self,
 					       unsigned long action, void *hcpu)
@@ -777,6 +869,10 @@ static int __cpuinit remote_softirq_cpu_notify(struct notifier_block *self,
 	 * If a CPU goes away, splice its entries to the current CPU
 	 * and trigger a run of the softirq
 	 */
+	/** 20140927    
+	 * 대상 cpu가 죽을 때, 그 cpu의 softirq_work_list를 가져와 현재 CPU에 등록하고,
+	 * softirq를 발생시켜 처리한다.
+	 **/
 	if (action == CPU_DEAD || action == CPU_DEAD_FROZEN) {
 		int cpu = (unsigned long) hcpu;
 		int i;
@@ -786,7 +882,7 @@ static int __cpuinit remote_softirq_cpu_notify(struct notifier_block *self,
 		 **/
 		local_irq_disable();
 		/** 20140920    
-		 * 각각의 softirq에 대해
+		 * 각각의 softirq에 대해 아래 동작을 수행한다.
 		 **/
 		for (i = 0; i < NR_SOFTIRQS; i++) {
 			/** 20140920    
@@ -802,11 +898,14 @@ static int __cpuinit remote_softirq_cpu_notify(struct notifier_block *self,
 				continue;
 
 			/** 20140920    
-			 * 현재 cpu의 softirq_work_list를 가져오고,
-			 * local_head 다음에 head를 추가한다.
+			 * 현재 cpu의 softirq_work_list에 CPU_DEAD되는 cpu의 list(head)를 붙여넣고,
+			 * head의 리스트를 비운다.
 			 **/
 			local_head = &__get_cpu_var(softirq_work_list[i]);
 			list_splice_init(head, local_head);
+			/** 20140927    
+			 * softirq를 발생시킨다. interrupt disable 상태에서 호출하는 버전 호출.
+			 **/
 			raise_softirq_irqoff(i);
 		}
 		local_irq_enable();
@@ -817,6 +916,8 @@ static int __cpuinit remote_softirq_cpu_notify(struct notifier_block *self,
 
 /** 20140920    
  * remote_softirq_cpu_notifier NB 정의.
+ *
+ * 등록된 notifier_block은 cpu_notify, cpu_notify_nofail로 호출한다.
  **/
 static struct notifier_block __cpuinitdata remote_softirq_cpu_notifier = {
 	.notifier_call	= remote_softirq_cpu_notify,
@@ -853,10 +954,19 @@ void __init softirq_init(void)
 	 **/
 	register_hotcpu_notifier(&remote_softirq_cpu_notifier);
 
+	/** 20140927    
+	 * TASKLET_SOFTIRQ와 HI_SOFTIRQ에 action을 지정한다.
+	 **/
 	open_softirq(TASKLET_SOFTIRQ, tasklet_action);
 	open_softirq(HI_SOFTIRQ, tasklet_hi_action);
 }
 
+/** 20140927    
+ * ksoftirqd의 동작.
+ *
+ * local_softirq_pending 되어 있다면 __do_softirq로 pending된 softirq를 실행하고,
+ * 그렇지 않다면 외부에서 wakeup시킬 수 있도록 TASK_INTERRUPTIBLE로 실행된다.
+ **/
 static int run_ksoftirqd(void * __bind_cpu)
 {
 	set_current_state(TASK_INTERRUPTIBLE);
@@ -891,8 +1001,15 @@ static int run_ksoftirqd(void * __bind_cpu)
 			/* Preempt disable stops cpu going offline.
 			   If already offline, we'll be on wrong CPU:
 			   don't process */
+			/** 20140927    
+			 * __bind_cpu가 offline이라면 wait_to_die로 이동.
+			 **/
 			if (cpu_is_offline((long)__bind_cpu))
 				goto wait_to_die;
+			/** 20140927    
+			 * __do_softirq 내에서 softirq action을 수행하기 전후에
+			 * local_irq_enable(), local_irq_disable을 수행한다.
+			 **/
 			local_irq_disable();
 			if (local_softirq_pending())
 				__do_softirq();
@@ -904,7 +1021,7 @@ static int run_ksoftirqd(void * __bind_cpu)
 			cond_resched();
 			preempt_disable();
 			/** 20140830    
-			 * __bind_cpu에 대해 context switch를 note 한다.
+			 * 현재 ksoftirqd가 수행되는 __bind_cpu에 대해 context switch를 note 한다.
 			 * ddd로 수행시 호출되지 않는데, 왜???
 			 **/
 			rcu_note_context_switch((long)__bind_cpu);
@@ -912,10 +1029,18 @@ static int run_ksoftirqd(void * __bind_cpu)
 		preempt_enable();
 		set_current_state(TASK_INTERRUPTIBLE);
 	}
+	/** 20140927    
+	 * kthread_stop()을 호출할 쪽에서 처리할 수 있도록 TASK_RUNNING으로 변경시키고
+	 * 0을 리턴한다.
+	 **/
 	__set_current_state(TASK_RUNNING);
 	return 0;
 
 wait_to_die:
+	/** 20140927    
+	 * 수행될 cpu가 offline이므로 kthread_stop()이 호출될 때까지
+	 * TASK_INTERRUPTIBLE로 schdule된다.
+	 **/
 	preempt_enable();
 	/* Wait for kthread_stop */
 	set_current_state(TASK_INTERRUPTIBLE);
@@ -996,6 +1121,10 @@ static int __cpuinit cpu_callback(struct notifier_block *nfb,
 	switch (action) {
 	case CPU_UP_PREPARE:
 	case CPU_UP_PREPARE_FROZEN:
+		/** 20140927    
+		 * CPU_UP_PREPARE, CPU_UP_PREPARE_FROZEN에
+		 * cpu마다 존재하는 ksoftirqd를 생성한다.
+		 **/
 		p = kthread_create_on_node(run_ksoftirqd,
 					   hcpu,
 					   cpu_to_node(hotcpu),
@@ -1004,11 +1133,17 @@ static int __cpuinit cpu_callback(struct notifier_block *nfb,
 			printk("ksoftirqd for %i failed\n", hotcpu);
 			return notifier_from_errno(PTR_ERR(p));
 		}
+		/** 20140927    
+		 * hotcpu에서만 수행하도록 설정한다.
+		 **/
 		kthread_bind(p, hotcpu);
   		per_cpu(ksoftirqd, hotcpu) = p;
  		break;
 	case CPU_ONLINE:
 	case CPU_ONLINE_FROZEN:
+		/** 20140927    
+		 * CPU_ONLINE, CPU_ONLINE_FROZEN에 ksoftirqd를 실행시킨다.
+		 **/
 		wake_up_process(per_cpu(ksoftirqd, hotcpu));
 		break;
 #ifdef CONFIG_HOTPLUG_CPU

@@ -1047,6 +1047,8 @@ __kuser_helper_end:
 	/** 20130309    
 	 * 각 vector mode에 대한 공통 코드
 	 *
+	 *   vector_stub 진행 중 svc 모드로 전환된다.
+	 *
 	 *   name : exception mode 이름. __vector_start에서 호출. 예) irq, dabt, ...
 	 *   mode : macro로 정의하고자 하는 mode
 	 *   correction : exception에 따른 복귀 주소 보정
@@ -1108,6 +1110,10 @@ vector_\name:
 	/** 20130309    
 	 * 해당 \mode를 clear하고, SVC_MODE로 전환
 	 * spsr_cxsr에 저장하는 이유는 movs pc, lr시에 cpsr로 채우기 위함
+	 *
+	 * svc_exit에서 
+	 * msr	spsr_cxsf, \rpsr
+	 * ldmia	sp, {r0 - pc}^			@ load r0 - pc, cpsr
 	 **/
 	eor	r0, r0, #(\mode ^ SVC_MODE | PSR_ISETSTATE)
 	msr	spsr_cxsf, r0

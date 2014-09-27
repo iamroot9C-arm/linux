@@ -182,6 +182,9 @@ extern void put_online_cpus(void);
 /** 20130727    
  * vexpress의 경우 CONFIG_HOTPLUG_CPU 설정되어 있으므로 cpu_notifier 호출
  * hotcpu notifier 등록.
+ *
+ * 등록: register_hotcpu_notifer
+ * 호출: hotcpu_notifier
  **/
 #define hotcpu_notifier(fn, pri)	cpu_notifier(fn, pri)
 #define register_hotcpu_notifier(nb)	register_cpu_notifier(nb)
@@ -193,6 +196,9 @@ int cpu_down(unsigned int cpu);
 extern void cpu_hotplug_driver_lock(void);
 extern void cpu_hotplug_driver_unlock(void);
 #else
+/** 20140927    
+ * cpu hotplug driver lock/unlock은 NULL 함수.
+ **/
 static inline void cpu_hotplug_driver_lock(void)
 {
 }

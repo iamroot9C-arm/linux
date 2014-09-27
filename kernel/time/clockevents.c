@@ -264,6 +264,9 @@ int clockevents_register_notifier(struct notifier_block *nb)
  * Notify about a clock event change. Called with clockevents_lock
  * held.
  */
+/** 20140920    
+ * clockevents_chain 리스트에 clockevents change를 통보한다.
+ **/
 static void clockevents_do_notify(unsigned long reason, void *dev)
 {
 	raw_notifier_call_chain(&clockevents_chain, reason, dev);

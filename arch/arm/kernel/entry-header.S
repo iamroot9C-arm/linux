@@ -75,7 +75,7 @@
 
 #ifndef CONFIG_THUMB2_KERNEL
 	/** 20140824    
-	 * exception에서 복귀하여 supervisor mode로 진입하는 매크로.
+	 * supervisor mode에서 복귀하여 exception code로 진입하는 매크로.
 	 *
 	 * spsr에 백업받아 놓은 상태 레지스터를 복원한다.
 	 **/

@@ -58,6 +58,11 @@
  * SOFTIRQ_OFFSET: 1<<8
  * HARDIRQ_OFFSET: 1<<16
  * NMI_OFFSET    : 1<<26
+ *
+ * from softirq.c
+ * SOFTIRQ_OFFSET : softirq 처리가 진행 중임을 표시한다.
+ *		__local_bh_disable, __local_bh_enable로 상태를 변경한다.
+ * SOFTIRQ_DISABLE_OFFSET : softirq가 enable/disable 되어 있음을 표시한다.
  **/
 #define PREEMPT_SHIFT	0
 #define SOFTIRQ_SHIFT	(PREEMPT_SHIFT + PREEMPT_BITS)
@@ -111,7 +116,8 @@
 #define in_irq()		(hardirq_count())
 #define in_softirq()		(softirq_count())
 /** 20131005    
- * preempt_count 중 interrupt 관련 비트를 추출해 현재 interrupt context인지 판단한다.
+ * preempt_count 중 interrupt 관련 비트를 추출해
+ * 현재 interrupt context인지 판단한다.
  **/
 #define in_interrupt()		(irq_count())
 /** 20131123    
@@ -150,6 +156,10 @@
 #define in_atomic_preempt_off() \
 		((preempt_count() & ~PREEMPT_ACTIVE) != PREEMPT_CHECK_OFFSET)
 
+/** 20140927    
+ * CONFIG_PREEMPT_COUNT가 설정되어 있는 경우
+ * IRQ_EXIT_OFFSET을 HARDIRQ_OFFSET 보다 하나 작은 값으로 설정한다.
+ **/
 #ifdef CONFIG_PREEMPT_COUNT
 # define preemptible()	(preempt_count() == 0 && !irqs_disabled())
 # define IRQ_EXIT_OFFSET (HARDIRQ_OFFSET-1)

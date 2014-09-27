@@ -119,7 +119,7 @@
 #define local_irq_disable() \
 	do { raw_local_irq_disable(); trace_hardirqs_off(); } while (0)
  /** 20121124
-  * local_irq_save 보고감.
+  * irq 이전 상태를 flags에 저장하고, local irq를 disable.
   **/
 #define local_irq_save(flags)				\
 	do {						\

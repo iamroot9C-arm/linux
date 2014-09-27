@@ -534,7 +534,9 @@ void cpu_init(void)
 int __cpu_logical_map[NR_CPUS];
 
 /** 20140621    
- * 논리 cpu번호를 설정한다.
+ * cpu의 물리 ID를 읽어 logical map에 저장한다.
+ *
+ * gic 등에서 register 설정시 실제 물리 CPU 번호를 가져오기 위해 사용.
  **/
 void __init smp_setup_processor_id(void)
 {

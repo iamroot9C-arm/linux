@@ -1909,6 +1909,9 @@ extern void thread_group_times(struct task_struct *p, cputime_t *ut, cputime_t *
 #define PF_SWAPWRITE	0x00800000	/* Allowed to write to swap */
 #define PF_SPREAD_PAGE	0x01000000	/* Spread page cache over cpuset */
 #define PF_SPREAD_SLAB	0x02000000	/* Spread some slab caches over cpuset */
+ /** 20140927    
+  * 특정 cpu에서만 실행되도록 지정하는 속성.
+  **/
 #define PF_THREAD_BOUND	0x04000000	/* Thread bound to specific cpu */
 #define PF_MCE_EARLY    0x08000000      /* Early kill for mce process policy */
 #define PF_MEMPOLICY	0x10000000	/* Non-default NUMA mempolicy */
@@ -2003,6 +2006,9 @@ static inline void rcu_copy_process(struct task_struct *p)
 
 #endif
 
+/** 20140927    
+ * 새로 설정한 flags를 지우고, 저장한 값과 중첩되는 flags만 설정한다.
+ **/
 static inline void tsk_restore_flags(struct task_struct *task,
 				unsigned long orig_flags, unsigned long flags)
 {

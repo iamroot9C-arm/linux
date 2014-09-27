@@ -640,6 +640,9 @@ do {									\
 # define __this_cpu_sub(pcp, val)	__this_cpu_add((pcp), -(val))
 #endif
 
+/** 20140927    
+ * 현재 cpu의 percpu 변수를 하나 증가시키는 매크로
+ **/
 #ifndef __this_cpu_inc
 # define __this_cpu_inc(pcp)		__this_cpu_add((pcp), 1)
 #endif

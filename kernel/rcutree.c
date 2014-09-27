@@ -209,7 +209,8 @@ void rcu_sched_qs(int cpu)
 }
 
 /** 20140906    
- * interrupt bh 동작에 의한 qs를 기록한다.
+ * bh 동작에 의한 qs를 기록한다.
+ * rch_sched와 별도로 기록해야 하는 이유에 대한 추가적인 이해가 필요하다???
  **/
 void rcu_bh_qs(int cpu)
 {

@@ -78,6 +78,8 @@ void handle_IRQ(unsigned int irq, struct pt_regs *regs)
 		generic_handle_irq(irq);
 	}
 
+	/** 20140927    
+	 **/
 	irq_exit();
 	set_irq_regs(old_regs);
 }

@@ -80,6 +80,9 @@ do {							\
 
 #endif
 
+/** 20140927    
+ * 현재 cpu의 kstat.softirqs 중 irq의 값을 하나 증가시킨다.
+ **/
 static inline void kstat_incr_softirqs_this_cpu(unsigned int irq)
 {
 	__this_cpu_inc(kstat.softirqs[irq]);

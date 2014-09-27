@@ -283,6 +283,8 @@ static int gic_set_wake(struct irq_data *d, unsigned int on)
 #define gic_set_wake	NULL
 #endif
 
+/** 20140927    
+ **/
 asmlinkage void __exception_irq_entry gic_handle_irq(struct pt_regs *regs)
 {
 	u32 irqstat, irqnr;
@@ -371,6 +373,10 @@ static void __init gic_dist_init(struct gic_chip_data *gic)
 	u32 cpumask;
 	unsigned int gic_irqs = gic->gic_irqs;
 	void __iomem *base = gic_data_dist_base(gic);
+	/** 20140927    
+	 * smp_processor_id : 현재 task가 실행 중인 processor id.
+	 * cpu_logical_map  : logical cpu id로 physical cpu id를 찾아온다.
+	 **/
 	u32 cpu = cpu_logical_map(smp_processor_id());
 
 	cpumask = 1 << cpu;
