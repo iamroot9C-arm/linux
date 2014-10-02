@@ -87,6 +87,9 @@ static inline bool tick_broadcast_oneshot_available(void) { return false; }
  * Broadcasting support
  */
 #ifdef CONFIG_GENERIC_CLOCKEVENTS_BROADCAST
+/** 20141002
+ * CONFIG_GENERIC_CLOCKEVENTS_BROADCAST 정의됨
+ **/
 extern int tick_device_uses_broadcast(struct clock_event_device *dev, int cpu);
 extern int tick_check_broadcast_device(struct clock_event_device *dev);
 extern int tick_is_broadcast_device(struct clock_event_device *dev);
@@ -133,6 +136,10 @@ static inline void tick_set_periodic_handler(struct clock_event_device *dev,
 /*
  * Check, if the device is functional or a dummy for broadcast
  */
+/** 20141002
+ * broadcast timer의 경우 CLOCK_EVT_FEAT_DUMMY 속성이 존재하므로,
+ * broadcast가 아닌지 검사하는 용도로도 사용된다.
+ **/
 static inline int tick_device_is_functional(struct clock_event_device *dev)
 {
 	return !(dev->features & CLOCK_EVT_FEAT_DUMMY);

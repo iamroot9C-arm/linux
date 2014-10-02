@@ -66,10 +66,17 @@ EXPORT_SYMBOL_GPL(clockevent_delta2ns);
  *
  * Must be called with interrupts disabled !
  */
+/** 20141002
+ * clock_event_device에 새로운 mode를 지정하는 API.
+ **/
 void clockevents_set_mode(struct clock_event_device *dev,
 				 enum clock_event_mode mode)
 {
 	if (dev->mode != mode) {
+		/** 20141002
+		 * sp804_clockevent의 경우 sp804_set_mode,
+		 * twd의 경우 twd_set_mode가 호출된다.
+		 **/
 		dev->set_mode(mode, dev);
 		dev->mode = mode;
 
@@ -90,6 +97,11 @@ void clockevents_set_mode(struct clock_event_device *dev,
  * clockevents_shutdown - shutdown the device and clear next_event
  * @dev:	device to shutdown
  */
+/** 20141002
+ * clock_event_device의 mode를 SHUTDOWN으로 지정하고, next_event를 MAX로 초기화.
+ *
+ * 현재 동작 중인 dev를 정지시킬 때, 새로운 dev를 등록시키기 전에 사용할 수 있다.
+ **/
 void clockevents_shutdown(struct clock_event_device *dev)
 {
 	clockevents_set_mode(dev, CLOCK_EVT_MODE_SHUTDOWN);
@@ -394,6 +406,9 @@ void clockevents_handle_noop(struct clock_event_device *dev)
  *
  * Called from the notifier chain. clockevents_lock is held already
  */
+/** 20141002
+ * 이전 device를 해제하고, 새로운 device를 준비한다.
+ **/
 void clockevents_exchange_device(struct clock_event_device *old,
 				 struct clock_event_device *new)
 {

@@ -147,6 +147,9 @@ static inline void __iomem *gic_cpu_base(struct irq_data *d)
 	return gic_data_cpu_base(gic_data);
 }
 
+/** 20141002
+ * 해당 irq_data의 hardware irq number를 리턴한다.
+ **/
 static inline unsigned int gic_irq(struct irq_data *d)
 {
 	return d->hwirq;
@@ -245,11 +248,24 @@ static int gic_retrigger(struct irq_data *d)
 }
 
 #ifdef CONFIG_SMP
+/** 20141002
+ * gic용 interrupt affinity 지정 함수 (.irq_set_affinity)
+ * register의 특정 bit
+ **/
 static int gic_set_affinity(struct irq_data *d, const struct cpumask *mask_val,
 			    bool force)
 {
+	/** 20141002
+	 * IHI0048B_GICv2.0 
+	 * 4.3.12
+	 * Interrupt Processor Targets Registers, GICD_ITARGETSRn
+	 **/
 	void __iomem *reg = gic_dist_base(d) + GIC_DIST_TARGET + (gic_irq(d) & ~3);
 	unsigned int shift = (gic_irq(d) % 4) * 8;
+	/** 20141002
+	 * mask_val 중 online 상태인 cpu를 지정한다.
+	 * offline으로 바뀌면 이 irq affinity도 변경되어야 할 듯???
+	 **/
 	unsigned int cpu = cpumask_any_and(mask_val, cpu_online_mask);
 	u32 val, mask, bit;
 
@@ -257,8 +273,14 @@ static int gic_set_affinity(struct irq_data *d, const struct cpumask *mask_val,
 		return -EINVAL;
 
 	mask = 0xff << shift;
+	/** 20141002
+	 * physical cpu 번호에 해당하는 bit를 찾아온다.
+	 **/
 	bit = 1 << (cpu_logical_map(cpu) + shift);
 
+	/** 20141002
+	 * irq controller lock으로 임계구역을 설정한 뒤 gic reigster에 접근한다.
+	 **/
 	raw_spin_lock(&irq_controller_lock);
 	val = readl_relaxed(reg) & ~mask;
 	writel_relaxed(val | bit, reg);

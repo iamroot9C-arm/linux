@@ -314,6 +314,7 @@ static inline irq_hw_number_t irqd_to_hwirq(struct irq_data *d)
  *
  *	irq_ack  : interrupt에 대해 응답 처리 한다 (새로운 interrupt를 받는다)
  *	irq_mask : interrupt source를 mask 한다.
+ *  irq_set_affinity : SMP에서 irq를 실행할 cpu를 지정한다.
  **/
 struct irq_chip {
 	const char	*name;

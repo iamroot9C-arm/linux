@@ -160,6 +160,9 @@ static int sp804_set_next_event(unsigned long next,
 	return 0;
 }
 
+/** 20141002
+ * sp804는 PERIOD과 ONESHOT의 속성을 다 가진다.
+ **/
 static struct clock_event_device sp804_clockevent = {
 	.features       = CLOCK_EVT_FEAT_PERIODIC | CLOCK_EVT_FEAT_ONESHOT,
 	.set_mode	= sp804_set_mode,

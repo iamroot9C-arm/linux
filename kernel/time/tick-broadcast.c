@@ -81,6 +81,9 @@ int tick_check_broadcast_device(struct clock_event_device *dev)
 /*
  * Check, if the device is the broadcast device
  */
+/** 20141002
+ * dev가 존재하고, 현재 broadcast로 사용 중인 device와 같다면 참.
+ **/
 int tick_is_broadcast_device(struct clock_event_device *dev)
 {
 	return (dev && tick_broadcast_device.evtdev == dev);
@@ -617,6 +620,9 @@ void tick_shutdown_broadcast_oneshot(unsigned int *cpup)
 /*
  * Check, whether the broadcast device is in one shot mode
  */
+/** 20141002
+ * 현재 tick_broadcast_device가 ONESHOT으로 동작 중인 경우.
+ **/
 int tick_broadcast_oneshot_active(void)
 {
 	return tick_broadcast_device.mode == TICKDEV_MODE_ONESHOT;

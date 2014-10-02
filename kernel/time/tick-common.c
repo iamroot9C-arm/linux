@@ -122,16 +122,29 @@ void tick_handle_periodic(struct clock_event_device *dev)
  */
 void tick_setup_periodic(struct clock_event_device *dev, int broadcast)
 {
+	/** 20141002
+	 * event_handler를 broadcast에 따라 지정.
+	 **/
 	tick_set_periodic_handler(dev, broadcast);
 
 	/* Broadcast setup ? */
+	/** 20141002
+	 * broadcast인 경우 이 함수에서 처리하지 않는다.
+	 **/
 	if (!tick_device_is_functional(dev))
 		return;
 
+	/** 20141002
+	 * clock_event_device가 PERIODIC 속성이며 , broadcast device가 ONESHOT으로 동작 중이지 않으므로
+	 * mode를 CLOCK_EVT_MODE_PERIODIC로 설정한다.
+	 **/
 	if ((dev->features & CLOCK_EVT_FEAT_PERIODIC) &&
 	    !tick_broadcast_oneshot_active()) {
 		clockevents_set_mode(dev, CLOCK_EVT_MODE_PERIODIC);
 	} else {
+	/** 20141002
+	 * 그렇지 않은 경우 ONESHOT mode로 동작시킨다.
+	 **/
 		unsigned long seq;
 		ktime_t next;
 
@@ -163,11 +176,20 @@ static void tick_setup_device(struct tick_device *td,
 	/*
 	 * First device setup ?
 	 */
+	/** 20141002
+	 * 현재 cpu의 tick_cpu_device가 비어있다면 최초 device를 등록하는 것이다.
+	 **/
 	if (!td->evtdev) {
 		/*
 		 * If no cpu took the do_timer update, assign it to
 		 * this cpu:
 		 */
+		/** 20141002
+		 * 현재 tick_do_timer_cpu로 지정된 cpu가 없다면
+		 * 전달받은 cpu를 새로운 do_timer를 수행하는 cpu로 지정한다.
+		 *
+		 * tick_period는 HZ주기로 동작하도록 설정한다.
+		 **/
 		if (tick_do_timer_cpu == TICK_DO_TIMER_BOOT) {
 			tick_do_timer_cpu = cpu;
 			tick_next_period = ktime_get();
@@ -177,19 +199,36 @@ static void tick_setup_device(struct tick_device *td,
 		/*
 		 * Startup in periodic mode first.
 		 */
+		/** 20141002
+		 * tick device의 mode를 periodic로 지정, 아래에서 periodic으로 설정하기 위함.
+		 **/
 		td->mode = TICKDEV_MODE_PERIODIC;
 	} else {
+		/** 20141002
+		 * 이전에 tick event device가 등록된 상태라면
+		 * 이전 event_handler를 clockevents_handle_noop로 지정해 제거한다.
+		 **/
 		handler = td->evtdev->event_handler;
 		next_event = td->evtdev->next_event;
 		td->evtdev->event_handler = clockevents_handle_noop;
 	}
 
+	/** 20141002
+	 * 새로운 device를 전달받은 tick_device의 event device로 지정한다. 
+	 **/
 	td->evtdev = newdev;
 
 	/*
 	 * When the device is not per cpu, pin the interrupt to the
 	 * current cpu:
 	 */
+	/** 20141002
+	 * 새로운 device의 cpumask가 전달받은 cpumask가 같지 않은지 비교.
+	 * 이 때 cpumask는 현재 cpu의 mask가 넘어오도록 되어 있으므로,
+	 * 같은 경우는 device가 cpu마다 지정되는 경우이다.
+	 *
+	 * cpu마다 지정되는 device가 아니라면 interrupt를 현재 cpu로 고정시킨다.
+	 **/
 	if (!cpumask_equal(newdev->cpumask, cpumask))
 		irq_set_affinity(newdev->irq, cpumask);
 
@@ -202,6 +241,10 @@ static void tick_setup_device(struct tick_device *td,
 	if (tick_device_uses_broadcast(newdev, cpu))
 		return;
 
+	/** 20141002
+	 * tick device의 mode에 따라 periodic / oneshot 동작을 설정.
+	 * periodic의 경우 tick용으로 사용되는 것이므로 broadcast하지 않는다.
+	 **/
 	if (td->mode == TICKDEV_MODE_PERIODIC)
 		tick_setup_periodic(newdev, 0);
 	else
@@ -220,10 +263,16 @@ static int tick_check_new_device(struct clock_event_device *newdev)
 
 	raw_spin_lock_irqsave(&tick_device_lock, flags);
 
+	/** 20141002
+	 * 현재 cpu를 가져와 cpumask에 포함되어 있지 않다면 out_bc로 이동.
+	 **/
 	cpu = smp_processor_id();
 	if (!cpumask_test_cpu(cpu, newdev->cpumask))
 		goto out_bc;
 
+	/** 20141002
+	 * percpu인 tick_cpu_device를 받아와 현재 clock_event_device 를 받아옴.
+	 **/
 	td = &per_cpu(tick_cpu_device, cpu);
 	curdev = td->evtdev;
 
@@ -249,6 +298,9 @@ static int tick_check_new_device(struct clock_event_device *newdev)
 	 * If we have an active device, then check the rating and the oneshot
 	 * feature.
 	 */
+	/** 20141002
+	 * 최초 periodic용 등록을 위해 호출되었을 때 curdev는 NULL.
+	 **/
 	if (curdev) {
 		/*
 		 * Prefer one shot capable devices !
@@ -268,6 +320,10 @@ static int tick_check_new_device(struct clock_event_device *newdev)
 	 * device. If the current device is the broadcast device, do
 	 * not give it back to the clockevents layer !
 	 */
+	/** 20141002
+	 * 현재 등록된 clock_event_device가 broadcast로 사용 중인 dev라면
+	 * shutdown 시키고 curdev를 비움. curdev가 NULL이면 거짓.
+	 **/
 	if (tick_is_broadcast_device(curdev)) {
 		clockevents_shutdown(curdev);
 		curdev = NULL;
