@@ -406,6 +406,9 @@ void irq_enter(void)
 	 **/
 	int cpu = smp_processor_id();
 
+	/** 20141004    
+	 * RCU에 irq 진입을 알린다.
+	 **/
 	rcu_irq_enter();
 	/** 20140621    
 	 * 현재 task가 idle task이고, interrupt context가 아닐 때
@@ -420,6 +423,9 @@ void irq_enter(void)
 		_local_bh_enable();
 	}
 
+	/** 20141004    
+	 * HARDIRQ 진행 중임을 preempt_count에 기록한다.
+	 **/
 	__irq_enter();
 }
 
@@ -477,7 +483,7 @@ void irq_exit(void)
 	if (idle_cpu(smp_processor_id()) && !in_interrupt() && !need_resched())
 		tick_nohz_irq_exit();
 #endif
-	/** 20141004 여기부터...
+	/** 20141004
 	 **/
 	rcu_irq_exit();
 	sched_preempt_enable_no_resched();

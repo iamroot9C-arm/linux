@@ -188,10 +188,16 @@ void cpu_idle(void)
 	/* endless idle loop with no priority at all */
 	while (1) {
 		tick_nohz_idle_enter();
+		/** 20141004    
+		 * rcu_idle_enter 호출.
+		 **/
 		rcu_idle_enter();
 		leds_event(led_idle_start);
 		while (!need_resched()) {
 #ifdef CONFIG_HOTPLUG_CPU
+			/** 20141004    
+			 * 자신의 cpu가 offline으로 들어간 경우 cpu_die를 호출.
+			 **/
 			if (cpu_is_offline(smp_processor_id()))
 				cpu_die();
 #endif

@@ -106,7 +106,9 @@ extern int rcu_num_nodes;
  */
 struct rcu_dynticks {
 	/** 20140823    
-	 * dynticks_nesting 추후분석 ???
+	 * dynticks_nesting : NEST_MASK에 해당하는 부분
+	 * 0  : IDLE
+	 * !0 : NOT IDLE, Nesting Level
 	 **/
 	long long dynticks_nesting; /* Track irq/process nesting level. */
 				    /* Process level is worth LLONG_MAX/2. */

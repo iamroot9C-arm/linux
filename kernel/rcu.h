@@ -47,6 +47,10 @@
  * The DYNTICK_TASK_EXIT_IDLE value is thus the combined value used upon
  * initial exit from idle.
  */
+/** 20141004    
+ * DYNTICK_TASK_NEST_WIDTH : RCU에서 CPU가 idle이 되지 못할 것이라 생각하는 (process-based) 이유를 count 한다.
+ * 그 외 비트 중 2비트의 가드 비트를 제외한 비트는 interrupts를 카운팅하는데 사용된다.
+ **/
 #define DYNTICK_TASK_NEST_WIDTH 7
 #define DYNTICK_TASK_NEST_VALUE ((LLONG_MAX >> DYNTICK_TASK_NEST_WIDTH) + 1)
 #define DYNTICK_TASK_NEST_MASK  (LLONG_MAX - DYNTICK_TASK_NEST_VALUE + 1)

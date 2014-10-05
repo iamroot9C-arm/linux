@@ -422,9 +422,19 @@ static int rcu_implicit_offline_qs(struct rcu_data *rdp)
  * we really have entered idle, and must do the appropriate accounting.
  * The caller must have disabled interrupts.
  */
+/** 20141004    
+ * RCU에게 현재 CPU가 idle 상태로 진입함을 알린다.
+ * interrupt는 금지된 상태여야 한다.
+ * rcu_dynticks의 dynticks 값을 증가시킨다.
+ *
+ * NO_HZ인 경우 rcu_prepare_for_idle 에서 특정 동작을 한다.
+ **/
 static void rcu_idle_enter_common(struct rcu_dynticks *rdtp, long long oldval)
 {
 	trace_rcu_dyntick("Start", oldval, 0);
+	/** 20141004    
+	 * 현재 task가 idle이 아닌 상태에서 이 함수가 호출된 경우 경고 메시지를 출력한다.
+	 **/
 	if (!is_idle_task(current)) {
 		struct task_struct *idle = idle_task(smp_processor_id());
 
@@ -436,6 +446,12 @@ static void rcu_idle_enter_common(struct rcu_dynticks *rdtp, long long oldval)
 	}
 	rcu_prepare_for_idle(smp_processor_id());
 	/* CPUs seeing atomic_inc() must see prior RCU read-side crit sects */
+	/** 20141004    
+	 * dynticks 원자적으로 증가.
+	 * RCU read-side 임계구역에 대한 조작에 선행되어 atomic_inc가 완료되어야 한다.
+	 *
+	 * 왜 rdtp->dynticks 를 변경하는데 smp_mb를 사용해야 하나???
+	 **/
 	smp_mb__before_atomic_inc();  /* See above. */
 	atomic_inc(&rdtp->dynticks);
 	smp_mb__after_atomic_inc();  /* Force ordering with next sojourn. */
@@ -465,16 +481,33 @@ static void rcu_idle_enter_common(struct rcu_dynticks *rdtp, long long oldval)
  * the possibility of usermode upcalls having messed up our count
  * of interrupt nesting level during the prior busy period.
  */
+/** 20141004    
+ * RCU에게  현재 CPU가 idle 상태로 진입함을 알린다.
+ *
+ * idle mode로의 진입은 다른 말로 read-side critical sections을 벗어남을 의미한다.
+ * (RCU read-side critical sections는 idle 상태의 인터럽트 핸들러에서도 발생할 수 있지만, 이는 irq_enter와 irq_exit에서 다뤄질 수 있다)
+ *
+ * dynticks_nesting을 0으로 만들어 놓어 usermode upcalls의 가능성을 허용한다.
+ * usermode upcall : 앞선 busy 구간동안 인터럽트 네스팅 레벨의 카운트를 뒤섞어 놓을 수 있다.
+ **/
 void rcu_idle_enter(void)
 {
 	unsigned long flags;
 	long long oldval;
 	struct rcu_dynticks *rdtp;
 
+	/** 20141004    
+	 * 현재 cpu에 해당하는 rcu_dynticks에서 dynticks_nesting 값을 가져온다.
+	 * 이미 IDLE 값을 가진다면 경고 메시지 출력.
+	 **/
 	local_irq_save(flags);
 	rdtp = &__get_cpu_var(rcu_dynticks);
 	oldval = rdtp->dynticks_nesting;
 	WARN_ON_ONCE((oldval & DYNTICK_TASK_NEST_MASK) == 0);
+	/** 20141004    
+	 * 중첩 없는 NOT IDLE 상태라면 IDLE 상태로 변경.
+	 * 그 외에는 중첩 count를 감소시킨다.
+	 **/
 	if ((oldval & DYNTICK_TASK_NEST_MASK) == DYNTICK_TASK_NEST_VALUE)
 		rdtp->dynticks_nesting = 0;
 	else
@@ -500,17 +533,32 @@ EXPORT_SYMBOL_GPL(rcu_idle_enter);
  *
  * You have been warned.
  */
+/** 20141004    
+ * RCU에게 현재 CPU가 irq를 벗어나 idle 상태로 진입함을 알린다.
+ *
+ * 인터럽트 핸들러에서 벗어나 idle mode로 진입할 수도 있다.
+ * (이전 상태가 IDLE 이었다면)
+ **/
 void rcu_irq_exit(void)
 {
 	unsigned long flags;
 	long long oldval;
 	struct rcu_dynticks *rdtp;
 
+	/** 20141004    
+	 * local irq를 막아놓은 상태로 수행.
+	 *
+	 * dynticks_nesting을 하나 감소시켜 interrupt count를 감소시킨다.
+	 **/
 	local_irq_save(flags);
 	rdtp = &__get_cpu_var(rcu_dynticks);
 	oldval = rdtp->dynticks_nesting;
 	rdtp->dynticks_nesting--;
 	WARN_ON_ONCE(rdtp->dynticks_nesting < 0);
+	/** 20141004    
+	 * nesting이 존재할 경우 trace만 호출하고 벗어난다.
+	 * 그렇지 않고 IDLE 상태였다면 irq handler 실행 후, 다시 idle로 들어간다.
+	 **/
 	if (rdtp->dynticks_nesting)
 		trace_rcu_dyntick("--=", oldval, rdtp->dynticks_nesting);
 	else
@@ -525,15 +573,33 @@ void rcu_irq_exit(void)
  * we really have exited idle, and must do the appropriate accounting.
  * The caller must have disabled interrupts.
  */
+/** 20141004    
+ * RCU에게 현재 CPU가 idle 상태에서 벗어났음을 알린다.
+ * rcu_dynticks의 dynticks 값을 증가시킨다.
+ *
+ * NO_HZ인 경우 rcu_cleanup_after_idle 에서 특정 동작을 한다.
+ **/
 static void rcu_idle_exit_common(struct rcu_dynticks *rdtp, long long oldval)
 {
+	/** 20141004    
+	 * smp_mb 내에서 rdtp의 dynticks 값을 원자적으로 증가시킨다.
+	 *
+	 * smp_mb ???
+	 * RCU read-side critical section에서 dynticks를 참고한다.
+	 **/
 	smp_mb__before_atomic_inc();  /* Force ordering w/previous sojourn. */
 	atomic_inc(&rdtp->dynticks);
 	/* CPUs seeing atomic_inc() must see later RCU read-side crit sects */
 	smp_mb__after_atomic_inc();  /* See above. */
+	/** 20141004    
+	 * idle상태에서 벗어났으므로 짝수면 잘못된 값이다.
+	 **/
 	WARN_ON_ONCE(!(atomic_read(&rdtp->dynticks) & 0x1));
 	rcu_cleanup_after_idle(smp_processor_id());
 	trace_rcu_dyntick("End", oldval, rdtp->dynticks_nesting);
+	/** 20141004    
+	 * 현재 task가 idle이 아닌 상태에서 이 함수가 호출된 경우 경고 메시지를 출력한다.
+	 **/
 	if (!is_idle_task(current)) {
 		struct task_struct *idle = idle_task(smp_processor_id());
 
@@ -563,10 +629,17 @@ void rcu_idle_exit(void)
 	struct rcu_dynticks *rdtp;
 	long long oldval;
 
+	/** 20141004    
+	 * irq 금지 상태로 현재 cpu의 rcu_dynticks를 
+	 **/
 	local_irq_save(flags);
 	rdtp = &__get_cpu_var(rcu_dynticks);
 	oldval = rdtp->dynticks_nesting;
 	WARN_ON_ONCE(oldval < 0);
+	/** 20141004    
+	 * 현재 상태가 NOT IDLE이라면, DYNTICK_TASK_NEST_VALUE를 더해 중첩된 상태로 만든다.
+	 * 현재 상태가 IDLE이라면, EXIT IDLE을 상태로 만든다(nest 값은 1).
+	 **/
 	if (oldval & DYNTICK_TASK_NEST_MASK)
 		rdtp->dynticks_nesting += DYNTICK_TASK_NEST_VALUE;
 	else
@@ -595,14 +668,22 @@ EXPORT_SYMBOL_GPL(rcu_idle_exit);
  *
  * You have been warned.
  */
+/** 20141004    
+ * RCU에게 현재 CPU가 idle에서 벗어나 irq mode로 진입할 것임을 알린다.
+ *
+ * idle mode에서 벗어날 수 있는 interrupt handler가 실행되며,
+ * 다른 말로 read-side 임계구역이 발생할 수 있는 모드로 진입함을 의미한다.
+ **/
 void rcu_irq_enter(void)
 {
 	unsigned long flags;
 	struct rcu_dynticks *rdtp;
 	long long oldval;
 
-	/** 20140621    
-	 * interrupt금지한 상태로 실행된다.
+	/** 20141004    
+	 * local irq를 막아놓은 상태로 수행.
+	 *
+	 * percpu변수 rcu_dynticks에서 dynticks_nesting을 하나 증가시킨다.
 	 **/
 	local_irq_save(flags);
 	rdtp = &__get_cpu_var(rcu_dynticks);
@@ -612,6 +693,12 @@ void rcu_irq_enter(void)
 	if (oldval)
 		trace_rcu_dyntick("++=", oldval, rdtp->dynticks_nesting);
 	else
+		/** 20141004    
+		 * 이전 상태가 IDLE인 경우. irq로 진입하면서 rcu_idle_exit_common 호출.
+		 * 이미 rcu_idle_exit가 호출된 경우, 
+		 *
+		 * 20141011 여기부터...
+		 **/
 		rcu_idle_exit_common(rdtp, oldval);
 	local_irq_restore(flags);
 }
@@ -729,6 +816,15 @@ EXPORT_SYMBOL_GPL(rcu_lockdep_current_cpu_online);
  * interrupt from idle, return true.  The caller must have at least
  * disabled preemption.
  */
+/** 20141004    
+ * cpu가 idle 상태이거나, idle에서 irq가 처음 발생했을 때
+ * http://lwn.net/Articles/223185/
+ * => dynticks로 구현되면서 rcu_irq_enter, rcu_irq_exit, rcu_idle_enter, rcu_idle_exit 함수에서 state 변화를 기록하는 방식으로 실행된다.
+ *
+ * 1. 현재 상태가 dynticks IDLE이거나, (dynticks_nesting == 0)
+ * 2. irq_enter -> (NOT IDLE -> IDLE) -> irq_exit (dynticks_nesting < 0)
+ * 3. (NOT IDLE -> IDLE) -> irq_entry -> irq_exit (dynticks_nesting == 1)
+ **/
 int rcu_is_cpu_rrupt_from_idle(void)
 {
 	return __get_cpu_var(rcu_dynticks).dynticks_nesting <= 1;
@@ -758,6 +854,8 @@ static int dyntick_save_progress_counter(struct rcu_data *rdp)
  * for this same CPU.
  */
 /** 20140809    
+ * 암시적인 rcu dynticks qs를 판단한다.
+ *
  * true를 리턴하는 조건
  * 1. dynticks idle 상태이거나, idle/nmi를 거쳤을 경우
  * 2. offline 상태로 3개 이상의 tick이 지난 경우
@@ -2023,7 +2121,7 @@ void rcu_check_callbacks(int cpu, int user)
 	 * user mode나 idle loop 상태에서 인터럽트 발생(nested 제외)으로 호출된 경우,
 	 * CPU는 QS state다. (read-side에서 preempt_disable을 하기 때문)
 	 *
-	 * 따라 qs state를 기록한다.
+	 * 따라서 qs state를 기록한다.
 	 **/
 	if (user || rcu_is_cpu_rrupt_from_idle()) {
 
@@ -3147,9 +3245,12 @@ rcu_init_percpu_data(int cpu, struct rcu_state *rsp, int preemptible)
 	rdp->qlen_last_fqs_check = 0;
 	rdp->n_force_qs_snap = rsp->n_force_qs;
 	rdp->blimit = blimit;
+	/** 20141004    
+	 * dyntick이 EXIT IDLE 상태이다.
+	 **/
 	rdp->dynticks->dynticks_nesting = DYNTICK_TASK_EXIT_IDLE;
 	/** 20140823    
-	 * dynticks를 홀수값으로 만들어 idel 상태가 아니도록 한다.
+	 * dynticks를 홀수값으로 만들어 idle 상태가 아니도록 한다.
 	 **/
 	atomic_set(&rdp->dynticks->dynticks,
 		   (atomic_read(&rdp->dynticks->dynticks) & ~0x1) + 1);

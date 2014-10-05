@@ -116,8 +116,8 @@
 #define in_irq()		(hardirq_count())
 #define in_softirq()		(softirq_count())
 /** 20131005    
- * preempt_count 중 interrupt 관련 비트를 추출해
- * 현재 interrupt context인지 판단한다.
+ * preempt_count 중 interrupt 관련 비트를 추출해 interrupt context인지 판단한다.
+ * HARDIRQ, SOFTIRQ 포함
  **/
 #define in_interrupt()		(irq_count())
 /** 20131123    
@@ -205,6 +205,9 @@ extern void rcu_nmi_exit(void);
  * always balanced, so the interrupted value of ->hardirq_context
  * will always be restored.
  */
+/** 20141004   
+ * preempt_count의 HARDIRQ_OFFSET 위치의 값을 더해 HARDIRQ 상태임을 나타낸다.
+ **/
 #define __irq_enter()					\
 	do {						\
 		account_system_vtime(current);		\

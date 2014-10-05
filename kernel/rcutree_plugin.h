@@ -1831,6 +1831,9 @@ static void rcu_prepare_for_idle_init(int cpu)
  * Because we do not have RCU_FAST_NO_HZ, don't bother cleaning up
  * after it.
  */
+/** 20141004    
+ * CONFIG_RCU_FAST_NO_HZ가 정의되어 있지 않아 NULL 함수.
+ **/
 static void rcu_cleanup_after_idle(int cpu)
 {
 }
@@ -1839,6 +1842,9 @@ static void rcu_cleanup_after_idle(int cpu)
  * Do the idle-entry grace-period work, which, because CONFIG_RCU_FAST_NO_HZ=n,
  * is nothing.
  */
+/** 20141004    
+ * CONFIG_RCU_FAST_NO_HZ가 정의되어 있지 않아 NULL 함수.
+ **/
 static void rcu_prepare_for_idle(int cpu)
 {
 }

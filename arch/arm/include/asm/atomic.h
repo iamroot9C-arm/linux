@@ -397,6 +397,10 @@ static inline int __atomic_add_unless(atomic_t *v, int a, int u)
 
 #define atomic_add_negative(i,v) (atomic_add_return(i, v) < 0)
 
+/** 20141004    
+ * atomic operation은 local cpu에 원자적인 연산이므로,
+ * SMP의 동기화가 필요한 경우 다음 매크로들을 사용해야 한다.
+ **/
 #define smp_mb__before_atomic_dec()	smp_mb()
 #define smp_mb__after_atomic_dec()	smp_mb()
 #define smp_mb__before_atomic_inc()	smp_mb()
