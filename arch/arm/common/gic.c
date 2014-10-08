@@ -322,6 +322,9 @@ asmlinkage void __exception_irq_entry gic_handle_irq(struct pt_regs *regs)
 			handle_IRQ(irqnr, regs);
 			continue;
 		}
+		/** 20140927
+		 * irq 번호가 15이하인 경우 IPI로 처리한다.
+		 **/
 		if (irqnr < 16) {
 			writel_relaxed(irqstat, cpu_base + GIC_CPU_EOI);
 #ifdef CONFIG_SMP

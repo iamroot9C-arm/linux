@@ -2894,7 +2894,7 @@ static int __rcu_pending(struct rcu_state *rsp, struct rcu_data *rdp)
 	/* Is the RCU core waiting for a quiescent state from this CPU? */
 	/** 20140906    
 	 * rcu scheduler가 완전히 동작 중인 상태에서, qs가 pending되어 있고,
-	 * quiesce가 한 번도 이뤄지지 않은 경우
+	 * 새로운 gp 시작 이후 qs가 한 번도 이뤄지지 않은 경우
 	 **/
 	if (rcu_scheduler_fully_active &&
 	    rdp->qs_pending && !rdp->passed_quiesce) {

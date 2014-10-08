@@ -2713,7 +2713,8 @@ static inline int test_tsk_thread_flag(struct task_struct *tsk, int flag)
 }
 
 /** 20130713    
- * task의 thread_info 구조체의 flags 중 TIF_NEED_RESCHED flas를 켜주는 함수
+ * task의 thread_info 구조체의 flags 중 TIF_NEED_RESCHED flags를 켜주는 함수.
+ * 이후 해당 flag를 검사하여 reschedule 한다.
  **/
 static inline void set_tsk_need_resched(struct task_struct *tsk)
 {
@@ -2785,7 +2786,7 @@ static inline int signal_pending_state(long state, struct task_struct *p)
 }
 
 /** 20130706    
- * resched flag를 보고 scheduling이 필요한지 판단하는 함수
+ * 현재 task의 resched flag를 보고 scheduling이 필요한지 판단하는 함수
  **/
 static inline int need_resched(void)
 {

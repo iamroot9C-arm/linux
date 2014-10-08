@@ -221,8 +221,8 @@ __irq_svc:
 #ifdef CONFIG_PREEMPT
 	/** 20140816    
 	 * tsk에 thread_info를 받아와 선점 카운트와 flags를 추출한다.
-	 * 선점 카운트가 0이 아니라면, 즉 선점불가라면 flags를 0으로 초기화 시킨다.
-	 * flags에 TIF_NEED_RESCHED가 켜있다면 svc_preempt 루틴을 실행하고 돌아온다.
+	 * 선점 카운트가 0이 아니라면, 즉 선점불가라면 가져온 flags를 0으로 만든다.
+	 * flags를 검사해 _TIF_NEED_RESCHED가 켜있다면 svc_preempt 루틴을 실행하고 돌아온다.
 	 **/
 	get_thread_info tsk
 	ldr	r8, [tsk, #TI_PREEMPT]		@ get preempt count
@@ -247,8 +247,8 @@ ENDPROC(__irq_svc)
 #ifdef CONFIG_PREEMPT
 	/** 20140816    
 	 * bl이 호출되어 lr이 변경되기 전에 백업을 받아둔다.
-	 * preempt_schedule_irq를 호출해 선점한 뒤, 다시 flags를 가져와
-	 * _TIF_NEED_RESCHED가 켜있다면 다시 선점함수를 호출하고,
+	 * preempt_schedule_irq에서 선점을 위한 __schedule을 호출한 뒤,
+	 * 다시 flags를 가져와 TIF_NEED_RESCHED가 켜있다면 선점함수를 호출하고,
 	 * 그렇지 않다면 복귀한다.
 	 **/
 svc_preempt:
@@ -1109,7 +1109,7 @@ vector_\name:
 	mrs	r0, cpsr
 	/** 20130309    
 	 * 해당 \mode를 clear하고, SVC_MODE로 전환
-	 * spsr_cxsr에 저장하는 이유는 movs pc, lr시에 cpsr로 채우기 위함
+	 * spsr_cxsf에 저장하는 이유는 movs pc, lr시에 cpsr로 채우기 위함
 	 *
 	 * svc_exit에서 
 	 * msr	spsr_cxsf, \rpsr

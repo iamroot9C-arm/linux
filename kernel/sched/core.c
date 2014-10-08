@@ -559,6 +559,9 @@ static inline void init_hrtick(void)
 #endif
 
 /** 20130713    
+ * 특정 task를 reschedule 될 것이라 표시한다.
+ * 만약 현재 task에 resched를 표시하면, PREEMPT 설정이 되어 있는 경우 __irq_svc에서 선점이 발생한다.
+ *
  * task p의 thread_info flags 변수에
  *    1. 이미 need_resched가 되어 있다면 return.
  *    2. 없으면 need_resched를 set.
@@ -4010,7 +4013,7 @@ int mutex_spin_on_owner(struct mutex *lock, struct task_struct *owner)
  * occur there and call schedule directly.
  */
 /** 20140622    
- * 선점 카운트가 0이 아니거나 인터럽트 금지 상태가 아닌 경우에
+ * 선점 불가가 아니거나 인터럽트 금지 상태가 아닌 경우에
  * 현재 task를 선점하여 스케쥴러를 호출한다.
  *
  * comment:
