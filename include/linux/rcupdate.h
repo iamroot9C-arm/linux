@@ -701,7 +701,7 @@ static inline void rcu_preempt_sleep_check(void)
  * This is a simple wrapper around rcu_dereference_check().
  */
 /** 20140718
- * RCU로 보호받는 포인터를 읽어온다.
+ * rcu read-side 임계구역에서 RCU로 보호받는 포인터를 읽어온다.
  **/
 #define rcu_dereference(p) rcu_dereference_check(p, 0)
 

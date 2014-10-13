@@ -2022,6 +2022,9 @@ static void rcu_idle_gp_timer_func(unsigned long cpu_in)
 /*
  * Initialize the timer used to pull CPUs out of dyntick-idle mode.
  */
+/** 20141011    
+ * CONFIG_RCU_FAST_NO_HZ가 정의되어 있는 경우,
+ **/
 static void rcu_prepare_for_idle_init(int cpu)
 {
 	struct rcu_dynticks *rdtp = &per_cpu(rcu_dynticks, cpu);
@@ -2037,10 +2040,18 @@ static void rcu_prepare_for_idle_init(int cpu)
  * is no longer any point to ->idle_gp_timer, so cancel it.  This will
  * do nothing if this timer is not active, so just cancel it unconditionally.
  */
+/** 20141011    
+ * idle 상태가 끝나고 rcu 관련된 작업을 정리한다.
+ *
+ * NO_HZ에서 동작하는 timer를 제거하고, tick_nohz_enabled의 snap을 남긴다.
+ **/
 static void rcu_cleanup_after_idle(int cpu)
 {
 	struct rcu_dynticks *rdtp = &per_cpu(rcu_dynticks, cpu);
 
+	/** 20141011    
+	 * rcu_prepare_for_idle_init에서 설정한 idle_gp_timer.
+	 **/
 	del_timer(&rdtp->idle_gp_timer);
 	trace_rcu_prep_idle("Cleanup after idle");
 	rdtp->tick_nohz_enabled_snap = ACCESS_ONCE(tick_nohz_enabled);
@@ -2065,6 +2076,8 @@ static void rcu_cleanup_after_idle(int cpu)
  *
  * The caller must have disabled interrupts.
  */
+/** 20141011    
+ **/
 static void rcu_prepare_for_idle(int cpu)
 {
 	struct timer_list *tp;
@@ -2072,8 +2085,14 @@ static void rcu_prepare_for_idle(int cpu)
 	int tne;
 
 	/* Handle nohz enablement switches conservatively. */
+	/** 20141011    
+	 * 현재 tick_nohz_enabled를 가져와 이전 값과 다르다면 새로운 snap을 남기고 리턴한다.
+	 **/
 	tne = ACCESS_ONCE(tick_nohz_enabled);
 	if (tne != rdtp->tick_nohz_enabled_snap) {
+		/** 20141011    
+		 * 수행하지 않은 CBs들이 있다면 수행한다.
+		 **/
 		if (rcu_cpu_has_callbacks(cpu))
 			invoke_rcu_core(); /* force nohz to see update. */
 		rdtp->tick_nohz_enabled_snap = tne;
@@ -2105,6 +2124,10 @@ static void rcu_prepare_for_idle(int cpu)
 	 * If there are no callbacks on this CPU, enter dyntick-idle mode.
 	 * Also reset state to avoid prejudicing later attempts.
 	 */
+	/** 20141011    
+	 * 특정 cpu에 수행해야 할 CBs들이 존재하지 않는다면,
+	 * CONFIG_RCU_FAST_NO_HZ 관련 변수를 초기화 하고 dyntick-idle mode로 진입하기 위해 리턴한다.
+	 **/
 	if (!rcu_cpu_has_callbacks(cpu)) {
 		rdtp->dyntick_holdoff = jiffies - 1;
 		rdtp->dyntick_drain = 0;
@@ -2122,6 +2145,9 @@ static void rcu_prepare_for_idle(int cpu)
 	}
 
 	/* Check and update the ->dyntick_drain sequencing. */
+	/** 20141018    
+	 * 여기부터...
+	 **/
 	if (rdtp->dyntick_drain <= 0) {
 		/* First time through, initialize the counter. */
 		rdtp->dyntick_drain = RCU_IDLE_FLUSHES;

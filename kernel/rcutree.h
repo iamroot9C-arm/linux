@@ -157,6 +157,9 @@ struct rcu_node {
 	/** 20140809    
 	 * 현재의 grace period 를 진행할 cpu/group에 대한 mask.
 	 * dyntick에서 결과를 확인하기 위한 대상이 속해 있는지 표시.
+	 *
+	 * leaf에서 각 비트는 rcu_data structure를 의미.
+	 * 그 외는 child rcu_node structure를 의미.
 	 **/
 	unsigned long qsmask;	/* CPUs or groups that need to switch in */
 				/*  order for current grace period to proceed.*/

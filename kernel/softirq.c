@@ -332,6 +332,9 @@ restart:
 			/** 20140927    
 			 * softirq action 호출 이후에, rcu_bh에 대한 QS가 되었음을 기록한다.
 			 * interrupt enable 상태이므로 각 softirq 하나를 처리할 때마다 QS를 기록한다.
+			 *
+			 * quiescent states for rcu_bh are any code outside of softirq with interrupts enabled.
+			 * from http://lwn.net/Articles/305782/
 			 **/
 			rcu_bh_qs(cpu);
 		}
@@ -584,6 +587,9 @@ void __tasklet_schedule(struct tasklet_struct *t)
 {
 	unsigned long flags;
 
+	/** 20141011    
+	 * interrupt를 막은채로 tasklet을 tasklet vector의 마지막에 schedule (등록) 한다.
+	 **/
 	local_irq_save(flags);
 	t->next = NULL;
 	*__this_cpu_read(tasklet_vec.tail) = t;
@@ -690,6 +696,9 @@ static void tasklet_hi_action(struct softirq_action *a)
 }
 
 
+/** 20141011    
+ * tasklet_struct를 받아 tasklet을 초기화 한다.
+ **/
 void tasklet_init(struct tasklet_struct *t,
 		  void (*func)(unsigned long), unsigned long data)
 {

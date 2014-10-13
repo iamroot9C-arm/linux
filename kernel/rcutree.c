@@ -85,6 +85,8 @@ static struct lock_class_key rcu_node_class[RCU_NUM_LVLS];
  *
  * call_rcu(block되지 않고 read-side critical section이 모두 완료되었을 때 호출)
  *  callback을 call_rcu_sched, call_rcu_bh로 지정.
+ *
+ * rsp->rda에 해당하는 struct rcu_data.
  **/
 struct rcu_state rcu_sched_state =
 	RCU_STATE_INITIALIZER(rcu_sched, call_rcu_sched);
@@ -403,7 +405,8 @@ static int rcu_implicit_offline_qs(struct rcu_data *rdp)
 	 * to the idle loop on the way down.
 	 */
 	/** 20140809    
-	 * offline 상태 이후 두 지피가 지났다면, quiescent state이므로 qs로 진행한다.
+	 * rdp에 해당하는 cpu가 offline 상태이고 gp_start + 2가 지났다면,
+	 * quiescent state이므로 qs로 진행한다.
 	 * (Quiescent state = CPU not using RCU)
 	 **/
 	if (cpu_is_offline(rdp->cpu) &&
@@ -444,6 +447,9 @@ static void rcu_idle_enter_common(struct rcu_dynticks *rdtp, long long oldval)
 			  current->pid, current->comm,
 			  idle->pid, idle->comm); /* must be idle task! */
 	}
+	/** 20141011    
+	 * idle 상태로 들어가기 전 rcu를 처리한다.
+	 **/
 	rcu_prepare_for_idle(smp_processor_id());
 	/* CPUs seeing atomic_inc() must see prior RCU read-side crit sects */
 	/** 20141004    
@@ -697,7 +703,7 @@ void rcu_irq_enter(void)
 		 * 이전 상태가 IDLE인 경우. irq로 진입하면서 rcu_idle_exit_common 호출.
 		 * 이미 rcu_idle_exit가 호출된 경우, 
 		 *
-		 * 20141011 여기부터...
+		 * idle 상태에서 interrupt가 발생한 경우에 해당하며, dynticks 값을 증가(odd-value: non-idle)시킨다.
 		 **/
 		rcu_idle_exit_common(rdtp, oldval);
 	local_irq_restore(flags);
@@ -839,7 +845,8 @@ int rcu_is_cpu_rrupt_from_idle(void)
  * 현재 dynticks 값을 dynticks_snap에 저장한다.
  *
  * 특정 CPU의 dyncticks counter를 읽어와 추후 묵시적인 qs 상태에 사용한다.
- * dynticks idle 모드 중일 때는 1을 리턴해 extended qs 상태임을 나타낸다.
+ * 현재 dynticks idle 모드 중일 때는 1을 리턴해 extended qs 상태임을 나타낸다.
+ * 그렇지 않은 경우 snap만 남겨두는 것이다.
  **/
 static int dyntick_save_progress_counter(struct rcu_data *rdp)
 {
@@ -1224,6 +1231,9 @@ static void init_callback_list(struct rcu_data *rdp)
  */
 /** 20140809    
  * 현재 gp가 끝났을 때 이 cpu에 대한 callback을 진행해 gp가 끝났음을 표시한다.
+ *
+ * cpu가 속한 rcu node에 rdp가 알고 있는 gpnum과 다른 정보가 기억되어 있다면,
+ * callback 리스트를 옮기고 rnp의 gpnum으로 갱신시킨다.
  **/
 static void
 __rcu_process_gp_end(struct rcu_state *rsp, struct rcu_node *rnp, struct rcu_data *rdp)
@@ -1589,7 +1599,7 @@ rcu_report_qs_rnp(unsigned long mask, struct rcu_state *rsp,
 						 rnp->grplo, rnp->grphi,
 						 !!rnp->gp_tasks);
 		/** 20140809    
-		 * node에 qsmask가 남아 있거나, block된 readers가 존재한다면 벗어난다.
+		 * node의 관찰대상(qsmask)가 남아 있거나, block된 readers가 존재한다면 벗어난다.
 		 *
 		 * leaf노드의 경우 qsmask는 달려 있는 cpu에 대한 완료를 검사하는 의미이고,
 		 * leaf노드가 아닐 경우 qsmask는 달려 있는 node에 대한 완료를 검사하는 의미이다.
@@ -2122,6 +2132,10 @@ void rcu_check_callbacks(int cpu, int user)
 	 * CPU는 QS state다. (read-side에서 preempt_disable을 하기 때문)
 	 *
 	 * 따라서 qs state를 기록한다.
+	 *
+	 * rcu qs는 context switch, idle (either dynticks or the idle loop), and user-mode execution일 때 기록한다.
+	 * rcu_bh qs는 interrupts가 활성화된 상태로 softirq의 밖에서 실행되는 코드일 때 기록한다.
+	 * 따라서 rcu qs는 rch_bh qs도 포함한다.
 	 **/
 	if (user || rcu_is_cpu_rrupt_from_idle()) {
 
@@ -2223,6 +2237,12 @@ static void force_qs_rnp(struct rcu_state *rsp, int (*f)(struct rcu_data *))
 		/** 20140809    
 		 * 현재 cpu가 qsmask에 속해 있고, 전달받은 함수의 호출 결과가 참이라면
 		 * mask에 현재 cpu에 해당하는 bit를 표시한다.
+		 *
+		 * f가 dyntick_save_progress_counter로 전달되었을 경우,
+		 * cpu가 하나 이상 idle mode일 경우 해당한다.
+		 *
+		 * f가 rcu_implicit_dynticks_qs가 전달되었을 경우,
+		 * 현재 상태가 idle 상태가 아니거나, idle/nmi 상태를 거쳤을 경우
 		 **/
 		for (; cpu <= rnp->grphi; cpu++, bit <<= 1) {
 			if ((rnp->qsmask & bit) != 0 &&
@@ -2231,12 +2251,6 @@ static void force_qs_rnp(struct rcu_state *rsp, int (*f)(struct rcu_data *))
 		}
 		/** 20140809    
 		 * mask가 하나라도 표시되어 있다면 rcu_report_qs_rnp 를 수행한다.
-		 *
-		 * dyntick_save_progress_counter가 전달되었을 경우,
-		 * 하나라도 idle mode일 경우 해당한다.
-		 *
-		 * rcu_implicit_dynticks_qs가 전달되었을 경우,
-		 * 현재 상태가 idle 상태가 아니거나, idle/nmi 상태를 거쳤을 경우
 		 **/
 		if (mask != 0) {
 
@@ -2300,7 +2314,7 @@ static void force_quiescent_state(struct rcu_state *rsp, int relaxed)
 	if (relaxed && ULONG_CMP_GE(rsp->jiffies_force_qs, jiffies))
 		goto unlock_fqs_ret; /* no emergency and done recently. */
 	/** 20140809    
-	 * n_force_qs 증가.
+	 * force_quiescent_state가 호출된 횟수 증가.
 	 **/
 	rsp->n_force_qs++;
 	raw_spin_lock(&rnp->lock);  /* irqs already disabled */
@@ -2385,6 +2399,15 @@ unlock_fqs_ret:
  * and rcu_data structures.  This may be called only from the CPU to
  * whom the rdp belongs.
  */
+/** 20141011    
+ * 특정 rsp와 rdp로 callback을 처리하는 핵심함수.
+ *
+ * 1. 우선 force_qs를 진행할 정도로 충분한 시간이 흘렀다면 force qs를 처리한다.
+ * 2. 이후 rnp의 데이터와 동기를 맞춘 뒤,
+ * 3. qs가 발생했는지 판단해 report 한다.
+ * 4. 새로운 gp가 존재한다면 시작시키고,
+ * 5. 호출할 CB들이 있다면 호출한다.
+ **/
 static void
 __rcu_process_callbacks(struct rcu_state *rsp)
 {
@@ -2401,9 +2424,6 @@ __rcu_process_callbacks(struct rcu_state *rsp)
 	 * idle CPUs and, if needed, send resched IPIs.
 	 */
 	/** 20140726    
-	 * RCU GP가 충분히 길어진 상태라면, dyntick idle CPU를 체크하고,
-	 * 필요하다면 resched IPI를 날린다.
-	 * 
 	 * rcu_state의 jiffies_force_qs로 지정한 값이 현재 지피보다 작다면,
 	 * 강제로 quiescent_state(CPU not using RCU)로 진입한다.
 	 *
@@ -2438,6 +2458,7 @@ __rcu_process_callbacks(struct rcu_state *rsp)
 
 	/* If there are callbacks ready, invoke them. */
 	/** 20140830    
+	 * rcu_process_gp_end() 에서 nxttail을 조정한 뒤
 	 * callback 리스트에 대기 중인 CB들이 있다면 콜백들을 호출한다.
 	 **/
 	if (cpu_has_callbacks_ready_to_invoke(rdp))
@@ -2488,6 +2509,7 @@ static void invoke_rcu_callbacks(struct rcu_state *rsp, struct rcu_data *rdp)
 
 /** 20140726    
  * RCU_SOFTIRQ를 raise.
+ * open_softirq에서 등록한 rcu_process_callbacks가 호출된다.
  **/
 static void invoke_rcu_core(void)
 {
@@ -2980,6 +3002,10 @@ static int rcu_pending(int cpu)
  * by the current CPU, even if none need be done immediately, returning
  * 1 if so.
  */
+/** 20141011    
+ * 각 rsp 중에 특정 cpu에 해당하는 rcu_data를 가져와 아직 수행하지 않은
+ * CBs이 존재하는지 검사한다.
+ **/
 static int rcu_cpu_has_callbacks(int cpu)
 {
 	struct rcu_state *rsp;

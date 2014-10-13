@@ -432,6 +432,7 @@ extern bool force_irqthreads;
 
 /** 20140426    
  * 커널에서 사용되는 약속된 SOFTIRQ 번호.
+ * 이 순서가 우선순위로, __do_softirq에서 우선순위 순으로 작업을 실행한다.
  **/
 enum
 {
@@ -526,9 +527,15 @@ extern void __send_remote_softirq(struct call_single_data *cp, int cpu,
  * tasklet_struct
  *
  * tasklet은 softirq로 구현되며, interrupt context에서 실행된다.
- *
- * tasklet은 softirq와 달리 한 시점에 하나의 CPU에서만 수행된다.
- * 반면, 다른 BH와 달리 각기 다른 taslket은 다른 CPU들에서 각각 실행될 수 있다.
+ * 한 종류의 tasklet은 softirq와 달리 한 시점에 하나의 CPU에서만 수행된다.
+ * 반면, 다른 bottom-half와 달리 각기 다른 taslket은 다른 CPU들에서 각각 실행될 수 있다.
+ * 
+ * 속성:
+ * - tasklet_schedule()이 호출되면, tasklet은 어떤 cpu에서 최소 한 번은 실행된다.
+ * - tasklet이 이미 스케쥴 되었지만 아직 시작되지 않았다면, 한 번만 실행된다.
+ * - 같은 tasklet이 다른 CPU에서 수행 중이라면, 나중에 실행하기 위해 재스케쥴 된다.
+ * - 같은 tasklet은 자신에 관해서는 엄격히 직렬화 되지만,(wrt: with reference to)
+ *   다른 tasklet들과는 그렇지 않다. 따라서 task간 동기화를 위해서는 spinlock을 사용해야 한다.
  **/
 struct tasklet_struct
 {
@@ -576,8 +583,16 @@ static inline void tasklet_unlock_wait(struct tasklet_struct *t)
 
 extern void __tasklet_schedule(struct tasklet_struct *t);
 
+/** 20141011    
+ * tasklet을 스케쥴하는(작업 등록) 함수.
+ * 
+ **/
 static inline void tasklet_schedule(struct tasklet_struct *t)
 {
+	/** 20141011    
+	 * tasklet이 schedule 되어 있지 않다면 schedule 상태로 변경하고
+	 * __tasklet_schedule를 호출한다.
+	 **/
 	if (!test_and_set_bit(TASKLET_STATE_SCHED, &t->state))
 		__tasklet_schedule(t);
 }

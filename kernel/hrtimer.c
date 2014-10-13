@@ -649,6 +649,9 @@ static int hrtimer_reprogram(struct hrtimer *timer,
 /*
  * Initialize the high resolution related parts of cpu_base
  */
+/** 20141011    
+ * hres timer base를 초기화 한다.
+ **/
 static inline void hrtimer_init_hres(struct hrtimer_cpu_base *base)
 {
 	base->expires_next.tv64 = KTIME_MAX;
@@ -1784,6 +1787,9 @@ static void migrate_hrtimers(int scpu)
 
 #endif /* CONFIG_HOTPLUG_CPU */
 
+/** 20141011    
+ * high-res timer cpu notify.
+ **/
 static int __cpuinit hrtimer_cpu_notify(struct notifier_block *self,
 					unsigned long action, void *hcpu)
 {
@@ -1817,6 +1823,9 @@ static int __cpuinit hrtimer_cpu_notify(struct notifier_block *self,
 	return NOTIFY_OK;
 }
 
+/** 20141011    
+ * high-res timer Notifier block.
+ **/
 static struct notifier_block __cpuinitdata hrtimers_nb = {
 	.notifier_call = hrtimer_cpu_notify,
 };
@@ -1826,6 +1835,9 @@ static struct notifier_block __cpuinitdata hrtimers_nb = {
  **/
 void __init hrtimers_init(void)
 {
+	/** 20141011    
+	 * cpu_notifier를 등록하기 전에, callback을 직접 호출해 init을 호출한다.
+	 **/
 	hrtimer_cpu_notify(&hrtimers_nb, (unsigned long)CPU_UP_PREPARE,
 			  (void *)(long)smp_processor_id());
 	register_cpu_notifier(&hrtimers_nb);

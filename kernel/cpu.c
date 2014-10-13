@@ -208,6 +208,7 @@ static int __cpu_notify(unsigned long val, void *v, int nr_to_call,
 }
 
 /** 20140927    
+ * register_cpu_notify로 등록한 notifier_block을 호출한다.
  **/
 static int cpu_notify(unsigned long val, void *v)
 {
