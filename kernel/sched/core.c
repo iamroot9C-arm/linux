@@ -4719,6 +4719,13 @@ EXPORT_SYMBOL(task_nice);
  * idle_cpu - is a given cpu idle currently?
  * @cpu: the processor in question.
  */
+/** 20141011
+ * 주어진 cpu가 IDLE 상태인지 판단하는 함수.
+ *
+ * 조건 1. 현재 실행 중인 task가 idle일 때 실행하는 task이다.
+ * 조건 2. 실행 중인 idle을 제외하고 실행 중인 task가 0개이다.
+ * 조건 3. SMP인 경우 깨울 task 목록이 비어있다.
+ **/
 int idle_cpu(int cpu)
 {
 	struct rq *rq = cpu_rq(cpu);

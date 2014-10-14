@@ -1895,6 +1895,10 @@ static void rcu_idle_count_callbacks_posted(void)
  * adjustment, they can be converted into kernel config parameters, though
  * making the state machine smarter might be a better option.
  */
+/** 20141011
+ * RCU_IDLE_GP_DELAY : RCU callbacks가 펜딩되어 있을 때 CPU가 dyntick-idle 모드에서 잠잘 수 있는 지피 수.
+ *                     idle_gp_timer_expires 에 사용된다.
+ **/
 #define RCU_IDLE_FLUSHES 5		/* Number of dyntick-idle tries. */
 #define RCU_IDLE_OPT_FLUSHES 3		/* Optional dyntick-idle tries. */
 #define RCU_IDLE_GP_DELAY 4		/* Roughly one grace period. */
@@ -2023,7 +2027,8 @@ static void rcu_idle_gp_timer_func(unsigned long cpu_in)
  * Initialize the timer used to pull CPUs out of dyntick-idle mode.
  */
 /** 20141011    
- * CONFIG_RCU_FAST_NO_HZ가 정의되어 있는 경우,
+ * CONFIG_RCU_FAST_NO_HZ가 정의되어 있는 경우.
+ * cpu를 dyntick-idle mode에서 빠져나오게 하기 위한 timer를 초기화 한다.
  **/
 static void rcu_prepare_for_idle_init(int cpu)
 {
@@ -2043,7 +2048,7 @@ static void rcu_prepare_for_idle_init(int cpu)
 /** 20141011    
  * idle 상태가 끝나고 rcu 관련된 작업을 정리한다.
  *
- * NO_HZ에서 동작하는 timer를 제거하고, tick_nohz_enabled의 snap을 남긴다.
+ * NO_HZ에서 동작하는 timer를 제거하고, percpu 포인터에 global tick_nohz_enabled 상태를 저장한다.
  **/
 static void rcu_cleanup_after_idle(int cpu)
 {
@@ -2159,6 +2164,9 @@ static void rcu_prepare_for_idle(int cpu)
 		rdtp->dyntick_holdoff = jiffies;
 		if (rcu_cpu_has_nonlazy_callbacks(cpu)) {
 			trace_rcu_prep_idle("Dyntick with callbacks");
+			/** 20141011
+			 * 
+			 **/
 			rdtp->idle_gp_timer_expires =
 				round_up(jiffies + RCU_IDLE_GP_DELAY,
 					 RCU_IDLE_GP_DELAY);
@@ -2167,6 +2175,9 @@ static void rcu_prepare_for_idle(int cpu)
 				round_jiffies(jiffies + RCU_IDLE_LAZY_GP_DELAY);
 			trace_rcu_prep_idle("Dyntick with lazy callbacks");
 		}
+		/** 20141011
+		 * 설정된 idle_gp_timer를 등록한다.
+		 **/
 		tp = &rdtp->idle_gp_timer;
 		mod_timer_pinned(tp, rdtp->idle_gp_timer_expires);
 		rdtp->nonlazy_posted_snap = rdtp->nonlazy_posted;

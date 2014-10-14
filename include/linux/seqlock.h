@@ -30,6 +30,46 @@
 #include <linux/preempt.h>
 #include <asm/processor.h>
 
+/** 20141011
+ * reader-writer lock의 문제점인 writer가 굶주리는 문제(starving writer problem)를 해결한 lock.
+ * 
+ * - writer
+ *   lock/unlock시에 spinlock을 사용하며, smp_wmb()로 동기화되는 sequence number를 단조 증가시킨다.
+ *   즉, writer 임계구간에서 sequence number는 홀수이다.
+ * 
+ * - reader
+ *   lock/unlock으로 구성되지 않고 smp_rmb()로 동기화되는 sequence를 검사한다.
+ *   writer가 임계구역에 있거나, reader가 데이터에 접근하기 전후의 sequence number가 달라졌다면 retry한다.
+ *
+ *
+ * 따라서 writer는 reader에 방해받지 않으며, 다수의 reader 사이에 lock이 존재하지 않은 특징을 갖고 있다.
+ * 단 reader의 참조 구간이 길어질수록 재시도로 인한 비용이 높아진다.
+ *
+ * 일반적인 reader의 구현은 다음과 같으며, 대표적인 예는 jiffies, timekeeping 값이다.
+ * 	do {
+ *	    seq = read_seqbegin(&foo);
+ * 	...
+ *      } while (read_seqretry(&foo, seq));
+ *
+ *
+ *       write access                |                   read access
+ *       ------------                |                   -----------
+ *                                   |
+ *  +++++++++++++++++++++++++++      |      ++++++++++++++++++++++++++++++++++++
+ *  + acquire write_seqlock   +      |      +   +   get count_pre              +
+ *  +  increment counter      +      |      +   +------------------------------+
+ *  +++++++++++++++++++++++++++      |      +   +   copy data                  +
+ *  |                         |      |      +   +------------------------------+
+ *  |   modify data ...       |      |      +  while (count_pre != count_post) +
+ *  |                         |      |      ++++++++++++++++++++++++++++++++++++
+ *  +++++++++++++++++++++++++++      |      |                                  |
+ *  +  increment counter      +      |      |       working with copy ...      |
+ *  + drop write_seqlock      +      |      |                                  |
+ *  +++++++++++++++++++++++++++      |      |__________________________________|
+ *                                   |
+ *
+ *  [참고] http://irl.cs.ucla.edu/~yingdi/web/paperreading/smp_locking.pdf
+ **/
 typedef struct {
 	unsigned sequence;
 	spinlock_t lock;
@@ -55,6 +95,11 @@ typedef struct {
  * Acts like a normal spin_lock/unlock.
  * Don't need preempt_disable() because that is in the spin_lock already.
  */
+/** 20141011
+ * spinlock에 기반한 writer 임계구역 설정/해제 함수.
+ * lock : sequence를 변경한 뒤 memory barrier를 둔다.
+ * unlock : memory barrier 이후 sequence를 변경한다.
+ **/
 static inline void write_seqlock(seqlock_t *sl)
 {
 	spin_lock(&sl->lock);
@@ -81,6 +126,9 @@ static inline int write_tryseqlock(seqlock_t *sl)
 }
 
 /* Start of read calculation -- fetch last complete writer token */
+/** 20141011
+ * writer가 임계구역에서 벗어난 상태에서 리턴된다.
+ **/
 static __always_inline unsigned read_seqbegin(const seqlock_t *sl)
 {
 	unsigned ret;
@@ -101,6 +149,9 @@ repeat:
  *
  * If sequence value changed then writer changed data while in section.
  */
+/** 20141011
+ * reader가 값을 읽기 전후에 sequence number가 변경되었는지 확인한다.
+ **/
 static __always_inline int read_seqretry(const seqlock_t *sl, unsigned start)
 {
 	smp_rmb();

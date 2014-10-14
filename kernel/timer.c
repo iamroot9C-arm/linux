@@ -793,9 +793,16 @@ __mod_timer(struct timer_list *timer, unsigned long expires,
 
 	debug_activate(timer, expires);
 
+	/** 20141011
+	 * 기본적으로 현재 CPU에서 timer가 수행된다.
+	 **/
 	cpu = smp_processor_id();
 
 #if defined(CONFIG_NO_HZ) && defined(CONFIG_SMP)
+	/** 20141011
+	 * SMP에서 timer를 수행할 cpu가 고정(pinned)되지 않았을 경우
+	 * nohz timer를 실행할 cpu를 찾아 온다.
+	 **/
 	if (!pinned && get_sysctl_timer_migration() && idle_cpu(cpu))
 		cpu = get_nohz_timer_target();
 #endif
@@ -938,6 +945,9 @@ EXPORT_SYMBOL(mod_timer);
  *
  *     del_timer(timer); timer->expires = expires; add_timer(timer);
  */
+/** 20141011
+ * timer의 timeout 값을 변경한다. timer는 현재 cpu에 등록된다.
+ **/
 int mod_timer_pinned(struct timer_list *timer, unsigned long expires)
 {
 	if (timer->expires == expires && timer_pending(timer))

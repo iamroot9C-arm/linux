@@ -590,8 +590,9 @@ static void rcu_idle_exit_common(struct rcu_dynticks *rdtp, long long oldval)
 	/** 20141004    
 	 * smp_mb 내에서 rdtp의 dynticks 값을 원자적으로 증가시킨다.
 	 *
-	 * smp_mb ???
-	 * RCU read-side critical section에서 dynticks를 참고한다.
+	 * smp_mb 존재이유???
+	 * : interrupt 등으로 인해 idle 상태에서 벗어나면
+	 *   RCU read-side critical section이 존재할 수 있고, 이 때 증가된 dynticks를 참고해야 한다.
 	 **/
 	smp_mb__before_atomic_inc();  /* Force ordering w/previous sojourn. */
 	atomic_inc(&rdtp->dynticks);
@@ -697,6 +698,9 @@ void rcu_irq_enter(void)
 	rdtp->dynticks_nesting++;
 	WARN_ON_ONCE(rdtp->dynticks_nesting == 0);
 	if (oldval)
+		/** 20141011
+		 * 이전 상태가 IDLE이 아닌 경우. idle에서 벗어나는 함수를 호출하지 않고 리턴. 
+		 **/
 		trace_rcu_dyntick("++=", oldval, rdtp->dynticks_nesting);
 	else
 		/** 20141004    
@@ -2437,7 +2441,7 @@ __rcu_process_callbacks(struct rcu_state *rsp)
 	 * period that some other CPU ended.
 	 */
 	/** 20140809    
-	 * 다른 CPU가 끝낸 이전 gp에 대한 완료를 처리한다.
+	 * 같은 rcu_node의 다른 CPU가 끝낸 이전 gp에 대한 완료를 처리한다.
 	 **/
 	rcu_process_gp_end(rsp, rdp);
 
@@ -3280,6 +3284,9 @@ rcu_init_percpu_data(int cpu, struct rcu_state *rsp, int preemptible)
 	 **/
 	atomic_set(&rdp->dynticks->dynticks,
 		   (atomic_read(&rdp->dynticks->dynticks) & ~0x1) + 1);
+	/** 20141011
+	 * 
+	 **/
 	rcu_prepare_for_idle_init(cpu);
 	raw_spin_unlock(&rnp->lock);		/* irqs remain disabled. */
 
