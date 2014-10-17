@@ -59,7 +59,7 @@
  * if we block.
  */
 /** 20140719
- * CONFIG_PREEMPT_RCU인 경우
+ * CONFIG_PREEMPT_RCU인 경우에 해당.
  * 현재 태스크의 rcu_read_lock_nesting카운트를 증가시킨다.
  **/
 void __rcu_read_lock(void)
@@ -76,6 +76,12 @@ EXPORT_SYMBOL_GPL(__rcu_read_lock);
  * invoke rcu_read_unlock_special() to clean up after a context switch
  * in an RCU read-side critical section and other special cases.
  */
+/** 20141015
+ * CONFIG_PREEMPT_RCU인 경우에 해당.
+ * nesting의 마지막 unlock이 아닐 경우 nesting count만 감소.
+ * nesting의 마지막 unlock일 경우 task에 rcu_read_unlock_special 옵션이 포함되었을 경우
+ *   rcu_read_unlock_special 실행
+ **/
 void __rcu_read_unlock(void)
 {
 	struct task_struct *t = current;

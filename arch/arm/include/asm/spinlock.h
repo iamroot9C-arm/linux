@@ -159,7 +159,7 @@ static inline int arch_spin_trylock(arch_spinlock_t *lock)
 	 *  %0: slock
 	 *  %1: tmp
 	 *  %2: &lock->slock
-	 *  %3: (1 << TICK_SHIFT)
+	 *  %3: (1 << TICKET_SHIFT)
 	 *
 	 *  newval = lockval + (1 << TICKET_SHIFT)
 	 **/

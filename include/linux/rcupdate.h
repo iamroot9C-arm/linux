@@ -702,6 +702,13 @@ static inline void rcu_preempt_sleep_check(void)
  */
 /** 20140718
  * rcu read-side 임계구역에서 RCU로 보호받는 포인터를 읽어온다.
+ *
+ * rcu_read_lock()
+ * dereference(p)
+ * recu_read_unlock()
+ *
+ * Publish-Subscribe Mechanism 의 Subscribe에 해당
+ * http://lwn.net/Articles/262464/
  **/
 #define rcu_dereference(p) rcu_dereference_check(p, 0)
 
@@ -765,12 +772,15 @@ static inline void rcu_preempt_sleep_check(void)
  */
 /** 20140412    
  * rcu read lock
- **/
-/** 20140816
+ *
+ *   Preempt     : nesting count 증가 후 barrier.
+ *   Non-preempt : null statement.
+ *
+ * 20140816
  * non real time RCU : RCU read-side critical section block불가능
  * real-time RCU : RCU read-side critical section block가능
+ *
  **/
-
 static inline void rcu_read_lock(void)
 {
 	/** 20140412    
@@ -934,6 +944,9 @@ static inline notrace void rcu_read_unlock_sched_notrace(void)
 /** 20140329    
  * RCU로 보호받는 pointer에 새로운 값을 할당한다.
  * write barrier 명령을 수반하여, 이전 reader의 RCU 포인터 접근이 영향을 받지 않도록 한다.
+ *
+ * Publish-Subscribe Mechanism 의 Publish에 해당
+ * http://lwn.net/Articles/262464/
  **/
 #define rcu_assign_pointer(p, v) \
 	__rcu_assign_pointer((p), (v), __rcu)

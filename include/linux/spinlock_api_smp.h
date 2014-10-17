@@ -188,7 +188,7 @@ static inline void __raw_spin_lock_bh(raw_spinlock_t *lock)
 static inline void __raw_spin_lock(raw_spinlock_t *lock)
 {
 	/** 20130706    
-	 * 선점불가로 지정
+	 * 선점불가로 지정. lock을 잡은채로 선점당하면 안 된다.
 	 **/
 	preempt_disable();
 	/** 20130706    
