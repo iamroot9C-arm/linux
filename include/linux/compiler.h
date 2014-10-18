@@ -326,6 +326,7 @@ void ftrace_likely_update(struct ftrace_branch_data *f, int val, int expect);
  * 변수가 volatile 특성을 가지면 컴파일러는 해당 변수에 대한 메모리 접근이
  *  side-effect를 가진다고 가정하여, 접근 순서 및 횟수 등을 변경하지 않도록 주의를 기울인다.
  *  from : http://studyfoss.egloos.com/5682616
+ *  http://lwn.net/Articles/508991/
  */
 #define ACCESS_ONCE(x) (*(volatile typeof(x) *)&(x))
 

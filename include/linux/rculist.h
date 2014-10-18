@@ -76,7 +76,11 @@ extern void __list_add_rcu(struct list_head *new,
  * list_for_each_entry_rcu().
  */
 /** 20140329    
- * rcu로 보호되는 list의 앞부분에 새로운 node를 추가한다.
+ * rcu로 보호되는 list head 다음에 새로운 node를 추가한다.
+ * Publish-Subscribe Mechanism의 Publish에 해당.
+ *
+ * list 순회관련 함수들은 제외하고 rcu list 관련 함수를 사용할 때는
+ * lock으로 임계구역을 보호해야 한다.
  **/
 static inline void list_add_rcu(struct list_head *new, struct list_head *head)
 {

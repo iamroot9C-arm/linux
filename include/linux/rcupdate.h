@@ -543,9 +543,12 @@ static inline void rcu_preempt_sleep_check(void)
 		(_________p1); \
 	})
 /** 20121201
+ * instruction barrier를 wrapping하여 'Publish-Subscribe Mechanism'의
+ * Publish 기능을 한다.
+ *
  * CONFIG SMP일 경우 #define smp_wmb()	dmb()
- * dmb()를 통해서 명령어 reordering을 방지함으로써
- * 새로운 값 참조를 보장해 준다.
+ * dmb()를 통해 이전 memory 쓰기 명령의 reordering을 방지함으로써
+ * rcu_dereference() 등 Subscribe측의 새로운 값 참조를 보장한다.
  **/
 #define __rcu_assign_pointer(p, v, space) \
 	do { \
@@ -780,6 +783,9 @@ static inline void rcu_preempt_sleep_check(void)
  * non real time RCU : RCU read-side critical section block불가능
  * real-time RCU : RCU read-side critical section block가능
  *
+ * rcu read-side 임계구역에서는 선점불가로 만들지 않기 때문에, 
+ * 선점가능일 경우 rcu_read_lock 구간이 선점될 수 있다.
+ * 따라서 중첩 count를 저장해 마지막 unlock시 동작할 수 있도록 한다.
  **/
 static inline void rcu_read_lock(void)
 {
@@ -943,10 +949,17 @@ static inline notrace void rcu_read_unlock_sched_notrace(void)
  */
 /** 20140329    
  * RCU로 보호받는 pointer에 새로운 값을 할당한다.
- * write barrier 명령을 수반하여, 이전 reader의 RCU 포인터 접근이 영향을 받지 않도록 한다.
+ * Publish-Subscribe Mechanism의 Publish에 해당.
+ * [참고] http://lwn.net/Articles/262464/
  *
- * Publish-Subscribe Mechanism 의 Publish에 해당
- * http://lwn.net/Articles/262464/
+ * write barrier 명령을 수반하여, 다음과 같은 예에서 구조체의 멤버에 할당이
+ * 끝난 뒤 reader의 RCU pointer 접근이 가능하도록 한다.
+ *
+ *   1| p = kmalloc(sizeof(*p), GFP_KERNEL);
+ *   2| p->a = 1;
+ *   3| p->b = 2;
+ *   4| p->c = 3;
+ *   5| rcu_assign_pointer(gp, p);
  **/
 #define rcu_assign_pointer(p, v) \
 	__rcu_assign_pointer((p), (v), __rcu)

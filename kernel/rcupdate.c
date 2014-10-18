@@ -76,11 +76,15 @@ EXPORT_SYMBOL_GPL(__rcu_read_lock);
  * invoke rcu_read_unlock_special() to clean up after a context switch
  * in an RCU read-side critical section and other special cases.
  */
-/** 20141015
- * CONFIG_PREEMPT_RCU인 경우에 해당.
- * nesting의 마지막 unlock이 아닐 경우 nesting count만 감소.
- * nesting의 마지막 unlock일 경우 task에 rcu_read_unlock_special 옵션이 포함되었을 경우
- *   rcu_read_unlock_special 실행
+/** 20141015    
+ * PREEMPT_RCU에서 read-side 임계구역을 벗어나는 함수.
+ *
+ * 마지막 unlock이 아니면 nesting 카운트만 감소시킨다.
+ * 마지막 unlock이면 우선 rcu_read_lock_nesting을 매우 낮은 값으로 만들어두고,
+ * task에 rcu_read_unlock_special이 지정되어 있다면 rcu_read_unlock_special()을
+ * 호출한 뒤, 다시 rcu_read_lock_nesting을 0으로 만든다.
+ *
+ * barrier를 두어 compiler의 생성순서를 보장한다.
  **/
 void __rcu_read_unlock(void)
 {
