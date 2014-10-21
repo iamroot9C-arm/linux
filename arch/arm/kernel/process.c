@@ -187,6 +187,8 @@ void cpu_idle(void)
 
 	/* endless idle loop with no priority at all */
 	while (1) {
+		/** 20141018    
+		 **/
 		tick_nohz_idle_enter();
 		/** 20141004    
 		 * rcu_idle_enter 호출.

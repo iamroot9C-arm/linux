@@ -49,6 +49,8 @@ static ssize_t __ref store_online(struct device *dev,
 	cpu_hotplug_driver_lock();
 	/** 20140927    
 	 * echo '0', '1' 항목에 따라 cpu_down, cpu_up 호출
+	 *
+	 * cpu->dev.id는 down/up 시킬 cpu 번호가 넘어온다.
 	 **/
 	switch (buf[0]) {
 	case '0':

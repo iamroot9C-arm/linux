@@ -96,7 +96,7 @@ static int rcu_preempted_readers_exp(struct rcu_node *rnp);
  * Tell them what RCU they are running.
  */
 /** 20140719
- * CONFIG_TREE_PREEMPT_RCU 옵션이 켜져 있으면 printk 메세지 표시
+ * config_tree_preempt_rcu 옵션이 켜져 있으면 printk 메세지 표시
  **/
 static void __init rcu_bootup_announce(void)
 {
@@ -585,6 +585,11 @@ static void rcu_preempt_check_blocked_tasks(struct rcu_node *rnp)
  *
  * The caller must hold rnp->lock with irqs disabled.
  */
+/** 20141018    
+ * CONFIG_TREE_PREEMPT_RCU인 경우에 해당.
+ *
+ * offline된 rcu_node에 등록되어 있는 tasklist를 이관.
+ **/
 static int rcu_preempt_offline_tasks(struct rcu_state *rsp,
 				     struct rcu_node *rnp,
 				     struct rcu_data *rdp)
@@ -616,6 +621,9 @@ static int rcu_preempt_offline_tasks(struct rcu_state *rsp,
 		retval |= RCU_OFL_TASKS_NORM_GP;
 	if (rcu_preempted_readers_exp(rnp))
 		retval |= RCU_OFL_TASKS_EXP_GP;
+	/** 20141018    
+	 * rnp에 등록되어 있는 block된 task를 rnp_root로 이관.
+	 **/
 	lp = &rnp->blkd_tasks;
 	lp_root = &rnp_root->blkd_tasks;
 	while (!list_empty(lp)) {
@@ -724,6 +732,12 @@ EXPORT_SYMBOL_GPL(kfree_call_rcu);
  * synchronize_rcu() was waiting.  RCU read-side critical sections are
  * delimited by rcu_read_lock() and rcu_read_unlock(), and may be nested.
  */
+/** 20141018    
+ * gp가 지날 때까지 기다리는 함수.
+ *
+ * Wait For Pre-Existing RCU Readers to Complete
+ * [참고] http://lwn.net/Articles/262464/
+ **/
 void synchronize_rcu(void)
 {
 	rcu_lockdep_assert(!lock_is_held(&rcu_bh_lock_map) &&
@@ -1026,6 +1040,8 @@ static void rcu_preempt_check_blocked_tasks(struct rcu_node *rnp)
  * such non-existent tasks cannot possibly have been blocking the current
  * grace period.
  */
+/** 20141018    
+ **/
 static int rcu_preempt_offline_tasks(struct rcu_state *rsp,
 				     struct rcu_node *rnp,
 				     struct rcu_data *rdp)
@@ -1370,6 +1386,9 @@ static int __cpuinit rcu_spawn_one_boost_kthread(struct rcu_state *rsp,
 /*
  * Stop the RCU's per-CPU kthread when its CPU goes offline,.
  */
+/** 20141018    
+ * offline 상태가 되는 cpu의 per-CPU kthread를 가져와 정지시킨다.
+ **/
 static void rcu_stop_cpu_kthread(int cpu)
 {
 	struct task_struct *t;
@@ -1896,6 +1915,9 @@ static void rcu_idle_count_callbacks_posted(void)
  * making the state machine smarter might be a better option.
  */
 /** 20141011
+ * RCU_IDLE_FLUSHES  : RCU를 만족(pending된 작업 처리)시키기 위해 재시도할 횟수.
+ * 이 시점을 넘어서면 최대 전력으로 state machine을 돌리는 것보다 주기적인 scheduling-clock interrupt로 수행하는 것이 낫다.
+ *
  * RCU_IDLE_GP_DELAY : RCU callbacks가 펜딩되어 있을 때 CPU가 dyntick-idle 모드에서 잠잘 수 있는 지피 수.
  *                     idle_gp_timer_expires 에 사용된다.
  **/
@@ -1911,6 +1933,9 @@ extern int tick_nohz_enabled;
  * the specified CPU?  Both RCU flavor and CPU are specified by the
  * rcu_data structure.
  */
+/** 20141018    
+ * rdp가 qlen과 qlen_lazy가 다르면 queue에 nonlazy CBs가 존재한다.
+ **/
 static bool __rcu_cpu_has_nonlazy_callbacks(struct rcu_data *rdp)
 {
 	return rdp->qlen != rdp->qlen_lazy;
@@ -1922,6 +1947,9 @@ static bool __rcu_cpu_has_nonlazy_callbacks(struct rcu_data *rdp)
  * Are there non-lazy RCU-preempt callbacks?  (There cannot be if there
  * is no RCU-preempt in the kernel.)
  */
+/** 20141018    
+ * rdp에 nonlazy CBs가 존재하는지 검사한다.
+ **/
 static bool rcu_preempt_cpu_has_nonlazy_callbacks(int cpu)
 {
 	struct rcu_data *rdp = &per_cpu(rcu_preempt_data, cpu);
@@ -1970,6 +1998,9 @@ int rcu_needs_cpu(int cpu, unsigned long *delta_jiffies)
 	struct rcu_dynticks *rdtp = &per_cpu(rcu_dynticks, cpu);
 
 	/* Flag a new idle sojourn to the idle-entry state machine. */
+	/** 20141018    
+	 * 새로 idle 상태로 들어감을 표시한다.
+	 **/
 	rdtp->idle_first_pass = 1;
 	/* If no callbacks, RCU doesn't need the CPU. */
 	if (!rcu_cpu_has_callbacks(cpu)) {
@@ -2029,6 +2060,8 @@ static void rcu_idle_gp_timer_func(unsigned long cpu_in)
 /** 20141011    
  * CONFIG_RCU_FAST_NO_HZ가 정의되어 있는 경우.
  * cpu를 dyntick-idle mode에서 빠져나오게 하기 위한 timer를 초기화 한다.
+ *
+ * timer 만료시 rcu_idle_gp_timer_func가 호출된다.
  **/
 static void rcu_prepare_for_idle_init(int cpu)
 {
@@ -2114,6 +2147,21 @@ static void rcu_prepare_for_idle(int cpu)
 	 * Instead, repost the ->idle_gp_timer if this CPU has callbacks
 	 * pending.
 	 */
+	/** 20141018    
+	 * idle로 들어가기 전 호출되는 rcu_needs_cpu에서 idle_first_pass를 1로 설정.
+	 * 두 번째 호출되었을 때 nonlazy_posted가 변경되지 않았다면 timer를 재설정하고 return 한다.
+	 *
+	 * 아래 dyntick_drain에서 다음 조건을 만족하면
+	 * (rdtp->dyntick_drain <= RCU_IDLE_OPT_FLUSHES &&
+	 *   !rcu_pending(cpu) &&
+	 *   !local_softirq_pending())
+	 *
+	 * 아래 if문의 두 번째 조건이 참이 된다.
+	 *  CBs이 있으면 idle_gp_timer가 재등록되고,
+	 *  없으면 바로 return 된다.
+	 *
+	 * timer 만료시 rcu_idle_gp_timer_func가 호출된다.
+	 **/
 	if (!rdtp->idle_first_pass &&
 	    (rdtp->nonlazy_posted == rdtp->nonlazy_posted_snap)) {
 		if (rcu_cpu_has_callbacks(cpu)) {
@@ -2122,6 +2170,10 @@ static void rcu_prepare_for_idle(int cpu)
 		}
 		return;
 	}
+	/** 20141018    
+	 * idle_first_pass를 한 번 거치게 되어 0으로 변경.
+	 * nonlazy_posted_snap은 nonlazy_posted보다 작게 설정.
+	 **/
 	rdtp->idle_first_pass = 0;
 	rdtp->nonlazy_posted_snap = rdtp->nonlazy_posted - 1;
 
@@ -2130,7 +2182,7 @@ static void rcu_prepare_for_idle(int cpu)
 	 * Also reset state to avoid prejudicing later attempts.
 	 */
 	/** 20141011    
-	 * 특정 cpu에 수행해야 할 CBs들이 존재하지 않는다면,
+	 * idle로 진입할 cpu에 수행해야 할 CBs들이 존재하지 않는다면,
 	 * CONFIG_RCU_FAST_NO_HZ 관련 변수를 초기화 하고 dyntick-idle mode로 진입하기 위해 리턴한다.
 	 **/
 	if (!rcu_cpu_has_callbacks(cpu)) {
@@ -2151,11 +2203,16 @@ static void rcu_prepare_for_idle(int cpu)
 
 	/* Check and update the ->dyntick_drain sequencing. */
 	/** 20141018    
-	 * 여기부터...
+	 * 최초 실행시 dyntick_drain이 0이므로 RCU_IDLE_FLUSHES 로 초기화.
 	 **/
 	if (rdtp->dyntick_drain <= 0) {
 		/* First time through, initialize the counter. */
 		rdtp->dyntick_drain = RCU_IDLE_FLUSHES;
+	/** 20141018    
+	 * RCU_IDLE_OPT_FLUSHES 상태이며, rcu와 local softirq가 pending 되어 있지 않으면 dyntick_drain을 초기화 한다.
+	 *   nonlazy CBs가 존재하면 idle_gp_timer_expires를 RCU_IDLE_GP_DELAY로,
+	 *   존재하지 않으면 RCU_IDLE_LAZY_GP_DELAY로 설정한다.
+	 **/
 	} else if (rdtp->dyntick_drain <= RCU_IDLE_OPT_FLUSHES &&
 		   !rcu_pending(cpu) &&
 		   !local_softirq_pending()) {
@@ -2164,9 +2221,6 @@ static void rcu_prepare_for_idle(int cpu)
 		rdtp->dyntick_holdoff = jiffies;
 		if (rcu_cpu_has_nonlazy_callbacks(cpu)) {
 			trace_rcu_prep_idle("Dyntick with callbacks");
-			/** 20141011
-			 * 
-			 **/
 			rdtp->idle_gp_timer_expires =
 				round_up(jiffies + RCU_IDLE_GP_DELAY,
 					 RCU_IDLE_GP_DELAY);
@@ -2182,6 +2236,11 @@ static void rcu_prepare_for_idle(int cpu)
 		mod_timer_pinned(tp, rdtp->idle_gp_timer_expires);
 		rdtp->nonlazy_posted_snap = rdtp->nonlazy_posted;
 		return; /* Nothing more to do immediately. */
+	/** 20141018    
+	 * 그렇지 않은 경우 dyntick_drain을 감소시킨다.
+	 * 감소 후 0이 되었다면 재시도 횟수를 초과해
+	 * dyntick을 막고 rcu core를 동작시킨다.
+	 **/
 	} else if (--(rdtp->dyntick_drain) <= 0) {
 		/* We have hit the limit, so time to give up. */
 		rdtp->dyntick_holdoff = jiffies;
@@ -2189,6 +2248,11 @@ static void rcu_prepare_for_idle(int cpu)
 		invoke_rcu_core();  /* Force the CPU out of dyntick-idle. */
 		return;
 	}
+
+	/** 20141018    
+	 * rdtp->dyntick_drain <= RCU_IDLE_OPT_FLUSHES 이지만,
+	 * rcu_pending인 경우에 수행된다.
+	 **/
 
 	/*
 	 * Do one step of pushing the remaining RCU callbacks through
@@ -2229,6 +2293,12 @@ static void rcu_prepare_for_idle(int cpu)
  * Of course, callbacks should only be posted from within a trace event
  * designed to be called from idle or from within RCU_NONIDLE().
  */
+/** 20141018    
+ * CONFIG_RCU_FAST_NO_HZ가 정의된 경우 nonlazy_posted을 증가시킨다.
+ *
+ * nonlazy_posted 값은 rcu_prepare_for_idle() 함수가
+ * 뭔가가 idle loop를 빠져나와 CBs을 post했음을 발견하게 해준다.
+ **/
 static void rcu_idle_count_callbacks_posted(void)
 {
 	__this_cpu_add(rcu_dynticks.nonlazy_posted, 1);

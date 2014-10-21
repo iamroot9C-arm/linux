@@ -150,6 +150,10 @@ static int rcu_scheduler_fully_active __read_mostly;
  * Control variables for per-CPU and per-rcu_node kthreads.  These
  * handle all flavors of RCU.
  */
+/** 20141018    
+ * rcu CBs을 처리할 per_cpu task 변수를 정의.
+ * rcu_spawn_kthreads에서 task를 지정한다.
+ **/
 static DEFINE_PER_CPU(struct task_struct *, rcu_cpu_kthread_task);
 DEFINE_PER_CPU(unsigned int, rcu_cpu_kthread_status);
 DEFINE_PER_CPU(int, rcu_cpu_kthread_cpu);
@@ -1366,7 +1370,7 @@ rcu_start_gp_per_cpu(struct rcu_state *rsp, struct rcu_node *rnp, struct rcu_dat
  * quiescent state.
  */
 /** 20140809    
- * 새로운 gp를 시작한다.
+ * 필요한 경우 새로운 gp를 시작한다.
  *
  * 하나의 gp를 마친 뒤 호출될 수도 있고, removal phase 이후 시작될 수도 있다.
  * 다음 gp를 detect하기 위한 준비과정으로 hierarchy를 재초기화 한다.
@@ -1772,6 +1776,9 @@ rcu_check_quiescent_state(struct rcu_state *rsp, struct rcu_data *rdp)
  * specified CPU must be offline, and the caller must hold the
  * ->onofflock.
  */
+/** 20141018    
+ * dead cpu에 해당하는 rdp의 CBs들을 rsp에 등록하고, rdp 리스트를 초기화 한다.
+ **/
 static void
 rcu_send_cbs_to_orphanage(int cpu, struct rcu_state *rsp,
 			  struct rcu_node *rnp, struct rcu_data *rdp)
@@ -1781,6 +1788,9 @@ rcu_send_cbs_to_orphanage(int cpu, struct rcu_state *rsp,
 	 * because ->onofflock excludes _rcu_barrier()'s adoption of
 	 * the callbacks, thus no memory barrier is required.
 	 */
+	/** 20141018    
+	 * dead cpu에 CBs이 존재한다면 dead cpu의 rdp를 rsp에 반영시킨다.
+	 **/
 	if (rdp->nxtlist != NULL) {
 		rsp->qlen_lazy += rdp->qlen_lazy;
 		rsp->qlen += rdp->qlen;
@@ -1822,6 +1832,9 @@ rcu_send_cbs_to_orphanage(int cpu, struct rcu_state *rsp,
  * Adopt the RCU callbacks from the specified rcu_state structure's
  * orphanage.  The caller must hold the ->onofflock.
  */
+/** 20141018    
+ * rsp에 임시 저장 중인 dead cpu의 CBs을 현재 cpu로 입양한다.
+ **/
 static void rcu_adopt_orphan_cbs(struct rcu_state *rsp)
 {
 	int i;
@@ -1834,11 +1847,18 @@ static void rcu_adopt_orphan_cbs(struct rcu_state *rsp)
 	 * by causing them to fail to wait for the callbacks in the
 	 * orphanage.
 	 */
+	/** 20141018    
+	 * rcu_barrier가 진행 중이고 현재 task가 아니라면 입양하면 안 된다.
+	 **/
 	if (rsp->rcu_barrier_in_progress &&
 	    rsp->rcu_barrier_in_progress != current)
 		return;
 
 	/* Do the accounting first. */
+	/** 20141018    
+	 * rcu_send_cbs_to_orphanage()에서 rsp에 달아두었던 작업을 
+	 * 현재 cpu의 rdp에 적용한다.
+	 **/
 	rdp->qlen_lazy += rsp->qlen_lazy;
 	rdp->qlen += rsp->qlen;
 	rdp->n_cbs_adopted += rsp->qlen;
@@ -1854,6 +1874,9 @@ static void rcu_adopt_orphan_cbs(struct rcu_state *rsp)
 	 */
 
 	/* First adopt the ready-to-invoke callbacks. */
+	/** 20141018    
+	 * ready-to-invoke CBs를 먼저 입양한다.
+	 **/
 	if (rsp->orphan_donelist != NULL) {
 		*rsp->orphan_donetail = *rdp->nxttail[RCU_DONE_TAIL];
 		*rdp->nxttail[RCU_DONE_TAIL] = rsp->orphan_donelist;
@@ -1865,6 +1888,9 @@ static void rcu_adopt_orphan_cbs(struct rcu_state *rsp)
 	}
 
 	/* And then adopt the callbacks that still need a grace period. */
+	/** 20141018    
+	 * GP를 통해야 하는 CBs을 입양한다.
+	 **/
 	if (rsp->orphan_nxtlist != NULL) {
 		*rdp->nxttail[RCU_NEXT_TAIL] = rsp->orphan_nxtlist;
 		rdp->nxttail[RCU_NEXT_TAIL] = rsp->orphan_nxttail;
@@ -1896,11 +1922,18 @@ static void rcu_cleanup_dying_cpu(struct rcu_state *rsp)
  * There can only be one CPU hotplug operation at a time, so no other
  * CPU can be attempting to update rcu_cpu_kthread_task.
  */
+/** 20141018    
+ * dead cpu에 관련된 rcu 관련 정보를 정리하고,
+ * rdp가 속한 rnp의 task 관련 정보를 갱신한다.
+ **/
 static void rcu_cleanup_dead_cpu(int cpu, struct rcu_state *rsp)
 {
 	unsigned long flags;
 	unsigned long mask;
 	int need_report = 0;
+	/** 20141018    
+	 * dead cpu의 rcu data 위치를 받아온다.
+	 **/
 	struct rcu_data *rdp = per_cpu_ptr(rsp->rda, cpu);
 	struct rcu_node *rnp = rdp->mynode;  /* Outgoing CPU's rdp & rnp. */
 
@@ -1914,6 +1947,12 @@ static void rcu_cleanup_dead_cpu(int cpu, struct rcu_state *rsp)
 	raw_spin_lock_irqsave(&rsp->onofflock, flags);
 
 	/* Orphan the dead CPU's callbacks, and adopt them if appropriate. */
+	/** 20141018    
+	 * dead cpu의 CBs를 rsp에 달아둔 뒤, 다시 현재 cpu의 rdp에 달아준다.
+	 * 즉, 고아가 된 CBs를 입양한다.
+	 *
+	 * 이 과정은 rsp에 onofflock이 걸린 상태에서 동작해야 한다.
+	 **/
 	rcu_send_cbs_to_orphanage(cpu, rsp, rnp, rdp);
 	rcu_adopt_orphan_cbs(rsp);
 
@@ -1921,6 +1960,10 @@ static void rcu_cleanup_dead_cpu(int cpu, struct rcu_state *rsp)
 	mask = rdp->grpmask;	/* rnp->grplo is constant. */
 	do {
 		raw_spin_lock(&rnp->lock);	/* irqs already disabled. */
+		/** 20141018    
+		 * dead cpu에 해당하는 위치를 qsmaskinit에서 제거.
+		 * 제거 후에도 qsmaskinit이 남아 있다면 break.
+		 **/
 		rnp->qsmaskinit &= ~mask;
 		if (rnp->qsmaskinit != 0) {
 			if (rnp != rdp->mynode)
@@ -2649,7 +2692,7 @@ __call_rcu(struct rcu_head *head, void (*func)(struct rcu_head *rcu),
 	ACCESS_ONCE(rdp->qlen)++;
 	/** 20140823    
 	 * lazy인 경우 qlen_lazy 증가.
-	 * 아닌 경우 ???
+	 * 아닌 경우 CONFIG_RCU_FAST_NO_HZ일 때는 rcu_dynticks에 발생횟수를 증가시킨다.
 	 **/
 	if (lazy)
 		rdp->qlen_lazy++;
@@ -3414,6 +3457,9 @@ static int __cpuinit rcu_cpu_notify(struct notifier_block *self,
 	case CPU_DEAD_FROZEN:
 	case CPU_UP_CANCELED:
 	case CPU_UP_CANCELED_FROZEN:
+	/** 20141018    
+	 * CPU_DEAD notify 받았을 때 죽은 cpu의 rcu 관련 작업을 정리한다.
+	 **/
 		for_each_rcu_flavor(rsp)
 			rcu_cleanup_dead_cpu(cpu, rsp);
 		break;

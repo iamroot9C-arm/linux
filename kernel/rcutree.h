@@ -325,6 +325,7 @@ struct rcu_data {
 	struct rcu_node *mynode;	/* This CPU's leaf of hierarchy */
 	/** 20140823    
 	 * leaf node의 qsmask에 적용하기 위한 mask.
+	 * rdp에 해당하는 cpu가 rcu_node에서 몇 번째에 해당하는지에 대한 정보.
 	 **/
 	unsigned long grpmask;		/* Mask to apply to leaf qsmask. */
 #ifdef CONFIG_RCU_CPU_STALL_INFO

@@ -288,6 +288,8 @@ static ktime_t tick_nohz_stop_sched_tick(struct tick_sched *ts,
 		time_delta = timekeeping_max_deferment();
 	} while (read_seqretry(&xtime_lock, seq));
 
+	/** 20141018    
+	 **/
 	if (rcu_needs_cpu(cpu, &rcu_delta_jiffies) || printk_needs_cpu(cpu) ||
 	    arch_needs_cpu(cpu)) {
 		next_jiffies = last_jiffies + 1;
@@ -459,6 +461,8 @@ static void __tick_nohz_idle_enter(struct tick_sched *ts)
 
 		ts->idle_calls++;
 
+		/** 20141018    
+		 **/
 		expires = tick_nohz_stop_sched_tick(ts, now, cpu);
 		if (expires.tv64 > 0LL) {
 			ts->idle_sleeps++;
@@ -505,6 +509,8 @@ void tick_nohz_idle_enter(void)
 	 * update of the idle time accounting in tick_nohz_start_idle().
 	 */
 	ts->inidle = 1;
+	/** 20141018    
+	 **/
 	__tick_nohz_idle_enter(ts);
 
 	local_irq_enable();
