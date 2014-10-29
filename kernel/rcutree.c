@@ -2447,13 +2447,19 @@ unlock_fqs_ret:
  * whom the rdp belongs.
  */
 /** 20141011    
- * 특정 rsp와 rdp로 callback을 처리하는 핵심함수.
+ * 특정 rsp와 rdp로 RCU가 진행해야 할 작업을 처리하는 핵심함수.
  *
  * 1. 우선 force_qs를 진행할 정도로 충분한 시간이 흘렀다면 force qs를 처리한다.
+ *		force_quiescent_state
  * 2. 이후 rnp의 데이터와 동기를 맞춘 뒤,
- * 3. qs가 발생했는지 판단해 report 한다.
+ *		rcu_process_gp_end
+ * 3. 최근에 qs가 발생했는지 판단해 report 한다.
+ *		rcu_check_quiescent_state
  * 4. 새로운 gp가 존재한다면 시작시키고,
+ *		(force_quiescent_state에 의해 block된 것도 여기서 실행 될 것이다)
+ *		rcu_start_gp
  * 5. 호출할 CB들이 있다면 호출한다.
+ *		invoke_rcu_callbacks
  **/
 static void
 __rcu_process_callbacks(struct rcu_state *rsp)
@@ -2569,7 +2575,7 @@ static void invoke_rcu_core(void)
 /** 20140831    
  * call_rcu에 의해 호출되며, RCU core 처리가 필요한 경우 처리한다.
  *
- * extended qs인 경우, SOFTIRQ를 발생시켜 CBs를 처리한다.
+ * extended qs에서 호출된 경우, SOFTIRQ를 발생시켜 CBs를 처리한다.
  * 너무 많은 CBs가 대기 중이거나 충분히 오랜시간이 흘렀다면 강제로 qs state로 처리한다.
  **/
 static void __call_rcu_core(struct rcu_state *rsp, struct rcu_data *rdp,
@@ -2581,8 +2587,7 @@ static void __call_rcu_core(struct rcu_state *rsp, struct rcu_data *rdp,
 	 */
 	/** 20140830    
 	 * rcu가 cpu idle 상태이고 현재 cpu가 online인 경우,
-	 * (userspace의 extended qs에 해당)
-	 * RCU_SOFTIRQ를 raise 한다.
+	 * 즉 extended qs에서 호출된 경우 RCU_SOFTIRQ를 raise 한다.
 	 **/
 	if (rcu_is_cpu_idle() && cpu_online(smp_processor_id()))
 		invoke_rcu_core();
@@ -2653,7 +2658,9 @@ static void __call_rcu_core(struct rcu_state *rsp, struct rcu_data *rdp,
 }
 
 /** 20140831    
- * func을 CB 리스트에 등록한다. 필요한 경우 RCU core를 처리한다.
+ * func을 CB 리스트에 등록한다.
+ *
+ * call_rcu에 관련된 core-RCU를 처리한다.
  **/
 static void
 __call_rcu(struct rcu_head *head, void (*func)(struct rcu_head *rcu),
@@ -2714,7 +2721,7 @@ __call_rcu(struct rcu_head *head, void (*func)(struct rcu_head *rcu),
 
 	/* Go handle any RCU core processing required. */
 	/** 20140831    
-	 * RCU core 처리가 필요한 경우 처리한다.
+	 * call_rcu에 의해 필요한 core-RCU 부분을 처리한다.
 	 **/
 	__call_rcu_core(rsp, rdp, head, flags);
 	local_irq_restore(flags);
@@ -2723,8 +2730,9 @@ __call_rcu(struct rcu_head *head, void (*func)(struct rcu_head *rcu),
 /*
  * Queue an RCU-sched callback for invocation after a grace period.
  */
-/** 20140426    
- * 추후 분석???
+/** 20141025    
+ * rcu_sched_state에 callback을 등록한다.
+ * 여기서 등록한 callback은 gp 이후 호출된다.
  **/
 void call_rcu_sched(struct rcu_head *head, void (*func)(struct rcu_head *rcu))
 {
@@ -2750,6 +2758,10 @@ EXPORT_SYMBOL_GPL(call_rcu_bh);
  * when there was in fact only one the whole time, as this just adds
  * some overhead: RCU still operates correctly.
  */
+/** 20141025    
+ * 현재 online인 cpu가 1개라면
+ * rcu blocking이 곧 grace period를 의미한다.
+ **/
 static inline int rcu_blocking_is_gp(void)
 {
 	int ret;
@@ -2784,14 +2796,24 @@ static inline int rcu_blocking_is_gp(void)
  * In "classic RCU", these two guarantees happen to be one and
  * the same, but can differ in realtime RCU implementations.
  */
+/** 20141025    
+ * synchronize_rcu의 non-PREEMPT 버전.
+ * call_rcu_sched를 호출하고 대기한다.
+ **/
 void synchronize_sched(void)
 {
 	rcu_lockdep_assert(!lock_is_held(&rcu_bh_lock_map) &&
 			   !lock_is_held(&rcu_lock_map) &&
 			   !lock_is_held(&rcu_sched_lock_map),
 			   "Illegal synchronize_sched() in RCU-sched read-side critical section");
+	/** 20141025    
+	 * online cpu가 하나라면 block이 곧 grace period를 의미한다.
+	 * 따라서 대기 없이 바로 리턴한다.
+	 **/
 	if (rcu_blocking_is_gp())
 		return;
+	/** 20141025
+	 **/
 	wait_rcu_gp(call_rcu_sched);
 }
 EXPORT_SYMBOL_GPL(synchronize_sched);

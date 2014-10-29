@@ -177,7 +177,7 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 	unsigned long flags;
 
 	/** 20130706    
-	 * 선점 불가로 설정. 비선점일 경우에는 의미 없음.
+	 * lock을 소유한 채 선점당하면 안 되므로 선점 불가로 설정.
 	 **/
 	preempt_disable();
 	/** 20130706    

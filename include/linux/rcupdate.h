@@ -179,7 +179,6 @@ void synchronize_rcu(void);
 
 /** 20140412    
  * CONFIG_PREEMPT_RCU 가 정의되지 않은 경우.
- * vexpress default config에는 정의되어 있지 않음.
  *
  * lock   : 선점 불가
  * unlock : 선점 가능
@@ -193,6 +192,11 @@ static inline void __rcu_read_unlock(void)
 {
 	preempt_enable();
 }
+
+/** 20141025    
+ * CONFIG_PREEMPT_RCU 가 정의되지 않은 경우.
+ *	synchronize_sched()를 호출해 block 상태로 대기한다.
+ **/
 
 static inline void synchronize_rcu(void)
 {
@@ -270,6 +274,10 @@ void wait_rcu_gp(call_rcu_func_t crf);
  * allocated dynamically in the heap or defined statically don't need any
  * initialization.
  */
+/** 20141025    
+ * RCU list 디버깅용 매커니즘.
+ * rcu_head가 동적할당으로 heap에 위치되거나 정적할당하여 사용한다면 필요치 않다.
+ **/
 #ifdef CONFIG_DEBUG_OBJECTS_RCU_HEAD
 extern void init_rcu_head_on_stack(struct rcu_head *head);
 extern void destroy_rcu_head_on_stack(struct rcu_head *head);

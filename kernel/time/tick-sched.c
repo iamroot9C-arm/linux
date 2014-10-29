@@ -281,6 +281,9 @@ static ktime_t tick_nohz_stop_sched_tick(struct tick_sched *ts,
 	u64 time_delta;
 
 	/* Read jiffies and the time when jiffies were updated last */
+	/** 20141025    
+	 * 마지막으로 jiffies가 업데이트 되었을 때의 jiffies값과 시간을 저장한다.
+	 **/
 	do {
 		seq = read_seqbegin(&xtime_lock);
 		last_update = last_jiffies_update;
@@ -289,12 +292,16 @@ static ktime_t tick_nohz_stop_sched_tick(struct tick_sched *ts,
 	} while (read_seqretry(&xtime_lock, seq));
 
 	/** 20141018    
+	 * rcu가 cpu 작업을 필요로 하거나, printk가 pending되어 있거나, 
+	 * architecture에서 필요로 하다면 next_jiffies는 다음 jiffies가 된다.
 	 **/
 	if (rcu_needs_cpu(cpu, &rcu_delta_jiffies) || printk_needs_cpu(cpu) ||
 	    arch_needs_cpu(cpu)) {
 		next_jiffies = last_jiffies + 1;
 		delta_jiffies = 1;
 	} else {
+	/** 20141025    
+	 **/
 		/* Get the next timer wheel timer */
 		next_jiffies = get_next_timer_interrupt(last_jiffies);
 		delta_jiffies = next_jiffies - last_jiffies;

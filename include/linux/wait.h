@@ -163,12 +163,20 @@ static inline void __add_wait_queue_exclusive(wait_queue_head_t *q,
 	__add_wait_queue(q, wait);
 }
 
+/** 20141025    
+ * wait queue 리스트의 tail에 task를 추가한다.
+ **/
 static inline void __add_wait_queue_tail(wait_queue_head_t *head,
 					 wait_queue_t *new)
 {
 	list_add_tail(&new->task_list, &head->task_list);
 }
 
+/** 20141025    
+ * wait queue 리스트의 tail에 EXCLUSIVE로 task를 추가한다.
+ *
+ * EXCLUSIVE 속성이 지정된 task는 wake_up시에 배타적으로 깨워져야 한다.
+ **/
 static inline void __add_wait_queue_tail_exclusive(wait_queue_head_t *q,
 					      wait_queue_t *wait)
 {

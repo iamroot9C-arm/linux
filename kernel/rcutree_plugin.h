@@ -701,6 +701,11 @@ static void rcu_preempt_do_callbacks(void)
 /*
  * Queue a preemptible-RCU callback for invocation after a grace period.
  */
+/** 20141025    
+ * preemptible-RCU인 경우,
+ * rcu_preempt_state에 callback을 등록한다.
+ * 여기서 등록한 callback은 gp 이후 호출된다.
+ **/
 void call_rcu(struct rcu_head *head, void (*func)(struct rcu_head *rcu))
 {
 	__call_rcu(head, func, &rcu_preempt_state, 0);
@@ -733,7 +738,7 @@ EXPORT_SYMBOL_GPL(kfree_call_rcu);
  * delimited by rcu_read_lock() and rcu_read_unlock(), and may be nested.
  */
 /** 20141018    
- * gp가 지날 때까지 기다리는 함수.
+ * gp가 끝날 때까지 block되어 기다리는 함수.
  *
  * Wait For Pre-Existing RCU Readers to Complete
  * [참고] http://lwn.net/Articles/262464/
@@ -1969,6 +1974,9 @@ static bool rcu_preempt_cpu_has_nonlazy_callbacks(int cpu)
 /*
  * Does any flavor of RCU have non-lazy callbacks on the specified CPU?
  */
+/** 20141025    
+ * 각 rcu state들이 특정 cpu에서 nonlazy CBs를 갖고 있는지 판단한다.
+ **/
 static bool rcu_cpu_has_nonlazy_callbacks(int cpu)
 {
 	return __rcu_cpu_has_nonlazy_callbacks(&per_cpu(rcu_sched_data, cpu)) ||
@@ -1993,6 +2001,12 @@ static bool rcu_cpu_has_nonlazy_callbacks(int cpu)
  * delayed until the wakeup time, which defeats the purpose of posting
  * a timer.
  */
+/** 20141025    
+ * rcu가 매개변수로 지정된 cpu의 동작을 필요로 하는지 리턴한다.
+ *
+ * delta_jiffies에 각 상황에 맞는 delta값을 계산해 리턴한다.
+ * 만약 CPU 사용이 바로 다시 필요하다면 delta_jiffies는 다음 jiffies가 된다.
+ **/
 int rcu_needs_cpu(int cpu, unsigned long *delta_jiffies)
 {
 	struct rcu_dynticks *rdtp = &per_cpu(rcu_dynticks, cpu);
@@ -2003,16 +2017,28 @@ int rcu_needs_cpu(int cpu, unsigned long *delta_jiffies)
 	 **/
 	rdtp->idle_first_pass = 1;
 	/* If no callbacks, RCU doesn't need the CPU. */
+	/** 20141025    
+	 * 처리할 CB이 없으면 0을 리턴.
+	 **/
 	if (!rcu_cpu_has_callbacks(cpu)) {
 		*delta_jiffies = ULONG_MAX;
 		return 0;
 	}
+	/** 20141025    
+	 * RCU가 최근에 시도되었고 실패했다면, rcu 관련된 작업이 필요하다.
+	 **/
 	if (rdtp->dyntick_holdoff == jiffies) {
 		/* RCU recently tried and failed, so don't try again. */
 		*delta_jiffies = 1;
 		return 1;
 	}
 	/* Set up for the possibility that RCU will post a timer. */
+	/** 20141025    
+	 * cpu에 해당하는 rcu_data가 nonlazy CBs를 보유 중이라면
+	 * delta_jiffies는 RCU_IDLE_GP_DELAY로 정렬되지 않은 값만큼이다.
+	 * 그렇지 않다면
+	 * delta_jiffies는 RCU_IDLE_LAZY_GP_DELAY로 정렬되지 않은 값만큼이다.
+	 **/
 	if (rcu_cpu_has_nonlazy_callbacks(cpu)) {
 		*delta_jiffies = round_up(RCU_IDLE_GP_DELAY + jiffies,
 					  RCU_IDLE_GP_DELAY) - jiffies;

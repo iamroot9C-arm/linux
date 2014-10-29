@@ -22,6 +22,9 @@
  * and macros DECLARE_COMPLETION(), DECLARE_COMPLETION_ONSTACK(), and
  * INIT_COMPLETION().
  */
+/** 20141025    
+ * wait queue
+ **/
 struct completion {
 	unsigned int done;
 	wait_queue_head_t wait;

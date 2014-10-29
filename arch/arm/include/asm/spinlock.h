@@ -52,6 +52,18 @@
 #define WFE(cond)	ALT_SMP("wfe" cond, "nop")
 #endif
 
+/** 20141021    
+ * unlock 전 memory barrier를 두어 변경 사항이 반영되도록 한다.
+ * 또한 sev를 날리기 전에 unlock이 메모리에 모두 반영되어야 한다.
+ *
+ *	<barrier>	// dmb //
+ *  <unlock>
+ *  <barrier>	// dsb //
+ *  <sev>
+ *
+ * https://lists.ubuntu.com/archives/kernel-team/2014-March/040628.html
+ * http://events.linuxfoundation.org/sites/events/files/slides/weak-to-weedy.pdf
+ **/
 static inline void dsb_sev(void)
 {
 #if __LINUX_ARM_ARCH__ >= 7
@@ -185,19 +197,19 @@ static inline int arch_spin_trylock(arch_spinlock_t *lock)
  **/
 static inline void arch_spin_unlock(arch_spinlock_t *lock)
 {
-/** 20121201
- *  %0: slock
- *  %1: tmp
- *  %2: &lock->slock
- * 
- * &lock->slock의 값을 slock으로 가져와서
- * owner값에 1을 증가시키고&lock->slock에 저장한다. 
-**/
+	/** 20121201
+	 *  %0: slock
+	 *  %1: tmp
+	 *  %2: &lock->slock
+	 * 
+	 * &lock->slock의 값을 slock으로 가져와서
+	 * owner값에 1을 증가시키고&lock->slock에 저장한다. 
+	 **/
 	unsigned long tmp;
 	u32 slock;
-/** 20121201
- * dmb()를 사용하였는데 왜???
-**/
+	/** 20121201
+	 * lock을 해제하기 전 변경사항이 메모리에 반영되도록 한다.
+	 **/
 	smp_mb();
 
 	__asm__ __volatile__(
@@ -210,11 +222,11 @@ static inline void arch_spin_unlock(arch_spinlock_t *lock)
 	: "=&r" (slock), "=&r" (tmp)
 	: "r" (&lock->slock)
 	: "cc");
-/** 20121201
- * dsb와 sev를 연속으로 호출하는 함수(dsb를 사용하였는데왜???)
- * ARM문서 B1.8.13 Wait For Event and Send Event
- * 멀티프로세서 시스템에서 모든 프로세스에게 이벤트를 전달해준다
-**/
+	/** 20121201
+	 * dsb와 sev를 연속으로 호출하는 함수
+	 * ARM문서 B1.8.13 Wait For Event and Send Event
+	 * 멀티프로세서 시스템에서 모든 프로세스에게 이벤트를 전달해준다
+	 **/
 	dsb_sev();
 }
 
@@ -248,18 +260,30 @@ static inline int arch_spin_is_contended(arch_spinlock_t *lock)
  * just write zero since the lock is exclusively held.
  */
 
+/** 20141021    
+ * rwlock의 writer lock 함수.
+ * 
+ * lock 변수가 0이 아닐 경우 다른 reader 또는 writer가 lock을 보유하고 있으므로
+ * wfe로 대기하다가 unlock시 sev를 보내주면 깨어난다.
+ *
+ * 깨어난 뒤 exclusive monitor 값이 변경되었다면 다시 시도하고,
+ * 그렇지 않다면 lock을 소유하여 bit 31 (음수 최대값)을 설정해
+ * 다른 reader와 writer의 접근을 막는다.
+ *
+ * lock 획득 후 memory barrier.
+ **/
 static inline void arch_write_lock(arch_rwlock_t *rw)
 {
 	unsigned long tmp;
-/** 20130323
-*1: ldrex temp, [rw->lock] : temp = *rw->lock
-*	teq temp, #0 : temp = temp ^ 0
-*	wfene        : if temp != 0, wait for event
-*	strexeq temp 0x80000000, *rw->lock : *rw->lock = -INT_MAX, 
-*                                        다른프로세스가 접근했으면 temp = 1, 그외는  temp = 0;
-*	teq temp, 0  : temp = temp ^ 0;
-* 	bne 1b       : if temp != 0, go 1b 
-*/
+	/** 20130323
+	 * 1: ldrex temp, [rw->lock] : temp = *rw->lock
+	 *	teq temp, #0 : temp = temp ^ 0
+	 *	wfene        : if temp != 0, wait for event
+	 *	strexeq temp 0x80000000, *rw->lock : *rw->lock = -INT_MAX, 
+	 *                   다른프로세스가 접근했으면 temp = 1, 그외는  temp = 0;
+	 *	teq temp, 0  : temp = temp ^ 0;
+	 * 	bne 1b       : if temp != 0, go 1b 
+	 */
 	__asm__ __volatile__(
 "1:	ldrex	%0, [%1]\n"
 "	teq	%0, #0\n"
@@ -274,6 +298,11 @@ static inline void arch_write_lock(arch_rwlock_t *rw)
 	smp_mb();
 }
 
+/** 20141021    
+ * 현재 다른 reader나 writer가 lock을 소유하고 있지 않고, (lock 변수 0)
+ * 성공적으로 lock을 획득했으면 (exclusive monitor 상태값 0)
+ * lock에 0x80000000을 기록하고 성공을 리턴한다. (이제 다른 reader나 writer가 접근하지 못한다)
+ **/
 static inline int arch_write_trylock(arch_rwlock_t *rw)
 {
 	unsigned long tmp;
@@ -294,12 +323,20 @@ static inline int arch_write_trylock(arch_rwlock_t *rw)
 	}
 }
 
+/** 20141021    
+ * rwlock 중 writer unlock의 구현.
+ *
+ * lock에 0을 쓰고, (오직 하나의 writer만 lock을 획득하므로)
+ * 대기 중인 reader, writer에 알리기 위해 dsb, sev 명령을 사용한다.
+ *
+ * lock 해제 전 memory barrier.
+ **/
 static inline void arch_write_unlock(arch_rwlock_t *rw)
 {
 	smp_mb();
-/** 20130323
-* 	*rw->lock = 0
-*/
+	/** 20130323
+	 * 	*rw->lock = 0
+	 */
 	__asm__ __volatile__(
 	"str	%1, [%0]\n"
 	:
@@ -327,22 +364,30 @@ static inline void arch_write_unlock(arch_rwlock_t *rw)
  * currently active.  However, we know we won't have any write
  * locks.
  */
+/** 20141021    
+ * rwlock의 read lock 함수.
+ *
+ * lock 변수가 음수거나(writer가 lock을 보유 중) exclusive monitor가 변경되었다면 wfe로 대기.
+ * 0 이상이면 다른 reader가 lock을 보유 중이므로 exclusive monitor 상태가 접근가능하면 lock을 보유할 수 있다.
+ *
+ * lock 획득 후 memory barrier.
+ **/
 static inline void arch_read_lock(arch_rwlock_t *rw)
 {
 	unsigned long tmp, tmp2;
 
-/** 20130323
-*		loadex ~ strexpl 사이 명령을 아토믹하게 수행.
-*		:wfemi 를 수행. wait for event on minus condition (negative	
-*1:	ldrex temp, [rw->lock]  : temp = *rw->lock  
-*	adds  temp, temp, #1    : temp = temp + 1; 
-*	strexpl temp2, temp, [rw->lock]  : if temp >= 0, *rw->lock = temp.  
-* 									   temp2 = 1 다른 프로세서가 rw->lock 주소를 접근 시, 그외 0
-*								       store on pl condition (plus or zero)
-*	WFE("mi")  wfemi       :  temp < 0 이면, 대기상태로 진입. ( sev가 올때까지 대기)
-*	rsbpls temp, temp2, #0 :  if temp >= 0, temp = 0 - temp2, update cpsr_f 
-*	bmi 1b
-*/
+	/** 20130323
+	 *		loadex ~ strexpl 사이 명령을 아토믹하게 수행.
+	 *		:wfemi 를 수행. wait for event on minus condition (negative)
+	 *1:	ldrex temp, [rw->lock]  : temp = *rw->lock  
+	 *	adds  temp, temp, #1    : temp = temp + 1; 
+	 *	strexpl temp2, temp, [rw->lock]  : if temp >= 0, *rw->lock = temp.  
+	 * 									   temp2 = 1 다른 프로세서가 rw->lock 주소를 접근 시, 그외 0
+	 *								       store on pl condition (plus or zero)
+	 *	WFE("mi")  wfemi       :  temp < 0 이면, 대기상태로 진입. ( sev가 올때까지 대기)
+	 *	rsbpls temp, temp2, #0 :  if temp >= 0, temp = 0 - temp2, update cpsr_f 
+	 *	bmi 1b
+	 */
 	__asm__ __volatile__(
 "1:	ldrex	%0, [%2]\n"
 "	adds	%0, %0, #1\n"
@@ -357,18 +402,26 @@ static inline void arch_read_lock(arch_rwlock_t *rw)
 	smp_mb();
 }
 
+/** 20141021    
+ * rwlock의 read unlock 함수.
+ *
+ * lock 변수에 1을 뺀다.
+ *
+ * lock 해제 전 memory barrier.
+ **/
 static inline void arch_read_unlock(arch_rwlock_t *rw)
 {
 	unsigned long tmp, tmp2;
 
 	smp_mb();
-/** 201303223
-*1:	ldrex tmp, rw->lock : tmp = *rw->lock
-*	sub tmp, tmp, 1     : tmp = tmp - 1;
-*	strex tmp2, tmp, rw->lock : *rw->lock = tmp, tmp2 =1 다른프로세서가 접근했으면, 그외 tmp2 = 0;
-*	teq tmp2, #0              : tmp2 ^ 0
-* 	bne 1b                    : tmp2 != 0 이면 go 1b
-*/
+	/** 201303223
+	 *1:	ldrex tmp, rw->lock : tmp = *rw->lock
+	 *	sub tmp, tmp, 1     : tmp = tmp - 1;
+	 *	strex tmp2, tmp, rw->lock : *rw->lock = tmp
+	 *					다른프로세서가 접근했으면 tmp2 = 1, 그외 tmp2 = 0;
+	 *	teq tmp2, #0              : tmp2 ^ 0
+	 * 	bne 1b                    : tmp2 != 0 이면 go 1b
+	 */
 	__asm__ __volatile__(
 "1:	ldrex	%0, [%2]\n"
 "	sub	%0, %0, #1\n"
@@ -379,13 +432,18 @@ static inline void arch_read_unlock(arch_rwlock_t *rw)
 	: "r" (&rw->lock)
 	: "cc");
 
-/** 20130323
-*	dsb / sev asm 명령 실행.
-*/
+	/** 20130323
+	 * dsb / sev asm 명령 실행.
+	 **/
 	if (tmp == 0)
 		dsb_sev();
 }
 
+/** 20141021    
+ * 현재 다른 writer가 lock을 소유하고 있지 않고, (lock 변수 0이상)
+ * 성공적으로 lock을 획득했으면 (exclusive monitor 상태값 0)
+ * lock에 1을 더하고 성공을 리턴한다.
+ **/
 static inline int arch_read_trylock(arch_rwlock_t *rw)
 {
 	unsigned long tmp, tmp2 = 1;

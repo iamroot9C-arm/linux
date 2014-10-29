@@ -666,7 +666,9 @@ unlock:
  * wheel for the next timer event.
  */
 /** 20140920    
- * IDLE을 수행 중인 cpu에게 need_resched를 수행하도록 한다.
+ * idle task를 수행 중인 다른 cpu를 깨운다.
+ *
+ * 해당 cpu의 rq를 받아와 need_resched를 켜고 IPI를 보내 schedule 하도록 한다.
  **/
 void wake_up_idle_cpu(int cpu)
 {
@@ -4131,7 +4133,8 @@ static void __wake_up_common(wait_queue_head_t *q, unsigned int mode,
 	wait_queue_t *curr, *next;
 
 	/** 20131123    
-	 * waitqueue의 task_list를 순회하며 queue에 추가할 당시 등록한 func으로 waitqueue를 깨운다.
+	 * waitqueue의 task_list를 순회하며 task를 깨운다.
+	 * task를 깨우는 함수는 default 함수이거나, 추가할 당시 등록한 func이다.
 	 **/
 	list_for_each_entry_safe(curr, next, &q->task_list, task_list) {
 		unsigned flags = curr->flags;
@@ -4245,6 +4248,12 @@ EXPORT_SYMBOL_GPL(__wake_up_sync);	/* For internal use only */
  * It may be assumed that this function implies a write memory barrier before
  * changing the task state if and only if any tasks are woken up.
  */
+/** 20141025    
+ * 'completion' 이벤트를 기다리는 하나의 task를 꺠운다.
+ *
+ * complete는 spinlock을 사용하고 irq를 막기 때문에 SMP에서 병렬적으로
+ * 수행되지 않음을 보장한다.
+ **/
 void complete(struct completion *x)
 {
 	unsigned long flags;
@@ -4254,7 +4263,8 @@ void complete(struct completion *x)
 	 **/
 	spin_lock_irqsave(&x->wait.lock, flags);
 	/** 20130720    
-	 * done을 증가
+	 * done을 증가.
+	 * completion이 먼저 호출되었다면 이후 호출된 wait_for_completion은 바로 리턴된다.
 	 **/
 	x->done++;
 	__wake_up_common(&x->wait, TASK_NORMAL, 1, 0, NULL);
@@ -4282,24 +4292,54 @@ void complete_all(struct completion *x)
 }
 EXPORT_SYMBOL(complete_all);
 
+/** 20141025    
+ * interrupt 받거나 timeout이 될 때까지 지정된 state 상태로 대기하는 함수.
+ **/
 static inline long __sched
 do_wait_for_common(struct completion *x, long timeout, int state)
 {
+	/** 20141025    
+	 * 처음 wait_for_complete_XXX가 호출되었다면 done이 0이므로,
+	 * waituqueue를 선언하고, completion을 queue에 달아준다.
+	 *
+	 * done이 0이 아닌 경우 completion이 먼저 호출되었을 것이고,
+	 * 그렇다면 이미 이벤트가 발생했으므로 scheduling 되지 않고 바로 리턴한다.
+	 **/
 	if (!x->done) {
 		DECLARE_WAITQUEUE(wait, current);
 
+		/** 20141025    
+		 * EXCLUSIVE로 wait queue에 추가한다.
+		 **/
 		__add_wait_queue_tail_exclusive(&x->wait, &wait);
+		/** 20141025    
+		 * 깨어났을 때 done이 완료되지 않았거나 timeout이 남아있을 때까지
+		 * schedule 함수를 반복 호출한다.
+		 **/
 		do {
+			/** 20141025    
+			 * task의 상태가 이미 지정된 state와 같다면 error.
+			 **/
 			if (signal_pending_state(state, current)) {
 				timeout = -ERESTARTSYS;
 				break;
 			}
+			/** 20141025    
+			 * 현재 task의 상태를 변경하고 전달받은 timeout까지 sleep하도록
+			 * schedule 시킨다.
+			 **/
 			__set_current_state(state);
 			spin_unlock_irq(&x->wait.lock);
 			timeout = schedule_timeout(timeout);
 			spin_lock_irq(&x->wait.lock);
 		} while (!x->done && timeout);
+		/** 20141025    
+		 * 깨어난 뒤에 wait queue를 정리한다.
+		 **/
 		__remove_wait_queue(&x->wait, &wait);
+		/** 20141025    
+		 * timeout으로 깨어났다면 timeout을 리턴한다.
+		 **/
 		if (!x->done)
 			return timeout;
 	}
@@ -4307,9 +4347,15 @@ do_wait_for_common(struct completion *x, long timeout, int state)
 	return timeout ?: 1;
 }
 
+/** 20141025    
+ * timeout까지 state 상태로 scheduling 되어 기다린다.
+ **/
 static long __sched
 wait_for_common(struct completion *x, long timeout, int state)
 {
+	/** 20141025    
+	 * sleep 상태로 들어가기 전에 schedule 포인트를 둔다.
+	 **/
 	might_sleep();
 
 	spin_lock_irq(&x->wait.lock);
@@ -4328,6 +4374,9 @@ wait_for_common(struct completion *x, long timeout, int state)
  * See also similar routines (i.e. wait_for_completion_timeout()) with timeout
  * and interrupt capability. Also see complete().
  */
+/** 20141025    
+ * completion을 기다리며 TASK_UNINTERRUPTIBLE 상태로 queue에 들어가 대기한다.
+ **/
 void __sched wait_for_completion(struct completion *x)
 {
 	wait_for_common(x, MAX_SCHEDULE_TIMEOUT, TASK_UNINTERRUPTIBLE);
@@ -5279,7 +5328,7 @@ SYSCALL_DEFINE0(sched_yield)
 	return 0;
 }
 /** 20131207
- * 스캐쥴이 필요하고, 선점 중인 상태가 아닐 경우 resched 호출 판단.
+ * RESCHED flag가 떠있고, 선점 중인 상태가 아닐 경우 resched 호출 판단.
  * 아래 add_preempt_count 참조
  ***/
 static inline int should_resched(void)

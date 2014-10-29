@@ -143,10 +143,14 @@ static inline int __raw_write_trylock(rwlock_t *lock)
  */
 #if !defined(CONFIG_GENERIC_LOCKBREAK) || defined(CONFIG_DEBUG_LOCK_ALLOC)
 
+/** 20141022    
+ * rwlock - raw read lock.
+ **/
 static inline void __raw_read_lock(rwlock_t *lock)
 {
 	/** 20130323
 	*	PREMPT is not defined in vexperss
+	*	lock을 잡은채 선점 당하면 안되므로 선점 불가로 진행한다.
 	*/
 	preempt_disable();
 	/** 20130323

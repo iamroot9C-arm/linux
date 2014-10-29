@@ -84,6 +84,10 @@ struct tvec_root {
 	struct list_head vec[TVR_SIZE];
 };
 
+/** 20141025    
+ * timer_jiffies : timer가 알고 있는 jiffies 값?
+ * next_timer
+ **/
 struct tvec_base {
 	spinlock_t lock;
 	struct timer_list *running_timer;
@@ -1260,6 +1264,10 @@ static inline void __run_timers(struct tvec_base *base)
  * is used on S/390 to stop all activity when a CPU is idle.
  * This function needs to be called with interrupts disabled.
  */
+/** 20141025    
+ * NO_HZ인 경우 다음 timer event가 일어날 시간을 계산한다.
+ * 20141101 여기부터
+ **/
 static unsigned long __next_timer_interrupt(struct tvec_base *base)
 {
 	unsigned long timer_jiffies = base->timer_jiffies;

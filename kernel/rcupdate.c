@@ -201,6 +201,9 @@ struct rcu_synchronize {
  * Awaken the corresponding synchronize_rcu() instance now that a
  * grace period has elapsed.
  */
+/** 20141025    
+ * rcu gp 후 호출되어, wait_rcu_gp 호출되어 대기 중인 task를 완료시킨다.
+ **/
 static void wakeme_after_rcu(struct rcu_head  *head)
 {
 	struct rcu_synchronize *rcu;
@@ -209,6 +212,14 @@ static void wakeme_after_rcu(struct rcu_head  *head)
 	complete(&rcu->completion);
 }
 
+/** 20141025    
+ * RCU의 gp 완료를 대기하는 함수. 
+ *
+ * call_rcu 함수를 매개변수로 받아, wakeme_after_rcu를 CB으로 등록한다.
+ * rcu의 gp가 완료되면, wakeme_after_rcu가 호출되고,
+ * wakeme_after_rcu에서 completion을 처리하여
+ * wait_for_completion 다음부터 수행을 재개한다.
+ **/
 void wait_rcu_gp(call_rcu_func_t crf)
 {
 	struct rcu_synchronize rcu;
