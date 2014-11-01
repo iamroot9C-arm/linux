@@ -510,6 +510,9 @@ static inline void debug_deactivate(struct hrtimer *timer)
 /*
  * High resolution timer enabled ?
  */
+/** 20141101    
+ * HIGH_RES_TIMERS가 사용될 경우 default 값은 1.
+ **/
 static int hrtimer_hres_enabled __read_mostly  = 1;
 
 /*
@@ -531,6 +534,9 @@ __setup("highres=", setup_hrtimer_hres);
 /*
  * hrtimer_high_res_enabled - query, if the highres mode is enabled
  */
+/** 20141101    
+ * hrtimer가 high-res로 설정되어 있는지 리턴.
+ **/
 static inline int hrtimer_is_hres_enabled(void)
 {
 	return hrtimer_hres_enabled;
@@ -539,6 +545,9 @@ static inline int hrtimer_is_hres_enabled(void)
 /*
  * Is the high resolution mode active ?
  */
+/** 20141101    
+ * 현재 cpu에서 high-res timer가 동작 중인지 리턴한다.
+ **/
 static inline int hrtimer_hres_active(void)
 {
 	return __this_cpu_read(hrtimer_bases.hres_active);
@@ -728,6 +737,9 @@ static int hrtimer_switch_to_hres(void)
 				    "mode on CPU %d\n", cpu);
 		return 0;
 	}
+	/** 20141101    
+	 * high-res timer가 high resolution으로 동작한다.
+	 **/
 	base->hres_active = 1;
 	for (i = 0; i < HRTIMER_MAX_CLOCK_BASES; i++)
 		base->clock_base[i].resolution = KTIME_HIGH_RES;
@@ -1178,6 +1190,9 @@ EXPORT_SYMBOL_GPL(hrtimer_get_remaining);
  */
 ktime_t hrtimer_get_next_event(void)
 {
+	/** 20141101    
+	 * 현재 cpu에 해당하는 hrtimer_bases를 가져온다.
+	 **/
 	struct hrtimer_cpu_base *cpu_base = &__get_cpu_var(hrtimer_bases);
 	struct hrtimer_clock_base *base = cpu_base->clock_base;
 	ktime_t delta, mindelta = { .tv64 = KTIME_MAX };
@@ -1514,6 +1529,8 @@ void hrtimer_run_pending(void)
 	 * check bit in the tick_oneshot code, otherwise we might
 	 * deadlock vs. xtime_lock.
 	 */
+	/** 20141101    
+	 **/
 	if (tick_check_oneshot_change(!hrtimer_is_hres_enabled()))
 		hrtimer_switch_to_hres();
 }

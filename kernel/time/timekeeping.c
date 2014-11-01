@@ -1288,6 +1288,12 @@ struct timespec get_monotonic_coarse(void)
  */
 void do_timer(unsigned long ticks)
 {
+	/** 20141101    
+	 * 전달된 ticks만큼 jiffies_64를 갱신한다.
+	 *
+	 * vmlinux.lds.S에서
+	 * jiffies = jiffies_64;
+	 **/
 	jiffies_64 += ticks;
 	update_wall_time();
 	calc_global_load(ticks);

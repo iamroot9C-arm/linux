@@ -167,6 +167,12 @@ struct hrtimer_clock_base {
 	ktime_t			offset;
 };
 
+/** 20141101    
+ * hrtimer의 base type 3가지.
+ *   MONOTONIC : 0부터 시작. 단조 증가.
+ *   REALTIME  : 시스템 외부 시간에 영향을 받는다.
+ *   BOOTTIME  :
+ **/
 enum  hrtimer_base_type {
 	HRTIMER_BASE_MONOTONIC,
 	HRTIMER_BASE_REALTIME,

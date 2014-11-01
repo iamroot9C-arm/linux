@@ -43,6 +43,11 @@ struct tick_sched *tick_get_tick_sched(int cpu)
 /*
  * Must be called with interrupts disabled !
  */
+/** 20141101    
+ * jiffies64 값을 갱신한다.
+ *
+ * periodic tick, NOHZ에 해당하는 dynticks에 모두 사용할 수 있는 함수.
+ **/
 static void tick_do_update_jiffies64(ktime_t now)
 {
 	unsigned long ticks = 0;
@@ -51,21 +56,40 @@ static void tick_do_update_jiffies64(ktime_t now)
 	/*
 	 * Do a quick check without holding xtime_lock:
 	 */
+	/** 20141101    
+	 * 현재 ktime과 마지막 jiffies에서 업데이트한 값의 차가
+	 * 주기보다 작다면 바로 리턴.
+	 **/
 	delta = ktime_sub(now, last_jiffies_update);
 	if (delta.tv64 < tick_period.tv64)
 		return;
 
 	/* Reevalute with xtime_lock held */
+	/** 20141101    
+	 * xtime_lock을 갱신하기 위한 lock을 잡는다.
+	 **/
 	write_seqlock(&xtime_lock);
 
+	/** 20141101    
+	 * 현재 ktime이 마지막 jiffies에서 업데이트한 ktime의 차가 주기 이상이라면
+	 * 아래 동작을 수행한다.
+	 **/
 	delta = ktime_sub(now, last_jiffies_update);
 	if (delta.tv64 >= tick_period.tv64) {
 
+		/** 20141101    
+		 * 주기 이상의 delta값을 구한다.
+		 * last_jiffies_update는 일단 주기만큼만 더해 놓는다.
+		 **/
 		delta = ktime_sub(delta, tick_period);
 		last_jiffies_update = ktime_add(last_jiffies_update,
 						tick_period);
 
 		/* Slow path for long timeouts */
+		/** 20141101    
+		 * 주기만큼 빼준 delta가 주기값 이상이라면,
+		 * ticks 단위로 증분값을 환산해 last_jiffies_update를 갱신한다.
+		 **/
 		if (unlikely(delta.tv64 >= tick_period.tv64)) {
 			s64 incr = ktime_to_ns(tick_period);
 
@@ -74,9 +98,16 @@ static void tick_do_update_jiffies64(ktime_t now)
 			last_jiffies_update = ktime_add_ns(last_jiffies_update,
 							   incr * ticks);
 		}
+		/** 20141101    
+		 * long timeouts와 periodic의 경우 모두 해당하도록 ticks를 더해
+		 * do_timer를 호출한다.
+		 **/
 		do_timer(++ticks);
 
 		/* Keep the tick_next_period variable up to date */
+		/** 20141101    
+		 * 다음 주기가 발생할 tick을 새로 계산해둔다.
+		 **/
 		tick_next_period = ktime_add(last_jiffies_update, tick_period);
 	}
 	write_sequnlock(&xtime_lock);

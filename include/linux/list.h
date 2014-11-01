@@ -181,7 +181,7 @@ static inline void list_replace(struct list_head *old,
 /** 20140621    
  * list의 old entry를 new entry로 변경하고, old를 초기화 시킨다.
  *
- * 예를 들어 percpu list를 local 변수 list에 옮길 때 사용된다.
+ * 예를 들어 percpu list를 떼어와 local 변수 list에 달아줄 때 사용된다.
  **/
 static inline void list_replace_init(struct list_head *old,
 					struct list_head *new)
