@@ -14,6 +14,10 @@ struct timerqueue_node {
 	ktime_t expires;
 };
 
+/** 20141108    
+ * hrtimer_clock_base의 active.
+ * rb_tree의 root(rb_node *)와 timerqueue_node를 가리키는 포인터를 갖고 있다.
+ **/
 struct timerqueue_head {
 	struct rb_root head;
 	struct timerqueue_node *next;
@@ -35,12 +39,20 @@ extern struct timerqueue_node *timerqueue_iterate_next(
  * Returns a pointer to the timer node that has the
  * earliest expiration time.
  */
+/** 20141108    
+ * 만료시간이 가장 가까운 timer를 리턴한다.
+ **/
 static inline
 struct timerqueue_node *timerqueue_getnext(struct timerqueue_head *head)
 {
 	return head->next;
 }
 
+/** 20141108    
+ * timerqueue_node를 초기화 한다.
+ *
+ * 초기화할 주요 자료구조는 rb_node.
+ **/
 static inline void timerqueue_init(struct timerqueue_node *node)
 {
 	rb_init_node(&node->node);

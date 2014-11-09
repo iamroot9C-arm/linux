@@ -201,7 +201,7 @@ static irqreturn_t twd_handler(int irq, void *dev_id)
 	/** 20140920    
 	 * twd interrupt 발생시 응답하고, event_handler를 호출해 interrupt를 처리한다.
 	 * 
-	 * tick_handle_periodic는 tick_handle_periodic.
+	 * event_handler는 tick_handle_periodic.
 	 **/
 	if (twd_timer_ack()) {
 		evt->event_handler(evt);

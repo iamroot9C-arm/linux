@@ -668,6 +668,9 @@ debug_activate(struct timer_list *timer, unsigned long expires)
 	trace_timer_start(timer, expires);
 }
 
+/** 20141108    
+ * timer DEBUG용 함수. 분석 생략
+ **/
 static inline void debug_deactivate(struct timer_list *timer)
 {
 	debug_timer_deactivate(timer);

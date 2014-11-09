@@ -636,6 +636,9 @@ void resched_cpu(int cpu)
  * selecting an idle cpu will add more delays to the timers than intended
  * (as that cpu's timer base may not be uptodate wrt jiffies etc).
  */
+/** 20141108    
+ * nohz인 경우, idle cpu로부터 timer를 가져와 수행시킬 cpu를 가져온다.
+ **/
 int get_nohz_timer_target(void)
 {
 	int cpu = smp_processor_id();
@@ -643,6 +646,11 @@ int get_nohz_timer_target(void)
 	struct sched_domain *sd;
 
 	rcu_read_lock();
+	/** 20141108    
+	 * 현재 cpu의 모든 sched_domain을 순회.
+	 * 각 domain에 속하는 모든 cpu를 순회.
+	 * cpu가 idle_cpu가 아닐 경우를 찾아 리턴한다.
+	 **/
 	for_each_domain(cpu, sd) {
 		for_each_cpu(i, sched_domain_span(sd)) {
 			if (!idle_cpu(i)) {

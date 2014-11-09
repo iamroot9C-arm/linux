@@ -114,7 +114,12 @@ enum hrtimer_restart {
  * hrtimer
  *
  * node : timer queue, expires값과 rb_tree의 entry point를 갖고 있음.
- * base : clock base 정보
+ *	node.expires(hard) : _softexpires + slack(또는 delta로 지정된 값)
+ * _softexpires (soft) : timer의 가장 빠른 만료시간.
+ * http://lwn.net/Articles/461592/
+ *
+ * base : clock base 정보. hrtimer_bases 선언시 초기화 되어 있다.
+ * function : timer 만료시 호출될 함수
  **/
 struct hrtimer {
 	struct timerqueue_node		node;
@@ -156,6 +161,12 @@ struct hrtimer_sleeper {
  * @softirq_time:	the time when running the hrtimer queue in the softirq
  * @offset:		offset of this clock to the monotonic base
  */
+/** 20141108    
+ * 특정 clock에 대한 timer base 자료구조.
+ *
+ * cpu_base : hrtimer_clock_base가 위치하는 hrtimer_cpu_base를 가리킨다.
+ * active   : rb-tree의 root node.
+ **/
 struct hrtimer_clock_base {
 	struct hrtimer_cpu_base	*cpu_base;
 	int			index;
@@ -169,8 +180,8 @@ struct hrtimer_clock_base {
 
 /** 20141101    
  * hrtimer의 base type 3가지.
- *   MONOTONIC : 0부터 시작. 단조 증가.
- *   REALTIME  : 시스템 외부 시간에 영향을 받는다.
+ *   MONOTONIC : 부팅 이후 0부터 시작. 단조 증가.
+ *   REALTIME  : 시스템이 파악하는 실제 시간. 시스템 외부 시간에 영향을 받는다.
  *   BOOTTIME  :
  **/
 enum  hrtimer_base_type {
@@ -196,6 +207,12 @@ enum  hrtimer_base_type {
  * @max_hang_time:	Maximum time spent in hrtimer_interrupt
  * @clock_base:		array of clock bases for this cpu
  */
+/** 20141108    
+ * hrtimer 프레임워크를 사용하기 위해 cpu별 clock bases를 가진다.
+ *
+ * lock         : cpu base와 clock bases에 대해 동시에 보호하는 lock.
+ * active_bases : clock bases 중 active timer를 보유한 경우 1로 표시
+ **/
 struct hrtimer_cpu_base {
 	raw_spinlock_t			lock;
 	unsigned int			active_bases;
@@ -212,6 +229,9 @@ struct hrtimer_cpu_base {
 	struct hrtimer_clock_base	clock_base[HRTIMER_MAX_CLOCK_BASES];
 };
 
+/** 20141108    
+ * hrtimer의 node의 만료시간을 지정한다.
+ **/
 static inline void hrtimer_set_expires(struct hrtimer *timer, ktime_t time)
 {
 	timer->node.expires = time;
@@ -262,6 +282,9 @@ static inline ktime_t hrtimer_get_expires(const struct hrtimer *timer)
 	return timer->node.expires;
 }
 
+/** 20141108    
+ * hrtimer의 soft expires값을 가져온다.
+ **/
 static inline ktime_t hrtimer_get_softexpires(const struct hrtimer *timer)
 {
 	return timer->_softexpires;
@@ -442,6 +465,9 @@ static inline int hrtimer_active(const struct hrtimer *timer)
 /*
  * Helper function to check, whether the timer is on one of the queues
  */
+/** 20141108    
+ * timer가 현재 timerqueue에 포함되어 있는지 검사.
+ **/
 static inline int hrtimer_is_queued(struct hrtimer *timer)
 {
 	return timer->state & HRTIMER_STATE_ENQUEUED;

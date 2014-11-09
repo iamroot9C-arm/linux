@@ -28,11 +28,17 @@
 /*
  * Per cpu nohz control structure
  */
+/** 20141108    
+ * percpu 변수로 tick_sched 구조체 정의.
+ **/
 static DEFINE_PER_CPU(struct tick_sched, tick_cpu_sched);
 
 /*
  * The time, when the last jiffy update happened. Protected by xtime_lock.
  */
+/** 20141108    
+ * 마지막으로 jiffies가 갱신된 시간을 저장한다.
+ **/
 static ktime_t last_jiffies_update;
 
 struct tick_sched *tick_get_tick_sched(int cpu)
@@ -116,6 +122,12 @@ static void tick_do_update_jiffies64(ktime_t now)
 /*
  * Initialize and return retrieve the jiffies update.
  */
+/** 20141108    
+ * tick emulation을 하기 위해 tick을 초기화 또는 jiffies update 시간을 리턴한다.
+ *
+ * last_jiffies_update가 초기화되지 않은 상태라면 tick_next_period로 초기화.
+ * (ktime_get으로 현재 ktime_t 값을 가진다)
+ **/
 static ktime_t tick_init_jiffy_update(void)
 {
 	ktime_t period;
@@ -892,6 +904,9 @@ static enum hrtimer_restart tick_sched_timer(struct hrtimer *timer)
 
 static int sched_skew_tick;
 
+/** 20141108    
+ * early param을 받아 sched_skew_tick 값으로 설정한다.
+ **/
 static int __init skew_tick(char *str)
 {
 	get_option(&str, &sched_skew_tick);
@@ -905,16 +920,30 @@ early_param("skew_tick", skew_tick);
  */
 void tick_setup_sched_timer(void)
 {
+	/** 20141108    
+	 * 현재 cpu에 해당하는 tick_sched 구조체 정보를 가져온다.
+	 **/
 	struct tick_sched *ts = &__get_cpu_var(tick_cpu_sched);
 	ktime_t now = ktime_get();
 
 	/*
 	 * Emulate tick processing via per-CPU hrtimers:
 	 */
+	/** 20141108    
+	 * sched tick으로 사용할 hrtimer를 초기화 한다.
+	 * clock은 CLOCK_MONOTONIC으로 단조 증가하고,
+	 * mode는 절대값이다.
+	 *
+	 * timer 만료시 호출될 function은 tick_sched_timer.
+	 **/
 	hrtimer_init(&ts->sched_timer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS);
 	ts->sched_timer.function = tick_sched_timer;
 
 	/* Get the next period (per cpu) */
+	/** 20141108    
+	 * sched_timer의 exprires를 jiffies update 시점,
+	 * 즉 tick이 마지막으로 발생한 시점으로 초기화한다.
+	 **/
 	hrtimer_set_expires(&ts->sched_timer, tick_init_jiffy_update());
 
 	/* Offset the tick to avert xtime_lock contention. */
@@ -926,6 +955,9 @@ void tick_setup_sched_timer(void)
 	}
 
 	for (;;) {
+		/** 20141108    
+		 * sched_timer의 expires에 tick_period를 더한다.
+		 **/
 		hrtimer_forward(&ts->sched_timer, now, tick_period);
 		hrtimer_start_expires(&ts->sched_timer,
 				      HRTIMER_MODE_ABS_PINNED);

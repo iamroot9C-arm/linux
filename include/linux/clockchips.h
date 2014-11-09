@@ -79,6 +79,9 @@ enum clock_event_nofitiers {
  * @cpumask:		cpumask to indicate for which CPUs this device works
  * @list:		list head for the management code
  */
+/** 20141108    
+ * 특정 시간에 이벤트(인터럽트)를 발생시키는 장치이다.
+ **/
 struct clock_event_device {
 	void			(*event_handler)(struct clock_event_device *);
 	int			(*set_next_event)(unsigned long evt,

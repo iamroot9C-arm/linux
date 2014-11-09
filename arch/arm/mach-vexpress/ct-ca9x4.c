@@ -56,7 +56,7 @@ static void __init ct_ca9x4_map_io(void)
 static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, A9_MPCORE_TWD, IRQ_LOCALTIMER);
 
 /** 20140920    
- * twd_local_timer를 local timer로 등록한다.
+ * twd_local_timer를 local timer(percpu)로 등록한다.
  **/
 static void __init ca9x4_twd_init(void)
 {

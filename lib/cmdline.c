@@ -49,6 +49,9 @@ static int get_range(char **str, int *pint)
  *	3 - hyphen found to denote a range
  */
 
+/** 20141108    
+ * string 옵션으로 받아 integer로 변환해 저장한다.
+ **/
 int get_option (char **str, int *pint)
 {
 	char *cur = *str;

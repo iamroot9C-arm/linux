@@ -103,8 +103,10 @@
  * ordinary per-CPU variables.
  */
 /** 20130622
- * Per CPU section (.data..percpu)에 변수를 
- * 넣기 위한 매크로.
+ * Per CPU section (.data..percpu)에 변수를 넣기 위한 매크로.
+ *
+ * DECLARE : extern으로 선언
+ * DEFINE  : 변수 정의
  **/
 #define DECLARE_PER_CPU(type, name)					\
 	DECLARE_PER_CPU_SECTION(type, name, "")

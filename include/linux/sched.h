@@ -1055,6 +1055,9 @@ struct sched_domain {
 	unsigned long span[0];
 };
 
+/** 20141108    
+ * sched_domain에 속하는 모든 cpu에 해당하는 cpumask를 가져온다.
+ **/
 static inline struct cpumask *sched_domain_span(struct sched_domain *sd)
 {
 	return to_cpumask(sd->span);

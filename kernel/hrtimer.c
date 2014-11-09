@@ -58,9 +58,14 @@
  * to reach a base using a clockid, hrtimer_clockid_to_base()
  * is used to convert from clockid to the proper hrtimer_base_type.
  */
+/** 20141108    
+ **/
 DEFINE_PER_CPU(struct hrtimer_cpu_base, hrtimer_bases) =
 {
 
+	/** 20141108    
+	 * struct hrtimer_clock_base
+	 **/
 	.clock_base =
 	{
 		{
@@ -90,6 +95,9 @@ static const int hrtimer_clock_to_base_table[MAX_CLOCKS] = {
 	[CLOCK_BOOTTIME]	= HRTIMER_BASE_BOOTTIME,
 };
 
+/** 20141108    
+ * clock_id로 하여 clock base의 index를 가져온다.
+ **/
 static inline int hrtimer_clockid_to_base(clockid_t clock_id)
 {
 	return hrtimer_clock_to_base_table[clock_id];
@@ -133,6 +141,19 @@ static void hrtimer_get_softirq_time(struct hrtimer_cpu_base *base)
  * possible to set timer->base = NULL and drop the lock: the timer remains
  * locked.
  */
+/** 20141108    
+ * hrtimer의 hrtimer_cpu_base에 lock을 건다.
+ *
+ * lock변수 위치는 hrtimer_cpu_base 내에 둔다.
+ * 단, lock의 위치가 hrtimer_clock_base에 있지 않으므로 spinlock 전후에
+ * timer->base가 변경되지 않았음을 확인해야 한다.
+ *
+ * __run_timers나 migrate_timers에서 리스트나 큐에 존재하는 모든 타이머를
+ * 안전하게 수정할 수 있다.
+ *
+ * timer의 base가 lock이 걸린 상태에서 timer가 list로부터 제거되면,
+ * timer의 base를 NULL로 설정함으로써 lock을 버릴 수 있다. timer 자체는 lock을 건 상태로.
+ **/
 static
 struct hrtimer_clock_base *lock_hrtimer_base(const struct hrtimer *timer,
 					     unsigned long *flags)
@@ -156,6 +177,12 @@ struct hrtimer_clock_base *lock_hrtimer_base(const struct hrtimer *timer,
 /*
  * Get the preferred target CPU for NOHZ
  */
+/** 20141108    
+ * hrtimer를 수행할 target을 가져온다.
+ *
+ * NOHZ에서 현재 cpu가 idle_cpu라면 timer를 수행할 target cpu를 가져온다.
+ * 그렇지 않을 경우 this_cpu를 리턴한다.
+ **/
 static int hrtimer_get_target(int this_cpu, int pinned)
 {
 #ifdef CONFIG_NO_HZ
@@ -191,6 +218,9 @@ hrtimer_check_target(struct hrtimer *timer, struct hrtimer_clock_base *new_base)
 /*
  * Switch the timer base to the current CPU when possible.
  */
+/** 20141108   
+ * 20141115 여기부터...
+ **/
 static inline struct hrtimer_clock_base *
 switch_hrtimer_base(struct hrtimer *timer, struct hrtimer_clock_base *base,
 		    int pinned)
@@ -829,6 +859,9 @@ static inline void timer_stats_hrtimer_set_start_info(struct hrtimer *timer)
 #endif
 }
 
+/** 20141108    
+ * TIMER_STATS 분석 생략.
+ **/
 static inline void timer_stats_hrtimer_clear_start_info(struct hrtimer *timer)
 {
 #ifdef CONFIG_TIMER_STATS
@@ -849,6 +882,9 @@ static inline void timer_stats_account_hrtimer(struct hrtimer *timer)
 /*
  * Counterpart to lock_hrtimer_base above:
  */
+/** 20141108    
+ * lock_hrtimer_base에서 걸어둔 spinlock을 해제한다.
+ **/
 static inline
 void unlock_hrtimer_base(const struct hrtimer *timer, unsigned long *flags)
 {
@@ -968,6 +1004,12 @@ static int enqueue_hrtimer(struct hrtimer *timer,
  * reprogram to zero. This is useful, when the context does a reprogramming
  * anyway (e.g. timer interrupt)
  */
+/** 20141108    
+ * timerqueue에서 timer를 제거한다.
+ * 
+ * 제거하는 timer가 다음 만료될 timer였다면 reprogram에 따라 clock event device를
+ * 재프로그램 한다.
+ **/
 static void __remove_hrtimer(struct hrtimer *timer,
 			     struct hrtimer_clock_base *base,
 			     unsigned long newstate, int reprogram)
@@ -976,6 +1018,12 @@ static void __remove_hrtimer(struct hrtimer *timer,
 	if (!(timer->state & HRTIMER_STATE_ENQUEUED))
 		goto out;
 
+	/** 20141108    
+	 * 다음 만료될 timerqueue_node를 먼저 가져온다. (제거 전)
+	 * timerqueue에서 node를 제거한다.
+	 * 제거한 노드가 다음 만료될 타이머라면 reprogram에 따라
+	 * clock event device를 reprogram 한다.
+	 **/
 	next_timer = timerqueue_getnext(&base->active);
 	timerqueue_del(&base->active, &timer->node);
 	if (&timer->node == next_timer) {
@@ -991,6 +1039,10 @@ static void __remove_hrtimer(struct hrtimer *timer,
 		}
 #endif
 	}
+	/** 20141108    
+	 * timerqueue에 남은 node가 없다면 hrtimer_cpu_base 중
+	 * 해당 clock base를 active_bases에서 지운다.
+	 **/
 	if (!timerqueue_getnext(&base->active))
 		base->cpu_base->active_bases &= ~(1 << base->index);
 out:
@@ -1000,6 +1052,9 @@ out:
 /*
  * remove hrtimer, called with base lock held
  */
+/** 20141108    
+ * hrimter를 timerqueue에서 제거한다.
+ **/
 static inline int
 remove_hrtimer(struct hrtimer *timer, struct hrtimer_clock_base *base)
 {
@@ -1017,6 +1072,10 @@ remove_hrtimer(struct hrtimer *timer, struct hrtimer_clock_base *base)
 		 */
 		debug_deactivate(timer);
 		timer_stats_hrtimer_clear_start_info(timer);
+		/** 20141108    
+		 * clock_base가 현재 cpu에 해당할 경우에만 강제로 reprogram 한다.
+		 * (호출 비용)
+		 **/
 		reprogram = base->cpu_base == &__get_cpu_var(hrtimer_bases);
 		/*
 		 * We must preserve the CALLBACK state flag here,
@@ -1038,9 +1097,15 @@ int __hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim,
 	unsigned long flags;
 	int ret, leftmost;
 
+	/** 20141108    
+	 * hrtimer의 clock_base에 lock을 건다.
+	 **/
 	base = lock_hrtimer_base(timer, &flags);
 
 	/* Remove an active timer from the queue: */
+	/** 20141108    
+	 * active timer를 queue에서 제거한다.
+	 **/
 	ret = remove_hrtimer(timer, base);
 
 	/* Switch the timer base, if necessary: */
@@ -1226,6 +1291,11 @@ ktime_t hrtimer_get_next_event(void)
 }
 #endif
 
+/** 20141108    
+ * hrtimer를 초기화 한다.
+ *
+ * clock_id에 해당하는 clock base를 초기화 하고, timerqueue를 초기화 한다.
+ **/
 static void __hrtimer_init(struct hrtimer *timer, clockid_t clock_id,
 			   enum hrtimer_mode mode)
 {
@@ -1240,6 +1310,12 @@ static void __hrtimer_init(struct hrtimer *timer, clockid_t clock_id,
 		clock_id = CLOCK_MONOTONIC;
 
 	base = hrtimer_clockid_to_base(clock_id);
+	/** 20141108    
+	 * clock_base 중 clock_id에 해당하는 base를 찾아
+	 * 이 hrtimer의 hrtimer_clock_base로 삼는다.
+	 *
+	 * hrtimer_bases에서 hrtimer_clock_base의 array를 찾아온다.
+	 **/
 	timer->base = &cpu_base->clock_base[base];
 	timerqueue_init(&timer->node);
 
@@ -1256,6 +1332,9 @@ static void __hrtimer_init(struct hrtimer *timer, clockid_t clock_id,
  * @clock_id:	the clock to be used
  * @mode:	timer mode abs/rel
  */
+/** 20141108    
+ * timer를 주어진 clock으로 초기화 한다.
+ **/
 void hrtimer_init(struct hrtimer *timer, clockid_t clock_id,
 		  enum hrtimer_mode mode)
 {

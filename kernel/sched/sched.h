@@ -548,6 +548,9 @@ DECLARE_PER_CPU(struct rq, runqueues);
  * The domain tree of any CPU may only be accessed from within
  * preempt-disabled sections.
  */
+/** 20141108    
+ * cpu rq의 sched_domain들을 순회한다.
+ **/
 #define for_each_domain(cpu, __sd) \
 	for (__sd = rcu_dereference_check_sched_domain(cpu_rq(cpu)->sd); \
 			__sd; __sd = __sd->parent)
