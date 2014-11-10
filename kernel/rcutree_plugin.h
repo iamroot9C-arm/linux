@@ -1922,7 +1922,6 @@ static void rcu_idle_count_callbacks_posted(void)
 /** 20141011
  * RCU_IDLE_FLUSHES  : RCU를 만족(pending된 작업 처리)시키기 위해 재시도할 횟수.
  * 이 시점을 넘어서면 최대 전력으로 state machine을 돌리는 것보다 주기적인 scheduling-clock interrupt로 수행하는 것이 낫다.
- *
  * RCU_IDLE_GP_DELAY : RCU callbacks가 펜딩되어 있을 때 CPU가 dyntick-idle 모드에서 잠잘 수 있는 지피 수.
  *                     idle_gp_timer_expires 에 사용된다.
  **/
@@ -2105,7 +2104,7 @@ static void rcu_prepare_for_idle_init(int cpu)
  * do nothing if this timer is not active, so just cancel it unconditionally.
  */
 /** 20141011    
- * idle 상태가 끝나고 rcu 관련된 작업을 정리한다.
+ * idle 상태가 끝나고 rcu 관련된 작업(timer 취소 등)을 정리한다.
  *
  * NO_HZ에서 동작하는 timer를 제거하고, percpu 포인터에 global tick_nohz_enabled 상태를 저장한다.
  **/
@@ -2247,6 +2246,9 @@ static void rcu_prepare_for_idle(int cpu)
 		rdtp->dyntick_holdoff = jiffies;
 		if (rcu_cpu_has_nonlazy_callbacks(cpu)) {
 			trace_rcu_prep_idle("Dyntick with callbacks");
+			/** 20141011
+			 * 
+			 **/
 			rdtp->idle_gp_timer_expires =
 				round_up(jiffies + RCU_IDLE_GP_DELAY,
 					 RCU_IDLE_GP_DELAY);

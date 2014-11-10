@@ -511,28 +511,23 @@ static inline int cpu_of(struct rq *rq)
 #endif
 }
 
-/** 20131130    
- * per cpu 변수로 struct rq runqueues를 생성.
+/** 20130713
+ * 20131130
+ *
+ * runqueues : struct rq타입의 per-cpu 변수.
+ *
+ * cpu_rq(cpu) : runqueues에서 cpu에 해당하는 rq 변수 주소.
+ * this_rq()   : runqueues에서 현재 cpu에 해당하는 rq 변수 주소.
+ * task_rq(p)  : runqueues에서 task가 실행 중인 cpu 번호에 해당하는 rq 변수 주소.
+ * cpu_curr(cpu) : cpu에 해당하는 rq 변수가 가리키는 task 포인터.
+ * raw_rq()    : 현재 cpu에 해당하는 rq 변수 주소.
  **/
 DECLARE_PER_CPU(struct rq, runqueues);
 
-/** 20130713    
- * cpu에 해당하는 runqueues의 위치
- * runqueue는 per_cpu 변수.
- **/
 #define cpu_rq(cpu)		(&per_cpu(runqueues, (cpu)))
 #define this_rq()		(&__get_cpu_var(runqueues))
-/** 20130713    
- * task_cpu로 task p의 cpu 번호를 가져와 per_cpu 메모리의 runqueues의 주소를 취함
-**/
 #define task_rq(p)		cpu_rq(task_cpu(p))
-/** 20130713    
- * cpu runqueue의 curr가 가리키는 task_struct
- **/
 #define cpu_curr(cpu)		(cpu_rq(cpu)->curr)
-/** 20131130    
- * 현재 cpu에 해당하는 runqueues값을 가져온다.
- **/
 #define raw_rq()		(&__raw_get_cpu_var(runqueues))
 
 #ifdef CONFIG_SMP
