@@ -26,11 +26,17 @@
 /*
  * Tick devices
  */
+/** 20141115    
+ * cpu별로 tick_device 자료구조를 갖는다.
+ **/
 DEFINE_PER_CPU(struct tick_device, tick_cpu_device);
 /*
  * Tick next event: keeps track of the tick time
  */
 ktime_t tick_next_period;
+/** 20141115    
+ * tick_setup_device() 에서 HZ주기로 동작하도록 설정한다.
+ **/
 ktime_t tick_period;
 int tick_do_timer_cpu __read_mostly = TICK_DO_TIMER_BOOT;
 static DEFINE_RAW_SPINLOCK(tick_device_lock);
@@ -75,6 +81,9 @@ static void tick_periodic(int cpu)
 		write_sequnlock(&xtime_lock);
 	}
 
+	/** 20141115    
+	 * 모든 cpu가 tick을 주기적으로 처리하는 작업을 수행한다.
+	 **/
 	update_process_times(user_mode(get_irq_regs()));
 	profile_tick(CPU_PROFILING);
 }
@@ -300,6 +309,7 @@ static int tick_check_new_device(struct clock_event_device *newdev)
 	 */
 	/** 20141002
 	 * 최초 periodic용 등록을 위해 호출되었을 때 curdev는 NULL.
+	 * 다음 호출되었을 때 curdev는 NOT NULL.
 	 **/
 	if (curdev) {
 		/*
@@ -328,6 +338,9 @@ static int tick_check_new_device(struct clock_event_device *newdev)
 		clockevents_shutdown(curdev);
 		curdev = NULL;
 	}
+	/** 20141115    
+	 * 이전 device를 해제하고, 새로운 device를 등록한다.
+	 **/
 	clockevents_exchange_device(curdev, newdev);
 	tick_setup_device(td, newdev, cpu, cpumask_of(cpu));
 	if (newdev->features & CLOCK_EVT_FEAT_ONESHOT)
@@ -429,6 +442,9 @@ static int tick_notify(struct notifier_block *nb, unsigned long reason,
 {
 	switch (reason) {
 
+	/** 20141115    
+	 * clockevents_register_device에서 CLOCK_EVT_NOTIFY_ADD notify를 준다.
+	 **/
 	case CLOCK_EVT_NOTIFY_ADD:
 		return tick_check_new_device(dev);
 

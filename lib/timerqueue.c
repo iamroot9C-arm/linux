@@ -36,6 +36,11 @@
  * Adds the timer node to the timerqueue, sorted by the
  * node's expires value.
  */
+/** 20141115    
+ * timerqueue에 node를 추가한다.
+ *
+ * expires기준으로 rb_tree로 정렬된 데이터이다.
+ **/
 void timerqueue_add(struct timerqueue_head *head, struct timerqueue_node *node)
 {
 	struct rb_node **p = &head->head.rb_node;

@@ -148,6 +148,9 @@ static ktime_t tick_init_jiffy_update(void)
 /*
  * NO HZ enabled ?
  */
+/** 20141115    
+ * dynticks인 경우 default로 nohz enabled이다.
+ **/
 int tick_nohz_enabled __read_mostly  = 1;
 
 /*
@@ -872,6 +875,10 @@ static enum hrtimer_restart tick_sched_timer(struct hrtimer *timer)
 #endif
 
 	/* Check, if the jiffies need an update */
+	/** 20141115    
+	 * 현재 cpu가 do_timer를 동작시키는 cpu인 경우,
+	 *   jiffies64를 update 시킨다.
+	 **/
 	if (tick_do_timer_cpu == cpu)
 		tick_do_update_jiffies64(now);
 
@@ -918,6 +925,11 @@ early_param("skew_tick", skew_tick);
 /**
  * tick_setup_sched_timer - setup the tick emulation timer
  */
+/** 20141115    
+ * tick emulation layer를 설정한다.
+ *
+ * - hrtimer를 하나 설정한다. CB function은 tick_sched_timer.
+ **/
 void tick_setup_sched_timer(void)
 {
 	/** 20141108    
@@ -935,6 +947,7 @@ void tick_setup_sched_timer(void)
 	 * mode는 절대값이다.
 	 *
 	 * timer 만료시 호출될 function은 tick_sched_timer.
+	 *
 	 **/
 	hrtimer_init(&ts->sched_timer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS);
 	ts->sched_timer.function = tick_sched_timer;
@@ -942,11 +955,14 @@ void tick_setup_sched_timer(void)
 	/* Get the next period (per cpu) */
 	/** 20141108    
 	 * sched_timer의 exprires를 jiffies update 시점,
-	 * 즉 tick이 마지막으로 발생한 시점으로 초기화한다.
+	 * 즉 tick이 마지막으로 발생한, 현재 tick으로 초기화한다.
 	 **/
 	hrtimer_set_expires(&ts->sched_timer, tick_init_jiffy_update());
 
 	/* Offset the tick to avert xtime_lock contention. */
+	/** 20141115    
+	 * sched 보정치가 주어져 있다면 expires를 보정한다.
+	 **/
 	if (sched_skew_tick) {
 		u64 offset = ktime_to_ns(tick_period) >> 1;
 		do_div(offset, num_possible_cpus());
@@ -956,7 +972,7 @@ void tick_setup_sched_timer(void)
 
 	for (;;) {
 		/** 20141108    
-		 * sched_timer의 expires에 tick_period를 더한다.
+		 * sched_timer의 expires를 현재값에 tick_period를 더한 값으로 설정한다.
 		 **/
 		hrtimer_forward(&ts->sched_timer, now, tick_period);
 		hrtimer_start_expires(&ts->sched_timer,
@@ -1002,6 +1018,10 @@ void tick_clock_notify(void)
 /*
  * Async notification about clock event changes
  */
+/** 20141115    
+ * tick_sched의 check_clocks의 0번 비트를 설정해 비동기적으로
+ * clock event 변경을 통지한다.
+ **/
 void tick_oneshot_notify(void)
 {
 	struct tick_sched *ts = &__get_cpu_var(tick_cpu_sched);
@@ -1017,22 +1037,37 @@ void tick_oneshot_notify(void)
  * mode, because high resolution timers are disabled (either compile
  * or runtime).
  */
+/** 20141115    
+ * oneshot change
+ **/
 int tick_check_oneshot_change(int allow_nohz)
 {
 	struct tick_sched *ts = &__get_cpu_var(tick_cpu_sched);
 
+	/** 20141115    
+	 * tick_oneshot_notify()이 호출되면 clock event가 변경되었음을 확인한다.
+	 **/
 	if (!test_and_clear_bit(0, &ts->check_clocks))
 		return 0;
 
+	/** 20141115    
+	 * 현재 nohz_mode가 INACTIVE가 아니면 NOHZ로 동작 중이다.
+	 **/
 	if (ts->nohz_mode != NOHZ_MODE_INACTIVE)
 		return 0;
 
 	if (!timekeeping_valid_for_hres() || !tick_is_oneshot_available())
 		return 0;
 
+	/** 20141115    
+	 **/
 	if (!allow_nohz)
 		return 1;
 
+	/** 20141115    
+	 * hrtimer_run_pending에서 들어온 경우 allow_nohz는 false이므로
+	 * 실행되지 않는다.
+	 **/
 	tick_nohz_switch_to_nohz();
 	return 0;
 }

@@ -7,7 +7,8 @@
 
 /** 20140419    
  * timerqueue_node
- * expires를 기준으로 rb_tree로 구성된다.
+ *
+ * expires를 기준으로 rb_tree를 구성하기 위한 자료구조.
  **/
 struct timerqueue_node {
 	struct rb_node node;
@@ -16,7 +17,9 @@ struct timerqueue_node {
 
 /** 20141108    
  * hrtimer_clock_base의 active.
- * rb_tree의 root(rb_node *)와 timerqueue_node를 가리키는 포인터를 갖고 있다.
+ *
+ * head : rb tree의 root
+ * next : 다음 expire될 timerqueue_node.
  **/
 struct timerqueue_head {
 	struct rb_root head;

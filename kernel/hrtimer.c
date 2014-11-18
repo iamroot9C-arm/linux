@@ -65,6 +65,9 @@ DEFINE_PER_CPU(struct hrtimer_cpu_base, hrtimer_bases) =
 
 	/** 20141108    
 	 * struct hrtimer_clock_base
+	 * clock base
+	 *	.resolution은 KTIME_LOW_RES로 동작한다.
+	 * hrtimer_switch_to_hres에서 hres로 동작시키며 변경시킨다.
 	 **/
 	.clock_base =
 	{
@@ -182,6 +185,8 @@ struct hrtimer_clock_base *lock_hrtimer_base(const struct hrtimer *timer,
  *
  * NOHZ에서 현재 cpu가 idle_cpu라면 timer를 수행할 target cpu를 가져온다.
  * 그렇지 않을 경우 this_cpu를 리턴한다.
+ *
+ * 따라서 pinned되어 있을 경우 항상 현재 cpu가 반환된다.
  **/
 static int hrtimer_get_target(int this_cpu, int pinned)
 {
@@ -228,6 +233,9 @@ switch_hrtimer_base(struct hrtimer *timer, struct hrtimer_clock_base *base,
 	struct hrtimer_clock_base *new_base;
 	struct hrtimer_cpu_base *new_cpu_base;
 	int this_cpu = smp_processor_id();
+	/** 20141115    
+	 * pinned로 넘어온 경우, hrtimer를 수행할 함수는 this_cpu가 된다.
+	 **/
 	int cpu = hrtimer_get_target(this_cpu, pinned);
 	int basenum = base->index;
 
@@ -235,6 +243,10 @@ again:
 	new_cpu_base = &per_cpu(hrtimer_bases, cpu);
 	new_base = &new_cpu_base->clock_base[basenum];
 
+	/** 20141115    
+	 * 기존 base와 new_base가 다르다면
+	 *   분석 안 함???
+	 **/
 	if (base != new_base) {
 		/*
 		 * We are trying to move timer to new_base.
@@ -262,6 +274,10 @@ again:
 		}
 		timer->base = new_base;
 	}
+	/** 20141115    
+	 * new_base를 넘긴다.
+	 * 만약 base와 new_base가 같다면 별다른 동작없이 현재 clock_base가 리턴된다.
+	 **/
 	return new_base;
 }
 
@@ -703,11 +719,25 @@ static inline void hrtimer_init_hres(struct hrtimer_cpu_base *base)
  * check happens. The timer gets enqueued into the rbtree. The reprogramming
  * and expiry check is done in the hrtimer_interrupt or in the softirq.
  */
+/** 20141115    
+ * hrtimer가 timerqueue에 enqueue되었을 때 가장 가까운 expire라면
+ * hrtimer를 reprogram 한다.
+ **/
 static inline int hrtimer_enqueue_reprogram(struct hrtimer *timer,
 					    struct hrtimer_clock_base *base,
 					    int wakeup)
 {
+	/** 20141115    
+	 * hres timer로 동작 중이며, hrtimer_reprogram이 성공한 뒤
+	 * hrtimer_interrup에서 expire 되었는지 check하고, softirq를 발생시킨다.
+	 **/
 	if (base->cpu_base->hres_active && hrtimer_reprogram(timer, base)) {
+		/** 20141115    
+		 * wakeup이 설정된 경우
+		 *   cpu_base에 lock을 건 상태로 HRTIMER_SOFTIRQ를 raise 한다.
+		 * wakeup이 설정되지 않은 경우
+		 *   pending만 표시한다.
+		 **/
 		if (wakeup) {
 			raw_spin_unlock(&base->cpu_base->lock);
 			raise_softirq_irqoff(HRTIMER_SOFTIRQ);
@@ -756,6 +786,9 @@ static int hrtimer_switch_to_hres(void)
 	struct hrtimer_cpu_base *base = &per_cpu(hrtimer_bases, cpu);
 	unsigned long flags;
 
+	/** 20141115    
+	 * 현재 hres_active되어 동작 중이다.
+	 **/
 	if (base->hres_active)
 		return 1;
 
@@ -771,6 +804,9 @@ static int hrtimer_switch_to_hres(void)
 	 * high-res timer가 high resolution으로 동작한다.
 	 **/
 	base->hres_active = 1;
+	/** 20141115    
+	 * 해당 hrtimer_cpu_base의 array의 resolution을 초기화 한다.
+	 **/
 	for (i = 0; i < HRTIMER_MAX_CLOCK_BASES; i++)
 		base->clock_base[i].resolution = KTIME_HIGH_RES;
 
@@ -848,6 +884,9 @@ void hrtimers_resume(void)
 	timerfd_clock_was_set();
 }
 
+/** 20141115    
+ * TIMER_STATS 분석 생략.
+ **/
 static inline void timer_stats_hrtimer_set_start_info(struct hrtimer *timer)
 {
 #ifdef CONFIG_TIMER_STATS
@@ -977,11 +1016,19 @@ EXPORT_SYMBOL_GPL(hrtimer_forward);
  *
  * Returns 1 when the new timer is the leftmost timer in the tree.
  */
+/** 20141115    
+ * lock이 걸린 상태에서 새로운 hrtimer를 queue에 추가하고,
+ * 관련 자료구조를 설정한다.
+ **/
 static int enqueue_hrtimer(struct hrtimer *timer,
 			   struct hrtimer_clock_base *base)
 {
 	debug_activate(timer);
 
+	/** 20141115    
+	 * timerqueue에 새로운 timer를 추가하고,
+	 * 해당 cpu_base의 active_bases에 active timer가 존재함을 표시한다.
+	 **/
 	timerqueue_add(&base->active, &timer->node);
 	base->cpu_base->active_bases |= 1 << base->index;
 
@@ -989,8 +1036,14 @@ static int enqueue_hrtimer(struct hrtimer *timer,
 	 * HRTIMER_STATE_ENQUEUED is or'ed to the current state to preserve the
 	 * state of a possibly running callback.
 	 */
+	/** 20141115    
+	 * hrtimer의 상태에 enqueue되었음을 표시한다.
+	 **/
 	timer->state |= HRTIMER_STATE_ENQUEUED;
 
+	/** 20141115    
+	 * 새로 추가된 timer가 timerqueue의 다음 expires될 함수라면 1이 리턴된다.
+	 **/
 	return (&timer->node == base->active.next);
 }
 
@@ -1089,6 +1142,12 @@ remove_hrtimer(struct hrtimer *timer, struct hrtimer_clock_base *base)
 	return 0;
 }
 
+/** 20141115    
+ * hrtimer를 range (soft expires + delta_ns)를 받아 등록시킨다.
+ *
+ * hrtimer를 clock_base에 등록(enqueue)시키고,
+ * 가장 가까운 expire값이라면 clock device를 reprogram 하고 softirq를 발생시킨다.
+ **/
 int __hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim,
 		unsigned long delta_ns, const enum hrtimer_mode mode,
 		int wakeup)
@@ -1111,7 +1170,13 @@ int __hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim,
 	/* Switch the timer base, if necessary: */
 	new_base = switch_hrtimer_base(timer, base, mode & HRTIMER_MODE_PINNED);
 
+	/** 20141115    
+	 * 넘어온 mode가 MODE_REL인 경우 수행.
+	 **/
 	if (mode & HRTIMER_MODE_REL) {
+		/** 20141115    
+		 * 새로운 base에서 시간을 얻어와 ktime에 더해준다.
+		 **/
 		tim = ktime_add_safe(tim, new_base->get_time());
 		/*
 		 * CONFIG_TIME_LOW_RES is a temporary way for architectures
@@ -1125,10 +1190,17 @@ int __hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim,
 #endif
 	}
 
+	/** 20141115    
+	 * hrtimer의 expires range를 설정한다. delta_ns는 ns.
+	 **/
 	hrtimer_set_expires_range_ns(timer, tim, delta_ns);
 
 	timer_stats_hrtimer_set_start_info(timer);
 
+	/** 20141115    
+	 * hrtimer를 new_base의 timerqueue에 추가하고,
+	 * leftmost node여부를 리턴받는다.
+	 **/
 	leftmost = enqueue_hrtimer(timer, new_base);
 
 	/*
@@ -1137,9 +1209,17 @@ int __hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim,
 	 *
 	 * XXX send_remote_softirq() ?
 	 */
+	/** 20141115    
+	 * enqueue한 hrtimer가 leftmost, 즉 가장 가까운 expire될 타이머이며,
+	 * 해당 cpu_base가 현재 cpu라면
+	 * hrtimer_enqueue_reprogram을 호출해 reprogram 하고 softirq를 호출한다.
+	 **/
 	if (leftmost && new_base->cpu_base == &__get_cpu_var(hrtimer_bases))
 		hrtimer_enqueue_reprogram(timer, new_base, wakeup);
 
+	/** 20141115    
+	 * hrtimer_cpu_base에 걸었던 lock을 해제한다.
+	 **/
 	unlock_hrtimer_base(timer, &flags);
 
 	return ret;
@@ -1294,7 +1374,7 @@ ktime_t hrtimer_get_next_event(void)
 /** 20141108    
  * hrtimer를 초기화 한다.
  *
- * clock_id에 해당하는 clock base를 초기화 하고, timerqueue를 초기화 한다.
+ * hrtimer 구조체의 node(timerqueue node)와 base(clock base)를 초기화 한다.
  **/
 static void __hrtimer_init(struct hrtimer *timer, clockid_t clock_id,
 			   enum hrtimer_mode mode)
@@ -1304,11 +1384,17 @@ static void __hrtimer_init(struct hrtimer *timer, clockid_t clock_id,
 
 	memset(timer, 0, sizeof(struct hrtimer));
 
+	/** 20141115    
+	 * hrtimer_bases 변수에서 현재 cpu에 해당하는 cpu_base를 가져온다.
+	 **/
 	cpu_base = &__raw_get_cpu_var(hrtimer_bases);
 
 	if (clock_id == CLOCK_REALTIME && mode != HRTIMER_MODE_ABS)
 		clock_id = CLOCK_MONOTONIC;
 
+	/** 20141115    
+	 * clock id(다양한 시스템 clock에 대한 ID)로 base index를 찾아온다.
+	 **/
 	base = hrtimer_clockid_to_base(clock_id);
 	/** 20141108    
 	 * clock_base 중 clock_id에 해당하는 base를 찾아
@@ -1566,6 +1652,9 @@ void hrtimer_peek_ahead_timers(void)
 	local_irq_restore(flags);
 }
 
+/** 20141115    
+ * 분석 예정 ???
+ **/
 static void run_hrtimer_softirq(struct softirq_action *h)
 {
 	struct hrtimer_cpu_base *cpu_base = &__get_cpu_var(hrtimer_bases);
@@ -1609,6 +1698,8 @@ void hrtimer_run_pending(void)
 	 * deadlock vs. xtime_lock.
 	 */
 	/** 20141101    
+	 *
+	 * hrtimer_is_hres_enabled()는 HIGH_RES_TIMERS 설정된 경우 default로 1.
 	 **/
 	if (tick_check_oneshot_change(!hrtimer_is_hres_enabled()))
 		hrtimer_switch_to_hres();

@@ -109,6 +109,9 @@ int tick_oneshot_mode_active(void)
  *
  * Called with interrupts disabled.
  */
+/** 20141115    
+ * high resolution mode로 동작한다.
+ **/
 int tick_init_highres(void)
 {
 	return tick_switch_to_oneshot(hrtimer_interrupt);

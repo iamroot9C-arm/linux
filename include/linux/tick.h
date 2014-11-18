@@ -16,11 +16,15 @@ enum tick_device_mode {
 	TICKDEV_MODE_ONESHOT,
 };
 
+/** 20141115    
+ **/
 struct tick_device {
 	struct clock_event_device *evtdev;
 	enum tick_device_mode mode;
 };
 
+/** 20141115    
+ **/
 enum tick_nohz_mode {
 	NOHZ_MODE_INACTIVE,
 	NOHZ_MODE_LOWRES,
@@ -49,6 +53,8 @@ enum tick_nohz_mode {
  */
 /** 20141108    
  * scheduling 등에 사용하는 tick을 emulation하기 위한 자료구조.
+ *
+ * nohz_mode : NOHZ 동작 모드를 설정한다.
  **/
 struct tick_sched {
 	struct hrtimer			sched_timer;

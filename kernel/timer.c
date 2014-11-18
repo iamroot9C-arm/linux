@@ -1635,6 +1635,10 @@ void update_process_times(int user_tick)
  */
 /** 20140920    
  * TIMER_SOFTIRQ가 raise 되었을 때 수행되는 action.
+ *
+ * update_process_times
+ *     run_local_timers
+ *         raise_softirq(TIMER_SOFTIRQ);
  **/
 static void run_timer_softirq(struct softirq_action *h)
 {

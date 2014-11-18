@@ -82,6 +82,19 @@ enum hrtimer_restart {
  *
  * All state transitions are protected by cpu_base->lock.
  */
+/** 20141115    
+ * HRTIMER의 상태.
+ *
+ * 0x00		비활성 상태
+ * 0x01		enqueue(rb_tree에 추가)된 상태
+ * 0x02		CB 함수 동작 중
+ * 0x04		다른 CPU로 마이그레이트된 상태
+ *
+ * Special cases:
+ * 0x03		CB 함수 동작 중이며, enqueue된 상태
+ *		(다른 CPU에 requeue되었다)
+ * 0x05		타이머가 CPU hotunplug 되어 마이그레이트 되었다.
+ **/
 #define HRTIMER_STATE_INACTIVE	0x00
 #define HRTIMER_STATE_ENQUEUED	0x01
 #define HRTIMER_STATE_CALLBACK	0x02
@@ -116,10 +129,23 @@ enum hrtimer_restart {
  * node : timer queue, expires값과 rb_tree의 entry point를 갖고 있음.
  *	node.expires(hard) : _softexpires + slack(또는 delta로 지정된 값)
  * _softexpires (soft) : timer의 가장 빠른 만료시간.
+ *
+ * soft, hard expires를 지정하는 API
+ *   - hrtimer_set_expires : 동일한 값으로 지정
+ *   - hrtimer_set_expires_range : range로 지정
+ * 
+ * [참고] Greedy hrtimer expiration
  * http://lwn.net/Articles/461592/
  *
  * base : clock base 정보. hrtimer_bases 선언시 초기화 되어 있다.
+ *        (BASE_MONOTONIC, REALTIME, BOOTTIME)
  * function : timer 만료시 호출될 함수
+ *
+ *
+ * - sched_timer의 사용예
+ * 1. hrtimer_init()으로 timerqueue_node와 hrtimer_clock_base 초기화
+ * 2. callback function  지정
+ * 3. hrtimer_set_expires()으로 expires 지정
  **/
 struct hrtimer {
 	struct timerqueue_node		node;
@@ -165,7 +191,7 @@ struct hrtimer_sleeper {
  * 특정 clock에 대한 timer base 자료구조.
  *
  * cpu_base : hrtimer_clock_base가 위치하는 hrtimer_cpu_base를 가리킨다.
- * active   : rb-tree의 root node.
+ * active   : rb-tree의 head를 가리키는 구조체.
  **/
 struct hrtimer_clock_base {
 	struct hrtimer_cpu_base	*cpu_base;
@@ -230,7 +256,7 @@ struct hrtimer_cpu_base {
 };
 
 /** 20141108    
- * hrtimer의 node의 만료시간을 지정한다.
+ * hrtimer node의 만료시간을 같은 시간으로 지정한다.
  **/
 static inline void hrtimer_set_expires(struct hrtimer *timer, ktime_t time)
 {
@@ -238,12 +264,22 @@ static inline void hrtimer_set_expires(struct hrtimer *timer, ktime_t time)
 	timer->_softexpires = time;
 }
 
+/** 20141115    
+ * hrtimer node의 만료시간을 range로 지정한다.
+ * soft expires와 delta를 받는다.
+ **/
 static inline void hrtimer_set_expires_range(struct hrtimer *timer, ktime_t time, ktime_t delta)
 {
 	timer->_softexpires = time;
 	timer->node.expires = ktime_add_safe(time, delta);
 }
 
+/** 20141115    
+ * hrtimer node의 만료시간을 range로 지정한다.
+ * soft expires와 delta를 받는다.
+ *
+ * expires range의 delta가 ns인 경우 사용.
+ **/
 static inline void hrtimer_set_expires_range_ns(struct hrtimer *timer, ktime_t time, unsigned long delta)
 {
 	timer->_softexpires = time;
@@ -435,6 +471,10 @@ static inline int hrtimer_start_expires(struct hrtimer *timer,
 {
 	unsigned long delta;
 	ktime_t soft, hard;
+	/** 20141115    
+	 * hrtimer의 soft, hard expires 값으로 delta를 구하고, 이 값들을
+	 * hrtimer_start_range_ns에 넘긴다.
+	 **/
 	soft = hrtimer_get_softexpires(timer);
 	hard = hrtimer_get_expires(timer);
 	delta = ktime_to_ns(ktime_sub(hard, soft));
