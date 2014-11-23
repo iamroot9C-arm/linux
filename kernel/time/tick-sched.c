@@ -1021,6 +1021,8 @@ void tick_clock_notify(void)
 /** 20141115    
  * tick_sched의 check_clocks의 0번 비트를 설정해 비동기적으로
  * clock event 변경을 통지한다.
+ *
+ * check 시점은 tick_check_oneshot_change.
  **/
 void tick_oneshot_notify(void)
 {

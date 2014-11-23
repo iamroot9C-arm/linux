@@ -162,6 +162,9 @@ static int sp804_set_next_event(unsigned long next,
 
 /** 20141002
  * sp804는 PERIODIC과 ONESHOT의 속성을 다 가진다.
+ *
+ * cpumask : 이 디바이스가 동작할 수 있는 cpu 지정.
+ *           cpu_all_mask이므로 모든 cpu에서 동작할 수 있다.
  **/
 static struct clock_event_device sp804_clockevent = {
 	.features       = CLOCK_EVT_FEAT_PERIODIC | CLOCK_EVT_FEAT_ONESHOT,
@@ -199,5 +202,8 @@ void __init sp804_clockevents_init(void __iomem *base, unsigned int irq,
 	 * irq action 등록.
 	 **/
 	setup_irq(irq, &sp804_timer_irq);
+	/** 20141122    
+	 * sp804 clock event device를 설정하고 등록한다.
+	 **/
 	clockevents_config_and_register(evt, rate, 0xf, 0xffffffff);
 }

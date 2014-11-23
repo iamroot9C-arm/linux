@@ -137,6 +137,8 @@ static inline void tick_set_periodic_handler(struct clock_event_device *dev,
  * Check, if the device is functional or a dummy for broadcast
  */
 /** 20141002
+ * tick device가 기능하거나 broadcast를 위한 dummy인지 검사한다.
+ *
  * broadcast timer의 경우 CLOCK_EVT_FEAT_DUMMY 속성이 존재하므로,
  * broadcast가 아닌지 검사하는 용도로도 사용된다.
  **/

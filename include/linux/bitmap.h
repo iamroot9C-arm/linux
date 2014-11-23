@@ -255,6 +255,9 @@ static inline void bitmap_complement(unsigned long *dst, const unsigned long *sr
 		__bitmap_complement(dst, src, nbits);
 }
 
+/** 20141122    
+ * 두 비트맵이 동일한 비트맵을 표현하는지 검사한다.
+ **/
 static inline int bitmap_equal(const unsigned long *src1,
 			const unsigned long *src2, int nbits)
 {

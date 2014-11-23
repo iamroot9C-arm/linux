@@ -86,6 +86,11 @@ cpumask_var_t irq_default_affinity;
  *	@irq:		Interrupt to check
  *
  */
+/** 20141123    
+ * 주어진 irq가 irq_set_affinity 가능한지 검사한다.
+ *
+ * 자세한 내용은 추후분석???
+ **/
 int irq_can_set_affinity(unsigned int irq)
 {
 	struct irq_desc *desc = irq_to_desc(irq);

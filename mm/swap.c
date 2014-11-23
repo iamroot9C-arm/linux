@@ -572,7 +572,7 @@ EXPORT_SYMBOL(__lru_cache_add);
  */
 /** 20140111
  * page의 active 속성과 unevictable 속성을 제거하여
- * lru cache에 추가한다.
+ * percpu인 lru cache에 추가한다.
  **/
 void lru_cache_add_lru(struct page *page, enum lru_list lru)
 {

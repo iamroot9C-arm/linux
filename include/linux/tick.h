@@ -11,6 +11,9 @@
 
 #ifdef CONFIG_GENERIC_CLOCKEVENTS
 
+/** 20141122    
+ * tick device mode
+ **/
 enum tick_device_mode {
 	TICKDEV_MODE_PERIODIC,
 	TICKDEV_MODE_ONESHOT,

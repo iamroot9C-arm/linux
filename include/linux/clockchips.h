@@ -81,6 +81,8 @@ enum clock_event_nofitiers {
  */
 /** 20141108    
  * 특정 시간에 이벤트(인터럽트)를 발생시키는 장치이다.
+ *
+ * cpumask : 이 디바이스가 동작할 수 있는 cpu를 표시한다.
  **/
 struct clock_event_device {
 	void			(*event_handler)(struct clock_event_device *);

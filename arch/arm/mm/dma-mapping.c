@@ -485,6 +485,8 @@ static void *__alloc_from_contiguous(struct device *dev, size_t size,
 	size_t count = size >> PAGE_SHIFT;
 	struct page *page;
 
+	/** 20141122    
+	 **/
 	page = dma_alloc_from_contiguous(dev, count, order);
 	if (!page)
 		return NULL;
@@ -582,6 +584,8 @@ static void *__dma_alloc(struct device *dev, size_t size, dma_addr_t *handle,
 	else if (!IS_ENABLED(CONFIG_CMA))
 		addr = __alloc_remap_buffer(dev, size, gfp, prot, &page, caller);
 	else
+		/** 20141122    
+		 **/
 		addr = __alloc_from_contiguous(dev, size, prot, &page);
 
 	if (addr)
@@ -603,6 +607,8 @@ void *arm_dma_alloc(struct device *dev, size_t size, dma_addr_t *handle,
 	if (dma_alloc_from_coherent(dev, size, handle, &memory))
 		return memory;
 
+	/** 20141122    
+	 **/
 	return __dma_alloc(dev, size, handle, gfp, prot,
 			   __builtin_return_address(0));
 }

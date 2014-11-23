@@ -31,6 +31,9 @@
  *   interrupt.  Note: this must take account of any unprocessed
  *   timer interrupt which may be pending.
  */
+/** 20141122    
+ * kernel timer.
+ **/
 struct sys_timer {
 	void			(*init)(void);
 	void			(*suspend)(void);

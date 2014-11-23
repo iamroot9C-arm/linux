@@ -456,6 +456,9 @@ static inline void cpumask_complement(struct cpumask *dstp,
  * @src1p: the first input
  * @src2p: the second input
  */
+/** 20141122    
+ * 두 cpumask의 비트맵이 동일한 비트들을 표현하는지 검사한다.
+ **/
 static inline bool cpumask_equal(const struct cpumask *src1p,
 				const struct cpumask *src2p)
 {
@@ -593,7 +596,7 @@ static inline void cpumask_copy(struct cpumask *dstp,
  * @cpu: the cpu (<= nr_cpu_ids)
  */
 /** 20130713    
- * cpu가 포함되어 있는 cpumask를 가져온다.
+ * cpu만 포함되어 있는 cpumask를 가져온다.
  **/
 #define cpumask_of(cpu) (get_cpu_mask(cpu))
 
@@ -781,6 +784,10 @@ static inline void free_bootmem_cpumask_var(cpumask_var_t mask)
 
 /* It's common to want to use cpu_all_mask in struct member initializers,
  * so it has to refer to an address rather than a pointer. */
+/** 20141122    
+ * kernel/cpu.c에서 정의된 cpu_all_bits 선언.
+ * bitmap mask를 cpumask로 변환해 cpu_all_mask라 선언한다.
+ **/
 extern const DECLARE_BITMAP(cpu_all_bits, NR_CPUS);
 #define cpu_all_mask to_cpumask(cpu_all_bits)
 
@@ -814,9 +821,11 @@ void init_cpu_online(const struct cpumask *src);
  * This does the conversion, and can be used as a constant initializer.
  */
 /** 20121208
-  삼항 연산자가 필요한 이유 ???
-  20130518
-    syntax 검사용인듯...
+ * bitmap을 struct cpumask *로 변환한다.
+ *
+ * 삼항 연산자가 필요한 이유 ???
+ * 20130518
+ * syntax 검사용인듯...
  **/
 #define to_cpumask(bitmap)						\
 	((struct cpumask *)(1 ? (bitmap)				\
@@ -838,7 +847,12 @@ extern const unsigned long
 	cpu_bit_bitmap[BITS_PER_LONG+1][BITS_TO_LONGS(NR_CPUS)];
 
 /** 20130713    
- * cpu가 포함되어 있는 bitmap을 가져온다.
+ * NR_CPUS의 비트맵에서 cpu만 설정되어 있는 cpu_mask를 가져온다.
+ *
+ * 비트가 설정된 비트맵을 왼쪽으로 리오더링된 테이블에서 p를 조정하여
+ * 0으로 채워진 비트맵을 온전히 가져올 수 있다.
+ *
+ * cpu_bit_bitmap 참고.
  **/
 static inline const struct cpumask *get_cpu_mask(unsigned int cpu)
 {
@@ -853,6 +867,10 @@ static inline const struct cpumask *get_cpu_mask(unsigned int cpu)
 #define cpu_is_offline(cpu)	unlikely(!cpu_online(cpu))
 
 #if NR_CPUS <= BITS_PER_LONG
+/** 20141122    
+ * 하나의 워드(long 변수)로 표현가능하므로 CPU_BITS_ALL은
+ * 비트맵을 NR_CPUS만큼 1로 채워 cpu_mask로 리턴한다.
+ **/
 #define CPU_BITS_ALL						\
 {								\
 	[BITS_TO_LONGS(NR_CPUS)-1] = CPU_MASK_LAST_WORD	\
@@ -875,6 +893,9 @@ static inline const struct cpumask *get_cpu_mask(unsigned int cpu)
 #ifndef CONFIG_DISABLE_OBSOLETE_CPUMASK_FUNCTIONS
 #define cpumask_of_cpu(cpu) (*get_cpu_mask(cpu))
 
+/** 20141122    
+ * NR_CPUS 개수만큼 1로 설정된 bitmap의 마지막 word를 취한다.
+ **/
 #define CPU_MASK_LAST_WORD BITMAP_LAST_WORD_MASK(NR_CPUS)
 
 #if NR_CPUS <= BITS_PER_LONG

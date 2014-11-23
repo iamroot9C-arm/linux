@@ -26,6 +26,9 @@
  * timer stops in C3 state.
  */
 
+/** 20141122    
+ * tick broadcast device용 변수는 전역으로 설정.
+ **/
 static struct tick_device tick_broadcast_device;
 /* FIXME: Use cpumask_var_t. */
 static DECLARE_BITMAP(tick_broadcast_mask, NR_CPUS);

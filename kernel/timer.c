@@ -2166,6 +2166,10 @@ void __init init_timers(void)
 	/** 20140920    
 	 * timer cpu notify (CPU_UP_PREPARE)를 boot 중인 자기 자신에게 전송한다.
 	 * 이 notify를 받아 tvec_base를 초기화 한다.
+     *
+     * 부팅시 부팅코어를 제외한 일반적인 경우
+     * (예를 들면 smp의 다른 코어를 초기화 하거나, HOTPLUG 등)라면
+     * 아래에 등록한 timers_nb를 이용해 notify를 발송할 것이다.
 	 **/
 	int err = timer_cpu_notify(&timers_nb, (unsigned long)CPU_UP_PREPARE,
 				(void *)(long)smp_processor_id());

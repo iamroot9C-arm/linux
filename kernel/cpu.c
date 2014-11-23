@@ -700,11 +700,26 @@ void __cpuinit notify_cpu_starting(unsigned int cpu)
  */
 
 /* cpu_bit_bitmap[0] is empty - so we can back into it */
+/** 20141122    
+ * mask를 1개, 2개, 4개, 8개 선언하는 매크로.
+ * 각 mask에는 비트당 
+ **/
 #define MASK_DECLARE_1(x)	[x+1][0] = (1UL << (x))
 #define MASK_DECLARE_2(x)	MASK_DECLARE_1(x), MASK_DECLARE_1(x+1)
 #define MASK_DECLARE_4(x)	MASK_DECLARE_2(x), MASK_DECLARE_2(x+2)
 #define MASK_DECLARE_8(x)	MASK_DECLARE_4(x), MASK_DECLARE_4(x+4)
 
+/** 20141122    
+ * 비트가 설정된 비트맵을 왼쪽 끝으로 몰아놓은 형태의 table.
+ * (re-ordering)
+ *
+ * 이렇게 만든 이유는, 만약 bitmap을 단순히 table로 만든다면
+ * cpu_bit_bitmap[NR_CPUS][BITS_PER_LONG]가 되어 cpu의 개수가 늘어날수록
+ * read-only 영역 메모리 낭비가 커진다.
+ *
+ * 이 테이블 형식으로 만든 뒤 cpumask를 가져올 때는
+ * get_cpu_mask(cpu)를 사용한다.
+ **/
 const unsigned long cpu_bit_bitmap[BITS_PER_LONG+1][BITS_TO_LONGS(NR_CPUS)] = {
 
 	MASK_DECLARE_8(0),	MASK_DECLARE_8(8),
@@ -716,6 +731,9 @@ const unsigned long cpu_bit_bitmap[BITS_PER_LONG+1][BITS_TO_LONGS(NR_CPUS)] = {
 };
 EXPORT_SYMBOL_GPL(cpu_bit_bitmap);
 
+/** 20141122    
+ * cpu 개수(NR_CPUS)만큼 1로 채워진 cpu_mask를 선언.
+ **/
 const DECLARE_BITMAP(cpu_all_bits, NR_CPUS) = CPU_BITS_ALL;
 EXPORT_SYMBOL(cpu_all_bits);
 

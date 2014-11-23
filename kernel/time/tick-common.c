@@ -175,6 +175,9 @@ void tick_setup_periodic(struct clock_event_device *dev, int broadcast)
 /*
  * Setup the tick device
  */
+/** 20141122    
+ * tick device에 새로운 clock event device를 등록한다.
+ **/
 static void tick_setup_device(struct tick_device *td,
 			      struct clock_event_device *newdev, int cpu,
 			      const struct cpumask *cpumask)
@@ -247,6 +250,9 @@ static void tick_setup_device(struct tick_device *td,
 	 * This allows us to handle this x86 misfeature in a generic
 	 * way.
 	 */
+    /** 20141122    
+     * 20141129 여기부터
+     **/
 	if (tick_device_uses_broadcast(newdev, cpu))
 		return;
 
@@ -263,6 +269,11 @@ static void tick_setup_device(struct tick_device *td,
 /*
  * Check, if the new registered device should be used.
  */
+/** 20141122    
+ *
+ * clockevents_register_device에서 전역리스트에 새로운 clock device를 등록하고
+ * CLOCK_EVT_NOTIFY_ADD notify를 날리면 이 notify handler가 호출된다.
+ **/
 static int tick_check_new_device(struct clock_event_device *newdev)
 {
 	struct clock_event_device *curdev;
@@ -286,12 +297,21 @@ static int tick_check_new_device(struct clock_event_device *newdev)
 	curdev = td->evtdev;
 
 	/* cpu local device ? */
+	/** 20141122    
+	 * 디바이스가 동작할 cpumask가 현재 cpu의 cpumask와 동일하면
+	 * 현재 cpu의 local device이다.
+     * 그렇지 않다면 broadcast device이다.
+	 **/
 	if (!cpumask_equal(newdev->cpumask, cpumask_of(cpu))) {
 
 		/*
 		 * If the cpu affinity of the device interrupt can not
 		 * be set, ignore it.
 		 */
+        /** 20141122    
+         * device interrupt에 대해 cpu affinity를 설정이 불가능하면
+         * out_bc로 이동.
+         **/
 		if (!irq_can_set_affinity(newdev->irq))
 			goto out_bc;
 
@@ -299,6 +319,10 @@ static int tick_check_new_device(struct clock_event_device *newdev)
 		 * If we have a cpu local device already, do not replace it
 		 * by a non cpu local device
 		 */
+        /** 20141122    
+         * 현재 cpu에 local device가 등록되어 있다면
+         * 새로 지정되는 broadcast 디바이스로 교체되지 않도록 한다.
+         **/
 		if (curdev && cpumask_equal(curdev->cpumask, cpumask_of(cpu)))
 			goto out_bc;
 	}
@@ -310,6 +334,9 @@ static int tick_check_new_device(struct clock_event_device *newdev)
 	/** 20141002
 	 * 최초 periodic용 등록을 위해 호출되었을 때 curdev는 NULL.
 	 * 다음 호출되었을 때 curdev는 NOT NULL.
+     *
+     * 20141122
+     * curdev는 cpu local device이다. 이미 존재하면 새 디바이스와 속성을 비교한다.
 	 **/
 	if (curdev) {
 		/*
@@ -342,6 +369,11 @@ static int tick_check_new_device(struct clock_event_device *newdev)
 	 * 이전 device를 해제하고, 새로운 device를 등록한다.
 	 **/
 	clockevents_exchange_device(curdev, newdev);
+    /** 20141122    
+     * tick device에 새로운 clock_event_device를 등록한다.
+     * 새로 등록된 clock event device가 ONESHOT 속성이 있으면
+     * oneshot notify를 준다.
+     **/
 	tick_setup_device(td, newdev, cpu, cpumask_of(cpu));
 	if (newdev->features & CLOCK_EVT_FEAT_ONESHOT)
 		tick_oneshot_notify();

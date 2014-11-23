@@ -21,6 +21,9 @@
 #include "tick-internal.h"
 
 /* The registered clock event devices */
+/** 20141122    
+ * clockevent_devices 리스트.
+ **/
 static LIST_HEAD(clockevent_devices);
 static LIST_HEAD(clockevents_released);
 
@@ -317,6 +320,12 @@ void clockevents_register_device(struct clock_event_device *dev)
 
 	raw_spin_lock_irqsave(&clockevents_lock, flags);
 
+	/** 20141122    
+	 * clock_event_device를 전역 리스트에 등록한다.
+	 * 
+	 * 즉, 전역 리스트에 새로운 clock event device를 등록하고,
+	 * CLOCK_EVT_NOTIFY_ADD를 날린다. 
+	 **/
 	list_add(&dev->list, &clockevent_devices);
 	clockevents_do_notify(CLOCK_EVT_NOTIFY_ADD, dev);
 	clockevents_notify_released();

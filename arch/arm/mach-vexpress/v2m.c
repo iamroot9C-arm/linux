@@ -568,7 +568,8 @@ static void __init v2m_init(void)
 /** 20140830    
  * vexpress용 MACHINE 정의.
  *
- * handle_irq는 gic_handle_irq.
+ * timer :      v2m_timer
+ * handle_irq:  gic_handle_irq
  **/
 MACHINE_START(VEXPRESS, "ARM-Versatile Express")
 	.atag_offset	= 0x100,
