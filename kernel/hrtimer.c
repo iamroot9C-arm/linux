@@ -204,6 +204,10 @@ static int hrtimer_get_target(int this_cpu, int pinned)
  *
  * Called with cpu_base->lock of target cpu held.
  */
+/** 20141129    
+ * timer를 migrate할 때, target이 되는 cpu의 다음 만료시간보다
+ * migration 할 timer의 만료시간이 짧을 때는 migrate하지 못한다.
+ **/
 static int
 hrtimer_check_target(struct hrtimer *timer, struct hrtimer_clock_base *new_base)
 {
@@ -224,7 +228,8 @@ hrtimer_check_target(struct hrtimer *timer, struct hrtimer_clock_base *new_base)
  * Switch the timer base to the current CPU when possible.
  */
 /** 20141108   
- * 20141115 여기부터...
+ * hrtimer의 base를 현재 cpu(pinned되어 있지 않은 상태에서 NO_HZ라면 다른 cpu)의
+ * hrtimer_clock_base로 설정한다.
  **/
 static inline struct hrtimer_clock_base *
 switch_hrtimer_base(struct hrtimer *timer, struct hrtimer_clock_base *base,
@@ -244,8 +249,7 @@ again:
 	new_base = &new_cpu_base->clock_base[basenum];
 
 	/** 20141115    
-	 * 기존 base와 new_base가 다르다면
-	 *   분석 안 함???
+	 * 기존 base와 new_base가 다르다면 new_base를 timer의 base로 설정한다.
 	 **/
 	if (base != new_base) {
 		/*
@@ -265,6 +269,10 @@ again:
 		raw_spin_unlock(&base->cpu_base->lock);
 		raw_spin_lock(&new_base->cpu_base->lock);
 
+		/** 20141129    
+		 * timer migrate할 cpu가 현재 cpu가 아닌데, expires 때문에 migrate시키지
+		 * 못한다면, 현재 timer base에 다시 등록시키고 다시 시도한다.
+		 **/
 		if (cpu != this_cpu && hrtimer_check_target(timer, new_base)) {
 			cpu = this_cpu;
 			raw_spin_unlock(&new_base->cpu_base->lock);
@@ -764,6 +772,9 @@ static inline ktime_t hrtimer_update_base(struct hrtimer_cpu_base *base)
  *
  * Called with interrupts disabled via on_each_cpu()
  */
+/** 20141129    
+ * timekeeping 분석 후 분석예정???
+ **/
 static void retrigger_next_event(void *arg)
 {
 	struct hrtimer_cpu_base *base = &__get_cpu_var(hrtimer_bases);
@@ -780,6 +791,11 @@ static void retrigger_next_event(void *arg)
 /*
  * Switch to high resolution mode
  */
+/** 20141201    
+ * hrtimer로 highres로 동작한다.
+ *
+ * tick을 emulation하기 위한 hrtimer를 생성해 시작시킨다.
+ **/
 static int hrtimer_switch_to_hres(void)
 {
 	int i, cpu = smp_processor_id();
@@ -787,13 +803,20 @@ static int hrtimer_switch_to_hres(void)
 	unsigned long flags;
 
 	/** 20141115    
-	 * 현재 hres_active되어 동작 중이다.
+	 * 현재 hres_active되어 동작 중이면 바로 리턴한다.
 	 **/
 	if (base->hres_active)
 		return 1;
 
+	/** 20141129    
+	 * tick을 highres로 변경시키는동안 interrupt가 발생하지 않도록 한다.
+	 **/
 	local_irq_save(flags);
 
+	/** 20141129    
+	 * highres를 위한 tick init.
+	 * clock_event_device를 ONESHOT 방식으로 설정한다.
+	 **/
 	if (tick_init_highres()) {
 		local_irq_restore(flags);
 		printk(KERN_WARNING "Could not switch to high resolution "
@@ -810,6 +833,9 @@ static int hrtimer_switch_to_hres(void)
 	for (i = 0; i < HRTIMER_MAX_CLOCK_BASES; i++)
 		base->clock_base[i].resolution = KTIME_HIGH_RES;
 
+	/** 20141129    
+	 * tick_sched를 위한 timer를 하나 생성해 등록시킨다.
+	 **/
 	tick_setup_sched_timer();
 	/* "Retrigger" the interrupt to get things going */
 	retrigger_next_event(NULL);
@@ -940,7 +966,8 @@ void unlock_hrtimer_base(const struct hrtimer *timer, unsigned long *flags)
  * Returns the number of overruns.
  */
 /** 20140419    
- * timer에 interval을 더한다.
+ * timer의 expires에 interval을 더해 앞으로 있을 다음 interval에 만료되도록 한다.
+ * 현재 시간이 timer의 만료시간을 초과한 횟수(/interval)가 리턴된다.
  *
  * sched_rt_period_timer에서 호출하였을 때 interval은 rt_period.
  **/
@@ -968,7 +995,7 @@ u64 hrtimer_forward(struct hrtimer *timer, ktime_t now, ktime_t interval)
 
 	/** 20140419    
 	 * delta는 만료 후 얼마가 지났는지 표현.
-	 * delta가 interval보다 큰 경우에 아래 부분을 수행
+	 * delta가 interval 이상인 경우 아래 부분을 수행
 	 **/
 	if (unlikely(delta.tv64 >= interval.tv64)) {
 		/** 20140419    
@@ -986,7 +1013,7 @@ u64 hrtimer_forward(struct hrtimer *timer, ktime_t now, ktime_t interval)
 		 **/
 		hrtimer_add_expires_ns(timer, incr * orun);
 		/** 20140419    
-		 * expires 값이 현재 시간보다 크면 overrun 값을 리턴
+		 * expires 값이 현재 시간보다 크면 이후 만료될 것이므로 overrun 값을 리턴
 		 **/
 		if (hrtimer_get_expires_tv64(timer) > now.tv64)
 			return orun;
@@ -1017,7 +1044,7 @@ EXPORT_SYMBOL_GPL(hrtimer_forward);
  * Returns 1 when the new timer is the leftmost timer in the tree.
  */
 /** 20141115    
- * lock이 걸린 상태에서 새로운 hrtimer를 queue에 추가하고,
+ * lock이 걸린 상태에서 새로운 hrtimer를 queue(rb-tree)에 추가하고,
  * 관련 자료구조를 설정한다.
  **/
 static int enqueue_hrtimer(struct hrtimer *timer,
@@ -1157,21 +1184,26 @@ int __hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim,
 	int ret, leftmost;
 
 	/** 20141108    
-	 * hrtimer의 clock_base에 lock을 건다.
+	 * hrtimer의 clock_base에 lock을 걸고,
+	 * hrtimer의 hrtimer_clock_base를 리턴한다.
 	 **/
 	base = lock_hrtimer_base(timer, &flags);
 
 	/* Remove an active timer from the queue: */
 	/** 20141108    
-	 * active timer를 queue에서 제거한다.
+	 * active timer를 timerqueue에서 제거한다.
 	 **/
 	ret = remove_hrtimer(timer, base);
 
 	/* Switch the timer base, if necessary: */
+	/** 20141129    
+	 * 필요하다면 hrtimer의 base를 변경한다.
+	 * mode에 PINNED가 설정되어 있다면 new_base는 기존 base와 동일하다.
+	 **/
 	new_base = switch_hrtimer_base(timer, base, mode & HRTIMER_MODE_PINNED);
 
 	/** 20141115    
-	 * 넘어온 mode가 MODE_REL인 경우 수행.
+	 * 넘어온 mode가 HRTIMER_MODE_REL인 경우(현재 시간에 상대적일 때) 수행.
 	 **/
 	if (mode & HRTIMER_MODE_REL) {
 		/** 20141115    
@@ -1198,7 +1230,7 @@ int __hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim,
 	timer_stats_hrtimer_set_start_info(timer);
 
 	/** 20141115    
-	 * hrtimer를 new_base의 timerqueue에 추가하고,
+	 * hrtimer를 new_base의 timerqueue(rbtree로 구성)에 추가하고,
 	 * leftmost node여부를 리턴받는다.
 	 **/
 	leftmost = enqueue_hrtimer(timer, new_base);
@@ -1236,9 +1268,15 @@ int __hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim,
  *  0 on success
  *  1 when the timer was active
  */
+/** 20141129    
+ * 현재 cpu에 hrtimer의 만료시간을 받아 등록한다.
+ **/
 int hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim,
 		unsigned long delta_ns, const enum hrtimer_mode mode)
 {
+	/** 20141129    
+	 * softirq wakeup을 1로 설정한다.
+	 **/
 	return __hrtimer_start_range_ns(timer, tim, delta_ns, mode, 1);
 }
 EXPORT_SYMBOL_GPL(hrtimer_start_range_ns);
@@ -1686,6 +1724,9 @@ static inline void __hrtimer_peek_ahead_timers(void) { }
  **/
 void hrtimer_run_pending(void)
 {
+	/** 20141129    
+	 * 이미 hrtimer가 hres로 동작 중이라면 바로 리턴한다.
+	 **/
 	if (hrtimer_hres_active())
 		return;
 
@@ -1698,6 +1739,7 @@ void hrtimer_run_pending(void)
 	 * deadlock vs. xtime_lock.
 	 */
 	/** 20141101    
+	 * 20141206 여기부터...
 	 *
 	 * hrtimer_is_hres_enabled()는 HIGH_RES_TIMERS 설정된 경우 default로 1.
 	 **/

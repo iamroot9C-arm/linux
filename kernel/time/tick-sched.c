@@ -112,7 +112,7 @@ static void tick_do_update_jiffies64(ktime_t now)
 
 		/* Keep the tick_next_period variable up to date */
 		/** 20141101    
-		 * 다음 주기가 발생할 tick을 새로 계산해둔다.
+		 * 다음 주기가 발생할 시간을 새로 계산해둔다.
 		 **/
 		tick_next_period = ktime_add(last_jiffies_update, tick_period);
 	}
@@ -927,8 +927,7 @@ early_param("skew_tick", skew_tick);
  */
 /** 20141115    
  * tick emulation layer를 설정한다.
- *
- * - hrtimer를 하나 설정한다. CB function은 tick_sched_timer.
+ * - percpu로 동작하는 hrtimer를 하나 설정한다. CB function은 tick_sched_timer.
  **/
 void tick_setup_sched_timer(void)
 {
@@ -975,15 +974,26 @@ void tick_setup_sched_timer(void)
 		 * sched_timer의 expires를 현재값에 tick_period를 더한 값으로 설정한다.
 		 **/
 		hrtimer_forward(&ts->sched_timer, now, tick_period);
+		/** 20141129    
+		 * 설정한 sched_timer를 현재 CPU에서 절대시간으로 만료되도록 등록시킨다.
+		 **/
 		hrtimer_start_expires(&ts->sched_timer,
 				      HRTIMER_MODE_ABS_PINNED);
 		/* Check, if the timer was already in the past */
+		/** 20141129    
+		 * sched_timer가 active 되었다면 벗어나고,
+		 * 그렇지 않다면 새로 시간을 받아와 다음 주기에 동작하도록 등록한다.
+		 **/
 		if (hrtimer_active(&ts->sched_timer))
 			break;
 		now = ktime_get();
 	}
 
 #ifdef CONFIG_NO_HZ
+	/** 20141129    
+	 * dynticks 등 nohz 활성상태인 경우,
+	 * 이제 nohz는 HIGHRES로 동작한다.
+	 **/
 	if (tick_nohz_enabled)
 		ts->nohz_mode = NOHZ_MODE_HIGHRES;
 #endif

@@ -190,7 +190,7 @@ struct hrtimer_sleeper {
 /** 20141108    
  * 특정 clock에 대한 timer base 자료구조.
  *
- * cpu_base : hrtimer_clock_base가 위치하는 hrtimer_cpu_base를 가리킨다.
+ * cpu_base : hrtimer_clock_base가 위치하는(포함하는) hrtimer_cpu_base를 가리킨다.
  * active   : rb-tree의 head를 가리키는 구조체.
  **/
 struct hrtimer_clock_base {
@@ -236,6 +236,7 @@ enum  hrtimer_base_type {
 /** 20141108    
  * hrtimer 프레임워크를 사용하기 위해 cpu별 clock bases를 가진다.
  *
+ * expires_next :	clock_set_next_event()에 의해 설정된, 다음 event가 발생할 절대 시간.
  * lock         : cpu base와 clock bases에 대해 동시에 보호하는 lock.
  * active_bases : clock bases 중 active timer를 보유한 경우 1로 표시
  **/
@@ -466,14 +467,17 @@ __hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim,
 extern int hrtimer_cancel(struct hrtimer *timer);
 extern int hrtimer_try_to_cancel(struct hrtimer *timer);
 
+/** 20141129    
+ * 현재 cpu에 hrtimer가 expire되도록 등록한다.
+ **/
 static inline int hrtimer_start_expires(struct hrtimer *timer,
 						enum hrtimer_mode mode)
 {
 	unsigned long delta;
 	ktime_t soft, hard;
 	/** 20141115    
-	 * hrtimer의 soft, hard expires 값으로 delta를 구하고, 이 값들을
-	 * hrtimer_start_range_ns에 넘긴다.
+	 * hrtimer의 hard, soft expires의 차를 구하고,
+	 * 이 값들을 사용하여 hrtimer_start_range_ns 인터페이스를 통해 호출한다.
 	 **/
 	soft = hrtimer_get_softexpires(timer);
 	hard = hrtimer_get_expires(timer);
@@ -497,6 +501,10 @@ extern ktime_t hrtimer_get_next_event(void);
  * callback function is running or it's in the state of being migrated
  * to another cpu.
  */
+/** 20141129    
+ * hrtimer가 INACTIVE 상태가 아니라면 active이다.
+ * (ENQUEUED, CALLBACK, MIGRATE)
+ **/
 static inline int hrtimer_active(const struct hrtimer *timer)
 {
 	return timer->state != HRTIMER_STATE_INACTIVE;

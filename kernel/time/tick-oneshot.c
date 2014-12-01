@@ -57,6 +57,10 @@ void tick_setup_oneshot(struct clock_event_device *newdev,
 /**
  * tick_switch_to_oneshot - switch to oneshot mode
  */
+/** 20141129    
+ * clock_event_device를 ONESHOT 모드로 설정하고,
+ * event_handler를 전달받은 핸들러로 등록한다.
+ **/
 int tick_switch_to_oneshot(void (*handler)(struct clock_event_device *))
 {
 	struct tick_device *td = &__get_cpu_var(tick_cpu_device);
@@ -85,7 +89,9 @@ int tick_switch_to_oneshot(void (*handler)(struct clock_event_device *))
 
 	td->mode = TICKDEV_MODE_ONESHOT;
 	/** 20141122    
-	 * clock_event_device를 event_handler를 전달받은 handler로 지정한다.
+	 * clock_event_device의 event_handler를 전달받은 handler로 지정한다.
+	 * clockevents의 mode를 oneshot으로 설정한다.
+	 * tick broadcast device를 oneshot으로 설정한다.
 	 **/
 	dev->event_handler = handler;
 	clockevents_set_mode(dev, CLOCK_EVT_MODE_ONESHOT);
@@ -117,7 +123,7 @@ int tick_oneshot_mode_active(void)
  * Called with interrupts disabled.
  */
 /** 20141115    
- * high resolution mode로 동작한다.
+ * high resolution mode로 동작한다. (ONESHOT 방식 동작)
  **/
 int tick_init_highres(void)
 {

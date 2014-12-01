@@ -22,6 +22,9 @@
 
 typedef void (*print_fn_t)(struct seq_file *m, unsigned int *classes);
 
+/** 20141129    
+ * cpu별로 hrtimer를 위한 cpu_base를 설정한다.
+ **/
 DECLARE_PER_CPU(struct hrtimer_cpu_base, hrtimer_bases);
 
 /*

@@ -430,6 +430,10 @@ static void ipi_timer(void)
 }
 
 #ifdef CONFIG_GENERIC_CLOCKEVENTS_BROADCAST
+/** 20141129    
+ * clockevents를 broadcast 할 때 IPI_TIMER를 smp call 한다.
+ * vexpress에서 등록이 되지 않아 호출되지 않았다.
+ **/
 static void smp_timer_broadcast(const struct cpumask *mask)
 {
 	smp_cross_call(mask, IPI_TIMER);

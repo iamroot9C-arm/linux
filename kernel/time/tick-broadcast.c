@@ -31,6 +31,9 @@
  **/
 static struct tick_device tick_broadcast_device;
 /* FIXME: Use cpumask_var_t. */
+/** 20141129    
+ * cpu 개수만큼 설정된 tick_broadcast_mask 비트맵을 선언한다.
+ **/
 static DECLARE_BITMAP(tick_broadcast_mask, NR_CPUS);
 static DECLARE_BITMAP(tmpmask, NR_CPUS);
 static DEFINE_RAW_SPINLOCK(tick_broadcast_lock);
@@ -50,6 +53,10 @@ struct tick_device *tick_get_broadcast_device(void)
 	return &tick_broadcast_device;
 }
 
+/** 20141129    
+ * tick broadcast mask를 가져온다.
+ * broadcast로 동작하는 cpu들의 mask.
+ **/
 struct cpumask *tick_get_broadcast_mask(void)
 {
 	return to_cpumask(tick_broadcast_mask);
@@ -58,6 +65,9 @@ struct cpumask *tick_get_broadcast_mask(void)
 /*
  * Start the device in periodic mode
  */
+/** 20141129    
+ * clock_event_device를 periodic broadcast용으로 설정한다.
+ **/
 static void tick_broadcast_start_periodic(struct clock_event_device *bc)
 {
 	if (bc)
@@ -67,15 +77,30 @@ static void tick_broadcast_start_periodic(struct clock_event_device *bc)
 /*
  * Check, if the device can be utilized as broadcast device:
  */
+/** 20141129    
+ * dev가 새로운 broadcast device가 될 수 있는지 검사하고,
+ * 가능하다면 새로운 broadcast device로 설정한다.
+ **/
 int tick_check_broadcast_device(struct clock_event_device *dev)
 {
+	/** 20141129    
+	 * 이미 tick_broadcast_device에 clock_event_device가 등록되어 있고,
+	 * 새롭게 추가된 dev의 rating이 높지 않다면 등록하지 않고 리턴한다.
+	 **/
 	if ((tick_broadcast_device.evtdev &&
 	     tick_broadcast_device.evtdev->rating >= dev->rating) ||
 	     (dev->features & CLOCK_EVT_FEAT_C3STOP))
 		return 0;
 
+	/** 20141129    
+	 * 새로운 device를 tick_broadcast_device에 clock_event_device로 지정한다.
+	 **/
 	clockevents_exchange_device(tick_broadcast_device.evtdev, dev);
 	tick_broadcast_device.evtdev = dev;
+	/** 20141129    
+	 * boradcast mask에 대상이 존재하면
+	 * 새로운 device를 periodic broadcast용으로 설정한다.
+	 **/
 	if (!cpumask_empty(tick_get_broadcast_mask()))
 		tick_broadcast_start_periodic(dev);
 	return 1;
@@ -96,6 +121,13 @@ int tick_is_broadcast_device(struct clock_event_device *dev)
  * Check, if the device is disfunctional and a place holder, which
  * needs to be handled by the broadcast device.
  */
+/** 20141129    
+ * clock_event_device가 functional하지 않다면 broadcast를 위한 것일 뿐이므로
+ * cpu를 broadcast mask에 등록시킨다.
+ * 그렇지 않다면 broadcast mask에서 제거한다.
+ *
+ * vexpress의 경우 sp804, twd clock_event_device는 broadcast에 포함되지 않는다.
+ **/
 int tick_device_uses_broadcast(struct clock_event_device *dev, int cpu)
 {
 	unsigned long flags;
@@ -109,6 +141,13 @@ int tick_device_uses_broadcast(struct clock_event_device *dev, int cpu)
 	 * operated from the broadcast device and is a placeholder for
 	 * the cpu local device.
 	 */
+	/** 20141129    
+	 * clock_event_device가 periodic이나 oneshot으로도 동작하지 않을 경우,
+	 * broadcast dummy인 경우
+	 *   broadcast mask에 전달받은 cpu를 등록하고 periodic으로 동작시킨다.
+	 * broadcast dummy가 아닌 경우
+	 *   
+	 **/
 	if (!tick_device_is_functional(dev)) {
 		dev->event_handler = tick_handle_periodic;
 		cpumask_set_cpu(cpu, tick_get_broadcast_mask());
@@ -372,16 +411,25 @@ int tick_resume_broadcast(void)
 #ifdef CONFIG_TICK_ONESHOT
 
 /* FIXME: use cpumask_var_t. */
+/** 20141129    
+ * tick broadcast oneshot 비트맵 마스크를 선언한다.
+ **/
 static DECLARE_BITMAP(tick_broadcast_oneshot_mask, NR_CPUS);
 
 /*
  * Exposed for debugging: see timer_list.c
  */
+/** 20141129    
+ * tick broadcast oneshot 비트맵 마스크를 (cpumask *) 타입으로 리턴한다.
+ **/
 struct cpumask *tick_get_broadcast_oneshot_mask(void)
 {
 	return to_cpumask(tick_broadcast_oneshot_mask);
 }
 
+/** 20141129    
+ * tick_broadcast_device의 mode를 ONESHOT으로 하고 program 한다.
+ **/
 static int tick_broadcast_set_event(ktime_t expires, int force)
 {
 	struct clock_event_device *bc = tick_broadcast_device.evtdev;
@@ -517,17 +565,28 @@ void tick_broadcast_oneshot_control(unsigned long reason)
  *
  * Called with tick_broadcast_lock held
  */
+/** 20141129    
+ * cpu를 broadcast_oneshot mask에서 지운다.
+ **/
 static void tick_broadcast_clear_oneshot(int cpu)
 {
 	cpumask_clear_cpu(cpu, tick_get_broadcast_oneshot_mask());
 }
 
+/** 20141129    
+ * broadcast mask되어 있는 각 cpu를 순회하며
+ * clock_event_device가 등록되어 있는 경우 next_event(tick_next_period)를 설정한다.
+ **/
 static void tick_broadcast_init_next_event(struct cpumask *mask,
 					   ktime_t expires)
 {
 	struct tick_device *td;
 	int cpu;
 
+	/** 20141129    
+	 * mask에 속하는 각 cpu의 tick_cpu_device에 접근하여
+	 * clock_event_device가 존재한다면 expires를 다음 이벤트 발생시간으로 설정한다.
+	 **/
 	for_each_cpu(cpu, mask) {
 		td = &per_cpu(tick_cpu_device, cpu);
 		if (td->evtdev)
@@ -538,17 +597,27 @@ static void tick_broadcast_init_next_event(struct cpumask *mask,
 /**
  * tick_broadcast_setup_oneshot - setup the broadcast device
  */
+/** 20141129    
+ * tick broadcast device를 oneshot 방식으로 설정한다.
+ **/
 void tick_broadcast_setup_oneshot(struct clock_event_device *bc)
 {
 	int cpu = smp_processor_id();
 
 	/* Set it up only once ! */
+	/** 20141129    
+	 * 현재 event_handler가 tick_handle_oneshot_broadcast가 아니라면
+	 * event_handler를 tick_handle_oneshot_broadcast로 설정한다.
+	 **/
 	if (bc->event_handler != tick_handle_oneshot_broadcast) {
 		int was_periodic = bc->mode == CLOCK_EVT_MODE_PERIODIC;
 
 		bc->event_handler = tick_handle_oneshot_broadcast;
 
 		/* Take the do_timer update */
+		/** 20141129    
+		 * 현재 코드를 수행하는 cpu가 do_timer를 수행하는 cpu이다.
+		 **/
 		tick_do_timer_cpu = cpu;
 
 		/*
@@ -557,12 +626,23 @@ void tick_broadcast_setup_oneshot(struct clock_event_device *bc)
 		 * oneshot_mask bits for those and program the
 		 * broadcast device to fire.
 		 */
+		/** 20141129    
+		 * tick broadcast mask를 tmpmask로 복사해 와서 현재 cpu는 제거한다.
+		 * tick broadcast oneshot 마스크에 tick broadcast 마스크를 or한다.
+		 **/
 		cpumask_copy(to_cpumask(tmpmask), tick_get_broadcast_mask());
 		cpumask_clear_cpu(cpu, to_cpumask(tmpmask));
 		cpumask_or(tick_get_broadcast_oneshot_mask(),
 			   tick_get_broadcast_oneshot_mask(),
 			   to_cpumask(tmpmask));
 
+		/** 20141129    
+		 * tick이 periodic이었고, tick broadcast mask가 현재 cpu를 제외했을 때
+		 * 비어있지 않았다면
+		 *   clock_event_device의 mode를 ONESHOT 모드로 설정하고,
+		 *   다음 event가 tick_next_period가 되도록 한다.
+		 *   (tick_cpu_device와 tick_broadcast_device 모두.)
+		 **/
 		if (was_periodic && !cpumask_empty(to_cpumask(tmpmask))) {
 			clockevents_set_mode(bc, CLOCK_EVT_MODE_ONESHOT);
 			tick_broadcast_init_next_event(to_cpumask(tmpmask),
@@ -578,6 +658,10 @@ void tick_broadcast_setup_oneshot(struct clock_event_device *bc)
 		 * would prevent the first broadcast enter after this
 		 * to program the bc device.
 		 */
+		/** 20141129    
+		 * 첫번째 수행에서 각 cpu의 device에 대한 설정까지 되었으므로
+		 * 이후 호출시에는 broadcast oneshot mask에서 지운다.
+		 **/
 		tick_broadcast_clear_oneshot(cpu);
 	}
 }
@@ -592,6 +676,10 @@ void tick_broadcast_switch_to_oneshot(void)
 
 	raw_spin_lock_irqsave(&tick_broadcast_lock, flags);
 
+	/** 20141129    
+	 * tick broadcast device의 mode를 ONESHOT으로 변경하고,
+	 * clock_event_device가 등록되어 있다면 tick broadcast를 oneshot으로 설정한다.
+	 **/
 	tick_broadcast_device.mode = TICKDEV_MODE_ONESHOT;
 	bc = tick_broadcast_device.evtdev;
 	if (bc)

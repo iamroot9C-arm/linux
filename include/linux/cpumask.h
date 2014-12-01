@@ -402,6 +402,9 @@ static inline int cpumask_and(struct cpumask *dstp,
  * @src1p: the first input
  * @src2p: the second input
  */
+/** 20141129    
+ * 두 개의 cpumask를 or해 새로운 cpumask로 만들어 리턴한다.
+ **/
 static inline void cpumask_or(struct cpumask *dstp, const struct cpumask *src1p,
 			      const struct cpumask *src2p)
 {

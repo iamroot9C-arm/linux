@@ -38,6 +38,9 @@ ktime_t tick_next_period;
  * tick_setup_device() 에서 HZ주기로 동작하도록 설정한다.
  **/
 ktime_t tick_period;
+/** 20141129    
+ * do_timer를 수행하는 cpu를 저장하는 전역변수.
+ **/
 int tick_do_timer_cpu __read_mostly = TICK_DO_TIMER_BOOT;
 static DEFINE_RAW_SPINLOCK(tick_device_lock);
 
@@ -129,6 +132,10 @@ void tick_handle_periodic(struct clock_event_device *dev)
 /*
  * Setup the device for a periodic tick
  */
+/** 20141129    
+ *
+ * vexpress의 경우 sp804, twd 모두 broadcast 0으로 호출된다.
+ **/
 void tick_setup_periodic(struct clock_event_device *dev, int broadcast)
 {
 	/** 20141002
@@ -197,7 +204,7 @@ static void tick_setup_device(struct tick_device *td,
 		 * this cpu:
 		 */
 		/** 20141002
-		 * 현재 tick_do_timer_cpu로 지정된 cpu가 없다면
+		 * 현재 tick_do_timer_cpu로 지정된 cpu가 없다면 (BOOT 초기값)
 		 * 전달받은 cpu를 새로운 do_timer를 수행하는 cpu로 지정한다.
 		 *
 		 * tick_period는 HZ주기로 동작하도록 설정한다.
@@ -251,7 +258,8 @@ static void tick_setup_device(struct tick_device *td,
 	 * way.
 	 */
     /** 20141122    
-     * 20141129 여기부터
+	 * newdev가 dummy라면 cpu를 broadcast에 의한 handle 대상으로 등록하고,
+	 * 그렇지 않다면 broadcast mask에서 제거한다.
      **/
 	if (tick_device_uses_broadcast(newdev, cpu))
 		return;
@@ -270,9 +278,10 @@ static void tick_setup_device(struct tick_device *td,
  * Check, if the new registered device should be used.
  */
 /** 20141122    
- *
  * clockevents_register_device에서 전역리스트에 새로운 clock device를 등록하고
  * CLOCK_EVT_NOTIFY_ADD notify를 날리면 이 notify handler가 호출된다.
+ *
+ * 성공적으로 등록한 경우 NOTIFY_STOP이 리턴된다. 
  **/
 static int tick_check_new_device(struct clock_event_device *newdev)
 {
@@ -284,7 +293,7 @@ static int tick_check_new_device(struct clock_event_device *newdev)
 	raw_spin_lock_irqsave(&tick_device_lock, flags);
 
 	/** 20141002
-	 * 현재 cpu를 가져와 cpumask에 포함되어 있지 않다면 out_bc로 이동.
+	 * 현재 cpu가 새로운 device의 cpumask에 포함되어 있지 않다면 out_bc로 이동.
 	 **/
 	cpu = smp_processor_id();
 	if (!cpumask_test_cpu(cpu, newdev->cpumask))
@@ -371,14 +380,16 @@ static int tick_check_new_device(struct clock_event_device *newdev)
 	clockevents_exchange_device(curdev, newdev);
     /** 20141122    
      * tick device에 새로운 clock_event_device를 등록한다.
-     * 새로 등록된 clock event device가 ONESHOT 속성이 있으면
-     * oneshot notify를 준다.
+     * 새 clock_event_device에 ONESHOT 속성이 있으면 oneshot notify를 준다.
      **/
 	tick_setup_device(td, newdev, cpu, cpumask_of(cpu));
 	if (newdev->features & CLOCK_EVT_FEAT_ONESHOT)
 		tick_oneshot_notify();
 
 	raw_spin_unlock_irqrestore(&tick_device_lock, flags);
+	/** 20141129    
+	 * 정상적으로 tick device에 새로운 clock_event_device를 등록했다면 벗어난다.
+	 **/
 	return NOTIFY_STOP;
 
 out_bc:

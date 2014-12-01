@@ -61,6 +61,7 @@ union ktime {
 };
 
 /** 20140419    
+ * 시간
  **/
 typedef union ktime ktime_t;		/* Kill this */
 

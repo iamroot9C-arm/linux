@@ -216,6 +216,10 @@ static int clockevents_program_min_delta(struct clock_event_device *dev)
  *
  * Returns 0 on success, -ETIME when the event is in the past.
  */
+/** 20141129    
+ * clock_event_device에 expires를 next_event로 설정한다.
+ * 자세한 분석은 생략???
+ **/
 int clockevents_program_event(struct clock_event_device *dev, ktime_t expires,
 			      bool force)
 {
