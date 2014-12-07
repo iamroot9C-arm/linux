@@ -123,10 +123,10 @@ static void tick_do_update_jiffies64(ktime_t now)
  * Initialize and return retrieve the jiffies update.
  */
 /** 20141108    
- * tick emulation을 하기 위해 tick을 초기화 또는 jiffies update 시간을 리턴한다.
+ * tick emulation을 하기 위해 jiffies update 값을 리턴한다.
+ * jiffies가 아직 update되지 않았다면 다음 period를 더한 값으로 초기화 한다.
  *
- * last_jiffies_update가 초기화되지 않은 상태라면 tick_next_period로 초기화.
- * (ktime_get으로 현재 ktime_t 값을 가진다)
+ * ktime_get으로 현재 ktime_t 값을 가진다.
  **/
 static ktime_t tick_init_jiffy_update(void)
 {
@@ -702,6 +702,12 @@ static int tick_nohz_reprogram(struct tick_sched *ts, ktime_t now)
 /*
  * The nohz low res interrupt handler
  */
+/** 20141206    
+ * nohz timer interrupt handler for low res.
+ *
+ * high res를 위한 handler는 hrtimer_interrupt이다.
+ * 두 핸들러 함수는 추후분석???
+ **/
 static void tick_nohz_handler(struct clock_event_device *dev)
 {
 	struct tick_sched *ts = &__get_cpu_var(tick_cpu_sched);
@@ -750,30 +756,58 @@ static void tick_nohz_handler(struct clock_event_device *dev)
 /**
  * tick_nohz_switch_to_nohz - switch to nohz mode
  */
+/** 20141206    
+ * tick NOHZ로 설정되어 있을 때, sched_timer를 no_hz로 동작시킨다.
+ *
+ * oneshot notify가 왔을 때 hres config가 되어 있지 않을 때 실행된다.
+ **/
 static void tick_nohz_switch_to_nohz(void)
 {
 	struct tick_sched *ts = &__get_cpu_var(tick_cpu_sched);
 	ktime_t next;
 
+	/** 20141206    
+	 * CONFIG_NO_HZ인 경우 tick_nohz_enabled의 default가 1이므로 if는 거짓이 된다.
+	 **/
 	if (!tick_nohz_enabled)
 		return;
 
 	local_irq_disable();
+	/** 20141206    
+	 * tick을 oneshot mode로 동작시킨다.
+	 * event handler함수를 tick_nohz_handler로 지정한다.
+	 *
+	 * tick_init_highres에서는 hrtimer_interrupt를 event_handler로 지정한다.
+	 **/
 	if (tick_switch_to_oneshot(tick_nohz_handler)) {
 		local_irq_enable();
 		return;
 	}
 
+	/** 20141206    
+	 * hres는 설정되어 있지 않아 tick_sched의 nohz_mode는 NOHZ_MODE_LOWRES이다.
+	 **/
 	ts->nohz_mode = NOHZ_MODE_LOWRES;
 
 	/*
 	 * Recycle the hrtimer in ts, so we can share the
 	 * hrtimer_forward with the highres code.
 	 */
+	/** 20141206    
+	 * sched tick으로 사용할 hrtimer를 초기화 한다.
+	 **/
 	hrtimer_init(&ts->sched_timer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS);
 	/* Get the next period */
+	/** 20141206    
+	 * nohz로 동작시킬 때 아직 jiffy가 update되지 않았다면,
+	 * next period 값이 리턴될 것이다.
+	 **/
 	next = tick_init_jiffy_update();
 
+	/** 20141206    
+	 * sched_timer의 expire 시간을 next로 설정하고, program 시킨다.
+	 * program이 실패하면, next는 tick_period만큼 증가되어 다시 시도한다.
+	 **/
 	for (;;) {
 		hrtimer_set_expires(&ts->sched_timer, next);
 		if (!tick_program_event(next, 0))
@@ -1050,14 +1084,15 @@ void tick_oneshot_notify(void)
  * or runtime).
  */
 /** 20141115    
- * oneshot change
+ * oneshot change가 필요한지 검사한다.
  **/
 int tick_check_oneshot_change(int allow_nohz)
 {
 	struct tick_sched *ts = &__get_cpu_var(tick_cpu_sched);
 
 	/** 20141115    
-	 * tick_oneshot_notify()이 호출되면 clock event가 변경되었음을 확인한다.
+	 * tick_oneshot_notify()이 호출되면 clock event가 변경되고,
+	 * test가 참이 되어 리턴되지 않고 아래가 실행된다.
 	 **/
 	if (!test_and_clear_bit(0, &ts->check_clocks))
 		return 0;
@@ -1072,13 +1107,16 @@ int tick_check_oneshot_change(int allow_nohz)
 		return 0;
 
 	/** 20141115    
+	 * !hrtimer_is_hres_enabled()가 allow_nohz로 넘어온다.
+	 * 따라서 hres enabled라면 1이 리턴된다.
 	 **/
 	if (!allow_nohz)
 		return 1;
 
 	/** 20141115    
-	 * hrtimer_run_pending에서 들어온 경우 allow_nohz는 false이므로
-	 * 실행되지 않는다.
+	 * CONFIG_HIGH_RES_TIMERS이 설정되어 있다면
+	 * hrtimer_run_pending에서 allow_nohz는 false이므로 위에서 리턴된다.
+	 * 그렇지 않다면 nohz low res로 등작한다.
 	 **/
 	tick_nohz_switch_to_nohz();
 	return 0;

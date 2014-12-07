@@ -27,6 +27,12 @@ struct tick_device {
 };
 
 /** 20141115    
+ * NOHZ와 HIGH_RES_TIMERS는 의존성이 없으므로
+ * NOHZ mode의 속성은 아래 세 가지로 나뉜다.
+ *
+ * TICK_ONESHOT
+ *   NOHZ
+ *   HIGH_RES_TIMERS
  **/
 enum tick_nohz_mode {
 	NOHZ_MODE_INACTIVE,

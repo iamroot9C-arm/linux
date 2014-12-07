@@ -1294,7 +1294,7 @@ static void call_timer_fn(struct timer_list *timer, void (*fn)(unsigned long),
  */
 /** 20140920    
  * 20141101    
- * 현재 CPU에서 만료된 timer들을 실행한다.
+ * 현재 CPU에서 만료된 timer들을 실행한다. (실행 context는 softirq)
  *
  * 현재 jiffies가 timer_jiffies보다 크다면 그 사이의 timer들은 만료된 것이므로
  * 하나씩 가져와 실행시키고 list에서 제거한다.
@@ -1647,11 +1647,14 @@ static void run_timer_softirq(struct softirq_action *h)
 	 **/
 	struct tvec_base *base = __this_cpu_read(tvec_bases);
 
+	/** 20141206    
+	 * hrtimer 동작이 pending되어 있다면 실행시킨다.
+	 **/
 	hrtimer_run_pending();
 
 	/** 20140920    
 	 * 현재 jiffies가 base의 timer_jiffies 이상인 경우
-	 * __run_timers로 timer를 동작시킨다.
+	 * __run_timers로 timer를 제거하고 handler 함수를 실행시킨다.
 	 **/
 	if (time_after_eq(jiffies, base->timer_jiffies))
 		__run_timers(base);

@@ -1533,6 +1533,11 @@ static void __run_hrtimer(struct hrtimer *timer, ktime_t *now)
  * High resolution timer interrupt
  * Called with interrupts disabled
  */
+/** 20141206    
+ *
+ * tick_init_highres에서 tick_device의 event_handler로 지정.
+ * hrtimer_peek_ahead_timers를 통해 들어오는 경우.
+ **/
 void hrtimer_interrupt(struct clock_event_device *dev)
 {
 	struct hrtimer_cpu_base *cpu_base = &__get_cpu_var(hrtimer_bases);
@@ -1720,7 +1725,13 @@ static inline void __hrtimer_peek_ahead_timers(void) { }
  */
 /** 20140920    
  * vexpress의 경우 high resolution timer가 config되어 있지 않다.
- * 추후 분석???
+ *
+ * 20141206
+ * hrtimer로 동작한다면 highres 또는 nohz로 동작시켜야 하는지 판단해
+ * 각각 함수를 호출한다.
+ *
+ * softirq conext 내에서 조건을 판단해 sched_timer를 만들어
+ * mode change를 하는 것이 바람직한 구조는 아니다.
  **/
 void hrtimer_run_pending(void)
 {
@@ -1739,9 +1750,12 @@ void hrtimer_run_pending(void)
 	 * deadlock vs. xtime_lock.
 	 */
 	/** 20141101    
-	 * 20141206 여기부터...
+	 * TICK이 oneshot으로 동작해야 하는지 체크해 그렇다면 hres로 동작시킨다.
 	 *
-	 * hrtimer_is_hres_enabled()는 HIGH_RES_TIMERS 설정된 경우 default로 1.
+	 * HIGH_RES_TIMERS이 설정되어 있다면 hrtimer_is_hres_enabled()는 1이 된다.
+	 * NO_HZ만 설정되어 있다면 tick_check_oneshot_change 내에서
+	 * tick_nohz_switch_to_nohz가 호출되고,
+	 * hrtimer_switch_to_hres는 호출되지 않는다.
 	 **/
 	if (tick_check_oneshot_change(!hrtimer_is_hres_enabled()))
 		hrtimer_switch_to_hres();
