@@ -58,6 +58,9 @@ static struct map_desc v2m_io_desc[] __initdata = {
 
 static void __iomem *v2m_sysreg_base;
 
+/** 20141213
+ * base주소를 읽어와서 base로부터의 offset에 해당하는 register를 초기화한다.
+ **/
 static void __init v2m_sysctl_init(void __iomem *base)
 {
 	u32 scctrl;
@@ -410,6 +413,14 @@ static const char *v2m_osc2_periphs[] __initconst = {
 	"mb:uart3", "1000c000.uart", "1c0c0000.uart",	/* PL011 UART3 */
 };
 
+/** 20141213
+ * v2m의 clock device를 clk구조체를 clock framework에 등록한다. 
+ * **/
+
+/** 20141220
+ * 여기서 부터 ...
+ * **/
+
 static void __init v2m_clk_init(void)
 {
 	struct clk *clk;
@@ -441,6 +452,7 @@ static void __init v2m_clk_init(void)
 
 static void __init v2m_timer_init(void)
 {
+
 	v2m_sysctl_init(ioremap(V2M_SYSCTL, SZ_4K));
 	v2m_clk_init();
 	v2m_sp804_init(ioremap(V2M_TIMER01, SZ_4K), IRQ_V2M_TIMER0);

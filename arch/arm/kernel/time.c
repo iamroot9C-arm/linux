@@ -110,6 +110,9 @@ void timer_tick(void)
 }
 #endif
 
+/** 20141213
+ * timespec자료구조를 초기화 한다. 
+ * **/
 static void dummy_clock_access(struct timespec *ts)
 {
 	ts->tv_sec = 0;
@@ -119,11 +122,16 @@ static void dummy_clock_access(struct timespec *ts)
 static clock_access_fn __read_persistent_clock = dummy_clock_access;
 static clock_access_fn __read_boot_clock = dummy_clock_access;;
 
+/** 20141213
+ * 초기화한 timespec자료구조를 읽어온다.
+ * **/
 void read_persistent_clock(struct timespec *ts)
 {
 	__read_persistent_clock(ts);
 }
-
+/** 20141213
+ * 초기화한 timespec자료구조를 읽어온다.
+ * **/
 void read_boot_clock(struct timespec *ts)
 {
 	__read_boot_clock(ts);

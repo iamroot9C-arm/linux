@@ -122,6 +122,10 @@ struct clk_ops {
  * @num_parents: number of possible parents
  * @flags: framework-level hints and quirks
  */
+/** 20141213
+ * clock freamwork와 clk_hw사이에서 공유되는 데이터 
+ * **/
+
 struct clk_init_data {
 	const char		*name;
 	const struct clk_ops	*ops;

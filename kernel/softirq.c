@@ -938,6 +938,11 @@ static struct notifier_block __cpuinitdata remote_softirq_cpu_notifier = {
 	.notifier_call	= remote_softirq_cpu_notify,
 };
 
+
+/** 20141213
+ * 각 cpu에 대해 softirq자료구조를 초기화 한다.
+ **/
+
 void __init softirq_init(void)
 {
 	int cpu;

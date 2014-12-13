@@ -346,6 +346,9 @@ EXPORT_SYMBOL(mktime);
  *	0 <= tv_nsec < NSEC_PER_SEC
  * For negative values only the tv_sec field is negative !
  */
+/** 20141213
+ * timespec자료구조에 맞게 normalize하여 sec과 nsec을 설정한다.
+ **/
 void set_normalized_timespec(struct timespec *ts, time_t sec, s64 nsec)
 {
 	while (nsec >= NSEC_PER_SEC) {

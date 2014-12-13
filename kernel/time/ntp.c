@@ -42,6 +42,10 @@ static u64			tick_length_base;
  * phase-lock loop variables
  */
 
+/** 20141213
+ * 시간 동기화에 사용되는 각종 변수
+ **/
+
 /*
  * clock synchronization status
  *
@@ -253,10 +257,15 @@ static inline int ntp_synced(void)
  * Update (tick_length, tick_length_base, tick_nsec), based
  * on (tick_usec, ntp_tick_adj, time_freq):
  */
+/** 20141213
+ * NTP에 사용되는 변수들을 갱신한다.
+ **/
+
 static void ntp_update_frequency(void)
 {
 	u64 second_length;
 	u64 new_base;
+
 
 	second_length		 = (u64)(tick_usec * NSEC_PER_USEC * USER_HZ)
 						<< NTP_SCALE_SHIFT;
@@ -343,23 +352,36 @@ static void ntp_update_offset(long offset)
 /**
  * ntp_clear - Clears the NTP state variables
  */
+/** 20141213
+ * NTP state 관련 변수를 초기화 한다.
+ **/
+
 void ntp_clear(void)
 {
 	unsigned long flags;
 
 	spin_lock_irqsave(&ntp_lock, flags);
 
+	/** 20141213
+	 * ntp 동기화를 위해 시간 동기화 변수를 초기화 
+	 **/
 	time_adjust	= 0;		/* stop active adjtime() */
 	time_status	|= STA_UNSYNC;
 	time_maxerror	= NTP_PHASE_LIMIT;
 	time_esterror	= NTP_PHASE_LIMIT;
 
+	/** 20141213
+	 * NTP초기화를 위해 각종 변수들을 갱신한다.
+	 **/
 	ntp_update_frequency();
 
 	tick_length	= tick_length_base;
 	time_offset	= 0;
 
 	/* Clear PPS state variables */
+	/** 20141213
+	 * CONFIG_NTP_PPS가 정의되어 있지 않아 NULL함수
+	 * **/
 	pps_clear();
 	spin_unlock_irqrestore(&ntp_lock, flags);
 
@@ -961,6 +983,9 @@ static int __init ntp_tick_adj_setup(char *str)
 
 __setup("ntp_tick_adj=", ntp_tick_adj_setup);
 
+/** 20141213
+ * ntp관련 변수를 초기화 한다.
+ **/
 void __init ntp_init(void)
 {
 	ntp_clear();

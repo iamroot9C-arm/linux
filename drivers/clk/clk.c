@@ -1188,6 +1188,7 @@ EXPORT_SYMBOL_GPL(clk_set_parent);
  * Initializes the lists in struct clk, queries the hardware for the
  * parent and rate and sets them both.
  */
+
 int __clk_init(struct device *dev, struct clk *clk)
 {
 	int i, ret = 0;
@@ -1335,6 +1336,10 @@ out:
  * separate C file from the logic that implements it's operations.  Returns 0
  * on success, otherwise an error code.
  */
+/** 20141213
+ * clock hardware를 clk구조체에 등록시킨다.(clk->hw = hw)
+ **/
+
 struct clk *__clk_register(struct device *dev, struct clk_hw *hw)
 {
 	int ret;
@@ -1372,6 +1377,10 @@ struct clk *clk_register(struct device *dev, struct clk_hw *hw)
 	int i, ret;
 	struct clk *clk;
 
+	/** 20141213
+	 * clk구조체를 할당하고 clk_hw로 부터 참조한 데이터를 clk구조체에 적용한다.
+	 * clk->hw에 clock hardware를 등록시킨다.
+	 **/
 	clk = kzalloc(sizeof(*clk), GFP_KERNEL);
 	if (!clk) {
 		pr_err("%s: could not allocate clk\n", __func__);
@@ -1413,6 +1422,9 @@ struct clk *clk_register(struct device *dev, struct clk_hw *hw)
 		}
 	}
 
+	/** 20141213
+	 * clk구조체를 초기화한다.
+	 **/	
 	ret = __clk_init(dev, clk);
 	if (!ret)
 		return clk;

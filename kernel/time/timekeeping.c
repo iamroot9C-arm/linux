@@ -105,6 +105,9 @@ static struct timespec tk_xtime(struct timekeeper *tk)
 	return ts;
 }
 
+/** 20141213
+ * timekeeper의 xtime을 초기화
+ * **/
 static void tk_set_xtime(struct timekeeper *tk, const struct timespec *ts)
 {
 	tk->xtime_sec = ts->tv_sec;
@@ -127,6 +130,10 @@ static void tk_xtime_add(struct timekeeper *tk, const struct timespec *ts)
  *
  * Unless you're the timekeeping code, you should not be using this!
  */
+/** 20141213	
+ * clocksource clock을 사용해서 timekeeper변수를 세팅
+ **/
+
 static void tk_setup_internals(struct timekeeper *tk, struct clocksource *clock)
 {
 	cycle_t interval;
@@ -620,33 +627,64 @@ void __attribute__((weak)) read_boot_clock(struct timespec *ts)
 /*
  * timekeeping_init - Initializes the clocksource and common timekeeping values
  */
+/** 20141213
+ * timekeeper관련 변수들을 초기화한다.
+ **/
+
 void __init timekeeping_init(void)
 {
 	struct clocksource *clock;
 	unsigned long flags;
 	struct timespec now, boot;
 
+	/** 20141213
+	 * timespec구조체 now,boot를 읽어온다.
+	 * **/
 	read_persistent_clock(&now);
 	read_boot_clock(&boot);
 
+	/** 20141213
+	 * timekeeper자료구조를 변경하기 위해 sequence lock을 적용한다.
+	 **/
 	seqlock_init(&timekeeper.lock);
 
+	/** 20141213
+	 * ntp 관련 변수 초기화
+	 ***/
 	ntp_init();
 
 	write_seqlock_irqsave(&timekeeper.lock, flags);
+	/** 20141213
+	 * clocksource_jiffies를 default clock으로 가져온다.
+	 **/
 	clock = clocksource_default_clock();
+	/** 20141213
+	 * Clocksource에 enable 멤버가 없으므로 pass
+	 **/
 	if (clock->enable)
 		clock->enable(clock);
+	/** 20141213
+	 * default clock 관련 변수를 이용해서 timekeeper에 적용
+	 * **/
 	tk_setup_internals(&timekeeper, clock);
 
+	/** 20141213
+	 * timespec구조체 now를 이용하여 timekeeper에 적용
+	 **/	
 	tk_set_xtime(&timekeeper, &now);
 	timekeeper.raw_time.tv_sec = 0;
 	timekeeper.raw_time.tv_nsec = 0;
 	if (boot.tv_sec == 0 && boot.tv_nsec == 0)
 		boot = tk_xtime(&timekeeper);
 
+	/** 20141213
+	 * nomailize된 xtime과 monotonic값의 차이를 구하고 tv_sec과 tv_nsec을 wall_to_monotonic값으로 설정한다.
+	 **/
 	set_normalized_timespec(&timekeeper.wall_to_monotonic,
 				-boot.tv_sec, -boot.tv_nsec);
+	/** 20141213
+	 * timekeeper와 realtime과의 차이 값을 구한다.
+	 **/
 	update_rt_offset(&timekeeper);
 	timekeeper.total_sleep_time.tv_sec = 0;
 	timekeeper.total_sleep_time.tv_nsec = 0;

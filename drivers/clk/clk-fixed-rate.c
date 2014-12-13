@@ -47,6 +47,24 @@ EXPORT_SYMBOL_GPL(clk_fixed_rate_ops);
  * @flags: framework-specific flags
  * @fixed_rate: non-adjustable clock rate
  */
+
+/** 20141213
+ *
+	struct clk_fixed_rate
+	+-------------------+
+	|	struct clk_hw	|	
+	|	+-----------+ <=====|	 struct clk
+	|	|	(*)-----+----------->+-------+
+	|	|			|	|	|	 |		 |
+	|	|	(*)		|	|	|====|=(*)	 |
+	|	+-----------+	|		 +-------+
+	|					|
+	+-------------------+
+
+ clk_fixed_rate 구조체를 할당하고 clock_init_data 초기화해서, 
+ fixed->hw에 clk를 등록하고 리턴한다.
+ **/
+
 struct clk *clk_register_fixed_rate(struct device *dev, const char *name,
 		const char *parent_name, unsigned long flags,
 		unsigned long fixed_rate)

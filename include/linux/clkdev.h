@@ -17,6 +17,9 @@
 struct clk;
 struct device;
 
+/** 20141213
+ * clk_lookup노드 구조체
+ **/
 struct clk_lookup {
 	struct list_head	node;
 	const char		*dev_id;

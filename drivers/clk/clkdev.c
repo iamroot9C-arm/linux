@@ -216,6 +216,10 @@ void devm_clk_put(struct device *dev, struct clk *clk)
 }
 EXPORT_SYMBOL(devm_clk_put);
 
+
+/** 20141213
+ * clocks리스트에 clk_lookup구조체인 cl을 리스트로 추가한다.
+ **/
 void clkdev_add(struct clk_lookup *cl)
 {
 	mutex_lock(&clocks_mutex);
@@ -243,6 +247,9 @@ struct clk_lookup_alloc {
 	char	con_id[MAX_CON_ID];
 };
 
+/** 20141213
+ * clk_lookup 구조체를 할당하고 멤버를 clk, con_id, dev_fmt로 초기화 한 후 리턴한다. 
+ **/
 static struct clk_lookup * __init_refok
 vclkdev_alloc(struct clk *clk, const char *con_id, const char *dev_fmt,
 	va_list ap)
@@ -325,6 +332,9 @@ EXPORT_SYMBOL(clkdev_drop);
  * those.  This is to permit this function to be called immediately
  * after clk_register().
  */
+/** 20141213
+ * clock참조를 위해 clk구조체를 clkdev리스트에 추가한다.
+ **/
 int clk_register_clkdev(struct clk *clk, const char *con_id,
 	const char *dev_fmt, ...)
 {
