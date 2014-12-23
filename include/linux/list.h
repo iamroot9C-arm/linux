@@ -819,6 +819,14 @@ static inline void hlist_move_list(struct hlist_head *old,
  * @head:	the head for your list.
  * @member:	the name of the hlist_node within the struct.
  */
+/** 20141220    
+ * hlist에서 연결된 entry를 순회하는 매크로.
+ *
+ *  tpos : cursor용 변수.
+ *  pos  : loop를 위해 사용하는 임시 변수.
+ *  head : list head
+ *  member : 구조체에서 hlist 연결을 위해 사용된 hlist_node 멤버변수 이름
+ **/
 #define hlist_for_each_entry(tpos, pos, head, member)			 \
 	for (pos = (head)->first;					 \
 	     pos &&							 \

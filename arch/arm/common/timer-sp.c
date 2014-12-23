@@ -35,6 +35,10 @@ static long __init sp804_get_clock_rate(const char *name)
 	long rate;
 	int err;
 
+	/** 20141220    
+	 * dev_id : sp804
+	 * con_id : name (v2m-timer0)
+	 **/
 	clk = clk_get_sys("sp804", name);
 	if (IS_ERR(clk)) {
 		pr_err("sp804: %s clock not found: %d\n", name,
@@ -184,6 +188,10 @@ static struct irqaction sp804_timer_irq = {
 	.dev_id		= &sp804_clockevent,
 };
 
+/** 20141220    
+ * sp804_clockevents_init(base + TIMER_1_BASE, irq, "v2m-timer0");
+ *   name == con_id ==> v2m-timer0
+ **/
 void __init sp804_clockevents_init(void __iomem *base, unsigned int irq,
 	const char *name)
 {

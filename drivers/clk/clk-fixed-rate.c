@@ -28,12 +28,19 @@
 
 #define to_clk_fixed_rate(_hw) container_of(_hw, struct clk_fixed_rate, hw)
 
+/** 20141220    
+ * clk_hw 구조체를 받아 struct clk_fixed_rate가 가지고 있는 
+ * fixed_rate를 리턴한다.
+ **/
 static unsigned long clk_fixed_rate_recalc_rate(struct clk_hw *hw,
 		unsigned long parent_rate)
 {
 	return to_clk_fixed_rate(hw)->fixed_rate;
 }
 
+/** 20141220    
+ * fixed rate ops.
+ **/
 const struct clk_ops clk_fixed_rate_ops = {
 	.recalc_rate = clk_fixed_rate_recalc_rate,
 };
@@ -52,19 +59,19 @@ EXPORT_SYMBOL_GPL(clk_fixed_rate_ops);
  *
 	struct clk_fixed_rate
 	+-------------------+
-	|	struct clk_hw	|	
+	|	 - struct clk_hw|	
 	|	+-----------+ <=====|	 struct clk
 	|	|	(*)-----+----------->+-------+
 	|	|			|	|	|	 |		 |
 	|	|	(*)		|	|	|====|=(*)	 |
 	|	+-----------+	|		 +-------+
-	|					|
+	|	 - fixed_rate	|
+	|	 - flag         |
 	+-------------------+
 
- clk_fixed_rate 구조체를 할당하고 clock_init_data 초기화해서, 
- fixed->hw에 clk를 등록하고 리턴한다.
+ 1. clk_fixed_rate 구조체를 할당하고 clock_init_data 초기화한다.
+ 2. clk hierarchy에 clk을 등록하고, fixed->hw에 clk 지정하고 리턴한다.
  **/
-
 struct clk *clk_register_fixed_rate(struct device *dev, const char *name,
 		const char *parent_name, unsigned long flags,
 		unsigned long fixed_rate)
@@ -74,6 +81,9 @@ struct clk *clk_register_fixed_rate(struct device *dev, const char *name,
 	struct clk_init_data init;
 
 	/* allocate fixed-rate clock */
+	/** 20141220    
+	 * clk_fixed_rate 구조체 할당
+	 **/
 	fixed = kzalloc(sizeof(struct clk_fixed_rate), GFP_KERNEL);
 	if (!fixed) {
 		pr_err("%s: could not allocate fixed clk\n", __func__);
@@ -82,6 +92,9 @@ struct clk *clk_register_fixed_rate(struct device *dev, const char *name,
 
 	init.name = name;
 	init.ops = &clk_fixed_rate_ops;
+	/** 20141220    
+	 * CLK flags에 BASIC 속성을 부여한다.
+	 **/
 	init.flags = flags | CLK_IS_BASIC;
 	init.parent_names = (parent_name ? &parent_name: NULL);
 	init.num_parents = (parent_name ? 1 : 0);
@@ -91,6 +104,9 @@ struct clk *clk_register_fixed_rate(struct device *dev, const char *name,
 	fixed->hw.init = &init;
 
 	/* register the clock */
+	/** 20141220    
+	 * fixed->hw 정보로 clk을 초기화하고 등록한다.
+	 **/
 	clk = clk_register(dev, &fixed->hw);
 
 	if (IS_ERR(clk))

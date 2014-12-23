@@ -3971,6 +3971,9 @@ static struct kmem_cache *get_slab(size_t size, gfp_t flags)
 	 * 그렇지 않다면 크기의 지수값을 구해 index로 삼는다.
 	 **/
 	if (size <= 192) {
+		/** 20141220    
+		 * 요청된 크기가 0이라면, ZERO_SIZE_PTR를 리턴해 fault와 구분한다.
+		 **/
 		if (!size)
 			return ZERO_SIZE_PTR;
 
@@ -4001,6 +4004,10 @@ void *__kmalloc(size_t size, gfp_t flags)
 
 	s = get_slab(size, flags);
 
+	/** 20141220    
+	 * get_slab에 의해 리턴된 주소가 ZERO_SIZE_PTR인 경우
+	 * ZERO_SIZE_PTR를 그대로 리턴한다.
+	 **/
 	if (unlikely(ZERO_OR_NULL_PTR(s)))
 		return s;
 

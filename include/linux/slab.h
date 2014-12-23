@@ -88,6 +88,9 @@
  * Both make kfree a no-op.
  */
 /** 20140510    
+ * ZERO_SIZE_PTR는 kmalloc시 0으로 요청한 경우 리턴된다.
+ * 따라서 추후 이 포인터로 접근요청이 들어온 경우, fault와 구분해 처리할 수 있다.
+ *
  * ZERO_SIZE_PTR를 상수값 16을 사용해 zero pointer 임을 나타낸다.
  * 만약 NULL pointer exception 발생시 이 상수값임을 확인하면 잘못된 포인터 접근을 확인할 수 있다.
  **/
@@ -383,6 +386,9 @@ static inline void *kmem_cache_zalloc(struct kmem_cache *k, gfp_t flags)
  * @size: how many bytes of memory are required.
  * @flags: the type of memory to allocate (see kmalloc).
  */
+/** 20141220    
+ * kmalloc으로 할당받은 메모리를 0으로 초기화 한다.
+ **/
 static inline void *kzalloc(size_t size, gfp_t flags)
 {
 	return kmalloc(size, flags | __GFP_ZERO);

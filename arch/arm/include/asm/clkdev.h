@@ -21,6 +21,9 @@
 #define __clk_put(clk)	do { } while (0)
 #endif
 
+/** 20141220    
+ * clk_lookup_alloc 을 위한 할당
+ **/
 static inline struct clk_lookup_alloc *__clkdev_alloc(size_t size)
 {
 	return kzalloc(size, GFP_KERNEL);

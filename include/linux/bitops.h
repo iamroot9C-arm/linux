@@ -3,6 +3,9 @@
 #include <asm/types.h>
 
 #ifdef	__KERNEL__
+/** 20141220    
+ * nr번째 BIT값을 얻어오는 매크로.
+ **/
 #define BIT(nr)			(1UL << (nr))
 /** 20130511 
  *  word내의 Mask 위치를 찾아준다.

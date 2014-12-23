@@ -102,6 +102,13 @@ EXPORT_SYMBOL(of_clk_get_by_name);
  * Then we take the most specific entry - with the following
  * order of precedence: dev+con > dev only > con only.
  */
+/** 20141220    
+ * clkdev를 등록한 전역리스트 clocks에서
+ * dev_id, con_id로 clk_lookup을 검색해 리턴한다.
+ *
+ * 검색 우선순위는
+ * (dev_id match && con_id match) > (dev_id match only) > (con_id match only)
+ **/
 static struct clk_lookup *clk_find(const char *dev_id, const char *con_id)
 {
 	struct clk_lookup *p, *cl = NULL;
@@ -136,6 +143,9 @@ static struct clk_lookup *clk_find(const char *dev_id, const char *con_id)
 	return cl;
 }
 
+/** 20141220    
+ * dev_id, con_id로 clocks에서 clk_lookup을 찾아 연결된 struct clk를 리턴한다.
+ **/
 struct clk *clk_get_sys(const char *dev_id, const char *con_id)
 {
 	struct clk_lookup *cl;
@@ -146,6 +156,9 @@ struct clk *clk_get_sys(const char *dev_id, const char *con_id)
 		cl = NULL;
 	mutex_unlock(&clocks_mutex);
 
+	/** 20141220    
+	 *
+	 **/
 	return cl ? cl->clk : ERR_PTR(-ENOENT);
 }
 EXPORT_SYMBOL(clk_get_sys);
@@ -218,7 +231,7 @@ EXPORT_SYMBOL(devm_clk_put);
 
 
 /** 20141213
- * clocks리스트에 clk_lookup구조체인 cl을 리스트로 추가한다.
+ * 전역리스트 clocks에 clk_lookup구조체인 cl을 추가한다.
  **/
 void clkdev_add(struct clk_lookup *cl)
 {
@@ -248,7 +261,8 @@ struct clk_lookup_alloc {
 };
 
 /** 20141213
- * clk_lookup 구조체를 할당하고 멤버를 clk, con_id, dev_fmt로 초기화 한 후 리턴한다. 
+ * clk_lookup 포함하는 clk_lookup_alloc 구조체를 할당하고,
+ * 내부의 clk_lookup 멤버를 clk, con_id, dev_fmt로 초기화 한 후 리턴한다. 
  **/
 static struct clk_lookup * __init_refok
 vclkdev_alloc(struct clk *clk, const char *con_id, const char *dev_fmt,
@@ -274,6 +288,10 @@ vclkdev_alloc(struct clk *clk, const char *con_id, const char *dev_fmt,
 	return &cla->cl;
 }
 
+/** 20141220    
+ * clkdev lookup용 clk_lookup_alloc을 할당받고,
+ * con_id, dev_fmt으로 내부의 clk_lookup을 초기화 하고 리턴한다.
+ **/
 struct clk_lookup * __init_refok
 clkdev_alloc(struct clk *clk, const char *con_id, const char *dev_fmt, ...)
 {
@@ -334,6 +352,15 @@ EXPORT_SYMBOL(clkdev_drop);
  */
 /** 20141213
  * clock참조를 위해 clk구조체를 clkdev리스트에 추가한다.
+ *
+ * 20141220
+ * 생성된 clk와 con_id, dev_id를 받아
+ * 1. clk_lookup을 할당받고
+ * 2. 전달받은 argument로 채운 뒤,
+ * 3. clocks에 등록한다.
+ *
+ * con_id  : con_id (connection ID)
+ * dev_fmt : dev_id (device ID)
  **/
 int clk_register_clkdev(struct clk *clk, const char *con_id,
 	const char *dev_fmt, ...)
@@ -344,6 +371,9 @@ int clk_register_clkdev(struct clk *clk, const char *con_id,
 	if (IS_ERR(clk))
 		return PTR_ERR(clk);
 
+	/** 20141220    
+	 * con_id, dev_fmt으로 clkdev 정보를 담은 clk_lookup을 할당 및 초기화 한다.
+	 **/
 	va_start(ap, dev_fmt);
 	cl = vclkdev_alloc(clk, con_id, dev_fmt, ap);
 	va_end(ap);
@@ -351,6 +381,9 @@ int clk_register_clkdev(struct clk *clk, const char *con_id,
 	if (!cl)
 		return -ENOMEM;
 
+	/** 20141220    
+	 * 전역 리스트 clocks에 생성한 clk_lookup을 등록한다.
+	 **/
 	clkdev_add(cl);
 
 	return 0;

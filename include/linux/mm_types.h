@@ -155,7 +155,10 @@ struct page {
 				/** 20140607    
 				 * usage count.
 				 *
-				 * get_page에 의해 증가된다.
+				 * 이 페이지가 reference된 횟수를 나타낸다.
+				 * get_pageXXX에 의해 증가된다.
+				 * put_pageXXX에 의해 감소된다.
+				 * page_count에 의해 현재값이 리턴된다.
 				 **/
 				atomic_t _count;		/* Usage count, see below. */
 			};

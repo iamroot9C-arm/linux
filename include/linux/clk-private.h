@@ -25,6 +25,24 @@
 
 #ifdef CONFIG_COMMON_CLK
 
+/** 20141220    
+ * clk에 대한 공통 자료구조.
+ *
+ * name : 클럭 검색시 사용되는 이름.
+ * ops  : 클럭에 대한 추가 검색 삭제에 사용되는 operations.
+ *        등록한 hw의 ops가 지정된다.
+ *
+ * num_parents  : parent의 개수
+ * parent_names : parents가 되는 clk의 이름들.
+ *
+ * parent       : parent가 되는 하나의 clk.
+ * parents      : parent_names에 지정된 parent clk들이 등록된다.
+ *   clk_set_parent 에 의해서 parent 변경이 가능하다.
+ *
+ * => fixed_rate의 경우 하나의 parent_names만 전달된다.
+ *    clk-wm831x.c의 경우 여러 개의 parent가 전달된다.
+ *
+ **/
 struct clk {
 	const char		*name;
 	const struct clk_ops	*ops;
