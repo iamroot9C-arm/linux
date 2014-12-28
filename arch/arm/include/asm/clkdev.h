@@ -17,6 +17,10 @@
 #ifdef CONFIG_HAVE_MACH_CLKDEV
 #include <mach/clkdev.h>
 #else
+/** 20141227    
+ * vexpress는 machine clkdev가 존재하지 않으므로
+ * 별도의 동작을 취하지 않는다.
+ **/
 #define __clk_get(clk)	({ 1; })
 #define __clk_put(clk)	do { } while (0)
 #endif

@@ -25,6 +25,8 @@ cycle_t clocksource_mmio_readl_up(struct clocksource *c)
 	return readl_relaxed(to_mmio_clksrc(c)->reg);
 }
 
+/** 20141227    
+ **/
 cycle_t clocksource_mmio_readl_down(struct clocksource *c)
 {
 	return ~readl_relaxed(to_mmio_clksrc(c)->reg);
@@ -49,6 +51,10 @@ cycle_t clocksource_mmio_readw_down(struct clocksource *c)
  * @bits:	Number of valid bits
  * @read:	One of clocksource_mmio_read*() above
  */
+/** 20141227    
+ * mmio로 mapping된 clocksource에 대한
+ * clocksource 구조체를 설정하고 등록한다.
+ **/
 int __init clocksource_mmio_init(void __iomem *base, const char *name,
 	unsigned long hz, int rating, unsigned bits,
 	cycle_t (*read)(struct clocksource *))
@@ -58,6 +64,10 @@ int __init clocksource_mmio_init(void __iomem *base, const char *name,
 	if (bits > 32 || bits < 16)
 		return -EINVAL;
 
+	/** 20141227    
+	 * clocksource_mmio를 위한 메모리 공간을 할당 받아, 
+	 * 전달받은 매개변수로 설정한다.
+	 **/
 	cs = kzalloc(sizeof(struct clocksource_mmio), GFP_KERNEL);
 	if (!cs)
 		return -ENOMEM;
@@ -69,5 +79,9 @@ int __init clocksource_mmio_init(void __iomem *base, const char *name,
 	cs->clksrc.mask = CLOCKSOURCE_MASK(bits);
 	cs->clksrc.flags = CLOCK_SOURCE_IS_CONTINUOUS;
 
+	/** 20141227    
+	 * 생성한 clocksource 정보와 hz(rate)를 전달해
+	 * clocksource를 rating 순으로 list에 등록한다.
+	 **/
 	return clocksource_register_hz(&cs->clksrc, hz);
 }

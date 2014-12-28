@@ -98,6 +98,11 @@ struct clk_hw;
  * required (eg. from an interrupt). Note that clk_prepare MUST have been
  * called before clk_enable.
  */
+/** 20141227    
+ * hardware clock을 위한 콜백 함수.
+ *
+ * common clock framework API를 통해 호출된다.
+ **/
 struct clk_ops {
 	int		(*prepare)(struct clk_hw *hw);
 	void		(*unprepare)(struct clk_hw *hw);
@@ -126,7 +131,7 @@ struct clk_ops {
  * @flags: framework-level hints and quirks
  */
 /** 20141213
- * clock freamwork와 clk_hw사이에서 공유되는 데이터 
+ * clock framework와 clk_hw사이에서 공유되는 데이터 
  * **/
 
 struct clk_init_data {

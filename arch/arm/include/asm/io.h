@@ -226,6 +226,9 @@ extern void _memset_io(volatile void __iomem *, int, size_t);
  * IO port primitives for more information.
  */
 #ifndef readl
+/** 20141227    
+ * address에 매핑된 레지스터 등에서 값을 little endian으로 읽어 cpu의 endian으로 변환한다.
+ **/
 #define readb_relaxed(c) ({ u8  __r = __raw_readb(c); __r; })
 #define readw_relaxed(c) ({ u16 __r = le16_to_cpu((__force __le16) \
 					__raw_readw(c)); __r; })

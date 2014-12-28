@@ -208,6 +208,10 @@ struct clocksource {
 #define CLOCK_SOURCE_UNSTABLE			0x40
 
 /* simplify initialization of mask field */
+/** 20141227    
+ * bits 값에 따라 clocksource의 mask를 구한다.
+ * bits가 32로 넘어온 경우, (1ULL << 32) - 1
+ **/
 #define CLOCKSOURCE_MASK(bits) (cycle_t)((bits) < 64 ? ((1ULL<<(bits))-1) : -1)
 
 /**
@@ -299,6 +303,9 @@ __clocksource_register_scale(struct clocksource *cs, u32 scale, u32 freq);
 extern void
 __clocksource_updatefreq_scale(struct clocksource *cs, u32 scale, u32 freq);
 
+/** 20141227    
+ * clocksource와 hz를 받아 계산해 등록하고 clocksource를 선택하는 함수.
+ **/
 static inline int clocksource_register_hz(struct clocksource *cs, u32 hz)
 {
 	return __clocksource_register_scale(cs, 1, hz);

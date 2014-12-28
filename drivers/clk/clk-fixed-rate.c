@@ -39,6 +39,8 @@ static unsigned long clk_fixed_rate_recalc_rate(struct clk_hw *hw,
 }
 
 /** 20141220    
+ * clk_ops.
+ *
  * fixed rate ops.
  **/
 const struct clk_ops clk_fixed_rate_ops = {
@@ -59,14 +61,14 @@ EXPORT_SYMBOL_GPL(clk_fixed_rate_ops);
  *
 	struct clk_fixed_rate
 	+-------------------+
-	|	 - struct clk_hw|	
-	|	+-----------+ <=====|	 struct clk
-	|	|	(*)-----+----------->+-------+
-	|	|			|	|	|	 |		 |
-	|	|	(*)		|	|	|====|=(*)	 |
-	|	+-----------+	|		 +-------+
-	|	 - fixed_rate	|
-	|	 - flag         |
+	|    struct clk_hw  |
+	|   +-----------+ <=====|    struct clk
+	|   |   (*)-----+----------->+-------+
+	|   |           |   |   |    |       |
+	|   |   (*)     |   |   |====|=(*)   |
+	|   +-----------+   |        +-------+
+	|    - fixed_rate   |
+	|    - flag         |
 	+-------------------+
 
  1. clk_fixed_rate 구조체를 할당하고 clock_init_data 초기화한다.

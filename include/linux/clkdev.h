@@ -18,7 +18,9 @@ struct clk;
 struct device;
 
 /** 20141213
- * clk_lookup노드 구조체
+ * clk_lookup노드 구조체.
+ *
+ * dev_id, con_id는 search시 사용된다.
  **/
 struct clk_lookup {
 	struct list_head	node;

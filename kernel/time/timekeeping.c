@@ -629,6 +629,8 @@ void __attribute__((weak)) read_boot_clock(struct timespec *ts)
  */
 /** 20141213
  * timekeeper관련 변수들을 초기화한다.
+ *
+ * clocksource과 공통 timekeeping 변수들을 초기화 한다.
  **/
 
 void __init timekeeping_init(void)
@@ -655,7 +657,7 @@ void __init timekeeping_init(void)
 
 	write_seqlock_irqsave(&timekeeper.lock, flags);
 	/** 20141213
-	 * clocksource_jiffies를 default clock으로 가져온다.
+	 * default clock(clocksource_jiffies)으로부터 clock source를 가져온다.
 	 **/
 	clock = clocksource_default_clock();
 	/** 20141213

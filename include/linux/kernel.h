@@ -109,6 +109,9 @@
 	__x - (__x % (y));				\
 }							\
 )
+/** 20141227    
+ * x를 divisor로 나눠 몫을 반올림한다.
+ **/
 #define DIV_ROUND_CLOSEST(x, divisor)(			\
 {							\
 	typeof(divisor) __divisor = divisor;		\

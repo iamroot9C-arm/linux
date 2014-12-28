@@ -132,9 +132,9 @@ EXPORT_SYMBOL_GPL(timecounter_cyc2time);
  */
 
 /** 20130601
-from을 기반으로 주파수 to를 만들어주기 위해 필요한 변수인
-mult,shift를 구한다.
-**/
+ * from을 기반으로 주파수 to를 만들어주기 위해 필요한 변수인
+ * mult, shift를 구한다.
+ **/
 void
 clocks_calc_mult_shift(u32 *mult, u32 *shift, u32 from, u32 to, u32 maxsec)
 {
@@ -176,6 +176,14 @@ clocks_calc_mult_shift(u32 *mult, u32 *shift, u32 from, u32 to, u32 maxsec)
  * override_name:
  *	Name of the user-specified clocksource.
  */
+/** 20141227    
+ * curr_clocksource:
+ *   clocksource_select()에 의해 선택된 clocksource 포인터.
+ *
+ * clocksource_list:
+ *   rating 순으로 정렬된 clocksource 리스트
+ *
+ **/
 static struct clocksource *curr_clocksource;
 static LIST_HEAD(clocksource_list);
 static DEFINE_MUTEX(clocksource_mutex);
@@ -446,6 +454,12 @@ static int clocksource_watchdog_kthread(void *data)
 
 #else /* CONFIG_CLOCKSOURCE_WATCHDOG */
 
+/** 20141227    
+ * 새로운 clocksource를 watchdog에 등록한다.
+ *
+ * vexpress config의 경우 CONFIG_CLOCKSOURCE_WATCHDOG가 정의되지 않아
+ * 이 함수가 실행된다.
+ **/
 static void clocksource_enqueue_watchdog(struct clocksource *cs)
 {
 	if (cs->flags & CLOCK_SOURCE_IS_CONTINUOUS)
@@ -501,6 +515,9 @@ void clocksource_touch_watchdog(void)
  * @cs:         Pointer to clocksource
  *
  */
+/** 20141227    
+ * clocksource mult의 11%를 보정값으로 취한다.
+ **/
 static u32 clocksource_max_adjustment(struct clocksource *cs)
 {
 	u64 ret;
@@ -517,6 +534,8 @@ static u32 clocksource_max_adjustment(struct clocksource *cs)
  * @cs:         Pointer to clocksource
  *
  */
+/** 20141227    
+ **/
 static u64 clocksource_max_deferment(struct clocksource *cs)
 {
 	u64 max_nsecs, max_cycles;
@@ -566,6 +585,12 @@ static u64 clocksource_max_deferment(struct clocksource *cs)
  * Select the clocksource with the best rating, or the clocksource,
  * which is selected by userspace override.
  */
+/** 20141227    
+ * best rating값 또는 userspace에 의해 선택된 clocksource를
+ * curr_clocksource로 선택한다.
+ * 
+ * 자세한 내용은 추후 분석.
+ **/
 static void clocksource_select(void)
 {
 	struct clocksource *best, *cs;
@@ -638,6 +663,9 @@ fs_initcall(clocksource_done_booting);
 /*
  * Enqueue the clocksource sorted by rating
  */
+/** 20141227    
+ * 새로운 clocksource를 rating 값을 기준으로 내림차순으로 등록한다.
+ **/
 static void clocksource_enqueue(struct clocksource *cs)
 {
 	struct list_head *entry = &clocksource_list;
@@ -661,6 +689,9 @@ static void clocksource_enqueue(struct clocksource *cs)
  * This *SHOULD NOT* be called directly! Please use the
  * clocksource_updatefreq_hz() or clocksource_updatefreq_khz helper functions.
  */
+/** 20141227    
+ * clocksource의 scale과 freq 값을 받아 mult와 shift 등 값을 update한다.
+ **/
 void __clocksource_updatefreq_scale(struct clocksource *cs, u32 scale, u32 freq)
 {
 	u64 sec;
@@ -674,14 +705,33 @@ void __clocksource_updatefreq_scale(struct clocksource *cs, u32 scale, u32 freq)
 	 * ~ 0.06ppm granularity for NTP. We apply the same 12.5%
 	 * margin as we do in clocksource_max_deferment()
 	 */
+	/** 20141227    
+	 * cs->mask에서 상위 3비트를 제외한 부분을 0으로 만든다. 
+	 * 이는 wrapping around 전에 적당한 여유값을 두기 위함이다.
+	 *
+	 * sec으로 삼는 값을 freq와 scale로 나눈 몫을 취한다.
+	 *
+	 * mask : 1111 1111 1111 .....
+	 *      -    1 1111 1111 .....
+	 *      ======================
+	 * sec    1110 0000 0000 .....
+	 *
+	 * sec = sec / freq / scale;
+	 **/
 	sec = (cs->mask - (cs->mask >> 3));
 	do_div(sec, freq);
 	do_div(sec, scale);
+	/** 20141227    
+	 * sec을 보정한다.
+	 **/
 	if (!sec)
 		sec = 1;
 	else if (sec > 600 && cs->mask > UINT_MAX)
 		sec = 600;
 
+	/** 20141227    
+	 * freq와 계산한 sec으로부터 clocksource의 mult와 shift 값을 계산한다.
+	 **/
 	clocks_calc_mult_shift(&cs->mult, &cs->shift, freq,
 			       NSEC_PER_SEC / scale, sec * scale);
 
@@ -690,6 +740,9 @@ void __clocksource_updatefreq_scale(struct clocksource *cs, u32 scale, u32 freq)
 	 * Since mult may be adjusted by ntp, add an safety extra margin
 	 *
 	 */
+	/** 20141227    
+	 * clocksource의 mult를 위한 보정값을 구한 뒤, 범위 내의 값을 계산한다.
+	 **/
 	cs->maxadj = clocksource_max_adjustment(cs);
 	while ((cs->mult + cs->maxadj < cs->mult)
 		|| (cs->mult - cs->maxadj > cs->mult)) {
@@ -713,6 +766,10 @@ EXPORT_SYMBOL_GPL(__clocksource_updatefreq_scale);
  * This *SHOULD NOT* be called directly! Please use the
  * clocksource_register_hz() or clocksource_register_khz helper functions.
  */
+/** 20141227    
+ * 새로운 clocksource를 rating이 높은 순서로 queue에 추가하고,
+ * 가장 높은 rating 값을 가진 clocksource를 선택한다.
+ **/
 int __clocksource_register_scale(struct clocksource *cs, u32 scale, u32 freq)
 {
 

@@ -80,9 +80,18 @@ static void __init v2m_sp804_init(void __iomem *base, unsigned int irq)
 	if (WARN_ON(!base || irq == NO_IRQ))
 		return;
 
+	/** 20141227    
+	 * TIMER1, TIMER2의 TIMER_CTRL 레지스터에 값을 쓴다.
+	 * 자세한 내용은 datasheet (DDI0271 sp804 trm) 참조.
+	 **/
 	writel(0, base + TIMER_1_BASE + TIMER_CTRL);
 	writel(0, base + TIMER_2_BASE + TIMER_CTRL);
 
+	/** 20141227    
+	 * "v2m-timer1"라는 이름으로 common clock framework에서 clk을 받아오고,
+	 * clocksource로 사용하기 위해 register를 설정하고 clocksource 구조체를 설정해 등록한다.
+	 * HW는 TIMER2와 연결한다.
+	 **/
 	sp804_clocksource_init(base + TIMER_2_BASE, "v2m-timer1");
 	/** 20140830    
 	 * periodic tick발생용 timer.
@@ -363,14 +372,25 @@ static int v2m_osc_set_rate(struct clk_hw *hw, unsigned long rate,
 	return 0;
 }
 
+/** 20141227    
+ * v2m OSC를 위한 callback operations.
+ * common clock framework에서 호출되어 hardware에 의존적인 동작을 수행한다.
+ **/
 static struct clk_ops v2m_osc_ops = {
 	.recalc_rate = v2m_osc_recalc_rate,
 	.round_rate = v2m_osc_round_rate,
 	.set_rate = v2m_osc_set_rate,
 };
 
+/** 20141227    
+ * OSC clock을 clk hierarchy에 추가한다.
+ **/
 struct clk * __init v2m_osc_register(const char *name, struct v2m_osc *osc)
 {
+	/** 20141227    
+	 * clock framework와 clk_hw 사이에 약속된 구조체를 채운다.
+	 * 설정된 clk
+	 **/
 	struct clk_init_data init;
 
 	WARN_ON(osc->site > 2);
@@ -415,12 +435,14 @@ static const char *v2m_osc2_periphs[] __initconst = {
 
 /** 20141213
  * v2m의 clock device를 clk구조체를 clock framework에 등록한다. 
- * **/
+ **/
 
-/** 20141220
- * 여기서 부터 ...
- * **/
-
+/** 20141227    
+ * v2m machine을 위한 clk 초기화 작업.
+ *
+ * clk 구조체를 생성해 clock hierarchy에 등록한다.
+ * 등록한 clk을 검색하기 위한 clk_lookup 구조체를 생성해 리스트에 등록한다.
+ **/
 static void __init v2m_clk_init(void)
 {
 	struct clk *clk;
@@ -455,6 +477,10 @@ static void __init v2m_timer_init(void)
 
 	v2m_sysctl_init(ioremap(V2M_SYSCTL, SZ_4K));
 	v2m_clk_init();
+	/** 20141227    
+	 * V2M TIMER0,1와 관련된 물리주소를 4KB만큼 페이지 테이블에 매핑시킨 뒤,
+	 * 가상주소와 irq 번호를 매개변수로 sp804 init 함수를 호출한다.
+	 **/
 	v2m_sp804_init(ioremap(V2M_TIMER01, SZ_4K), IRQ_V2M_TIMER0);
 }
 

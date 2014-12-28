@@ -178,6 +178,9 @@ struct clk *clk_get(struct device *dev, const char *con_id)
 }
 EXPORT_SYMBOL(clk_get);
 
+/** 20141227    
+ * clk_put.
+ **/
 void clk_put(struct clk *clk)
 {
 	__clk_put(clk);
@@ -351,13 +354,13 @@ EXPORT_SYMBOL(clkdev_drop);
  * after clk_register().
  */
 /** 20141213
- * clock참조를 위해 clk구조체를 clkdev리스트에 추가한다.
+ * struct clk을 위한 clock lookup을 clkdev 리스트에 등록한다.
  *
  * 20141220
  * 생성된 clk와 con_id, dev_id를 받아
  * 1. clk_lookup을 할당받고
  * 2. 전달받은 argument로 채운 뒤,
- * 3. clocks에 등록한다.
+ * 3. 전역리스트 clocks에 clk_lookup을 등록한다.
  *
  * con_id  : con_id (connection ID)
  * dev_fmt : dev_id (device ID)

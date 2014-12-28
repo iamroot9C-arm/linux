@@ -43,6 +43,9 @@ static DEFINE_RAW_SPINLOCK(clockevents_lock);
  *
  * Math helper, returns latch value converted to nanoseconds (bound checked)
  */
+/** 20141227    
+ * latch value (device ticks)를 ns로 변환한다.
+ **/
 u64 clockevent_delta2ns(unsigned long latch, struct clock_event_device *evt)
 {
 	u64 clc = (u64) latch << evt->shift;
@@ -342,6 +345,9 @@ void clockevents_config(struct clock_event_device *dev, u32 freq)
 {
 	u64 sec;
 
+	/** 20141227    
+	 * clock event device에 CLOCK_EVT_FEAT_ONESHOT가 있어야 한다.
+	 **/
 	if (!(dev->features & CLOCK_EVT_FEAT_ONESHOT))
 		return;
 
@@ -350,6 +356,8 @@ void clockevents_config(struct clock_event_device *dev, u32 freq)
 	 * to 10 minutes for hardware which can program more than
 	 * 32bit ticks so we still get reasonable conversion values.
 	 */
+	/** 20141227    
+	 **/
 	sec = dev->max_delta_ticks;
 	do_div(sec, freq);
 	if (!sec)

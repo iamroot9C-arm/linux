@@ -279,6 +279,9 @@ inline int __clk_get_prepare_count(struct clk *clk)
 	return !clk ? -EINVAL : clk->prepare_count;
 }
 
+/** 20141227    
+ * clk 구조체에서 rate를 받아와 리턴한다.
+ **/
 unsigned long __clk_get_rate(struct clk *clk)
 {
 	unsigned long ret;
@@ -293,6 +296,9 @@ unsigned long __clk_get_rate(struct clk *clk)
 	if (clk->flags & CLK_IS_ROOT)
 		goto out;
 
+	/** 20141227    
+	 * 만약 ROOT가 아닌데 parent clk이 존재하지 않는다면 0을 리턴한다.
+	 **/
 	if (!clk->parent)
 		ret = 0;
 
@@ -417,20 +423,41 @@ void clk_unprepare(struct clk *clk)
 }
 EXPORT_SYMBOL_GPL(clk_unprepare);
 
+/** 20141227    
+ * clk의 hierarchy를 타고 올라가 parent가 존재한다면 차례로 prepare를 호출한다.
+ **/
 int __clk_prepare(struct clk *clk)
 {
 	int ret = 0;
 
+	/** 20141227    
+	 * clk이 없다면 0이 리턴된다.
+	 * 재귀호출시 parent가 없다면 0이 리턴된다.
+	 **/
 	if (!clk)
 		return 0;
 
+	/** 20141227    
+	 * prepare_count가 0이라면 처음 prepare.
+	 **/
 	if (clk->prepare_count == 0) {
+		/** 20141227    
+		 * parent가 있다면 hierarchy를 타고 올라가 prepare를 각각 호출하기 위함
+		 **/
 		ret = __clk_prepare(clk->parent);
 		if (ret)
 			return ret;
 
+		/** 20141227    
+		 * clk 콜백에 prepare가 등록되어 있다면 호출한다.
+		 *
+		 * fixed_rate의 경우 clk_fixed_rate_ops를 참고한다.
+		 **/
 		if (clk->ops->prepare) {
 			ret = clk->ops->prepare(clk->hw);
+			/** 20141227    
+			 * prepare에 실패하면 unprepare로 만든다.
+			 **/
 			if (ret) {
 				__clk_unprepare(clk->parent);
 				return ret;
@@ -438,6 +465,9 @@ int __clk_prepare(struct clk *clk)
 		}
 	}
 
+	/** 20141227    
+	 * prepare_count를 증가시킨다.
+	 **/
 	clk->prepare_count++;
 
 	return 0;
@@ -455,10 +485,17 @@ int __clk_prepare(struct clk *clk)
  * exclusive.  In fact clk_prepare must be called before clk_enable.
  * Returns 0 on success, -EERROR otherwise.
  */
+/** 20141227    
+ * clk의 prepare clk_ops.prepare를 호출한다.
+ * parent가 존재하면 parent의 prepare부터 호출한다.
+ **/
 int clk_prepare(struct clk *clk)
 {
 	int ret;
 
+	/** 20141227    
+	 * prepare_lock을 획득한 상태에서 호출한다.
+	 **/
 	mutex_lock(&prepare_lock);
 	ret = __clk_prepare(clk);
 	mutex_unlock(&prepare_lock);
@@ -509,6 +546,9 @@ void clk_disable(struct clk *clk)
 }
 EXPORT_SYMBOL_GPL(clk_disable);
 
+/** 20141227    
+ * clk의 hierarchy를 타고 올라가 parent가 존재한다면 차례로 enable을 호출한다.
+ **/
 static int __clk_enable(struct clk *clk)
 {
 	int ret = 0;
@@ -551,11 +591,18 @@ static int __clk_enable(struct clk *clk)
  * must be called before clk_enable.  Returns 0 on success, -EERROR
  * otherwise.
  */
+/** 20141227    
+ * spinlock으로 임계구역을 생성한 상태에서
+ * parent가 존재하면 따라올라가 각각 clk_ops.enable을 호출한다.
+ **/
 int clk_enable(struct clk *clk)
 {
 	unsigned long flags;
 	int ret;
 
+	/** 20141227    
+	 * prepare와 달리 enable_lock은 spinlock.
+	 **/
 	spin_lock_irqsave(&enable_lock, flags);
 	ret = __clk_enable(clk);
 	spin_unlock_irqrestore(&enable_lock, flags);
@@ -571,10 +618,16 @@ EXPORT_SYMBOL_GPL(clk_enable);
  * Simply returns the cached rate of the clk.  Does not query the hardware.  If
  * clk is NULL then returns 0.
  */
+/** 20141227    
+ * clk에 등록된 rate를 받아와 리턴한다.
+ **/
 unsigned long clk_get_rate(struct clk *clk)
 {
 	unsigned long rate;
 
+	/** 20141227    
+	 * prepare_lock으로 임계구역을 생성한다.
+	 **/
 	mutex_lock(&prepare_lock);
 	rate = __clk_get_rate(clk);
 	mutex_unlock(&prepare_lock);
@@ -1479,7 +1532,7 @@ EXPORT_SYMBOL_GPL(__clk_register);
  * error code; drivers must test for an error code after calling clk_register.
  */
 /** 20141220    
- * clk_hw를 바탕으로 clk을 생성하고, clk hierarchy에 등록하고 초기화 한다.
+ * clk_hw를 바탕으로 clk객체를 생성하고, clk hierarchy에 등록하고 초기화 한다.
  **/
 struct clk *clk_register(struct device *dev, struct clk_hw *hw)
 {

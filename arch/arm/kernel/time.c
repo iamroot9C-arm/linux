@@ -35,6 +35,9 @@
 /*
  * Our system timer.
  */
+/** 20141227    
+ * time_init에서 설정.
+ **/
 static struct sys_timer *system_timer;
 
 #if defined(CONFIG_RTC_DRV_CMOS) || defined(CONFIG_RTC_DRV_CMOS_MODULE) || \
