@@ -122,6 +122,24 @@ extern struct cpu_cache_fns cpu_cache;
 
 /** 20131026    
  * v7 architecture의 경우 cache-v7.S의 v7_XXXXX 가 호출된다.
+ *
+ * 대응되는 부분은 arch/arm/mm/proc-macros.S의 
+ * .macro define_cache_functions name:req
+ * 	.align 2
+ * 	.type	\name\()_cache_fns, #object
+ * ENTRY(\name\()_cache_fns)
+ * 	.long	\name\()_flush_icache_all
+ * 	.long	\name\()_flush_kern_cache_all
+ * 	.long	\name\()_flush_user_cache_all
+ * 	.long	\name\()_flush_user_cache_range
+ * 	.long	\name\()_coherent_kern_range
+ * 	.long	\name\()_coherent_user_range
+ * 	.long	\name\()_flush_kern_dcache_area
+ * 	.long	\name\()_dma_map_area
+ * 	.long	\name\()_dma_unmap_area
+ * 	.long	\name\()_dma_flush_range
+ * 	.size	\name\()_cache_fns, . - \name\()_cache_fns
+ * .endm
  **/
 #define __cpuc_flush_icache_all		cpu_cache.flush_icache_all
 #define __cpuc_flush_kern_all		cpu_cache.flush_kern_all

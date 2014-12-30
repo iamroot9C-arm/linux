@@ -52,6 +52,12 @@
  * #define smp_mb()    dmb(ish)
  * #define smp_rmb()   smp_mb()
  * #define smp_wmb()   dmb(ishst)
+ *
+ * 20141229
+ * ISB
+ * 프로세서의 파이프라인을 플러시하여, ISB 다음의 명령들이 캐시나 메모리로부터 fetch되도록 한다.
+ * CP15 레지스터에 대한 변경, ASID 변경 같은 컨텍스트 변경작업, 완료된 TLB 관리작업, 분기예측 관리작업 등
+ * 상태에 따라 명령의 동작이 달라질 수 있는 상황에서 사용한다.
  **/
 #define isb() __asm__ __volatile__ ("isb" : : : "memory")
 #define dsb() __asm__ __volatile__ ("dsb" : : : "memory")

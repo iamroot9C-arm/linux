@@ -982,6 +982,8 @@ kuser_cmpxchg32_fixup:
 	 *
 	 * ldrex, strex 는 atomic 동작을 보장하기 위한 명령어.		
 	 * [참고] http://en.wikipedia.org/wiki/Load-link/store-conditional
+	 * 
+	 * include/asm/atomic.h 에 정리해 두었음.
 	 **/
 
 	smp_dmb	arm

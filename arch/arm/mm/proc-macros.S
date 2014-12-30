@@ -305,6 +305,12 @@ ENTRY(\name\()_processor_functions)
 /** 20130316
 	 architecture 이름을 매개변수로 받아 캐시 함수를
 	선언하는 매크로 
+
+	arch/arm/mm/cache-v7.S 에서 다음과 같이 매크로 호출해 정의함.
+		define_cache_functions v7
+	
+	e.g.) v7_flush_kern_dcache_area 의 주소가 들어간다.
+	      arch/arm/mm/cache-v7.S에 정의됨.
 **/
 .macro define_cache_functions name:req
 	.align 2

@@ -571,8 +571,14 @@ static void __init setup_processor(void)
 	 * entries in arch/arm/mm/proc-*.S
 	 */
 	/** 20130608    
-	 * arch/arm/mm/proc-v7.S
+	 * arch/arm/mm/proc-v7.S 에서
 	 * __v7_proc_info:
+	 *	.long	0x000f0000		@ Required ID value
+	 *	.long	0x000f0000		@ Mask for ID
+	 *	__v7_proc __v7_setup
+	 *	.size	__v7_proc_info, . - __v7_proc_info
+	 *
+	 *  __v7_proc 매크로 호출 부분에 v7 관련 함수들이 들어간다.
 	 **/
 	list = lookup_processor_type(read_cpuid_id());
 	if (!list) {

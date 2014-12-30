@@ -26,6 +26,13 @@
 
 /** 20121103
 	ARMv6K부터 atomic 연산을 위해서 ldrex, strex 명령을 제공한다.
+
+	멀티스레딩 시스템에서 동기화를 달성하기 위해 사용되는 원자적 명령으로,
+	메모리 영역을 읽고 업데이트 하는 과정에서 다른 업데이트가 발생하지 않았음을 보장한다.
+	기존 SWP 명령은 ABA Problem에 대해 보장하지 못하는 문제가 있다.
+	
+	아키텍쳐에서 제공하는 명령을 이용하여 atomic operation, spinlock 같은 primitive를 구현한다.
+
 	
 	The L1 memory system of the Cortex-A9 processor has a local monitor. This is a 2-state, open
 	and exclusive, state machine that manages load/store exclusive (LDREXB, LDREXH, LDREX, LDREXD,

@@ -430,6 +430,11 @@ __v7_setup_stack:
 	.long	v7_processor_functions
 	.long	v7wbi_tlb_fns
 	.long	v6_user_fns
+	/** 20141226
+	 * arch/arm/mm/proc-macros.S에서
+	 * .macro define_cache_functions name:req
+	 *		.type	\name\()_cache_fns, #object
+	 **/
 	.long	v7_cache_fns
 .endm
 
