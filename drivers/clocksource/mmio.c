@@ -15,6 +15,9 @@ struct clocksource_mmio {
 	struct clocksource clksrc;
 };
 
+/** 20150103    
+ * clocksource를 포함하는 clocksource_mmio 구조체를 리턴.
+ **/
 static inline struct clocksource_mmio *to_mmio_clksrc(struct clocksource *c)
 {
 	return container_of(c, struct clocksource_mmio, clksrc);
@@ -26,6 +29,10 @@ cycle_t clocksource_mmio_readl_up(struct clocksource *c)
 }
 
 /** 20141227    
+ * clocksource를 받아 clocksource_mmio의 register 값을 읽어내는 함수.
+ *
+ * SP804 TRM 'Current Value Register, TimerXValue'을 읽는다.
+ * decrementing counter이므로 register에서 읽은 값을 뒤집는다.
  **/
 cycle_t clocksource_mmio_readl_down(struct clocksource *c)
 {
@@ -72,6 +79,9 @@ int __init clocksource_mmio_init(void __iomem *base, const char *name,
 	if (!cs)
 		return -ENOMEM;
 
+	/** 20150103    
+	 * reg: clocksource에서 clock을 읽어내는 주소를 지정한다.
+	 **/
 	cs->reg = base;
 	cs->clksrc.name = name;
 	cs->clksrc.rating = rating;

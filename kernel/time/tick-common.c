@@ -357,6 +357,10 @@ static int tick_check_new_device(struct clock_event_device *newdev)
 		/*
 		 * Check the rating
 		 */
+		/** 20150103    
+		 * 현재 device의 rating 값이 새로 추가한 rating 이상이라면
+		 * device 교체를 하지 않고 out_bc로 이동한다.
+		 **/
 		if (curdev->rating >= newdev->rating)
 			goto out_bc;
 	}

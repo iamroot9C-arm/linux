@@ -56,6 +56,9 @@ static struct map_desc v2m_io_desc[] __initdata = {
 	},
 };
 
+/** 20150103    
+ * V2M_SYSREGS의 가상 주소.
+ **/
 static void __iomem *v2m_sysreg_base;
 
 /** 20141213
@@ -75,6 +78,10 @@ static void __init v2m_sysctl_init(void __iomem *base)
 	writel(scctrl, base + SCCTRL);
 }
 
+/** 20150103    
+ * sp804의 레지스터를 설정하고,
+ * clocksource와 clockevent로 등록한다.
+ **/
 static void __init v2m_sp804_init(void __iomem *base, unsigned int irq)
 {
 	if (WARN_ON(!base || irq == NO_IRQ))
@@ -472,10 +479,24 @@ static void __init v2m_clk_init(void)
 		WARN_ON(clk_register_clkdev(clk, NULL, v2m_osc2_periphs[i]));
 }
 
+/** 20150103    
+ * v2m timer 초기화.
+ *	- sysctl control에서 timer0, timer1의 TIMCLK을 선택한다.
+ *	- clock hierarchy에 clk을 등록한다.
+ *	- sp804를 clocksource와 clockevent로 등록한다.
+ **/
 static void __init v2m_timer_init(void)
 {
 
+	/** 20141227    
+	 * V2M_SYSCTL 레지스터 영역을 4KB만큼 page table에 매핑시키고,
+	 * 레지스터를 초기화 한다.
+	 **/
 	v2m_sysctl_init(ioremap(V2M_SYSCTL, SZ_4K));
+	/** 20150103    
+	 * clk을 구조체를 생성해 clock hierarchy에 등록하고,
+	 * lookup용 자료구조에 추가한다.
+	 **/
 	v2m_clk_init();
 	/** 20141227    
 	 * V2M TIMER0,1와 관련된 물리주소를 4KB만큼 페이지 테이블에 매핑시킨 뒤,

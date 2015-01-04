@@ -190,6 +190,13 @@ static int __init timer_init_syscore_ops(void)
 
 device_initcall(timer_init_syscore_ops);
 
+/** 20150103    
+ * machine specific한 timer를 초기화 한다.
+ *   - sysctl control에서 timer를 enable 한다.
+ *   - clock hierarchy에 clk을 등록한다.
+ *   - clocksource, clockevent를 등록한다.
+ * sched_clock을 등록시킨다.
+ **/
 void __init time_init(void)
 {
 	/** 20140920    

@@ -1354,6 +1354,8 @@ static inline int check_new_page(struct page *page)
 
 /** 20131116    
  * gfp_flags에 따라 새로 받아온 page들에 대해 관련된 자료구조를 초기화 해준다.
+ *
+ * 첫번째 page에만 private = 0, _count = 1로 설정한다.
  **/
 static int prep_new_page(struct page *page, int order, gfp_t gfp_flags)
 {
@@ -2251,6 +2253,9 @@ void free_hot_cold_page_list(struct list_head *list, int cold)
  * Note: this is probably too low level an operation for use in drivers.
  * Please consult with lkml before using this in your driver.
  */
+/** 20150103    
+ * (compound가 아닌) order만큼의 연속적인 page 각각을 독립적인 page로 분할한다.
+ **/
 void split_page(struct page *page, unsigned int order)
 {
 	int i;
@@ -2267,6 +2272,9 @@ void split_page(struct page *page, unsigned int order)
 		split_page(virt_to_page(page[0].shadow), order);
 #endif
 
+	/** 20150103    
+	 * 첫번째 page를 제외한 page들 각각을 referenced 상태로 만들어 준다.
+	 **/
 	for (i = 1; i < (1 << order); i++)
 		set_page_refcounted(page + i);
 }
@@ -3991,6 +3999,8 @@ got_pg:
  * This is the 'heart' of the zoned buddy allocator.
  */
 /** 20140705 
+ * "buddy allocator"
+ *
  * sequence락을 걸고 cpu_mems_allowed값을 읽어서 선호하는 존을 설정하고
  * 선호하는 존으로부터 watermark를 low 설정하여 freepage를 얻어온다.
  * 처음에는 watermark low로 설정하여 dirty page가 limit을 초과하지 않는
@@ -3999,7 +4009,6 @@ got_pg:
  * get_page_from_freelist로 부터 freepage를 얻어오는데 실패하면
  * slowpath를 통해 page할당을 재시도한다.
  */
-
 struct page *
 __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
 			struct zonelist *zonelist, nodemask_t *nodemask)
@@ -4108,7 +4117,7 @@ EXPORT_SYMBOL(__alloc_pages_nodemask);
  */
 /** 20140705
  * 1. 메모리 할당을 하기 위한 인터페이스로 사용됨 (kmalloc으로도 호출됨)
- * 2. buddy로부터 물리적으로 연속적으로 2^order만큼 할당하여
+ * 2. buddy로부터 물리적으로 연속적으로 2**order만큼 할당하여
  * 가상메모리주소를 반환한다
  */
 unsigned long __get_free_pages(gfp_t gfp_mask, unsigned int order)
@@ -4197,12 +4206,29 @@ static void *make_alloc_exact(unsigned long addr, unsigned order, size_t size)
  *
  * Memory allocated by this function must be released by free_pages_exact().
  */
+/** 20150103    
+ * size만큼 order로 연속적인 물리페이지를 할당받은 뒤,
+ * 남은 크기의 페이지들을 해제한다.
+ *
+ * alloc_pages_exact로 할당받은 페이지는 free_pages_exact로 해제해야 한다.
+ * split되어 각 page별로 referenced 되기 때문이다.
+ **/
 void *alloc_pages_exact(size_t size, gfp_t gfp_mask)
 {
+	/** 20150103    
+	 * 할당받을 크기에 해당하는 order를 구한다.
+	 **/
 	unsigned int order = get_order(size);
 	unsigned long addr;
 
+	/** 20150103    
+	 * buddy로부터 2**order개의 페이지를 할당받는다.
+	 * 물리적으로 연속적인 메모리가 할당된다.
+	 **/
 	addr = __get_free_pages(gfp_mask, order);
+	/** 20150103    
+	 * 할당받은 page에서 size를 제외한 페이지들을 free시킨다.
+	 **/
 	return make_alloc_exact(addr, order, size);
 }
 EXPORT_SYMBOL(alloc_pages_exact);

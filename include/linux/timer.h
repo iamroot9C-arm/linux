@@ -9,6 +9,8 @@
 
 struct tvec_base;
 /** 20130601
+ * per_cpu 변수인 tvec_bases의 tvN의 리스트에 등록되는 자료구조.
+ * expires와 만료시 호출할 function으로 이뤄져 있다.
 **/
 struct timer_list {
 	/*
@@ -85,6 +87,11 @@ extern struct tvec_base boot_tvec_bases;
 			__FILE__ ":" __stringify(__LINE__))	\
 	}
 
+/** 20150103    
+ * timer_list 하나를 정의한다.
+ *
+ * timer_list 이름, 콜백함수, 만료시간, data를 전달 받는다.
+ **/
 #define DEFINE_TIMER(_name, _function, _expires, _data)		\
 	struct timer_list _name =				\
 		TIMER_INITIALIZER(_function, _expires, _data)

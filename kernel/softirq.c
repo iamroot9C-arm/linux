@@ -940,9 +940,10 @@ static struct notifier_block __cpuinitdata remote_softirq_cpu_notifier = {
 
 
 /** 20141213
- * 각 cpu에 대해 softirq자료구조를 초기화 한다.
+ * 각 cpu에 대해 softirq 자료구조를 초기화 한다.
+ *
+ * TASKLET_SOFTIRQ와 HI_SOFTIRQ에 대한 action을 지정한다.
  **/
-
 void __init softirq_init(void)
 {
 	int cpu;

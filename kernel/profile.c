@@ -102,6 +102,9 @@ int profile_setup(char *str)
 __setup("profile=", profile_setup);
 
 
+/** 20150103    
+ * profile을 동작시키기 위해 prof_buffer를 할당받는다.
+ **/
 int __ref profile_init(void)
 {
 	int buffer_bytes;
@@ -109,27 +112,51 @@ int __ref profile_init(void)
 		return 0;
 
 	/* only text is profiled */
+	/** 20150103    
+	 * text와 read-only section의 크기를 계산하고, prof_shift한 크기를 구한다.
+	 * 크기에 atomic_t를 곱해 필요한 buffer크기를 계산한다.
+	 **/
 	prof_len = (_etext - _stext) >> prof_shift;
 	buffer_bytes = prof_len*sizeof(atomic_t);
 
 	if (!alloc_cpumask_var(&prof_cpu_mask, GFP_KERNEL))
 		return -ENOMEM;
 
+	/** 20150103    
+	 * cpu_possible_mask를 prof_cpu_mask로 복사한다.
+	 **/
 	cpumask_copy(prof_cpu_mask, cpu_possible_mask);
 
+	/** 20150103    
+	 * 계산한 버퍼크기만큼 0으로 초기화해 할당받는다.
+	 * 성공적으로 할당 받았다면 리턴.
+	 *
+	 * __GFP_NOWARN은 큰 사이즈로 요청이 들어가 할당이 실패해도 
+	 * 경고를 출력하지 않는다.
+	 **/
 	prof_buffer = kzalloc(buffer_bytes, GFP_KERNEL|__GFP_NOWARN);
 	if (prof_buffer)
 		return 0;
 
+	/** 20150103    
+	 * 할당에 실패하였다면 alloc_pages_exact로 재시도 한다.
+	 **/
 	prof_buffer = alloc_pages_exact(buffer_bytes,
 					GFP_KERNEL|__GFP_ZERO|__GFP_NOWARN);
 	if (prof_buffer)
 		return 0;
 
+	/** 20150103    
+	 * 물리적으로 연속된 메모리로 할당받지 못한다면
+	 * 가상 메모리 상에서만 연속적인 메모리를 할당받는다.
+	 **/
 	prof_buffer = vzalloc(buffer_bytes);
 	if (prof_buffer)
 		return 0;
 
+	/** 20150103    
+	 * 그래도 할당에 실패한다면 메모리가 부족한 경우.
+	 **/
 	free_cpumask_var(prof_cpu_mask);
 	return -ENOMEM;
 }

@@ -457,7 +457,7 @@ static inline struct page *virt_to_head_page(const void *x)
  * the first time (boot or memory hotplug)
  */
 /** 20130504
- * page struct의 _count(atomic_t.counter)를 1로 설정
+ * struct page의 _count(atomic_t.counter)를 1로 설정
  *
  * 20130511 
  * 커널내에서만 사용하는 lock 방식 (reference가 존재하므로 이용이 제약된다.). 

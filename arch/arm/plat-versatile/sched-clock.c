@@ -24,6 +24,9 @@
 #include <asm/sched_clock.h>
 #include <plat/sched_clock.h>
 
+/** 20150103    
+ * versatile_sched_clock_init에서 지정한 레지스터.
+ **/
 static void __iomem *ctr;
 
 /** 20130601
@@ -37,8 +40,8 @@ static u32 notrace versatile_read_sched_clock(void)
 	return 0;
 }
 /** 20130601
- * 1. reg을 ctr에 저장
- * 2. 리눅스에서 사용할 스캐쥴링 clock 기준값을 설정???
+ * 1. ctr를 읽어올 reg를 전역변수에 저장
+ * 2. 리눅스에서 사용할 스캐쥴링 clock 기준값을 설정
  **/
 void __init versatile_sched_clock_init(void __iomem *reg, unsigned long rate)
 {

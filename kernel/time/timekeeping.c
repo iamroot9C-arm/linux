@@ -630,7 +630,7 @@ void __attribute__((weak)) read_boot_clock(struct timespec *ts)
 /** 20141213
  * timekeeper관련 변수들을 초기화한다.
  *
- * clocksource과 공통 timekeeping 변수들을 초기화 한다.
+ * clocksource default clock을 가져와 공통 timekeeping 변수를 초기화 한다.
  **/
 
 void __init timekeeping_init(void)

@@ -741,11 +741,26 @@ asmlinkage void __init start_kernel(void)
 	 * machine의 irq 초기화 함수를 호출한다.
 	 **/
 	init_IRQ();
+	/** 20140920    
+	 * prio tree를 초기화 한다.
+	 **/
 	prio_tree_init();
+	/** 20140920    
+	 * timer를 사용하기 위한 초기화를 수행한다.
+	 **/
 	init_timers();
 	hrtimers_init();
+	/** 20141213
+	 * softirq 자료구조를 초기화 한다.
+	 **/
 	softirq_init();
+	/** 20141213
+	 * timekeeper관련 변수들을 초기화한다.
+	 **/
 	timekeeping_init();
+	/** 20150103    
+	 * machine speicific한 timer를 초기화하고, sched_clock timer를 설정한다.
+	 **/
 	time_init();
 	profile_init();
 	call_function_init();

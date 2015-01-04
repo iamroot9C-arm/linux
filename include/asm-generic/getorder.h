@@ -57,6 +57,7 @@ int __get_order(unsigned long size)
  * 4096 -> 0
  * 8193 -> 2
  *
+ * n은
  *  2^0 * PAGE_SIZE and below                 ->   0
  *	2^0 * PAGE_SIZE + 1  ~  2^1 * PAGE_SIZE   ->   1
  *	2^1 * PAGE_SIZE + 1  ~  2^2 * PAGE_SIZE   ->   2

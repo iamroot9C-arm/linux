@@ -1605,6 +1605,7 @@ unsigned long get_next_timer_interrupt(unsigned long now)
  * process.  user_tick is 1 if the tick is user time, 0 for system.
  */
 /** 20140830    
+ * timer 인터럽트 핸들러에서 현재 프로세스에서 한 틱을 부과하기 위해 호출된다.
  **/
 void update_process_times(int user_tick)
 {

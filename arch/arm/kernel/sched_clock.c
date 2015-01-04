@@ -24,6 +24,11 @@ struct clock_data {
 };
 
 static void sched_clock_poll(unsigned long wrap_ticks);
+/** 20150103    
+ * sched_clock_timer를 정의한다.
+ *
+ * 콜백 함수는 sched_clock_poll이다.
+ **/
 static DEFINE_TIMER(sched_clock_timer, sched_clock_poll, 0, 0);
 
 /** 20140426    
@@ -51,8 +56,10 @@ static u32 notrace jiffy_sched_clock_read(void)
 }
 
 /** 20130518    
- * read_sched_clock 함수 포인터 초기화
- * setup_sched_clock로 지정한 함수 (versatile_read_sched_clock)가 등록.
+ * read_sched_clock 콜백함수.
+ *
+ * versatile_sched_clock_init()에서
+ * setup_sched_clock로 지정한 함수 versatile_read_sched_clock가 등록.
  **/
 static u32 __read_mostly (*read_sched_clock)(void) = jiffy_sched_clock_read;
 
@@ -62,7 +69,9 @@ static inline u64 cyc_to_ns(u64 cyc, u32 mult, u32 shift)
 }
 
 /** 20140426    
- * cyc 값을 setup_sched_clock 에서 계산한 값을 바탕으로 변환 ns로 리턴
+ * cyc 값을 sched_clock을 기준으로 한 ns로 변환.
+ *
+ * epoch_ns가 갱신된 이후 얼마의 ns가 흘렀는지 더해 리턴.
  **/
 static unsigned long long cyc_to_sched_clock(u32 cyc, u32 mask)
 {
@@ -96,17 +105,19 @@ static unsigned long long cyc_to_sched_clock(u32 cyc, u32 mask)
  * Atomically update the sched_clock epoch.
  */
 /** 20130601
-clock_data에 epoch_cyc,epoch_ns,epoch_cyc_copy를 채워준다. 
-**/
+ * 전역 clock_data에 epoch_cyc,epoch_ns,epoch_cyc_copy를 갱신한다. 
+ **/
 static void notrace update_sched_clock(void)
 {
 	unsigned long flags;
 	u32 cyc;
 	u64 ns;
-/** 20130601
-versatile_sched_clock_init에서 setup_sched_clock을 부를때
-versatile_read_sched_clock 함수 포인터를 주고 read_sched_clock에 저장된다.
-**/
+	/** 20130601
+	 * sched_clock 값을 읽어오기 위해 등록한 콜백함수를 호출해 값을 읽어온다.
+	 *
+	 * versatile_sched_clock_init에서 setup_sched_clock을 부를때
+	 * versatile_read_sched_clock 함수 포인터를 주고 read_sched_clock에 저장된다.
+	 **/
 	cyc = read_sched_clock();
 	ns = cd.epoch_ns +
 		cyc_to_ns((cyc - cd.epoch_cyc) & sched_clock_mask,
@@ -124,17 +135,29 @@ versatile_read_sched_clock 함수 포인터를 주고 read_sched_clock에 저장
 	raw_local_irq_restore(flags);
 }
 
+/** 20150103    
+ * wrap_ticks 이후에 timer가 만료되도록 sched_clock_timer를 설정한다.
+ * sched_clock 관련 자료구조를 update한다.
+ **/
 static void sched_clock_poll(unsigned long wrap_ticks)
 {
+	/** 20150103    
+	 * sched_clock_timer의 timeout 시간을 변경한다.
+	 * 현재 jiffies에 wrap_ticks를 더한 시간에 만료되도록 한다.
+	 **/
 	mod_timer(&sched_clock_timer, round_jiffies(jiffies + wrap_ticks));
+	/** 20150103    
+	 * sched_clock으로 사용되는 epoch_XX를 갱신한다.
+	 **/
 	update_sched_clock();
 }
+
 /** 20130601
  * 1.clock_data의 mult,shift 값을 구한후 이값으로 한 사이클의 소요시간(ns)을 구한다.
  * 2.프리퀀시 단위 설정
  * 3.sched_clock_timer의 data을 설장
  * 4.clock_data 값 설정
- * 리눅스에서 사용할 스캐쥴링 clock 기준값을 설정???
+ * 리눅스에서 사용할 스캐쥴링 clock 기준값을 설정
  *
  * 리눅스에서는 64비트 ns 타이머하고 arm에서는 32 비트 TCNT(cycle 단위)를 사용한다.
  **/
@@ -172,6 +195,9 @@ void __init setup_sched_clock(u32 (*read)(void), int bits, unsigned long rate)
 	 * static struct clock_data cd = {
 	 * .mult	= NSEC_PER_SEC / HZ,
 	 * };
+	 *
+	 *  24MHz 는 Counter Register가 1증가 또는 감소하는 주파수이고, 1GHz는 clock source로 삼기 위한 ns 단위 resolution입니다.
+	 *    1GHz resolution clock을 사용하려면 24MHz로 동작하는 counter로 몇 번 곱하고, shift 시켜줘야 하는지 구합니다.
 	 **/
 	clocks_calc_mult_shift(&cd.mult, &cd.shift, rate, NSEC_PER_SEC, 0);
 
@@ -198,7 +224,7 @@ void __init setup_sched_clock(u32 (*read)(void), int bits, unsigned long rate)
 	 * shift : 0x1a
 	 * wrap = ((0x1_0000_0000 - 1)*mult)>>shift;
 	 *
-	 * wrap : cycle의 갯수가 0xffffffff가 되었때까지 걸리는 cycle을 ns로 변환한 값
+	 * wrap : cycle의 갯수가 0xffffffff가 될 때까지 걸리는 cycle을 ns로 변환한 값
 	 **/
 	wrap = cyc_to_ns((1ULL << bits) - 1, cd.mult, cd.shift);
 	/** 20130601
@@ -208,6 +234,9 @@ void __init setup_sched_clock(u32 (*read)(void), int bits, unsigned long rate)
 	w = wrap;
 
 	/* calculate the ns resolution of this counter */
+	/** 20150103    
+	 * 1 cyc에 소요되는 ns.
+	 **/
 	res = cyc_to_ns(1ULL, cd.mult, cd.shift);
 	pr_info("sched_clock: %u bits at %lu%cHz, resolution %lluns, wraps every %lums\n",
 		bits, r, r_unit, res, w);
@@ -225,6 +254,9 @@ void __init setup_sched_clock(u32 (*read)(void), int bits, unsigned long rate)
 	 * 보정해주는 값으로 사용???
 	 **/
 	sched_clock_timer.data = msecs_to_jiffies(w - (w / 10));
+	/** 20150103    
+	 * sched_clock 관련 전역변수를 갱신한다.
+	 **/
 	update_sched_clock();
 	/*
 	 * Ensure that sched_clock() starts off at 0ns
@@ -240,7 +272,9 @@ void __init setup_sched_clock(u32 (*read)(void), int bits, unsigned long rate)
 }
 
 /** 20140426    
- * sched clock 레지스터를 읽어 ns 단위의 값으로 리턴
+ * 시스템이 시작된 후, 몇 ns가 지났는지 리턴한다.
+ *
+ * sched clock 레지스터를 읽어 ns 단위의 값으로 리턴.
  **/
 unsigned long long notrace sched_clock(void)
 {
@@ -252,15 +286,28 @@ unsigned long long notrace sched_clock(void)
 	return cyc_to_sched_clock(cyc, sched_clock_mask);
 }
 
+/** 20150103    
+ * sched_clock을 새로 읽고, timer를 동록시킨다.
+ **/
 void __init sched_clock_postinit(void)
 {
 	/*
 	 * If no sched_clock function has been provided at that point,
 	 * make it the final one one.
 	 */
+	/** 20150103    
+	 * read_sched_clock가 초기값이라면,
+	 * 즉, sched_clock를 읽기 위한 콜백으로 어떠한 함수도 등록되지 않았다면
+	 * jiffy_sched_clock_read를 등록한다.
+	 **/
 	if (read_sched_clock == jiffy_sched_clock_read)
 		setup_sched_clock(jiffy_sched_clock_read, 32, HZ);
 
+	/** 20150103    
+	 * setup_sched_clock에서 sched_clock_timer.data를 jiffies로 계산해 넣었다.
+	 *
+	 * sched_clock_timer를 등록시키고 시작시킨다.
+	 **/
 	sched_clock_poll(sched_clock_timer.data);
 }
 

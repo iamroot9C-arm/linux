@@ -93,7 +93,8 @@ static long __init sp804_get_clock_rate(const char *name)
 static void __iomem *sched_clock_base;
 
 /** 20141227    
- *
+ * sched_clock_base의 TIMER_VALUE 레지스터에서 값을 읽어온다.
+ * 감소되는 cyc 값이므로 읽은 값을 반전시킨다.
  **/
 static u32 sp804_read(void)
 {
@@ -103,7 +104,7 @@ static u32 sp804_read(void)
 /** 20141227    
  * sp804를 clocksource로 사용하기 위해 레지스터를 설정하고,
  * clocksource 구조체를 생성해 초기화 하고,
- * 마지막 argument 유무에 따라 shced_clock을 초기화한다.
+ * 마지막 argument 유무에 따라 sched_clock을 초기화한다. (vexpress는 하지 않음)
  **/
 void __init __sp804_clocksource_and_sched_clock_init(void __iomem *base,
 						     const char *name,
@@ -120,7 +121,7 @@ void __init __sp804_clocksource_and_sched_clock_init(void __iomem *base,
 
 	/* setup timer 0 as free-running clocksource */
 	/** 20141227    
-	 * 레지스터 설정. 자세한 내용은 datasheet 참조
+	 * 레지스터 설정. 자세한 내용은 datasheet DDI0271_SP804 TRM 참조
 	 **/
 	writel(0, base + TIMER_CTRL);
 	writel(0xffffffff, base + TIMER_LOAD);

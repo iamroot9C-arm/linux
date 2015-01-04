@@ -378,7 +378,7 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
 		       struct zonelist *zonelist, nodemask_t *nodemask);
 
 /** 20140705
- * nodemask를 설정하지 않고 2^order만큼 page할당을 시도한다.
+ * nodemask를 설정하지 않고 2**order만큼 page할당을 시도한다.
  */
 static inline struct page *
 __alloc_pages(gfp_t gfp_mask, unsigned int order,
@@ -434,7 +434,7 @@ extern struct page *alloc_pages_vma(gfp_t gfp_mask, int order,
  * numa_node_id()는 0을 반환.
  **/
 /** 20140705
- * 2^order만큼의 page할당을 시도한다.
+ * 2**order만큼의 page할당을 시도한다.
  */
 #define alloc_pages(gfp_mask, order) \
 		alloc_pages_node(numa_node_id(), gfp_mask, order)
@@ -471,6 +471,8 @@ extern void free_hot_cold_page_list(struct list_head *list, int cold);
 
 /** 20130907    
  * 하나의 page는 order를 0으로 해서 __free_pages 호출
+ * 
+ * __가 붙은 버전은 struct page *를 받고, 안 붙은 버전은 va를 받는다.
  **/
 #define __free_page(page) __free_pages((page), 0)
 #define free_page(addr) free_pages((addr), 0)

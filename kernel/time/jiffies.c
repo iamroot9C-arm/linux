@@ -59,7 +59,7 @@ static cycle_t jiffies_read(struct clocksource *cs)
 }
 
 /** 20141227    
- * clocksource
+ * clocksource jiffies.
  **/
 struct clocksource clocksource_jiffies = {
 	.name		= "jiffies",
@@ -94,6 +94,9 @@ static int __init init_jiffies_clocksource(void)
 
 core_initcall(init_jiffies_clocksource);
 
+/** 20150103    
+ * clocksource default clock은 clocksource_jiffies이다.
+ **/
 struct clocksource * __init __weak clocksource_default_clock(void)
 {
 	return &clocksource_jiffies;

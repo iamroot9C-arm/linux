@@ -29,7 +29,7 @@ static inline void set_page_count(struct page *page, int v)
  * a count of one.
  */
 /** 20130803    
- * page의 _count를 1로 설정해 reference 상태로 만든다.
+ * non-refcounted page의 _count를 1로 설정해 reference 상태로 만든다.
  **/
 static inline void set_page_refcounted(struct page *page)
 {
