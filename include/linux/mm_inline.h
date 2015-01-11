@@ -17,12 +17,17 @@
  * could be as far down as __page_cache_release.
  */
 /** 20140104    
- * page가 file LRU / anon LRU에 속하는 것인지 리턴.
+ * page가 file cache인지 아닌지 여부를 리턴.
+ *
  * page가 regular filesystem에 근거한 page cache page라면 1,
- * 그렇지 않고 anonymous, tmpfs나 ram/swap backed에 근거한 page라면 0을 리턴
+ * 그렇지 않고 anonymous, tmpfs나 ram/swap backed에 근거한 page라면 0을 리턴.
  **/
 static inline int page_is_file_cache(struct page *page)
 {
+	/** 20140104
+	 * swap backed라면 anonymous page이므로 file cache가 아니다.
+	 * 이에 따라 속하는 LRU가 달라진다.
+	 **/
 	return !PageSwapBacked(page);
 }
 /** 20131221
@@ -46,7 +51,7 @@ static __always_inline void add_page_to_lru_list(struct page *page,
 	int nr_pages = hpage_nr_pages(page);
 	mem_cgroup_update_lru_size(lruvec, lru, nr_pages);
 	/** 20131221
-	 * lruvec->list에 page->lru를 등록시킨다
+	 * lruvec->list에 page를 등록시킨다
 	 **/
 	list_add(&page->lru, &lruvec->lists[lru]);
 	/** 20131221
@@ -56,7 +61,7 @@ static __always_inline void add_page_to_lru_list(struct page *page,
 }
 
 /** 20140104    
- * page를 lru  list에서 제거하고 state를 update한다.
+ * page를 lru list에서 제거하고 state를 update한다.
  **/
 static __always_inline void del_page_from_lru_list(struct page *page,
 				struct lruvec *lruvec, enum lru_list lru)
@@ -85,10 +90,10 @@ static __always_inline void del_page_from_lru_list(struct page *page,
  * Returns the base LRU type - file or anon - @page should be on.
  */
 /** 20140104    
- * page가 file에 의한 cache라면 LRU_INACTIVE_FILE을 리턴,
- * 아니라면 LRU_INACTIVE_ANON을 리턴
+ * page의 lru base 속성을 리턴한다.
  *
- * 이후 active 속성을 추가로 설정하는 방법이 주로 사용됨.
+ * page가 file cache라면 LRU_INACTIVE_FILE, 아니라면 LRU_INACTIVE_ANON이다.
+ * 이후 active 속성을 추가로 설정하는 방법이 사용됨.
  **/
 static inline enum lru_list page_lru_base_type(struct page *page)
 {
@@ -129,7 +134,7 @@ static __always_inline enum lru_list page_off_lru(struct page *page)
  * into the array of LRU lists.
  */
 /** 20140607    
- * page의 flag로 해당하는 lru type을 리턴.
+ * page의 flag을 보고 page가 속해야 할 lru type을 리턴.
  **/
 static __always_inline enum lru_list page_lru(struct page *page)
 {

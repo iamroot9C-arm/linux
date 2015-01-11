@@ -672,6 +672,10 @@ int remove_mapping(struct address_space *mapping, struct page *page)
 void putback_lru_page(struct page *page)
 {
 	int lru;
+	/** 20150111    
+	 * page의 현재 Active 속성을 가져오고, 속성을 클리어 한다.
+	 * !!이므로 비트 위치와 상관없이 0, 1로 리턴된다.
+	 **/
 	int active = !!TestClearPageActive(page);
 	int was_unevictable = PageUnevictable(page);
 
@@ -684,7 +688,7 @@ redo:
 	ClearPageUnevictable(page);
 
 	/** 20140111
-	 * page가 evictable 한지 검사한다.
+	 * page가 evictable 하다면 isolate 했던 페이지를 lru cache에 추가한다.
 	 *
 	 * ramdisk처럼 특정 용도로 사용되거나, mlocked 되었다면 unevictable이다.
 	 **/
@@ -701,7 +705,8 @@ redo:
 		 **/
 		lru_cache_add_lru(page, lru);
 	/** 20140111
-	 * lru_list가 LRU_UNEVICTABLE일 경우 실행
+	 * lru_list가 LRU_UNEVICTABLE일 경우
+	 * page를 zone의 unevictable list에 추가한다.
 	 **/
 	} else {
 		/*

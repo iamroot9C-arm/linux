@@ -10,7 +10,9 @@
 
 /* 14 pointers + two long's align the pagevec structure to a power of two */
 /** 20140104    
- * 2의 n 제곱으로 맞춰주기 위한 값.
+ * struct pagevec의 크기를 2의 n 제곱으로 맞춰주기 위한 값.
+ *
+ * 4 + 4 + (4 * 14) = 64
  **/
 #define PAGEVEC_SIZE	14
 
@@ -18,6 +20,9 @@ struct page;
 struct address_space;
 
 /** 20140104    
+ * pagevec은 page를 vector(덩어리)로 관리하기 위한 자료구조.
+ *   cold는 lruvec에서만 사용하는 필드이다.
+ *
  * pagevec의 nr개의 page들을 처리하는 동안 spinlock으로 동기화 한다.
  **/
 struct pagevec {
@@ -59,6 +64,9 @@ static inline unsigned pagevec_count(struct pagevec *pvec)
 	return pvec->nr;
 }
 
+/** 20150111    
+ * 하나의 pagevec에서 가리킬 수 있는 page가 몇 개인지 리턴한다.
+ **/
 static inline unsigned pagevec_space(struct pagevec *pvec)
 {
 	return PAGEVEC_SIZE - pvec->nr;

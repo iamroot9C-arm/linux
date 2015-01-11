@@ -55,9 +55,16 @@ struct call_single_queue {
 
 /** 20140621    
  * list와 lock을 보유한 call_single_queue per cpu 변수를 선언한다.
+ *
+ * call_function_init에서 초기화.
+ * generic_exec_single에서 추가된다.
+ * generic_smp_call_function_single_interrupt에서 호출된다.
  **/
 static DEFINE_PER_CPU_SHARED_ALIGNED(struct call_single_queue, call_single_queue);
 
+/** 20150111    
+ * action에 따라 call_function_data에 필요한 동작을 수행한다.
+ **/
 static int
 hotplug_cfd(struct notifier_block *nfb, unsigned long action, void *hcpu)
 {
@@ -90,18 +97,35 @@ static struct notifier_block __cpuinitdata hotplug_cfd_notifier = {
 	.notifier_call		= hotplug_cfd,
 };
 
+/** 20150111    
+ * call function 관련 초기화를 수행한다.
+ **/
 void __init call_function_init(void)
 {
+	/** 20150110    
+	 * 현재 cpu 번호를 받아온다.
+	 **/
 	void *cpu = (void *)(long)smp_processor_id();
 	int i;
 
+	/** 20150110    
+	 * cpu_possible_mask에 설정된 cpu를 순회.
+	 **/
 	for_each_possible_cpu(i) {
+		/** 20150110    
+		 * per_cpu 전역변수로 선언된 call_single_queue에서 cpu에 해당하는
+		 * queue를 받아와 spinlock과 list head를 초기화 한다.
+		 **/
 		struct call_single_queue *q = &per_cpu(call_single_queue, i);
 
 		raw_spin_lock_init(&q->lock);
 		INIT_LIST_HEAD(&q->list);
 	}
 
+	/** 20150111    
+	 * CPU_UP_PREPARE를 먼저 내려 hotplug_cfd를 먼저 호출한다.
+	 * hotplug_cfd_notifier를 cpu notify block에 등록한다.
+	 **/
 	hotplug_cfd(&hotplug_cfd_notifier, CPU_UP_PREPARE, cpu);
 	register_cpu_notifier(&hotplug_cfd_notifier);
 }

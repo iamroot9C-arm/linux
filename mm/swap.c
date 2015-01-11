@@ -37,7 +37,8 @@
 int page_cluster;
 
 /** 20140104    
- * lru_add_pvecs는 각각이 구조체 배열.
+ * lru_add_pvecs는 LRU 종류의 수만큼 pagevec이 배열로 percpu로 존재한다.
+ * lru_add_pvecs : lru cache
  **/
 static DEFINE_PER_CPU(struct pagevec[NR_LRU_LISTS], lru_add_pvecs);
 static DEFINE_PER_CPU(struct pagevec, lru_rotate_pvecs);
@@ -327,17 +328,17 @@ static void pagevec_lru_move_fn(struct pagevec *pvec,
 	struct zone *zone = NULL;
 	struct lruvec *lruvec;
 	unsigned long flags = 0;
-/** 20131221
- pvec의 nr갯수만큼 루프를 돈다
- pvec의 page[i]가 포함된 zone에 
-**/
+	/** 20131221
+	 * pvec의 nr갯수만큼 루프를 돈다.
+	 * pvec의 pages[i]가 포함된 zone에 
+	 **/
 	for (i = 0; i < pagevec_count(pvec); i++) {
 		struct page *page = pvec->pages[i];
 		struct zone *pagezone = page_zone(page);
 		/** 20131221
-		  현재 page가 이전에 옮겨준 page와 다른 zone에 있으면
-		  이전 zone의 lock을 풀고 현재 zone의 lock을 건다.
-		**/
+		 * 현재 page가 loop문 이전에 옮겨준 page와 다른 zone에 있으면
+		 * 이전 zone의 lock을 풀고 현재 zone의 lock을 건다.
+		 **/
 		if (pagezone != zone) {
 			if (zone)
 				spin_unlock_irqrestore(&zone->lru_lock, flags);
@@ -549,7 +550,7 @@ void mark_page_accessed(struct page *page)
 EXPORT_SYMBOL(mark_page_accessed);
 
 /** 20140111
- * page를 lru cache (percpu)에 추가한다.
+ * page를 lru cache (percpu로 존재하는 pagevec)에 추가한다.
  *
  * page를 percpu의 lru pagevec에 추가시키고,
  * lru pagevec이 다 찼으면 pagevec을 zone에 등록시킨다.
@@ -752,8 +753,7 @@ void lru_add_drain_cpu(int cpu)
 	for_each_lru(lru) {
 		pvec = &pvecs[lru - LRU_BASE];
 		/** 20140104    
-		 * pagevec에 nr이 존재하면
-		 *   pagevec에 의해 참조되는 page들을 lru에 추가한다.
+		 * pagevec에 등록된 page가 있다면, 해당 page들을 lru에 추가한다.
 		 **/
 		if (pagevec_count(pvec))
 			__pagevec_lru_add(pvec, lru);
@@ -764,7 +764,7 @@ void lru_add_drain_cpu(int cpu)
 	 **/
 	pvec = &per_cpu(lru_rotate_pvecs, cpu);
 	/** 20140104    
-	 * pagevec에 nr이 존재하면
+	 * 해당 cpu의 lru_rotate_pvecs에 page가 존재하면
 	 **/
 	if (pagevec_count(pvec)) {
 		unsigned long flags;
@@ -784,7 +784,7 @@ void lru_add_drain_cpu(int cpu)
 	 **/
 	pvec = &per_cpu(lru_deactivate_pvecs, cpu);
 	/** 20140104    
-	 * pagevec에 nr이 존재하면
+	 * 해당 cpu의 lru_deactivate_pvecs에 page가 존재하면
 	 **/
 	if (pagevec_count(pvec))
 		/** 20140104    
@@ -1019,7 +1019,7 @@ void lru_add_page_tail(struct page *page, struct page *page_tail,
 #endif /* CONFIG_TRANSPARENT_HUGEPAGE */
 
 /** 20131221
- * page를 lruvec에서 '인자(arg)로 넘어온 lru리스트'에 등록시켜주고 reclaim_stat을 갱신한다.
+ * page를 지정된 lruvec의 '인자(arg)로 넘어온 lru리스트'에 등록시켜주고 reclaim_stat을 갱신한다.
  **/
 static void __pagevec_lru_add_fn(struct page *page, struct lruvec *lruvec,
 				 void *arg)
@@ -1031,13 +1031,13 @@ static void __pagevec_lru_add_fn(struct page *page, struct lruvec *lruvec,
 	VM_BUG_ON(PageActive(page));
 	VM_BUG_ON(PageUnevictable(page));
 	VM_BUG_ON(PageLRU(page));
-/** 20131221
- * page의 flag에서 LRU에 해당하는 bit를 Set해준다.
- * page가 LRU리스트에 속한다는 의미임
- **/
+	/** 20131221
+	 * page의 flag에서 LRU에 해당하는 bit를 Set해준다.
+	 * page가 LRU리스트에 속한다는 의미임
+	 **/
 	SetPageLRU(page);
 	/** 20131221
-	 * 등록할lru가 active일경우 page의 flag속성에 active bit를 set해준다
+	 * 등록할 lru가 active일경우 page의 flag속성에 active bit를 set해준다
 	 **/
 	if (active)
 		SetPageActive(page);
@@ -1054,7 +1054,7 @@ static void __pagevec_lru_add_fn(struct page *page, struct lruvec *lruvec,
  * on them.  Reinitialises the caller's pagevec.
  */
 /** 20140104    
- * pvec이 나타내는 page들을 zone의 타입별 lru list로 이동시킨다.
+ * pvec으로 가리키던 page들을 zone의 lru list로 이동시킨다.
  *   move 동작을 수행할 함수는 __pagevec_lru_add_fn를 지정한다.
  **/
 void __pagevec_lru_add(struct pagevec *pvec, enum lru_list lru)

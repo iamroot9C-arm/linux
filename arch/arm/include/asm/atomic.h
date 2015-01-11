@@ -394,8 +394,10 @@ static inline int __atomic_add_unless(atomic_t *v, int a, int u)
 
 #define atomic_inc_and_test(v)	(atomic_add_return(1, v) == 0)
 /** 20130803    
- * atomic_sub_result을 이용해 v를 1 감소시키고, 감소시킨 결과가 0인지 리턴
- * atomic_dec_return을 이용해 v를 1 감소시키고, 감소시킨 결과를 리턴한다.
+ * atomic_dec_and_test(v)
+ *   v를 1 감소시키고, 감소시킨 결과가 0인지 리턴한다.
+ * atomic_dec_return(v)
+ *   v를 1 감소시키고, 감소시킨 결과를 리턴한다.
  **/
 #define atomic_dec_and_test(v)	(atomic_sub_return(1, v) == 0)
 #define atomic_inc_return(v)    (atomic_add_return(1, v))

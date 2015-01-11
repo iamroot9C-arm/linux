@@ -183,8 +183,9 @@ extern void put_online_cpus(void);
  * vexpress의 경우 CONFIG_HOTPLUG_CPU 설정되어 있으므로 cpu_notifier 호출
  * hotcpu notifier 등록.
  *
- * 등록: register_hotcpu_notifer
- * 호출: hotcpu_notifier
+ * 등록: register_hotcpu_notifer, hotcpu_notifier
+ * 해제: unregister_hotcpu_notifier
+ * 호출: cpu_notify
  **/
 #define hotcpu_notifier(fn, pri)	cpu_notifier(fn, pri)
 #define register_hotcpu_notifier(nb)	register_cpu_notifier(nb)

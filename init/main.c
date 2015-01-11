@@ -762,6 +762,9 @@ asmlinkage void __init start_kernel(void)
 	 * machine speicific한 timer를 초기화하고, sched_clock timer를 설정한다.
 	 **/
 	time_init();
+	/** 20150103    
+	 * profile을 동작시키기 위한 초기화.
+	 **/
 	profile_init();
 	call_function_init();
 	if (!irqs_disabled())

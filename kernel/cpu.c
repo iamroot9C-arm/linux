@@ -31,8 +31,13 @@ static DEFINE_MUTEX(cpu_add_remove_lock);
  * to serialize the updates to cpu_online_mask, cpu_present_mask.
  */
 /** 20130727    
- * cpu 관련 자료구조의 변경을 시작할 때 호출
+ * cpu_online_mask, cpu_present_mask가 변경되는 작업을 serialize 시킨다.
  *   - cpu_add_remove_lock을 mutex lock으로 건다
+ *
+ * e.g.
+ *   cpu_maps_update_begin
+ *   _cpu_up(cpu, 0);
+ *   cpu_maps_update_done
  **/
 void cpu_maps_update_begin(void)
 {
@@ -182,7 +187,7 @@ int __ref register_cpu_notifier(struct notifier_block *nb)
 {
 	int ret;
 	/** 20130727    
-	 * cpu 관련 자료구조 전후에 mutex_lock을 걸고 푸는 함수들을 호출해 원자성을 보장한다.
+	 * cpu 관련 자료구조 전후에  호출해 원자성을 보장한다.
 	 **/
 	cpu_maps_update_begin();
 	/** 20130727    
@@ -208,7 +213,7 @@ static int __cpu_notify(unsigned long val, void *v, int nr_to_call,
 }
 
 /** 20140927    
- * register_cpu_notify로 등록한 notifier_block을 호출한다.
+ * register_cpu_notifier로 등록한 notifier_block을 호출한다.
  **/
 static int cpu_notify(unsigned long val, void *v)
 {

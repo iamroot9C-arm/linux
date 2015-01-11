@@ -1867,6 +1867,8 @@ retry_reserve:
  * 실패했을 경우 약속된 다른 migratetype에서 받아올 수 있다.
  * 
  * buddy에서 빼왔으므로 받아온 page의 private영역에 migratetype을 저장하고 state를 조정한다.
+ *
+ * list : zone -> pageset -> pcp -> migratetype 별 list
   **/
 static int rmqueue_bulk(struct zone *zone, unsigned int order,
 			unsigned long count, struct list_head *list,
@@ -1904,8 +1906,9 @@ static int rmqueue_bulk(struct zone *zone, unsigned int order,
 		 */
 		/** 20131005    
 		 * cold가 아닌 경우 'list'의 앞에 page를 추가한다.
-		 * (rmqueue_bulk를 호출했을 때의 list는 pcp->lists[migratetype]이었고,
-		 *  한 번 수행된 이후에 list가 &page->lru로 변경된다.)
+		 * rmqueue_bulk가 처음 호출되었을 때 list는 pcp->lists[migratetype]이고,
+		 *  이 반복문이 한 번 수행되면 등록될 list가 &page->lru로 변경된다.
+		 * 
 		 * cold인 경우 'list'의 마지막에 page를 추가한다.
 		 **/
 		if (likely(cold == 0))
@@ -2169,7 +2172,7 @@ void free_hot_cold_page(struct page *page, int cold)
 	 **/
 	local_irq_save(flags);
 	/** 20130831    
-	 * 아래 두 함수는 추후 보기로 함
+	 * 아래 두 함수는 추후 보기로 함 ???
 	 **/
 	if (unlikely(wasMlocked))
 		free_page_mlock(page);
@@ -4147,7 +4150,8 @@ unsigned long get_zeroed_page(gfp_t gfp_mask)
 EXPORT_SYMBOL(get_zeroed_page);
 
 /** 20130831    
- * page의 reference count를 감소시키고, 0이 되면 order만큼 page들을 free 하는 함수
+ * page를 받아 reference count를 감소시키고,
+ * 0이 되면 order만큼 page들을 free 하는 함수
  **/
 void __free_pages(struct page *page, unsigned int order)
 {
@@ -4178,6 +4182,9 @@ void free_pages(unsigned long addr, unsigned int order)
 
 EXPORT_SYMBOL(free_pages);
 
+/** 20150111    
+ * 사용할 페이지 다음 페이지부터 할당받은 마지막 페이지까지 해제한다.
+ **/
 static void *make_alloc_exact(unsigned long addr, unsigned order, size_t size)
 {
 	if (addr) {
@@ -7000,11 +7007,21 @@ void __init free_area_init(unsigned long *zones_size)
 			__pa(PAGE_OFFSET) >> PAGE_SHIFT, NULL);
 }
 
+/** 20150111    
+ * page_alloc 관련 cpu notify를 처리한다.
+ **/
 static int page_alloc_cpu_notify(struct notifier_block *self,
 				 unsigned long action, void *hcpu)
 {
 	int cpu = (unsigned long)hcpu;
 
+	/** 20150111    
+	 * CPU_DEAD, CPU_DEAD_FROZEN action일 때
+	 *
+	 * - cpu의 pagevecs 속 pages들을 zone의 lru list로 옮긴다.
+	 * - cpu가 보유 중인 percpu pages를 버디 할당자로 되돌린다. 
+	 * - vm_events, vm_stats 관련 작업 처리
+	 **/
 	if (action == CPU_DEAD || action == CPU_DEAD_FROZEN) {
 		lru_add_drain_cpu(cpu);
 		drain_pages(cpu);

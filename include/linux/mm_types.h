@@ -168,7 +168,9 @@ struct page {
 	/* Third double word block */
 	union {
 		/** 20140322    
-		 * slub에서 사용할 때 partial slab에 대한 list
+		 * buddy에서 사용할 때 : free_area[order]의 free_list에 대한 list head.
+		 * slub에서 사용할 때  : partial slab에 대한 list head.
+		 * zone에서 사용할 때  : zone lruvec의 lru[NR_LRU_LISTS]에 대한 list head.
 		 *
 		 * compound page인 경우, 두번째 page의 .lru.next에 destructor를 등록시킨다.
 		 **/

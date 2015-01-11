@@ -776,6 +776,8 @@ static inline void alloc_bootmem_cpumask_var(cpumask_var_t *mask)
 {
 }
 
+/** 20150110    
+ **/
 static inline void free_cpumask_var(cpumask_var_t mask)
 {
 }

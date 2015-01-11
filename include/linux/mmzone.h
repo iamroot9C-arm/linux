@@ -322,6 +322,9 @@ struct per_cpu_pages {
 	struct list_head lists[MIGRATE_PCPTYPES];
 };
 
+/** 20150110    
+ * cpu별 pageset을 정의하는 자료구조.
+ **/
 struct per_cpu_pageset {
 	struct per_cpu_pages pcp;
 #ifdef CONFIG_NUMA
@@ -412,6 +415,9 @@ ZONE_SHIFT는 1
 #error ZONES_SHIFT -- too many zones configured adjust calculation
 #endif
 
+/** 20150110    
+ * memory zone 구조체
+ **/
 struct zone {
 	/* Fields commonly accessed by the page allocator */
 
@@ -457,7 +463,11 @@ struct zone {
 	unsigned long		min_slab_pages;
 #endif
 	/** 20130427    
-	 * zone_pcp_init 에서 할당
+	 * zone_pcp_init 에서 할당.
+	 * cpu별로 per_cpu_pages 구조체를 갖는다.
+	 *
+	 * cpu별로 pageset을 가지고 있다.
+	 * buddy로부터 batch 단위의 page를 가져올 때 정보가 포함된다.
 	 **/
 	struct per_cpu_pageset __percpu *pageset;
 	/*
@@ -510,7 +520,8 @@ struct zone {
 	/* Fields commonly accessed by the page reclaim scanner */
 	spinlock_t		lru_lock;
 	/** 20131214    
-	 * free_area_init_core에서 자료구조 초기화
+	 * free_area_init_core에서 자료구조 초기화.
+	 * lrulist를 갖고 있다.
 	 **/
 	struct lruvec		lruvec;
 

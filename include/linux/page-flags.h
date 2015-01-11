@@ -72,8 +72,10 @@
  * SPARSEMEM_EXTREME with !SPARSEMEM_VMEMMAP).
  */
 /** 20130504
-page struct flags의 값 리스트
-**/
+ * page struct flags의 값 리스트
+ *
+ * - PG_lru : zone의 lruvec의 lru에 등록될 때 SetPageLRU로 설정된다.
+ **/
 enum pageflags {
 	PG_locked,		/* Page is locked. Don't touch. */
 	PG_error,
@@ -142,6 +144,10 @@ enum pageflags {
 
 __PAGEFLAG(Slab, slab)
 
+	Page##uname
+	SetPage##uname
+	ClearPage##uname
+
 #define PAGEFLAG(uname, lname) TESTPAGEFLAG(uname, lname)		\
 	SETPAGEFLAG(uname, lname) CLEARPAGEFLAG(uname, lname)
  **/
@@ -168,6 +174,9 @@ static inline void ClearPage##uname(struct page *page)			\
 static inline void __SetPage##uname(struct page *page)			\
 			{ __set_bit(PG_##lname, &page->flags); }
 
+/** 20150110    
+ *  __ClearPage##uname
+ **/
 #define __CLEARPAGEFLAG(uname, lname)					\
 static inline void __ClearPage##uname(struct page *page)		\
 			{ __clear_bit(PG_##lname, &page->flags); }
@@ -274,6 +283,9 @@ PAGEFLAG(SavePinned, savepinned);			/* Xen */
 **/
 PAGEFLAG(Reserved, reserved) __CLEARPAGEFLAG(Reserved, reserved)
 /** 20140524    
+ * anonymous page인 경우 swapbacked이다.
+ *   - memory를 부족시 file cache와 anon은 다른 정책에 의해 처리된다.
+ *
  * handle_pte_fault
  *		do_anonymous_page
  *			page_add_new_anon_rmap

@@ -236,7 +236,8 @@ static inline void kick_all_cpus_sync(void) {  }
  **/
 #define get_cpu()		({ preempt_disable(); smp_processor_id(); })
 /** 20131221
- * 선점 가능으로 만들고, task 선점이 대기 중이라면 __schedule 함수를 실행한다.
+ * 선점 가능으로 만든다.
+ *   - task 선점이 대기 중이라면 __schedule 함수를 실행한다.
  **/
 #define put_cpu()		preempt_enable()
 
