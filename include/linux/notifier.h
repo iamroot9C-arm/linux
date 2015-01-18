@@ -115,18 +115,21 @@ extern void srcu_init_notifier_head(struct srcu_notifier_head *nh);
 
 /** 20140823    
  * 각 type의 notifier block head를 선언과 동시에 초기화.
+ *
+ * ATOMIC_NOTIFIER 선언 및 초기화.
+ *   register/unregister시 spinlock을 사용한다.
  **/
 #define ATOMIC_NOTIFIER_HEAD(name)				\
 	struct atomic_notifier_head name =			\
 		ATOMIC_NOTIFIER_INIT(name)
 /** 20140628    
- * BLOCKING_NOTIFIER_INIT로 초기화 notifier head 선언.
+ * BLOCKING_NOTIFIER 선언 및 초기화
  **/
 #define BLOCKING_NOTIFIER_HEAD(name)				\
 	struct blocking_notifier_head name =			\
 		BLOCKING_NOTIFIER_INIT(name)
 /** 20121201
- * name으로 RAW_NOTIFIER 생성 및 초기화
+ * RAW_NOTIFIER 선언 및 초기화
  **/
 #define RAW_NOTIFIER_HEAD(name)					\
 	struct raw_notifier_head name =				\

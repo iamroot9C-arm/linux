@@ -740,6 +740,39 @@ ENDPROC(ret_from_exception)
  * r0 = previous task_struct, r1 = previous thread_info, r2 = next thread_info
  * previous and next are guaranteed not to be the same.
  */
+/** 20150118    
+ * 두 task 사이의 문맥 전환 함수. register를 교환한다.
+ *
+ *   r0 : 이전 task_struct, r1 : 이전 thread_info, r2 : 다음 thread_info
+ *
+ *   struct cpu_context_save * prev_ti, * next_ti;
+ *   prev_ti = r1.cpu_context;
+ *   *prev_ti <= {r4 ~ sl, fp, sp, lr(pc)};
+ *   set_tls(r3, r4, r5);
+ *   tmp = r0;
+ *   next_ti = r2.cpu_context;
+ *   atomic_notifier_call_chain(thread_notify_head, THREAD_NOTIFY_SWITCH, r2);
+ *   r0 = tmp;
+ *   *text_ti => { r4 ~ sl, fp, sp, pc };
+ * 
+ * [APCS registers]
+ * r0	a1	    argument 1/scratch register/result
+ * r1	a2	    argument 2/scratch register/result
+ * r2	a3	    argument 3/scratch register/result
+ * r3	a4	    argument 4/scratch register/result
+ * r4	v1	    register variable
+ * r5	v2	    register variable
+ * r6	v3	    register variable
+ * r7	v4	    register variable
+ * r8	v5	    register variable
+ * r9	sb/v6	static base/register variable
+ * r10	sl/v7	stack limit/stack chunk handle/register variable
+ * r11	fp/v8	frame pointer/register variable
+ * r12	ip	    scratch register/new -sb in inter-link-unit calls
+ * r13	sp	    lower end of the current stack frame
+ * r14	lr	    link register/scratch register
+ * r15	pc	    program counter
+ **/
 ENTRY(__switch_to)
  UNWIND(.fnstart	)
  UNWIND(.cantunwind	)

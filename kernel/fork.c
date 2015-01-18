@@ -143,6 +143,11 @@ void __weak arch_release_thread_info(struct thread_info *ti)
  * kmemcache based allocator.
  */
 # if THREAD_SIZE >= PAGE_SIZE
+/** 20150117    
+ * thread_info 용으로 사용할 메모리를 할당해 리턴한다.
+ *
+ * # define THREADINFO_GFP		(GFP_KERNEL | __GFP_NOTRACK)
+ **/
 static struct thread_info *alloc_thread_info_node(struct task_struct *tsk,
 						  int node)
 {
@@ -282,6 +287,9 @@ void __init fork_init(unsigned long mempages)
 		init_task.signal->rlim[RLIMIT_NPROC];
 }
 
+/** 20150117    
+ * task_struct 내용 copy.
+ **/
 int __attribute__((weak)) arch_dup_task_struct(struct task_struct *dst,
 					       struct task_struct *src)
 {
@@ -301,16 +309,28 @@ static struct task_struct *dup_task_struct(struct task_struct *orig)
 	if (!tsk)
 		return NULL;
 
+	/** 20150117    
+	 * thread_info용 메모리 할당
+	 **/
 	ti = alloc_thread_info_node(tsk, node);
 	if (!ti)
 		goto free_tsk;
 
+	/** 20150117    
+	 * orig의 strcut task_struct를 복사한다.
+	 **/
 	err = arch_dup_task_struct(tsk, orig);
 	if (err)
 		goto free_ti;
 
+	/** 20150117    
+	 * task_struct의 .stack은 새로 할당한 thread_info를 지정한다.
+	 **/
 	tsk->stack = ti;
 
+	/** 20150117    
+	 * struct thread_info를 복사한다.
+	 **/
 	setup_thread_stack(tsk, orig);
 	clear_user_return_notifier(tsk);
 	clear_tsk_need_resched(tsk);
@@ -1546,6 +1566,9 @@ noinline struct pt_regs * __cpuinit __attribute__((weak)) idle_regs(struct pt_re
 	return regs;
 }
 
+/** 20150118    
+ * 추후 분석 ???
+ **/
 static inline void init_idle_pids(struct pid_link *links)
 {
 	enum pid_type type;
@@ -1556,18 +1579,30 @@ static inline void init_idle_pids(struct pid_link *links)
 	}
 }
 
+/** 20150118    
+ * 지정된 cpu를 위한 idle thread를 생성하고, idle thread로 지정한다.
+ **/
 struct task_struct * __cpuinit fork_idle(int cpu)
 {
 	struct task_struct *task;
 	struct pt_regs regs;
 
+	/** 20150118    
+	 * current task를 복사한다.
+	 **/
 	task = copy_process(CLONE_VM, 0, idle_regs(&regs), 0, NULL,
 			    &init_struct_pid, 0);
 	if (!IS_ERR(task)) {
 		init_idle_pids(task->pids);
+		/** 20150117    
+		 * cpu에 해당하는 rq의 idle thread로 task를 지정한다.
+		 **/
 		init_idle(task, cpu);
 	}
 
+	/** 20150117    
+	 * 생성한 task를 리턴한다.
+	 **/
 	return task;
 }
 

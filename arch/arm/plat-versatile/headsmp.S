@@ -18,6 +18,12 @@
  * This provides a "holding pen" into which all secondary cores are held
  * until we're ready for them to initialise.
  */
+/** 20150118    
+ * MPDIR에서 현재 실행 중인 core번호를 읽어낸다.
+ * pen_release 변수의 값을 읽어
+ * 현재 cpu 번호와 같을 때까지 loop로 대기하고,
+ * 같다면 secondary_startup로 이동한다.
+ **/
 ENTRY(versatile_secondary_startup)
 	mrc	p15, 0, r0, c0, c0, 5
 	and	r0, r0, #15

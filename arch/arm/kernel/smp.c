@@ -48,6 +48,11 @@
  * so we need some other way of telling a new secondary core
  * where to place its SVC stack
  */
+/** 20150118    
+ * SVC 모드 stack의 위치를 알려주기 위한 전역 변수.
+ *
+ * __cpu_up에서 초기화하고, head.S에서 사용한다.
+ **/
 struct secondary_data secondary_data;
 
 /** 20130713    
@@ -78,9 +83,18 @@ int __cpuinit __cpu_up(unsigned int cpu, struct task_struct *idle)
 	 * We need to tell the secondary core where to find
 	 * its stack and the page tables.
 	 */
+	/** 20150118    
+	 * secondary core가 필요한 secondary_data 구조체를 초기화 한다.
+	 *
+	 * secondary_startup에서 사용된다.
+	 **/
 	secondary_data.stack = task_stack_page(idle) + THREAD_START_SP;
 	secondary_data.pgdir = virt_to_phys(idmap_pgd);
 	secondary_data.swapper_pg_dir = virt_to_phys(swapper_pg_dir);
+	/** 20150118    
+	 * secondary_data 영역을 flush 한다.
+	 *   L1, L2 캐시의 순서로 clean 한다.
+	 **/
 	__cpuc_flush_dcache_area(&secondary_data, sizeof(secondary_data));
 	outer_clean_range(__pa(&secondary_data), __pa(&secondary_data + 1));
 
@@ -229,6 +243,8 @@ static void percpu_timer_setup(void);
  * This is the secondary CPU boot entry.  We're using this CPUs
  * idle thread stack, but a set of temporary page tables.
  */
+/** 20150118    
+ **/
 asmlinkage void __cpuinit secondary_start_kernel(void)
 {
 	struct mm_struct *mm = &init_mm;

@@ -128,6 +128,9 @@
 #define __DEVINITDATA    .section	".devinit.data", "aw"
 #define __DEVINITRODATA  .section	".devinit.rodata", "a"
 
+/** 20150118    
+ * cpuinit section 관련 매크로
+ **/
 #define __CPUINIT        .section	".cpuinit.text", "ax"
 #define __CPUINITDATA    .section	".cpuinit.data", "aw"
 #define __CPUINITRODATA  .section	".cpuinit.rodata", "a"

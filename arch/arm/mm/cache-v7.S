@@ -300,10 +300,12 @@ ENTRY(v7_flush_kern_dcache_area)
 	ALT_UP(W(nop))
 #endif
 1:
-/** 20130511
-데이타 캐쉬라인을 메모리에 쓴다.
-참고 - http://www.iamroot.org/xe/5705 
-**/
+	/** 20130511
+	 * 데이타 캐쉬라인을 메모리에 쓴다.
+	 * 참고 - http://www.iamroot.org/xe/5705 
+	 *
+	 * cache flush 명령 후 dsb를 사용해 동기화 되도록 한다.
+	 **/
 	mcr	p15, 0, r0, c7, c14, 1		@ clean & invalidate D line / unified line
 	add	r0, r0, r2
 	cmp	r0, r1

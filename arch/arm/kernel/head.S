@@ -200,7 +200,8 @@ ENTRY(stext)
 **/
 	mov	r8, r4				@ set TTBR1 to swapper_pg_dir
 /** 20121013
-    pc에 직접 값을 넣어 W(b)    \initfunc 을 실행. initfunc은 __v7_proc을 호출할 때 지정한 argument
+    pc에 직접 값을 넣어 W(b)    \initfunc 을 실행.
+	initfunc은 __v7_proc을 호출할 때 지정한 argument
 
 	arch/arm/mm/proc-v7.S
 		__v7_proc __v7_ca9mp_setup
@@ -512,6 +513,9 @@ ENTRY(secondary_startup)
 	setmode	PSR_F_BIT | PSR_I_BIT | SVC_MODE, r9
 	mrc	p15, 0, r9, c0, c0		@ get processor id
 	bl	__lookup_processor_type
+	/** 20150117
+	 * __lookup_processor_type의 리턴 결과로 r5 : procinfo
+	 **/
 	movs	r10, r5				@ invalid processor?
 	moveq	r0, #'p'			@ yes, error 'p'
  THUMB( it	eq )		@ force fixup-able long branch encoding
@@ -520,6 +524,14 @@ ENTRY(secondary_startup)
 	/*
 	 * Use the page tables supplied from  __cpu_up.
 	 */
+	/** 20150118    
+		r7  <- secondary_data
+		r13 = r12 <- __secondary_switched
+		__enable_mmu 호출 후 r13의 함수로 이동한다.
+
+		__enable_mmu
+			__secondary_switched
+	**/
 	adr	r4, __secondary_data
 	ldmia	r4, {r5, r7, r12}		@ address to jump to after
 	sub	lr, r4, r5			@ mmu has been enabled
@@ -528,6 +540,13 @@ ENTRY(secondary_startup)
 	ldr	r8, [r7, lr]			@ get secondary_data.swapper_pg_dir
 	adr	lr, BSYM(__enable_mmu)		@ return address
 	mov	r13, r12			@ __secondary_switched address
+	/** 20150117    
+		arch/arm/mm/proc-v7.S
+			__v7_proc __v7_ca9mp_setup
+
+		branch가 아니므로 #PROCINFO_INITFUNC 이후 리턴 주소는
+		lr에 넣어둔 __enable_mmu.
+	**/
  ARM(	add	pc, r10, #PROCINFO_INITFUNC	) @ initialise processor
 						  @ (return control reg)
  THUMB(	add	r12, r10, #PROCINFO_INITFUNC	)
@@ -537,6 +556,10 @@ ENDPROC(secondary_startup)
 	/*
 	 * r6  = &secondary_data
 	 */
+/** 20150118    
+ * sp <- secondary_data.stack
+ * fp <- 0
+ **/
 ENTRY(__secondary_switched)
 	ldr	sp, [r7, #4]			@ get secondary_data.stack
 	mov	fp, #0

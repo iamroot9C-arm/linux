@@ -15,6 +15,14 @@
 #include <linux/compiler.h>
 #include <asm/fpstate.h>
 
+/** 20150118    
+ * thread_info 관련 define.
+ *
+ *   order 1 << (1)
+ *   size  8KB
+ *   SP의 시작은 thread_info와 union이므로 THREAD_SIZE만큼 더한다.
+ *     ( -8은 왜 ??? )
+ **/
 #define THREAD_SIZE_ORDER	1
 #define THREAD_SIZE		8192
 #define THREAD_START_SP		(THREAD_SIZE - 8)
@@ -29,6 +37,9 @@ struct exec_domain;
 
 typedef unsigned long mm_segment_t;
 
+/** 20150118    
+ * cpu 문맥을 저장할 구조체.
+ **/
 struct cpu_context_save {
 	__u32	r4;
 	__u32	r5;
@@ -47,6 +58,12 @@ struct cpu_context_save {
  * low level task data that entry.S needs immediate access to.
  * __switch_to() assumes cpu_context follows immediately after cpu_domain.
  */
+/** 20150118    
+ * task 구조체와 연결된 thread_info 구조체.
+ *
+ * cpu : 현재 task가 실행되는 cpu 정보.
+ * cpu_context : 문맥 교환시 수행 중이던 문맥 저장을 위한 공간.
+ **/
 struct thread_info {
 	unsigned long		flags;		/* low level flags */
 	/** 20131005    
@@ -101,8 +118,11 @@ struct thread_info {
 static inline struct thread_info *current_thread_info(void) __attribute_const__;
 
 /** 20121208
- * thread_info는 stack에 overlay 된다.
+ * 'current' thread의 thread_info를 리턴한다.
+ *
+ * thread_info는 thread의 stack에 overlay 된다.
  * Kernel stack(8KB)의 첫 주소를 추출해 thread_info구조체로 리턴한다.
+ * 문맥교환시(switch_to) sp 역시 교체되므로, sp로 접근하는 것이 보장된다.
  **/
 static inline struct thread_info *current_thread_info(void)
 {
@@ -114,6 +134,12 @@ static inline struct thread_info *current_thread_info(void)
 	return (struct thread_info *)(sp & ~(THREAD_SIZE - 1));
 }
 
+/** 20150118    
+ * 특정 task가 보관 중인 문맥 중 pc, sp, fp를 가져온다.
+ *
+ * thread_info의 cpu_context에 문맥전환시 사용되는 레지스터들을 보관하므로
+ * 여기에 접근해서 읽어온다.
+ **/
 #define thread_saved_pc(tsk)	\
 	((unsigned long)(task_thread_info(tsk)->cpu_context.pc))
 #define thread_saved_sp(tsk)	\

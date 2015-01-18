@@ -4342,6 +4342,12 @@ more_balance:
 		if ((env.flags & LBF_SOME_PINNED) && env.imbalance > 0 &&
 				lb_iterations++ < max_lb_iterations) {
 
+			/** 20150117    
+			 * runqueue 포인터가 새로운 dst_cpu의 run queue로 변경된다.
+			 * 즉, 다른 runqueue로 변경된다.
+			 *
+			 * 이후 more_balance로 이동되어 move_tasks가 호출될 것이다.
+			 **/
 			this_rq		 = cpu_rq(env.new_dst_cpu);
 			env.dst_rq	 = this_rq;
 			env.dst_cpu	 = env.new_dst_cpu;
@@ -4484,6 +4490,9 @@ void idle_balance(int this_cpu, struct rq *this_rq)
 
 		if (sd->flags & SD_BALANCE_NEWIDLE) {
 			/* If we've pulled tasks over stop searching: */
+			/** 20150117    
+			 * runqueues 중 현재 cpu의 run queue의 위치가 넘어간다.
+			 **/
 			pulled_task = load_balance(this_cpu, this_rq,
 						   sd, CPU_NEWLY_IDLE, &balance);
 		}

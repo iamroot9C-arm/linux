@@ -39,6 +39,9 @@ unsigned int __init scu_get_core_count(void __iomem *scu_base)
 /*
  * Enable the SCU
  */
+/** 20150118    
+ * SCU 레지스터에 값을 써 SCU enable 시킨다.
+ **/
 void scu_enable(void __iomem *scu_base)
 {
 	u32 scu_ctrl;

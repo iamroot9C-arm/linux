@@ -516,7 +516,7 @@ static inline int cpu_of(struct rq *rq)
  *
  * runqueues : struct rq타입의 per-cpu 변수.
  *
- * cpu_rq(cpu) : runqueues에서 cpu에 해당하는 rq 변수 주소.
+ * cpu_rq(cpu) : runqueues에서 cpu에 해당하는 rq 변수 주소. 즉, 현재 cpu의 rq포인터
  * this_rq()   : runqueues에서 현재 cpu에 해당하는 rq 변수 주소.
  * task_rq(p)  : runqueues에서 task가 실행 중인 cpu 번호에 해당하는 rq 변수 주소.
  * cpu_curr(cpu) : cpu에 해당하는 rq 변수가 가리키는 task 포인터.
@@ -636,7 +636,7 @@ static inline struct task_group *task_group(struct task_struct *p)
 #endif /* CONFIG_CGROUP_SCHED */
 
 /** 20130720    
- * task p의 cpu를 전달받은 cpu 값으로 지정
+ * task p의 .cpu를 전달받은 cpu 값으로 지정
  **/
 static inline void __set_task_cpu(struct task_struct *p, unsigned int cpu)
 {
@@ -655,7 +655,7 @@ static inline void __set_task_cpu(struct task_struct *p, unsigned int cpu)
 	 **/
 	smp_wmb();
 	/** 20130720    
-	 * cpu를 새로 지정함
+	 * thread_info의 cpu를 새로 지정함
 	 **/
 	task_thread_info(p)->cpu = cpu;
 #endif

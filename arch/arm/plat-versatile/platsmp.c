@@ -30,6 +30,12 @@ volatile int __cpuinitdata pen_release = -1;
  * observers, irrespective of whether they're taking part in coherency
  * or not.  This is necessary for the hotplug code to work reliably.
  */
+/** 20150118    
+ * pen_release에 val로 넘어온 cpu번호를 쓰고, cache를 flush한다.
+ *
+ * 다른 core에서 실행 중인 versatile_secondary_startup에서 pen_release에
+ * 자신의 cpu번호가 쓰일 때까지 check한다.
+ **/
 static void __cpuinit write_pen_release(int val)
 {
 	pen_release = val;

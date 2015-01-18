@@ -2641,11 +2641,20 @@ static inline void threadgroup_unlock(struct task_struct *tsk) {}
 #ifndef __HAVE_THREAD_FUNCTIONS
 
 /** 20130713    
- * task의 stack에 저장된 주소 (thread_info와 union)를 리턴
+ * task에 해당하는 thread_info.
+ *
+ * 20150117    
+ * task_thread_info : thread_info의 위치로 해석
+ * task_stack_page  : 단순한 페이지(메모리 블럭)으로 해석
  **/
 #define task_thread_info(task)	((struct thread_info *)(task)->stack)
 #define task_stack_page(task)	((task)->stack)
 
+/** 20150117    
+ * task의 .stack, 즉 thread_info를 설정한다.
+ *
+ * org의 thread_info를 복사하고, task_struct을 가리키는 부분만 p를 가리킨다.
+ **/
 static inline void setup_thread_stack(struct task_struct *p, struct task_struct *org)
 {
 	*task_thread_info(p) = *task_thread_info(org);

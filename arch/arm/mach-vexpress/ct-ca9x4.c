@@ -247,6 +247,9 @@ static void __init ct_ca9x4_init_cpu_map(void)
 	set_smp_cross_call(gic_raise_softirq);
 }
 
+/** 20150118    
+ * SCU enable.
+ **/
 static void __init ct_ca9x4_smp_enable(unsigned int max_cpus)
 {
 	scu_enable(ct_ca9x4_scu_base);
@@ -264,7 +267,9 @@ struct ct_desc ct_ca9x4_desc __initdata = {
 	.init_tile	= ct_ca9x4_init,
 #ifdef CONFIG_SMP
 	/** 20130518    
-	 * smp_init_cpus 에서 호출
+	 * init_cpu_map : smp_init_cpus 에서 호출
+	 * 20150118
+	 * smp_enable : platform_smp_prepare_cpus 에서 호출
 	 **/
 	.init_cpu_map	= ct_ca9x4_init_cpu_map,
 	.smp_enable	= ct_ca9x4_smp_enable,

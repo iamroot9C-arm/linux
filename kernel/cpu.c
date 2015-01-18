@@ -416,6 +416,9 @@ static int __cpuinit _cpu_up(unsigned int cpu, int tasks_frozen)
 
 	cpu_hotplug_begin();
 
+	/** 20150118    
+	 * idle_threads_init에서 넣어둔 idle thread를 가져온다.
+	 **/
 	idle = idle_thread_get(cpu);
 	if (IS_ERR(idle)) {
 		ret = PTR_ERR(idle);

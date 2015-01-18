@@ -3805,6 +3805,10 @@ static void __sched __schedule(void)
 
 need_resched:
 	preempt_disable();
+	/** 20150117    
+	 * 현재 task가 수행되는 cpu 번호를 가져온다.
+	 * 해당 cpu의 rq 포인터를 가져온다.
+	 **/
 	cpu = smp_processor_id();
 	rq = cpu_rq(cpu);
 	/** 20140830    
@@ -3847,6 +3851,9 @@ need_resched:
 
 	pre_schedule(rq, prev);
 
+	/** 20150117    
+	 * 현재 task가 수행되는 cpu의 rq 포인터가 idle_balance로 넘어간다
+	 **/
 	if (unlikely(!rq->nr_running))
 		idle_balance(cpu, rq);
 
@@ -5741,12 +5748,14 @@ void __cpuinit init_idle_bootup_task(struct task_struct *idle)
  * flag, to make booting more robust.
  */
 /** 20140426    
- * cpu에 대한 idle task로 전달받은 task가 지정된다.
+ * cpu에 대한(rq) idle task로 전달받은 task가 지정된다.
+ * 
+ * idle thread의 thread_info의 cpu도 지정한다.
  **/
 void __cpuinit init_idle(struct task_struct *idle, int cpu)
 {
 	/** 20140426    
-	 * 해당 cpu의 rq를 가져온다.
+	 * percpu 변수에서 해당 cpu의 rq를 가져온다.
 	 **/
 	struct rq *rq = cpu_rq(cpu);
 	unsigned long flags;
@@ -8329,7 +8338,7 @@ void __init sched_init(void)
 	if (cpu_isolated_map == NULL)
 		zalloc_cpumask_var(&cpu_isolated_map, GFP_NOWAIT);
 	/** 20140426    
-	 * boot cpu의 idlethreads를 current로 지정
+	 * idle_threads 중 boot cpu에 해당하는 task를 current로 지정.
 	 **/
 	idle_thread_set_boot_cpu();
 #endif

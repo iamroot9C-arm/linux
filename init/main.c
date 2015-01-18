@@ -468,18 +468,17 @@ void __init parse_early_param(void)
  **/
 static void __init boot_cpu_init(void)
 {
-  /** 20121208
-   현재 Processor의 번호를 얻어온다
-   **/
+	/** 20121208
+	 * 현재 Processor의 번호를 얻어온다
+	 **/
 	int cpu = smp_processor_id();
 	/* Mark the boot cpu "present", "online" etc for SMP and UP case */
 	
     /** 20121208
-    cpu_online, cpu_active, cpu_present, cpu_possible 비트맵에 해당 비트를 1로 세팅한다.
-     **/
-	/** 20130810
-	 http://studyfoss.egloos.com/5444259 참조
-	**/
+	 * cpu_online, cpu_active, cpu_present, cpu_possible 비트맵에 해당 비트를 1로 세팅한다.
+	 * 20130810
+	 * http://studyfoss.egloos.com/5444259 참조
+	 **/
     set_cpu_online(cpu, true);
 	set_cpu_active(cpu, true);
 	set_cpu_present(cpu, true);
@@ -767,6 +766,9 @@ asmlinkage void __init start_kernel(void)
 	 **/
 	profile_init();
 	call_function_init();
+	/** 20150117    
+	 * 인터럽트는 disabled 상태여야 한다.
+	 **/
 	if (!irqs_disabled())
 		printk(KERN_CRIT "start_kernel(): bug: interrupts were "
 				 "enabled early\n");

@@ -123,7 +123,7 @@ void __init call_function_init(void)
 	}
 
 	/** 20150111    
-	 * CPU_UP_PREPARE를 먼저 내려 hotplug_cfd를 먼저 호출한다.
+	 * CPU_UP_PREPARE를 먼저 내려 hotplug_cfd를 준비한다.
 	 * hotplug_cfd_notifier를 cpu notify block에 등록한다.
 	 **/
 	hotplug_cfd(&hotplug_cfd_notifier, CPU_UP_PREPARE, cpu);
@@ -654,6 +654,8 @@ void smp_call_function_many(const struct cpumask *mask,
 	 * 현재 cpu가 online이고, irqs는 금지되어 있어야 하며,
 	 * oops_in_progress가 실행 중이지 않은 상태,
 	 * early_boot_irqs_disabled가 아니어야 한다.
+	 *
+	 * interrupt가 disabled된 상태에서는 deadlock이 발생할 수 있다.
 	 **/
 	WARN_ON_ONCE(cpu_online(this_cpu) && irqs_disabled()
 		     && !oops_in_progress && !early_boot_irqs_disabled);
@@ -914,6 +916,9 @@ void __init smp_init(void)
 	idle_threads_init();
 
 	/* FIXME: This should be done in userspace --RR */
+	/** 20150117    
+	 * cpu_present_mask 에서 각 cpu의 번호가 cpu에 담겨 cpu_up으로 전달.
+	 **/
 	for_each_present_cpu(cpu) {
 		if (num_online_cpus() >= setup_max_cpus)
 			break;

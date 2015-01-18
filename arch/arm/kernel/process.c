@@ -354,6 +354,9 @@ void show_regs(struct pt_regs * regs)
 	dump_stack();
 }
 
+/** 20150118    
+ * thread (struct thread_info) 관련 notify 선언 및 초기화.
+ **/
 ATOMIC_NOTIFIER_HEAD(thread_notify_head);
 
 EXPORT_SYMBOL_GPL(thread_notify_head);
