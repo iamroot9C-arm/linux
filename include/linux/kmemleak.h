@@ -58,6 +58,8 @@ static inline void kmemleak_erase(void **ptr)
 
 #else
 
+/** 20150124    
+ **/
 static inline void kmemleak_init(void)
 {
 }

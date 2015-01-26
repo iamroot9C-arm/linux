@@ -36,7 +36,7 @@ static inline void __init page_cgroup_init_flatmem(void)
 extern void __init page_cgroup_init(void);
 #else
 /** 20130803    
- * 선언
+ * CONFIG_SPARSEMEM이 설정되지 않았다.
  **/
 void __init page_cgroup_init_flatmem(void);
 static inline void __init page_cgroup_init(void)

@@ -23,6 +23,8 @@
  * pen_release 변수의 값을 읽어
  * 현재 cpu 번호와 같을 때까지 loop로 대기하고,
  * 같다면 secondary_startup로 이동한다.
+ *
+ * boot_secondary에서 pen_release에 cpu 값을 써준다.
  **/
 ENTRY(versatile_secondary_startup)
 	mrc	p15, 0, r0, c0, c0, 5
@@ -39,6 +41,10 @@ pen:	ldr	r7, [r6]
 	 * we've been released from the holding pen: secondary_stack
 	 * should now contain the SVC stack for this core
 	 */
+	/** 20150124    
+	 * pen release 되었고, secondary_startup으로 이동한다.
+	 * secondary_stack은 이미 SVC stack 정보를 갖고 있어야 한다.
+	 **/
 	b	secondary_startup
 
 	.align

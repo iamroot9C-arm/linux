@@ -2095,6 +2095,10 @@ static int n_tty_ioctl(struct tty_struct *tty, struct file *file,
 	}
 }
 
+/** 20150124    
+ * tty용 line discpline operations 구조체.
+ * tty_register_ldisc로 등록시킨다.
+ **/
 struct tty_ldisc_ops tty_ldisc_N_TTY = {
 	.magic           = TTY_LDISC_MAGIC,
 	.name            = "n_tty",

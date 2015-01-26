@@ -36,11 +36,14 @@
 
 #include "mm.h"
 
+/** 20150124    
+ * initrd 물리 시작 주소와 크기가 저장되는 변수.
+ **/
 static unsigned long phys_initrd_start __initdata = 0;
 static unsigned long phys_initrd_size __initdata = 0;
 /** 20130810
-kernel param으로 initrd start, size세팅 가능
-**/
+ * kernel param으로 initrd start, size세팅 가능
+ **/
 static int __init early_initrd(char *p)
 {
 	unsigned long start, size;

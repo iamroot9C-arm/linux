@@ -1909,6 +1909,9 @@ static int __cpuinit console_cpu_notify(struct notifier_block *self,
  *
  * Can sleep, returns nothing.
  */
+/** 20150124    
+ * console에 대한 lock을 건다.
+ **/
 void console_lock(void)
 {
 	BUG_ON(in_interrupt());

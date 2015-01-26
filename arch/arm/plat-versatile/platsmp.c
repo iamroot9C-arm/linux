@@ -59,15 +59,26 @@ void __cpuinit platform_secondary_init(unsigned int cpu)
 	 * let the primary processor know we're out of the
 	 * pen, then head off into the C entry point
 	 */
+	/** 20150124    
+	 * pen_release에 -1을 넣어 primary processor (boot cpu)에서
+	 * 다음 부분을 수행한다.
+	 **/
 	write_pen_release(-1);
 
 	/*
 	 * Synchronise with the boot thread.
 	 */
+	/** 20150124    
+	 * pen_release 이후 boot thread가 먼저 걸어둔 spinlock을 해제하고 진행한다.
+	 **/
 	spin_lock(&boot_lock);
 	spin_unlock(&boot_lock);
 }
 
+/** 20150124    
+ * 특정 cpu를 pen_release 방식으로 깨우고,
+ * 깨어날 때까지 timeout을 두고 대기한다.
+ **/
 int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
 {
 	unsigned long timeout;
@@ -84,6 +95,10 @@ int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
 	 * since we haven't sent them a soft interrupt, they shouldn't
 	 * be there.
 	 */
+	/** 20150124    
+	 * 깨울 cpu에 해당하는 물리번호를 가져와 pen_release 위치에 쓴다.
+	 * 쓰고 나서 cache를 clean 시킨다.
+	 **/
 	write_pen_release(cpu_logical_map(cpu));
 
 	/*
@@ -91,8 +106,14 @@ int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
 	 * the boot monitor to read the system wide flags register,
 	 * and branch to the address found there.
 	 */
+	/** 20150124    
+	 * 깨울 cpu를 지정해 irq 0(SGI)을 날린다.
+	 **/
 	gic_raise_softirq(cpumask_of(cpu), 0);
 
+	/** 20150124    
+	 * 깨어난 cpu가 init 과정을 마치고 pen_release에 -1을 넣어줄 때까지 대기한다.
+	 **/
 	timeout = jiffies + (1 * HZ);
 	while (time_before(jiffies, timeout)) {
 		smp_rmb();

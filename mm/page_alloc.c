@@ -5611,6 +5611,9 @@ static void __meminit zone_init_free_lists(struct zone *zone)
 	memmap_init_zone((size), (nid), (zone), (start_pfn), MEMMAP_EARLY)
 #endif
 
+/** 20150124    
+ * zone의 batchsize를 계산한다.
+ **/
 static int __meminit zone_batchsize(struct zone *zone)
 {
 #ifdef CONFIG_MMU
@@ -5622,6 +5625,9 @@ static int __meminit zone_batchsize(struct zone *zone)
 	 *
 	 * OK, so we don't know how big the cache is.  So guess.
 	 */
+	/** 20150124    
+	 * batch를 계산한다. (1 <= batch <= 32)
+	 **/
 	batch = zone->present_pages / 1024;
 	if (batch * PAGE_SIZE > 512 * 1024)
 		batch = (512 * 1024) / PAGE_SIZE;
@@ -5639,6 +5645,10 @@ static int __meminit zone_batchsize(struct zone *zone)
 	 * of pages of one half of the possible page colors
 	 * and the other with pages of the other colors.
 	 */
+	/** 20150124    
+	 * cache aliasing 속성 때문에 2**n으로 설정하는 것은
+	 * 오히려 성능을 약화시킬 수 있어 2**n - 1로 설정한다.
+	 **/
 	batch = rounddown_pow_of_two(batch + batch/2) - 1;
 
 	return batch;
@@ -5694,6 +5704,10 @@ static void setup_pageset(struct per_cpu_pageset *p, unsigned long batch)
  * to the value high for the pageset p.
  */
 
+/** 20150124    
+ * pcp의 highmark 를 설정한다.
+ * batch는 최소 1, high/4 사이의 값으로 설정된다.
+ **/
 static void setup_pagelist_highmark(struct per_cpu_pageset *p,
 				unsigned long high)
 {
@@ -5706,17 +5720,38 @@ static void setup_pagelist_highmark(struct per_cpu_pageset *p,
 		pcp->batch = PAGE_SHIFT * 8;
 }
 
+/** 20150124    
+ * zone의 pageset을 percpu로 동적할당 받아 설정한다.
+ **/
 static void __meminit setup_zone_pageset(struct zone *zone)
 {
 	int cpu;
 
+	/** 20150124    
+	 * cpu 개수만큼 사용할 per_cpu_pageset을 저장한 공간을 동적으로 할당 받는다.
+	 **/
 	zone->pageset = alloc_percpu(struct per_cpu_pageset);
 
+	/** 20150124    
+	 * possible cpu를 순회하며
+	 *   zone->pageset에서 해당 cpu용으로 할당된 메모리를 가져와
+	 *   zone batchsize를 계산해 pcp를 설정한다.
+	 *
+	 * zone_pcp_init은 bootstrapping 중 percpu서브시스템이 초기화 안 되었을 때,
+	 * 또는 hotplug cpu가 올라오며 percpu 메모리를 요청할 때
+	 * pageset을 제공하기 위한 역할이다.
+	 *
+	 * 자세한 내용은 zone_pcp_init, __build_all_zonelists의 주석을 참고한다.
+	 **/
 	for_each_possible_cpu(cpu) {
 		struct per_cpu_pageset *pcp = per_cpu_ptr(zone->pageset, cpu);
 
 		setup_pageset(pcp, zone_batchsize(zone));
 
+		/** 20150124    
+		 * pagelist fraction(분수)이 설정되어 있다면
+		 * zone에 존재하는 pages를 해당값으로 나눠 highmark를 설정한다.
+		 **/
 		if (percpu_pagelist_fraction)
 			setup_pagelist_highmark(pcp,
 				(zone->present_pages /
@@ -5816,6 +5851,9 @@ static __meminit void zone_pcp_init(struct zone *zone)
 	/** 20130427    
 	 * static 전역변수 boot_pageset의 주소를 pageset에 저장.
 	 * (boot_pageset은 .data..percpu 섹션에 존재)
+	 *
+	 * per cpu 서브시스템이 아직 동작하지 않기 때문에,
+	 * static per cpu 변수 영역에 위치한 값을 사용한다.
 	 **/
 	zone->pageset = &boot_pageset;
 

@@ -194,6 +194,9 @@ static unsigned long __cpuinit calibrate_delay_converge(void)
 		; /* nothing */
 	/* Go .. */
 	ticks = jiffies;
+	/** 20150124    
+	 * trials는 band는 누적한다.
+	 **/
 	do {
 		if (++trial_in_band == (1<<band)) {
 			++band;
@@ -244,6 +247,9 @@ recalibrate:
 	return lpj;
 }
 
+/** 20150124    
+ * per cpu 변수를 정적으로 선언한다.
+ **/
 static DEFINE_PER_CPU(unsigned long, cpu_loops_per_jiffy) = { 0 };
 
 /*
@@ -286,6 +292,9 @@ void __cpuinit calibrate_delay(void)
 			pr_info("Calibrating delay using timer "
 				"specific routine.. ");
 	} else {
+		/** 20150124    
+		 * 출력됨
+		 **/
 		if (!printed)
 			pr_info("Calibrating delay loop... ");
 		lpj = calibrate_delay_converge();

@@ -27,6 +27,11 @@ struct kref {
  * kref_init - initialize object.
  * @kref: object in question.
  */
+/** 20150124    
+ * (주로 object 내에 선언된) kref 구조체를 초기화 한다.
+ *
+ * refcount 를 1로 설정한다.
+ **/
 static inline void kref_init(struct kref *kref)
 {
 	atomic_set(&kref->refcount, 1);

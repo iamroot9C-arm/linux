@@ -308,6 +308,11 @@ enum zone_watermarks {
 #define high_wmark_pages(z) (z->watermark[WMARK_HIGH])
 
 /** 20140621    
+ * cpu별로 page들을 리스트로 구성해 두고,
+ * list가 비었다면 batch 단위로 buddy로부터 가져와 채워 넣는다.
+ * 만약 high 값을 넘었다면 충분히 많은 페이지가 들어있으므로
+ * batch 단위로 buddy로 반환한다.
+ *
  * count : list에 있는 페이지의 수
  * high  : high watermark (이 이상되면 buddy로 page를 반환하겠다)
  * batch : buddy로부터 할당/반환할 페이지 묶음 단위

@@ -773,8 +773,14 @@ asmlinkage void __init start_kernel(void)
 		printk(KERN_CRIT "start_kernel(): bug: interrupts were "
 				 "enabled early\n");
 	early_boot_irqs_disabled = false;
+	/** 20150124    
+	 * boot cpu의 interrupt를 활성화 한다.
+	 **/
 	local_irq_enable();
 
+	/** 20150124    
+	 * slub은 특별한 동작을 취하지 않는다.
+	 **/
 	kmem_cache_init_late();
 
 	/*
@@ -782,10 +788,19 @@ asmlinkage void __init start_kernel(void)
 	 * we've done PCI setups etc, and console_init() must be aware of
 	 * this. But we do want output early, in case something goes wrong.
 	 */
+	/** 20150124    
+	 * console을 초기화 한다.
+	 *
+	 * console이 초기화 된 상태이므로 panic이 발생할 상황이면 발생시킨다.
+	 **/
 	console_init();
 	if (panic_later)
 		panic(panic_later, panic_param);
 
+	/** 20150124    
+	 * LOCKDEP 설정 정보를 출력한다.
+	 * 분석 생략.
+	 **/
 	lockdep_info();
 
 	/*
@@ -793,9 +808,17 @@ asmlinkage void __init start_kernel(void)
 	 * to self-test [hard/soft]-irqs on/off lock inversion bugs
 	 * too:
 	 */
+	/** 20150124    
+	 * locking API를 boot-time에 테스트 한다.
+	 * 분석 생략.
+	 **/
 	locking_selftest();
 
 #ifdef CONFIG_BLK_DEV_INITRD
+	/** 20150124    
+	 * INITRD가 잘못 설정되어 있는 경우 (min_low_pfn보다 낮은 경우)
+	 * initrd를 disable 한다.
+	 **/
 	if (initrd_start && !initrd_below_start_ok &&
 	    page_to_pfn(virt_to_page((void *)initrd_start)) < min_low_pfn) {
 		printk(KERN_CRIT "initrd overwritten (0x%08lx < 0x%08lx) - "
@@ -805,13 +828,32 @@ asmlinkage void __init start_kernel(void)
 		initrd_start = 0;
 	}
 #endif
+	/** 20150124    
+	 * CONFIG_SPARSEMEM을 설정하지 않아 NULL 함수.
+	 **/
 	page_cgroup_init();
+	/** 20150124    
+	 * CONFIG_DEBUG_OBJECTS를 설정하지 않아 NULL 함수.
+	 **/
 	debug_objects_mem_init();
+	/** 20150124    
+	 * CONFIG_DEBUG_KMEMLEAK를 설정하지 않아 NULL 함수.
+	 **/
 	kmemleak_init();
 	setup_per_cpu_pageset();
+	/** 20150124    
+	 * CONFIG_NUMA가 아니므로 NULL 함수.
+	 **/
 	numa_policy_init();
+	/** 20150124    
+	 * machine의 timer init 함수에서 late_time_init을 등록했다면 실행한다.
+	 * vexpress는 지정하지 않음.
+	 **/
 	if (late_time_init)
 		late_time_init();
+	/** 20150124    
+	 * sched_clock이 동작 중임을 표시한다.
+	 **/
 	sched_clock_init();
 	calibrate_delay();
 	pidmap_init();

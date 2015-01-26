@@ -4623,6 +4623,8 @@ void __init kmem_cache_init(void)
 		nr_cpu_ids, nr_node_ids);
 }
 
+/** 20150124    
+ **/
 void __init kmem_cache_init_late(void)
 {
 }

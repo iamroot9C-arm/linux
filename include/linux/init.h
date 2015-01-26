@@ -228,6 +228,9 @@ extern bool initcall_debug;
 #define __exitcall(fn) \
 	static exitcall_t __exitcall_##fn __exit_call = fn
 
+/** 20150124    
+ * fn을 .con_initcall.init 섹션에 넣어준다.
+ **/
 #define console_initcall(fn) \
 	static initcall_t __initcall_##fn \
 	__used __section(.con_initcall.init) = fn

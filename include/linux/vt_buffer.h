@@ -28,6 +28,8 @@
 #endif
 
 #ifndef VT_BUF_HAVE_MEMSETW
+/** 20150124    
+ **/
 static inline void scr_memsetw(u16 *s, u16 c, unsigned int count)
 {
 	count /= 2;

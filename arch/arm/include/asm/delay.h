@@ -21,6 +21,8 @@ extern struct arm_delay_ops {
 	void (*udelay)(unsigned long);
 } arm_delay_ops;
 
+/** 20150124    
+ **/
 #define __delay(n)		arm_delay_ops.delay(n)
 
 /*

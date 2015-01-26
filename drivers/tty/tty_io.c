@@ -3292,17 +3292,33 @@ void tty_default_fops(struct file_operations *fops)
  * Just do some early initializations, and do the complex setup
  * later.
  */
+/** 20150124    
+ * console device를 사용하기 전 init 과정을 수행한다.
+ *
+ * TTY를 등록시키고, console_initcall로 등록한 함수들을 수행한다.
+ **/
 void __init console_init(void)
 {
 	initcall_t *call;
 
 	/* Setup the default TTY line discipline. */
+	/** 20150124    
+	 * default TTY를 ldisc 등록한다.
+	 **/
 	tty_ldisc_begin();
 
 	/*
 	 * set up the console device so that later boot sequences can
 	 * inform about problems etc..
 	 */
+	/** 20150124    
+	 * console_initcall로 등록된 fn을 순서대로 호출한다.
+	 * (.con_initcall.init 섹션)
+	 *
+	 * drivers/tty/vt/vt.c의 con_init,
+	 * drivers/video/console/fbcon.c의 fbcon_init
+	 *
+	 **/
 	call = __con_initcall_start;
 	while (call < __con_initcall_end) {
 		(*call)();

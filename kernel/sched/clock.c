@@ -79,6 +79,9 @@ unsigned long long __attribute__((weak)) sched_clock(void)
 }
 EXPORT_SYMBOL_GPL(sched_clock);
 
+/** 20150124    
+ * sched_clock이 동작 중임을 표시한다.
+ **/
 __read_mostly int sched_clock_running;
 
 #ifdef CONFIG_HAVE_UNSTABLE_SCHED_CLOCK
@@ -321,6 +324,10 @@ u64 local_clock(void)
 
 #else /* CONFIG_HAVE_UNSTABLE_SCHED_CLOCK */
 
+/** 20150124    
+ * CONFIG_HAVE_UNSTABLE_SCHED_CLOCK이 아니므로
+ * 단순히 sched_clock_running을 설정한다.
+ **/
 void sched_clock_init(void)
 {
 	sched_clock_running = 1;

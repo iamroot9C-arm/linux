@@ -312,6 +312,8 @@ mpol_shared_policy_lookup(struct shared_policy *sp, unsigned long idx)
 #define vma_policy(vma) NULL
 #define vma_set_policy(vma, pol) do {} while(0)
 
+/** 20150124    
+ **/
 static inline void numa_policy_init(void)
 {
 }
