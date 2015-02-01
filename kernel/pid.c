@@ -43,10 +43,18 @@ static struct hlist_head *pid_hash;
 static unsigned int pidhash_shift = 4;
 struct pid init_struct_pid = INIT_STRUCT_PID;
 
+/** 20150131    
+ * 전역 pid_max를 DEFAULT 값으로 설정한다.
+ **/
 int pid_max = PID_MAX_DEFAULT;
 
 #define RESERVED_PIDS		300
 
+/** 20150131    
+ * pid_max의 최대, 최소값
+ * pid_max_mx: 32768
+ * pid_max_min: 301 
+ **/
 int pid_max_min = RESERVED_PIDS + 1;
 int pid_max_max = PID_MAX_LIMIT;
 
@@ -68,6 +76,10 @@ static inline int mk_pid(struct pid_namespace *pid_ns,
  * value does not cause lots of bitmaps to be allocated, but
  * the scheme scales to up to 4 million PIDs, runtime.
  */
+/** 20150131    
+ * init을 위한 pid_namespace.
+ * init_pid_ns 선언.
+ **/
 struct pid_namespace init_pid_ns = {
 	.kref = {
 		.refcount       = ATOMIC_INIT(2),
@@ -568,20 +580,34 @@ void __init pidhash_init(void)
 		INIT_HLIST_HEAD(&pid_hash[i]);
 }
 
+/** 20150131    
+ * pid_max값과 pid_max_min값을 구한다.
+ * init_pid_ns를 초기화 한다.
+ **/
 void __init pidmap_init(void)
 {
 	/* bump default and minimum pid_max based on number of cpus */
+	/** 20150131    
+	 * pid_max값과 pid_max_min 값을 cpu의 숫자를 기준으로 찾아낸다.
+	 **/
 	pid_max = min(pid_max_max, max_t(int, pid_max,
 				PIDS_PER_CPU_DEFAULT * num_possible_cpus()));
 	pid_max_min = max_t(int, pid_max_min,
 				PIDS_PER_CPU_MIN * num_possible_cpus());
 	pr_info("pid_max: default: %u minimum: %u\n", pid_max, pid_max_min);
 
+	/** 20150131    
+	 * pidmap[0]의 page를 할당받아 설정한다.
+	 * pidmap[0]의 page 0번을 사용 중이라 표시하고, nr_free를 하나 감소시킨다.
+	 **/
 	init_pid_ns.pidmap[0].page = kzalloc(PAGE_SIZE, GFP_KERNEL);
 	/* Reserve PID 0. We never call free_pidmap(0) */
 	set_bit(0, init_pid_ns.pidmap[0].page);
 	atomic_dec(&init_pid_ns.pidmap[0].nr_free);
 
+	/** 20150131    
+	 * pid 구조체를 할당받기 위한 kmem_cache를 생성한다.
+	 **/
 	init_pid_ns.pid_cachep = KMEM_CACHE(pid,
 			SLAB_HWCACHE_ALIGN | SLAB_PANIC);
 }

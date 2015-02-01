@@ -8,15 +8,33 @@
 #include <linux/nsproxy.h>
 #include <linux/kref.h>
 
+/** 20150131    
+ * 각 pidmap entry가 나타내는 구조체.
+ *
+ **/
 struct pidmap {
        atomic_t nr_free;
        void *page;
 };
 
+/** 20150131    
+ * 하나의 PAGE로 비트맵으로 표시했을 때, 몇 개의 페이지 엔트리가 필요한지 결정한다.
+ *
+ * PID_MAX_LIMIT을 (BITS_PER_PAGE)로 나눠 entry 수를 계산한다.
+ *
+ * DIV_ROUND_UP과 같은 의미.
+ * ( 32768 + 32768 - 1 ) / 32768 = 1
+ **/
 #define PIDMAP_ENTRIES         ((PID_MAX_LIMIT + 8*PAGE_SIZE - 1)/PAGE_SIZE/8)
 
 struct bsd_acct_struct;
 
+/** 20150131    
+ * 2.6대 버전에 새로 추가된 pid_namespace.
+ * [참고] http://studyfoss.egloos.com/5242243
+ *
+ * cgroup에서 pid namespace를 관리하기 위해 사용된다. 
+ **/
 struct pid_namespace {
 	struct kref kref;
 	struct pidmap pidmap[PIDMAP_ENTRIES];

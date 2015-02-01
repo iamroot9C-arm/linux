@@ -855,6 +855,9 @@ asmlinkage void __init start_kernel(void)
 	 * sched_clock이 동작 중임을 표시한다.
 	 **/
 	sched_clock_init();
+	/** 20150131    
+	 * BogoMIPS를 계산한다.
+	 **/
 	calibrate_delay();
 	pidmap_init();
 	anon_vma_init();

@@ -145,6 +145,9 @@ unsigned int kmem_cache_size(struct kmem_cache *);
  * f.e. add ____cacheline_aligned_in_smp to the struct declaration
  * then the objects will be properly aligned in SMP configurations.
  */
+/** 20150131    
+ * kmem_cache_create 래핑 매크로.
+ **/
 #define KMEM_CACHE(__struct, __flags) kmem_cache_create(#__struct,\
 		sizeof(struct __struct), __alignof__(struct __struct),\
 		(__flags), NULL)
