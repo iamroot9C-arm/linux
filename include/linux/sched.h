@@ -1430,6 +1430,9 @@ struct task_struct {
 	struct list_head ptrace_entry;
 
 	/* PID/PID hash table linkage. */
+	/** 20150203
+	 * PIDTYPE별로 pid리스트를 가지고 있다.
+	 **/
 	struct pid_link pids[PIDTYPE_MAX];
 	struct list_head thread_group;
 
@@ -1731,6 +1734,11 @@ static inline int rt_task(struct task_struct *p)
 	return rt_prio(p->prio);
 }
 
+/** 20150203
+ * task의 PID (process ID)를 리턴한다.
+ *
+ * task의 pid 링크 배열 중 PID의 pid 구조체를 리턴한다.
+ **/
 static inline struct pid *task_pid(struct task_struct *task)
 {
 	return task->pids[PIDTYPE_PID].pid;

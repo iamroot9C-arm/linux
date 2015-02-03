@@ -22,6 +22,12 @@ struct fs_struct;
  * As soon as a single namespace is cloned or unshared, the
  * nsproxy is copied.
  */
+/** 20150203
+ * 각 process별 namespace를 모아놓은 자료구조.
+ * namespace는 각 이름공간 안에서 유일성을 가져야 한다는 제약이 존재한다.
+ *
+ *   .count :  reference count
+ **/
 struct nsproxy {
 	atomic_t count;
 	struct uts_namespace *uts_ns;

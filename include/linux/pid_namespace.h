@@ -11,6 +11,8 @@
 /** 20150131    
  * 각 pidmap entry가 나타내는 구조체.
  *
+ * nr_free :  사용 가능한 pid의 수를 기록한다.
+ * page    :  pid bitmap용으로 할당받은 페이지를 가리킨다.
  **/
 struct pidmap {
        atomic_t nr_free;
@@ -18,7 +20,7 @@ struct pidmap {
 };
 
 /** 20150131    
- * 하나의 PAGE로 비트맵으로 표시했을 때, 몇 개의 페이지 엔트리가 필요한지 결정한다.
+ * namespace에 속하는 pid를 비트맵으로 표시했을 때, 몇 개의 페이지가 필요한지 결정한다.
  *
  * PID_MAX_LIMIT을 (BITS_PER_PAGE)로 나눠 entry 수를 계산한다.
  *

@@ -28,6 +28,9 @@
 
 static struct kmem_cache *nsproxy_cachep;
 
+/** 20150203
+ * init_task를 위한 nsproxy 구조체.
+ **/
 struct nsproxy init_nsproxy = {
 	.count	= ATOMIC_INIT(1),
 	.uts_ns	= &init_uts_ns,

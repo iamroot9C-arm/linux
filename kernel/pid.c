@@ -41,6 +41,9 @@
 	hash_long((unsigned long)nr + (unsigned long)ns, pidhash_shift)
 static struct hlist_head *pid_hash;
 static unsigned int pidhash_shift = 4;
+/** 20150203
+ * init_task를 위한 pid 구조체 정의
+ **/
 struct pid init_struct_pid = INIT_STRUCT_PID;
 
 /** 20150131    
@@ -598,7 +601,7 @@ void __init pidmap_init(void)
 
 	/** 20150131    
 	 * pidmap[0]의 page를 할당받아 설정한다.
-	 * pidmap[0]의 page 0번을 사용 중이라 표시하고, nr_free를 하나 감소시킨다.
+	 * pidmap[0]의 page 0번을 사용 중이라 표시하고, 가용량를 하나 감소시킨다.
 	 **/
 	init_pid_ns.pidmap[0].page = kzalloc(PAGE_SIZE, GFP_KERNEL);
 	/* Reserve PID 0. We never call free_pidmap(0) */
