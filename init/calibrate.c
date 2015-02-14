@@ -196,9 +196,7 @@ static unsigned long __cpuinit calibrate_delay_converge(void)
 
 	/* wait for "start of" clock tick */
 	/** 20150131    
-	 * jiffies의 시작점을 가져오기 위해
-	 * 한 번 가져온 뒤, 다음 jiffies가 될 때까지 대기했다가 
-	 * 다음 jiffies가 되면 tick을 가져온다.
+	 * jiffies와 시작점을 맞추기 위해 다음 jiffies가 될 때까지 대기한다.
 	 **/
 	ticks = jiffies;
 	while (ticks == jiffies)
@@ -209,6 +207,11 @@ static unsigned long __cpuinit calibrate_delay_converge(void)
 	 * 한 tick 내에서 수용 가능한 최대 대역폭과 그 대역폭까지의 누적치를 구한다.
 	 **/
 	do {
+		/** 20150207    
+		 * 한 밴드의 trial을 마치면 다음 밴드로 이동한다.
+		 * 다음 밴드로 이동할 때마다 trial 단위는 밴드가 되고,
+		 * trial 수는 두 배씩 늘어난다.
+		 **/
 		if (++trial_in_band == (1<<band)) {
 			++band;
 			trial_in_band = 0;
@@ -221,7 +224,7 @@ static unsigned long __cpuinit calibrate_delay_converge(void)
 	 * the largest likely undershoot. This defines our chop bounds.
 	 */
 	/** 20150131    
-	 * 마지막 대역폭은 trials에서 제외시키고,
+	 * tick이 넘어간 마지막 trial은 trials에서 제외시키고,
 	 * 나머지 부분을 측정하기 위해 현재 값을 base로 삼는다.
 	 **/
 	trials -= band;
@@ -238,37 +241,36 @@ recalibrate:
 	 */
 	chop_limit = lpj >> LPS_PREC;
 	/** 20150131    
-	 * 최소 정밀도에 도달할 때까지 다음 작업을 반복 수행한다.
-	 *     lpj에 현재 대역폭을 합산한다.
-	 *     tick 시작 지점을 맞추고, 해당 lpj만큼 delay 후
-	 *     tick을 넘어갔다면 마지막 합산한 대역폭은 초과값이므로 버린다.
-	 *     대역폭을 반으로 줄인다.
+	 * 최고 정밀도에 도달할 때까지 다음 작업을 반복 수행한다.
+	 *     전체 lpj에 현재 loopadd를 합산한다.
+	 *     tick 시작 지점을 맞추고, 전체 lpj만큼 delay 후
+	 *     tick을 넘어갔다면 마지막 합산한 loopadd는 초과값이므로 버린다.
+	 *     loopadd의 정밀도를 두 배 높인다.
 	 *
-	 * 즉, 이전에 구해둔 lpj를 base로 하여
-	 * 정밀도를 2배씩 높여가며 tick을 넘어가지 않도록 합산해 최적값을 찾아낸다.
+	 * 즉, 이전에 구해둔 lpj를 base로 하여 정밀도를 높여가며 delay를 시도해
+	 * 지피 내에서 감당할 수 있는 최대값을 찾아낸다.
 	 **/
 	while (loopadd > chop_limit) {
 		/** 20150131    
-		 * lpj에 현재 대역폭을 누적시킨다.
+		 * lpj에 현재 loopadd를 누적시킨다.
 		 **/
 		lpj += loopadd;
 		/** 20150131    
-		 * 다음 jiffies로 넘어갈 때까지 기다려
-		 * ticks의 시작 위치를 맞춘다.
+		 * jiffies와 시작점을 맞추기 위해 다음 jiffies가 될 때까지 대기한다.
 		 **/
 		ticks = jiffies;
 		while (ticks == jiffies)
 			; /* nothing */
 		ticks = jiffies;
-		__delay(lpj);
-		/** 20150131    
-		 * delay 동안 다음 tick으로 넘어갔다면
-		 * 넘어간 bandwidth는 제외한다.
+		/** 20150207    
+		 * 전체 lpj만큼 delay를 준다.
+		 * delay 중 다음 tick으로 넘어갔다면, 그 loopadd는 누적치에서 제외한다.
 		 **/
+		__delay(lpj);
 		if (jiffies != ticks)	/* longer than 1 tick */
 			lpj -= loopadd;
 		/** 20150131    
-		 * 대역폭을 반으로 줄인다.
+		 * 정밀도를 두 배 높인다.
 		 **/
 		loopadd >>= 1;
 	}

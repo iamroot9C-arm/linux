@@ -253,6 +253,9 @@ EXPORT_SYMBOL_GPL(__put_task_struct);
 
 void __init __weak arch_task_cache_init(void) { }
 
+/** 20150207    
+ * fork 관련 동작 수행을 위한 초기화.
+ **/
 void __init fork_init(unsigned long mempages)
 {
 #ifndef CONFIG_ARCH_TASK_STRUCT_ALLOCATOR
@@ -260,6 +263,9 @@ void __init fork_init(unsigned long mempages)
 #define ARCH_MIN_TASKALIGN	L1_CACHE_BYTES
 #endif
 	/* create a slab on which task_structs can be allocated */
+	/** 20150207    
+	 * struct task_struct 용 kmem_cache를 생성한다.
+	 **/
 	task_struct_cachep =
 		kmem_cache_create("task_struct", sizeof(struct task_struct),
 			ARCH_MIN_TASKALIGN, SLAB_PANIC | SLAB_NOTRACK, NULL);
@@ -273,14 +279,23 @@ void __init fork_init(unsigned long mempages)
 	 * value: the thread structures can take up at most half
 	 * of memory.
 	 */
+	/** 20150207    
+	 * mempages를 기준으로 하여 최대 threads의 수를 계산한다.
+	 **/
 	max_threads = mempages / (8 * THREAD_SIZE / PAGE_SIZE);
 
 	/*
 	 * we need to allow at least 20 threads to boot a system
 	 */
+	/** 20150207    
+	 * max_threads는 최하 20이어야 한다.
+	 **/
 	if (max_threads < 20)
 		max_threads = 20;
 
+	/** 20150207    
+	 * init_task의 signal handler 관련 rlimit 값을 채운다.
+	 **/
 	init_task.signal->rlim[RLIMIT_NPROC].rlim_cur = max_threads/2;
 	init_task.signal->rlim[RLIMIT_NPROC].rlim_max = max_threads/2;
 	init_task.signal->rlim[RLIMIT_SIGPENDING] =
@@ -1706,6 +1721,9 @@ static void sighand_ctor(void *data)
 	init_waitqueue_head(&sighand->signalfd_wqh);
 }
 
+/** 20150207    
+ * proc 관련 kmem_cache들을 생성한다.
+ **/
 void __init proc_caches_init(void)
 {
 	sighand_cachep = kmem_cache_create("sighand_cache",
@@ -1732,7 +1750,13 @@ void __init proc_caches_init(void)
 			sizeof(struct mm_struct), ARCH_MIN_MMSTRUCT_ALIGN,
 			SLAB_HWCACHE_ALIGN|SLAB_PANIC|SLAB_NOTRACK, NULL);
 	vm_area_cachep = KMEM_CACHE(vm_area_struct, SLAB_PANIC);
+	/** 20150207   
+	 * VMA 관련 초기화.
+	 **/
 	mmap_init();
+	/** 20150214    
+	 * nsproxy cache 초기화 : kmem_cache 생성.
+	 **/
 	nsproxy_cache_init();
 }
 

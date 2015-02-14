@@ -422,6 +422,11 @@ void unlink_anon_vmas(struct vm_area_struct *vma)
 	}
 }
 
+/** 20150207    
+ * anon_vma object(slub object)를 만들 때마다 호출하는 콜백함수.
+ *
+ * object의 mutex, refcount, list head를 초기화 한다.
+ **/
 static void anon_vma_ctor(void *data)
 {
 	struct anon_vma *anon_vma = data;
@@ -431,6 +436,10 @@ static void anon_vma_ctor(void *data)
 	INIT_LIST_HEAD(&anon_vma->head);
 }
 
+/** 20150207    
+ * anon_vma를 위한 kmem_cache를 생성한다.
+ *   "anon_vma", "anon_vma_chain"
+ **/
 void __init anon_vma_init(void)
 {
 	anon_vma_cachep = kmem_cache_create("anon_vma", sizeof(struct anon_vma),

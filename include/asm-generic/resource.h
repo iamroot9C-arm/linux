@@ -69,6 +69,9 @@
 /*
  * boot-time rlimit defaults for the init task:
  */
+/** 20150207    
+ * init task를 위한 rlimit 디폴트값.
+ **/
 #define INIT_RLIMITS							\
 {									\
 	[RLIMIT_CPU]		= {  RLIM_INFINITY,  RLIM_INFINITY },	\

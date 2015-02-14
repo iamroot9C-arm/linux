@@ -92,6 +92,11 @@ int sysctl_max_map_count __read_mostly = DEFAULT_MAX_MAP_COUNT;
  * Make sure vm_committed_as in one cacheline and not cacheline shared with
  * other variables. It can be updated by several CPUs frequently.
  */
+/** 20150207    
+ * 커밋된 vm 사용량을 percpu별로 저장한다.
+ *
+ * cacheline에 align 시킨다.
+ **/
 struct percpu_counter vm_committed_as ____cacheline_aligned_in_smp;
 
 /*
@@ -2701,10 +2706,16 @@ void mm_drop_all_locks(struct mm_struct *mm)
 /*
  * initialise the VMA slab
  */
+/** 20150207    
+ * mmap 관련 초기화를 수행한다.
+ **/
 void __init mmap_init(void)
 {
 	int ret;
 
+	/** 20150207    
+	 * percpu virtual memory counter인 vm_committed_as 를 0으로 초기화.
+	 **/
 	ret = percpu_counter_init(&vm_committed_as, 0);
 	VM_BUG_ON(ret);
 }

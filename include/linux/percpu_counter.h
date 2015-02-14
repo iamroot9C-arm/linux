@@ -15,6 +15,12 @@
 
 #ifdef CONFIG_SMP
 
+/** 20150207    
+ * cpu별 사용량 카운터 구조체.
+ * 이 자체는 percpu가 아니다.
+ *
+ * 동적 할당받아 사용하는 percpu 포인터 counters.
+ **/
 struct percpu_counter {
 	raw_spinlock_t lock;
 	s64 count;
@@ -29,6 +35,9 @@ extern int percpu_counter_batch;
 int __percpu_counter_init(struct percpu_counter *fbc, s64 amount,
 			  struct lock_class_key *key);
 
+/** 20150207    
+ * percpu counter를 value로 설정한다.
+ **/
 #define percpu_counter_init(fbc, value)					\
 	({								\
 		static struct lock_class_key __key;			\

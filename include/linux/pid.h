@@ -54,6 +54,12 @@ struct upid {
 	struct hlist_node pid_chain;
 };
 
+/** 20150207    
+ * pid 구조체.
+ *
+ * numbers : level에 따라 가변적이므로
+ *           'variable length array in structure'로 선언되었다.
+ **/
 struct pid
 {
 	atomic_t count;

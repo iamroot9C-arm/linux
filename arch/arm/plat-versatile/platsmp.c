@@ -35,6 +35,8 @@ volatile int __cpuinitdata pen_release = -1;
  *
  * 다른 core에서 실행 중인 versatile_secondary_startup에서 pen_release에
  * 자신의 cpu번호가 쓰일 때까지 check한다.
+ *
+ * coherency에 관계없이 다른 observers에게 보여지도록 보장한다.
  **/
 static void __cpuinit write_pen_release(int val)
 {

@@ -492,6 +492,10 @@ void __init __weak smp_setup_processor_id(void)
 {
 }
 
+/** 20150207    
+ * NULL 함수.
+ * thread_info의 크기가 PAGE_SIZE 이상이 아니다.
+ **/
 void __init __weak thread_info_cache_init(void)
 {
 }
@@ -859,11 +863,26 @@ asmlinkage void __init start_kernel(void)
 	 * BogoMIPS를 계산한다.
 	 **/
 	calibrate_delay();
+	/** 20150207    
+	 * pidmap 관련 변수를 구하고, init_pid_ns를 위한 초기화를 한다.
+	 **/
 	pidmap_init();
+	/** 20150207    
+	 * anon_vma를 위한 초기화로 kmem_cache를 생성한다.
+	 **/
 	anon_vma_init();
 	thread_info_cache_init();
+	/** 20150207    
+	 * credentials 초기화 : kmem_cache 생성
+	 **/
 	cred_init();
+	/** 20150207    
+	 * fork 초기화 : kmem_cache 생성, max_threads 설정
+	 **/
 	fork_init(totalram_pages);
+	/** 20150207    
+	 * process 초기화 : kmem_cache 생성, VMA 관련 초기화.
+	 **/
 	proc_caches_init();
 	buffer_init();
 	key_init();

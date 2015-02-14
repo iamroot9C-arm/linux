@@ -1470,7 +1470,7 @@ static struct page *new_slab(struct kmem_cache *s, gfp_t flags, int node)
 	inc_slabs_node(s, page_to_nid(page), page->objects);
 	/** 20140215
 	 * kmem_cache의 위치를 할당 받아온 page의 page->slab에 저장한다.
-	**/
+	 **/
 	 page->slab = s;
 	 /** 20140215
 	 page의 Slab관련 flag를 세팅한다.
@@ -3677,6 +3677,9 @@ static int kmem_cache_open(struct kmem_cache *s,
 	 **/
 	free_kmem_cache_nodes(s);
 error:
+	/** 20150207    
+	 * flags에 SLAB_PANIC 옵션이 있다면 실패시 panic을 발생시킨다.
+	 **/
 	if (flags & SLAB_PANIC)
 		panic("Cannot create slab %s size=%lu realsize=%u "
 			"order=%u offset=%u flags=%lx\n",

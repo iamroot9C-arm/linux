@@ -36,6 +36,10 @@ struct bsd_acct_struct;
  * [참고] http://studyfoss.egloos.com/5242243
  *
  * cgroup에서 pid namespace를 관리하기 위해 사용된다. 
+ *
+ * pid_namespace마다 별도의 pid_cachep를 가지고 있는데,
+ * struct pid를 할당받기 위한 kmem_cache를 독자적으로 가지고 있는 이유는
+ * namespace가 다름에 따라 할당 받아올 메모리 역시 분리되어 있기 때문이다.
  **/
 struct pid_namespace {
 	struct kref kref;

@@ -610,6 +610,8 @@ void __init pidmap_init(void)
 
 	/** 20150131    
 	 * pid 구조체를 할당받기 위한 kmem_cache를 생성한다.
+	 * init_pid_ns를 제외한 pid_ns는 create_pid_namespace에서
+	 * create_pid_cachep로 할당 받는다.
 	 **/
 	init_pid_ns.pid_cachep = KMEM_CACHE(pid,
 			SLAB_HWCACHE_ALIGN | SLAB_PANIC);

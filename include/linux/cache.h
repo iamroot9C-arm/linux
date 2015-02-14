@@ -27,6 +27,9 @@
 #endif
 
 #ifndef ____cacheline_aligned_in_smp
+/** 20150207    
+ * SMP 설정여부에 따라 SMP관련 cachealign이 결정된다.
+ **/
 #ifdef CONFIG_SMP
 #define ____cacheline_aligned_in_smp ____cacheline_aligned
 #else

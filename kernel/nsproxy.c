@@ -274,6 +274,11 @@ out:
 	return err;
 }
 
+/** 20150207    
+ * nsproxy 관련 cache 초기화를 한다.
+ *
+ * nsproxy kmem_cache를 생성한다.
+ **/
 int __init nsproxy_cache_init(void)
 {
 	nsproxy_cachep = KMEM_CACHE(nsproxy, SLAB_PANIC);

@@ -11,6 +11,10 @@
 #include <linux/debugobjects.h>
 
 #ifdef CONFIG_HOTPLUG_CPU
+/** 20150207    
+ * percpu_counter 전역 리스트.
+ * spinlock으로 보호된다.
+ **/
 static LIST_HEAD(percpu_counters);
 static DEFINE_SPINLOCK(percpu_counters_lock);
 #endif
@@ -51,6 +55,8 @@ static inline void debug_percpu_counter_deactivate(struct percpu_counter *fbc)
 }
 
 #else	/* CONFIG_DEBUG_OBJECTS_PERCPU_COUNTER */
+/** 20150207    
+ **/
 static inline void debug_percpu_counter_activate(struct percpu_counter *fbc)
 { }
 static inline void debug_percpu_counter_deactivate(struct percpu_counter *fbc)
@@ -109,11 +115,18 @@ s64 __percpu_counter_sum(struct percpu_counter *fbc)
 }
 EXPORT_SYMBOL(__percpu_counter_sum);
 
+/** 20150207    
+ * percpu counter 초기화.
+ **/
 int __percpu_counter_init(struct percpu_counter *fbc, s64 amount,
 			  struct lock_class_key *key)
 {
 	raw_spin_lock_init(&fbc->lock);
 	lockdep_set_class(&fbc->lock, key);
+	/** 20150207    
+	 * 전체 count 초기화.
+	 * percpu를 위한 메모리 할당.
+	 **/
 	fbc->count = amount;
 	fbc->counters = alloc_percpu(s32);
 	if (!fbc->counters)

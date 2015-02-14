@@ -410,6 +410,9 @@ static inline void lockdep_on(void)
 /*
  * The class key takes no space if lockdep is disabled:
  */
+/** 20150207    
+ * NULL
+ **/
 struct lock_class_key { };
 
 #define lockdep_depth(tsk)	(0)

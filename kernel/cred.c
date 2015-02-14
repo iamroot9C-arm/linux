@@ -616,6 +616,10 @@ EXPORT_SYMBOL(revert_creds);
 /*
  * initialise the credentials stuff
  */
+/** 20150207    
+ * credentials (자격, 인증서) 관련 초기화로
+ * "cred_jar"라는 kmem_cache를 생성한다.
+ **/
 void __init cred_init(void)
 {
 	/* allocate a slab in which we can store credentials */
