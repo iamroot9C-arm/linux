@@ -174,6 +174,9 @@ static inline void __raw_spin_lock_irq(raw_spinlock_t *lock)
 	LOCK_CONTENDED(lock, do_raw_spin_trylock, do_raw_spin_lock);
 }
 
+/** 20150214    
+ * bottom-half를 막고, 선점을 금지시킨 상태로 spinlock을 건다.
+ **/
 static inline void __raw_spin_lock_bh(raw_spinlock_t *lock)
 {
 	local_bh_disable();

@@ -56,6 +56,8 @@ struct inodes_stat_t {
 };
 
 
+/** 20150214    
+ **/
 #define NR_FILE  8192	/* this can well be larger on a larger system */
 
 #define MAY_EXEC		0x00000001

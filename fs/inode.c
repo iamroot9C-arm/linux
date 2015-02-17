@@ -1767,11 +1767,17 @@ void __init inode_init_early(void)
 		INIT_HLIST_HEAD(&inode_hashtable[loop]);
 }
 
+/** 20150214    
+ * inode 관련 초기화를 수행한다 : kmem_cache 생성 등
+ **/
 void __init inode_init(void)
 {
 	unsigned int loop;
 
 	/* inode slab cache */
+	/** 20150214    
+	 * "inode_cache" kmem_cache를 생성한다.
+	 **/
 	inode_cachep = kmem_cache_create("inode_cache",
 					 sizeof(struct inode),
 					 0,
@@ -1780,6 +1786,9 @@ void __init inode_init(void)
 					 init_once);
 
 	/* Hash may have been set up in inode_init_early */
+	/** 20150214    
+	 * CONFIG_NUMA가 설정되지 않아 hashdist는 0.
+	 **/
 	if (!hashdist)
 		return;
 

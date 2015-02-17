@@ -1837,6 +1837,9 @@ static inline void security_free_mnt_opts(struct security_mnt_opts *opts)
  * are just stubbed out, but a few must call the proper capable code.
  */
 
+/** 20150214    
+ * CONFIG_SECURITY가 설정되지 않아 NULL 함수.
+ **/
 static inline int security_init(void)
 {
 	return 0;

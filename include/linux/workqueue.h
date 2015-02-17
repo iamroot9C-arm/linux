@@ -144,6 +144,9 @@ struct execute_work {
 /*
  * initialize a work item's function pointer
  */
+/** 20150214    
+ * work의 func 등록.
+ **/
 #define PREPARE_WORK(_work, _func)				\
 	do {							\
 		(_work)->func = (_func);			\
@@ -160,6 +163,9 @@ static inline unsigned int work_static(struct work_struct *work)
 	return *work_data_bits(work) & WORK_STRUCT_STATIC;
 }
 #else
+/** 20150214    
+ * CONFIG_DEBUG_OBJECTS_WORK가 설정되지 않을 경우 NULL 함수.
+ **/
 static inline void __init_work(struct work_struct *work, int onstack) { }
 static inline void destroy_work_on_stack(struct work_struct *work) { }
 static inline unsigned int work_static(struct work_struct *work) { return 0; }
@@ -184,6 +190,10 @@ static inline unsigned int work_static(struct work_struct *work) { return 0; }
 		PREPARE_WORK((_work), (_func));				\
 	} while (0)
 #else
+/** 20150214    
+ * workqueue의 작업 초기화.
+ * func은 work에서 실행할 함수이다.
+ **/
 #define __INIT_WORK(_work, _func, _onstack)				\
 	do {								\
 		__init_work((_work), _onstack);				\
@@ -193,6 +203,11 @@ static inline unsigned int work_static(struct work_struct *work) { return 0; }
 	} while (0)
 #endif
 
+/** 20150214    
+ * workqueue 작업 초기화.
+ * 
+ * func을 work에서 실행할 함수로 등록한다.
+ **/
 #define INIT_WORK(_work, _func)					\
 	do {							\
 		__INIT_WORK((_work), (_func), 0);		\

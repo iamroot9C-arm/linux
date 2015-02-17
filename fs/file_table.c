@@ -574,6 +574,9 @@ void __init files_init(unsigned long mempages)
 { 
 	unsigned long n;
 
+	/** 20150214    
+	 * "filp" kmem_cache를 생성한다.
+	 **/
 	filp_cachep = kmem_cache_create("filp", sizeof(struct file), 0,
 			SLAB_HWCACHE_ALIGN | SLAB_PANIC, NULL);
 
@@ -582,8 +585,19 @@ void __init files_init(unsigned long mempages)
 	 * Per default don't use more than 10% of our memory for files. 
 	 */ 
 
+	/** 20150214    
+	 * inode와 dcache가 필요한 용량을 대략 1K로 잡고
+	 * 한 페이지에 표현할 수 있는 갯수를 구하고,
+	 * 제공된 mempages의 10%만큼 페이지를 사용한다고 했을 때 생성할 수 있는
+	 * 파일의 수를 구한다.
+	 *
+	 * max_files의 최소치는 NR_FILE이다.
+	 **/
 	n = (mempages * (PAGE_SIZE / 1024)) / 10;
 	files_stat.max_files = max_t(unsigned long, n, NR_FILE);
+	/** 20150214    
+	 * files defer list init.
+	 **/
 	files_defer_init();
 	lg_lock_init(&files_lglock, "files_lglock");
 	percpu_counter_init(&nr_files, 0);

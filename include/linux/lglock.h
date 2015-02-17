@@ -43,6 +43,9 @@
  EXPORT_SYMBOL(name##_lock_dep_map)
 
 #else
+/** 20150214    
+ * CONFIG_DEBUG_LOCK_ALLOC를 설정하지 않았음.
+ **/
 #define LOCKDEP_INIT_MAP(a, b, c, d)
 
 #define DEFINE_LGLOCK_LOCKDEP(name)

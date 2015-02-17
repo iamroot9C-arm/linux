@@ -112,6 +112,25 @@ struct vm_area_struct;
  * GFP_NOWAIT : GFP_ATOMIC이며, __GFP_HIGH를 사용하지는 않는다.
  *				Like GFP_ATOMIC, except that the call will not fallback on emer- gency memory pools. This increases the liklihood of the memory
  * allocation failing.
+ *
+ * 20150214 
+ * GFP_ATOMIC
+ *   인터럽트 핸들러 등 process context가 아닌 부분에서 메모리를 할당할 때 사용된다. sleep 하지 않는다.
+ * Used to allocate memory from interrupt handlers and other code outside of a process context. Never sleeps.
+ *
+ * GFP_KERNEL
+ * 커널 메모리를 할당한다. 메모리를 할당하지 못하면 sleep 가능하다.
+ * Normal allocation of kernel memory. May sleep.
+ *
+ * GFP_USER
+ * user-space 페이지를 위한 메모리 할당에 사용된다. sleep 가능하다.
+ * NUMA로 오면서 특정 cpuset에 배정된 node에서만 메모리를 할당받는 속성이 추가되었따.
+ * Used to allocate memory for user-space pages; it may sleep.
+ *
+ * GFP_HIGHUSER
+ * GFP_USER 특징에 high memory로부터 할당받아야 하는 속성이 추가되었다.
+ * Like GFP_USER, but allocates from high memory, if any. High memory is described in the next subsection.
+ *
  **/
 #define GFP_NOWAIT	(GFP_ATOMIC & ~__GFP_HIGH)
 /* GFP_ATOMIC means both !wait (__GFP_WAIT not set) and use emergency pool */
@@ -277,15 +296,14 @@ static inline int allocflags_to_migratetype(gfp_t gfp_flags)
 
 /** 20130629    
  * nr_free_pagecache_pages 에서 호출된 경우 flags는 다음과 같다.
- #define GFP_HIGHUSER_MOVABLE	(__GFP_WAIT | __GFP_IO | __GFP_FS | \
-				 __GFP_HARDWALL | __GFP_HIGHMEM | \
-				 __GFP_MOVABLE)
-
-
-#define GFP_ZONEMASK	(__GFP_DMA|__GFP_HIGHMEM|__GFP_DMA32|__GFP_MOVABLE)
-
-20130727
-flags에 해당하는 zone type을 리턴한다.
+ * #define GFP_HIGHUSER_MOVABLE	(__GFP_WAIT | __GFP_IO | __GFP_FS | \
+ *						__GFP_HARDWALL | __GFP_HIGHMEM | \
+ *						__GFP_MOVABLE)
+ *
+ * #define GFP_ZONEMASK	(__GFP_DMA|__GFP_HIGHMEM|__GFP_DMA32|__GFP_MOVABLE)
+ *
+ * 20130727
+ * flags에 해당하는 zone type을 리턴한다.
  **/
 static inline enum zone_type gfp_zone(gfp_t flags)
 {

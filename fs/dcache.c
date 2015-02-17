@@ -3123,6 +3123,11 @@ static void __init dcache_init_early(void)
 		INIT_HLIST_BL_HEAD(dentry_hashtable + loop);
 }
 
+/** 20150214    
+ * dcache 관련 초기화를 한다.
+ *
+ * kmem_cache를 생성한다.
+ **/
 static void __init dcache_init(void)
 {
 	unsigned int loop;
@@ -3132,10 +3137,16 @@ static void __init dcache_init(void)
 	 * but it is probably not worth it because of the cache nature
 	 * of the dcache. 
 	 */
+	/** 20150214    
+	 * "dentry" kmem_cache를 생성한다.
+	 **/
 	dentry_cache = KMEM_CACHE(dentry,
 		SLAB_RECLAIM_ACCOUNT|SLAB_PANIC|SLAB_MEM_SPREAD);
 
 	/* Hash may have been set up in dcache_init_early */
+	/** 20150214    
+	 * CONFIG_NUMA가 설정되지 않은 경우, hashdisk는 0.
+	 **/
 	if (!hashdist)
 		return;
 
@@ -3178,13 +3189,26 @@ void __init vfs_caches_init(unsigned long mempages)
 	/* Base hash sizes on available memory, with a reserve equal to
            150% of current kernel size */
 
+	/** 20150214    
+	 * mempages(totalram_pages)에서 free pages를 뺀, 사용 중인 메모리의 150%를
+	 * reserve로 판단한다. 최대치는 mempages-1.
+	 **/
 	reserve = min((mempages - nr_free_pages()) * 3/2, mempages - 1);
 	mempages -= reserve;
 
+	/** 20150214    
+	 * "names_cache" kmem_cache 생성.
+	 **/
 	names_cachep = kmem_cache_create("names_cache", PATH_MAX, 0,
 			SLAB_HWCACHE_ALIGN|SLAB_PANIC, NULL);
 
+	/** 20150214    
+	 * dcache 초기화를 수행한다 : "dentry" kmem_cache 생성 등.
+	 **/
 	dcache_init();
+	/** 20150214    
+	 * inode 관련 초기화를 수행한다 : kmem_cache 생성 등
+	 **/
 	inode_init();
 	files_init(mempages);
 	mnt_init();

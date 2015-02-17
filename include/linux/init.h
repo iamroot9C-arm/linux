@@ -41,6 +41,11 @@
 
 /* These are for everybody (although not all archs will actually
    discard it in modules) */
+/** 20150214    
+ * section 지정 매크로.
+ *
+ * function 리턴타입과 이름 사이에 위치시킨다.
+ **/
 #define __init		__section(.init.text) __cold notrace
 #define __initdata	__section(.init.data)
 #define __initconst	__section(.init.rodata)

@@ -525,6 +525,7 @@ extern void __send_remote_softirq(struct call_single_data *cp, int cpu,
 
 /** 20140920    
  * tasklet_struct
+ *	softirq에 기반한 bottom-half 매커니즘의 하나.
  *
  * tasklet은 softirq로 구현되며, interrupt context에서 실행된다.
  * 한 종류의 tasklet은 softirq와 달리 한 시점에 하나의 CPU에서만 수행된다.
@@ -546,6 +547,9 @@ struct tasklet_struct
 	unsigned long data;
 };
 
+/** 20150214    
+ * tasklet을 생성한다.
+ **/
 #define DECLARE_TASKLET(name, func, data) \
 struct tasklet_struct name = { NULL, 0, ATOMIC_INIT(0), func, data }
 
@@ -553,6 +557,12 @@ struct tasklet_struct name = { NULL, 0, ATOMIC_INIT(0), func, data }
 struct tasklet_struct name = { NULL, 0, ATOMIC_INIT(1), func, data }
 
 
+/** 20150214    
+ * tasklet state에 사용되는 두 가지 속성.
+ *   TASKLET_STATE_SCHED : 실행을 위해 schedule 되어 있다.
+ *   TASKLET_STATE_RUN   : tasklet이 진행 중이다. (SMP에서만 사용)
+ *	                       tasklet의 trylock/unlock에서 lock 변수처럼 사용한다.
+ **/
 enum
 {
 	TASKLET_STATE_SCHED,	/* Tasklet is scheduled for execution */
@@ -560,13 +570,26 @@ enum
 };
 
 #ifdef CONFIG_SMP
+/** 20150214    
+ * 해당 tasklet의 현재 상태가 state run 중이 아니라면 참.
+ *
+ * state에서 run속성을 검사한다.
+ **/
 static inline int tasklet_trylock(struct tasklet_struct *t)
 {
 	return !test_and_set_bit(TASKLET_STATE_RUN, &(t)->state);
 }
 
+/** 20150214    
+ * tasklet lock을 해제한다.
+ *
+ * state에서 run 속성을 제거한다.
+ **/
 static inline void tasklet_unlock(struct tasklet_struct *t)
 {
+	/** 20150214    
+	 * bit clear 이전에 smp barrier를 둔다.
+	 **/
 	smp_mb__before_clear_bit(); 
 	clear_bit(TASKLET_STATE_RUN, &(t)->state);
 }
@@ -584,15 +607,13 @@ static inline void tasklet_unlock_wait(struct tasklet_struct *t)
 extern void __tasklet_schedule(struct tasklet_struct *t);
 
 /** 20141011    
- * tasklet을 스케쥴하는(작업 등록) 함수.
- * 
+ * tasklet을 스케쥴(리스트에 등록)하는 함수.
+ *
+ * 현재 tasklet의 상태를 schedule 중으로 변경하고,
+ * 이전 상태가 schedule 중이 아니였다면 __tasklet_schedule를 호출한다.
  **/
 static inline void tasklet_schedule(struct tasklet_struct *t)
 {
-	/** 20141011    
-	 * tasklet이 schedule 되어 있지 않다면 schedule 상태로 변경하고
-	 * __tasklet_schedule를 호출한다.
-	 **/
 	if (!test_and_set_bit(TASKLET_STATE_SCHED, &t->state))
 		__tasklet_schedule(t);
 }

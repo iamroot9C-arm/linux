@@ -22,12 +22,17 @@
 #include <linux/rcupdate.h>
 #include <linux/workqueue.h>
 
+/** 20150214    
+ * free가 지연된 fdtables 등록 리스트.
+ **/
 struct fdtable_defer {
 	spinlock_t lock;
 	struct work_struct wq;
 	struct fdtable *next;
 };
 
+/** 20150214    
+ **/
 int sysctl_nr_open __read_mostly = 1024*1024;
 int sysctl_nr_open_min = BITS_PER_LONG;
 int sysctl_nr_open_max = 1024 * 1024; /* raised later */
@@ -38,6 +43,11 @@ int sysctl_nr_open_max = 1024 * 1024; /* raised later */
  * the work_struct in fdtable itself which avoids a 64 byte (i386) increase in
  * this per-task structure.
  */
+/** 20150214    
+ * percpu 변수 fdtable_defer_list의 선언.
+ * 
+ * vmalloc으로 생성된, free를 연기한 fdtables를 등록하는 리스트.
+ **/
 static DEFINE_PER_CPU(struct fdtable_defer, fdtable_defer_list);
 
 static void *alloc_fdmem(size_t size)
@@ -66,6 +76,10 @@ static void __free_fdtable(struct fdtable *fdt)
 	kfree(fdt);
 }
 
+/** 20150214    
+ * fdtables free용 work.
+ * 추후 분석.
+ **/
 static void free_fdtable_work(struct work_struct *work)
 {
 	struct fdtable_defer *f =
@@ -395,19 +409,38 @@ out:
 	return NULL;
 }
 
+/** 20150214    
+ * cpu에 해당하는 fdtable_defer_list를 초기화 한다.
+ *
+ * fdtable_defer_list는 vmalloc된 fdtable을 free시키기 위해 사용하는 리스트이다.
+ * free_fdtable_work가 호출된다.
+ **/
 static void __devinit fdtable_defer_list_init(int cpu)
 {
+	/** 20150214    
+	 * 현재 cpu에 해당하는 fdtable_defer_list 포인터를 가져와 초기화 한다.
+	 **/
 	struct fdtable_defer *fddef = &per_cpu(fdtable_defer_list, cpu);
 	spin_lock_init(&fddef->lock);
 	INIT_WORK(&fddef->wq, free_fdtable_work);
 	fddef->next = NULL;
 }
 
+/** 20150214    
+ * fdtable defer list 초기화.
+ * sysctl_nr_open_max 설정.
+ **/
 void __init files_defer_init(void)
 {
 	int i;
+	/** 20150214    
+	 * possible cpu를 순회하며 fdtable_defer_list를 초기화 한다.
+	 **/
 	for_each_possible_cpu(i)
 		fdtable_defer_list_init(i);
+	/** 20150214    
+	 * open할 수 있는 최대치를 설정한다.
+	 **/
 	sysctl_nr_open_max = min((size_t)INT_MAX, ~(size_t)0/sizeof(void *)) &
 			     -BITS_PER_LONG;
 }

@@ -307,6 +307,9 @@ extern atomic_t			kgdb_active;
 extern bool dbg_is_early;
 extern void __init dbg_late_init(void);
 #else /* ! CONFIG_KGDB */
+/** 20150214    
+ * CONFIG_KGDB가 설정되지 않아 NULL 함수.
+ **/
 #define in_dbg_master() (0)
 #define dbg_late_init()
 #endif /* ! CONFIG_KGDB */

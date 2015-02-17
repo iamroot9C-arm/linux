@@ -3508,6 +3508,9 @@ static int calculate_sizes(struct kmem_cache *s, int forced_order)
 	if (s->flags & SLAB_CACHE_DMA)
 		s->allocflags |= SLUB_DMA;
 
+	/** 20150214    
+	 * __GFP_RECLAIMABLE 속성이 필요한지 검사해 추가한다.
+	 **/
 	if (s->flags & SLAB_RECLAIM_ACCOUNT)
 		s->allocflags |= __GFP_RECLAIMABLE;
 

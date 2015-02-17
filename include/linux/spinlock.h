@@ -244,6 +244,7 @@ static inline void do_raw_spin_unlock(raw_spinlock_t *lock) __releases(lock)
 #endif
 
 /** 20131026    
+ * irq 또는 bh를 금지시킨 상태에서 spinlock을 건다.
  **/
 #define raw_spin_lock_irq(lock)		_raw_spin_lock_irq(lock)
 #define raw_spin_lock_bh(lock)		_raw_spin_lock_bh(lock)
@@ -340,6 +341,9 @@ static inline void spin_lock(spinlock_t *lock)
 	raw_spin_lock(&lock->rlock);
 }
 
+/** 20150214    
+ * bottom-half를 막고, 선점을 금지시킨 상태로 spinlock을 건다.
+ **/
 static inline void spin_lock_bh(spinlock_t *lock)
 {
 	raw_spin_lock_bh(&lock->rlock);

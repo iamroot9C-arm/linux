@@ -10,6 +10,11 @@
  * Could be added though, just undo lg_lock_init
  */
 
+/** 20150214    
+ * lg lock 초기화.
+ *
+ * LOCK ALLOC을 디버깅하지 않으면 아무 동작도 취하지 않는다.
+ **/
 void lg_lock_init(struct lglock *lg, char *name)
 {
 	LOCKDEP_INIT_MAP(&lg->lock_dep_map, name, &lg->lock_key, 0);

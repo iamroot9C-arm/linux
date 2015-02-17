@@ -97,6 +97,8 @@ EXPORT_SYMBOL(node_states);
 
 /** 20130803    
  * mem_init 에서 초기화
+ *
+ * highmem page까지 포함한다.
  **/
 unsigned long totalram_pages __read_mostly;
 unsigned long totalreserve_pages __read_mostly;
@@ -4318,8 +4320,18 @@ static unsigned int nr_free_zone_pages(int offset)
 /*
  * Amount of free RAM allocatable within ZONE_DMA and ZONE_NORMAL
  */
+/** 20150214    
+ * buffer 용으로 사용할 free pages의 수를 계산해 리턴한다.
+ *
+ * 구현상으로 ZONE_DMA와 ZONE_NORMAL의 free pages의 수가 리턴된다.
+ * (HIGHMEM은 포함되지 않음)
+ **/
 unsigned int nr_free_buffer_pages(void)
 {
+	/** 20150214    
+	 * GFP_USER용으로 메모리 할당이 가능한 zone 리스트를 받아와
+	 * free pages의 개수를 합해 리턴한다.
+	 **/
 	return nr_free_zone_pages(gfp_zone(GFP_USER));
 }
 EXPORT_SYMBOL_GPL(nr_free_buffer_pages);

@@ -349,7 +349,8 @@ restart:
 
 	/** 20140927    
 	 * 다시 softirq pending 값을 가져온다.
-	 * 그 사이에 softirq가 들어왔다면 max_restart까지만 실행한다.
+	 * 그 사이에 softirq가 들어와 pending되어 있고, 재시작한 횟수가 max_restart를
+	 * 넘지 않았다면 restart부터 실행한다.
 	 **/
 	pending = local_softirq_pending();
 	if (pending && --max_restart)
@@ -583,13 +584,14 @@ struct tasklet_head
 static DEFINE_PER_CPU(struct tasklet_head, tasklet_vec);
 static DEFINE_PER_CPU(struct tasklet_head, tasklet_hi_vec);
 
+/** 20141011    
+ * interrupt를 막은채로 tasklet을 tasklet vector 마지막에 등록시키고,
+ * TASKLET_SOFTIRQ로 softirq를 raise한다.
+ **/
 void __tasklet_schedule(struct tasklet_struct *t)
 {
 	unsigned long flags;
 
-	/** 20141011    
-	 * interrupt를 막은채로 tasklet을 tasklet vector의 마지막에 schedule (등록) 한다.
-	 **/
 	local_irq_save(flags);
 	t->next = NULL;
 	*__this_cpu_read(tasklet_vec.tail) = t;
@@ -625,10 +627,17 @@ void __tasklet_hi_schedule_first(struct tasklet_struct *t)
 
 EXPORT_SYMBOL(__tasklet_hi_schedule_first);
 
+/** 20150214    
+ * TASKLET_SOFTIRQ pending시 수행되는 action.
+ **/
 static void tasklet_action(struct softirq_action *a)
 {
 	struct tasklet_struct *list;
 
+	/** 20150214    
+	 * interrupt 금지상태에서 tasklet_vec 리스트를 끊고 지역변수 list로 가져온다.
+	 *   struct tasklet_head 선언부 위의 그림 참고.
+	 **/
 	local_irq_disable();
 	list = __this_cpu_read(tasklet_vec.head);
 	__this_cpu_write(tasklet_vec.head, NULL);
@@ -636,14 +645,27 @@ static void tasklet_action(struct softirq_action *a)
 	local_irq_enable();
 
 	while (list) {
+		/** 20150214    
+		 * tasklet_struct를 하나 가져오고 리스트에서 제거한다.
+		 **/
 		struct tasklet_struct *t = list;
 
 		list = list->next;
 
+		/** 20150214    
+		 * 가져온 tasklet의 lock에 성공하면
+		 *   count가 0일 경우에만 func을 호출한다.
+		 **/
 		if (tasklet_trylock(t)) {
 			if (!atomic_read(&t->count)) {
+				/** 20150214    
+				 * state sched를 제거한다.
+				 **/
 				if (!test_and_clear_bit(TASKLET_STATE_SCHED, &t->state))
 					BUG();
+				/** 20150214    
+				 * func 호출.
+				 **/
 				t->func(t->data);
 				tasklet_unlock(t);
 				continue;
@@ -651,6 +673,10 @@ static void tasklet_action(struct softirq_action *a)
 			tasklet_unlock(t);
 		}
 
+		/** 20150214    
+		 * tasklet의 lock 획득에 실패하거나, tasklet이 disable되어 실행할 수 없는 경우,
+		 * 분리했던 tasklet을 인터럽트 금지상태에서 tasklet_vec의 끝에 추가한다.
+		 **/
 		local_irq_disable();
 		t->next = NULL;
 		*__this_cpu_read(tasklet_vec.tail) = t;
@@ -697,7 +723,7 @@ static void tasklet_hi_action(struct softirq_action *a)
 
 
 /** 20141011    
- * tasklet_struct를 받아 tasklet을 초기화 한다.
+ * 전달받은 tasklet_struct를 초기화 한다.
  **/
 void tasklet_init(struct tasklet_struct *t,
 		  void (*func)(unsigned long), unsigned long data)

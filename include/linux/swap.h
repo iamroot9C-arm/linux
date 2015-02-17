@@ -230,6 +230,9 @@ extern unsigned int nr_free_buffer_pages(void);
 extern unsigned int nr_free_pagecache_pages(void);
 
 /* Definition of global_page_state not available yet */
+/** 20150214    
+ * 시스템 전체의 NR_FREE_PAGES 항목 조회.
+ **/
 #define nr_free_pages() global_page_state(NR_FREE_PAGES)
 
 

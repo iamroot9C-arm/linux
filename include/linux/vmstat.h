@@ -120,8 +120,8 @@ static inline void zone_page_state_add(long x, struct zone *zone,
 }
 
 /** 20130914
-전역 vm_stat[item]의 값을 리턴
-**/
+ * 전역 vm_stat[item]의 값을 리턴
+ **/
 static inline unsigned long global_page_state(enum zone_stat_item item)
 {
 	long x = atomic_long_read(&vm_stat[item]);
@@ -133,9 +133,9 @@ static inline unsigned long global_page_state(enum zone_stat_item item)
 }
 
 /** 20130914
-지정된 zone 에서 item에 해당하는 vm_stat을 읽어서 리턴한다.
-(0보다 작을 경우 0으로 조정)
-**/
+ * 지정된 zone 에서 item에 해당하는 vm_stat을 읽어서 리턴한다.
+ * (0보다 작을 경우 0으로 조정)
+ **/
 static inline unsigned long zone_page_state(struct zone *zone,
 					enum zone_stat_item item)
 {

@@ -3188,6 +3188,8 @@ static struct kmem_cache *bh_cachep __read_mostly;
  * Once the number of bh's in the machine exceeds this level, we start
  * stripping them in writeback.
  */
+/** 20150214    
+ **/
 static int max_buffer_heads;
 
 int buffer_heads_over_limit;
@@ -3237,6 +3239,9 @@ void free_buffer_head(struct buffer_head *bh)
 }
 EXPORT_SYMBOL(free_buffer_head);
 
+/** 20150214    
+ * 추후분석
+ **/
 static void buffer_exit_cpu(int cpu)
 {
 	int i;
@@ -3250,6 +3255,11 @@ static void buffer_exit_cpu(int cpu)
 	per_cpu(bh_accounting, cpu).nr = 0;
 }
 
+/** 20150214    
+ * HOTCPU 이벤트시 호출되는 콜백 함수.
+ *
+ * CPU_DEAD와 CPU_DEAD_FROZEN notify를 받으면 해당 cpu의 bh 관련 정보를 갱신한다.
+ **/
 static int buffer_cpu_notify(struct notifier_block *self,
 			      unsigned long action, void *hcpu)
 {
@@ -3302,10 +3312,21 @@ int bh_submit_read(struct buffer_head *bh)
 }
 EXPORT_SYMBOL(bh_submit_read);
 
+/** 20150214    
+ * buffer heads 관련 초기화를 수행한다.
+ *
+ * kmem_cache를 생성하고, 관련 전역변수 설정 및 hotcpu 콜백을 등록한다.
+ **/
 void __init buffer_init(void)
 {
 	int nrpages;
 
+	/** 20150214    
+	 * buffer_head에 대한 kmem_cache를 생성한다.
+	 *
+	 * SLAB_RECLAIM_ACCOUNT 속성에 의해
+	 * slab용 page 할당시 __GFP_RECLAIMABLE 속성이 주어진다.
+	 **/
 	bh_cachep = kmem_cache_create("buffer_head",
 			sizeof(struct buffer_head), 0,
 				(SLAB_RECLAIM_ACCOUNT|SLAB_PANIC|
@@ -3315,7 +3336,14 @@ void __init buffer_init(void)
 	/*
 	 * Limit the bh occupancy to 10% of ZONE_NORMAL
 	 */
+	/** 20150214    
+	 * buffer heads용으로 사용할 메모리는 ZONE_NORMAL까지 페이지 중 10%이다.
+	 * 한 페이지에 들어갈 수 있는 buffer_head의 수를 계산해 max_buffer_heads로 잡는다.
+	 **/
 	nrpages = (nr_free_buffer_pages() * 10) / 100;
 	max_buffer_heads = nrpages * (PAGE_SIZE / sizeof(struct buffer_head));
+	/** 20150214    
+	 * HOTCPU 이벤트시 호출될 콜백을 등록한다.
+	 **/
 	hotcpu_notifier(buffer_cpu_notify, 0);
 }

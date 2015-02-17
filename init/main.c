@@ -884,9 +884,21 @@ asmlinkage void __init start_kernel(void)
 	 * process 초기화 : kmem_cache 생성, VMA 관련 초기화.
 	 **/
 	proc_caches_init();
+	/** 20150214    
+	 * buffer head 초기화 : kmem_cache 생성, max_buffer_heads 설정 등
+	 **/
 	buffer_init();
+	/** 20150214    
+	 * CONFIG_KEYS가 설정되지 않아 NULL 함수.
+	 **/
 	key_init();
+	/** 20150214    
+	 * CONFIG_SECURITY가 설정되지 않아 NULL 함수.
+	 **/
 	security_init();
+	/** 20150214    
+	 * CONFIG_KGDB가 설정되지 않아 NULL 함수.
+	 **/
 	dbg_late_init();
 	vfs_caches_init(totalram_pages);
 	signals_init();
