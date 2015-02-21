@@ -32,6 +32,11 @@ static const struct address_space_operations sysfs_aops = {
 	.write_end	= simple_write_end,
 };
 
+/** 20150221    
+ * sysfs 관련 bdi 정의.
+ *
+ *   readahead를 사용하지 않고, ACCT와 WRITEBACK을 사용하지 않는다
+ **/
 static struct backing_dev_info sysfs_backing_dev_info = {
 	.name		= "sysfs",
 	.ra_pages	= 0,	/* No readahead */
@@ -45,6 +50,9 @@ static const struct inode_operations sysfs_inode_operations ={
 	.setxattr	= sysfs_setxattr,
 };
 
+/** 20150221    
+ * sysfs_inode_init 에서는 sysfs bdi 초기화만 수행한다.
+ **/
 int __init sysfs_inode_init(void)
 {
 	return bdi_init(&sysfs_backing_dev_info);

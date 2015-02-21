@@ -168,6 +168,9 @@ void fprop_fraction_single(struct fprop_global *p,
  */
 #define PROP_BATCH (8*(1+ilog2(nr_cpu_ids)))
 
+/** 20150221    
+ * fprop_local_percpu를 받아 초기화 한다.
+ **/
 int fprop_local_init_percpu(struct fprop_local_percpu *pl)
 {
 	int err;

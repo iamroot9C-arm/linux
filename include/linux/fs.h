@@ -1024,6 +1024,12 @@ static inline int ra_has_index(struct file_ra_state *ra, pgoff_t index)
 #define FILE_MNT_WRITE_TAKEN	1
 #define FILE_MNT_WRITE_RELEASED	2
 
+/** 20150221    
+ * file 구조체.
+ *
+ *   private_data : 여러가지 용도로 사용된다.
+ *     seq_file 인터페이스에서는 seq_file *로 사용된다.
+ **/
 struct file {
 	/*
 	 * fu_list becomes invalid after file_free is called and queued via
@@ -2016,6 +2022,9 @@ static inline void file_accessed(struct file *file)
 int sync_inode(struct inode *inode, struct writeback_control *wbc);
 int sync_inode_metadata(struct inode *inode, int wait);
 
+/** 20150221    
+ * file_system_type에 대한 descriptor.
+ **/
 struct file_system_type {
 	const char *name;
 	int fs_flags;
@@ -2075,6 +2084,8 @@ extern struct dentry *mount_pseudo(struct file_system_type *, char *,
 extern int register_filesystem(struct file_system_type *);
 extern int unregister_filesystem(struct file_system_type *);
 extern struct vfsmount *kern_mount_data(struct file_system_type *, void *data);
+/** 20150221    
+ **/
 #define kern_mount(type) kern_mount_data(type, NULL)
 extern void kern_unmount(struct vfsmount *mnt);
 extern int may_umount_tree(struct vfsmount *);

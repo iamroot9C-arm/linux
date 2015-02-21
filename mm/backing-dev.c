@@ -651,6 +651,9 @@ void bdi_unregister(struct backing_dev_info *bdi)
 }
 EXPORT_SYMBOL(bdi_unregister);
 
+/** 20150221    
+ * bdi의 bdi_writeback 구조체를 초기화 한다.
+ **/
 static void bdi_wb_init(struct bdi_writeback *wb, struct backing_dev_info *bdi)
 {
 	memset(wb, 0, sizeof(*wb));
@@ -661,14 +664,24 @@ static void bdi_wb_init(struct bdi_writeback *wb, struct backing_dev_info *bdi)
 	INIT_LIST_HEAD(&wb->b_io);
 	INIT_LIST_HEAD(&wb->b_more_io);
 	spin_lock_init(&wb->list_lock);
+	/** 20150221    
+	 * writeback용 wakeup_timer를 설정한다.
+	 * timer 만료시 wakeup_timer_fn가 호출되고, bdi가 fn에 전달된다.
+	 **/
 	setup_timer(&wb->wakeup_timer, wakeup_timer_fn, (unsigned long)bdi);
 }
 
 /*
  * Initial write bandwidth: 100 MB/s
  */
+/** 20150221    
+ * write bandwidth
+ **/
 #define INIT_BW		(100 << (20 - PAGE_SHIFT))
 
+/** 20150221    
+ * backing_dev_info 를 받아 초기화 한다.
+ **/
 int bdi_init(struct backing_dev_info *bdi)
 {
 	int i, err;
@@ -682,8 +695,14 @@ int bdi_init(struct backing_dev_info *bdi)
 	INIT_LIST_HEAD(&bdi->bdi_list);
 	INIT_LIST_HEAD(&bdi->work_list);
 
+	/** 20150221    
+	 * bdi에 연결된 bdi_writeback 구조체를 초기화 한다.
+	 **/
 	bdi_wb_init(&bdi->wb, bdi);
 
+	/** 20150221    
+	 * percpu counter 'bdi_stat'을 각 item별로 초기화 한다.
+	 **/
 	for (i = 0; i < NR_BDI_STAT_ITEMS; i++) {
 		err = percpu_counter_init(&bdi->bdi_stat[i], 0);
 		if (err)
@@ -695,6 +714,9 @@ int bdi_init(struct backing_dev_info *bdi)
 	bdi->bw_time_stamp = jiffies;
 	bdi->written_stamp = 0;
 
+	/** 20150221    
+	 * ratelimit와 write backwidth 초기값을 설정한다.
+	 **/
 	bdi->balanced_dirty_ratelimit = INIT_BW;
 	bdi->dirty_ratelimit = INIT_BW;
 	bdi->write_bandwidth = INIT_BW;

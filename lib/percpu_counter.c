@@ -99,6 +99,11 @@ EXPORT_SYMBOL(__percpu_counter_add);
  * Add up all the per-cpu counts, return the result.  This is a more accurate
  * but much slower version of percpu_counter_read_positive()
  */
+/** 20150221    
+ * percpu_counter의 count에 percpu별로 유지하고 있던 변수까지 더해 리턴한다.
+ *
+ * percpu_counter_read_positive보다 느리지만 보다 정확한 값을 리턴한다.
+ **/
 s64 __percpu_counter_sum(struct percpu_counter *fbc)
 {
 	s64 ret;
@@ -117,6 +122,8 @@ EXPORT_SYMBOL(__percpu_counter_sum);
 
 /** 20150207    
  * percpu counter 초기화.
+ *
+ * count 항목을 amount로 초기화 하고, percpu인 counters를 할당한다.
  **/
 int __percpu_counter_init(struct percpu_counter *fbc, s64 amount,
 			  struct lock_class_key *key)

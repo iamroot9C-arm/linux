@@ -655,6 +655,9 @@ static inline void debug_timer_deactivate(struct timer_list *timer) { }
 static inline void debug_timer_assert_init(struct timer_list *timer) { }
 #endif
 
+/** 20150221    
+ * timer DEBUG용 함수. 분석 생략
+ **/
 static inline void debug_init(struct timer_list *timer)
 {
 	debug_timer_init(timer);
@@ -725,6 +728,9 @@ EXPORT_SYMBOL_GPL(setup_deferrable_timer_on_stack_key);
  * init_timer_key() must be done to a timer prior calling *any* of the
  * other timer functions.
  */
+/** 20150221    
+ * timer를 name과 key로 초기화 한다.
+ **/
 void init_timer_key(struct timer_list *timer,
 		    const char *name,
 		    struct lock_class_key *key)

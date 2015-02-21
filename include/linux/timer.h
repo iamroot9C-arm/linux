@@ -142,16 +142,21 @@ void init_timer_deferrable_key(struct timer_list *timer,
 						    (data));		\
 	} while (0)
 #else
+/** 20150221    
+ * LOCKDEP이 설정되어 있지 않음.
+ **/
 #define init_timer(timer)\
 	init_timer_key((timer), NULL, NULL)
 #define init_timer_deferrable(timer)\
 	init_timer_deferrable_key((timer), NULL, NULL)
 #define init_timer_on_stack(timer)\
 	init_timer_on_stack_key((timer), NULL, NULL)
+/** 20150221    
+ * timer를 주어진 fn과 data로 설정한다.
+ **/
 #define setup_timer(timer, fn, data)\
 	setup_timer_key((timer), NULL, NULL, (fn), (data))
 /** 20140628    
- * LOCKDEP이 설정되어 있지 않음.
  * timer를 주어진 fn과 data로 설정한다. key는 stack 변수를 사용한다.
  **/
 #define setup_timer_on_stack(timer, fn, data)\
@@ -178,6 +183,9 @@ static inline void init_timer_on_stack_key(struct timer_list *timer,
 }
 #endif
 
+/** 20150221    
+ * timer를 주어진 argument로 설정한다.
+ **/
 static inline void setup_timer_key(struct timer_list * timer,
 				const char *name,
 				struct lock_class_key *key,

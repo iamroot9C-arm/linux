@@ -82,13 +82,16 @@ struct idr_layer {
 };
 
 /** 20140517    
- * idr_init으로 초기화
+ * object에 integer ID를 할당하고, id로 objects를 찾을 때 사용한다.
  *
+ * idr_init으로 초기화.
  *		top		- IDR layer의 가장 윗단. tree의 root.
  *		id_free	- 예비용으로 보관 중인 여유 idr_layer의 list. (single list)
  *		layers	- IDR layer의 수. tree의 height.
  *		id_free_cnt - id_free 리스트에 연결된 idr_layer의 수.
  *		lock	- idr 구조체에 대한 lock.
+ *
+ *	[참고] http://studyfoss.egloos.com/5187192
  **/
 struct idr {
 	struct idr_layer __rcu *top;
@@ -98,6 +101,9 @@ struct idr {
 	spinlock_t	  lock;
 };
 
+/** 20150221    
+ * name이라는 IDR의 생성 및 초기화.
+ **/
 #define IDR_INIT(name)						\
 {								\
 	.top		= NULL,					\
@@ -169,11 +175,18 @@ struct ida_bitmap {
 	unsigned long		bitmap[IDA_BITMAP_LONGS];
 };
 
+/** 20150221    
+ * IDR의 구조를 이용하는 ID 할당자.
+ * id에 따른 pointer를 저장하지 않고 ID만을 할당한다.
+ **/
 struct ida {
 	struct idr		idr;
 	struct ida_bitmap	*free_bitmap;
 };
 
+/** 20150221    
+ * name이라는 IDA를 생성 및 초기화.
+ **/
 #define IDA_INIT(name)		{ .idr = IDR_INIT(name), .free_bitmap = NULL, }
 #define DEFINE_IDA(name)	struct ida name = IDA_INIT(name)
 

@@ -41,6 +41,9 @@ DEFINE_LGLOCK(files_lglock);
 /* SLAB cache for file structures */
 static struct kmem_cache *filp_cachep __read_mostly;
 
+/** 20150221    
+ * percpu counter로 cpu마다 사용 중인 file 구조체의 수를 관리한다.
+ **/
 static struct percpu_counter nr_files __cacheline_aligned_in_smp;
 
 static void file_free_rcu(struct rcu_head *head)
@@ -570,6 +573,11 @@ void mark_files_ro(struct super_block *sb)
 	lg_global_unlock(&files_lglock);
 }
 
+/** 20150221    
+ * file 관련 초기화를 수행한다.
+ *
+ * "filp" kmem_cache를 생성하고, max_files 등 관련 전역 변수를 초기화 한다.
+ **/
 void __init files_init(unsigned long mempages)
 { 
 	unsigned long n;
@@ -599,6 +607,12 @@ void __init files_init(unsigned long mempages)
 	 * files defer list init.
 	 **/
 	files_defer_init();
+	/** 20150221    
+	 * local global lock init.
+	 **/
 	lg_lock_init(&files_lglock, "files_lglock");
+	/** 20150221    
+	 * nr_files percpu counter 초기화.
+	 **/
 	percpu_counter_init(&nr_files, 0);
 } 

@@ -537,6 +537,10 @@ extern void __send_remote_softirq(struct call_single_data *cp, int cpu,
  * - 같은 tasklet이 다른 CPU에서 수행 중이라면, 나중에 실행하기 위해 재스케쥴 된다.
  * - 같은 tasklet은 자신에 관해서는 엄격히 직렬화 되지만,(wrt: with reference to)
  *   다른 tasklet들과는 그렇지 않다. 따라서 task간 동기화를 위해서는 spinlock을 사용해야 한다.
+ *
+ *   count : disable count.
+ *       0인 경우 tasklet이 enable되어 있다. pending되어 있다면 실행할 수 있다.
+ *       0이 아닌 경우 tasklet이 disable되어 있다.
  **/
 struct tasklet_struct
 {
@@ -562,6 +566,12 @@ struct tasklet_struct name = { NULL, 0, ATOMIC_INIT(1), func, data }
  *   TASKLET_STATE_SCHED : 실행을 위해 schedule 되어 있다.
  *   TASKLET_STATE_RUN   : tasklet이 진행 중이다. (SMP에서만 사용)
  *	                       tasklet의 trylock/unlock에서 lock 변수처럼 사용한다.
+ *
+ *	tasklet_schedule() : TASKLET_STATE_SCHED 상태로 만듦.
+ *	tasklet_action()   : TASKLET_STATE_SCHED 상태를 해제.
+ *
+ *	tasklet_trylock()  : TASKLET_STATE_RUN 상태로 만듦.
+ *	tasklet_unlock()   : TASKLET_STATE_RUN 상태를 해제.
  **/
 enum
 {
@@ -573,7 +583,7 @@ enum
 /** 20150214    
  * 해당 tasklet의 현재 상태가 state run 중이 아니라면 참.
  *
- * state에서 run속성을 검사한다.
+ * TASKLET_STATE_RUN인 경우 다른 곳에서 lock을 잡고 있다.
  **/
 static inline int tasklet_trylock(struct tasklet_struct *t)
 {
@@ -594,6 +604,9 @@ static inline void tasklet_unlock(struct tasklet_struct *t)
 	clear_bit(TASKLET_STATE_RUN, &(t)->state);
 }
 
+/** 20150221    
+ * 주어진 tasklet의 상태가 RUN인동안 계속 대기한다.
+ **/
 static inline void tasklet_unlock_wait(struct tasklet_struct *t)
 {
 	while (test_bit(TASKLET_STATE_RUN, &(t)->state)) { barrier(); }
@@ -641,12 +654,24 @@ static inline void tasklet_hi_schedule_first(struct tasklet_struct *t)
 }
 
 
+/** 20150221    
+ * tasklet의 disable count를 증가시키고, smp 메모리 배리어를 둔다.
+ * nosync의 의미는 현재 실행 중인 함수가 종료될 때까지 대기하지 않는다는 의미이다.
+ **/
 static inline void tasklet_disable_nosync(struct tasklet_struct *t)
 {
 	atomic_inc(&t->count);
 	smp_mb__after_atomic_inc();
 }
 
+/** 20150221    
+ * 주어진 tasklet을 disable 시킨다.
+ * tasklet_schedule에 의해 계속 스케쥴 될 수는 있지만, 실행은 tasklet_enable이 될 때까지 연기된다.
+ * tasklet이 현재 실행 중이라면, 종료될 때까지 busy-wait 한다.
+ * 따라서 tasklet_disable이 호출되면, 더 이상 시스템에서 해당 tasklet은 실행되지 않는다.
+ *
+ * [출처] http://www.makelinux.net/ldd3/chp-7-sect-5
+ **/
 static inline void tasklet_disable(struct tasklet_struct *t)
 {
 	tasklet_disable_nosync(t);
@@ -654,6 +679,10 @@ static inline void tasklet_disable(struct tasklet_struct *t)
 	smp_mb();
 }
 
+/** 20150221    
+ * 기존의 disable된 tasklet을 enable한다. tasklet이 스케줄 되어 있는 상태라면 해당 tasklet은 곧 실행될 것이다.
+ * 항상 tasklet_disable과 쌍을 이뤄야 하며, 커널은 disable count를 각 tasklet마다 유지한다.
+ **/
 static inline void tasklet_enable(struct tasklet_struct *t)
 {
 	smp_mb__before_atomic_dec();

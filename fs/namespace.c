@@ -23,6 +23,9 @@
 #include "pnode.h"
 #include "internal.h"
 
+/** 20150221    
+ * 한 page 내에 나타낼 수 있는 list_head 크기를 구해 HASH_SIZE로 삼는다.
+ **/
 #define HASH_SHIFT ilog2(PAGE_SIZE / sizeof(struct list_head))
 #define HASH_SIZE (1UL << HASH_SHIFT)
 
@@ -30,11 +33,23 @@ static int event;
 static DEFINE_IDA(mnt_id_ida);
 static DEFINE_IDA(mnt_group_ida);
 static DEFINE_SPINLOCK(mnt_id_lock);
+/** 20150221    
+ * mnt id의 시작값은 0.
+ * ida_get_new_above에서 사용된다.
+ **/
 static int mnt_id_start = 0;
 static int mnt_group_start = 1;
 
+/** 20150221    
+ **/
 static struct list_head *mount_hashtable __read_mostly;
+/** 20150221    
+ * 전역변수로 mnt kmem_cache를 생성한다.
+ **/
 static struct kmem_cache *mnt_cache __read_mostly;
+/** 20150221    
+ * 전역 namespace_sem을 선언한다.
+ **/
 static struct rw_semaphore namespace_sem;
 
 /* /sys/fs */
@@ -49,6 +64,9 @@ EXPORT_SYMBOL_GPL(fs_kobj);
  * It should be taken for write in all cases where the vfsmount
  * tree or hash is modified or when a vfsmount structure is modified.
  */
+/** 20150221    
+ * vfsmount lock을 BRLOCK으로 선언.
+ **/
 DEFINE_BRLOCK(vfsmount_lock);
 
 static inline unsigned long hash(struct vfsmount *mnt, struct dentry *dentry)
@@ -65,6 +83,9 @@ static inline unsigned long hash(struct vfsmount *mnt, struct dentry *dentry)
  * allocation is serialized by namespace_sem, but we need the spinlock to
  * serialize with freeing.
  */
+/** 20150221    
+ * 20150228 여기부터...
+ **/
 static int mnt_alloc_id(struct mount *mnt)
 {
 	int res;
@@ -160,6 +181,9 @@ unsigned int mnt_get_count(struct mount *mnt)
 
 static struct mount *alloc_vfsmnt(const char *name)
 {
+	/** 20150221    
+	 * "mnt_cache" kmem_cache 로부터 mount 구조체를 하나 동작 할당 받는다.
+	 **/
 	struct mount *mnt = kmem_cache_zalloc(mnt_cache, GFP_KERNEL);
 	if (mnt) {
 		int err;
@@ -2601,11 +2625,20 @@ void __init mnt_init(void)
 	unsigned u;
 	int err;
 
+	/** 20150221    
+	 * namespace rw semaphore를 초기화 한다.
+	 **/
 	init_rwsem(&namespace_sem);
 
+	/** 20150221    
+	 * "mnt_cache" kmem_cache를 생성한다.
+	 **/
 	mnt_cache = kmem_cache_create("mnt_cache", sizeof(struct mount),
 			0, SLAB_HWCACHE_ALIGN | SLAB_PANIC, NULL);
 
+	/** 20150221    
+	 * mount_hashtable용으로 page를 하나 할당 받는다.
+	 **/
 	mount_hashtable = (struct list_head *)__get_free_page(GFP_ATOMIC);
 
 	if (!mount_hashtable)
@@ -2613,9 +2646,15 @@ void __init mnt_init(void)
 
 	printk(KERN_INFO "Mount-cache hash table entries: %lu\n", HASH_SIZE);
 
+	/** 20150221    
+	 * 할당받은 mount_hashtable의 list head를 초기화 한다.
+	 **/
 	for (u = 0; u < HASH_SIZE; u++)
 		INIT_LIST_HEAD(&mount_hashtable[u]);
 
+	/** 20150221    
+	 * vfsmount lock을 초기화 한다.
+	 **/
 	br_lock_init(&vfsmount_lock);
 
 	err = sysfs_init();

@@ -33,6 +33,9 @@ EXPORT_SYMBOL(rwsem_is_locked);
 /*
  * initialise the semaphore
  */
+/** 20150221    
+ * rw semaphore를 초기화 한다.
+ **/
 void __init_rwsem(struct rw_semaphore *sem, const char *name,
 		  struct lock_class_key *key)
 {

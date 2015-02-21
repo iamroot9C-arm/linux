@@ -103,6 +103,10 @@ static void free_sysfs_super_info(struct sysfs_super_info *info)
 	kfree(info);
 }
 
+/** 20150221    
+ * sysfs용 mount 함수. super block에 대한 dentry를 받아와 리턴한다.
+ * 자세한 내용은 추후 분석???
+ **/
 static struct dentry *sysfs_mount(struct file_system_type *fs_type,
 	int flags, const char *dev_name, void *data)
 {
@@ -135,6 +139,9 @@ static struct dentry *sysfs_mount(struct file_system_type *fs_type,
 	return dget(sb->s_root);
 }
 
+/** 20150221    
+ * 추후 분석???
+ **/
 static void sysfs_kill_sb(struct super_block *sb)
 {
 	struct sysfs_super_info *info = sysfs_info(sb);
@@ -145,6 +152,8 @@ static void sysfs_kill_sb(struct super_block *sb)
 	free_sysfs_super_info(info);
 }
 
+/** 20150221    
+ **/
 static struct file_system_type sysfs_fs_type = {
 	.name		= "sysfs",
 	.mount		= sysfs_mount,
@@ -155,6 +164,9 @@ int __init sysfs_init(void)
 {
 	int err = -ENOMEM;
 
+	/** 20150221    
+	 * "sysfs_dir_cache" kmem cache를 생성한다.
+	 **/
 	sysfs_dir_cachep = kmem_cache_create("sysfs_dir_cache",
 					      sizeof(struct sysfs_dirent),
 					      0, 0, NULL);
@@ -165,6 +177,11 @@ int __init sysfs_init(void)
 	if (err)
 		goto out_err;
 
+	/** 20150221    
+	 * sysfs_fs_type을 filesystem으로 등록한다.
+	 *
+	 * cat /proc/filesystems에서 확인 가능하다.
+	 **/
 	err = register_filesystem(&sysfs_fs_type);
 	if (!err) {
 		sysfs_mnt = kern_mount(&sysfs_fs_type);

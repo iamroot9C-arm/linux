@@ -1177,6 +1177,10 @@ mount_fs(struct file_system_type *type, int flags, const char *name, void *data)
 			goto out_free_secdata;
 	}
 
+	/** 20150221    
+	 * 해당 file_system_type의 mount 콜백을 호출한다.
+	 * super_block에 대한 dentry가 리턴된다.
+	 **/
 	root = type->mount(type, flags, name, data);
 	if (IS_ERR(root)) {
 		error = PTR_ERR(root);
@@ -1188,6 +1192,9 @@ mount_fs(struct file_system_type *type, int flags, const char *name, void *data)
 	WARN_ON(sb->s_bdi == &default_backing_dev_info);
 	sb->s_flags |= MS_BORN;
 
+	/** 20150221    
+	 * CONFIG_SECURITY를 설정하지 않아 0을 리턴.
+	 **/
 	error = security_sb_kern_mount(sb, flags, secdata);
 	if (error)
 		goto out_sb;

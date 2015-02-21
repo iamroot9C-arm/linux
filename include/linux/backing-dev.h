@@ -38,6 +38,9 @@ enum bdi_state {
 
 typedef int (congested_fn)(void *, int);
 
+/** 20150221    
+ * bdi 관련 stat 항목들.
+ **/
 enum bdi_stat_item {
 	BDI_RECLAIMABLE,
 	BDI_WRITEBACK,
@@ -48,6 +51,14 @@ enum bdi_stat_item {
 
 #define BDI_STAT_BATCH (8*(1+ilog2(nr_cpu_ids)))
 
+/** 20150221    
+ * bdi 관련 정보 중 writeback 관련 정보를 표현하는 구조체.
+ *
+ *     bdi : bdi_writeback을 포함하는 bdi 구조체 포인터
+ *     last_old_flush : 마지막으로 old data를 flush 한 jiffies
+ *     wakeup_timer : bdi therad를 깨울 때 사용되는 thread.
+ *                    bdi_wakeup_thread_delayed에서 시간이 설정된다.
+ **/
 struct bdi_writeback {
 	struct backing_dev_info *bdi;	/* our parent bdi */
 	unsigned int nr;
@@ -63,6 +74,10 @@ struct bdi_writeback {
 	spinlock_t list_lock;		/* protects the b_* lists */
 };
 
+/** 20150221    
+ * block device에 대한 I/O data flow 트래픽 정보를 표현하는 구조체.
+ *     readahead 와 request queue 혼잡 상태 등.
+ **/
 struct backing_dev_info {
 	struct list_head bdi_list;
 	unsigned long ra_pages;	/* max readahead in PAGE_CACHE_SIZE units */
@@ -73,6 +88,9 @@ struct backing_dev_info {
 
 	char *name;
 
+	/** 20150221    
+	 * bdi_stat 관련 percpu counter.
+	 **/
 	struct percpu_counter bdi_stat[NR_BDI_STAT_ITEMS];
 
 	unsigned long bw_time_stamp;	/* last time write bw is updated */

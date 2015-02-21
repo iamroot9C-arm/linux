@@ -29,7 +29,13 @@
  *	Once the reference is obtained we can drop the spinlock.
  */
 
+/** 20150221    
+ * 시스템 전체 file_system이 single list 형태로 구성되어 있다.
+ **/
 static struct file_system_type *file_systems;
+/** 20150221    
+ * file systems 전역 RW lock.
+ **/
 static DEFINE_RWLOCK(file_systems_lock);
 
 /* WARNING: This can be used only if we _already_ own a reference */
@@ -43,6 +49,10 @@ void put_filesystem(struct file_system_type *fs)
 	module_put(fs->owner);
 }
 
+/** 20150221    
+ * file_systems에 name이라는 file_system_type을 찾는다.
+ * 존재하면 해당 위치에서 리턴. 존재하지 않으면 리스트의 마지막까지 이동해 리턴.
+ **/
 static struct file_system_type **find_filesystem(const char *name, unsigned len)
 {
 	struct file_system_type **p;
@@ -66,6 +76,11 @@ static struct file_system_type **find_filesystem(const char *name, unsigned len)
  *	unregistered.
  */
  
+/** 20150221    
+ * 새로운 file_system_type을 등록한다.
+ *
+ * file_systems 리스트에 추가할 때 write_lock을 사용한다.
+ **/
 int register_filesystem(struct file_system_type * fs)
 {
 	int res = 0;
@@ -75,6 +90,10 @@ int register_filesystem(struct file_system_type * fs)
 	if (fs->next)
 		return -EBUSY;
 	write_lock(&file_systems_lock);
+	/** 20150221    
+	 * 이미 fs가 file_systems에 등록되어 있다면(*p) 에러를 리턴.
+	 * 등록되어 있지 않다면 fs를 가리킨다.
+	 **/
 	p = find_filesystem(fs->name, strlen(fs->name));
 	if (*p)
 		res = -EBUSY;

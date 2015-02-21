@@ -17,9 +17,8 @@
 
 /** 20150207    
  * cpu별 사용량 카운터 구조체.
- * 이 자체는 percpu가 아니다.
  *
- * 동적 할당받아 사용하는 percpu 포인터 counters.
+ * 전체 count 변수와 percpu별 counters를 유지한다.
  **/
 struct percpu_counter {
 	raw_spinlock_t lock;
@@ -56,6 +55,9 @@ static inline void percpu_counter_add(struct percpu_counter *fbc, s64 amount)
 	__percpu_counter_add(fbc, amount, percpu_counter_batch);
 }
 
+/** 20150221    
+ * percpu_counter값을 더해 리턴한다. 항상 0보다 큰 값이 리턴된다.
+ **/
 static inline s64 percpu_counter_sum_positive(struct percpu_counter *fbc)
 {
 	s64 ret = __percpu_counter_sum(fbc);
@@ -77,6 +79,10 @@ static inline s64 percpu_counter_read(struct percpu_counter *fbc)
  * number for some counter which should never be negative.
  *
  */
+/** 20150221    
+ * percpu_counter의 현재 count 값을 리턴한다.
+ * 항상 0 이상이 리턴된다.
+ **/
 static inline s64 percpu_counter_read_positive(struct percpu_counter *fbc)
 {
 	s64 ret = fbc->count;

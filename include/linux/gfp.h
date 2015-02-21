@@ -118,6 +118,10 @@ struct vm_area_struct;
  *   인터럽트 핸들러 등 process context가 아닌 부분에서 메모리를 할당할 때 사용된다. sleep 하지 않는다.
  * Used to allocate memory from interrupt handlers and other code outside of a process context. Never sleeps.
  *
+ *	 GFP_ATOMIC ==> !(__GFP_WAIT) && (__GFP_HIGH)
+ *      gfp_to_alloc_flags에서 __GFP_HIGH ==> ALLOC_HIGH
+ *      __zone_watermark_ok에서watermark check가 통과할 가능성이 높아진다.
+ *
  * GFP_KERNEL
  * 커널 메모리를 할당한다. 메모리를 할당하지 못하면 sleep 가능하다.
  * Normal allocation of kernel memory. May sleep.

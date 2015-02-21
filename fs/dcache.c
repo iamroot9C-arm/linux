@@ -3210,7 +3210,13 @@ void __init vfs_caches_init(unsigned long mempages)
 	 * inode 관련 초기화를 수행한다 : kmem_cache 생성 등
 	 **/
 	inode_init();
+	/** 20150221    
+	 * file 관련 초기화를 수행한다 : kmem_cache 생성, file 관련 전역변수 초기화 등
+	 **/
 	files_init(mempages);
+	/** 20150221    
+	 * 20150228 
+	 **/
 	mnt_init();
 	bdev_cache_init();
 	chrdev_init();

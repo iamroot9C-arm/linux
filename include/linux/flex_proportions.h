@@ -71,6 +71,9 @@ void fprop_inc_single(struct fprop_global *p, struct fprop_local_single *pl)
 /*
  * ---- PERCPU ----
  */
+/** 20150221    
+ * fprop의 의미???
+ **/
 struct fprop_local_percpu {
 	/* the local events counter */
 	struct percpu_counter events;

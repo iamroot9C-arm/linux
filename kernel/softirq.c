@@ -585,7 +585,7 @@ static DEFINE_PER_CPU(struct tasklet_head, tasklet_vec);
 static DEFINE_PER_CPU(struct tasklet_head, tasklet_hi_vec);
 
 /** 20141011    
- * interrupt를 막은채로 tasklet을 tasklet vector 마지막에 등록시키고,
+ * interrupt를 막은채로 tasklet을 cpu자신의 tasklet vector 마지막에 등록시키고,
  * TASKLET_SOFTIRQ로 softirq를 raise한다.
  **/
 void __tasklet_schedule(struct tasklet_struct *t)
@@ -629,6 +629,8 @@ EXPORT_SYMBOL(__tasklet_hi_schedule_first);
 
 /** 20150214    
  * TASKLET_SOFTIRQ pending시 수행되는 action.
+ *
+ * open_softirq에서 action으로 지정. 
  **/
 static void tasklet_action(struct softirq_action *a)
 {
@@ -654,7 +656,7 @@ static void tasklet_action(struct softirq_action *a)
 
 		/** 20150214    
 		 * 가져온 tasklet의 lock에 성공하면
-		 *   count가 0일 경우에만 func을 호출한다.
+		 *   'disable count'가 0일 경우에만 func을 호출한다.
 		 **/
 		if (tasklet_trylock(t)) {
 			if (!atomic_read(&t->count)) {

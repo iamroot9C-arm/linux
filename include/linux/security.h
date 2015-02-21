@@ -1952,6 +1952,9 @@ static inline int security_sb_remount(struct super_block *sb, void *data)
 	return 0;
 }
 
+/** 20150221    
+ * CONFIG_SECURITY가 설정되지 않아 0을 리턴.
+ **/
 static inline int security_sb_kern_mount(struct super_block *sb, int flags, void *data)
 {
 	return 0;
