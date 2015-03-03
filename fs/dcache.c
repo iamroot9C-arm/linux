@@ -86,6 +86,9 @@ __cacheline_aligned_in_smp DEFINE_SEQLOCK(rename_lock);
 
 EXPORT_SYMBOL(rename_lock);
 
+/** 20150228    
+ * "struct dentry"용 kmem cache
+ **/
 static struct kmem_cache *dentry_cache __read_mostly;
 
 /*
@@ -3215,7 +3218,6 @@ void __init vfs_caches_init(unsigned long mempages)
 	 **/
 	files_init(mempages);
 	/** 20150221    
-	 * 20150228 
 	 **/
 	mnt_init();
 	bdev_cache_init();

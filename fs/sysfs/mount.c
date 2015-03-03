@@ -24,6 +24,9 @@
 
 
 static struct vfsmount *sysfs_mnt;
+/** 20150228    
+ * "struct sysfs_dirent" 용 kmem cache.
+ **/
 struct kmem_cache *sysfs_dir_cachep;
 
 static const struct super_operations sysfs_ops = {
@@ -153,6 +156,7 @@ static void sysfs_kill_sb(struct super_block *sb)
 }
 
 /** 20150221    
+ * sysfs fs type.
  **/
 static struct file_system_type sysfs_fs_type = {
 	.name		= "sysfs",
@@ -178,7 +182,7 @@ int __init sysfs_init(void)
 		goto out_err;
 
 	/** 20150221    
-	 * sysfs_fs_type을 filesystem으로 등록한다.
+	 * sysfs_fs_type을 filesystem 리스트에 등록한다.
 	 *
 	 * cat /proc/filesystems에서 확인 가능하다.
 	 **/

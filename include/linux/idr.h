@@ -66,6 +66,8 @@
  *					non-leaf node일 경우, 각 비트는 하위 layer 공간이 모두 차 있는지 여부를 나타냄.
  *		ary			leaf node일 경우, 해당 ID에 대응하는 pointer 값.
  *					non-leaf node일 경우, 하위 idr_layer에 대한 pointer.
+ *
+ *					ida로 사용할 때, leaf node일 경우 ary의 의미는 독자적인 bitmap의 위치를 저장하기 위해 사용된다.
  *		count		leaf node일 경우, 현재 layer에서 할당된 idr의 수.
  *					non-leaf node일 경우, 할당된 하위 layer의 수.
  *		layer		leaf node일 경우 0부터 시작한 index.
@@ -166,10 +168,18 @@ void idr_init(struct idr *idp);
  * IDA_BITMAP_LONGS is calculated to be one less to accommodate
  * ida_bitmap->nr_busy so that the whole struct fits in 128 bytes.
  */
+/** 20150228    
+ * IDA chunk 크기는 128 바이트.
+ * IDA 비트맵을 LONGS로 31개.
+ * IDA 비트맵 LONGS를 BITS 크기로 계산. (31 * 4 * 8)
+ **/
 #define IDA_CHUNK_SIZE		128	/* 128 bytes per chunk */
 #define IDA_BITMAP_LONGS	(IDA_CHUNK_SIZE / sizeof(long) - 1)
 #define IDA_BITMAP_BITS 	(IDA_BITMAP_LONGS * sizeof(long) * 8)
 
+/** 20150228    
+ * nr_busy는 정수값을 하나 할당 받을 때마다 증가시킨다.
+ **/
 struct ida_bitmap {
 	long			nr_busy;
 	unsigned long		bitmap[IDA_BITMAP_LONGS];
@@ -178,6 +188,8 @@ struct ida_bitmap {
 /** 20150221    
  * IDR의 구조를 이용하는 ID 할당자.
  * id에 따른 pointer를 저장하지 않고 ID만을 할당한다.
+ *
+ * idr의 구조는 http://studyfoss.egloos.com/5187192 참고.
  **/
 struct ida {
 	struct idr		idr;

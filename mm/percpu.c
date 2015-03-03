@@ -111,12 +111,14 @@ struct pcpu_chunk {
 	struct list_head	list;		/* linked to pcpu_slot lists */
 	/** 20140322    
 	 * chunk내의 사용 가능한 메모리 크기.
-	 * 초기값은 pcpu_alloc_chunk에서 pcpu_unit_size로 설정
+	 * 초기값은 pcpu_alloc_chunk에서 pcpu_unit_size로 설정되고,
+	 * 할당이 이뤄질 때마다 감소한다.
 	 **/
 	int			free_size;	/* free bytes in the chunk */
 	/** 20140322    
 	 * 최초 free_size가 contig_hint로 들어감.
-	 * 이후 동적으로 할당과 해제를 거치며 사용 가능한 연속적인 여유 공간의 정보가 업데이트 됨.
+	 * 이후 동적으로 할당과 해제를 거치며 해당 chunk에서 사용 가능한
+	 * 연속적인 여유 공간의 정보가 업데이트 됨.
 	 **/
 	int			contig_hint;	/* max contiguous size hint */
 	void			*base_addr;	/* base address of this chunk */
@@ -185,7 +187,7 @@ static unsigned int pcpu_high_unit_cpu __read_mostly;
  * pcpu_setup_first_chunk에서 초기값 설정
  *
  * 20140308
- * first chunk 의 주소를 기록해 두고,
+ * first chunk 의 주소.
  * 각 chunk 주소에서 offset을 구할 때 기준 주소로 삼는다.
  * (pcpu_setup_first_chunk에서는 bootmem allocator로부터 할당받아온 메모리)
  **/
@@ -197,7 +199,7 @@ EXPORT_SYMBOL_GPL(pcpu_base_addr);
  **/
 static const int *pcpu_unit_map __read_mostly;		/* cpu -> unit */
 /** 20130629    
- * cpu를 index 했을 때 unit의 위치를 저장한 배열 주소
+ * cpu를 index 했을 때 unit의 offset을 저장한 배열 주소
  * pcpu_setup_first_chunk 에서 설정
  **/
 const unsigned long *pcpu_unit_offsets __read_mostly;	/* cpu -> unit offset */
@@ -507,8 +509,11 @@ static void pcpu_mem_free(void *ptr, size_t size)
 
 	20140301    
 	chunk의 크기가 변경된 뒤에 호출되어, 기존의 slot과 다른 위치에 저장되어야 하는 경우
-		새로운 slot index가 더 크다면 새로운 list의 가장 앞에 추가,
-		작다면 새로운 list의 뒤에 추가
+		새로운 slot index가 더 크다면 chunk를 새 슬롯리스트의 가장 앞에 추가하고,
+		새로운 slot index가 더 작다면 chunk를 새 슬롯리스트의 list의 뒤에 추가.
+
+		일반적으로 chunk 내에서 pcpu를 해제했다면 oslot < nslot일 것이고,
+		pcpu를 할당했다면 oslot > nslot일 것이다.
  **/
 static void pcpu_chunk_relocate(struct pcpu_chunk *chunk, int oslot)
 {
@@ -713,7 +718,7 @@ static void pcpu_split_block(struct pcpu_chunk *chunk, int i,
  */
 /** 20140301    
  * 해당 chunk의 map 정보를 scan하며 size를 만족시키는 여유공간을 찾아
- * map 정보를 갱신하고, 갱신한 위치를 리턴한다.
+ * map 정보를 갱신하고, 위치를 리턴한다.
  *
  * map은 split 등을 위해 여유공간을 포함해야 한다.
  **/
@@ -835,7 +840,7 @@ static int pcpu_alloc_area(struct pcpu_chunk *chunk, int size, int align)
 		chunk->map[i] = -chunk->map[i];
 
 		/** 20140301    
-		 * chunk의 위치를 변경시킨다.
+		 * free_size가 변경되었으므로 chunk의 위치를 갱신한다.
 		 **/
 		pcpu_chunk_relocate(chunk, oslot);
 		/** 20140301    
@@ -970,6 +975,9 @@ static struct pcpu_chunk *pcpu_alloc_chunk(void)
 	 * 자료구조 초기화
 	 **/
 	INIT_LIST_HEAD(&chunk->list);
+	/** 20150228    
+	 * free_size와 contig_hint의 초기값은 pcpu_unit_size.
+	 **/
 	chunk->free_size = pcpu_unit_size;
 	chunk->contig_hint = pcpu_unit_size;
 
@@ -2682,7 +2690,7 @@ out_free_ar:
  * mappings on applicable archs.
  */
 /** 20130831    
- * 각 cpu가 setup_per_cpu_areas 에서 채워준다.
+ * 각 cpu의 unit offset 위치를 setup_per_cpu_areas 에서 채워준다.
  **/
 unsigned long __per_cpu_offset[NR_CPUS] __read_mostly;
 EXPORT_SYMBOL(__per_cpu_offset);

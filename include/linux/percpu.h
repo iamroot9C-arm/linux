@@ -323,8 +323,9 @@ do {									\
 #endif
 
 /** 20140607    
- * percpu 변수에 대한 operation을 수행하는 매크로.
- * atomic 버전으로 spin_lock 과 irq disable로 보호된다.
+ * percpu 변수 중 현재 cpu에 해당하는 변수위치에 연산을 수행하는 매크로.
+ *
+ * irq로 보호된다. percpu이므로 SMP lock (spinlock)은 필요하지 않다.
  **/
 #define _this_cpu_generic_to_op(pcp, val, op)				\
 do {									\
@@ -352,7 +353,9 @@ do {									\
 
 /** 20140607    
  * 공통함수 this_cpu_add.
- * size에 따라 _1, _2, _4, _8 버전이 호출된다.
+ * percpu 변수 중 현재 cpu에 대한 위치에 연산을 수행한다.
+ *
+ * percpu 변수 size에 따라 _1, _2, _4, _8 버전이 호출된다.
  **/
 #ifndef this_cpu_add
 # ifndef this_cpu_add_1

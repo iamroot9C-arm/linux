@@ -84,19 +84,28 @@ static inline unsigned long hash(struct vfsmount *mnt, struct dentry *dentry)
  * serialize with freeing.
  */
 /** 20150221    
- * 20150228 여기부터...
+ * 새로운 mnt id를 할당 받아 mnt_id에 채운다.
  **/
 static int mnt_alloc_id(struct mount *mnt)
 {
 	int res;
 
 retry:
+	/** 20150228    
+	 * mnt_id_ida를 위한 리소스를 할당한다.
+	 **/
 	ida_pre_get(&mnt_id_ida, GFP_KERNEL);
 	spin_lock(&mnt_id_lock);
+	/** 20150228    
+	 * mnt_id_start 이상의 새로운 handler을 받아오고, mnt_id_start를 증가시킨다.
+	 **/
 	res = ida_get_new_above(&mnt_id_ida, mnt_id_start, &mnt->mnt_id);
 	if (!res)
 		mnt_id_start = mnt->mnt_id + 1;
 	spin_unlock(&mnt_id_lock);
+	/** 20150228    
+	 * 메모리가 부족하다면 재시도 한다.
+	 **/
 	if (res == -EAGAIN)
 		goto retry;
 
@@ -179,26 +188,39 @@ unsigned int mnt_get_count(struct mount *mnt)
 #endif
 }
 
+/** 20150228    
+ * 주어진 이름을 저장하는 mount 객체를 할당받고 초기화 한다.
+ **/
 static struct mount *alloc_vfsmnt(const char *name)
 {
 	/** 20150221    
-	 * "mnt_cache" kmem_cache 로부터 mount 구조체를 하나 동작 할당 받는다.
+	 * "mnt_cache" kmem_cache 로부터 mount 구조체를 하나 동적 할당 받는다.
 	 **/
 	struct mount *mnt = kmem_cache_zalloc(mnt_cache, GFP_KERNEL);
 	if (mnt) {
 		int err;
 
+		/** 20150228    
+		 * mnt id를 할당 받는다.
+		 **/
 		err = mnt_alloc_id(mnt);
 		if (err)
 			goto out_free_cache;
 
 		if (name) {
+			/** 20150228    
+			 * name을 할당받아 저장한다.
+			 **/
 			mnt->mnt_devname = kstrdup(name, GFP_KERNEL);
 			if (!mnt->mnt_devname)
 				goto out_free_id;
 		}
 
 #ifdef CONFIG_SMP
+		/** 20150228    
+		 * percpu mnt_pcp를 할당받는다.
+		 * 현재 cpu에 해당하는 mnt_count를 하나 증가 시킨다.
+		 **/
 		mnt->mnt_pcp = alloc_percpu(struct mnt_pcp);
 		if (!mnt->mnt_pcp)
 			goto out_free_devname;
@@ -209,6 +231,9 @@ static struct mount *alloc_vfsmnt(const char *name)
 		mnt->mnt_writers = 0;
 #endif
 
+		/** 20150228    
+		 * list head들을 초기화 한다.
+		 **/
 		INIT_LIST_HEAD(&mnt->mnt_hash);
 		INIT_LIST_HEAD(&mnt->mnt_child);
 		INIT_LIST_HEAD(&mnt->mnt_mounts);
@@ -773,10 +798,16 @@ vfs_kern_mount(struct file_system_type *type, int flags, const char *name, void 
 	if (!type)
 		return ERR_PTR(-ENODEV);
 
+	/** 20150228    
+	 * name으로 mount 객체를 생성하고 초기화 한다.
+	 **/
 	mnt = alloc_vfsmnt(name);
 	if (!mnt)
 		return ERR_PTR(-ENOMEM);
 
+	/** 20150307    
+	 * 여기부터...
+	 **/
 	if (flags & MS_KERNMOUNT)
 		mnt->mnt.mnt_flags = MNT_INTERNAL;
 

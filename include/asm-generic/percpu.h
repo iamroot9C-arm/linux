@@ -30,7 +30,7 @@ extern unsigned long __per_cpu_offset[NR_CPUS];
  * current processor.
  */
 /** 20130831    
- * 현재 명령을 수행한 cpu로 __per_cpu_offset을 참고해 offset들을 저장한 array에서 해당 값을 가져온다.
+ * 현재 명령을 수행한 cpu id를 받아와 __per_cpu_offset에서 offset 값을 찾아온다.
  **/
 #ifndef __my_cpu_offset
 #define __my_cpu_offset per_cpu_offset(raw_smp_processor_id())
