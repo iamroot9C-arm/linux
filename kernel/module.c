@@ -911,9 +911,15 @@ static ssize_t show_refcnt(struct module_attribute *mattr,
 static struct module_attribute modinfo_refcnt =
 	__ATTR(refcnt, 0444, show_refcnt, NULL);
 
+/** 20150307    
+ * module을 사용 중임을 표시한다.
+ **/
 void __module_get(struct module *module)
 {
 	if (module) {
+		/** 20150307    
+		 * 현재 core의 선점을 금지한 상태에서 module의 ref 카운트를 증가시키다.
+		 **/
 		preempt_disable();
 		__this_cpu_inc(module->refptr->incs);
 		trace_module_get(module, _RET_IP_);
@@ -941,9 +947,16 @@ bool try_module_get(struct module *module)
 }
 EXPORT_SYMBOL(try_module_get);
 
+/** 20150307    
+ * module의 reference count를 감소시킨다.
+ **/
 void module_put(struct module *module)
 {
 	if (module) {
+		/** 20150307    
+		 * 선점 불가 상태에서 모듈의 reference count 중 decs를 증가시킨다.
+		 * 최신 소스에서는 module의 ref. count가 atomic operation으로 변경됨.
+		 **/
 		preempt_disable();
 		smp_wmb(); /* see comment in module_refcount */
 		__this_cpu_inc(module->refptr->decs);

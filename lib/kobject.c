@@ -909,11 +909,20 @@ const struct kobj_ns_type_operations *kobj_ns_ops(struct kobject *kobj)
 }
 
 
+/** 20150307    
+ * 현재 type에 해당하는 kobj ns의 grab 콜백을 호출한다.
+ **/
 void *kobj_ns_grab_current(enum kobj_ns_type type)
 {
 	void *ns = NULL;
 
+	/** 20150307    
+	 * kobj_ns_type은 spinlock으로 보호 받는다.
+	 **/
 	spin_lock(&kobj_ns_type_lock);
+	/** 20150307    
+	 * type에 해당하는 ops table의 grab_current_ns를 호출한다.
+	 **/
 	if ((type > KOBJ_NS_TYPE_NONE) && (type < KOBJ_NS_TYPES) &&
 	    kobj_ns_ops_tbl[type])
 		ns = kobj_ns_ops_tbl[type]->grab_current_ns();

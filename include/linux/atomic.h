@@ -13,6 +13,8 @@
  * Returns non-zero if @v was not @u, and zero otherwise.
  */
 /** 20140111
+ * v가 이미 u가 아니라면, a만큼 증가시켜 리턴한다.
+ *
  * __atomic_add_unless함수에서 a만큼 증가를 시도하고,
  * 만약 v값이 증가되지 않은 경우 false리턴한다.
  **/
@@ -30,7 +32,7 @@ static inline int atomic_add_unless(atomic_t *v, int a, int u)
  */
 /** 20140524    
  * v의 값이 0이 아니라면 1을 증가시키고, 그 결과가 0이 아니라면 성공.
- * 즉, v가 0이 아니면 1 증가시켜 결과를 리턴한다.
+ * v가 0이 아닌 경우 0이 아닌 값이 리턴. 0인 경우 0이 리턴.
  **/
 #ifndef atomic_inc_not_zero
 #define atomic_inc_not_zero(v)		atomic_add_unless((v), 1, 0)

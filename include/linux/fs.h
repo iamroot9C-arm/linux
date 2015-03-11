@@ -228,6 +228,9 @@ struct inodes_stat_t {
 #define MS_I_VERSION	(1<<23) /* Update inode I_version field */
 #define MS_STRICTATIME	(1<<24) /* Always perform atime updates */
 #define MS_NOSEC	(1<<28)
+/** 20150307    
+ * mount_fs에서 superblock의 flags에 추가한다.
+ **/
 #define MS_BORN		(1<<29)
 #define MS_ACTIVE	(1<<30)
 #define MS_NOUSER	(1<<31)
@@ -1475,6 +1478,11 @@ extern struct list_head super_blocks;
 extern spinlock_t sb_lock;
 
 /* Possible states of 'frozen' field */
+/** 20150307    
+ * sb_writers 필드에 저장되는 상태 값.
+ *
+ * fs에 대한 동작이 금지되어 있는 상태를 의미하는 듯???
+ **/
 enum {
 	SB_UNFROZEN = 0,		/* FS is unfrozen */
 	SB_FREEZE_WRITE	= 1,		/* Writes, dir ops, ioctls frozen */
@@ -1499,6 +1507,9 @@ struct sb_writers {
 #endif
 };
 
+/** 20150307    
+ * super_block 자료구조.
+ **/
 struct super_block {
 	struct list_head	s_list;		/* Keep this first */
 	dev_t			s_dev;		/* search index; _not_ kdev_t */
@@ -1506,6 +1517,9 @@ struct super_block {
 	unsigned char		s_blocksize_bits;
 	unsigned long		s_blocksize;
 	loff_t			s_maxbytes;	/* Max file size */
+	/** 20150307    
+	 * super_block이 연결된 filesystem type에 대한 포인터.
+	 **/
 	struct file_system_type	*s_type;
 	const struct super_operations	*s_op;
 	const struct dquot_operations	*dq_op;
@@ -1516,6 +1530,9 @@ struct super_block {
 	struct dentry		*s_root;
 	struct rw_semaphore	s_umount;
 	struct mutex		s_lock;
+	/** 20150307    
+	 * superblock의 reference count.
+	 **/
 	int			s_count;
 	atomic_t		s_active;
 #ifdef CONFIG_SECURITY
@@ -1551,6 +1568,9 @@ struct super_block {
 	char s_id[32];				/* Informational name */
 	u8 s_uuid[16];				/* UUID */
 
+	/** 20150307    
+	 * filesystem private 포인터.
+	 **/
 	void 			*s_fs_info;	/* Filesystem private info */
 	unsigned int		s_max_links;
 	fmode_t			s_mode;

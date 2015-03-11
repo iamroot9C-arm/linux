@@ -206,8 +206,14 @@ EXPORT_SYMBOL(register_shrinker);
 /*
  * Remove one
  */
+/** 20150307    
+ * 등록한 shrinker를 해제한다.
+ **/
 void unregister_shrinker(struct shrinker *shrinker)
 {
+	/** 20150307    
+	 * shrinker 리스트의 rwsem 구간 안에서 shrinker를 전역 list에서 제거한다.
+	 **/
 	down_write(&shrinker_rwsem);
 	list_del(&shrinker->list);
 	up_write(&shrinker_rwsem);

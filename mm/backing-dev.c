@@ -14,6 +14,9 @@
 
 static atomic_long_t bdi_seq = ATOMIC_LONG_INIT(0);
 
+/** 20150307    
+ * default bdi 선언.
+ **/
 struct backing_dev_info default_backing_dev_info = {
 	.name		= "default",
 	.ra_pages	= VM_MAX_READAHEAD * 1024 / PAGE_CACHE_SIZE,

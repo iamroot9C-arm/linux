@@ -212,6 +212,9 @@ enum module_state
  * put @incs/@decs in same cache line, with no extra memory cost,
  * since alloc_percpu() is fine grained.
  */
+/** 20150307    
+ * 각 cpu마다 module을 참조하는 횟수를 저장하기 위한 구조체.
+ **/
 struct module_ref {
 	unsigned long incs;
 	unsigned long decs;

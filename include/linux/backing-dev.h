@@ -80,6 +80,9 @@ struct bdi_writeback {
  **/
 struct backing_dev_info {
 	struct list_head bdi_list;
+	/** 20150307    
+	 * readahead를 진행할 페이지수.
+	 **/
 	unsigned long ra_pages;	/* max readahead in PAGE_CACHE_SIZE units */
 	unsigned long state;	/* Always use atomic bitops on this */
 	unsigned int capabilities; /* Device capabilities */

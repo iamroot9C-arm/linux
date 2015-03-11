@@ -77,11 +77,17 @@ static int sysfs_fill_super(struct super_block *sb, void *data, int silent)
 
 static int sysfs_test_super(struct super_block *sb, void *data)
 {
+	/** 20150307    
+	 * sb의 fs private 정보를 가져온다.
+	 **/
 	struct sysfs_super_info *sb_info = sysfs_info(sb);
 	struct sysfs_super_info *info = data;
 	enum kobj_ns_type type;
 	int found = 1;
 
+	/** 20150307    
+	 * KOBJ NS 타입들을 순회하며 sb에서 찾아온 정보와 
+	 **/
 	for (type = KOBJ_NS_TYPE_NONE; type < KOBJ_NS_TYPES; type++) {
 		if (sb_info->ns[type] != info->ns[type])
 			found = 0;
@@ -108,20 +114,24 @@ static void free_sysfs_super_info(struct sysfs_super_info *info)
 
 /** 20150221    
  * sysfs용 mount 함수. super block에 대한 dentry를 받아와 리턴한다.
- * 자세한 내용은 추후 분석???
  **/
-static struct dentry *sysfs_mount(struct file_system_type *fs_type,
-	int flags, const char *dev_name, void *data)
+static struct dentry *sysfs_mount(struct file_system_type *fs_type, int flags, const char *dev_name, void *data)
 {
 	struct sysfs_super_info *info;
 	enum kobj_ns_type type;
 	struct super_block *sb;
 	int error;
 
+	/** 20150307    
+	 * sysfs_super_info객체 생성.
+	 **/
 	info = kzalloc(sizeof(*info), GFP_KERNEL);
 	if (!info)
 		return ERR_PTR(-ENOMEM);
 
+	/** 20150307    
+	 * 현재 type에 해당하는 grab 콜백으로 받아온 정보를 info의 ns에 저장한다.
+	 **/
 	for (type = KOBJ_NS_TYPE_NONE; type < KOBJ_NS_TYPES; type++)
 		info->ns[type] = kobj_ns_grab_current(type);
 
@@ -177,6 +187,9 @@ int __init sysfs_init(void)
 	if (!sysfs_dir_cachep)
 		goto out;
 
+	/** 20150307    
+	 * sysfs inode 관련 초기화 수행
+	 **/
 	err = sysfs_inode_init();
 	if (err)
 		goto out_err;

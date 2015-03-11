@@ -39,11 +39,17 @@ static struct file_system_type *file_systems;
 static DEFINE_RWLOCK(file_systems_lock);
 
 /* WARNING: This can be used only if we _already_ own a reference */
+/** 20150307    
+ * filesystem의 owner module을 사용 중으로 표시한다.
+ **/
 void get_filesystem(struct file_system_type *fs)
 {
 	__module_get(fs->owner);
 }
 
+/** 20150307    
+ * filesystem의 owner module를 사용 안함으로 표시한다.
+ **/
 void put_filesystem(struct file_system_type *fs)
 {
 	module_put(fs->owner);

@@ -145,9 +145,15 @@ struct sysfs_addrm_cxt {
  * the network namespace of the task which mounted this sysfs
  * instance).
  */
+/** 20150307    
+ * kobjs의 namespace 타입별 정보를 저장하는 구조체.
+ **/
 struct sysfs_super_info {
 	void *ns[KOBJ_NS_TYPES];
 };
+/** 20150307    
+ * sb의 fs private 정보를 추출한다.
+ **/
 #define sysfs_info(SB) ((struct sysfs_super_info *)(SB->s_fs_info))
 extern struct sysfs_dirent sysfs_root;
 extern struct kmem_cache *sysfs_dir_cachep;

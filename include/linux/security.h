@@ -1934,6 +1934,9 @@ static inline int security_bprm_secureexec(struct linux_binprm *bprm)
 	return cap_bprm_secureexec(bprm);
 }
 
+/** 20150307    
+ * CONFIG_SECURITY가 설정되지 않아 0을 리턴.
+ **/
 static inline int security_sb_alloc(struct super_block *sb)
 {
 	return 0;

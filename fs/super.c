@@ -37,6 +37,10 @@
 #include "internal.h"
 
 
+/** 20150307    
+ * 시스템의 superblock을 연결하는 전역 리스트.
+ * superblock 변경을 보호하기 위한 spinlock.
+ **/
 LIST_HEAD(super_blocks);
 DEFINE_SPINLOCK(sb_lock);
 
@@ -109,11 +113,17 @@ static int prune_super(struct shrinker *shrink, struct shrink_control *sc)
 	return total_objects;
 }
 
+/** 20150307    
+ * superblock의 sb_writers를 초기화 한다.
+ **/
 static int init_sb_writers(struct super_block *s, struct file_system_type *type)
 {
 	int err;
 	int i;
 
+	/** 20150307    
+	 * FREEZE LEVEL을 순회하며 sb_writer의 counter를 초기화 한다.
+	 **/
 	for (i = 0; i < SB_FREEZE_LEVELS; i++) {
 		err = percpu_counter_init(&s->s_writers.counter[i], 0);
 		if (err < 0)
@@ -121,6 +131,9 @@ static int init_sb_writers(struct super_block *s, struct file_system_type *type)
 		lockdep_init_map(&s->s_writers.lock_map[i], sb_writers_name[i],
 				 &type->s_writers_key[i], 0);
 	}
+	/** 20150307    
+	 * waitqueue를 초기화 한다.
+	 **/
 	init_waitqueue_head(&s->s_writers.wait);
 	init_waitqueue_head(&s->s_writers.wait_unfrozen);
 	return 0;
@@ -130,6 +143,9 @@ err_out:
 	return err;
 }
 
+/** 20150307    
+ * 추후 분석???
+ **/
 static void destroy_sb_writers(struct super_block *s)
 {
 	int i;
@@ -148,6 +164,9 @@ static void destroy_sb_writers(struct super_block *s)
  */
 static struct super_block *alloc_super(struct file_system_type *type, int flags)
 {
+	/** 20150307    
+	 * super_block을 할당받고 0으로 초기화 한다.
+	 **/
 	struct super_block *s = kzalloc(sizeof(struct super_block),  GFP_USER);
 	static const struct super_operations default_op;
 
@@ -162,12 +181,18 @@ static struct super_block *alloc_super(struct file_system_type *type, int flags)
 			goto out;
 		}
 #ifdef CONFIG_SMP
+		/** 20150307    
+		 * percpu로 list_head를 할당받는다.
+		 **/
 		s->s_files = alloc_percpu(struct list_head);
 		if (!s->s_files)
 			goto err_out;
 		else {
 			int i;
 
+			/** 20150307    
+			 * 각 cpu별로 list_head를 초기화 한다.
+			 **/
 			for_each_possible_cpu(i)
 				INIT_LIST_HEAD(per_cpu_ptr(s->s_files, i));
 		}
@@ -176,6 +201,10 @@ static struct super_block *alloc_super(struct file_system_type *type, int flags)
 #endif
 		if (init_sb_writers(s, type))
 			goto err_out;
+		/** 20150307    
+		 * superblock의 flags를 지정한다.
+		 * bdi는 default_backing_dev_info로 우선 초기화 한다.
+		 **/
 		s->s_flags = flags;
 		s->s_bdi = &default_backing_dev_info;
 		INIT_HLIST_NODE(&s->s_instances);
@@ -246,6 +275,9 @@ err_out:
  *
  *	Frees a superblock.
  */
+/** 20150307    
+ * superblock이 사용 중이던 메모리를 해제하고 제거한다.
+ **/
 static inline void destroy_super(struct super_block *s)
 {
 #ifdef CONFIG_SMP
@@ -264,8 +296,15 @@ static inline void destroy_super(struct super_block *s)
 /*
  * Drop a superblock's refcount.  The caller must hold sb_lock.
  */
+/** 20150307    
+ * superblock의 레퍼런스 카운트를 감소시키고, 0이 되면 제거한다.
+ **/
 static void __put_super(struct super_block *sb)
 {
+	/** 20150307    
+	 * superblock의 s_count를 감소시켜 0이 되었다면
+	 * sb을 superblock 리스트에서 제거하고, destroy 시킨다.
+	 **/
 	if (!--sb->s_count) {
 		list_del_init(&sb->s_list);
 		destroy_super(sb);
@@ -279,8 +318,15 @@ static void __put_super(struct super_block *sb)
  *	Drops a temporary reference, frees superblock if there's no
  *	references left.
  */
+/** 20150307    
+ * superblock의 reference 정보를 drop시킨다.
+ * reference count가 0이 되면 제거한다.
+ **/
 static void put_super(struct super_block *sb)
 {
+	/** 20150307    
+	 * superblock을 제거하는 과정은 spinlock에 의해 보호된다.
+	 **/
 	spin_lock(&sb_lock);
 	__put_super(sb);
 	spin_unlock(&sb_lock);
@@ -298,14 +344,23 @@ static void put_super(struct super_block *sb)
  *
  *	Caller holds exclusive lock on superblock; that lock is released.
  */
+/** 20150307    
+ * superblock에 대한 active reference를 감소시킨다.
+ **/
 void deactivate_locked_super(struct super_block *s)
 {
 	struct file_system_type *fs = s->s_type;
+	/** 20150307    
+	 * superblock의 active를 감소시켜 0이 되었다면 제거한다.
+	 **/
 	if (atomic_dec_and_test(&s->s_active)) {
 		cleancache_invalidate_fs(s);
 		fs->kill_sb(s);
 
 		/* caches are now gone, we can safely kill the shrinker now */
+		/** 20150307    
+		 * superblock이 등록시켜 둔 shrinker를 제거한다.
+		 **/
 		unregister_shrinker(&s->s_shrink);
 
 		/*
@@ -314,8 +369,14 @@ void deactivate_locked_super(struct super_block *s)
 		 */
 		rcu_barrier();
 		put_filesystem(fs);
+		/** 20150307    
+		 * superblock의 reference count를 감소시킨다.
+		 **/
 		put_super(s);
 	} else {
+		/** 20150307    
+		 * s_umount의 자원을 해제한다.
+		 **/
 		up_write(&s->s_umount);
 	}
 }
@@ -351,16 +412,35 @@ EXPORT_SYMBOL(deactivate_super);
  *	success, 0 if we had failed (superblock contents was already dead or
  *	dying when grab_super() had been called).
  */
+/** 20150307    
+ * superblock의 active reference를 획득할 때 사용된다.
+ * superblock 전역 리스트에 이미 존재하는 경우에 사용되어야 한다.
+ *
+ * 성공한 경우 1을 리턴, 실패한 경우 0이 리턴된다.
+ * (실패에 해당하는 경우는 superblock의 내용이 이미 dead이거나 dying일 때)
+ **/
 static int grab_super(struct super_block *s) __releases(sb_lock)
 {
+	/** 20150307    
+	 * superblock의 active reference가 0이 아니라면 하나 증가시켜 리턴한다.
+	 **/
 	if (atomic_inc_not_zero(&s->s_active)) {
 		spin_unlock(&sb_lock);
 		return 1;
 	}
 	/* it's going away */
+	/** 20150307    
+	 * superblock의 reference count를 하나 증가시킨다.
+	 **/
 	s->s_count++;
+	/** 20150307    
+	 * rw semaphore를 잡기 전에 spinlock을 해제한다. (sleep 될 수 있기 때문에)
+	 **/
 	spin_unlock(&sb_lock);
 	/* wait for it to die */
+	/** 20150307    
+	 * 다른 곳에서 s_umount 세마포어를 풀 때까지 기다린다.
+	 **/
 	down_write(&s->s_umount);
 	up_write(&s->s_umount);
 	put_super(s);
@@ -469,6 +549,9 @@ EXPORT_SYMBOL(generic_shutdown_super);
  *	@flags:	mount flags
  *	@data:	argument to each of them
  */
+/** 20150307    
+ * superblock을 찾아 존재하면 리턴하고, 없으면 새로 할당하는 함수.
+ **/
 struct super_block *sget(struct file_system_type *type,
 			int (*test)(struct super_block *,void *),
 			int (*set)(struct super_block *,void *),
@@ -482,18 +565,42 @@ struct super_block *sget(struct file_system_type *type,
 
 retry:
 	spin_lock(&sb_lock);
+	/** 20150307    
+	 * test 콜백함수가 지정되어 있다면
+	 **/
 	if (test) {
+		/** 20150307    
+		 * filesystem type의 fs_supers 리스트를 순회하며 각 node 정보에 대해
+		 * 다음 과정을 수행한다.
+		 * (아래에서 새로 superblock을 할당한 뒤 fs_supers 리스트에 연결시킨다)
+		 **/
 		hlist_for_each_entry(old, node, &type->fs_supers, s_instances) {
+			/** 20150307    
+			 * test 결과 실패한다면 다음 node로 이동.
+			 **/
 			if (!test(old, data))
 				continue;
+			/** 20150307    
+			 * old superblock을 받아오는데 실패했다면, retry로 이동.
+			 **/
 			if (!grab_super(old))
 				goto retry;
+			/** 20150307    
+			 * old superblock의 reference count를 증가시키고 받아왔기 때문에
+			 * s에 들어 있는 superblock은 제거한다.
+			 **/
 			if (s) {
 				up_write(&s->s_umount);
 				destroy_super(s);
 				s = NULL;
 			}
+			/** 20150307    
+			 * old superblock의 writer semaphore를 획득한다.
+			 **/
 			down_write(&old->s_umount);
+			/** 20150307    
+			 * superblock에 MS_BORN이 존재하지 않는다면 비정상인 경우이다.
+			 **/
 			if (unlikely(!(old->s_flags & MS_BORN))) {
 				deactivate_locked_super(old);
 				goto retry;
@@ -501,6 +608,9 @@ retry:
 			return old;
 		}
 	}
+	/** 20150307    
+	 * superblock이 존재하지 않다면 superblock을 새로 만들고, retry로 재시도한다.
+	 **/
 	if (!s) {
 		spin_unlock(&sb_lock);
 		s = alloc_super(type, flags);
@@ -509,6 +619,9 @@ retry:
 		goto retry;
 	}
 		
+	/** 20150307    
+	 * filesystem의 superblock 지정 콜백 함수를 호출한다.
+	 **/
 	err = set(s, data);
 	if (err) {
 		spin_unlock(&sb_lock);
@@ -516,12 +629,27 @@ retry:
 		destroy_super(s);
 		return ERR_PTR(err);
 	}
+	/** 20150307    
+	 * 생성한 superblock의 filesystem type을 지정한다.
+	 **/
 	s->s_type = type;
+	/** 20150307    
+	 * superblock의 이름을 지정하고, 전역 리스트에 등록한다.
+	 **/
 	strlcpy(s->s_id, type->name, sizeof(s->s_id));
 	list_add_tail(&s->s_list, &super_blocks);
+	/** 20150307    
+	 * filesystem type의 fs_supers에 superblock을 연결시킨다.
+	 **/
 	hlist_add_head(&s->s_instances, &type->fs_supers);
 	spin_unlock(&sb_lock);
+	/** 20150307    
+	 * filesystem type을 사용 중으로 표시한다.
+	 **/
 	get_filesystem(type);
+	/** 20150307    
+	 * superblock의 shrinker를 등록한다.
+	 **/
 	register_shrinker(&s->s_shrink);
 	return s;
 }
@@ -1180,6 +1308,8 @@ mount_fs(struct file_system_type *type, int flags, const char *name, void *data)
 	/** 20150221    
 	 * 해당 file_system_type의 mount 콜백을 호출한다.
 	 * super_block에 대한 dentry가 리턴된다.
+	 *
+	 * 예를 들어 sysfs_fs_type는 sysfs_mount를 지정한다.
 	 **/
 	root = type->mount(type, flags, name, data);
 	if (IS_ERR(root)) {
@@ -1190,6 +1320,9 @@ mount_fs(struct file_system_type *type, int flags, const char *name, void *data)
 	BUG_ON(!sb);
 	WARN_ON(!sb->s_bdi);
 	WARN_ON(sb->s_bdi == &default_backing_dev_info);
+	/** 20150307    
+	 * superblock의 flags에 MS_BORN을 추가한다.
+	 **/
 	sb->s_flags |= MS_BORN;
 
 	/** 20150221    
