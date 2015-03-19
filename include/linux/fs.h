@@ -849,6 +849,10 @@ struct inode {
 		struct rcu_head		i_rcu;
 	};
 	u64			i_version;
+	/** 20150314    
+	 * reference count.
+	 * __iget / iput 로 변경된다.
+	 **/
 	atomic_t		i_count;
 	atomic_t		i_dio_count;
 	atomic_t		i_writecount;
@@ -1560,6 +1564,9 @@ struct super_block {
 	struct block_device	*s_bdev;
 	struct backing_dev_info *s_bdi;
 	struct mtd_info		*s_mtd;
+	/** 20150314    
+	 * 파일시스템 구조체의 fs_supers 리스트에 연결하는 포인트.
+	 **/
 	struct hlist_node	s_instances;
 	struct quota_info	s_dquot;	/* Diskquota specific options */
 
@@ -1883,6 +1890,9 @@ extern ssize_t vfs_readv(struct file *, const struct iovec __user *,
 extern ssize_t vfs_writev(struct file *, const struct iovec __user *,
 		unsigned long, loff_t *);
 
+/** 20150314    
+ * superblock ops.
+ **/
 struct super_operations {
    	struct inode *(*alloc_inode)(struct super_block *sb);
 	void (*destroy_inode)(struct inode *);
@@ -2053,6 +2063,10 @@ struct file_system_type {
 	void (*kill_sb) (struct super_block *);
 	struct module *owner;
 	struct file_system_type * next;
+	/** 20150314    
+	 * fs의 superblock들이 연결되는 리스트.
+	 * sget에서 지정된다.
+	 **/
 	struct hlist_head fs_supers;
 
 	struct lock_class_key s_lock_key;

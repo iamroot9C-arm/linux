@@ -29,12 +29,20 @@ static struct vfsmount *sysfs_mnt;
  **/
 struct kmem_cache *sysfs_dir_cachep;
 
+/** 20150314    
+ * sysfs의 superblock ops.
+ **/
 static const struct super_operations sysfs_ops = {
 	.statfs		= simple_statfs,
 	.drop_inode	= generic_delete_inode,
 	.evict_inode	= sysfs_evict_inode,
 };
 
+/** 20150314    
+ * sysfs의 root 노드의 dirent 정보.
+ *
+ * root의 inode는 1.
+ **/
 struct sysfs_dirent sysfs_root = {
 	.s_name		= "",
 	.s_count	= ATOMIC_INIT(1),
@@ -48,6 +56,9 @@ static int sysfs_fill_super(struct super_block *sb, void *data, int silent)
 	struct inode *inode;
 	struct dentry *root;
 
+	/** 20150314    
+	 * superblock의 속성을 채워넣는다.
+	 **/
 	sb->s_blocksize = PAGE_CACHE_SIZE;
 	sb->s_blocksize_bits = PAGE_CACHE_SHIFT;
 	sb->s_magic = SYSFS_MAGIC;
@@ -104,6 +115,8 @@ static int sysfs_set_super(struct super_block *sb, void *data)
 	return error;
 }
 
+/** 20150314    
+ **/
 static void free_sysfs_super_info(struct sysfs_super_info *info)
 {
 	int type;
@@ -135,11 +148,23 @@ static struct dentry *sysfs_mount(struct file_system_type *fs_type, int flags, c
 	for (type = KOBJ_NS_TYPE_NONE; type < KOBJ_NS_TYPES; type++)
 		info->ns[type] = kobj_ns_grab_current(type);
 
+	/** 20150314    
+	 * 파일시스템의 superblock 중 info에 해당하는 superblock을 찾아 리턴하고,
+	 * 없으면 새로 생성해 등록한 뒤 리턴한다.
+	 **/
 	sb = sget(fs_type, sysfs_test_super, sysfs_set_super, flags, info);
+	/** 20150314    
+	 * 에러가 리턴되거나, 지정한 info로 s_fs_info가 설정되지 않았다면
+	 * sysfs의 superblock info를 해제한다.
+	 **/
 	if (IS_ERR(sb) || sb->s_fs_info != info)
 		free_sysfs_super_info(info);
 	if (IS_ERR(sb))
 		return ERR_CAST(sb);
+	/** 20150314    
+	 * superblock의 dentry (s_root)가 존재하지 않는다면
+	 * sget에서 새로 만들어진 superblock이므로 정보를 채워 넣는다.
+	 **/
 	if (!sb->s_root) {
 		error = sysfs_fill_super(sb, data, flags & MS_SILENT ? 1 : 0);
 		if (error) {

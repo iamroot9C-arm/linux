@@ -18,6 +18,10 @@
  *     이 함수가 사용되는 부분이 없더라도 컴파일러 최적화 과정에서 제거하지 말아라..
  * */
 #define __used			__attribute__((__used__))
+/** 20150314    
+ * warn_unused_result
+ *     결과물이 사용되지 않았을 경우,  경고를 출력하라.
+ **/
 #define __must_check 		__attribute__((warn_unused_result))
 /** 20121215
  * gcc에서 builtin_offsetof 지원여부를 확인하지 못하겠음 ???

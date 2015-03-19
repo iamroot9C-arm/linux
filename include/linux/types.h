@@ -243,10 +243,26 @@ struct list_head {
 	struct list_head *next, *prev;
 };
 
+/** 20150314    
+ *
+ * +-----------+
+ * |           |      hlist_node      hlist_node      hlist_node
+ * +-----------+     +----------+    +----------+    +----------+
+ * |hlist_head-|---->|  *next --| -->|  *next  -| -->|  *next  -| --> NULL
+ * +-----------+ \   +----------+ \  +----------+ \  +----------+
+ * |           |   \_|_**pprev  |  \ |_**pprev  |  \_|_**pprev  |
+ * +-----------+     +----------+    +----------+    +----------+
+ *
+ *
+ * hlist_head 구조체
+ **/
 struct hlist_head {
 	struct hlist_node *first;
 };
 
+/** 20150314    
+ * hlist_node 구조체
+ **/
 struct hlist_node {
 	struct hlist_node *next, **pprev;
 };

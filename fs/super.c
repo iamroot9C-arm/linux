@@ -551,6 +551,9 @@ EXPORT_SYMBOL(generic_shutdown_super);
  */
 /** 20150307    
  * superblock을 찾아 존재하면 리턴하고, 없으면 새로 할당하는 함수.
+ *
+ * test와 set은 각 파일시스템마다 다르게 구현될 수 있으므로 콜백을 전달되고,
+ * data는 이 콜백에 전달되어 사용되는 fs 특정 데이터이다.
  **/
 struct super_block *sget(struct file_system_type *type,
 			int (*test)(struct super_block *,void *),

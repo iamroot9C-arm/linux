@@ -52,6 +52,9 @@ struct sysfs_inode_attrs {
  * accessible.  Dereferencing s_elem or any other outer entity
  * requires s_active reference.
  */
+/** 20150314    
+ * sysfs 계층 구조에서 각 sysfs 노드의 블럭 정보.
+ **/
 struct sysfs_dirent {
 	atomic_t		s_count;
 	atomic_t		s_active;

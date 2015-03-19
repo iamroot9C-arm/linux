@@ -104,6 +104,7 @@ EXPORT_SYMBOL(remove_wait_queue);
  * wait하기 전에 필요한 자료구조를 설정한다.
  *   - wait queue에 들어가 있지 않다면 queue에 등록해준다.
  *   - 현재 task의 state를 변경한다. (dmb가 포함되어 있다)
+ * 아직 스케쥴러는 호출되지 않았다.
  **/
 void
 prepare_to_wait(wait_queue_head_t *q, wait_queue_t *wait, int state)
@@ -277,25 +278,51 @@ EXPORT_SYMBOL(wake_bit_function);
  * waiting, the actions of __wait_on_bit() and __wait_on_bit_lock() are
  * permitted return codes. Nonzero return codes halt waiting and return.
  */
+/** 20150314    
+ * q에 지정된 bit가 풀릴 때까지 wq에서 대기하는 함수.
+ * action을 호출해 sleep 상태로 들어간다.
+ **/
 int __sched
 __wait_on_bit(wait_queue_head_t *wq, struct wait_bit_queue *q,
 			int (*action)(void *), unsigned mode)
 {
 	int ret = 0;
 
+	/** 20150314    
+	 * key flags 중 bit_nr이 풀릴 때까지 action을 호출해 sleep 하는 함수.
+	 **/
 	do {
+		/** 20150314    
+		 * wq에 등록하고, 대기할 수 있도록 준비한다.
+		 **/
 		prepare_to_wait(wq, &q->wait, mode);
+		/** 20150314    
+		 * q의 flags 중 bit_nr 비트가 설정되어 있다면,
+		 * action을 호출해 sleep 상태로 들어간다.
+		 **/
 		if (test_bit(q->key.bit_nr, q->key.flags))
 			ret = (*action)(q->key.flags);
 	} while (test_bit(q->key.bit_nr, q->key.flags) && !ret);
+	/** 20150314    
+	 * q에서의 대기가 끝난 뒤, task 상태를 변경하고 큐에서 제거한다.
+	 **/
 	finish_wait(wq, &q->wait);
 	return ret;
 }
 EXPORT_SYMBOL(__wait_on_bit);
 
+/** 20150314    
+ * word의 bit가 클리어 될 때까지 대기한다.
+ **/
 int __sched out_of_line_wait_on_bit(void *word, int bit,
 					int (*action)(void *), unsigned mode)
 {
+	/** 20150314    
+	 * word와 bit가 위치할 waitqueue 의 head를 가져오고,
+	 * wait_bit_queue를 선언한다.
+	 *
+	 * wq에 등록하고, word 내의 bit가 해제될 때까지 대기한다.
+	 **/
 	wait_queue_head_t *wq = bit_waitqueue(word, bit);
 	DEFINE_WAIT_BIT(wait, word, bit);
 
@@ -340,8 +367,11 @@ EXPORT_SYMBOL(out_of_line_wait_on_bit_lock);
 void __wake_up_bit(wait_queue_head_t *wq, void *word, int bit)
 {
 	/** 20140607    
-	 * wait bit key를 생성한다.
-	 * waitqueue에 대기 중인 task가 있으면 하나 wake up 시킨다.
+	 * word와 bit로 wait_bit_key를 생성한다.
+	 * 즉, bit가 켜있는지 꺼져 있는지를 여부까지 포함된 키가 된다.
+	 * 
+	 * waitqueue에 대기 중인 task가 있으면
+	 * key가 일치하는 task를 하나 wake up 시킨다.
 	 **/
 	struct wait_bit_key key = __WAIT_BIT_KEY_INITIALIZER(word, bit);
 	if (waitqueue_active(wq))
@@ -366,12 +396,18 @@ EXPORT_SYMBOL(__wake_up_bit);
  * may need to use a less regular barrier, such fs/inode.c's smp_mb(),
  * because spin_unlock() does not guarantee a memory barrier.
  */
+/** 20150314    
+ * word와 bit를 받아 해당 bit를 대기하고 잠든 task를 깨운다.
+ **/
 void wake_up_bit(void *word, int bit)
 {
 	__wake_up_bit(bit_waitqueue(word, bit), word, bit);
 }
 EXPORT_SYMBOL(wake_up_bit);
 
+/** 20150314    
+ * word와 bit로 word가 속한 zone의 wait_queue head를 찾아 리턴한다.
+ **/
 wait_queue_head_t *bit_waitqueue(void *word, int bit)
 {
 	const int shift = BITS_PER_LONG == 32 ? 5 : 6;

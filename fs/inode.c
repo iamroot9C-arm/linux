@@ -52,6 +52,10 @@
 
 static unsigned int i_hash_mask __read_mostly;
 static unsigned int i_hash_shift __read_mostly;
+/** 20150314    
+ * inode hashlist head 테이블.
+ * inode_init_early에서 생성.
+ **/
 static struct hlist_head *inode_hashtable __read_mostly;
 static __cacheline_aligned_in_smp DEFINE_SPINLOCK(inode_hash_lock);
 
@@ -383,6 +387,9 @@ static void init_once(void *foo)
 /*
  * inode->i_lock must be held
  */
+/** 20150314    
+ * inode는 atomic 
+ **/
 void __iget(struct inode *inode)
 {
 	atomic_inc(&inode->i_count);
@@ -440,6 +447,9 @@ static inline void inode_sb_list_del(struct inode *inode)
 	}
 }
 
+/** 20150314    
+ * superblock의 inode hashtable용 hash 함수.
+ **/
 static unsigned long hash(struct super_block *sb, unsigned long hashval)
 {
 	unsigned long tmp;
@@ -814,6 +824,9 @@ repeat:
  * find_inode_fast is the fast path version of find_inode, see the comment at
  * iget_locked for details.
  */
+/** 20150314    
+ * 해당 hash list에서 inode number가 ino인 노드를 찾아 inode를 리턴한다.
+ **/
 static struct inode *find_inode_fast(struct super_block *sb,
 				struct hlist_head *head, unsigned long ino)
 {
@@ -821,20 +834,37 @@ static struct inode *find_inode_fast(struct super_block *sb,
 	struct inode *inode = NULL;
 
 repeat:
+	/** 20150314    
+	 * hlist_head인 head부터 각 hlist_node인 inode를 순회하며...
+	 *
+	 * 각 inode의 정보를 획득할 때는 inode 내부의 i_lock을 사용한다.
+	 **/
 	hlist_for_each_entry(inode, node, head, i_hash) {
 		spin_lock(&inode->i_lock);
+		/** 20150314    
+		 * ino 번호가 일치하는 것을 찾는다.
+		 **/
 		if (inode->i_ino != ino) {
 			spin_unlock(&inode->i_lock);
 			continue;
 		}
+		/** 20150314    
+		 * 해당 sb에 속하는 것을 찾는다.
+		 **/
 		if (inode->i_sb != sb) {
 			spin_unlock(&inode->i_lock);
 			continue;
 		}
+		/** 20150314    
+		 * inode가 free될 것이라면 기다렸다가 다시 수행한다.
+		 **/
 		if (inode->i_state & (I_FREEING|I_WILL_FREE)) {
 			__wait_on_freeing_inode(inode);
 			goto repeat;
 		}
+		/** 20150314    
+		 * 해당 inode의 사용을 표시하고 리턴한다.
+		 **/
 		__iget(inode);
 		spin_unlock(&inode->i_lock);
 		return inode;
@@ -1062,12 +1092,22 @@ EXPORT_SYMBOL(iget5_locked);
  */
 struct inode *iget_locked(struct super_block *sb, unsigned long ino)
 {
+	/** 20150314    
+	 * inode hash 함수를 사용해 inode_hashtable에서 해당 hlist_head를 가져온다.
+	 **/
 	struct hlist_head *head = inode_hashtable + hash(sb, ino);
 	struct inode *inode;
 
+	/** 20150314    
+	 * inode hash 리스트를 사용할 때는 inode_hash_lock을 사용한다.
+	 * ino로 해당 hlist에서 inode를 찾아온다.
+	 **/
 	spin_lock(&inode_hash_lock);
 	inode = find_inode_fast(sb, head, ino);
 	spin_unlock(&inode_hash_lock);
+	/** 20150314    
+	 * inode를 찾았다면 inode가 사용 가능할 때까지 기다렸다가 리턴한다.
+	 **/
 	if (inode) {
 		wait_on_inode(inode);
 		return inode;

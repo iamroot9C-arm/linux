@@ -98,8 +98,14 @@ void wakeup_flusher_threads(long nr_pages, enum wb_reason reason);
 void inode_wait_for_writeback(struct inode *inode);
 
 /* writeback.h requires fs.h; it, too, is not included from here. */
+/** 20150314    
+ * inode에 대한 writeback 등 동작을 수행될 때까지 inode의 사용을 대기한다.
+ **/
 static inline void wait_on_inode(struct inode *inode)
 {
+	/** 20150314    
+	 * task는 inode의 i_state에 __I_NEW 비트가 설정될 때까지 대기한다.
+	 **/
 	might_sleep();
 	wait_on_bit(&inode->i_state, __I_NEW, inode_wait, TASK_UNINTERRUPTIBLE);
 }

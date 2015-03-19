@@ -172,6 +172,11 @@ void delete_from_page_cache(struct page *page)
 }
 EXPORT_SYMBOL(delete_from_page_cache);
 
+/** 20150314    
+ * 페이지를 기다리는 함수.
+ *
+ * sleep_on_page_bit 에서는 특정 비트가 설정 중일 때 호출되어 schedule을 호출한다.
+ **/
 static int sleep_on_page(void *word)
 {
 	io_schedule();
@@ -547,12 +552,19 @@ static inline void wake_up_page(struct page *page, int bit)
 }
 
 /** 20140524    
- * 추후 분석 ???
+ * 특정 page의 bit_nr이 풀릴 때까지 대기하는 함수.
  **/
 void wait_on_page_bit(struct page *page, int bit_nr)
 {
+	/** 20150314    
+	 * page->flags의 bit_nr번째 비트를 기다리는 wait bit queue를 정의한다.
+	 **/
 	DEFINE_WAIT_BIT(wait, &page->flags, bit_nr);
 
+	/** 20150314    
+	 * 현재 풀리기 기다리는 비트가 설정되어 있다면,
+	 *   특정 비트가 풀릴 때까지 TASK_UNINTERRUPTIBLE 상태로 sleep_on_page를 호출해 대기한다.
+	 **/
 	if (test_bit(bit_nr, &page->flags))
 		__wait_on_bit(page_waitqueue(page), &wait, sleep_on_page,
 							TASK_UNINTERRUPTIBLE);

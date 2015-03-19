@@ -735,7 +735,8 @@ static inline void hlist_del_init(struct hlist_node *n)
 }
 
 /** 20130803    
- * hlist에 hash node를 새로 추가하는 함수
+ * hlist에 hash node를 첫번째 노드로 새로 추가하는 함수
+ * 구조는 hlist_head 참고.
  **/
 static inline void hlist_add_head(struct hlist_node *n, struct hlist_head *h)
 {

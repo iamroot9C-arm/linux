@@ -1,6 +1,9 @@
 #ifndef __LINUX_MAGIC_H__
 #define __LINUX_MAGIC_H__
 
+/** 20150314    
+ * 파일시스템별 magic number.
+ **/
 #define ADFS_SUPER_MAGIC	0xadf5
 #define AFFS_SUPER_MAGIC	0xadff
 #define AFS_SUPER_MAGIC                0x5346414F
@@ -63,6 +66,9 @@
 #define PIPEFS_MAGIC            0x50495045
 #define PROC_SUPER_MAGIC	0x9fa0
 #define SOCKFS_MAGIC		0x534F434B
+/** 20150314    
+ * sysfs의 magic number.
+ **/
 #define SYSFS_MAGIC		0x62656572
 #define USBDEVICE_SUPER_MAGIC	0x9fa2
 #define MTD_INODE_FS_MAGIC      0x11307854

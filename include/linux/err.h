@@ -55,6 +55,9 @@ static inline long __must_check IS_ERR_OR_NULL(const void *ptr)
  * Explicitly cast an error-valued pointer to another pointer type in such a
  * way as to make it clear that's what's going on.
  */
+/** 20150314    
+ * ERR값에서 const 속성을 제거.
+ **/
 static inline void * __must_check ERR_CAST(const void *ptr)
 {
 	/* cast away the const */

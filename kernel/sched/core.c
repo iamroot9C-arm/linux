@@ -4157,6 +4157,7 @@ static void __wake_up_common(wait_queue_head_t *q, unsigned int mode,
 		/** 20131123    
 		 * 현재 waitqueue에 등록된 .func을 호출해 wake up.
 		 * 성공적으로 깨웠으며 WQ_FLAG_EXCLUSIVE이고, nr_exclusive개만큼 깨웠으면 break;
+		 * func에 key가 함께 전달되는데, func 구현에 따라 전달되는 key값이 일치할 때만 깨우도록 할 수 있다.
 		 **/
 		if (curr->func(curr, mode, wake_flags, key) &&
 				(flags & WQ_FLAG_EXCLUSIVE) && !--nr_exclusive)

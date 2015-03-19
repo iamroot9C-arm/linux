@@ -24,10 +24,15 @@
 #include <linux/spinlock.h>
 #include <asm/current.h>
 
+/** 20150314    
+ **/
 typedef struct __wait_queue wait_queue_t;
 typedef int (*wait_queue_func_t)(wait_queue_t *wait, unsigned mode, int flags, void *key);
 int default_wake_function(wait_queue_t *wait, unsigned mode, int flags, void *key);
 
+/** 20150314    
+ * wait_queue 자료구조.
+ **/
 struct __wait_queue {
 	unsigned int flags;
 #define WQ_FLAG_EXCLUSIVE	0x01
@@ -42,16 +47,25 @@ struct __wait_queue {
 	struct list_head task_list;
 };
 
+/** 20150314    
+ *
+ **/
 struct wait_bit_key {
 	void *flags;
 	int bit_nr;
 };
 
+/** 20150314    
+ * wait bit queue
+ **/
 struct wait_bit_queue {
 	struct wait_bit_key key;
 	wait_queue_t wait;
 };
 
+/** 20150314    
+ * wait_queue_t (struct __wait_queue) 들이 연결되는 리스트 head.
+ **/
 struct __wait_queue_head {
 	spinlock_t lock;
 	struct list_head task_list;
@@ -91,6 +105,9 @@ struct task_struct;
 #define DECLARE_WAIT_QUEUE_HEAD(name) \
 	wait_queue_head_t name = __WAIT_QUEUE_HEAD_INITIALIZER(name)
 
+/** 20150314    
+ * word, bit로 wait bit key를 설정한다.
+ **/
 #define __WAIT_BIT_KEY_INITIALIZER(word, bit)				\
 	{ .flags = word, .bit_nr = bit, }
 
@@ -684,6 +701,15 @@ int wake_bit_function(wait_queue_t *wait, unsigned mode, int sync, void *key);
  **/
 #define DEFINE_WAIT(name) DEFINE_WAIT_FUNC(name, autoremove_wake_function)
 
+/** 20150314    
+ * 특정 비트가 풀릴 때까지 대기하는 wait_bit_queue를 정의한다.
+ *
+ * .key  = word의 특정 bit.
+ * .wait = {
+ *   .func : wait queue에서 task를 깨울 때 호출할 함수를 지정.
+ *   .task_list : task가 wait하기 위해 기다릴 리스트를 초기화 한다.
+ * }
+ **/
 #define DEFINE_WAIT_BIT(name, word, bit)				\
 	struct wait_bit_queue name = {					\
 		.key = __WAIT_BIT_KEY_INITIALIZER(word, bit),		\
@@ -717,9 +743,16 @@ int wake_bit_function(wait_queue_t *wait, unsigned mode, int sync, void *key);
  * One uses wait_on_bit() where one is waiting for the bit to clear,
  * but has no intention of setting it.
  */
+/** 20150314    
+ * word에서 bit가 클리어 될 때까지 기다린다.
+ **/
 static inline int wait_on_bit(void *word, int bit,
 				int (*action)(void *), unsigned mode)
 {
+	/** 20150314    
+	 * word에서 bit가 설정되어 있지 않다면 대기할 필요 없이 바로 리턴.
+	 * 그렇지 않다면 bit가 클리어 될 때까지 기다린다.
+	 **/
 	if (!test_bit(bit, word))
 		return 0;
 	return out_of_line_wait_on_bit(word, bit, action, mode);
