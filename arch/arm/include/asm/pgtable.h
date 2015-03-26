@@ -262,7 +262,7 @@ static inline pte_t *pmd_page_vaddr(pmd_t pmd)
 #define pte_unmap(pte)			__pte_unmap(pte)
 
 /** 20130309    
- * pte entry의 값의 물리주소로부터 pfn을 구한다.
+ * pte entry가 가리키는 물리주소의 pfn을 구한다.
  **/
 #define pte_pfn(pte)		((pte_val(pte) & PHYS_MASK) >> PAGE_SHIFT)
 /** 20130309    

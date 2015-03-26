@@ -4,9 +4,9 @@
 #include <asm/kmap_types.h>
 
 /** 20131012
-* L2 Page Table의 Base 주소
-*
-* memory layout은 Documentation/arm/memory.txt 참고
+ * highmem 사용시 page를 임시로 매핑할 예약된 VA 시작 주소.
+ *
+ * memory layout은 Documentation/arm/memory.txt 참고
  **/
 #define PKMAP_BASE		(PAGE_OFFSET - PMD_SIZE)
 /** 20131026    

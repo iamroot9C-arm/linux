@@ -19,7 +19,8 @@
 #include "mm.h"
 /** 20131109
  * page에 대한 virtual adddress를 리턴한다.
- * 단, interrupt context에서 호출되어서는 안된다.
+ * 단, mapping할 슬롯이 꽉차 VA를 할당받지 못할 때 sleep 하기 때문에
+ * interrupt context에서 호출되어서는 안된다.
  **/
 void *kmap(struct page *page)
 {
@@ -66,7 +67,7 @@ EXPORT_SYMBOL(kunmap);
  * 1) highmem 영역이 아닌 page에 대한 요청일 경우
  *     이미 매핑된 VA를 리턴.
  * 2) highmem 영역인 page에 대한 요청일 경우
- *     2-1) 이미 매핑된 주소인 경우
+ *     2-1) 이미 kmap_high로 매핑된 주소인 경우
  *       이미 매핑된 VA를 리턴.
  *     2-2) 이미 매핑된 주소가 아닌 경우
  *       cpu별로 준비된 fixmap address 영역에서 va를 할당 받아 매핑한 뒤,
@@ -92,14 +93,9 @@ void *kmap_atomic(struct page *page)
 	pagefault_disable();
 
     /** 20131012
-     * CONFIG_HIGHMEM이 define되어있지 않으므로 page_address(page)를 리턴.
-	 * CONIFG_HIGHMEM이 define되어 있다면
-	 *   page가 
+	 * page가 highmem 영역에 속하지 않는다면 page가 매핑된 VA를 바로 리턴한다.
      **/
 	if (!PageHighMem(page))
-      /** 20131012
-        * page에 대한 virtual address를 리턴한다.
-       **/
 		return page_address(page);
 
 #ifdef CONFIG_DEBUG_HIGHMEM
@@ -112,12 +108,13 @@ void *kmap_atomic(struct page *page)
 	else
 #endif
 		/** 20131026    
-		 * page에 대해 mapping 된 VA가 있다면 해당 vaddr을
+		 * page에 대해 mapping 된 VA가 있다면 해당 vaddr을,
 		 * 없다면 NULL을 리턴한다.
+		 * 즉, kmap_high를 통해 이미 mapping된 페이지라면 매핑된 VA를 받아온다.
 		 **/
 		kmap = kmap_high_get(page);
 	/** 20131026    
-	 * kmap이 NULL이 아니라면 바로 kmap을 리턴
+	 * kmap이 NULL이 아니라면 이미 매핑된 가상주소를 얻어왔으므로 리턴
 	 **/
 	if (kmap)
 		return kmap;

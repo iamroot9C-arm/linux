@@ -69,16 +69,17 @@ unsigned int nr_free_highpages (void)
 
 /** 20131102    
  * pkmap_count
- * 0  해당 페이지 테이블 엔트리는 어떤 상위 메모리 페이지 프레임도 매핑하지 않고 사용 가능하다.
- * 1  해당 페이지 테이블 엔트리는 어떤 상위 메모리 페이지 프레임도 매핑하지 않지만, 이를 마지막으로 사용한 후에 해당 TLB 엔트리를 비우지 않아서 사용할 수 없다.
- * 2  해당 페이지 테이블 엔트리는 상위 메모리 페이지 프레임을 매핑하여, 커널 구성 요소 n-1개에서 사용한다.
+ * == 0  해당 페이지 테이블 엔트리는 어떤 상위 메모리 페이지 프레임도 매핑하지 않고 사용 가능하다.
+ * == 1  해당 페이지 테이블 엔트리는 어떤 상위 메모리 페이지 프레임도 매핑하지 않지만,
+ *       이를 마지막으로 사용한 후에 해당 TLB 엔트리를 비우지 않아서 사용할 수 없다.
+ * >= 2  해당 페이지 테이블 엔트리는 상위 메모리 페이지 프레임을 매핑하여, 커널 구성 요소 n-1개에서 사용한다. (reference count)
  **/
 static int pkmap_count[LAST_PKMAP];
 static unsigned int last_pkmap_nr;
 static  __cacheline_aligned_in_smp DEFINE_SPINLOCK(kmap_lock);
 
 /** 20131102    
- * PKMAP_BASE 영역에 대한 pte table. kmap_init에서 할당.
+ * PKMAP_BASE 영역을 매핑할 pte table의 위치. kmap_init에서 할당.
  **/
 pte_t * pkmap_page_table;
 
@@ -111,7 +112,6 @@ static DECLARE_WAIT_QUEUE_HEAD(pkmap_map_wait);
 /** 20131026    
  * irq disable 시킨 뒤 spin_lock 획득
  **/
-
 #define lock_kmap()             spin_lock_irq(&kmap_lock)
 /** 20131109
  * spin lock을 해제하고 irq enable함
@@ -237,8 +237,10 @@ void kmap_flush_unused(void)
  * map_new_virtual 이전에 lock_kmap.
  **/
 /** 20131109
- * pkmap_count가 0인 부분을 찾으면 set_page_addres함수를 통해 
- * page를 매핑시켜 VA를 가져온다
+ * highmem 사용시, page를 일시적으로 mapping시켜 VA주소를 반환한다.
+ * 
+ * pkmap_count가 0인 부분을 찾으면 페이지가 매핑 중이지 않은 주소영역이므로
+ * set_page_addres함수를 통해 page를 매핑시켜 VA를 가져온다
  **/
 static inline unsigned long map_new_virtual(struct page *page)
 {
@@ -340,14 +342,15 @@ start:
 	 **/
 	vaddr = PKMAP_ADDR(last_pkmap_nr);
 	/** 20131102    
-	 * last_pkmap_nr번째 엔트리의 VA에 해당되는 pte값을 설정한다.
+	 * pkmap_page_table의 last_pkmap_nr번째 엔트리에 해당되는 pte값(속성 포함)을 설정한다.
 	 **/
 	set_pte_at(&init_mm, vaddr,
 		   &(pkmap_page_table[last_pkmap_nr]), mk_pte(page, kmap_prot));
-/** 20131109
- * last_pkmap_nr번째 pkmap_count를 1로 초기화한다.
- * 1  해당 페이지 테이블 엔트리는 어떤 상위 메모리 페이지 프레임도 매핑하지 않지만, 이를 마지막으로 사용한 후에 해당 TLB 엔트리를 비우지 않아서 사용할 수 없다.
- **/
+	/** 20131109
+	 * last_pkmap_nr번째 pkmap_count를 1로 초기화한다.
+	 * 1  해당 페이지 테이블 엔트리는 어떤 상위 메모리 페이지 프레임도 매핑하지 않지만,
+	 *    이를 마지막으로 사용한 후에 해당 TLB 엔트리를 비우지 않아서 사용할 수 없다.
+	 **/
 	pkmap_count[last_pkmap_nr] = 1;
 	set_page_address(page, (void *)vaddr);
 
@@ -363,10 +366,11 @@ start:
  * We cannot call this from interrupts, as it may block.
  */
 /** 20131109
- * page에 대한 virtual address가 존재할 경우 그대로 리턴하고 
- * 없을 경우 map_new_virtual 함수를 통해 생성하여 리턴한다.
- * 새로운 매핑이 불가능할 경우 sleep된다. 
- * 따라서 interrupt루틴에서 불려질 수 없다.
+ * page에 대한 virtual address가 이미 존재할 경우 그대로 리턴하고 
+ * 없을 경우 map_new_virtual 함수를 통해 매핑하여 리턴한다.
+ *
+ * 새로  매핑이 불가능할 경우 sleep된다. 
+ * 따라서 interrupt context에서 호출될 수 없다.
  **/
 
 void *kmap_high(struct page *page)
@@ -425,9 +429,9 @@ EXPORT_SYMBOL(kmap_high);
 void *kmap_high_get(struct page *page)
 {
 	unsigned long vaddr, flags;
-  /** 20131012
-   * irq diable하고 spin_lock()함수를 호출한다.
-   **/
+	/** 20131012
+	 * irq diable하고 spin_lock()함수를 호출한다.
+	 **/
 	lock_kmap_any(flags);
     /** 20131012
       * page에 대한 virtual address를 가져온다
@@ -442,7 +446,7 @@ void *kmap_high_get(struct page *page)
 		pkmap_count[PKMAP_NR(vaddr)]++;
 	}
     /** 20131012
-    * spin_unlock()을 호출하고 irq상태플래그를 복원한다.
+	 * spin_unlock()을 호출하고 irq상태플래그를 복원한다.
      **/
 	unlock_kmap_any(flags);
 	return (void*) vaddr;
@@ -471,7 +475,7 @@ void kunmap_high(struct page *page)
  **/
 	lock_kmap_any(flags);
 	/** 20131109
-	 * page의 virtual address를 가져온다
+	 * page가 매핑된 virtual address를 가져온다
 	 **/
 	vaddr = (unsigned long)page_address(page);
 	BUG_ON(!vaddr);
@@ -485,6 +489,9 @@ void kunmap_high(struct page *page)
 	 * without a TLB flush!
 	 */
 	need_wakeup = 0;
+	/** 20150326
+	 * 해당 entry의 pkmap_count를 가져온다.
+	 **/
 	switch (--pkmap_count[nr]) {
 	case 0:
 		BUG();
@@ -549,6 +556,34 @@ static spinlock_t pool_lock;			/* protects page_address_pool */
 /** 20131026    
  * page_address_htable는 1 << PA_HASH_ORDER개의 slot으로 이뤄져 있음.
  * 각 htable의 slot 하나마다 lock을 사용한다.
+ *
+ * page_address_init에서 초기화.
+ *
+ *                      page_address_map
+ *                      +---------+    +---------+
+ * page_address_htable  | page    |    | page    |
+ *                      +---------+    +---------+
+ * +---------+          | virtual |    | virtual |
+ * | +-----+ |          +---------+    +---------+
+ * | | lh -|-|----------|-list  --|----|-list  --|
+ * | +-----+ |          +---------+    +---------+
+ * | | lock| |
+ * | +-----+ |   
+ * +---------+
+ * | +-----+<|------ page_address_slot
+ * | | lh  | |
+ * | +-----+ |
+ * | | lock| |
+ * | +-----+ |
+ * +---------+
+ * |   ...   |
+ * +---------+
+ * | +-----+<|------ page_address_slot
+ * | | lh  | |
+ * | +-----+ |
+ * | | lock| |
+ * | +-----+ |
+ * +---------+
  **/
 static struct page_address_slot {
 	struct list_head lh;			/* List of page_address_maps */
@@ -573,6 +608,9 @@ static struct page_address_slot *page_slot(const struct page *page)
  * Returns the page's virtual address.
  */
 /** 20131012
+ * page가 mapping되어 있는 VA를 해쉬 테이블에서 찾아 리턴한다.
+ * 매핑되어 있지 않다면 NULL이 리턴된다.
+ *
  * CONFIG_HIGHMEM이 define되어 있을 경우 실행된다.
  * page에 해당하는 해쉬 테이블 슬롯을 가져와서 pas->lh를 순회하며 
  * page_address_map과 page가 같은것을 찾으면 그 page의 virtual address를 리턴한다
@@ -583,11 +621,14 @@ void *page_address(const struct page *page)
 	void *ret;
 	struct page_address_slot *pas;
 
+	/** 20150326
+	 * page가 highmem 영역에 속하지 않는 경우, 바로 매핑된 VA를 구할 수 있다.
+	 **/
 	if (!PageHighMem(page))
 		return lowmem_page_address(page);
-/** 20131109
- * order에 해당하는 node의 hash list를 돌면서 page slot을 찾아 리턴한다.
- **/
+	/** 20131109
+	 * order에 해당하는 node의 hash list를 돌면서 page slot을 찾아 리턴한다.
+	 **/
 	pas = page_slot(page);
 	ret = NULL;
 	/** 20131109

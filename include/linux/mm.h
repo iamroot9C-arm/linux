@@ -885,8 +885,8 @@ static inline void set_page_links(struct page *page, enum zone_type zone,
 #include <linux/vmstat.h>
 
 /** 20130511 
-struct page에 대한 가상 주소를 가져오는 함수.
-**/
+ * page가 lowmem, 즉 물리주소와 1:1 매핑된 경우, 해당 page를 가리키는 가상 메모리 주소를 리턴한다.
+ **/
 static __always_inline void *lowmem_page_address(const struct page *page)
 {
 	return __va(PFN_PHYS(page_to_pfn(page)));

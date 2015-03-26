@@ -32,7 +32,7 @@
 /** 20130420    
  * MAX_ORDER_NR_PAGES의 의미는?
  * 20140517
- *   ==> MAX_ORDER를 pages의 개수로 계산한 값.
+ *   ==> zoned buddy allocator에서 사용하는 MAX_ORDER에서 가리키는 pages의 개수
  **/
 #define MAX_ORDER_NR_PAGES (1 << (MAX_ORDER - 1))
 

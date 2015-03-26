@@ -697,7 +697,7 @@ static void __init *early_alloc(unsigned long sz)
 }
 
 /** 20130309    
- * pte table을 위한 공간을 생성하고 해당 pmd에 속성과 함께 저장.
+ * pte table을 위한 공간을 생성하고, 해당 pmd entry 위치에 속성을 합쳐 entry를 만들어 저장.
  * 할당한 pte 중 addr에 해당하는 index의 주소를 리턴.
  **/
 static pte_t * __init early_pte_alloc(pmd_t *pmd, unsigned long addr, unsigned long prot)
@@ -728,9 +728,9 @@ static pte_t * __init early_pte_alloc(pmd_t *pmd, unsigned long addr, unsigned l
       * memblock에서 4KB크기의 메모리를 받아온다.
        **/
 		pte_t *pte = early_alloc(PTE_HWTABLE_OFF + PTE_HWTABLE_SIZE);
-  /** 20131019
-      pte 물리 주소 정보와 pmd의 prot 속성을 pmd 엔트리에 저장한다.
-   **/
+		/** 20131019
+		  pte 물리 주소 정보와 pmd의 prot 속성을 pmd 엔트리에 저장한다.
+		 **/
 		__pmd_populate(pmd, __pa(pte), prot);
 	}
 	/** 20130309    
@@ -1620,9 +1620,10 @@ static void __init devicemaps_init(struct machine_desc *mdesc)
 }
 
 /** 20130330    
- *  PKMAP_BASE 영역(2MB)에 대한 pte table을 생성하고, 전역변수 초기화
+ * PKMAP_BASE 영역(2MB)을 매핑하기 위한 pte table을 할당하고, 해당 pmd entry에 위치를 저장하고,
+ * 전역변수에 pte table의 주소를 저장한다.
  *
- *  이 영역은 kmap (interrupt context에서 사용 불가) 함수에 의해 mapping될 page table 영역이다.
+ * 이 영역은 kmap (interrupt context에서 사용 불가) 함수에 의해 mapping될 page table 영역이다.
  **/
 static void __init kmap_init(void)
 {

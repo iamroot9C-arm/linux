@@ -94,7 +94,9 @@
 #define PGDIR_SHIFT		21
 
 /** 20130330    
- * PMD_SIZE는 2MB 단위
+ * PMD_SHIFT는 2-level page table로 mapping할 수 있는 영역의 크기를 결정한다.
+ * PMD_SIZE는 2MB 단위.
+ *   4KB * (256 * 2) entries
  **/
 #define PMD_SIZE		(1UL << PMD_SHIFT)
 #define PMD_MASK		(~(PMD_SIZE-1))
