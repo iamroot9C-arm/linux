@@ -26,6 +26,11 @@
 
 extern struct super_block * sysfs_sb;
 
+/** 20150321    
+ * sysfs address_space operations.
+ * 
+ *
+ **/
 static const struct address_space_operations sysfs_aops = {
 	.readpage	= simple_readpage,
 	.write_begin	= simple_write_begin,
@@ -43,6 +48,11 @@ static struct backing_dev_info sysfs_backing_dev_info = {
 	.capabilities	= BDI_CAP_NO_ACCT_AND_WRITEBACK,
 };
 
+/** 20150321    
+ * sysfs의 inode에 대한 operations.
+ *
+ * sysfs는 가상파일시스템이므로 create 등에 대한 opeartions는 별도로 정의되어 있지 않다.
+ **/
 static const struct inode_operations sysfs_inode_operations ={
 	.permission	= sysfs_permission,
 	.setattr	= sysfs_setattr,
@@ -247,6 +257,9 @@ static void sysfs_init_inode(struct sysfs_dirent *sd, struct inode *inode)
 {
 	struct bin_attribute *bin_attr;
 
+	/** 20150321    
+	 * inode의 i_private에는 sysfs_dirent 포인터(sysfs_root의 주소)를 저장한다.
+	 **/
 	inode->i_private = sysfs_get(sd);
 	inode->i_mapping->a_ops = &sysfs_aops;
 	inode->i_mapping->backing_dev_info = &sysfs_backing_dev_info;
@@ -299,6 +312,10 @@ struct inode * sysfs_get_inode(struct super_block *sb, struct sysfs_dirent *sd)
 {
 	struct inode *inode;
 
+	/** 20150321    
+	 * 해당 superblock에서 sysfs_dirent의 inode 번호로 inode를 찾아온다.
+	 * 존재하지 않는다면 할당받아 설정한다.
+	 **/
 	inode = iget_locked(sb, sd->s_ino);
 	if (inode && (inode->i_state & I_NEW))
 		sysfs_init_inode(sd, inode);

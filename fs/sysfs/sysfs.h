@@ -198,6 +198,9 @@ void sysfs_remove_subdir(struct sysfs_dirent *sd);
 int sysfs_rename(struct sysfs_dirent *sd,
 	struct sysfs_dirent *new_parent_sd, const void *ns, const char *new_name);
 
+/** 20150321    
+ * sysfs_dirent의 s_count를 증가시키고 sysfs_dirent를 리턴한다.
+ **/
 static inline struct sysfs_dirent *__sysfs_get(struct sysfs_dirent *sd)
 {
 	if (sd) {

@@ -115,6 +115,9 @@ static inline void fsnotify_move(struct inode *old_dir, struct inode *new_dir,
 /*
  * fsnotify_inode_delete - and inode is being evicted from cache, clean up is needed
  */
+/** 20150321    
+ * 추후분석???
+ **/
 static inline void fsnotify_inode_delete(struct inode *inode)
 {
 	__fsnotify_inode_delete(inode);

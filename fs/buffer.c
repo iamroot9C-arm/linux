@@ -471,6 +471,9 @@ static void __remove_assoc_queue(struct buffer_head *bh)
 	bh->b_assoc_map = NULL;
 }
 
+/** 20150321    
+ * inode의 address_space에 private_list가 존재하면 inode는 buffers 들을 갖고 있다.
+ **/
 int inode_has_buffers(struct inode *inode)
 {
 	return !list_empty(&inode->i_data.private_list);

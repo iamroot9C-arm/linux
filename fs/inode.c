@@ -55,6 +55,8 @@ static unsigned int i_hash_shift __read_mostly;
 /** 20150314    
  * inode hashlist head 테이블.
  * inode_init_early에서 생성.
+ *
+ * 'ino'를 hashval로 사용하는 inode용 함수 hash를 호출해 index를 리턴한다.
  **/
 static struct hlist_head *inode_hashtable __read_mostly;
 static __cacheline_aligned_in_smp DEFINE_SPINLOCK(inode_hash_lock);
@@ -125,6 +127,9 @@ int proc_nr_inodes(ctl_table *table, int write,
  * These are initializations that need to be done on every inode
  * allocation as the fields are not initialised by slab allocation.
  */
+/** 20150321    
+ * inode의 각 항목을 초기화 한다.
+ **/
 int inode_init_always(struct super_block *sb, struct inode *inode)
 {
 	static const struct inode_operations empty_iops;
@@ -185,6 +190,9 @@ int inode_init_always(struct super_block *sb, struct inode *inode)
 		mapping->backing_dev_info = bdi;
 	}
 	inode->i_private = NULL;
+	/** 20150321    
+	 * inode의 i_mapping은 inode 내부의 address_space를 가리킨다.
+	 **/
 	inode->i_mapping = mapping;
 	INIT_HLIST_HEAD(&inode->i_dentry);	/* buggered by rcu freeing */
 #ifdef CONFIG_FS_POSIX_ACL
@@ -203,10 +211,20 @@ out:
 }
 EXPORT_SYMBOL(inode_init_always);
 
+/** 20150321    
+ * sb에 따른 inode 할당함수를 호출해 inode를 할당한다.
+ **/
 static struct inode *alloc_inode(struct super_block *sb)
 {
 	struct inode *inode;
 
+	/** 20150321    
+	 * sb의 콜백인 s_op에 등록된 alloc_inode가 존재하면 호출한다.
+	 * 존재하지 않는다면, inode_init에서 생성한 inode kmem_cache에서 할당받는다.
+	 *
+	 * sysfs의 경우, sysfs_fill_super에서 등록한 sysfs_ops에는 alloc_inode가 
+	 * 등록되어 있지 않다.
+	 **/
 	if (sb->s_op->alloc_inode)
 		inode = sb->s_op->alloc_inode(sb);
 	else
@@ -215,6 +233,10 @@ static struct inode *alloc_inode(struct super_block *sb)
 	if (!inode)
 		return NULL;
 
+	/** 20150321    
+	 * 할당받은 inode를 초기화 한다.
+	 * 실패한다면 적합한 해제함수로 해제한다.
+	 **/
 	if (unlikely(inode_init_always(sb, inode))) {
 		if (inode->i_sb->s_op->destroy_inode)
 			inode->i_sb->s_op->destroy_inode(inode);
@@ -232,8 +254,14 @@ void free_inode_nonrcu(struct inode *inode)
 }
 EXPORT_SYMBOL(free_inode_nonrcu);
 
+/** 20150321    
+ * 추후분석???
+ **/
 void __destroy_inode(struct inode *inode)
 {
+	/** 20150321    
+	 * 제거할 inode는 address_space에 private_list 가 존재하면 안 된다.
+	 **/
 	BUG_ON(inode_has_buffers(inode));
 	security_inode_free(inode);
 	fsnotify_inode_delete(inode);
@@ -347,6 +375,9 @@ EXPORT_SYMBOL(inc_nlink);
 void address_space_init_once(struct address_space *mapping)
 {
 	memset(mapping, 0, sizeof(*mapping));
+	/** 20150321    
+	 * radix_tree_root를 초기화 한다.
+	 **/
 	INIT_RADIX_TREE(&mapping->page_tree, GFP_ATOMIC);
 	spin_lock_init(&mapping->tree_lock);
 	mutex_init(&mapping->i_mmap_mutex);
@@ -362,6 +393,11 @@ EXPORT_SYMBOL(address_space_init_once);
  * once, because the fields are idempotent across use
  * of the inode, so let the slab aware of that.
  */
+/** 20150321    
+ * inode를 최초에 한 번 초기화 한다.
+ *
+ * hlist와 address_space_init_one 등이 호출된다.
+ **/
 void inode_init_once(struct inode *inode)
 {
 	memset(inode, 0, sizeof(*inode));
@@ -377,6 +413,12 @@ void inode_init_once(struct inode *inode)
 }
 EXPORT_SYMBOL(inode_init_once);
 
+/** 20150321    
+ * inode_init에서 "inode_cache"의 ctor로 지정한 콜백함수.
+ * inode object가 하나 생성될 때마다 호출된다.
+ *
+ * foo는 생성된 inode object 하나.
+ **/
 static void init_once(void *foo)
 {
 	struct inode *inode = (struct inode *) foo;
@@ -388,7 +430,7 @@ static void init_once(void *foo)
  * inode->i_lock must be held
  */
 /** 20150314    
- * inode는 atomic 
+ * inode의 reference  count를 증가시킨다.
  **/
 void __iget(struct inode *inode)
 {
@@ -430,6 +472,9 @@ static void inode_lru_list_del(struct inode *inode)
  * inode_sb_list_add - add inode to the superblock list of inodes
  * @inode: inode to add
  */
+/** 20150321    
+ * inode가 속한 superblock의 리스트에 inode를 등록한다.
+ **/
 void inode_sb_list_add(struct inode *inode)
 {
 	spin_lock(&inode_sb_list_lock);
@@ -863,7 +908,7 @@ repeat:
 			goto repeat;
 		}
 		/** 20150314    
-		 * 해당 inode의 사용을 표시하고 리턴한다.
+		 * 원하는 inode를 찾았으므로 찾은 inode에 reference count를 증가시키고 리턴한다.
 		 **/
 		__iget(inode);
 		spin_unlock(&inode->i_lock);
@@ -1090,6 +1135,10 @@ EXPORT_SYMBOL(iget5_locked);
  * hashed, and with the I_NEW flag set.  The file system gets to fill it in
  * before unlocking it via unlock_new_inode().
  */
+/** 20150321    
+ * mount된 filesystem에서inode 번호에 해당하는 inode object를 찾아 reference count를 증가시켜 리턴한다.
+ * 존재하지 않는다면 할당받아 리턴한다.
+ **/
 struct inode *iget_locked(struct super_block *sb, unsigned long ino)
 {
 	/** 20150314    
@@ -1113,19 +1162,37 @@ struct inode *iget_locked(struct super_block *sb, unsigned long ino)
 		return inode;
 	}
 
+	/** 20150321    
+	 * inode를 찾지 못했다면 생성한다.
+	 **/
 	inode = alloc_inode(sb);
 	if (inode) {
 		struct inode *old;
 
 		spin_lock(&inode_hash_lock);
 		/* We released the lock, so.. */
+		/** 20150321    
+		 * 다시 ino로 해당 hlist에서 inode를 찾는다.
+		 * lock을 걸지 않았으므로 inode 할당 중에 새로운 inode가 만들어졌는지
+		 * 검사하는 과정이다.
+		 *
+		 * inode가 검색되지 않았다면
+		 **/
 		old = find_inode_fast(sb, head, ino);
 		if (!old) {
+			/** 20150321    
+			 * inode에 i_ino를 할당하고,
+			 * spin lock 안에서 i_state를 I_NEW로 설정하고,
+			 * inode를 hlist에 추가한다.
+			 **/
 			inode->i_ino = ino;
 			spin_lock(&inode->i_lock);
 			inode->i_state = I_NEW;
 			hlist_add_head(&inode->i_hash, head);
 			spin_unlock(&inode->i_lock);
+			/** 20150321    
+			 * inode를 수퍼블록에 등록시킨다.
+			 **/
 			inode_sb_list_add(inode);
 			spin_unlock(&inode_hash_lock);
 
@@ -1140,6 +1207,11 @@ struct inode *iget_locked(struct super_block *sb, unsigned long ino)
 		 * us. Use the old inode instead of the one we just
 		 * allocated.
 		 */
+		/** 20150321    
+		 * inode를 생성한 뒤 다시 검색했을 때 inode가 나온다면,
+		 * 다른 곳에서 할당되었으므로 새로 생성한 inode를 제거하고
+		 * 검색된 inode를 사용한다.
+		 **/
 		spin_unlock(&inode_hash_lock);
 		destroy_inode(inode);
 		inode = old;
@@ -1817,6 +1889,8 @@ void __init inode_init(void)
 	/* inode slab cache */
 	/** 20150214    
 	 * "inode_cache" kmem_cache를 생성한다.
+	 *
+	 * object를 하나 생성할 때마다 init_once가 호출된다.
 	 **/
 	inode_cachep = kmem_cache_create("inode_cache",
 					 sizeof(struct inode),

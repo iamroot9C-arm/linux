@@ -610,6 +610,8 @@ typedef int (*read_actor_t)(read_descriptor_t *, struct page *,
 
 /** 20140531    
  * address space ops.
+ *
+ * cached object에 대한 page I/O 연산을 정의한 구조체.
  **/
 struct address_space_operations {
 	int (*writepage)(struct page *page, struct writeback_control *wbc);
@@ -835,6 +837,9 @@ struct inode {
 #endif
 
 	/* Misc */
+	/** 20150321    
+	 * inode의 i_state는 i_lock으로 보호된 상태에서 변경시킨다.
+	 **/
 	unsigned long		i_state;
 	struct mutex		i_mutex;
 
@@ -858,6 +863,9 @@ struct inode {
 	atomic_t		i_writecount;
 	const struct file_operations	*i_fop;	/* former ->i_op->default_file_ops */
 	struct file_lock	*i_flock;
+	/** 20150321    
+	 * address_space는 inode 구조체에 포함된다.
+	 **/
 	struct address_space	i_data;
 #ifdef CONFIG_QUOTA
 	struct dquot		*i_dquot[MAXQUOTAS];

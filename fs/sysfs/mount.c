@@ -51,6 +51,11 @@ struct sysfs_dirent sysfs_root = {
 	.s_ino		= 1,
 };
 
+/** 20150321    
+ *
+ * sb에 정보를 채워 넣는다.
+ *   struct super_operations 's_op'도 여기서 채워진다.
+ **/
 static int sysfs_fill_super(struct super_block *sb, void *data, int silent)
 {
 	struct inode *inode;
@@ -67,6 +72,10 @@ static int sysfs_fill_super(struct super_block *sb, void *data, int silent)
 
 	/* get root inode, initialize and unlock it */
 	mutex_lock(&sysfs_mutex);
+	/** 20150321    
+	 * 
+	 * sysfs_root의 s_ino는 1.
+	 **/
 	inode = sysfs_get_inode(sb, &sysfs_root);
 	mutex_unlock(&sysfs_mutex);
 	if (!inode) {
@@ -127,6 +136,8 @@ static void free_sysfs_super_info(struct sysfs_super_info *info)
 
 /** 20150221    
  * sysfs용 mount 함수. super block에 대한 dentry를 받아와 리턴한다.
+ *
+ * sysfs는 superblock을 sget으로 받아온다.
  **/
 static struct dentry *sysfs_mount(struct file_system_type *fs_type, int flags, const char *dev_name, void *data)
 {
@@ -136,7 +147,7 @@ static struct dentry *sysfs_mount(struct file_system_type *fs_type, int flags, c
 	int error;
 
 	/** 20150307    
-	 * sysfs_super_info객체 생성.
+	 * sysfs 특정 object 'sysfs_super_info' 생성.
 	 **/
 	info = kzalloc(sizeof(*info), GFP_KERNEL);
 	if (!info)
@@ -149,7 +160,7 @@ static struct dentry *sysfs_mount(struct file_system_type *fs_type, int flags, c
 		info->ns[type] = kobj_ns_grab_current(type);
 
 	/** 20150314    
-	 * 파일시스템의 superblock 중 info에 해당하는 superblock을 찾아 리턴하고,
+	 * 파일시스템의 superblock 중 info에 해당하는 superblock을 찾아 리턴한다.
 	 * 없으면 새로 생성해 등록한 뒤 리턴한다.
 	 **/
 	sb = sget(fs_type, sysfs_test_super, sysfs_set_super, flags, info);

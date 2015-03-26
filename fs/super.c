@@ -1290,6 +1290,10 @@ struct dentry *mount_single(struct file_system_type *fs_type,
 }
 EXPORT_SYMBOL(mount_single);
 
+/** 20150321    
+ *
+ * file_system_type에 등록된 mount 콜백을 호출한다.
+ **/
 struct dentry *
 mount_fs(struct file_system_type *type, int flags, const char *name, void *data)
 {
@@ -1298,6 +1302,9 @@ mount_fs(struct file_system_type *type, int flags, const char *name, void *data)
 	char *secdata = NULL;
 	int error = -ENOMEM;
 
+	/** 20150321    
+	 * kern_mount에서 data는 NULL로 넘어온다.
+	 **/
 	if (data && !(type->fs_flags & FS_BINARY_MOUNTDATA)) {
 		secdata = alloc_secdata();
 		if (!secdata)

@@ -2714,6 +2714,10 @@ void put_mnt_ns(struct mnt_namespace *ns)
 	kfree(ns);
 }
 
+/** 20150321    
+ *
+ * kern_mount에서 data는 항상 NULL로 호출.
+ **/
 struct vfsmount *kern_mount_data(struct file_system_type *type, void *data)
 {
 	struct vfsmount *mnt;
