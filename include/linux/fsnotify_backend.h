@@ -325,6 +325,9 @@ static inline int fsnotify_inode_watches_children(struct inode *inode)
  * Update the dentry with a flag indicating the interest of its parent to receive
  * filesystem events when those events happens to this dentry->d_inode.
  */
+/** 20150328    
+ * fsnotify 추후 분석 ???
+ **/
 static inline void __fsnotify_update_dcache_flags(struct dentry *dentry)
 {
 	struct dentry *parent;
@@ -348,6 +351,9 @@ static inline void __fsnotify_update_dcache_flags(struct dentry *dentry)
 /*
  * fsnotify_d_instantiate - instantiate a dentry for inode
  */
+/** 20150328    
+ * fsnotify 추후 분석 ???
+ **/
 static inline void __fsnotify_d_instantiate(struct dentry *dentry, struct inode *inode)
 {
 	if (!inode)

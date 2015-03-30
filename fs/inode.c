@@ -341,15 +341,27 @@ EXPORT_SYMBOL(clear_nlink);
  * This is a low-level filesystem helper to replace any
  * direct filesystem manipulation of i_nlink.
  */
+/** 20150328    
+ * inode의 nlink를 설정/제거 한다.
+ **/
 void set_nlink(struct inode *inode, unsigned int nlink)
 {
+	/** 20150328    
+	 * nlink가 0이면 clear 한다.
+	 **/
 	if (!nlink) {
 		clear_nlink(inode);
 	} else {
 		/* Yes, some filesystems do change nlink from zero to one */
+		/** 20150328    
+		 * i_nlink가 0이었다면 1로 바뀔 것이므로 s_remove_count를 업데이트 한다.
+		 **/
 		if (inode->i_nlink == 0)
 			atomic_long_dec(&inode->i_sb->s_remove_count);
 
+		/** 20150328    
+		 * nlink를 __i_nlink에 설정한다.
+		 **/
 		inode->__i_nlink = nlink;
 	}
 }
@@ -1031,9 +1043,16 @@ EXPORT_SYMBOL(lockdep_annotate_inode_mutex_key);
  * Called when the inode is fully initialised to clear the new state of the
  * inode and wake up anyone waiting for the inode to finish initialisation.
  */
+/** 20150328    
+ * inode의 I_NEW 상태를 해제하고, 대기 중인 task를 깨운다.
+ **/
 void unlock_new_inode(struct inode *inode)
 {
 	lockdep_annotate_inode_mutex_key(inode);
+	/** 20150328    
+	 * i_state를 변경할 때 lock으로 보호한 상태이다.
+	 * I_NEW 속성을 제거하고, barrier 이후 대기 중인 다른 task를 깨운다.
+	 **/
 	spin_lock(&inode->i_lock);
 	WARN_ON(!(inode->i_state & I_NEW));
 	inode->i_state &= ~I_NEW;
@@ -1534,11 +1553,22 @@ static void iput_final(struct inode *inode)
  *
  *	Consequently, iput() can sleep.
  */
+/** 20150328    
+ **/
 void iput(struct inode *inode)
 {
 	if (inode) {
+		/** 20150328    
+		 * inode가 I_CLEAR 상태인 경우 (clear_inode() 에 의해 설정),
+		 * iput을 할 수 없다.
+		 **/
 		BUG_ON(inode->i_state & I_CLEAR);
 
+		/** 20150328    
+		 * inode의 i_count를 하나 감소시키고, 0이 되었다면 lock이 걸린 상태에서
+		 * iput_final을 호출한다.
+		 * 즉, inode의 reference count를 감소시켜 0에 도달하였다면
+		 **/
 		if (atomic_dec_and_lock(&inode->i_count, &inode->i_lock))
 			iput_final(inode);
 	}

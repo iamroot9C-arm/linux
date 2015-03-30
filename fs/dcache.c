@@ -106,11 +106,18 @@ static unsigned int d_hash_mask __read_mostly;
 static unsigned int d_hash_shift __read_mostly;
 
 /** 20130803    
+ * dcache_init_early에서 dentry_hashtable을 생성한다.
+ * hashtable은 hlist_bl_head의 배열 형태이며,
+ * 각 head는 hlist_bl_node 리스트의 시작위치를 가리킨다.
+ *
  * 왜 dentry_hashtable은 hlist_bl_head를 사용할까???
  *   BL : bit lock
  **/
 static struct hlist_bl_head *dentry_hashtable __read_mostly;
 
+/** 20150328    
+ * dentry와 hash값으로 hash table의 hlist_bl_head를 찾아온다.
+ **/
 static inline struct hlist_bl_head *d_hash(const struct dentry *parent,
 					unsigned int hash)
 {
@@ -124,9 +131,15 @@ struct dentry_stat_t dentry_stat = {
 	.age_limit = 45,
 };
 
+/** 20150328    
+ * cpu마다 nr_dentry을 유지하고 있다.
+ **/
 static DEFINE_PER_CPU(unsigned int, nr_dentry);
 
 #if defined(CONFIG_SYSCTL) && defined(CONFIG_PROC_FS)
+/** 20150328    
+ * 각 cpu별로 유지하던 dentry 개수를 합산해 전체 dentry 수를 구한다.
+ **/
 static int get_nr_dentry(void)
 {
 	int i;
@@ -255,8 +268,17 @@ static void d_free(struct dentry *dentry)
  * should be called after unhashing, and after changing d_inode (if
  * the dentry has not already been unhashed).
  */
+/** 20150328    
+ * 이 dentry에 대해 진행 중인 rcu-walk path lookup을 무효화 시킨다.
+ * (raw_seqcount_begin ... read_seqcount_retry 과정을 다시 수행하게 된다)
+ *
+ * unhashing, d_inode 의 변경 이후에 호출된다.
+ **/
 static inline void dentry_rcuwalk_barrier(struct dentry *dentry)
 {
+	/** 20150328    
+	 * dentry object에 대해 spinlock이 걸려 있어야 한다.
+	 **/
 	assert_spin_locked(&dentry->d_lock);
 	/* Go through a barrier */
 	write_seqcount_barrier(&dentry->d_seq);
@@ -1274,11 +1296,19 @@ EXPORT_SYMBOL(shrink_dcache_parent);
  * copied and the copy passed in may be reused after this call.
  */
  
+ /** 20150328    
+  * dentry를 kmem_cache로부터 할당받고, name으로 초기화해 리턴한다.
+  **/
 struct dentry *__d_alloc(struct super_block *sb, const struct qstr *name)
 {
 	struct dentry *dentry;
 	char *dname;
 
+	/** 20150328    
+	 * slub으로부터 dentry object를 할당 받는다.
+	 *
+	 * kernel에서 사용하는 객체이므로 GFP_KERNEL 속성을 지정한다.
+	 **/
 	dentry = kmem_cache_alloc(dentry_cache, GFP_KERNEL);
 	if (!dentry)
 		return NULL;
@@ -1289,7 +1319,14 @@ struct dentry *__d_alloc(struct super_block *sb, const struct qstr *name)
 	 * will still always have a NUL at the end, even if we might
 	 * be overwriting an internal NUL character
 	 */
+	/** 20150328    
+	 * dentry의 d_iname을 초기화 한다.
+	 **/
 	dentry->d_iname[DNAME_INLINE_LEN-1] = 0;
+	/** 20150328    
+	 * name의 길이가 dcache 상에 바로 저장할 수 있는 길이보다 길다면
+	 * name을 위한 메모리 공간을 별도로 할당한다.
+	 **/
 	if (name->len > DNAME_INLINE_LEN-1) {
 		dname = kmalloc(name->len + 1, GFP_KERNEL);
 		if (!dname) {
@@ -1297,21 +1334,36 @@ struct dentry *__d_alloc(struct super_block *sb, const struct qstr *name)
 			return NULL;
 		}
 	} else  {
+	/** 20150328    
+	 * 이름을 직접 저장할 수 있다면 d_iname에 저장한다.
+	 **/
 		dname = dentry->d_iname;
 	}	
 
+	/** 20150328    
+	 * d_name에 길이와 hash 값을 저장하고, dname을 복사한다.
+	 **/
 	dentry->d_name.len = name->len;
 	dentry->d_name.hash = name->hash;
 	memcpy(dname, name->name, name->len);
 	dname[name->len] = 0;
 
 	/* Make sure we always see the terminating NUL character */
+	/** 20150328    
+	 * dname이 항상 NULL로 마무리 된 상태가 되도록 wmb를 둔다.
+	 **/
 	smp_wmb();
 	dentry->d_name.name = dname;
 
+	/** 20150328    
+	 * dentry의 속성들을 초기화 한다.
+	 **/
 	dentry->d_count = 1;
 	dentry->d_flags = 0;
 	spin_lock_init(&dentry->d_lock);
+	/** 20150328    
+	 * dentry의 seqlock을 초기화 한다.
+	 **/
 	seqcount_init(&dentry->d_seq);
 	dentry->d_inode = NULL;
 	dentry->d_parent = dentry;
@@ -1325,6 +1377,9 @@ struct dentry *__d_alloc(struct super_block *sb, const struct qstr *name)
 	INIT_LIST_HEAD(&dentry->d_u.d_child);
 	d_set_d_op(dentry, dentry->d_sb->s_d_op);
 
+	/** 20150328    
+	 * 현재 cpu의 dentry 개수를 늘린다.
+	 **/
 	this_cpu_inc(nr_dentry);
 
 	return dentry;
@@ -1379,6 +1434,9 @@ struct dentry *d_alloc_name(struct dentry *parent, const char *name)
 }
 EXPORT_SYMBOL(d_alloc_name);
 
+/** 20150328    
+ * dentry_operations에 존재하는 op에 대해 dentry의 d_flags에 표시한다.
+ **/
 void d_set_d_op(struct dentry *dentry, const struct dentry_operations *op)
 {
 	WARN_ON_ONCE(dentry->d_op);
@@ -1403,14 +1461,26 @@ void d_set_d_op(struct dentry *dentry, const struct dentry_operations *op)
 }
 EXPORT_SYMBOL(d_set_d_op);
 
+/** 20150328    
+ * dentry를 해당하는 inode에 연결시킨다.
+ **/
 static void __d_instantiate(struct dentry *dentry, struct inode *inode)
 {
+	/** 20150328    
+	 * dentry object는 spinlock에 의해 보호된다.
+	 **/
 	spin_lock(&dentry->d_lock);
+	/** 20150328    
+	 * inode가 주어졌다면 dentry를 inode의 i_dentry 리스트에 추가한다. 
+	 **/
 	if (inode) {
 		if (unlikely(IS_AUTOMOUNT(inode)))
 			dentry->d_flags |= DCACHE_NEED_AUTOMOUNT;
 		hlist_add_head(&dentry->d_alias, &inode->i_dentry);
 	}
+	/** 20150328    
+	 * dentry가 가리키는 inode를 저장한다.
+	 **/
 	dentry->d_inode = inode;
 	dentry_rcuwalk_barrier(dentry);
 	spin_unlock(&dentry->d_lock);
@@ -1432,9 +1502,15 @@ static void __d_instantiate(struct dentry *dentry, struct inode *inode)
  * in use by the dcache.
  */
  
+/** 20150328    
+ * inode에 dentry를 추가한다.
+ **/
 void d_instantiate(struct dentry *entry, struct inode * inode)
 {
 	BUG_ON(!hlist_unhashed(&entry->d_alias));
+	/** 20150328    
+	 * inode가 존재하면 inode를 변경하기 위해 lock을 획득한다.
+	 **/
 	if (inode)
 		spin_lock(&inode->i_lock);
 	__d_instantiate(entry, inode);
@@ -1525,10 +1601,20 @@ struct dentry *d_make_root(struct inode *root_inode)
 	struct dentry *res = NULL;
 
 	if (root_inode) {
+		/** 20150328    
+		 * 모든 root는 "/"라는 이름을 가진다.
+		 **/
 		static const struct qstr name = QSTR_INIT("/", 1);
 
+		/** 20150328    
+		 * root를 위한 denty를 할당받고, name으로 초기화 한다.
+		 **/
 		res = __d_alloc(root_inode->i_sb, &name);
 		if (res)
+			/** 20150328    
+			 * dentry를 메모리 부족없이 받아왔다면 root_inode에 대한 dentry로
+			 * 추가한다.
+			 **/
 			d_instantiate(res, root_inode);
 		else
 			iput(root_inode);
@@ -1835,12 +1921,18 @@ static noinline enum slow_d_compare slow_dentry_cmp(
  * NOTE! The caller *has* to check the resulting dentry against the sequence
  * number we've returned before using any of the resulting dentry state!
  */
+/** 20150328    
+ * 여기부터...
+ **/
 struct dentry *__d_lookup_rcu(const struct dentry *parent,
 				const struct qstr *name,
 				unsigned *seqp, struct inode *inode)
 {
 	u64 hashlen = name->hash_len;
 	const unsigned char *str = name->name;
+	/** 20150328    
+	 * parent와 hash 값으로 hlist_bl_head를 받아온다.
+	 **/
 	struct hlist_bl_head *b = d_hash(parent, hashlen_hash(hashlen));
 	struct hlist_bl_node *node;
 	struct dentry *dentry;
@@ -1865,6 +1957,9 @@ struct dentry *__d_lookup_rcu(const struct dentry *parent,
 	 *
 	 * See Documentation/filesystems/path-lookup.txt for more details.
 	 */
+	/** 20150328    
+	 * hlist_bl_head 에서부터 각 리스트에 연결된 dentry 객체를 찾아온다.
+	 **/
 	hlist_bl_for_each_entry_rcu(dentry, node, b, d_hash) {
 		unsigned seq;
 
@@ -1884,6 +1979,10 @@ seqretry:
 		 * and if we end up with a successful lookup, we actually
 		 * want to exit RCU lookup anyway.
 		 */
+		/** 20150328    
+		 * dentry에 대한 read-side ciritical section
+		 * raw_seqcount_begin ~ slow_dentry_cmp(read_seqcount_retry)
+		 **/
 		seq = raw_seqcount_begin(&dentry->d_seq);
 		if (dentry->d_parent != parent)
 			continue;
@@ -1891,6 +1990,12 @@ seqretry:
 			continue;
 		*seqp = seq;
 
+		/** 20150328    
+		 * parent dentry의 속성에 DCACHE_OP_COMPARE이 있는지 검사한다.
+		 * denty_operations 중 d_compare op이 존재하는 경우에 해당한다. 
+		 *
+		 * 만약 있다면 d_name의 hash가 같을 경우 slow_dentry_cmp
+		 **/
 		if (unlikely(parent->d_flags & DCACHE_OP_COMPARE)) {
 			if (dentry->d_name.hash != hashlen_hash(hashlen))
 				continue;
@@ -1904,6 +2009,8 @@ seqretry:
 			}
 		}
 
+		/** 20150328    
+		 **/
 		if (dentry->d_name.hash_len != hashlen)
 			continue;
 		if (!dentry_cmp(dentry, str, hashlen_len(hashlen)))

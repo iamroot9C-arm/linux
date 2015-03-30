@@ -26,6 +26,9 @@ struct vfsmount;
 #define IS_ROOT(x) ((x) == (x)->d_parent)
 
 /* The hash is always the low bits of hash_len */
+/** 20150328    
+ * endian에 상관없이 hash가 항상 하위비트에 오도록 한다.
+ **/
 #ifdef __LITTLE_ENDIAN
  #define HASH_LEN_DECLARE u32 hash; u32 len;
 #else
@@ -39,6 +42,10 @@ struct vfsmount;
  * hash comes first so it snuggles against d_parent in the
  * dentry.
  */
+/** 20150328    
+ * denty에서 사용하는 object로,
+ * name과 name에 대한 metadata(hash 또는 길이)를 묶어놓은 자료구조.
+ **/
 struct qstr {
 	union {
 		struct {
@@ -49,7 +56,14 @@ struct qstr {
 	const unsigned char *name;
 };
 
+/** 20150328    
+ * qstr의 name과 length 정보를 설정한다.
+ **/
 #define QSTR_INIT(n,l) { { { .len = l } }, .name = n }
+/** 20150328    
+ * hashlen의 하위비트에 위치한 hash 값을 가져온다.
+ * hashlen의 상위비트에 위치한 len  값을 가져온다.
+ **/
 #define hashlen_hash(hashlen) ((u32) (hashlen))
 #define hashlen_len(hashlen)  ((u32)((hashlen) >> 32))
 
@@ -90,6 +104,10 @@ extern unsigned int full_name_hash(const unsigned char *, unsigned int);
  * give reasonable cacheline footprint with larger lines without the
  * large memory footprint increase).
  */
+/** 20150328    
+ * dentry 구조체가 64바이트 캐시라인에 정렬되도록
+ * 조건에 따라 DNAME의 길이를 조절한다.
+ **/
 #ifdef CONFIG_64BIT
 # define DNAME_INLINE_LEN 32 /* 192 bytes */
 #else
@@ -100,6 +118,12 @@ extern unsigned int full_name_hash(const unsigned char *, unsigned int);
 # endif
 #endif
 
+/** 20150328    
+ * dentry 자료구조.
+ *
+ * dentry는 spinlock으로 보호된다.
+ * name을 갱신할 때 사용하는 seqlock이 별도로 존재한다.
+ **/
 struct dentry {
 	/* RCU lookup touched fields */
 	unsigned int d_flags;		/* protected by d_lock */
@@ -109,6 +133,11 @@ struct dentry {
 	struct qstr d_name;
 	struct inode *d_inode;		/* Where the name belongs to - NULL is
 					 * negative */
+	/** 20150328    
+	 * dentry inline name.
+	 * 
+	 * 길이가 짧다면 dentry에 바로 저장하고, 길다면 별도의 메모리에 저장한다.
+	 **/
 	unsigned char d_iname[DNAME_INLINE_LEN];	/* small names */
 
 	/* Ref lookup also touches following */
@@ -128,6 +157,9 @@ struct dentry {
 	 	struct rcu_head d_rcu;
 	} d_u;
 	struct list_head d_subdirs;	/* our children */
+	/** 20150328    
+	 * inode의 i_dentry 리스트에 연결하는 자료구조.
+	 **/
 	struct hlist_node d_alias;	/* inode alias list */
 };
 

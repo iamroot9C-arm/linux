@@ -28,8 +28,6 @@ extern struct super_block * sysfs_sb;
 
 /** 20150321    
  * sysfs address_space operations.
- * 
- *
  **/
 static const struct address_space_operations sysfs_aops = {
 	.readpage	= simple_readpage,
@@ -206,12 +204,18 @@ out:
 	return error;
 }
 
+/** 20150328    
+ * 기본 inode 속성 지정.
+ **/
 static inline void set_default_inode_attr(struct inode * inode, umode_t mode)
 {
 	inode->i_mode = mode;
 	inode->i_atime = inode->i_mtime = inode->i_ctime = CURRENT_TIME;
 }
 
+/** 20150328    
+ * inode의 권한, 관리시간 정보를 iattr로 설정한다.
+ **/
 static inline void set_inode_attr(struct inode * inode, struct iattr * iattr)
 {
 	inode->i_uid = iattr->ia_uid;
@@ -221,11 +225,21 @@ static inline void set_inode_attr(struct inode * inode, struct iattr * iattr)
 	inode->i_ctime = iattr->ia_ctime;
 }
 
+/** 20150328    
+ * inode 정보를 갱신한다.
+ **/
 static void sysfs_refresh_inode(struct sysfs_dirent *sd, struct inode *inode)
 {
 	struct sysfs_inode_attrs *iattrs = sd->s_iattr;
 
+	/** 20150328    
+	 * sd의 s_mode로 inode의 i_mode 지정
+	 **/
 	inode->i_mode = sd->s_mode;
+	/** 20150328    
+	 * sysfs_dirent는 기본 속성이 지정되어 있지 않으므로 sysfs_dirent의 attr를
+	 * 복사한다.
+	 **/
 	if (iattrs) {
 		/* sysfs_dirent has non-default attributes
 		 * get them from persistent copy in sysfs_dirent
@@ -236,6 +250,9 @@ static void sysfs_refresh_inode(struct sysfs_dirent *sd, struct inode *inode)
 					    iattrs->ia_secdata_len);
 	}
 
+	/** 20150328    
+	 * sd의 type이 directory라면 nlink를 subdirs + 2로 설정한다.
+	 **/
 	if (sysfs_type(sd) == SYSFS_DIR)
 		set_nlink(inode, sd->s_dir.subdirs + 2);
 }
@@ -253,12 +270,16 @@ int sysfs_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *sta
 	return 0;
 }
 
+/** 20150328    
+ * sd에 맞게 inode의 정보를 초기화 한다.
+ **/
 static void sysfs_init_inode(struct sysfs_dirent *sd, struct inode *inode)
 {
 	struct bin_attribute *bin_attr;
 
 	/** 20150321    
 	 * inode의 i_private에는 sysfs_dirent 포인터(sysfs_root의 주소)를 저장한다.
+	 * a_ops에 sysfs_aops 저장
 	 **/
 	inode->i_private = sysfs_get(sd);
 	inode->i_mapping->a_ops = &sysfs_aops;
@@ -269,6 +290,9 @@ static void sysfs_init_inode(struct sysfs_dirent *sd, struct inode *inode)
 	sysfs_refresh_inode(sd, inode);
 
 	/* initialize inode according to type */
+	/** 20150328    
+	 * sd의 type에 따른 동작을 수행한다.
+	 **/
 	switch (sysfs_type(sd)) {
 	case SYSFS_DIR:
 		inode->i_op = &sysfs_dir_inode_operations;
@@ -308,6 +332,10 @@ static void sysfs_init_inode(struct sysfs_dirent *sd, struct inode *inode)
  *	RETURNS:
  *	Pointer to allocated inode on success, NULL on failure.
  */
+/** 20150328    
+ * sysfs_dirent를 위한 inode를 가져온다.
+ * 이미 존재하지 않는다면 새로 할당받아 초기화 한다.
+ **/
 struct inode * sysfs_get_inode(struct super_block *sb, struct sysfs_dirent *sd)
 {
 	struct inode *inode;

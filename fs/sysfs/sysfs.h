@@ -54,6 +54,8 @@ struct sysfs_inode_attrs {
  */
 /** 20150314    
  * sysfs 계층 구조에서 각 sysfs 노드의 블럭 정보.
+ *
+ * s_count : reference count
  **/
 struct sysfs_dirent {
 	atomic_t		s_count;

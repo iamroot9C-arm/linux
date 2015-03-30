@@ -30,10 +30,16 @@
 #endif
 
 
+/** 20150328    
+ * hlist 'bit lock' head
+ **/
 struct hlist_bl_head {
 	struct hlist_bl_node *first;
 };
 
+/** 20150328    
+ * hlist node
+ **/
 struct hlist_bl_node {
 	struct hlist_bl_node *next, **pprev;
 };
@@ -43,12 +49,18 @@ struct hlist_bl_node {
 #define INIT_HLIST_BL_HEAD(ptr) \
 	((ptr)->first = NULL)
 
+/** 20150328    
+ * hlist_bl_node 초기화 함수.
+ **/
 static inline void INIT_HLIST_BL_NODE(struct hlist_bl_node *h)
 {
 	h->next = NULL;
 	h->pprev = NULL;
 }
 
+/** 20150328    
+ * ptr를 member로 포함하고 있는 type인 struct가 지칭된다.
+ **/
 #define hlist_bl_entry(ptr, type, member) container_of(ptr,type,member)
 
 static inline int hlist_bl_unhashed(const struct hlist_bl_node *h)

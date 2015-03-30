@@ -19,6 +19,9 @@
 /*
  * fsnotify_d_instantiate - instantiate a dentry for inode
  */
+/** 20150328    
+ * fsnotify 추후 분석 ???
+ **/
 static inline void fsnotify_d_instantiate(struct dentry *dentry,
 					  struct inode *inode)
 {

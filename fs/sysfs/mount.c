@@ -42,6 +42,7 @@ static const struct super_operations sysfs_ops = {
  * sysfs의 root 노드의 dirent 정보.
  *
  * root의 inode는 1.
+ * s_mode는 DIR이며, User/Group/Other에 읽기와 실행 퍼미션이 부여된다.
  **/
 struct sysfs_dirent sysfs_root = {
 	.s_name		= "",
@@ -71,9 +72,13 @@ static int sysfs_fill_super(struct super_block *sb, void *data, int silent)
 	sb->s_time_gran = 1;
 
 	/* get root inode, initialize and unlock it */
+	/** 20150328    
+	 * root의 inode를 받아온다.
+	 **/
 	mutex_lock(&sysfs_mutex);
 	/** 20150321    
-	 * 
+	 * sysfs_root를 위한 inode를 가져온다. 존재하지 않는다면 할당받아 초기화 한다.
+	 *
 	 * sysfs_root의 s_ino는 1.
 	 **/
 	inode = sysfs_get_inode(sb, &sysfs_root);
@@ -256,6 +261,9 @@ out_err:
 }
 
 #undef sysfs_get
+/** 20150328    
+ * sysfs_dirent의 reference count를 증가시킨다.
+ **/
 struct sysfs_dirent *sysfs_get(struct sysfs_dirent *sd)
 {
 	return __sysfs_get(sd);

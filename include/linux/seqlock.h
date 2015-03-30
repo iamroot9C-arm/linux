@@ -31,15 +31,17 @@
 #include <asm/processor.h>
 
 /** 20141011
- * reader-writer lock의 문제점인 writer가 굶주리는 문제(starving writer problem)를 해결한 lock.
+ * 일반적인 reader-writer lock의 문제점인 writer가 굶주리는 문제(starving writer problem)를 해결한 lock.
  * 
  * - writer
- *   lock/unlock시에 spinlock을 사용하며, smp_wmb()로 동기화되는 sequence number를 단조 증가시킨다.
+ *   lock/unlock시에 spinlock을 사용하여 writer 사이에 동기화를 수행한다.
+ *   smp_wmb()로 동기화되는 sequence number를 단조 증가시킨다.
  *   즉, writer 임계구간에서 sequence number는 홀수이다.
  * 
  * - reader
  *   lock/unlock으로 구성되지 않고 smp_rmb()로 동기화되는 sequence를 검사한다.
- *   writer가 임계구역에 있거나, reader가 데이터에 접근하기 전후의 sequence number가 달라졌다면 retry한다.
+ *   writer가 임계구역에 있거나(홀수),
+ *   reader가 데이터에 접근하기 전후의 sequence number가 달라졌다면 retry한다.
  *
  *
  * 따라서 writer는 reader에 방해받지 않으며, 다수의 reader 사이에 lock이 존재하지 않은 특징을 갖고 있다.
@@ -172,6 +174,9 @@ typedef struct seqcount {
 	unsigned sequence;
 } seqcount_t;
 
+/** 20150328    
+ * seqcount 초기화
+ **/
 #define SEQCNT_ZERO { 0 }
 #define seqcount_init(x)	do { *(x) = (seqcount_t) SEQCNT_ZERO; } while (0)
 
@@ -258,6 +263,12 @@ static inline unsigned read_seqcount_begin(const seqcount_t *s)
  * read_seqcount_retry() instead of stabilizing at the beginning of the
  * critical section.
  */
+/** 20150328    
+ * seqcount를 읽어와 read-side critical section을 시작한다.
+ *
+ * read_seqcount_begin은 홀수, 즉 write-side의 접근이 풀릴 때까지 반복하지만,
+ * 이 함수는 클리어시키고 바로 리턴하여 read_seqcount_retry에서 반복하도록 한다.
+ **/
 static inline unsigned raw_seqcount_begin(const seqcount_t *s)
 {
 	unsigned ret = ACCESS_ONCE(s->sequence);
@@ -338,6 +349,13 @@ static inline void write_seqcount_end(seqcount_t *s)
  * After write_seqcount_barrier, no read-side seq operations will complete
  * successfully and see data older than this.
  */
+/** 20150328    
+ * sequence의 홀짝을 유지한 상태로 값을 증가시켜
+ * 진행 중인 read-side의 seq연산을 실패하도록 한다. (read-side는 retry 한다)
+ *
+ * write_seqcount_barrier 이후, read-side seq 연산은 실패할 것이고,
+ * 이 배리어보다 오래된 data는 보지 않게 될 것이다.
+ **/
 static inline void write_seqcount_barrier(seqcount_t *s)
 {
 	smp_wmb();

@@ -2477,6 +2477,8 @@ static inline int security_sem_semop(struct sem_array *sma,
 	return 0;
 }
 
+/** 20150328    
+ **/
 static inline void security_d_instantiate(struct dentry *dentry, struct inode *inode)
 { }
 
@@ -2511,6 +2513,9 @@ static inline void security_release_secctx(char *secdata, u32 seclen)
 {
 }
 
+/** 20150328    
+ * CONFIG_SECURITY를 설정하지 않았으므로 error 를 리턴한다.
+ **/
 static inline int security_inode_notifysecctx(struct inode *inode, void *ctx, u32 ctxlen)
 {
 	return -EOPNOTSUPP;

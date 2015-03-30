@@ -818,6 +818,12 @@ struct inode {
 	 *    (set|clear|inc|drop)_nlink
 	 *    inode_(inc|dec)_link_count
 	 */
+	/** 20150328    
+	 * hard link의 수.
+	 *
+	 * fs에서 i_nlink는 읽기 전용으로 쓰고, __i_nlink는 쓰기 가능으로 사용하도록
+	 * 권장한다.
+	 **/
 	union {
 		const unsigned int i_nlink;
 		unsigned int __i_nlink;
@@ -850,6 +856,9 @@ struct inode {
 	struct list_head	i_lru;		/* inode LRU list */
 	struct list_head	i_sb_list;
 	union {
+		/** 20150328    
+		 * 이 inode에 해당하는 dentry의 리스트 헤드.
+		 **/
 		struct hlist_head	i_dentry;
 		struct rcu_head		i_rcu;
 	};
@@ -1621,6 +1630,9 @@ struct super_block {
 	struct shrinker s_shrink;	/* per-sb shrinker handle */
 
 	/* Number of inodes with nlink == 0 but still referenced */
+	/** 20150328    
+	 * 아직 참조되고 있는, nlink가 0인 inodes들의 수.
+	 **/
 	atomic_long_t s_remove_count;
 
 	/* Being remounted read-only */
@@ -1984,6 +1996,11 @@ struct super_operations {
  *
  * Q: What is the difference between I_WILL_FREE and I_FREEING?
  */
+/** 20150328    
+ * I_NEW는 mutex와 completion notification용으로 사용된다.
+ *
+ * inode object가 할당되었지만, disk의 inode로부터 데이터가 아직 읽히지 않았을 때
+ **/
 #define I_DIRTY_SYNC		(1 << 0)
 #define I_DIRTY_DATASYNC	(1 << 1)
 #define I_DIRTY_PAGES		(1 << 2)

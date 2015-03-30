@@ -446,6 +446,9 @@ static inline int spin_can_lock(spinlock_t *lock)
 	return raw_spin_can_lock(&lock->rlock);
 }
 
+/** 20150328    
+ * spinlock이 잠겨있지 않다면 ASSERT.
+ **/
 #define assert_spin_locked(lock)	assert_raw_spin_locked(&(lock)->rlock)
 
 /*
@@ -462,6 +465,9 @@ static inline int spin_can_lock(spinlock_t *lock)
  * @lock.  Returns false for all other cases.
  */
 extern int _atomic_dec_and_lock(atomic_t *atomic, spinlock_t *lock);
+/** 20150328    
+ * atomic을 감소시키고, 그 결과 0이라면 spinlock을 건 상태로 만든다.
+ **/
 #define atomic_dec_and_lock(atomic, lock) \
 		__cond_lock(lock, _atomic_dec_and_lock(atomic, lock))
 
