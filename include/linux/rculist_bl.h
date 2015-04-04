@@ -124,7 +124,7 @@ static inline void hlist_bl_add_head_rcu(struct hlist_bl_node *n,
  *
  */
 /** 20150328    
- * head에서부터 node들을 각각 순회하는데, node를 member로 포함하고 있는
+ * list의 head에서부터 node 각각 순회하는데, node를 member로 포함하고 있는
  * 실제 객체의 위치가 tpos에 저장된다.
  **/
 #define hlist_bl_for_each_entry_rcu(tpos, pos, head, member)		\

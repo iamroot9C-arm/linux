@@ -67,6 +67,8 @@ struct qstr {
 #define hashlen_hash(hashlen) ((u32) (hashlen))
 #define hashlen_len(hashlen)  ((u32)((hashlen) >> 32))
 
+/** 20150405    
+ **/
 struct dentry_stat_t {
 	int nr_dentry;
 	int nr_unused;
@@ -141,13 +143,28 @@ struct dentry {
 	unsigned char d_iname[DNAME_INLINE_LEN];	/* small names */
 
 	/* Ref lookup also touches following */
+	/** 20150404    
+	 * dentry object의 상태를 나타낸다.
+	 * positive : used   - 현재 사용 중
+	 * zero     : unused - 유효하지만 현재 사용 중이 아님
+	 * negative : negative - 유효한 inode와 연결되어 있지 않음 (d_inode is NULL).
+	 *
+	 * 이 속성은 d_lock에 의해 보호된다.
+	 **/
 	unsigned int d_count;		/* protected by d_lock */
 	spinlock_t d_lock;		/* per dentry lock */
 	const struct dentry_operations *d_op;
 	struct super_block *d_sb;	/* The root of the dentry tree */
 	unsigned long d_time;		/* used by d_revalidate */
+	/** 20150404    
+	 * fs specific data.
+	 **/
 	void *d_fsdata;			/* fs-specific data */
 
+	/** 20150404    
+	 * 'unused', 'negative' 상태의 dentry가 연결되는 리스트.
+	 * dentry_lru_add에서 d_sb의 s_dentry_lru에 등록시킨다.
+	 **/
 	struct list_head d_lru;		/* LRU list */
 	/*
 	 * d_child and d_rcu can share memory
@@ -200,6 +217,9 @@ struct dentry_operations {
  */
 
 /* d_flags entries */
+/** 20150404    
+ * dentry_operations에 해당 op이 존재함을 dentry의 d_flags에 표시한다.
+ **/
 #define DCACHE_OP_HASH		0x0001
 #define DCACHE_OP_COMPARE	0x0002
 #define DCACHE_OP_REVALIDATE	0x0004
@@ -378,6 +398,9 @@ extern char *dentry_path(struct dentry *, char *, int);
  *	if appropriate and return the dentry. A dentry will not be 
  *	destroyed when it has references.
  */
+/** 20150404    
+ * dentry를 받아 NULL이 아니라면 reference count를 증가시켜 리턴한다.
+ **/
 static inline struct dentry *dget_dlock(struct dentry *dentry)
 {
 	if (dentry)
@@ -385,9 +408,16 @@ static inline struct dentry *dget_dlock(struct dentry *dentry)
 	return dentry;
 }
 
+/** 20150404    
+ * dentry의 reference count를 증가시킨다.
+ **/
 static inline struct dentry *dget(struct dentry *dentry)
 {
 	if (dentry) {
+		/** 20150404    
+		 * dentry의 d_count를 변경하기 위해 d_lock을 걸고
+		 * reference count를 증가시켜 리턴한다.
+		 **/
 		spin_lock(&dentry->d_lock);
 		dget_dlock(dentry);
 		spin_unlock(&dentry->d_lock);
@@ -404,6 +434,9 @@ extern struct dentry *dget_parent(struct dentry *dentry);
  *	Returns true if the dentry passed is not currently hashed.
  */
  
+/** 20150404    
+ * dentry가 unhashed인지(hashtable에 존재하지 않는 경우) 조회해 리턴한다.
+ **/
 static inline int d_unhashed(struct dentry *dentry)
 {
 	return hlist_bl_unhashed(&dentry->d_hash);
@@ -438,6 +471,9 @@ static inline bool d_mountpoint(struct dentry *dentry)
 	return dentry->d_flags & DCACHE_MOUNTED;
 }
 
+/** 20150404    
+ * dentry의 flags를 검사해 'dentry requires i_op->lookup'인지 검사한다.
+ **/
 static inline bool d_need_lookup(struct dentry *dentry)
 {
 	return dentry->d_flags & DCACHE_NEED_LOOKUP;

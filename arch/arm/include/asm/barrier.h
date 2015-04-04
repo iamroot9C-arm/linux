@@ -120,6 +120,8 @@
 #define smp_wmb()	dmb()
 #endif
 
+/** 20150404    
+ **/
 #define read_barrier_depends()		do { } while(0)
 #define smp_read_barrier_depends()	do { } while(0)
 

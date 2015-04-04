@@ -1326,6 +1326,9 @@ mount_fs(struct file_system_type *type, int flags, const char *name, void *data)
 		error = PTR_ERR(root);
 		goto out_free_secdata;
 	}
+	/** 20150404    
+	 * 여기부터...
+	 **/
 	sb = root->d_sb;
 	BUG_ON(!sb);
 	WARN_ON(!sb->s_bdi);

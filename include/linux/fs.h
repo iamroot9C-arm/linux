@@ -1548,6 +1548,9 @@ struct super_block {
 	const struct export_operations *s_export_op;
 	unsigned long		s_flags;
 	unsigned long		s_magic;
+	/** 20150404    
+	 * superblock의 root dentry는 별도로 저장한다.
+	 **/
 	struct dentry		*s_root;
 	struct rw_semaphore	s_umount;
 	struct mutex		s_lock;
@@ -2567,6 +2570,9 @@ extern struct inode * igrab(struct inode *);
 extern ino_t iunique(struct super_block *, ino_t);
 extern int inode_needs_sync(struct inode *inode);
 extern int generic_delete_inode(struct inode *inode);
+/** 20150404    
+ * inode의 hard link의 수가 0이거나 inode가 unhashed 상태라면 drop된 것이다.
+ **/
 static inline int generic_drop_inode(struct inode *inode)
 {
 	return !inode->i_nlink || inode_unhashed(inode);

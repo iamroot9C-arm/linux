@@ -245,25 +245,43 @@ static void sysfs_deactivate(struct sysfs_dirent *sd)
 	rwsem_release(&sd->dep_map, 1, _RET_IP_);
 }
 
+/** 20150404    
+ * sysfs를 위한 ida에서 inode로 사용한 정수값을 할당 받는다.
+ **/
 static int sysfs_alloc_ino(unsigned int *pino)
 {
 	int ino, rc;
 
  retry:
 	spin_lock(&sysfs_ino_lock);
+	/** 20150404    
+	 * sysfs_ino_ida로부터 새로운 ino를 받아온다.
+	 *
+	 * sysfs_root의 ino가 1번으로 고정되어 있고,
+	 * 새로운 dirent를 위해 받아오는 s_ino는 2이상의 값이다.
+	 **/
 	rc = ida_get_new_above(&sysfs_ino_ida, 2, &ino);
 	spin_unlock(&sysfs_ino_lock);
 
+	/** 20150404    
+	 * 미리 받아둔 ida가 부족하면 추가로 할당받아 채운 뒤 재시도 한다.
+	 **/
 	if (rc == -EAGAIN) {
 		if (ida_pre_get(&sysfs_ino_ida, GFP_KERNEL))
 			goto retry;
 		rc = -ENOMEM;
 	}
 
+	/** 20150404    
+	 * 받아온 ino를 매개변수로 넘어온 곳에 저장한다.
+	 **/
 	*pino = ino;
 	return rc;
 }
 
+/** 20150404    
+ * sysfs_ino_ida에서 ino를 제거한다.
+ **/
 static void sysfs_free_ino(unsigned int ino)
 {
 	spin_lock(&sysfs_ino_lock);
@@ -271,6 +289,14 @@ static void sysfs_free_ino(unsigned int ino)
 	spin_unlock(&sysfs_ino_lock);
 }
 
+/** 20150404    
+ * sysfs_direct를 받아와 사용한 메모리를 해제하고 관련 자료구조를 정리한다.
+ * 해당 sd를 제거하고, 부모 layer로 올라가 반복해 호출한다.
+ *
+ * 꼬리 재귀(tail recursion)의 형태를 repeat으로 구현함으로써 스택의 과도한
+ * 사용을 막는 구조이다.
+ * dput 등도 같은 원리로 구현되어 있다.
+ **/
 void release_sysfs_dirent(struct sysfs_dirent * sd)
 {
 	struct sysfs_dirent *parent_sd;
@@ -279,26 +305,56 @@ void release_sysfs_dirent(struct sysfs_dirent * sd)
 	/* Moving/renaming is always done while holding reference.
 	 * sd->s_parent won't change beneath us.
 	 */
+	/** 20150404    
+	 * sysfs_dirent의 parent를 받아둔다.
+	 **/
 	parent_sd = sd->s_parent;
 
+	/** 20150404    
+	 * sd의 sysfs_type이 kobj link라면 target_sd의 reference count를 감소시킨다.
+	 **/
 	if (sysfs_type(sd) == SYSFS_KOBJ_LINK)
 		sysfs_put(sd->s_symlink.target_sd);
+	/** 20150404    
+	 * sd의 sysfs_type에 SYSFS_COPY_NAME 속성이 있다면
+	 * s_name을 위해 할당한 메모리를 해제한다.
+	 **/
 	if (sysfs_type(sd) & SYSFS_COPY_NAME)
 		kfree(sd->s_name);
 	if (sd->s_iattr && sd->s_iattr->ia_secdata)
 		security_release_secctx(sd->s_iattr->ia_secdata,
 					sd->s_iattr->ia_secdata_len);
+	/** 20150404    
+	 * sd의 s_iaddtr를 해제한다.
+	 **/
 	kfree(sd->s_iattr);
+	/** 20150404    
+	 * sysfs ida에서 받은 s_ino를 제거한다.
+	 **/
 	sysfs_free_ino(sd->s_ino);
+	/** 20150404    
+	 * sd용 slub object를 해제한다.
+	 **/
 	kmem_cache_free(sysfs_dir_cachep, sd);
 
+	/** 20150404    
+	 * 백업 받아둔 parent_sd가 존재한다면 reference count를 감소시키고,
+	 * 반복해 호출한다.
+	 **/
 	sd = parent_sd;
 	if (sd && atomic_dec_and_test(&sd->s_count))
 		goto repeat;
 }
 
+/** 20150404    
+ * sysfs_dirent의 removed 속성을 검사해 결과를 리턴한다.
+ **/
 static int sysfs_dentry_delete(const struct dentry *dentry)
 {
+	/** 20150404    
+	 * dentry의 fsdata에 저장해둔 sysfs_dirent를 찾아와
+	 * SYSFS_FLAG_REMOVED가 아니라면 false의 의미로 0이 리턴된다.
+	 **/
 	struct sysfs_dirent *sd = dentry->d_fsdata;
 	return !(sd && !(sd->s_flags & SYSFS_FLAG_REMOVED));
 }
@@ -370,6 +426,9 @@ static void sysfs_dentry_release(struct dentry *dentry)
 	sysfs_put(dentry->d_fsdata);
 }
 
+/** 20150404    
+ * dentry operations.
+ **/
 const struct dentry_operations sysfs_dentry_ops = {
 	.d_revalidate	= sysfs_dentry_revalidate,
 	.d_delete	= sysfs_dentry_delete,

@@ -59,6 +59,10 @@ static inline unsigned long find_zero(unsigned long mask)
  * and the next page not being mapped, take the exception and
  * return zeroes in the non-existing part.
  */
+/** 20150404    
+ * unaligned word에 대한 비교 함수.
+ * 자세한 내용은 추후 분석???
+ **/
 static inline unsigned long load_unaligned_zeropad(const void *addr)
 {
 	unsigned long ret, offset;

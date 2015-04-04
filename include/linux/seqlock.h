@@ -311,7 +311,8 @@ static inline int __read_seqcount_retry(const seqcount_t *s, unsigned start)
  */
 
 /** 20140705
- * 메모리 배리어를 설정하고 현재 seqcount값과 다를 경우 seqcount를 다시 읽어야 한다.
+ * 메모리 배리어를 두고 다시 읽어 현재 값과 처음 읽은 값을 비교한다.
+ * 다르다면 true로 재시도 해야 한다.
  */
 static inline int read_seqcount_retry(const seqcount_t *s, unsigned start)
 {

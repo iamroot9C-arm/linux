@@ -38,6 +38,9 @@ struct sysfs_elem_bin_attr {
 	struct hlist_head	buffers;
 };
 
+/** 20150404    
+ * sysfs의 inode attributes
+ **/
 struct sysfs_inode_attrs {
 	struct iattr	ia_iattr;
 	void		*ia_secdata;
@@ -105,6 +108,9 @@ struct sysfs_dirent {
 #define SYSFS_FLAG_MASK			~(SYSFS_NS_TYPE_MASK|SYSFS_TYPE_MASK)
 #define SYSFS_FLAG_REMOVED		0x02000
 
+/** 20150404    
+ * sysfs_direct의 s_flags 중 TYPE 부분을 마스킹 해온다.
+ **/
 static inline unsigned int sysfs_type(struct sysfs_dirent *sd)
 {
 	return sd->s_flags & SYSFS_TYPE_MASK;
@@ -213,6 +219,11 @@ static inline struct sysfs_dirent *__sysfs_get(struct sysfs_dirent *sd)
 }
 #define sysfs_get(sd) __sysfs_get(sd)
 
+/** 20150404    
+ * sysfs_dirent의 s_count를 감소시키고, 0이 되었다면 해당 dirent를 제거한다.
+ *
+ * sd를 제거함으로써 parent의 reference count도 0이 된다면 반복해 호출한다.
+ **/
 static inline void __sysfs_put(struct sysfs_dirent *sd)
 {
 	if (sd && atomic_dec_and_test(&sd->s_count))

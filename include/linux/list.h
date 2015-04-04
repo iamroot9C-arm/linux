@@ -695,6 +695,11 @@ static inline void INIT_HLIST_NODE(struct hlist_node *h)
 	h->pprev = NULL;
 }
 
+/** 20150404    
+ * hash node가 현재 hlist에 등록되어 있지 않은 상태인지 검사한다.
+ *
+ * hlist_node의 pprev가 NULL이라면 hash list에 등록되지 않은 상태.
+ **/
 static inline int hlist_unhashed(const struct hlist_node *h)
 {
 	return !h->pprev;

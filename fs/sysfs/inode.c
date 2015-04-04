@@ -358,12 +358,24 @@ struct inode * sysfs_get_inode(struct super_block *sb, struct sysfs_dirent *sd)
  * super_operations.evict_inode() implementation is needed to drop that
  * reference upon inode destruction.
  */
+/** 20150404    
+ * sysfs의 evice_inode 콜백 함수.
+ **/
 void sysfs_evict_inode(struct inode *inode)
 {
+	/** 20150404    
+	 * i_private에 저장해 뒀던 sysfs_direct를 받아와
+	 **/
 	struct sysfs_dirent *sd  = inode->i_private;
 
+	/** 20150404    
+	 * 추후 분석???
+	 **/
 	truncate_inode_pages(&inode->i_data, 0);
 	clear_inode(inode);
+	/** 20150404    
+	 * 해당 sysfs_direct의 reference count를 감소시키고, 해제한다.
+	 **/
 	sysfs_put(sd);
 }
 

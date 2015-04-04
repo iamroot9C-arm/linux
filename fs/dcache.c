@@ -81,6 +81,9 @@
 int sysctl_vfs_cache_pressure __read_mostly = 100;
 EXPORT_SYMBOL_GPL(sysctl_vfs_cache_pressure);
 
+/** 20150404    
+ * d_lru를 변경할 때 사용하는 global spinlock.
+ **/
 static __cacheline_aligned_in_smp DEFINE_SPINLOCK(dcache_lru_lock);
 __cacheline_aligned_in_smp DEFINE_SEQLOCK(rename_lock);
 
@@ -173,6 +176,10 @@ int proc_nr_dentry(ctl_table *table, int write, void __user *buffer,
  * In contrast, 'ct' and 'tcount' can be from a pathname, and do
  * need the careful unaligned handling.
  */
+/** 20150404    
+ * dentry로부터 온 name과 pathname으로 넘어온 name을 word 단위로 비교해
+ * 같으면 0, 다르면 1을 리턴한다.
+ **/
 static inline int dentry_string_cmp(const unsigned char *cs, const unsigned char *ct, unsigned tcount)
 {
 	unsigned long a,b,mask;
@@ -210,6 +217,10 @@ static inline int dentry_string_cmp(const unsigned char *cs, const unsigned char
 
 #endif
 
+/** 20150404    
+ * dentry가 주어진 이름과 같은 이름에 대한 것인지 결과를 리턴한다.
+ * 같으면 0 리턴.
+ **/
 static inline int dentry_cmp(const struct dentry *dentry, const unsigned char *ct, unsigned tcount)
 {
 	const unsigned char *cs;
@@ -229,8 +240,14 @@ static inline int dentry_cmp(const struct dentry *dentry, const unsigned char *c
 	 * early because the data cannot match (there can
 	 * be no NUL in the ct/tcount data)
 	 */
+	/** 20150404    
+	 * rename에 따른 RCU walk racing을 막기 위해 name pointer로 접근해 값을 가져온다.
+	 **/
 	cs = ACCESS_ONCE(dentry->d_name.name);
 	smp_read_barrier_depends();
+	/** 20150404    
+	 * dentry의 name과 argument로 넘어온 name을 비교해 결과를 리턴한다.
+	 **/
 	return dentry_string_cmp(cs, ct, tcount);
 }
 
@@ -335,10 +352,23 @@ static void dentry_unlink_inode(struct dentry * dentry)
 /*
  * dentry_lru_(add|del|prune|move_tail) must be called with d_lock held.
  */
+/** 20150404    
+ * unused dentry를 superblock의 s_dentry_lru에 등록시키고 숫자를 증가시킨다.
+ **/
 static void dentry_lru_add(struct dentry *dentry)
 {
+	/** 20150404    
+	 * 이미 dentry가 다른 d_lru에 등록되지 않은 경우에 한해,
+	 **/
 	if (list_empty(&dentry->d_lru)) {
+		/** 20150404    
+		 * d_lru 변경에는 global spinlock을 사용한다.
+		 **/
 		spin_lock(&dcache_lru_lock);
+		/** 20150404    
+		 * unused dentry를 superblock의 dentry_lru에 연결시키고,
+		 * lru에 등록된 dentry의 수를 증가시킨다.
+		 **/
 		list_add(&dentry->d_lru, &dentry->d_sb->s_dentry_lru);
 		dentry->d_sb->s_nr_dentry_unused++;
 		dentry_stat.nr_unused++;
@@ -575,22 +605,42 @@ void dput(struct dentry *dentry)
 		return;
 
 repeat:
+	/** 20150404    
+	 * d_count가 현재 1이라면 현재 사용 중인 dentry이므로
+	 * sleep 될 수 있다.
+	 **/
 	if (dentry->d_count == 1)
 		might_sleep();
+	/** 20150404    
+	 * d_count는 d_lock에 의해 보호된다.
+	 * 이미 0이라면 dput이 불가능한 상태이므로 BUG.
+	 **/
 	spin_lock(&dentry->d_lock);
 	BUG_ON(!dentry->d_count);
+	/** 20150404    
+	 * d_count가 1보다 크면 reference count만 감소시키고 리턴.
+	 **/
 	if (dentry->d_count > 1) {
 		dentry->d_count--;
 		spin_unlock(&dentry->d_lock);
 		return;
 	}
 
+	/** 20150404    
+	 * dentry callback으로 delete 함수가 존재하면 호출한다.
+	 * 결과 참이 리턴되면 kill_it으로 이동해 해결한다.
+	 *
+	 * sysfs의 경우 sysfs_dentry_delete가 호출된다. 
+	 **/
 	if (dentry->d_flags & DCACHE_OP_DELETE) {
 		if (dentry->d_op->d_delete(dentry))
 			goto kill_it;
 	}
 
 	/* Unreachable? Get rid of it */
+	/** 20150404    
+	 * dentry가 hash되지 않다면 kill_it으로 이동해 해결한다.
+	 **/
  	if (d_unhashed(dentry))
 		goto kill_it;
 
@@ -601,8 +651,14 @@ repeat:
 	 */
 	if (!d_need_lookup(dentry))
 		dentry->d_flags |= DCACHE_REFERENCED;
+	/** 20150404    
+	 * unused dentry를 superblock의 lru에 등록한다.
+	 **/
 	dentry_lru_add(dentry);
 
+	/** 20150404    
+	 * dentry의 reference count를 감소시킨다.
+	 **/
 	dentry->d_count--;
 	spin_unlock(&dentry->d_lock);
 	return;
@@ -1357,6 +1413,8 @@ struct dentry *__d_alloc(struct super_block *sb, const struct qstr *name)
 
 	/** 20150328    
 	 * dentry의 속성들을 초기화 한다.
+	 *
+	 * d_count는 dentry 생성과 동시에 1로 초기화해 사용 중임을 나타낸다.
 	 **/
 	dentry->d_count = 1;
 	dentry->d_flags = 0;
@@ -1462,7 +1520,10 @@ void d_set_d_op(struct dentry *dentry, const struct dentry_operations *op)
 EXPORT_SYMBOL(d_set_d_op);
 
 /** 20150328    
- * dentry를 해당하는 inode에 연결시킨다.
+ * dentry를 인스턴스화 시킨다.
+ *
+ * inode가 존재한다면 dentry를 inode에 연결시킨다.
+ * inode의 i_dentry에 추가한다.
  **/
 static void __d_instantiate(struct dentry *dentry, struct inode *inode)
 {
@@ -1471,7 +1532,8 @@ static void __d_instantiate(struct dentry *dentry, struct inode *inode)
 	 **/
 	spin_lock(&dentry->d_lock);
 	/** 20150328    
-	 * inode가 주어졌다면 dentry를 inode의 i_dentry 리스트에 추가한다. 
+	 * inode가 NULL이 아니라면(invalid dentry가 아니라면)
+	 * dentry를 inode의 i_dentry 리스트에 추가한다. 
 	 **/
 	if (inode) {
 		if (unlikely(IS_AUTOMOUNT(inode)))
@@ -1480,6 +1542,7 @@ static void __d_instantiate(struct dentry *dentry, struct inode *inode)
 	}
 	/** 20150328    
 	 * dentry가 가리키는 inode를 저장한다.
+	 * invalid dentry의 경우 NULL이 저장된다.
 	 **/
 	dentry->d_inode = inode;
 	dentry_rcuwalk_barrier(dentry);
@@ -1503,10 +1566,14 @@ static void __d_instantiate(struct dentry *dentry, struct inode *inode)
  */
  
 /** 20150328    
- * inode에 dentry를 추가한다.
+ * dentry에 inode 정보를 채워 인스턴스화 시킨다.
+ * inode가 NULL인 경우 invalid dentry.
  **/
 void d_instantiate(struct dentry *entry, struct inode * inode)
 {
+	/** 20150404    
+	 * 현재 dentry가 hash되어 있다면 BUG다.
+	 **/
 	BUG_ON(!hlist_unhashed(&entry->d_alias));
 	/** 20150328    
 	 * inode가 존재하면 inode를 변경하기 위해 lock을 획득한다.
@@ -1596,6 +1663,9 @@ struct dentry *d_instantiate_unique(struct dentry *entry, struct inode *inode)
 
 EXPORT_SYMBOL(d_instantiate_unique);
 
+/** 20150404    
+ * root_inode가 주어지면, 해당 inode를 위한 dentry를 할당받고 초기화해 리턴한다.
+ **/
 struct dentry *d_make_root(struct inode *root_inode)
 {
 	struct dentry *res = NULL;
@@ -1617,6 +1687,9 @@ struct dentry *d_make_root(struct inode *root_inode)
 			 **/
 			d_instantiate(res, root_inode);
 		else
+			/** 20150404    
+			 * dentry alloc이 실패했다면 root_inode의 reference count를 감소시킨다.
+			 **/
 			iput(root_inode);
 	}
 	return res;
@@ -1922,7 +1995,10 @@ static noinline enum slow_d_compare slow_dentry_cmp(
  * number we've returned before using any of the resulting dentry state!
  */
 /** 20150328    
- * 여기부터...
+ * parent dentry와 name으로 dcache에서 dentry를 찾는 d_lookup의 rcu-walk 버전.
+ *
+ * http://studyfoss.egloos.com/5469672
+ * Documentation/filesystems/path-lookup.txt.
  **/
 struct dentry *__d_lookup_rcu(const struct dentry *parent,
 				const struct qstr *name,
@@ -1982,6 +2058,9 @@ seqretry:
 		/** 20150328    
 		 * dentry에 대한 read-side ciritical section
 		 * raw_seqcount_begin ~ slow_dentry_cmp(read_seqcount_retry)
+		 *
+		 * rename이 동시에 이루어지는 경우로부터 보호하기 위한 sequence count.
+		 * lock을 걸어 dentry가 변경되는 것을 방지하기 위해 seqlock방식을 사용한다.
 		 **/
 		seq = raw_seqcount_begin(&dentry->d_seq);
 		if (dentry->d_parent != parent)
@@ -2010,6 +2089,8 @@ seqretry:
 		}
 
 		/** 20150328    
+		 * parent dentry 속성에 DCACHE_OP_COMPARE이 없다면
+		 * 먼저 hash_len을 비교하고 dentry_cmp로 비교해 일치하면 dentry를 리턴한다.
 		 **/
 		if (dentry->d_name.hash_len != hashlen)
 			continue;
@@ -3214,6 +3295,9 @@ static void __init dcache_init_early(void)
 	 * 초기값 0을 갖고 있을 것이다.
 	 *
 	 * dentry용 hash table을 생성한다.
+	 *
+	 * 출력 예)
+	 * Dentry cache hash table entries: 131072 (order: 7, 524288 bytes)
 	 **/
 	dentry_hashtable =
 		alloc_large_system_hash("Dentry cache",

@@ -1301,6 +1301,10 @@ static int lookup_fast(struct nameidata *nd, struct qstr *name,
 	 * of a false negative due to a concurrent rename, we're going to
 	 * do the non-racy lookup, below.
 	 */
+	/** 20150404    
+	 * nameidata의 flags에 LOOKUP_RCU 속성이 있는 경우 __d_lookup_rcu에
+	 * parent dentry와 name을 key로 하여 dentry를 검색한다.
+	 **/
 	if (nd->flags & LOOKUP_RCU) {
 		unsigned seq;
 		dentry = __d_lookup_rcu(parent, name, &seq, nd->inode);
@@ -1311,6 +1315,10 @@ static int lookup_fast(struct nameidata *nd, struct qstr *name,
 		 * This sequence count validates that the inode matches
 		 * the dentry name information from lookup.
 		 */
+		/** 20150404    
+		 * dentry를 찾은 경우, dentry의 inode를 받아온다.
+		 * inode를 받아오는 중에 d_seq가 변경되었다면, ECHILD를 리턴한다.
+		 **/
 		*inode = dentry->d_inode;
 		if (read_seqcount_retry(&dentry->d_seq, seq))
 			return -ECHILD;

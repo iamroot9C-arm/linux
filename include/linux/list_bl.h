@@ -63,6 +63,10 @@ static inline void INIT_HLIST_BL_NODE(struct hlist_bl_node *h)
  **/
 #define hlist_bl_entry(ptr, type, member) container_of(ptr,type,member)
 
+/** 20150404    
+ * hlist node의 pprev가 NULL이라면 현재 hashlist에 등록되지 않는 노드이다.
+ * 따라서 unhashed이다.
+ **/
 static inline int hlist_bl_unhashed(const struct hlist_bl_node *h)
 {
 	return !h->pprev;

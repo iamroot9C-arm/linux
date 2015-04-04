@@ -51,10 +51,9 @@ struct bug_entry {
 } while (0)
 #endif
 
-/**20121110
- 조건이 true이면 
-Kernel panic 발생시키는듯...???
-**/
+/** 20121110
+ * 조건이 true이면 BUG이다.
+ **/
 #ifndef HAVE_ARCH_BUG_ON
 #define BUG_ON(condition) do { if (unlikely(condition)) BUG(); } while(0)
 #endif

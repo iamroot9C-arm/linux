@@ -280,16 +280,27 @@ void __destroy_inode(struct inode *inode)
 }
 EXPORT_SYMBOL(__destroy_inode);
 
+/** 20150404    
+ * rcu_head를 포함하는 inode 오브젝트를 받아와 slub object를 해제한다.
+ **/
 static void i_callback(struct rcu_head *head)
 {
 	struct inode *inode = container_of(head, struct inode, i_rcu);
 	kmem_cache_free(inode_cachep, inode);
 }
 
+/** 20150404    
+ * inode 오브젝트를 제거한다.
+ **/
 static void destroy_inode(struct inode *inode)
 {
 	BUG_ON(!list_empty(&inode->i_lru));
 	__destroy_inode(inode);
+	/** 20150404    
+	 * inode가 속한 superblock에 callback 함수가 존재하면
+	 * 해당 함수를 호출해 inode를 해제한다.
+	 * 그렇지 않으면 rcu에 의해 i_callback함수를 호출해 제거한다.
+	 **/
 	if (inode->i_sb->s_op->destroy_inode)
 		inode->i_sb->s_op->destroy_inode(inode);
 	else
@@ -485,7 +496,7 @@ static void inode_lru_list_del(struct inode *inode)
  * @inode: inode to add
  */
 /** 20150321    
- * inode가 속한 superblock의 리스트에 inode를 등록한다.
+ * inode가 속한 superblock의 s_inodes 리스트에서 inode를 등록한다.
  **/
 void inode_sb_list_add(struct inode *inode)
 {
@@ -495,6 +506,9 @@ void inode_sb_list_add(struct inode *inode)
 }
 EXPORT_SYMBOL_GPL(inode_sb_list_add);
 
+/** 20150404    
+ * inode가 속한 superblock의 리스트에서 inode를 제거한다.
+ **/
 static inline void inode_sb_list_del(struct inode *inode)
 {
 	if (!list_empty(&inode->i_sb_list)) {
@@ -553,6 +567,9 @@ void __remove_inode_hash(struct inode *inode)
 }
 EXPORT_SYMBOL(__remove_inode_hash);
 
+/** 20150404    
+ * 추후 분석
+ **/
 void clear_inode(struct inode *inode)
 {
 	might_sleep();
@@ -585,6 +602,10 @@ EXPORT_SYMBOL(clear_inode);
  * the cache. This should occur atomically with setting the I_FREEING state
  * flag, so no inodes here should ever be on the LRU when being evicted.
  */
+/** 20150404    
+ * 전달받은 inode 객체를 해제하고, IO의 완료를 대기한다.
+ * 자세한 사항은 추후 분석???
+ **/
 static void evict(struct inode *inode)
 {
 	const struct super_operations *op = inode->i_sb->s_op;
@@ -592,9 +613,15 @@ static void evict(struct inode *inode)
 	BUG_ON(!(inode->i_state & I_FREEING));
 	BUG_ON(!list_empty(&inode->i_lru));
 
+	/** 20150404    
+	 * inode가 writeback 리스트에 등록되어 있다면 wb list에서 제거한다.
+	 **/
 	if (!list_empty(&inode->i_wb_list))
 		inode_wb_list_del(inode);
 
+	/** 20150404    
+	 * inode를 superblock 리스트에서 제거한다.
+	 **/
 	inode_sb_list_del(inode);
 
 	/*
@@ -603,15 +630,29 @@ static void evict(struct inode *inode)
 	 * the inode has I_FREEING set, flusher thread won't start new work on
 	 * the inode.  We just have to wait for running writeback to finish.
 	 */
+	/** 20150404    
+	 * writeback이 완료될 때까지 대기한다.
+	 **/
 	inode_wait_for_writeback(inode);
 
+	/** 20150404    
+	 * superblock_operations에 evict_inode가 정의되어 있다면 호출하고,
+	 * 그렇지 않다면 공통의 해제 루틴이 수행된다.
+	 **/
 	if (op->evict_inode) {
 		op->evict_inode(inode);
 	} else {
+		/** 20150404    
+		 * inode를 위해 매핑된 page들을 해제하는 루틴.
+		 * 자세한 사항은 추후 분석???
+		 **/
 		if (inode->i_data.nrpages)
 			truncate_inode_pages(&inode->i_data, 0);
 		clear_inode(inode);
 	}
+	/** 20150404    
+	 * 추후 분석???
+	 **/
 	if (S_ISBLK(inode->i_mode) && inode->i_bdev)
 		bd_forget(inode);
 	if (S_ISCHR(inode->i_mode) && inode->i_cdev)
@@ -624,6 +665,9 @@ static void evict(struct inode *inode)
 	BUG_ON(inode->i_state != (I_FREEING | I_CLEAR));
 	spin_unlock(&inode->i_lock);
 
+	/** 20150404    
+	 * inode 객체를 제거한다.
+	 **/
 	destroy_inode(inode);
 }
 
@@ -1490,6 +1534,9 @@ int insert_inode_locked4(struct inode *inode, unsigned long hashval,
 EXPORT_SYMBOL(insert_inode_locked4);
 
 
+/** 20150404    
+ * 일반적인 inode delete에서는 특별한 동작을 취하지 않고 참을 리턴.
+ **/
 int generic_delete_inode(struct inode *inode)
 {
 	return 1;
@@ -1506,19 +1553,38 @@ EXPORT_SYMBOL(generic_delete_inode);
  * in cache if fs is alive, sync and evict if fs is
  * shutting down.
  */
+/** 20150404    
+ * inode에 대한 마지막 reference가 해제되었을 때 호출된다.
+ * 자세한 사항은 추후 분석???
+ **/
 static void iput_final(struct inode *inode)
 {
 	struct super_block *sb = inode->i_sb;
+	/** 20150404    
+	 * inode가 가리키는 superblock으로부터 superblock_operations를 가져온다.
+	 **/
 	const struct super_operations *op = inode->i_sb->s_op;
 	int drop;
 
+	/** 20150404    
+	 * I_NEW 상태라면 경고를 출력한다.
+	 **/
 	WARN_ON(inode->i_state & I_NEW);
 
+	/** 20150404    
+	 * s_op에 drop_inode가 정의되어 있으면 호출하고,
+	 * 그렇지 않으면 generic_drop_inode를 호출한다.
+	 *
+	 * sysfs의 경우, sysfs_ops에서 drop_inode를 정의하고 있다.
+	 **/
 	if (op->drop_inode)
 		drop = op->drop_inode(inode);
 	else
 		drop = generic_drop_inode(inode);
 
+	/** 20150404    
+	 * drop이 실패했고 superblock에 mount superblock active 속성이 있다면
+	 **/
 	if (!drop && (sb->s_flags & MS_ACTIVE)) {
 		inode->i_state |= I_REFERENCED;
 		if (!(inode->i_state & (I_DIRTY|I_SYNC)))
@@ -1541,6 +1607,10 @@ static void iput_final(struct inode *inode)
 		inode_lru_list_del(inode);
 	spin_unlock(&inode->i_lock);
 
+	/** 20150404    
+	 * inode에 관련된 writeback 작업과 매핑된 page들을 정리하는 작업들을 수행한다.
+	 * 자세한 내용은 추후 분석???
+	 **/
 	evict(inode);
 }
 
@@ -1554,6 +1624,9 @@ static void iput_final(struct inode *inode)
  *	Consequently, iput() can sleep.
  */
 /** 20150328    
+ * 해당 inode의 reference count를 감소시킨다.
+ *
+ * iput_final 추후 분석???
  **/
 void iput(struct inode *inode)
 {
@@ -1565,9 +1638,8 @@ void iput(struct inode *inode)
 		BUG_ON(inode->i_state & I_CLEAR);
 
 		/** 20150328    
-		 * inode의 i_count를 하나 감소시키고, 0이 되었다면 lock이 걸린 상태에서
-		 * iput_final을 호출한다.
-		 * 즉, inode의 reference count를 감소시켜 0에 도달하였다면
+		 * inode의 reference count를 하나 감소시키고,
+		 * 0이 되었다면 lock을 걸고 iput_final을 호출한다.
 		 **/
 		if (atomic_dec_and_lock(&inode->i_count, &inode->i_lock))
 			iput_final(inode);
@@ -1828,6 +1900,9 @@ int inode_needs_sync(struct inode *inode)
 }
 EXPORT_SYMBOL(inode_needs_sync);
 
+/** 20150404    
+ * inode가 기다리는 방식.
+ **/
 int inode_wait(void *word)
 {
 	schedule();

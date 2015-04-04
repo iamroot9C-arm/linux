@@ -53,9 +53,11 @@ struct sysfs_dirent sysfs_root = {
 };
 
 /** 20150321    
+ * superblock 오브젝트를 받아 관련 정보를 채운다.
  *
- * sb에 정보를 채워 넣는다.
- *   struct super_operations 's_op'도 여기서 채워진다.
+ * sysfs_root에 대한 inode를 받아오고(없으면 생성), 
+ * 해당 inode에 대한 dentry를 생성한다.
+ * struct super_operations 's_op'도 여기서 채워진다.
  **/
 static int sysfs_fill_super(struct super_block *sb, void *data, int silent)
 {
@@ -89,12 +91,21 @@ static int sysfs_fill_super(struct super_block *sb, void *data, int silent)
 	}
 
 	/* instantiate and link root dentry */
+	/** 20150404    
+	 * root inode에 대한 dentry를 할당받고 초기화 한다.
+	 **/
 	root = d_make_root(inode);
 	if (!root) {
 		pr_debug("%s: could not get root dentry!\n",__func__);
 		return -ENOMEM;
 	}
+	/** 20150404    
+	 * root inode에 대한 dentry의 fsdata에 sysfs_root dirent를 저장한다.
+	 **/
 	root->d_fsdata = &sysfs_root;
+	/** 20150404    
+	 * superblock의 root dentry 정보와 dentry_operations를 저장한다.
+	 **/
 	sb->s_root = root;
 	sb->s_d_op = &sysfs_dentry_ops;
 	return 0;
@@ -140,9 +151,8 @@ static void free_sysfs_super_info(struct sysfs_super_info *info)
 }
 
 /** 20150221    
- * sysfs용 mount 함수. super block에 대한 dentry를 받아와 리턴한다.
- *
- * sysfs는 superblock을 sget으로 받아온다.
+ * sysfs용 mount 함수.
+ * super block를 찾거나 생성한 뒤 받아와 정보를 채우고, superblock에 대한 dentry를 * 받아와 리턴한다.
  **/
 static struct dentry *sysfs_mount(struct file_system_type *fs_type, int flags, const char *dev_name, void *data)
 {
@@ -180,6 +190,8 @@ static struct dentry *sysfs_mount(struct file_system_type *fs_type, int flags, c
 	/** 20150314    
 	 * superblock의 dentry (s_root)가 존재하지 않는다면
 	 * sget에서 새로 만들어진 superblock이므로 정보를 채워 넣는다.
+	 * 
+	 * 이 때 inode와 dentry 역시 생성한다.
 	 **/
 	if (!sb->s_root) {
 		error = sysfs_fill_super(sb, data, flags & MS_SILENT ? 1 : 0);
@@ -187,9 +199,15 @@ static struct dentry *sysfs_mount(struct file_system_type *fs_type, int flags, c
 			deactivate_locked_super(sb);
 			return ERR_PTR(error);
 		}
+		/** 20150404    
+		 * 이제 superblock을 사용가능하므로 MS_ACTIVE를 표시한다.
+		 **/
 		sb->s_flags |= MS_ACTIVE;
 	}
 
+	/** 20150404    
+	 * 받아온 superblock의 dentry ("/")의 reference count를 증가시켜 리턴한다.
+	 **/
 	return dget(sb->s_root);
 }
 
@@ -271,6 +289,9 @@ struct sysfs_dirent *sysfs_get(struct sysfs_dirent *sd)
 EXPORT_SYMBOL_GPL(sysfs_get);
 
 #undef sysfs_put
+/** 20150404    
+ * sysfs_dirent의 reference count를 감소시키고, 0이 되면 사용한 object와 메모리를 해제한다.
+ **/
 void sysfs_put(struct sysfs_dirent *sd)
 {
 	__sysfs_put(sd);
