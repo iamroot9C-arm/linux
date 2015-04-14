@@ -16,11 +16,17 @@
 struct sysfs_open_dirent;
 
 /* type-specific structures for sysfs_dirent->s_* union members */
+/** 20150411    
+ * sysfs_dirent가 directory인 경우에 해당하는 union 멤버.
+ **/
 struct sysfs_elem_dir {
 	struct kobject		*kobj;
 
 	unsigned long		subdirs;
 	/* children rbtree starts here and goes through sd->s_rb */
+	/** 20150411    
+	 * children rbtree
+	 **/
 	struct rb_root		children;
 };
 
@@ -58,6 +64,7 @@ struct sysfs_inode_attrs {
 /** 20150314    
  * sysfs 계층 구조에서 각 sysfs 노드의 블럭 정보.
  *
+ * s_parent : parent인 sysfs_dirent를 지정한다.
  * s_count : reference count
  **/
 struct sysfs_dirent {
@@ -120,6 +127,9 @@ static inline unsigned int sysfs_type(struct sysfs_dirent *sd)
  * Return any namespace tags on this dirent.
  * enum kobj_ns_type is defined in linux/kobject.h
  */
+/** 20150411    
+ * sysfs_dirent의 s_flags에 포함된 NS TYPE을 추출한다.
+ **/
 static inline enum kobj_ns_type sysfs_ns_type(struct sysfs_dirent *sd)
 {
 	return (sd->s_flags & SYSFS_NS_TYPE_MASK) >> SYSFS_NS_TYPE_SHIFT;
@@ -142,6 +152,10 @@ do {								\
 /*
  * Context structure to be used while adding/removing nodes.
  */
+/** 20150411    
+ * sysfs에 add/rm시 사용되는 context.
+ * parent와 removed sysfs_dirent가 저장된다.
+ **/
 struct sysfs_addrm_cxt {
 	struct sysfs_dirent	*parent_sd;
 	struct sysfs_dirent	*removed;

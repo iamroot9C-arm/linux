@@ -71,6 +71,10 @@ static int __init parse_tag_initrd(const struct tag *tag)
 
 __tagtable(ATAG_INITRD, parse_tag_initrd);
 
+/** 20150411    
+ * qemu에서 -initrd debug_with_qemu/busybox-1.20.2/rootfs.img를 준 경우
+ * atags를 파싱해 initrd 정보를 채움.
+ **/
 static int __init parse_tag_initrd2(const struct tag *tag)
 {
 	phys_initrd_start = tag->u.initrd.start;
@@ -442,10 +446,10 @@ void __init arm_memblock_init(struct meminfo *mi, struct machine_desc *mdesc)
 	/** 20130126    
 	 * initrd로 주어진 메모리 공간이 memblock.memory 영역 안에 없다면 initrd를 무시
 	 **/
-/** 20130810
-initrd지정된 영역이 region memory에 존재 하지 않을경우
-유효하지 않는 주소로 판단하고 무시
-**/
+	/** 20130810
+	  initrd지정된 영역이 region memory에 존재 하지 않을경우
+	  유효하지 않는 주소로 판단하고 무시
+	 **/
 	if (phys_initrd_size &&
 	    !memblock_is_region_memory(phys_initrd_start, phys_initrd_size)) {
 		pr_err("INITRD: 0x%08lx+0x%08lx is not a memory region - disabling initrd\n",
@@ -462,8 +466,8 @@ initrd지정된 영역이 region memory에 존재 하지 않을경우
 		phys_initrd_start = phys_initrd_size = 0;
 	}
 	/** 20130810
-	그리고 initrd_size가 있다면.. 
-	**/
+	 * 그리고 initrd_size가 있다면.. 
+	 **/
 	if (phys_initrd_size) {
 		/** 20130126    
 		 * initrd 메모리 영역을 memblock.reserved에 등록

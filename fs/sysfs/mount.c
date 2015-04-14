@@ -233,6 +233,14 @@ static struct file_system_type sysfs_fs_type = {
 	.kill_sb	= sysfs_kill_sb,
 };
 
+/** 20150411    
+ * sysfs 초기화를 수행한다.
+ *
+ * 1. "sysfs_dir_cache" kmem cache를 생성한다.
+ * 2. sysfs inode 관련 초기화를 수행한다.
+ * 3. sysfs를 레지스터 한다.
+ * 4. sysfs 파일시스템을 마운트 한다.
+ **/
 int __init sysfs_init(void)
 {
 	int err = -ENOMEM;
@@ -260,6 +268,9 @@ int __init sysfs_init(void)
 	 **/
 	err = register_filesystem(&sysfs_fs_type);
 	if (!err) {
+		/** 20150411    
+		 * sysfs 파일시스템을 internal로 mount하고, vfsmount 객체를 리턴 받는다.
+		 **/
 		sysfs_mnt = kern_mount(&sysfs_fs_type);
 		if (IS_ERR(sysfs_mnt)) {
 			printk(KERN_ERR "sysfs: could not mount!\n");
@@ -273,6 +284,9 @@ int __init sysfs_init(void)
 out:
 	return err;
 out_err:
+	/** 20150411    
+	 * 실패한 경우 sysfs_dir_cachep kmem cache를 제거한다.
+	 **/
 	kmem_cache_destroy(sysfs_dir_cachep);
 	sysfs_dir_cachep = NULL;
 	goto out;

@@ -107,6 +107,9 @@ struct rb_node
 } __attribute__((aligned(sizeof(long))));
     /* The alignment might seem pointless, but allegedly CRIS needs it */
 
+/** 20150411    
+ * red-block tree의 root node를 가리키는 구조체.
+ **/
 struct rb_root
 {
 	struct rb_node *rb_node;

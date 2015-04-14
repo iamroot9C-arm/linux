@@ -599,6 +599,13 @@ relock:
  * releasing its resources. If the parent dentries were scheduled for release
  * they too may now get deleted.
  */
+/** 20150411    
+ * dentry의 사용을 해제한다.
+ *
+ * usage count(d_count)를 보고 > 1이면 count만 감소시키고 리턴시키고,
+ * 그렇지 않을 경우 사용이 끝난 dentry이므로
+ *   콜백함수를 호출해 처리하고, dentry를 superblock의 lru에 연결시킨다.
+ **/
 void dput(struct dentry *dentry)
 {
 	if (!dentry)

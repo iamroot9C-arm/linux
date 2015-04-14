@@ -3028,6 +3028,9 @@ static inline void free_secdata(void *secdata)
 
 #else
 
+/** 20150411    
+ * CONFIG_SECURITY를 사용하지 않았다.
+ **/
 static inline char *alloc_secdata(void)
 {
         return (char *)1;

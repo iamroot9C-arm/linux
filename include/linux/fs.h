@@ -487,12 +487,19 @@ typedef void (dio_iodone_t)(struct kiocb *iocb, loff_t offset,
  *
  * Derek Atkins <warlord@MIT.EDU> 94-10-20
  */
+/** 20150411    
+ **/
 struct iattr {
 	unsigned int	ia_valid;
 	umode_t		ia_mode;
 	kuid_t		ia_uid;
 	kgid_t		ia_gid;
 	loff_t		ia_size;
+	/** 20150411    
+	 * ia_atime : time of last access
+	 * ia_mtime : time of last data modification
+	 * ia_ctime : time of last status change
+	 **/
 	struct timespec	ia_atime;
 	struct timespec	ia_mtime;
 	struct timespec	ia_ctime;
@@ -1571,6 +1578,9 @@ struct super_block {
 #else
 	struct list_head	s_files;
 #endif
+	/** 20150411    
+	 * mount instance를 superblock의 리스트에 등록된다.
+	 **/
 	struct list_head	s_mounts;	/* list of mounts; _not_ for fs use */
 	/* s_dentry_lru, s_nr_dentry_unused protected by dcache.c lru locks */
 	struct list_head	s_dentry_lru;	/* unused dentry lru */

@@ -2797,6 +2797,9 @@ static inline int rcu_blocking_is_gp(void)
  * the same, but can differ in realtime RCU implementations.
  */
 /** 20141025    
+ * rcu-sched의 grace period가 지나갈 때까지 기다린다.
+ * 이미 존재하는 rcu-sched의 read-side critical section이 완료될 때까지 기다린다.
+ *
  * synchronize_rcu의 non-PREEMPT 버전.
  * call_rcu_sched를 호출하고 대기한다.
  **/

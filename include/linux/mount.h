@@ -50,6 +50,9 @@ struct mnt_namespace;
  **/
 #define MNT_INTERNAL	0x4000
 
+/** 20150411    
+ * vfs에서 사용된 mount 관련 description.
+ **/
 struct vfsmount {
 	struct dentry *mnt_root;	/* root of the mounted tree */
 	struct super_block *mnt_sb;	/* pointer to superblock */

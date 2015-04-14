@@ -789,6 +789,11 @@ static struct mount *skip_mnt_tree(struct mount *p)
 	return p;
 }
 
+/** 20150411    
+ * VFS을 위한 vfsmount 객체에 정보를 채워 리턴한다.
+ *
+ * kernel에 의해 호출되는 경우와 user에 의해 호출되는 경우 모두에 해당.
+ **/
 struct vfsmount *
 vfs_kern_mount(struct file_system_type *type, int flags, const char *name, void *data)
 {
@@ -811,17 +816,27 @@ vfs_kern_mount(struct file_system_type *type, int flags, const char *name, void 
 	if (flags & MS_KERNMOUNT)
 		mnt->mnt.mnt_flags = MNT_INTERNAL;
 
+	/** 20150411    
+	 * 'name'이름을 가진 'type' file_system을 마운트해
+	 * superblock을 채우고, superblock의 dentry를 받아온다.
+	 **/
 	root = mount_fs(type, flags, name, data);
 	if (IS_ERR(root)) {
 		free_vfsmnt(mnt);
 		return ERR_CAST(root);
 	}
 
+	/** 20150411    
+	 * vfs mount로 받아온 정보를 struct mount에 채운다.
+	 **/
 	mnt->mnt.mnt_root = root;
 	mnt->mnt.mnt_sb = root->d_sb;
 	mnt->mnt_mountpoint = mnt->mnt.mnt_root;
 	mnt->mnt_parent = mnt;
 	br_write_lock(&vfsmount_lock);
+	/** 20150411    
+	 * 'struct mount' instance를 superblock의 s_mounts 리스트에 등록한다.
+	 **/
 	list_add_tail(&mnt->mnt_instance, &root->d_sb->s_mounts);
 	br_write_unlock(&vfsmount_lock);
 	return &mnt->mnt;
@@ -2688,6 +2703,9 @@ void __init mnt_init(void)
 	 **/
 	br_lock_init(&vfsmount_lock);
 
+	/** 20150411    
+	 * CONFIG_SYSFS인 경우 sysfs 관련 초기화를 수행한다.
+	 **/
 	err = sysfs_init();
 	if (err)
 		printk(KERN_WARNING "%s: sysfs_init error: %d\n",
@@ -2715,8 +2733,9 @@ void put_mnt_ns(struct mnt_namespace *ns)
 }
 
 /** 20150321    
+ * 파일시스템과 data를 받아 vfs에 mount하고, vfsmount 결과를 리턴한다.
  *
- * kern_mount에서 data는 항상 NULL로 호출.
+ * kern_mount로 호출된 경우 data는 항상 NULL로 호출.
  **/
 struct vfsmount *kern_mount_data(struct file_system_type *type, void *data)
 {
@@ -2727,6 +2746,9 @@ struct vfsmount *kern_mount_data(struct file_system_type *type, void *data)
 		 * it is a longterm mount, don't release mnt until
 		 * we unmount before file sys is unregistered
 		*/
+		/** 20150411    
+		 * mount namespace에 internal (userspace의 NS가 아닌)로 mount임을 기록한다.
+		 **/
 		real_mount(mnt)->mnt_ns = MNT_NS_INTERNAL;
 	}
 	return mnt;

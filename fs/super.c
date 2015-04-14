@@ -214,6 +214,9 @@ static struct super_block *alloc_super(struct file_system_type *type, int flags)
 		INIT_LIST_HEAD(&s->s_inode_lru);
 		spin_lock_init(&s->s_inode_lru_lock);
 		INIT_LIST_HEAD(&s->s_mounts);
+		/** 20150411    
+		 * rw semaphore 초기화
+		 **/
 		init_rwsem(&s->s_umount);
 		mutex_init(&s->s_lock);
 		lockdep_set_class(&s->s_umount, &type->s_umount_key);
@@ -1291,8 +1294,9 @@ struct dentry *mount_single(struct file_system_type *fs_type,
 EXPORT_SYMBOL(mount_single);
 
 /** 20150321    
- *
  * file_system_type에 등록된 mount 콜백을 호출한다.
+ * 
+ * 내부적으로 superblock을 할당받아 채우고, superblock의 dentry를 리턴한다.
  **/
 struct dentry *
 mount_fs(struct file_system_type *type, int flags, const char *name, void *data)
@@ -1327,7 +1331,7 @@ mount_fs(struct file_system_type *type, int flags, const char *name, void *data)
 		goto out_free_secdata;
 	}
 	/** 20150404    
-	 * 여기부터...
+	 * 받아온 superblock의 dentry를 검사한다.
 	 **/
 	sb = root->d_sb;
 	BUG_ON(!sb);
@@ -1354,10 +1358,22 @@ mount_fs(struct file_system_type *type, int flags, const char *name, void *data)
 	WARN((sb->s_maxbytes < 0), "%s set sb->s_maxbytes to "
 		"negative value (%lld)\n", type->name, sb->s_maxbytes);
 
+	/** 20150411    
+	 * r/w 세마포어의 writer lock을 해제한다.
+	 **/
 	up_write(&sb->s_umount);
+	/** 20150411    
+	 * security data를 해제한다.
+	 **/
 	free_secdata(secdata);
+	/** 20150411    
+	 * superblock의 dentry를 리턴한다.
+	 **/
 	return root;
 out_sb:
+	/** 20150411    
+	 * superblock을 받아온 뒤에 빠져나가기 위해 dentry를 릴리즈 한다.
+	 **/
 	dput(root);
 	deactivate_locked_super(sb);
 out_free_secdata:

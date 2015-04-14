@@ -57,14 +57,23 @@ enum kobject_action {
 	KOBJ_MAX
 };
 
+/** 20150411    
+ * kobject 자료구조.
+ **/
 struct kobject {
 	const char		*name;
+	/** 20150411    
+	 * ex) kset의 list에 추가될 때 사용된다.
+	 **/
 	struct list_head	entry;
 	struct kobject		*parent;
 	struct kset		*kset;
 	struct kobj_type	*ktype;
 	struct sysfs_dirent	*sd;
 	struct kref		kref;
+	/** 20150411    
+	 * kobject_init_internal에서 1로 초기화 한다.
+	 **/
 	unsigned int state_initialized:1;
 	unsigned int state_in_sysfs:1;
 	unsigned int state_add_uevent_sent:1;
@@ -105,6 +114,8 @@ extern void kobject_put(struct kobject *kobj);
 
 extern char *kobject_get_path(struct kobject *kobj, gfp_t flag);
 
+/** 20150411    
+ **/
 struct kobj_type {
 	void (*release)(struct kobject *kobj);
 	const struct sysfs_ops *sysfs_ops;
@@ -175,8 +186,15 @@ static inline struct kset *to_kset(struct kobject *kobj)
 	return kobj ? container_of(kobj, struct kset, kobj) : NULL;
 }
 
+/** 20150411    
+ * kset의 reference (실제로는 kset내에 포함된 kobj의 kref 증가)를 증가시킨다.
+ **/
 static inline struct kset *kset_get(struct kset *k)
 {
+	/** 20150411    
+	 * kset을 전달받아 kset 내 kobject의 reference를 증가시키고,
+	 * 해당 kset을 리턴한다.
+	 **/
 	return k ? to_kset(kobject_get(&k->kobj)) : NULL;
 }
 

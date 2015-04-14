@@ -31,6 +31,7 @@
 
 /** 20150221    
  * 시스템 전체 file_system이 single list 형태로 구성되어 있다.
+ * file_systems을 변경시킬 때 rwlock을 사용한다.
  **/
 static struct file_system_type *file_systems;
 /** 20150221    
@@ -123,17 +124,31 @@ EXPORT_SYMBOL(register_filesystem);
  *	may be freed or reused.
  */
  
+ /** 20150411    
+  * 주어진 파일시스템을 파일시스템 리스트에서 제거해 등록해제한다.
+  **/
 int unregister_filesystem(struct file_system_type * fs)
 {
 	struct file_system_type ** tmp;
 
+	/** 20150411    
+	 * file_systems 리스트는 rwlock으로 보호된다.
+	 **/
 	write_lock(&file_systems_lock);
+	/** 20150411    
+	 * 시스템의 filesystem 리스트를 순회하며,
+	 * argument로 전달받은 fs인 경우 리스트에서 제거한다.
+	 **/
 	tmp = &file_systems;
 	while (*tmp) {
 		if (fs == *tmp) {
 			*tmp = fs->next;
 			fs->next = NULL;
 			write_unlock(&file_systems_lock);
+			/** 20150411    
+			 * 현재 존재하는 모든 rcu read-size critical section이 완료될 때까지
+			 * 대기한다.
+			 **/
 			synchronize_rcu();
 			return 0;
 		}

@@ -194,6 +194,8 @@ static inline void __rcu_read_unlock(void)
 }
 
 /** 20141025    
+ * 이미 존재하는 rcu reader가 완료될 때까지 대기한다.
+ *
  * CONFIG_PREEMPT_RCU 가 정의되지 않은 경우.
  *	synchronize_sched()를 호출해 block 상태로 대기한다.
  **/

@@ -25,6 +25,9 @@
  **/
 #define IS_ERR_VALUE(x) unlikely((x) >= (unsigned long)-MAX_ERRNO)
 
+/** 20150411    
+ * error를 pointer로 casting 해 리턴.
+ **/
 static inline void * __must_check ERR_PTR(long error)
 {
 	return (void *) error;

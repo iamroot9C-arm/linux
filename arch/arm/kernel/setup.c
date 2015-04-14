@@ -983,6 +983,9 @@ __tagtable(ATAG_CMDLINE, parse_tag_cmdline);
  * The tag table is built by the linker from all the __tagtable
  * declarations.
  */
+/** 20150411    
+ * tag table을 검색해 들어온 tag에 해당하는 header를 검색해 처리한다.
+ **/
 static int __init parse_tag(const struct tag *tag)
 {
 	/** 20121215
@@ -1023,6 +1026,9 @@ static int __init parse_tag(const struct tag *tag)
 static void __init parse_tags(const struct tag *t)
 {
 	for (; t->hdr.size; t = tag_next(t))
+		/** 20150411    
+		 * parse_tag
+		 **/
 		if (!parse_tag(t))
 			printk(KERN_WARNING
 				"Ignoring unrecognised tag 0x%08x\n",

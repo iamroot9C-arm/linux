@@ -15,10 +15,16 @@ struct mnt_pcp {
 	int mnt_writers;
 };
 
+/** 20150411    
+ * mount 구조체.
+ **/
 struct mount {
 	struct list_head mnt_hash;
 	struct mount *mnt_parent;
 	struct dentry *mnt_mountpoint;
+	/** 20150411    
+	 * vfs에서 mount 될 때 사용되는 object 정보의 구조체.
+	 **/
 	struct vfsmount mnt;
 #ifdef CONFIG_SMP
 	struct mnt_pcp __percpu *mnt_pcp;
@@ -28,6 +34,9 @@ struct mount {
 #endif
 	struct list_head mnt_mounts;	/* list of children, anchored here */
 	struct list_head mnt_child;	/* and going through their mnt_child */
+	/** 20150411    
+	 * struct super_block에 달리는 포인트.
+	 **/
 	struct list_head mnt_instance;	/* mount instance on sb->s_mounts */
 	const char *mnt_devname;	/* Name of device e.g. /dev/dsk/hda1 */
 	struct list_head mnt_list;
@@ -48,8 +57,14 @@ struct mount {
 	int mnt_ghosts;
 };
 
+/** 20150411    
+ * unique한 mnt_namespace값.
+ **/
 #define MNT_NS_INTERNAL ERR_PTR(-EINVAL) /* distinct from any mnt_namespace */
 
+/** 20150411    
+ * vfsmount에서 mount 구조체를 추출한다.
+ **/
 static inline struct mount *real_mount(struct vfsmount *mnt)
 {
 	return container_of(mnt, struct mount, mnt);

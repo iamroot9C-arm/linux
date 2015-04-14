@@ -28,6 +28,9 @@
 DEFINE_MUTEX(sysfs_mutex);
 DEFINE_SPINLOCK(sysfs_assoc_lock);
 
+/** 20150411    
+ * rb_node를 포함하는 sysfs_dirent를 가져온다.
+ **/
 #define to_sysfs_dirent(X) rb_entry((X), struct sysfs_dirent, s_rb);
 
 static DEFINE_SPINLOCK(sysfs_ino_lock);
@@ -40,6 +43,11 @@ static DEFINE_IDA(sysfs_ino_ida);
  *
  *	Returns 31 bit hash of ns + name (so it fits in an off_t )
  */
+/** 20150411    
+ * ns와 name을 바탕으로 hash값을 뽑아낸다.
+ *
+ * 자세한 분석 생략???
+ **/
 static unsigned int sysfs_name_hash(const void *ns, const char *name)
 {
 	unsigned long hash = init_name_hash();
@@ -56,6 +64,10 @@ static unsigned int sysfs_name_hash(const void *ns, const char *name)
 	return hash;
 }
 
+/** 20150411    
+ * sysfs_dirent 비교시 평가순서
+ *   hash -> ns -> s_name
+ **/
 static int sysfs_name_compare(unsigned int hash, const void *ns,
 	const char *name, const struct sysfs_dirent *sd)
 {
@@ -66,6 +78,10 @@ static int sysfs_name_compare(unsigned int hash, const void *ns,
 	return strcmp(name, sd->s_name);
 }
 
+/** 20150411    
+ * sysfs_dirent 비교함수.
+ * hash -> ns -> name 순으로 비교한다.
+ **/
 static int sysfs_sd_compare(const struct sysfs_dirent *left,
 			    const struct sysfs_dirent *right)
 {
@@ -86,20 +102,39 @@ static int sysfs_sd_compare(const struct sysfs_dirent *left,
  *	RETURNS:
  *	0 on susccess -EEXIST on failure.
  */
+/** 20150411    
+ * 새로운 sysfs_dirent를 parent 아래 sibling rbtree에 연결한다.
+ **/
 static int sysfs_link_sibling(struct sysfs_dirent *sd)
 {
 	struct rb_node **node = &sd->s_parent->s_dir.children.rb_node;
 	struct rb_node *parent = NULL;
 
+	/** 20150411    
+	 * 추가할 sysfs_dirent가 디렉토리라면 parent의 subdirs 개수를 증가시킨다.
+	 **/
 	if (sysfs_type(sd) == SYSFS_DIR)
 		sd->s_parent->s_dir.subdirs++;
 
+	/** 20150411    
+	 * node가 NULL이 될 때까지 rb_tree를 탐색해 추가할 위치를 찾는다.
+	 **/
 	while (*node) {
 		struct sysfs_dirent *pos;
 		int result;
 
+		/** 20150411    
+		 * node를 포함하는 sysfs_dirent를 가져온다.
+		 **/
 		pos = to_sysfs_dirent(*node);
+		/** 20150411    
+		 * parent는 탐색이 이뤄질 때마다 갱신된다.
+		 **/
 		parent = *node;
+		/** 20150411    
+		 * 추가할 sd와 node에 해당하는 sysfs_dirent를 비교해
+		 * 다음 traverse할 위치를 판단한다.
+		 **/
 		result = sysfs_sd_compare(sd, pos);
 		if (result < 0)
 			node = &pos->s_rb.rb_left;
@@ -108,6 +143,10 @@ static int sysfs_link_sibling(struct sysfs_dirent *sd)
 		else
 			return -EEXIST;
 	}
+	/** 20150411    
+	 * rb_tree에 새로운 node를 추가하고,
+	 * rb_tree의 규칙을 지키기 위해 rebalance 시킨다.
+	 **/
 	/* add new node and rebalance the tree */
 	rb_link_node(&sd->s_rb, parent, node);
 	rb_insert_color(&sd->s_rb, &sd->s_parent->s_dir.children);
@@ -483,9 +522,17 @@ struct sysfs_dirent *sysfs_new_dirent(const char *name, umode_t mode, int type)
  *	Kernel thread context (may sleep).  sysfs_mutex is locked on
  *	return.
  */
+/** 20150411    
+ * parent_sd 아래에 sysfs_dirent를 추가/삭제할 때 호출한다.
+ * 
+ * sysfs_mutex lock을 걸고 리턴한다.
+ **/
 void sysfs_addrm_start(struct sysfs_addrm_cxt *acxt,
 		       struct sysfs_dirent *parent_sd)
 {
+	/** 20150411    
+	 * sysfs에 add/rm시 사용할 context를 초기화 하고, parent_sd를 지정한다.
+	 **/
 	memset(acxt, 0, sizeof(*acxt));
 	acxt->parent_sd = parent_sd;
 
@@ -512,11 +559,18 @@ void sysfs_addrm_start(struct sysfs_addrm_cxt *acxt,
  *	0 on success, -EEXIST if entry with the given name already
  *	exists.
  */
+/** 20150411    
+ * 새로운 sysfs_dirent를 addrm_cxt에 추가한다.
+ **/
 int __sysfs_add_one(struct sysfs_addrm_cxt *acxt, struct sysfs_dirent *sd)
 {
 	struct sysfs_inode_attrs *ps_iattr;
 	int ret;
 
+	/** 20150411    
+	 * parent의 sysfs_dirent의 ns_type과 sd의 ns_type의 유무를 비교해
+	 * 같지 않으면 에러.
+	 **/
 	if (!!sysfs_ns_type(acxt->parent_sd) != !!sd->s_ns) {
 		WARN(1, KERN_WARNING "sysfs: ns %s in '%s' for '%s'\n",
 			sysfs_ns_type(acxt->parent_sd)? "required": "invalid",
@@ -524,14 +578,29 @@ int __sysfs_add_one(struct sysfs_addrm_cxt *acxt, struct sysfs_dirent *sd)
 		return -EINVAL;
 	}
 
+	/** 20150411    
+	 * ns와 name을 바탕으로 hash값을 생성한다.
+	 **/
 	sd->s_hash = sysfs_name_hash(sd->s_ns, sd->s_name);
+	/** 20150411    
+	 * context에서 가리키는 parent의 sysfs_dirent를 가져와(reference 증가)
+	 * sd의 parent로 지정한다.
+	 **/
 	sd->s_parent = sysfs_get(acxt->parent_sd);
 
+	/** 20150411    
+	 * sysfs_dirent를 sibling rb-tree에 추가한다.
+	 **/
 	ret = sysfs_link_sibling(sd);
 	if (ret)
 		return ret;
 
 	/* Update timestamps on the parent */
+	/** 20150411    
+	 * parent의 timestamps를 수정한다.
+	 *
+	 * data modification과 status change 시간을 현재 시간으로 갱신한다.
+	 **/
 	ps_iattr = acxt->parent_sd->s_iattr;
 	if (ps_iattr) {
 		struct iattr *ps_iattrs = &ps_iattr->ia_iattr;
@@ -585,6 +654,9 @@ int sysfs_add_one(struct sysfs_addrm_cxt *acxt, struct sysfs_dirent *sd)
 {
 	int ret;
 
+	/** 20150418    
+	 * 여기부터...
+	 **/
 	ret = __sysfs_add_one(acxt, sd);
 	if (ret == -EEXIST) {
 		char *path = kzalloc(PATH_MAX, GFP_KERNEL);
@@ -754,6 +826,9 @@ static int create_dir(struct kobject *kobj, struct sysfs_dirent *parent_sd,
 	sd->s_dir.kobj = kobj;
 
 	/* link in */
+	/** 20150411    
+	 * sysfs에 add 또는 rm를 할 때 mutex lock을 건다.
+	 **/
 	sysfs_addrm_start(&acxt, parent_sd);
 	rc = sysfs_add_one(&acxt, sd);
 	sysfs_addrm_finish(&acxt);
@@ -781,15 +856,26 @@ int sysfs_create_subdir(struct kobject *kobj, const char *name,
  *	(i.e. network or user).  Return the ns_type associated with
  *	this object if any
  */
+/** 20150411    
+ * kobj의 ktype 의 속성 중 kobj_ns_type_operations에 포함된 정보인
+ * ns_type을 추출해 리턴한다.
+ **/
 static enum kobj_ns_type sysfs_read_ns_type(struct kobject *kobj)
 {
 	const struct kobj_ns_type_operations *ops;
 	enum kobj_ns_type type;
 
+	/** 20150411    
+	 * kobj의 ktype의 child_ns ops를 받아온다.
+	 * ops자체가 NULL이라면 type이 없으므로 KOBJ_NS_TYPE_NONE 를 리턴.
+	 **/
 	ops = kobj_child_ns_ops(kobj);
 	if (!ops)
 		return KOBJ_NS_TYPE_NONE;
 
+	/** 20150411    
+	 * ops의 type을 가져와 검사하고 리턴.
+	 **/
 	type = ops->type;
 	BUG_ON(type <= KOBJ_NS_TYPE_NONE);
 	BUG_ON(type >= KOBJ_NS_TYPES);
@@ -811,6 +897,12 @@ int sysfs_create_dir(struct kobject * kobj)
 
 	BUG_ON(!kobj);
 
+	/** 20150411    
+	 * kobj에 parent가 있으면 parent의 정보를 가져오고,
+	 * 없으면 root의 정보를 가져온다.
+	 *
+	 * sysfs_root의 sysfs_dirent는 sysfs/mount.c에 위치.
+	 **/
 	if (kobj->parent)
 		parent_sd = kobj->parent->sd;
 	else
@@ -819,8 +911,15 @@ int sysfs_create_dir(struct kobject * kobj)
 	if (!parent_sd)
 		return -ENOENT;
 
+	/** 20150411    
+	 * parent_sd의 ns type이 존재하면 (NONE이 아니라면)
+	 * kobj의 ns를 가져온다.
+	 **/
 	if (sysfs_ns_type(parent_sd))
 		ns = kobj->ktype->namespace(kobj);
+	/** 20150411    
+	 * kobj의 ns_type을 가져온다.
+	 **/
 	type = sysfs_read_ns_type(kobj);
 
 	error = create_dir(kobj, parent_sd, type, ns, kobject_name(kobj), &sd);

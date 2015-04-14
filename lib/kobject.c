@@ -117,12 +117,24 @@ char *kobject_get_path(struct kobject *kobj, gfp_t gfp_mask)
 EXPORT_SYMBOL_GPL(kobject_get_path);
 
 /* add the kobject to its kset's list */
+/** 20150411    
+ * kobj의 kset이 등록되어 있는 상태에서, kset의 리스트에 추가한다.
+ **/
 static void kobj_kset_join(struct kobject *kobj)
 {
+	/** 20150411    
+	 * kobj의 kset이 지정되지 않은 경우에 사용될 수 없다.
+	 **/
 	if (!kobj->kset)
 		return;
 
+	/** 20150411    
+	 * kobj가 가리키는 kset의 reference count를 증가시킨다.
+	 **/
 	kset_get(kobj->kset);
+	/** 20150411    
+	 * spinlock을 걸고 kset의 list에 kobj를 등록시킨다.
+	 **/
 	spin_lock(&kobj->kset->list_lock);
 	list_add_tail(&kobj->entry, &kobj->kset->list);
 	spin_unlock(&kobj->kset->list_lock);
@@ -140,6 +152,9 @@ static void kobj_kset_leave(struct kobject *kobj)
 	kset_put(kobj->kset);
 }
 
+/** 20150411    
+ * kobject 구조체를 하나 초기화 한다.
+ **/
 static void kobject_init_internal(struct kobject *kobj)
 {
 	if (!kobj)
@@ -167,12 +182,26 @@ static int kobject_add_internal(struct kobject *kobj)
 		return -EINVAL;
 	}
 
+	/** 20150411    
+	 * kobj의 parent의 reference count를 증가시킨다.
+	 **/
 	parent = kobject_get(kobj->parent);
 
 	/* join kset if set, use it as parent if we do not already have one */
+	/** 20150411    
+	 * kobj가 현재 kset에 포함되어 있을 경우 kobj를 kset에 조인시키고,
+	 * kobj의 parent가 지정되지 않은 경우 kset을 kobj의 parent로 지정한다.
+	 **/
 	if (kobj->kset) {
+		/** 20150411    
+		 * parent가 NULL인 경우, kset을 (실제로는 kset 내의 kobj) parent로 지정한다.
+		 * kset이 parent로 지정되므로 kset->kobj의 reference count가 증가된다.
+		 **/
 		if (!parent)
 			parent = kobject_get(&kobj->kset->kobj);
+		/** 20150411    
+		 * kobj를 kset의 리스트에 추가한다.
+		 **/
 		kobj_kset_join(kobj);
 		kobj->parent = parent;
 	}
@@ -210,6 +239,9 @@ static int kobject_add_internal(struct kobject *kobj)
  * @fmt: format string used to build the name
  * @vargs: vargs to format the string.
  */
+/** 20150411    
+ * kobject의 name을 vargs를 파싱해 채운다.
+ **/
 int kobject_set_name_vargs(struct kobject *kobj, const char *fmt,
 				  va_list vargs)
 {
@@ -219,14 +251,23 @@ int kobject_set_name_vargs(struct kobject *kobj, const char *fmt,
 	if (kobj->name && !fmt)
 		return 0;
 
+	/** 20150411    
+	 * fmt대로 argument를 파싱해 kobj의 이름을 지정한다.
+	 **/
 	kobj->name = kvasprintf(GFP_KERNEL, fmt, vargs);
 	if (!kobj->name)
 		return -ENOMEM;
 
 	/* ewww... some of these buggers have '/' in the name ... */
+	/** 20150411    
+	 * name에 '/'가 존재하면 '!'로 치환한다.
+	 **/
 	while ((s = strchr(kobj->name, '/')))
 		s[0] = '!';
 
+	/** 20150411    
+	 * 이전 name을 해제한다.
+	 **/
 	kfree(old_name);
 	return 0;
 }
@@ -265,6 +306,9 @@ EXPORT_SYMBOL(kobject_set_name);
  * to kobject_put(), not by a call to kfree directly to ensure that all of
  * the memory is cleaned up properly.
  */
+/** 20150411    
+ * 'ktype' 타입인 kobject를 하나 초기화 한다.
+ **/
 void kobject_init(struct kobject *kobj, struct kobj_type *ktype)
 {
 	char *err_str;
@@ -285,6 +329,9 @@ void kobject_init(struct kobject *kobj, struct kobj_type *ktype)
 	}
 
 	kobject_init_internal(kobj);
+	/** 20150411    
+	 * kobj의 ktype을 지정한다.
+	 **/
 	kobj->ktype = ktype;
 	return;
 
@@ -299,11 +346,17 @@ static int kobject_add_varg(struct kobject *kobj, struct kobject *parent,
 {
 	int retval;
 
+	/** 20150411    
+	 * kobject의 name을 채운다.
+	 **/
 	retval = kobject_set_name_vargs(kobj, fmt, vargs);
 	if (retval) {
 		printk(KERN_ERR "kobject: can not set name properly!\n");
 		return retval;
 	}
+	/** 20150411    
+	 * kobject의 parent를 지정한다.
+	 **/
 	kobj->parent = parent;
 	return kobject_add_internal(kobj);
 }
@@ -342,6 +395,9 @@ int kobject_add(struct kobject *kobj, struct kobject *parent,
 	if (!kobj)
 		return -EINVAL;
 
+	/** 20150411    
+	 * kobj는 초기화 되어 있어야 한다.
+	 **/
 	if (!kobj->state_initialized) {
 		printk(KERN_ERR "kobject '%s' (%p): tried to add an "
 		       "uninitialized object, something is seriously wrong.\n",
@@ -349,6 +405,9 @@ int kobject_add(struct kobject *kobj, struct kobject *parent,
 		dump_stack();
 		return -EINVAL;
 	}
+	/** 20150411    
+	 *
+	 **/
 	va_start(args, fmt);
 	retval = kobject_add_varg(kobj, parent, fmt, args);
 	va_end(args);
@@ -522,6 +581,9 @@ void kobject_del(struct kobject *kobj)
  * kobject_get - increment refcount for object.
  * @kobj: object.
  */
+/** 20150411    
+ * 주어진 kobj의 kref를 증가시킨다.
+ **/
 struct kobject *kobject_get(struct kobject *kobj)
 {
 	if (kobj)
@@ -567,6 +629,9 @@ static void kobject_cleanup(struct kobject *kobj)
 	}
 
 	/* free name if we allocated it */
+	/** 20150411    
+	 * kobject_set_name_vargs 에서 동적 할당 받은 name을 해제한다.
+	 **/
 	if (name) {
 		pr_debug("kobject: '%s': free name\n", name);
 		kfree(name);
@@ -601,6 +666,8 @@ static void dynamic_kobj_release(struct kobject *kobj)
 	kfree(kobj);
 }
 
+/** 20150411    
+ **/
 static struct kobj_type dynamic_kobj_ktype = {
 	.release	= dynamic_kobj_release,
 	.sysfs_ops	= &kobj_sysfs_ops,
@@ -617,10 +684,16 @@ static struct kobj_type dynamic_kobj_ktype = {
  * call to kobject_put() and not kfree(), as kobject_init() has
  * already been called on this structure.
  */
+/** 20150411    
+ * kobject를 할당받고 초기화해 리턴한다.
+ **/
 struct kobject *kobject_create(void)
 {
 	struct kobject *kobj;
 
+	/** 20150411    
+	 * kobject를 할당받는다.
+	 **/
 	kobj = kzalloc(sizeof(*kobj), GFP_KERNEL);
 	if (!kobj)
 		return NULL;
@@ -647,6 +720,9 @@ struct kobject *kobject_create_and_add(const char *name, struct kobject *parent)
 	struct kobject *kobj;
 	int retval;
 
+	/** 20150411    
+	 * kobject 할당 및 초기화.
+	 **/
 	kobj = kobject_create();
 	if (!kobj)
 		return NULL;
@@ -893,10 +969,16 @@ int kobj_ns_type_registered(enum kobj_ns_type type)
 	return registered;
 }
 
+/** 20150411    
+ * parent의 child_ns_type을 가져온다.
+ **/
 const struct kobj_ns_type_operations *kobj_child_ns_ops(struct kobject *parent)
 {
 	const struct kobj_ns_type_operations *ops = NULL;
 
+	/** 20150411    
+	 * parent의 ktype에서 child_ns_type을 받아온다.
+	 **/
 	if (parent && parent->ktype->child_ns_type)
 		ops = parent->ktype->child_ns_type(parent);
 

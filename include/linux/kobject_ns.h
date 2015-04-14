@@ -39,6 +39,9 @@ enum kobj_ns_type {
  *   @initial_ns: return the initial namespace (i.e. init_net_ns)
  *   @drop_ns: drops a reference to namespace
  */
+/** 20150411    
+ * kobj ns type과 operations 들을 포함하는 구조체.
+ **/
 struct kobj_ns_type_operations {
 	enum kobj_ns_type type;
 	void *(*grab_current_ns)(void);
