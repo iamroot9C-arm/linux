@@ -77,6 +77,9 @@ struct bdi_writeback {
 /** 20150221    
  * block device에 대한 I/O data flow 트래픽 정보를 표현하는 구조체.
  *     readahead 와 request queue 혼잡 상태 등.
+ *
+ *     ramfs_backing_dev_info, noop_backing_dev_info 등이 있다.
+ *     
  **/
 struct backing_dev_info {
 	struct list_head bdi_list;
@@ -279,6 +282,9 @@ int bdi_set_max_ratio(struct backing_dev_info *bdi, unsigned int max_ratio);
 #define BDI_CAP_VMFLAGS \
 	(BDI_CAP_READ_MAP | BDI_CAP_WRITE_MAP | BDI_CAP_EXEC_MAP)
 
+/** 20150418    
+ * noop에 해당하는 bdi capability.
+ **/
 #define BDI_CAP_NO_ACCT_AND_WRITEBACK \
 	(BDI_CAP_NO_WRITEBACK | BDI_CAP_NO_ACCT_DIRTY | BDI_CAP_NO_ACCT_WB)
 

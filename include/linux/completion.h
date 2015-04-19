@@ -30,6 +30,9 @@ struct completion {
 	wait_queue_head_t wait;
 };
 
+/** 20150418    
+ * struct completion의 초기값.
+ **/
 #define COMPLETION_INITIALIZER(work) \
 	{ 0, __WAIT_QUEUE_HEAD_INITIALIZER((work).wait) }
 
@@ -44,6 +47,9 @@ struct completion {
  * for static declarations. You should use the _ONSTACK variant for automatic
  * variables.
  */
+/** 20150418    
+ * struct completion을 선언과 동시에 초기화 하는 매크로.
+ **/
 #define DECLARE_COMPLETION(work) \
 	struct completion work = COMPLETION_INITIALIZER(work)
 
@@ -63,6 +69,10 @@ struct completion {
 # define DECLARE_COMPLETION_ONSTACK(work) \
 	struct completion work = COMPLETION_INITIALIZER_ONSTACK(work)
 #else
+/** 20150418    
+ * LOCKDEP을 config하지 않을 경우
+ * struct completion을 선언하고 초기화 하는 매크로.
+ **/
 # define DECLARE_COMPLETION_ONSTACK(work) DECLARE_COMPLETION(work)
 #endif
 

@@ -96,6 +96,9 @@ static inline void tk_normalize_xtime(struct timekeeper *tk)
 	}
 }
 
+/** 20150418    
+ * timekeeper로부터 timespec 시간을 얻어낸다.
+ **/
 static struct timespec tk_xtime(struct timekeeper *tk)
 {
 	struct timespec ts;
@@ -170,6 +173,9 @@ static void tk_setup_internals(struct timekeeper *tk, struct clocksource *clock)
 		else
 			tk->xtime_nsec <<= shift_change;
 	}
+	/** 20150418    
+	 * clocksource의 shift 값을 tk->shift 값에 넣는다.
+	 **/
 	tk->shift = clock->shift;
 
 	tk->ntp_error = 0;
@@ -1175,6 +1181,10 @@ static void update_wall_time(void)
 	* the vsyscall implementations are converted to use xtime_nsec
 	* (shifted nanoseconds), this can be killed.
 	*/
+	/** 20150418    
+	 * timekeeperr의 xtime_nsec 에서 remainder를 제외하고
+	 * timekeeper.shift 만큼 증감시킨 값을 넣는다.
+	 **/
 	remainder = timekeeper.xtime_nsec & ((1 << timekeeper.shift) - 1);
 	timekeeper.xtime_nsec -= remainder;
 	timekeeper.xtime_nsec += 1 << timekeeper.shift;
@@ -1289,6 +1299,11 @@ struct timespec __current_kernel_time(void)
 	return tk_xtime(&timekeeper);
 }
 
+/** 20150418    
+ * timekeeper로부터 timespec을 받아와 리턴한다.
+ *
+ * rw seqlock을 사용해 읽어오기 때문에 seq값이 변경되었다면 다시 읽는다.
+ **/
 struct timespec current_kernel_time(void)
 {
 	struct timespec now;

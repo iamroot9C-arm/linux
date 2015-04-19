@@ -328,6 +328,9 @@ EXPORT_SYMBOL_GPL(kobject_uevent_env);
  * Returns 0 if kobject_uevent() is completed with success or the
  * corresponding error when it fails.
  */
+/** 20150418    
+ * 추후 분석???
+ **/
 int kobject_uevent(struct kobject *kobj, enum kobject_action action)
 {
 	return kobject_uevent_env(kobj, action, NULL);

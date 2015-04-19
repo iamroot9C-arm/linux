@@ -485,14 +485,23 @@ const struct file_operations sysfs_file_operations = {
 	.poll		= sysfs_poll,
 };
 
+/** 20150418    
+ * attribute의 namespace를 kobj가 속한 ktype의 namespace ops로 받아와 리턴한다.
+ **/
 int sysfs_attr_ns(struct kobject *kobj, const struct attribute *attr,
 		  const void **pns)
 {
+	/** 20150418    
+	 * kobj를 받아와 kobj의 sysfs dirent를 가져온다.
+	 **/
 	struct sysfs_dirent *dir_sd = kobj->sd;
 	const struct sysfs_ops *ops;
 	const void *ns = NULL;
 	int err;
 
+	/** 20150418    
+	 * 해당 kobj의 sysfs dirent가 존재하지 않는 경우 에러.
+	 **/
 	if (!dir_sd) {
 		WARN(1, KERN_ERR "sysfs: kobject %s without dirent\n",
 			kobject_name(kobj));
@@ -500,12 +509,18 @@ int sysfs_attr_ns(struct kobject *kobj, const struct attribute *attr,
 	}
 
 	err = 0;
+	/** 20150418    
+	 * dir_sd의 namespace type이 없으면 namespace를 얻어올 수 없다.
+	 **/
 	if (!sysfs_ns_type(dir_sd))
 		goto out;
 
 	err = -EINVAL;
 	if (!kobj->ktype)
 		goto out;
+	/** 20150418    
+	 * kobj가 속한 ktype의 sysfs_ops를 받아와 attr의 namespace를 받아온다.
+	 **/
 	ops = kobj->ktype->sysfs_ops;
 	if (!ops)
 		goto out;
@@ -523,27 +538,46 @@ out:
 	return err;
 }
 
+/** 20150418    
+ * dir_sd에 attr를 새로운 sysfs dirent로 추가한다.
+ * type과 attribute mode를 받아 채운다.
+ **/
 int sysfs_add_file_mode(struct sysfs_dirent *dir_sd,
 			const struct attribute *attr, int type, umode_t amode)
 {
+	/** 20150418    
+	 * attribute의 mode에서 S_IALLUGO만 추출해 regular file에 mode를 추가한다.
+	 **/
 	umode_t mode = (amode & S_IALLUGO) | S_IFREG;
 	struct sysfs_addrm_cxt acxt;
 	struct sysfs_dirent *sd;
 	const void *ns;
 	int rc;
 
+	/** 20150418    
+	 * attr의 ns를 받아와 리턴한다.
+	 **/
 	rc = sysfs_attr_ns(dir_sd->s_dir.kobj, attr, &ns);
 	if (rc)
 		return rc;
 
+	/** 20150418    
+	 * 새로운 sysfs dirent를 생성해 name과 mode, type을 채운다.
+	 **/
 	sd = sysfs_new_dirent(attr->name, mode, type);
 	if (!sd)
 		return -ENOMEM;
 
+	/** 20150418    
+	 * 새로운 sysfs dirent에 위에서 받아온 namespace와 attribute 정보를 채운다.
+	 **/
 	sd->s_ns = ns;
 	sd->s_attr.attr = (void *)attr;
 	sysfs_dirent_init_lockdep(sd);
 
+	/** 20150418    
+	 * dir_sd에 대한 add/rm context를 생성하고, 이 context에 sd를 추가한다.
+	 **/
 	sysfs_addrm_start(&acxt, dir_sd);
 	rc = sysfs_add_one(&acxt, sd);
 	sysfs_addrm_finish(&acxt);
@@ -555,6 +589,11 @@ int sysfs_add_file_mode(struct sysfs_dirent *dir_sd,
 }
 
 
+/** 20150418    
+ * dir_sd에 attr에 해당하는 sysfs_dirent를 file로 추가한다.
+ *
+ * attr로부터 mode를 받아와 mode 정보를 받는 함수를 호출한다.
+ **/
 int sysfs_add_file(struct sysfs_dirent *dir_sd, const struct attribute *attr,
 		   int type)
 {
@@ -568,6 +607,12 @@ int sysfs_add_file(struct sysfs_dirent *dir_sd, const struct attribute *attr,
  *	@attr:	attribute descriptor.
  */
 
+/** 20150418    
+ * sysfs에 attr에 해당하는 file을 추가한다.
+ *
+ * sysfs_dirent를 생성해 전달받은 argument에서 속성을 채운다.
+ * file은 sysfs의 type이 SYSFS_KOBJ_ATTR이다.
+ **/
 int sysfs_create_file(struct kobject * kobj, const struct attribute * attr)
 {
 	BUG_ON(!kobj || !kobj->sd || !attr);

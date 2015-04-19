@@ -154,7 +154,7 @@ static inline void atomic_add(int i, atomic_t *v)
 }
 
 /** 20140517    
- * ldrex/strex 로 atomic 하게 증가시키고 이전 값 리턴.
+ * ldrex/strex 로 atomic 하게 증가시키고 결과 값 리턴.
  *
  * 연산 전,후로 memory barrier를 두어 메모리 접근 연산의 순서를 보장한다.
  **/
@@ -398,6 +398,8 @@ static inline int __atomic_add_unless(atomic_t *v, int a, int u)
  *   v를 1 감소시키고, 감소시킨 결과가 0인지 리턴한다.
  * atomic_dec_return(v)
  *   v를 1 감소시키고, 감소시킨 결과를 리턴한다.
+ * atomic_sub_and_test(i,v)
+ *   v를 i만큼 감소시키고, 감소시킨 결과가 0인지 리턴한다.
  **/
 #define atomic_dec_and_test(v)	(atomic_sub_return(1, v) == 0)
 #define atomic_inc_return(v)    (atomic_add_return(1, v))

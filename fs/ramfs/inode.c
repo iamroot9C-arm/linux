@@ -43,6 +43,9 @@
 static const struct super_operations ramfs_ops;
 static const struct inode_operations ramfs_dir_inode_operations;
 
+/** 20150418    
+ * ramfs을 위한 backing device info.
+ **/
 static struct backing_dev_info ramfs_backing_dev_info = {
 	.name		= "ramfs",
 	.ra_pages	= 0,	/* No readahead */
@@ -156,6 +159,8 @@ static const struct super_operations ramfs_ops = {
 	.show_options	= generic_show_options,
 };
 
+/** 20150418    
+ **/
 struct ramfs_mount_opts {
 	umode_t mode;
 };
@@ -165,11 +170,16 @@ enum {
 	Opt_err
 };
 
+/** 20150418    
+ * match table 'tokens'
+ **/
 static const match_table_t tokens = {
 	{Opt_mode, "mode=%o"},
 	{Opt_err, NULL}
 };
 
+/** 20150418    
+ **/
 struct ramfs_fs_info {
 	struct ramfs_mount_opts mount_opts;
 };
@@ -187,11 +197,23 @@ static int ramfs_parse_options(char *data, struct ramfs_mount_opts *opts)
 		if (!*p)
 			continue;
 
+		/** 20150418    
+		 * match table에서 p에 해당하는 token들을 찾아 token을 리턴하고,
+		 * argument를 파싱해 args에 채워온다.
+		 **/
 		token = match_token(p, tokens, args);
 		switch (token) {
 		case Opt_mode:
+			/** 20150418    
+			 * args[0]에 해당하는 값을 octal로 option에 받아온다.
+			 **/
 			if (match_octal(&args[0], &option))
 				return -EINVAL;
+			/** 20150418    
+			 * option 중에서 S_IALLUGO에 해당하는 값만 추출해 mode에 채운다.
+			 *
+			 * 20150425 여기부터...
+			 **/
 			opts->mode = option & S_IALLUGO;
 			break;
 		/*
@@ -206,14 +228,25 @@ static int ramfs_parse_options(char *data, struct ramfs_mount_opts *opts)
 	return 0;
 }
 
+/** 20150418    
+ * ramfs, rootfs 용 fill_super함수.
+ * mount_node에서 file_system_type에 특징적인 콜백함수로 지정된다.
+ *
+ **/
 int ramfs_fill_super(struct super_block *sb, void *data, int silent)
 {
 	struct ramfs_fs_info *fsi;
 	struct inode *inode;
 	int err;
 
+	/** 20150418    
+	 * superblock에 data 옵션을 저장한다.
+	 **/
 	save_mount_options(sb, data);
 
+	/** 20150418    
+	 * struct ramfs_fs_info를 할당 받아 fs private으로 저장한다.
+	 **/
 	fsi = kzalloc(sizeof(struct ramfs_fs_info), GFP_KERNEL);
 	sb->s_fs_info = fsi;
 	if (!fsi)
@@ -261,6 +294,9 @@ static struct file_system_type ramfs_fs_type = {
 	.mount		= ramfs_mount,
 	.kill_sb	= ramfs_kill_sb,
 };
+/** 20150418    
+ * rootfs file system type 정의.
+ **/
 static struct file_system_type rootfs_fs_type = {
 	.name		= "rootfs",
 	.mount		= rootfs_mount,
@@ -277,10 +313,16 @@ int __init init_rootfs(void)
 {
 	int err;
 
+	/** 20150418    
+	 * ramfs_backing_dev_info의 속성을 초기화 한다.
+	 **/
 	err = bdi_init(&ramfs_backing_dev_info);
 	if (err)
 		return err;
 
+	/** 20150418    
+	 * rootfs_fs_type을 새로운 filesystem으로 등록한다.
+	 **/
 	err = register_filesystem(&rootfs_fs_type);
 	if (err)
 		bdi_destroy(&ramfs_backing_dev_info);

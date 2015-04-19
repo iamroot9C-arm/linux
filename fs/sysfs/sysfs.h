@@ -66,6 +66,7 @@ struct sysfs_inode_attrs {
  *
  * s_parent : parent인 sysfs_dirent를 지정한다.
  * s_count : reference count
+ * s_active : active 함수. get: sysfs_get_active, put: sysfs_put_active
  **/
 struct sysfs_dirent {
 	atomic_t		s_count;
@@ -85,6 +86,9 @@ struct sysfs_dirent {
 
 	const void		*s_ns; /* namespace tag */
 	unsigned int		s_hash; /* ns + name hash */
+	/** 20150418    
+	 * sysfs dirent의 type에 따라 union에서 각각 다른 구조체를 참조한다.
+	 **/
 	union {
 		struct sysfs_elem_dir		s_dir;
 		struct sysfs_elem_symlink	s_symlink;

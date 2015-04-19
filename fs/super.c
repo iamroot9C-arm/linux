@@ -553,10 +553,15 @@ EXPORT_SYMBOL(generic_shutdown_super);
  *	@data:	argument to each of them
  */
 /** 20150307    
- * superblock을 찾아 존재하면 리턴하고, 없으면 새로 할당하는 함수.
+ * file_system_type의 리스트에서 superblock을 찾아
+ * 존재하면 바로 리턴하고, 없으면 새로 할당해 등록하는 함수.
  *
  * test와 set은 각 파일시스템마다 다르게 구현될 수 있으므로 콜백을 전달되고,
  * data는 이 콜백에 전달되어 사용되는 fs 특정 데이터이다.
+ *
+ * test: 예를 들어 file_system_type에 등록된 superblock들 중,
+ *       전달된 data를 갖는 superblock이 존재하는지 평가하는 함수.
+ * set : 새로 생성된 superblock 구조체에 data를 지정하는 함수.
  **/
 struct super_block *sget(struct file_system_type *type,
 			int (*test)(struct super_block *,void *),
@@ -576,8 +581,7 @@ retry:
 	 **/
 	if (test) {
 		/** 20150307    
-		 * filesystem type의 fs_supers 리스트를 순회하며 각 node 정보에 대해
-		 * 다음 과정을 수행한다.
+		 * filesystem의 fs_supers 리스트의 각 node에 대해 다음 과정을 수행한다.
 		 * (아래에서 새로 superblock을 할당한 뒤 fs_supers 리스트에 연결시킨다)
 		 **/
 		hlist_for_each_entry(old, node, &type->fs_supers, s_instances) {
@@ -1022,16 +1026,29 @@ void emergency_remount(void)
  * filesystems which don't use real block-devices.  -- jrs
  */
 
+/** 20150418    
+ * unnamed_dev_ida를 선언 및 초기화 한다.
+ **/
 static DEFINE_IDA(unnamed_dev_ida);
 static DEFINE_SPINLOCK(unnamed_dev_lock);/* protects the above */
 static int unnamed_dev_start = 0; /* don't bother trying below it */
 
+/** 20150418    
+ * anonymous block device를 위한 dev_t를 받아온다.
+ *
+ * major:0, minor:ida로부터 받아온다.
+ **/
 int get_anon_bdev(dev_t *p)
 {
 	int dev;
 	int error;
 
  retry:
+	/** 20150418    
+	 * unnamed_dev_ida의 사용을 준비한다. resource를 할당받아 채운다.
+	 * unnamed_dev_start 이상의 값을 dev에 할당 받아온다.
+	 * 정상적으로 받아왔다면 unnamed_dev_start를 갱신한다. 
+	 **/
 	if (ida_pre_get(&unnamed_dev_ida, GFP_ATOMIC) == 0)
 		return -ENOMEM;
 	spin_lock(&unnamed_dev_lock);
@@ -1045,6 +1062,9 @@ int get_anon_bdev(dev_t *p)
 	else if (error)
 		return -EAGAIN;
 
+	/** 20150418    
+	 * dev가 minor number 최대치까지 왔다면 dev를 제거한다.
+	 **/
 	if ((dev & MAX_ID_MASK) == (1 << MINORBITS)) {
 		spin_lock(&unnamed_dev_lock);
 		ida_remove(&unnamed_dev_ida, dev);
@@ -1053,6 +1073,9 @@ int get_anon_bdev(dev_t *p)
 		spin_unlock(&unnamed_dev_lock);
 		return -EMFILE;
 	}
+	/** 20150418    
+	 * major 0, minor 번호를 지정해 dev_t를 만들어 저장한다.
+	 **/
 	*p = MKDEV(0, dev & MINORMASK);
 	return 0;
 }
@@ -1069,8 +1092,16 @@ void free_anon_bdev(dev_t dev)
 }
 EXPORT_SYMBOL(free_anon_bdev);
 
+/** 20150418    
+ * sget에서 set 함수로 지정되는 콜백함수.
+ * dev_t를 받아오고, s_bdi는 NOOP.
+ **/
 int set_anon_super(struct super_block *s, void *data)
 {
+	/** 20150418    
+	 * anon block device를 위한 dev_t를 받아온다.
+	 * superblock의 s_bdi는 실제 device가 없으므로 noop_backing_dev_info.
+	 **/
 	int error = get_anon_bdev(&s->s_dev);
 	if (!error)
 		s->s_bdi = &noop_backing_dev_info;
@@ -1249,6 +1280,10 @@ struct dentry *mount_nodev(struct file_system_type *fs_type,
 	int (*fill_super)(struct super_block *, void *, int))
 {
 	int error;
+	/** 20150418    
+	 * test 함수가 지정되지 않았으므로 fs_type의 superblock을 생성하고,
+	 * set_anon_super을 호출해 superblock을 받아온다.
+	 **/
 	struct super_block *s = sget(fs_type, NULL, set_anon_super, flags, NULL);
 
 	if (IS_ERR(s))

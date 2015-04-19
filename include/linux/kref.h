@@ -70,6 +70,10 @@ static inline int kref_sub(struct kref *kref, unsigned int count,
 {
 	WARN_ON(release == NULL);
 
+	/** 20150418    
+	 * kref의 reference count를 count만큼 감소시키고, 그 결과가 0이면 
+	 * 전달받은 release 함수를 호출하여 해제한다.
+	 **/
 	if (atomic_sub_and_test((int) count, &kref->refcount)) {
 		release(kref);
 		return 1;

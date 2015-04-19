@@ -1592,6 +1592,9 @@ struct super_block {
 	int			s_nr_inodes_unused;	/* # of inodes on lru */
 
 	struct block_device	*s_bdev;
+	/** 20150418    
+	 * superblock에 해당하는 backing_dev_info.
+	 **/
 	struct backing_dev_info *s_bdi;
 	struct mtd_info		*s_mtd;
 	/** 20150314    

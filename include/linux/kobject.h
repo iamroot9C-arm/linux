@@ -72,7 +72,9 @@ struct kobject {
 	struct sysfs_dirent	*sd;
 	struct kref		kref;
 	/** 20150411    
-	 * kobject_init_internal에서 1로 초기화 한다.
+	 * state_initialized : kobject_init_internal에서 1로 설정한다.
+	 * state_in_sysfs    : kobject_add_internal에서 1로 설정한다.
+	 *                     kobject_del에서 0으로 설정한다.
 	 **/
 	unsigned int state_initialized:1;
 	unsigned int state_in_sysfs:1;
@@ -167,6 +169,11 @@ struct sock;
  * can add new environment variables, or filter out the uevents if so
  * desired.
  */
+/** 20150418    
+ * 특정 type의 kobject들을 관리하기 위한 kset 자료구조.
+ * kset에 속하는 kobject는 list에 등록되며,
+ * kset 자신 역시 내부에 kobject를 두고 reference count 등으로 관리된다.
+ **/
 struct kset {
 	struct list_head list;
 	spinlock_t list_lock;
@@ -198,11 +205,19 @@ static inline struct kset *kset_get(struct kset *k)
 	return k ? to_kset(kobject_get(&k->kobj)) : NULL;
 }
 
+/** 20150418    
+ * kset의 kobject를 받아 reference count를 감소시키고, 그 결과 0이라면 제거한다.
+ *
+ * kset 자신도 관리를 위해 kobject의 하나이므로, kobject_put을 사용해 관리된다.
+ **/
 static inline void kset_put(struct kset *k)
 {
 	kobject_put(&k->kobj);
 }
 
+/** 20150418    
+ * kobj의 ktype을 얻어온다.
+ **/
 static inline struct kobj_type *get_ktype(struct kobject *kobj)
 {
 	return kobj->ktype;

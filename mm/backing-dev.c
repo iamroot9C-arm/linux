@@ -25,6 +25,8 @@ struct backing_dev_info default_backing_dev_info = {
 };
 EXPORT_SYMBOL_GPL(default_backing_dev_info);
 
+/** 20150418    
+ **/
 struct backing_dev_info noop_backing_dev_info = {
 	.name		= "noop",
 	.capabilities	= BDI_CAP_NO_ACCT_AND_WRITEBACK,
@@ -683,7 +685,7 @@ static void bdi_wb_init(struct bdi_writeback *wb, struct backing_dev_info *bdi)
 #define INIT_BW		(100 << (20 - PAGE_SHIFT))
 
 /** 20150221    
- * backing_dev_info 를 받아 초기화 한다.
+ * backing_dev_info 를 받아 name, ra_pages, capabilities 외 속성을 초기화 한다.
  **/
 int bdi_init(struct backing_dev_info *bdi)
 {

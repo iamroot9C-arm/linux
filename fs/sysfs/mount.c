@@ -111,6 +111,10 @@ static int sysfs_fill_super(struct super_block *sb, void *data, int silent)
 	return 0;
 }
 
+/** 20150418    
+ * file_system_type으로 등록된 superblock 중 data를 포함하는 (또는 data 그 자체)
+ * superblock을 찾기 위한 sysfs용 콜백함수.
+ **/
 static int sysfs_test_super(struct super_block *sb, void *data)
 {
 	/** 20150307    
@@ -122,7 +126,7 @@ static int sysfs_test_super(struct super_block *sb, void *data)
 	int found = 1;
 
 	/** 20150307    
-	 * KOBJ NS 타입들을 순회하며 sb에서 찾아온 정보와 
+	 * KOBJ NS 타입들을 순회하며 sb_info의 ns 타입과  정보와 
 	 **/
 	for (type = KOBJ_NS_TYPE_NONE; type < KOBJ_NS_TYPES; type++) {
 		if (sb_info->ns[type] != info->ns[type])
@@ -152,7 +156,8 @@ static void free_sysfs_super_info(struct sysfs_super_info *info)
 
 /** 20150221    
  * sysfs용 mount 함수.
- * super block를 찾거나 생성한 뒤 받아와 정보를 채우고, superblock에 대한 dentry를 * 받아와 리턴한다.
+ * super block를 찾거나 생성한 뒤 받아와 정보를 채우고,
+ * superblock에 대한 dentry를 받아와 리턴한다.
  **/
 static struct dentry *sysfs_mount(struct file_system_type *fs_type, int flags, const char *dev_name, void *data)
 {

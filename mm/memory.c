@@ -2887,6 +2887,9 @@ static inline void unmap_mapping_range_list(struct list_head *head,
  * @even_cows: 1 when truncating a file, unmap even private COWed pages;
  * but 0 when invalidating pagecache, don't throw away private data.
  */
+/** 20150418    
+ * 추후 분석 ???
+ **/
 void unmap_mapping_range(struct address_space *mapping,
 		loff_t const holebegin, loff_t const holelen, int even_cows)
 {

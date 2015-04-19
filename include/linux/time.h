@@ -131,6 +131,7 @@ void get_xtime_and_monotonic_and_sleep_offset(struct timespec *xtim,
 void timekeeping_inject_sleeptime(struct timespec *delta);
 
 /** 20150411    
+ * 현재 kernel 시간을 timespec 형태로 얻어온다.
  **/
 #define CURRENT_TIME		(current_kernel_time())
 #define CURRENT_TIME_SEC	((struct timespec) { get_seconds(), 0 })

@@ -27,6 +27,9 @@
  * object registration that loops through the default attributes of the
  * subsystem and creates attributes files for them in sysfs.
  */
+/** 20150418    
+ * kobj로 생성된 sysfs dir에 default_attrs 속성들에 대한 file을 생성한다.
+ **/
 static int populate_dir(struct kobject *kobj)
 {
 	struct kobj_type *t = get_ktype(kobj);
@@ -34,6 +37,10 @@ static int populate_dir(struct kobject *kobj)
 	int error = 0;
 	int i;
 
+	/** 20150418    
+	 * kobj의 ktype이 존재하면, 해당 ktype의 기본 속성(default_attrs) 들에 대해
+	 * sysfs file을 생성한다.
+	 **/
 	if (t && t->default_attrs) {
 		for (i = 0; (attr = t->default_attrs[i]) != NULL; i++) {
 			error = sysfs_create_file(kobj, attr);
@@ -44,11 +51,20 @@ static int populate_dir(struct kobject *kobj)
 	return error;
 }
 
+/** 20150418    
+ * kobj를 위한 sysfs 디렉토리를 생성하고, attr를 파일로 생성한다.
+ **/
 static int create_dir(struct kobject *kobj)
 {
 	int error = 0;
+	/** 20150418    
+	 * sysfs에 kobject를 위한 directory를 생성한다.
+	 **/
 	error = sysfs_create_dir(kobj);
 	if (!error) {
+		/** 20150418    
+		 * 생성한 디렉토리에 default_attrs를 파일로 생성한다.
+		 **/
 		error = populate_dir(kobj);
 		if (error)
 			sysfs_remove_dir(kobj);
@@ -118,7 +134,7 @@ EXPORT_SYMBOL_GPL(kobject_get_path);
 
 /* add the kobject to its kset's list */
 /** 20150411    
- * kobj의 kset이 등록되어 있는 상태에서, kset의 리스트에 추가한다.
+ * kobj의 kset이 지정되어 있는 상태에서, kset의 리스트에 추가한다.
  **/
 static void kobj_kset_join(struct kobject *kobj)
 {
@@ -141,14 +157,24 @@ static void kobj_kset_join(struct kobject *kobj)
 }
 
 /* remove the kobject from its kset's list */
+/** 20150418    
+ * kobj가 kset에 속해 있다면, kset 리스트에서 제거시킨다.
+ **/
 static void kobj_kset_leave(struct kobject *kobj)
 {
 	if (!kobj->kset)
 		return;
 
+	/** 20150418    
+	 * kobject가 속한 kset 리스트에서 kobject를 제거한다.
+	 * 제거시 spinlock에 의해 kset이 보호되어야 한다.
+	 **/
 	spin_lock(&kobj->kset->list_lock);
 	list_del_init(&kobj->entry);
 	spin_unlock(&kobj->kset->list_lock);
+	/** 20150418    
+	 * kset에서 kobject가 하나 감소했으므로 reference count를 감소시킨다.
+	 **/
 	kset_put(kobj->kset);
 }
 
@@ -168,6 +194,10 @@ static void kobject_init_internal(struct kobject *kobj)
 }
 
 
+/** 20150418    
+ * kobject를 kset의 리스트에 추가하고 sysfs 디렉토리를 생성한다.
+ * 함수 호출 후 state_in_sysfs 상태로 1이 된다.
+ **/
 static int kobject_add_internal(struct kobject *kobj)
 {
 	int error = 0;
@@ -201,6 +231,7 @@ static int kobject_add_internal(struct kobject *kobj)
 			parent = kobject_get(&kobj->kset->kobj);
 		/** 20150411    
 		 * kobj를 kset의 리스트에 추가한다.
+		 * kobj의 parent가 없고 kset만 존재한다면 kset을 parent로 지정한다.
 		 **/
 		kobj_kset_join(kobj);
 		kobj->parent = parent;
@@ -211,6 +242,9 @@ static int kobject_add_internal(struct kobject *kobj)
 		 parent ? kobject_name(parent) : "<NULL>",
 		 kobj->kset ? kobject_name(&kobj->kset->kobj) : "<NULL>");
 
+	/** 20150418    
+	 * kobj를 위한 sysfs 디렉토리를 생성하고, default_attrs를 파일로 생성한다.
+	 **/
 	error = create_dir(kobj);
 	if (error) {
 		kobj_kset_leave(kobj);
@@ -228,6 +262,9 @@ static int kobject_add_internal(struct kobject *kobj)
 			     __func__, kobject_name(kobj), error,
 			     parent ? kobject_name(parent) : "'none'");
 	} else
+		/** 20150418    
+		 * 이제 kobj는 sysfs상에 존재한다.
+		 **/
 		kobj->state_in_sysfs = 1;
 
 	return error;
@@ -240,7 +277,7 @@ static int kobject_add_internal(struct kobject *kobj)
  * @vargs: vargs to format the string.
  */
 /** 20150411    
- * kobject의 name을 vargs를 파싱해 채운다.
+ * vargs를 파싱해 kobject의 name을 채운다.
  **/
 int kobject_set_name_vargs(struct kobject *kobj, const char *fmt,
 				  va_list vargs)
@@ -341,13 +378,19 @@ error:
 }
 EXPORT_SYMBOL(kobject_init);
 
+/** 20150418    
+ * parent에 주어진 이름을 가지는 kobject를 추가한다.
+ *
+ * kobject에 따라 특별한 이름이 존재할 수 있도록 포맷스트링으로 name을 받는다.
+ *   ex) "pci0000:00"
+ **/
 static int kobject_add_varg(struct kobject *kobj, struct kobject *parent,
 			    const char *fmt, va_list vargs)
 {
 	int retval;
 
 	/** 20150411    
-	 * kobject의 name을 채운다.
+	 * vargs를 fmt 형태로 파싱해 kobject의 name을 채운다.
 	 **/
 	retval = kobject_set_name_vargs(kobj, fmt, vargs);
 	if (retval) {
@@ -355,7 +398,8 @@ static int kobject_add_varg(struct kobject *kobj, struct kobject *parent,
 		return retval;
 	}
 	/** 20150411    
-	 * kobject의 parent를 지정한다.
+	 * kobject의 parent를 지정하고, kobj를 위한 sysfs 디렉토리를 생성한다.
+	 * parent는 NULL 지정이 가능하다.
 	 **/
 	kobj->parent = parent;
 	return kobject_add_internal(kobj);
@@ -386,6 +430,9 @@ static int kobject_add_varg(struct kobject *kobj, struct kobject *parent,
  * kobject_uevent() with the UEVENT_ADD parameter to ensure that
  * userspace is properly notified of this kobject's creation.
  */
+/** 20150418    
+ * parent에 포맷스트링으로 생성된 이름을 갖는 kobject를 추가한다.
+ **/
 int kobject_add(struct kobject *kobj, struct kobject *parent,
 		const char *fmt, ...)
 {
@@ -406,7 +453,8 @@ int kobject_add(struct kobject *kobj, struct kobject *parent,
 		return -EINVAL;
 	}
 	/** 20150411    
-	 *
+	 * 포맷스트링의 이름을 갖는 kobject를 parent에 추가한다.
+	 * kobject에 대한 sysfs 디렉토리와 파일이 생성된다.
 	 **/
 	va_start(args, fmt);
 	retval = kobject_add_varg(kobj, parent, fmt, args);
@@ -565,14 +613,26 @@ out:
  * kobject_del - unlink kobject from hierarchy.
  * @kobj: object.
  */
+/** 20150418    
+ * kobject를 kobject hiererachy에서 제거한다.
+ **/
 void kobject_del(struct kobject *kobj)
 {
 	if (!kobj)
 		return;
 
+	/** 20150418    
+	 * sysfs_dirent 상에서 kobj와 하위 attribute를 제거한다.
+	 **/
 	sysfs_remove_dir(kobj);
 	kobj->state_in_sysfs = 0;
+	/** 20150418    
+	 * kobj가 kset에 속해 있다면 kset에서 제거한다.
+	 **/
 	kobj_kset_leave(kobj);
+	/** 20150418    
+	 * kobj의 parent의 reference count를 감소시킨다.
+	 **/
 	kobject_put(kobj->parent);
 	kobj->parent = NULL;
 }
@@ -595,8 +655,14 @@ struct kobject *kobject_get(struct kobject *kobj)
  * kobject_cleanup - free kobject resources.
  * @kobj: object to cleanup
  */
+/** 20150418    
+ * kobj와 관련된 자료구조와 사용한 자원(name)을 모두 정리한다.
+ **/
 static void kobject_cleanup(struct kobject *kobj)
 {
+	/** 20150418    
+	 * kobject의 ktype과 name을 받아온다.
+	 **/
 	struct kobj_type *t = get_ktype(kobj);
 	const char *name = kobj->name;
 
@@ -609,6 +675,11 @@ static void kobject_cleanup(struct kobject *kobj)
 			 kobject_name(kobj), kobj);
 
 	/* send "remove" if the caller did not do it but sent "add" */
+	/** 20150418    
+	 * state_add_uevent_sent로 설정되어 있고 아직 state_remove_uevent_sent가
+	 * 설정되지 않은 상태라면
+	 * kobject_uevent를 통해 KOBJ_REMOVE 이벤트를 보낸다.
+	 **/
 	if (kobj->state_add_uevent_sent && !kobj->state_remove_uevent_sent) {
 		pr_debug("kobject: '%s' (%p): auto cleanup 'remove' event\n",
 			 kobject_name(kobj), kobj);
@@ -616,12 +687,18 @@ static void kobject_cleanup(struct kobject *kobj)
 	}
 
 	/* remove from sysfs if the caller did not do it */
+	/** 20150418    
+	 * kobject가 sysfs에 있으면 해당 kobject를 제거한다.
+	 **/
 	if (kobj->state_in_sysfs) {
 		pr_debug("kobject: '%s' (%p): auto cleanup kobject_del\n",
 			 kobject_name(kobj), kobj);
 		kobject_del(kobj);
 	}
 
+	/** 20150418    
+	 * ktype이 존재하고 release 처리 함수가 존재하면 호출한다.
+	 **/
 	if (t && t->release) {
 		pr_debug("kobject: '%s' (%p): calling ktype release\n",
 			 kobject_name(kobj), kobj);
@@ -638,6 +715,12 @@ static void kobject_cleanup(struct kobject *kobj)
 	}
 }
 
+/** 20150418    
+ * 주어진 kref를 가지는 kobject를 kobject_cleanup 함수로 해제한다.
+ *
+ * kobject가 reference count는 kref라는 내부 구조체로 관리하므로
+ * 이런 구조를 가진다.
+ **/
 static void kobject_release(struct kref *kref)
 {
 	kobject_cleanup(container_of(kref, struct kobject, kref));
@@ -649,6 +732,10 @@ static void kobject_release(struct kref *kref)
  *
  * Decrement the refcount, and if 0, call kobject_cleanup().
  */
+/** 20150418    
+ * kobject의 kref를 감소시키고, 그 결과 0이라면 kobject_release를 사용해
+ * kobject를 cleanup시킨다.
+ **/
 void kobject_put(struct kobject *kobj)
 {
 	if (kobj) {
@@ -656,6 +743,10 @@ void kobject_put(struct kobject *kobj)
 			WARN(1, KERN_WARNING "kobject: '%s' (%p): is not "
 			       "initialized, yet kobject_put() is being "
 			       "called.\n", kobject_name(kobj), kobj);
+		/** 20150418    
+		 * kref의 reference count를 감소시키고, 그 결과 0이라면
+		 * kobject_release를 사용해 kobject를 해제한다.
+		 **/
 		kref_put(&kobj->kref, kobject_release);
 	}
 }
@@ -715,6 +806,9 @@ struct kobject *kobject_create(void)
  *
  * If the kobject was not able to be created, NULL will be returned.
  */
+/** 20150418    
+ * parent에 name이름을 갖는 새로운 kobject를 할당받아 추가한다.
+ **/
 struct kobject *kobject_create_and_add(const char *name, struct kobject *parent)
 {
 	struct kobject *kobj;
@@ -727,6 +821,9 @@ struct kobject *kobject_create_and_add(const char *name, struct kobject *parent)
 	if (!kobj)
 		return NULL;
 
+	/** 20150418    
+	 * 생성 및 초기화된 kobj를 parent 아래 kobject hierarchy에 name으로 추가한다.
+	 **/
 	retval = kobject_add(kobj, parent, "%s", name);
 	if (retval) {
 		printk(KERN_WARNING "%s: kobject_add error: %d\n",

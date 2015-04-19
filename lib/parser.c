@@ -104,6 +104,9 @@ static int match_one(char *s, const char *p, substring_t args[])
  * format identifiers which will be taken into account when matching the
  * tokens, and whose locations will be returned in the @args array.
  */
+/** 20150418    
+ * 추후 분석???
+ **/
 int match_token(char *s, const match_table_t table, substring_t args[])
 {
 	const struct match_token *p;
@@ -167,6 +170,9 @@ int match_int(substring_t *s, int *result)
  * success, sets @result to the integer represented by the string and returns
  * 0. Returns either -ENOMEM or -EINVAL on failure.
  */
+/** 20150418    
+ * 추후 분석???
+ **/
 int match_octal(substring_t *s, int *result)
 {
 	return match_number(s, result, 8);

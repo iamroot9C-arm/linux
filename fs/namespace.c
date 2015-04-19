@@ -53,6 +53,9 @@ static struct kmem_cache *mnt_cache __read_mostly;
 static struct rw_semaphore namespace_sem;
 
 /* /sys/fs */
+/** 20150418    
+ * /sys/fs에 해당하는 kobject. mnt_init에서 초기화된다.
+ **/
 struct kobject *fs_kobj;
 EXPORT_SYMBOL_GPL(fs_kobj);
 
@@ -1044,6 +1047,9 @@ EXPORT_SYMBOL(generic_show_options);
  * given options, then the displayed options will not reflect reality
  * any more.
  */
+/** 20150418    
+ * superblock의 option에 options를 복사해 넣는다.
+ **/
 void save_mount_options(struct super_block *sb, char *options)
 {
 	BUG_ON(sb->s_options);
@@ -2710,6 +2716,9 @@ void __init mnt_init(void)
 	if (err)
 		printk(KERN_WARNING "%s: sysfs_init error: %d\n",
 			__func__, err);
+	/** 20150418    
+	 * fs라는 이름의 kobject를 생성한다.
+	 **/
 	fs_kobj = kobject_create_and_add("fs", NULL);
 	if (!fs_kobj)
 		printk(KERN_WARNING "%s: kobj create error\n", __func__);
