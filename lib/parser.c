@@ -171,6 +171,9 @@ int match_int(substring_t *s, int *result)
  * 0. Returns either -ENOMEM or -EINVAL on failure.
  */
 /** 20150418    
+ * substring_t에서 octal(8진) 표현 정수를 스캔해
+ * 매개변수 result에 integer로 반환한다.
+ *
  * 추후 분석???
  **/
 int match_octal(substring_t *s, int *result)

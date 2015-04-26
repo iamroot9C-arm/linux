@@ -928,19 +928,31 @@ void __module_get(struct module *module)
 }
 EXPORT_SYMBOL(__module_get);
 
+/** 20150425    
+ * 해당 모듈이 동작 중인 경우 ref 카운트를 증가시키고 리턴한다.
+ **/
 bool try_module_get(struct module *module)
 {
 	bool ret = true;
 
 	if (module) {
+		/** 20150425    
+		 * 선점 금지
+		 **/
 		preempt_disable();
 
+		/** 20150425    
+		 * 모듈이 동작 중인 경우 ref 카운트를 증가시킨다.
+		 **/
 		if (likely(module_is_live(module))) {
 			__this_cpu_inc(module->refptr->incs);
 			trace_module_get(module, _RET_IP_);
 		} else
 			ret = false;
 
+		/** 20150425    
+		 * 선점 허용
+		 **/
 		preempt_enable();
 	}
 	return ret;

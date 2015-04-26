@@ -61,6 +61,9 @@ static unsigned int i_hash_shift __read_mostly;
 static struct hlist_head *inode_hashtable __read_mostly;
 static __cacheline_aligned_in_smp DEFINE_SPINLOCK(inode_hash_lock);
 
+/** 20150425    
+ * inode_sb_list 용 spinlock 
+ **/
 __cacheline_aligned_in_smp DEFINE_SPINLOCK(inode_sb_list_lock);
 
 /*
@@ -989,22 +992,44 @@ repeat:
  * here to attempt to avoid that.
  */
 #define LAST_INO_BATCH 1024
+/** 20150425    
+ * percpu 변수 last_ino 정의.
+ **/
 static DEFINE_PER_CPU(unsigned int, last_ino);
 
+/** 20150425    
+ * i_ino에 저장할 ino을 받아온다.
+ *
+ * shared_last_ino : 시스템 전역으로 공유.
+ * last_ino        : shared_last_ino에서부터 cache용으로 각 cpu에 받아놓은 값.
+ **/
 unsigned int get_next_ino(void)
 {
+	/** 20150425    
+	 * 현재 cpu를 선점한 상태로 percpu 변수 last_ino 위치를 받아온다.
+	 **/
 	unsigned int *p = &get_cpu_var(last_ino);
 	unsigned int res = *p;
 
 #ifdef CONFIG_SMP
+	/** 20150425    
+	 * shared_last_ino에서 LAST_INO_BATCH 단위로 요청을 한 각 cpu에게 할당한다.
+	 * 각 cpu는 받아온 LAST_INO_BATCH 이내에서 percpu 변수값을 제공한다.
+	 **/
 	if (unlikely((res & (LAST_INO_BATCH-1)) == 0)) {
 		static atomic_t shared_last_ino;
+		/** 20150425    
+		 * 전역변수이므로 atomic 함수를 사용한다.
+		 **/
 		int next = atomic_add_return(LAST_INO_BATCH, &shared_last_ino);
 
 		res = next - LAST_INO_BATCH;
 	}
 #endif
 
+	/** 20150425    
+	 * 마지막 ino를 하나 증가시켜 리턴시킨다.
+	 **/
 	*p = ++res;
 	put_cpu_var(last_ino);
 	return res;
@@ -1021,10 +1046,22 @@ EXPORT_SYMBOL(get_next_ino);
  *	- fs can't be unmount
  *	- quotas, fsnotify, writeback can't work
  */
+/** 20150425    
+ * superblock에 따라 적절한 inode 할당 함수를 호출해 inode를 할당받아 리턴한다.
+ **/
 struct inode *new_inode_pseudo(struct super_block *sb)
 {
+	/** 20150425    
+	 * superblock에 지정된 s_op을 사용해 inode를 할당한다.
+	 *
+	 * sysfs나 ramfs의 경우 kmem_cache_alloc으로 inode 구조체만 할당 받아온다.
+	 **/
 	struct inode *inode = alloc_inode(sb);
 
+	/** 20150425    
+	 * 성공적으로 inode를 받아왔다면
+	 * i_state를 0으로 초기화 하고, i_sb_list를 0으로 초기화 한다.
+	 **/
 	if (inode) {
 		spin_lock(&inode->i_lock);
 		inode->i_state = 0;
@@ -1046,12 +1083,24 @@ struct inode *new_inode_pseudo(struct super_block *sb)
  *	newly created inode's mapping
  *
  */
+/** 20150425    
+ * superblock을 위한 새로운 inode를 할당받아 superblock에 등록한다.
+ **/
 struct inode *new_inode(struct super_block *sb)
 {
 	struct inode *inode;
 
+	/** 20150425    
+	 * spinlock을 잡기위해 inode_sb_list를 정의된 prefetch 함수로 가져온다.
+	 *
+	 * arm에서는 NULL.
+	 **/
 	spin_lock_prefetch(&inode_sb_list_lock);
 
+	/** 20150425    
+	 * sb에 해당하는 inode를 하나 할당 받는다.
+	 * inode를 superblock에
+	 **/
 	inode = new_inode_pseudo(sb);
 	if (inode)
 		inode_sb_list_add(inode);
@@ -2026,6 +2075,9 @@ void __init inode_init(void)
 		INIT_HLIST_HEAD(&inode_hashtable[loop]);
 }
 
+/** 20150425    
+ * mode를 검사하여 특별한 타입에 대해 file ops와 mode를 설정한다.
+ **/
 void init_special_inode(struct inode *inode, umode_t mode, dev_t rdev)
 {
 	inode->i_mode = mode;
@@ -2052,16 +2104,33 @@ EXPORT_SYMBOL(init_special_inode);
  * @dir: Directory inode
  * @mode: mode of the new inode
  */
+/** 20150425    
+ * 새로 할당된 inode의 uid, gid, mode를 초기화 한다.
+ **/
 void inode_init_owner(struct inode *inode, const struct inode *dir,
 			umode_t mode)
 {
+	/** 20150425    
+	 * inode의 i_uid를 current task의 fsuid로 한다.
+	 **/
 	inode->i_uid = current_fsuid();
+	/** 20150425    
+	 * dir이 지정되어 있고, dir의 i_mode에 ISGID가 포함되어 있다면
+	 * inode의 i_gid를 dir에 저장되어 있는 값으로 하고,
+	 * 그렇지 않을 경우 current task의 fsgid로 한다.
+	 **/
 	if (dir && dir->i_mode & S_ISGID) {
 		inode->i_gid = dir->i_gid;
+		/** 20150425    
+		 * inode를 부여하는 대상이 DIR이라면, S_ISGID를 상속한다.
+		 **/
 		if (S_ISDIR(mode))
 			mode |= S_ISGID;
 	} else
 		inode->i_gid = current_fsgid();
+	/** 20150425    
+	 * inode의 i_mode를 설정한다.
+	 **/
 	inode->i_mode = mode;
 }
 EXPORT_SYMBOL(inode_init_owner);

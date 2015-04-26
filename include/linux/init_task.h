@@ -158,6 +158,8 @@ extern struct task_group root_task_group;
  *
  * .cpus_allowed는 sched_init에서 do_set_cpus_allowed를 호출하여 변경됨.
  * .nsproxy는 init_nsproxy가 지정.
+ *
+ * .real_cred, .cred는 init_cred를 지정한다.
  **/
 #define INIT_TASK(tsk)	\
 {									\

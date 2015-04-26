@@ -193,6 +193,9 @@ struct inodes_stat_t {
 /* public flags for file_system_type */
 #define FS_REQUIRES_DEV 1 
 #define FS_BINARY_MOUNTDATA 2
+/** 20150425    
+ * SUBTYPE
+ **/
 #define FS_HAS_SUBTYPE 4
 #define FS_REVAL_DOT	16384	/* Check the paths ".", ".." for staleness */
 #define FS_RENAME_DOES_D_MOVE	32768	/* FS will handle d_move()
@@ -233,6 +236,9 @@ struct inodes_stat_t {
  **/
 #define MS_BORN		(1<<29)
 #define MS_ACTIVE	(1<<30)
+/** 20150425    
+ * userspace에서 mount 될 수 없는 속성.
+ **/
 #define MS_NOUSER	(1<<31)
 
 /*
@@ -808,6 +814,11 @@ struct inode {
 	struct posix_acl	*i_default_acl;
 #endif
 
+	/** 20150425    
+	 * i_op : inode의 inode 핸들링 함수.
+	 * i_sb : inode가 속한 superblock 정보.
+	 * i_mapping : address_space 정보.
+	 **/
 	const struct inode_operations	*i_op;
 	struct super_block	*i_sb;
 	struct address_space	*i_mapping;
@@ -835,6 +846,9 @@ struct inode {
 		const unsigned int i_nlink;
 		unsigned int __i_nlink;
 	};
+	/** 20150425    
+	 * i_rdev	: real device node
+	 **/
 	dev_t			i_rdev;
 	loff_t			i_size;
 	struct timespec		i_atime;

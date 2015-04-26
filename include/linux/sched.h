@@ -1457,6 +1457,9 @@ struct task_struct {
 /* process credentials */
 	const struct cred __rcu *real_cred; /* objective and real subjective task
 					 * credentials (COW) */
+	/** 20150425    
+	 * current_cred()로 리턴된다.
+	 **/
 	const struct cred __rcu *cred;	/* effective (overridable) subjective task
 					 * credentials (COW) */
 	char comm[TASK_COMM_LEN]; /* executable name excluding path

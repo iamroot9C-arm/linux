@@ -82,12 +82,18 @@ typedef struct spinlock {
 	};
 } spinlock_t;
 
+/** 20150425    
+ * unlock된 상태의 spin_lock 초기값
+ **/
 #define __SPIN_LOCK_INITIALIZER(lockname) \
 	{ { .rlock = __RAW_SPIN_LOCK_INITIALIZER(lockname) } }
 
 #define __SPIN_LOCK_UNLOCKED(lockname) \
 	(spinlock_t ) __SPIN_LOCK_INITIALIZER(lockname)
 
+/** 20150425    
+ * spinlock의 선언 및 초기화.
+ **/
 #define DEFINE_SPINLOCK(x)	spinlock_t x = __SPIN_LOCK_UNLOCKED(x)
 
 #include <linux/rwlock_types.h>

@@ -19,6 +19,9 @@
  * Bits in mapping->flags.  The lower __GFP_BITS_SHIFT bits are the page
  * allocation mode flags.
  */
+/** 20150425    
+ * __GFP_BITS_SHIFT 이후의 address_space 관련 flags 비트.
+ **/
 enum mapping_flags {
 	AS_EIO		= __GFP_BITS_SHIFT + 0,	/* IO error on async write */
 	AS_ENOSPC	= __GFP_BITS_SHIFT + 1,	/* ENOSPC on async write */
@@ -74,6 +77,9 @@ static inline gfp_t mapping_gfp_mask(struct address_space * mapping)
  * This is non-atomic.  Only to be used before the mapping is activated.
  * Probably needs a barrier...
  */
+/** 20150425    
+ * address_space의 flags에서 GFP 부분을 날리고, mask를 지정한다.
+ **/
 static inline void mapping_set_gfp_mask(struct address_space *m, gfp_t mask)
 {
 	m->flags = (m->flags & ~(__force unsigned long)__GFP_BITS_MASK) |

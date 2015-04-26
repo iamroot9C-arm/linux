@@ -30,6 +30,9 @@
 
 #include "internal.h"
 
+/** 20150425    
+ * ramfs 의 address_space ops.
+ **/
 const struct address_space_operations ramfs_aops = {
 	.readpage	= simple_readpage,
 	.write_begin	= simple_write_begin,

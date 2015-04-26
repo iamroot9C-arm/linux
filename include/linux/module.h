@@ -196,6 +196,13 @@ struct module_use {
 	struct module *source, *target;
 };
 
+/** 20150425    
+ * MODULE STATE.
+ *
+ * MODULE_STATE_LIVE   : 초기화 완료. 동작 중.
+ * MODULE_STATE_COMING : 로딩 중
+ * MODULE_STATE_GOING  : 모듈 제거 중.
+ **/
 enum module_state
 {
 	MODULE_STATE_LIVE,
@@ -213,7 +220,10 @@ enum module_state
  * since alloc_percpu() is fine grained.
  */
 /** 20150307    
- * 각 cpu마다 module을 참조하는 횟수를 저장하기 위한 구조체.
+ * module 참조횟수를 관리하는 구조체.
+ *
+ * module_get시에 incs를 증가시키고,
+ * module_put시에 decs를 증가시킨다.
  **/
 struct module_ref {
 	unsigned long incs;
@@ -383,6 +393,9 @@ extern struct mutex module_mutex;
 /* FIXME: It'd be nice to isolate modules during init, too, so they
    aren't used before they (may) fail.  But presently too much code
    (IDE & SCSI) require entry into the module during init.*/
+/** 20150425    
+ * module 상태가 제거 중이 아닐 경우 동작 중.
+ **/
 static inline int module_is_live(struct module *mod)
 {
 	return mod->state != MODULE_STATE_GOING;

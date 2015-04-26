@@ -284,6 +284,7 @@ int bdi_set_max_ratio(struct backing_dev_info *bdi, unsigned int max_ratio);
 
 /** 20150418    
  * noop에 해당하는 bdi capability.
+ * 실제 디바이스가 없으므로 WRITEBACK이나 ACCT DIRTY 관련 정보가 없다.
  **/
 #define BDI_CAP_NO_ACCT_AND_WRITEBACK \
 	(BDI_CAP_NO_WRITEBACK | BDI_CAP_NO_ACCT_DIRTY | BDI_CAP_NO_ACCT_WB)

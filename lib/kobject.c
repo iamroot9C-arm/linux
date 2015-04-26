@@ -432,6 +432,8 @@ static int kobject_add_varg(struct kobject *kobj, struct kobject *parent,
  */
 /** 20150418    
  * parent에 포맷스트링으로 생성된 이름을 갖는 kobject를 추가한다.
+ * 
+ * 추가된 kobject는 sysfs 내에 디렉토리와 파일이 추가된다.
  **/
 int kobject_add(struct kobject *kobj, struct kobject *parent,
 		const char *fmt, ...)
@@ -823,6 +825,7 @@ struct kobject *kobject_create_and_add(const char *name, struct kobject *parent)
 
 	/** 20150418    
 	 * 생성 및 초기화된 kobj를 parent 아래 kobject hierarchy에 name으로 추가한다.
+	 * sysfs에 디렉토리 및 파일도 추가된다.
 	 **/
 	retval = kobject_add(kobj, parent, "%s", name);
 	if (retval) {

@@ -506,6 +506,9 @@ static inline void rcu_preempt_sleep_check(void)
 #define rcu_dereference_sparse(p, space) \
 	((void)(((typeof(*p) space *)p) == p))
 #else /* #ifdef __CHECKER__ */
+/** 20150425    
+ * __CHECKER__를 정의하지 않아 NULL.
+ **/
 #define rcu_dereference_sparse(p, space)
 #endif /* #else #ifdef __CHECKER__ */
 
@@ -529,6 +532,9 @@ static inline void rcu_preempt_sleep_check(void)
 		smp_read_barrier_depends(); \
 		((typeof(*p) __force __kernel *)(_________p1)); \
 	})
+/** 20150425    
+ * rcu pointer의 값을 읽어온다.
+ **/
 #define __rcu_dereference_protected(p, c, space) \
 	({ \
 		rcu_lockdep_assert(c, "suspicious rcu_dereference_protected()" \
@@ -703,6 +709,9 @@ static inline void rcu_preempt_sleep_check(void)
  * when protected only by rcu_read_lock() will result in infrequent
  * but very ugly failures.
  */
+/** 20150425    
+ * RCU
+ **/
 #define rcu_dereference_protected(p, c) \
 	__rcu_dereference_protected((p), (c), __rcu)
 

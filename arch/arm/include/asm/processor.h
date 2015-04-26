@@ -127,6 +127,11 @@ static inline void prefetch(const void *ptr)
  **/
 #define prefetchw(ptr)	prefetch(ptr)
 
+/** 20150425    
+ * ARCH_HAS_SPINLOCK_PREFETCH를 정의한다.
+ *
+ * spin_lock_prefetch는 NULL 함수.
+ **/
 #define ARCH_HAS_SPINLOCK_PREFETCH
 #define spin_lock_prefetch(x) do { } while (0)
 

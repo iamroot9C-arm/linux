@@ -294,11 +294,22 @@ static int __init proc_filesystems_init(void)
 module_init(proc_filesystems_init);
 #endif
 
+/** 20150425    
+ * 파일시스템에서 name을 찾아 리턴한다.
+ **/
 static struct file_system_type *__get_fs_type(const char *name, int len)
 {
 	struct file_system_type *fs;
 
+	/** 20150425    
+	 * file_systems_lock read lock.
+	 **/
 	read_lock(&file_systems_lock);
+	/** 20150425    
+	 * file_systems에서 name인 파일시스템을 찾는다.
+	 * 파일시스템이 존재하면 module 참조 카운트를 증가시킨다.
+	 * module 획득이 실패하면 파일시스템이 NULL을 리턴한다.
+	 **/
 	fs = *(find_filesystem(name, len));
 	if (fs && !try_module_get(fs->owner))
 		fs = NULL;
@@ -306,16 +317,29 @@ static struct file_system_type *__get_fs_type(const char *name, int len)
 	return fs;
 }
 
+/** 20150425    
+ * name인 파일시스템을 찾아 리턴한다.
+ **/
 struct file_system_type *get_fs_type(const char *name)
 {
 	struct file_system_type *fs;
+	/** 20150425    
+	 * '.' 전까지 문자열 길이를 리턴
+	 **/
 	const char *dot = strchr(name, '.');
 	int len = dot ? dot - name : strlen(name);
 
+	/** 20150425    
+	 * name으로 등록된 파일시스템을 찾는다.
+	 **/
 	fs = __get_fs_type(name, len);
 	if (!fs && (request_module("%.*s", len, name) == 0))
 		fs = __get_fs_type(name, len);
 
+	/** 20150425    
+	 * name에 dot이 포함되어 있지만, 서브타입이 존재하지 않는 경우에는
+	 * 파일시스템 사용이 불가능한 것으로 리턴.
+	 **/
 	if (dot && fs && !(fs->fs_flags & FS_HAS_SUBTYPE)) {
 		put_filesystem(fs);
 		fs = NULL;

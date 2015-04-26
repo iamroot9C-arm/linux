@@ -384,6 +384,9 @@ EXPORT_SYMBOL(strim);
  * strlen - Find the length of a string
  * @s: The string to be sized
  */
+/** 20150425    
+ * 문자열 길이 리턴 라이브러리 함수.
+ **/
 size_t strlen(const char *s)
 {
 	const char *sc;

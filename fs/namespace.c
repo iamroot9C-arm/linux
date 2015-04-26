@@ -161,6 +161,9 @@ void mnt_release_group_id(struct mount *mnt)
 /*
  * vfsmount lock must be held for read
  */
+/** 20150425    
+ * 각 struct mount가 cpu마다 몇 번 mount 되었는지에 대한 count를 증가시킨다.
+ **/
 static inline void mnt_add_count(struct mount *mnt, int n)
 {
 #ifdef CONFIG_SMP
@@ -192,7 +195,8 @@ unsigned int mnt_get_count(struct mount *mnt)
 }
 
 /** 20150228    
- * 주어진 이름을 저장하는 mount 객체를 할당받고 초기화 한다.
+ * 주어진 이름을 가진 mount 객체를 할당받고 초기화 한다.
+ * struct vfsmount가 struct mount 내에 포함되어 있다.
  **/
 static struct mount *alloc_vfsmnt(const char *name)
 {
@@ -793,7 +797,7 @@ static struct mount *skip_mnt_tree(struct mount *p)
 }
 
 /** 20150411    
- * VFS을 위한 vfsmount 객체에 정보를 채워 리턴한다.
+ * VFS에 파일시스템을 마운트하고, vfsmount 객체에 정보를 채워 리턴한다.
  *
  * kernel에 의해 호출되는 경우와 user에 의해 호출되는 경우 모두에 해당.
  **/
@@ -966,6 +970,9 @@ put_again:
 	mntfree(mnt);
 }
 
+/** 20150425    
+ * 추후 분석???
+ **/
 void mntput(struct vfsmount *mnt)
 {
 	if (mnt) {
@@ -978,6 +985,9 @@ void mntput(struct vfsmount *mnt)
 }
 EXPORT_SYMBOL(mntput);
 
+/** 20150425    
+ * vfsmount를 받아 struct mount의 mnt_count(percpu 변수)를 증가시킨다.
+ **/
 struct vfsmount *mntget(struct vfsmount *mnt)
 {
 	if (mnt)
@@ -1910,18 +1920,30 @@ out:
 	return err;
 }
 
+/** 20150425    
+ * fstype에서 .이후의 문자열을 superblock의 s_subtype에 저장한다.
+ **/
 static struct vfsmount *fs_set_subtype(struct vfsmount *mnt, const char *fstype)
 {
 	int err;
+	/** 20150425    
+	 * 전체 fstype에서 '.' 위치부터 subtype.
+	 **/
 	const char *subtype = strchr(fstype, '.');
 	if (subtype) {
 		subtype++;
 		err = -EINVAL;
+		/** 20150425    
+		 * '.' 이후에 NULL인 경우 에러.
+		 **/
 		if (!subtype[0])
 			goto err;
 	} else
 		subtype = "";
 
+	/** 20150425    
+	 * subtype부분을 복사해 mnt_sb의 s_subtype에 저장한다.
+	 **/
 	mnt->mnt_sb->s_subtype = kstrdup(subtype, GFP_KERNEL);
 	err = -ENOMEM;
 	if (!mnt->mnt_sb->s_subtype)
@@ -1933,17 +1955,32 @@ static struct vfsmount *fs_set_subtype(struct vfsmount *mnt, const char *fstype)
 	return ERR_PTR(err);
 }
 
+/** 20150425    
+ * "fstype"을 등록된 파일시스템 목록에서 찾아, VFS에 마운트시키고 리턴한다.
+ **/
 static struct vfsmount *
 do_kern_mount(const char *fstype, int flags, const char *name, void *data)
 {
+	/** 20150425    
+	 * 등록된 파일시스템 리스트에서 fstype을 찾아 리턴한다.
+	 **/
 	struct file_system_type *type = get_fs_type(fstype);
 	struct vfsmount *mnt;
 	if (!type)
 		return ERR_PTR(-ENODEV);
+	/** 20150425    
+	 * vfsmount 객체에 정보를 채워 리턴한다.
+	 *
+	 * mount에 성공했고, FS_HAS_SUBTYPE이지만 s_subtype이 채워지지 않았다면
+	 * s_subtype을 채운다.
+	 **/
 	mnt = vfs_kern_mount(type, flags, name, data);
 	if (!IS_ERR(mnt) && (type->fs_flags & FS_HAS_SUBTYPE) &&
 	    !mnt->mnt_sb->s_subtype)
 		mnt = fs_set_subtype(mnt, fstype);
+	/** 20150425    
+	 * 파일시스템의 참조카운트를 감소시킨다.
+	 **/
 	put_filesystem(type);
 	return mnt;
 }
@@ -2331,10 +2368,16 @@ dput_out:
 	return retval;
 }
 
+/** 20150425    
+ * mnt_namespace 할당 및 초기화.
+ **/
 static struct mnt_namespace *alloc_mnt_ns(void)
 {
 	struct mnt_namespace *new_ns;
 
+	/** 20150425    
+	 * struct mnt_namespace 할당 후 count 1로 설정.
+	 **/
 	new_ns = kmalloc(sizeof(struct mnt_namespace), GFP_KERNEL);
 	if (!new_ns)
 		return ERR_PTR(-ENOMEM);
@@ -2429,13 +2472,27 @@ struct mnt_namespace *copy_mnt_ns(unsigned long flags, struct mnt_namespace *ns,
  * create_mnt_ns - creates a private namespace and adds a root filesystem
  * @mnt: pointer to the new root filesystem mountpoint
  */
+/** 20150425    
+ * struct mnt_namespace를 생성 및 초기화하고,
+ * 매개변수로 받은 struct vfsmount가 속한 struct mount에 등록한다.
+ **/
 static struct mnt_namespace *create_mnt_ns(struct vfsmount *m)
 {
+	/** 20150425    
+	 * struct mnt_namespace의 할당 및 초기화.
+	 **/
 	struct mnt_namespace *new_ns = alloc_mnt_ns();
 	if (!IS_ERR(new_ns)) {
+		/** 20150425    
+		 * vfsmount를 포함하는 mount 오브젝트를 찾아와 mnt_ns에
+		 * 새로 생성한 mnt_namespace를 지정한다.
+		 **/
 		struct mount *mnt = real_mount(m);
 		mnt->mnt_ns = new_ns;
 		new_ns->root = mnt;
+		/** 20150425    
+		 * mount의 mnt_list에 새로 생성된 new_ns를 등록한다.
+		 **/
 		list_add(&new_ns->list, &mnt->mnt_list);
 	} else {
 		mntput(m);
@@ -2654,17 +2711,30 @@ static void __init init_mount_tree(void)
 	struct mnt_namespace *ns;
 	struct path root;
 
+	/** 20150425    
+	 * init_rootfs 에서 등록한 "rootfs" 파일시스템을 mount 한다.
+	 **/
 	mnt = do_kern_mount("rootfs", 0, "rootfs", NULL);
 	if (IS_ERR(mnt))
 		panic("Can't create rootfs");
 
+	/** 20150425    
+	 * struct mnt_namespace를 생성하고 mnt에 등록한다.
+	 **/
 	ns = create_mnt_ns(mnt);
 	if (IS_ERR(ns))
 		panic("Can't allocate initial namespace");
 
+	/** 20150425    
+	 * init_task의 nsproxy에 생성한 mnt_namespace를 지정하고,
+	 * task의 ns_proxy에 연결되었으므로 reference count를 증가시킨다.
+	 **/
 	init_task.nsproxy->mnt_ns = ns;
 	get_mnt_ns(ns);
 
+	/** 20150425    
+	 * struct root 자료구조를 채운다.
+	 **/
 	root.mnt = mnt;
 	root.dentry = mnt->mnt_root;
 
@@ -2717,11 +2787,14 @@ void __init mnt_init(void)
 		printk(KERN_WARNING "%s: sysfs_init error: %d\n",
 			__func__, err);
 	/** 20150418    
-	 * fs라는 이름의 kobject를 생성한다.
+	 * fs라는 이름의 kobject를 생성하고 추가한다.
 	 **/
 	fs_kobj = kobject_create_and_add("fs", NULL);
 	if (!fs_kobj)
 		printk(KERN_WARNING "%s: kobj create error\n", __func__);
+	/** 20150425    
+	 * rootfs 파일시스템을 등록(초기화 포함)한다.
+	 **/
 	init_rootfs();
 	init_mount_tree();
 }

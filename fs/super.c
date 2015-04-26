@@ -1093,8 +1093,8 @@ void free_anon_bdev(dev_t dev)
 EXPORT_SYMBOL(free_anon_bdev);
 
 /** 20150418    
- * sget에서 set 함수로 지정되는 콜백함수.
- * dev_t를 받아오고, s_bdi는 NOOP.
+ * sget에서 superblock을 할당받은 뒤 호출되는 set 콜백함수.
+ * dev_t를 받아오고, s_bdi는 NOOP bdi를 지정한다.
  **/
 int set_anon_super(struct super_block *s, void *data)
 {
@@ -1289,6 +1289,9 @@ struct dentry *mount_nodev(struct file_system_type *fs_type,
 	if (IS_ERR(s))
 		return ERR_CAST(s);
 
+	/** 20150425    
+	 * superblock의 나머지 부분을 채우기 위해 콜백함수를 호출한다.
+	 **/
 	error = fill_super(s, data, flags & MS_SILENT ? 1 : 0);
 	if (error) {
 		deactivate_locked_super(s);

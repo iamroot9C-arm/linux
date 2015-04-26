@@ -269,6 +269,9 @@ static inline void put_cred(const struct cred *_cred)
  * Access the subjective credentials of the current task.  RCU-safe,
  * since nobody else can modify it.
  */
+/** 20150425    
+ * current task의 cred pointer.
+ **/
 #define current_cred() \
 	rcu_dereference_protected(current->cred, 1)
 
@@ -337,6 +340,9 @@ static inline void put_cred(const struct cred *_cred)
 #define task_uid(task)		(task_cred_xxx((task), uid))
 #define task_euid(task)		(task_cred_xxx((task), euid))
 
+/** 20150425    
+ * current->cred->xxx
+ **/
 #define current_cred_xxx(xxx)			\
 ({						\
 	current_cred()->xxx;			\
@@ -348,6 +354,10 @@ static inline void put_cred(const struct cred *_cred)
 #define current_egid()		(current_cred_xxx(egid))
 #define current_suid()		(current_cred_xxx(suid))
 #define current_sgid()		(current_cred_xxx(sgid))
+/** 20150425    
+ * current task의 cred->fsuid.
+ * VFS ops를 위한 uid/gid
+ **/
 #define current_fsuid() 	(current_cred_xxx(fsuid))
 #define current_fsgid() 	(current_cred_xxx(fsgid))
 #define current_cap()		(current_cred_xxx(cap_effective))

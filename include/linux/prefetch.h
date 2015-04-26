@@ -42,6 +42,9 @@
 #define prefetchw(x) __builtin_prefetch(x,1)
 #endif
 
+/** 20150425    
+ * arch/arm/include/asm/processor.h에서 정의하고 있으므로 해당 안 됨.
+ **/
 #ifndef ARCH_HAS_SPINLOCK_PREFETCH
 #define spin_lock_prefetch(x) prefetchw(x)
 #endif

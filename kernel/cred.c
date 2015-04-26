@@ -43,6 +43,9 @@ static struct thread_group_cred init_tgcred = {
 /*
  * The initial credentials for the initial task
  */
+/** 20150425    
+ * init task를 위한 init_cred.
+ **/
 struct cred init_cred = {
 	.usage			= ATOMIC_INIT(4),
 #ifdef CONFIG_DEBUG_CREDENTIALS

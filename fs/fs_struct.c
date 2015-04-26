@@ -29,6 +29,9 @@ void set_fs_root(struct fs_struct *fs, struct path *path)
  * Replace the fs->{pwdmnt,pwd} with {mnt,dentry}. Put the old values.
  * It can block.
  */
+/** 20150425    
+ * 20150501 여기부터...
+ **/
 void set_fs_pwd(struct fs_struct *fs, struct path *path)
 {
 	struct path old_pwd;

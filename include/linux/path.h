@@ -4,6 +4,8 @@
 struct dentry;
 struct vfsmount;
 
+/** 20150425    
+ **/
 struct path {
 	struct vfsmount *mnt;
 	struct dentry *dentry;

@@ -12,6 +12,11 @@
 #include <linux/linkage.h>
 #include <asm/assembler.h>
 
+/** 20150425    
+ * strchr ARM 구현.
+ *
+ * char * strchr(const char * s, int c);
+ **/
 		.text
 		.align	5
 ENTRY(strchr)
