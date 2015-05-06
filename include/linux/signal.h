@@ -15,6 +15,8 @@ extern int print_fatal_signals;
  * Real Time signals may be queued.
  */
 
+/** 20150502    
+ **/
 struct sigqueue {
 	struct list_head list;
 	int flags;

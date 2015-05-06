@@ -1094,7 +1094,7 @@ EXPORT_SYMBOL(free_anon_bdev);
 
 /** 20150418    
  * sget에서 superblock을 할당받은 뒤 호출되는 set 콜백함수.
- * dev_t를 받아오고, s_bdi는 NOOP bdi를 지정한다.
+ * anonymous block을 위한 dev_t를 받아오고, s_bdi는 NOOP bdi를 지정한다.
  **/
 int set_anon_super(struct super_block *s, void *data)
 {

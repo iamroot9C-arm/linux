@@ -3139,14 +3139,12 @@ static unsigned long calculate_alignment(unsigned long flags,
 	 **/
 	if (flags & SLAB_HWCACHE_ALIGN) {
 		/** 20140208    
-		 * size보다 크면서 가장 가까운 cache line의 1/(2의승수)를 구한다.
+		 * hw cache line 크기를 구해와 오브젝트 크기와 비교해 align을 결정한다.
+		 * cache line에 가까운 (1/2의 배수)와 align 요청 받은 크기 중 큰 값을 취한다.
 		 **/
 		unsigned long ralign = cache_line_size();
 		while (size <= ralign / 2)
 			ralign /= 2;
-		/** 20140208    
-		 * 제공된 align과 계산된 ralign 중 큰 값을 취한다.
-		 **/
 		align = max(align, ralign);
 	}
 
@@ -3509,7 +3507,7 @@ static int calculate_sizes(struct kmem_cache *s, int forced_order)
 		s->allocflags |= SLUB_DMA;
 
 	/** 20150214    
-	 * __GFP_RECLAIMABLE 속성이 필요한지 검사해 추가한다.
+	 * __GFP_RECLAIMABLE 속성이 필요한지 검사해 페이지 회수 가능 옵션을 추가한다.
 	 **/
 	if (s->flags & SLAB_RECLAIM_ACCOUNT)
 		s->allocflags |= __GFP_RECLAIMABLE;

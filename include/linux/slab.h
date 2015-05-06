@@ -16,6 +16,11 @@
  * Flags to pass to kmem_cache_create().
  * The ones marked DEBUG are only valid if CONFIG_SLAB_DEBUG is set.
  */
+/** 20150502    
+ * SLAB_HWCACHE_ALIGN : object를 hw cache line에 정렬시킨다.
+ * SLAB_PANIC         : error가 발견되어 object 할당 실패시 panic을 발생시킨다.
+ * SLAB_RECLAIM_ACCOUNT : slab의 object들이 reclaim 가능하다.
+ **/
 #define SLAB_DEBUG_FREE		0x00000100UL	/* DEBUG: Perform (expensive) checks on free */
 #define SLAB_RED_ZONE		0x00000400UL	/* DEBUG: Red zone objs in a cache */
 #define SLAB_POISON		0x00000800UL	/* DEBUG: Poison objects */
@@ -51,6 +56,9 @@
  *
  * See also the comment on struct slab_rcu in mm/slab.c.
  */
+/** 20150502    
+ * SLAB_MEM_SPREAD
+ **/
 #define SLAB_DESTROY_BY_RCU	0x00080000UL	/* Defer freeing slabs to RCU */
 #define SLAB_MEM_SPREAD		0x00100000UL	/* Spread some memory over cpuset */
 #define SLAB_TRACE		0x00200000UL	/* Trace allocations and frees */
@@ -146,7 +154,8 @@ unsigned int kmem_cache_size(struct kmem_cache *);
  * then the objects will be properly aligned in SMP configurations.
  */
 /** 20150131    
- * kmem_cache_create 래핑 매크로.
+ * type과 같은 이름으로 "kmem_cache"를 생성하는 kmem_cache_create 래핑 매크로.
+ * ctor는 NULL이다.
  **/
 #define KMEM_CACHE(__struct, __flags) kmem_cache_create(#__struct,\
 		sizeof(struct __struct), __alignof__(struct __struct),\

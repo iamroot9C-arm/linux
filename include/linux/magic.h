@@ -14,6 +14,9 @@
 #define DEBUGFS_MAGIC          0x64626720
 #define SECURITYFS_MAGIC	0x73636673
 #define SELINUX_MAGIC		0xf97cff8c
+/** 20150502    
+ * RAMFS MAGIC
+ **/
 #define RAMFS_MAGIC		0x858458f6	/* some random number */
 #define TMPFS_MAGIC		0x01021994
 #define HUGETLBFS_MAGIC 	0x958458f6	/* some random number */
@@ -59,6 +62,9 @@
 
 #define V9FS_MAGIC		0x01021997
 
+/** 20150502    
+ * BDEV 파일시스템 매직넘버.
+ **/
 #define BDEVFS_MAGIC            0x62646576
 #define BINFMTFS_MAGIC          0x42494e4d
 #define DEVPTS_SUPER_MAGIC	0x1cd1

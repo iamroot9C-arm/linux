@@ -44,6 +44,9 @@
  * SLAB caches for signal bits.
  */
 
+/** 20150502    
+ * signals_init에서 kmem_cache를 생성해 저장한다.
+ **/
 static struct kmem_cache *sigqueue_cachep;
 
 int print_fatal_signals __read_mostly;
@@ -3305,8 +3308,15 @@ __attribute__((weak)) const char *arch_vma_name(struct vm_area_struct *vma)
 	return NULL;
 }
 
+/** 20150502    
+ * 시그널 초기화 함수.
+ **/
 void __init signals_init(void)
 {
+	/** 20150502    
+	 * "sigqueue" kmem_cache를 생성한다.
+	 * 오브젝트 할당 실패시 PANIC 함수를 호출한다.
+	 **/
 	sigqueue_cachep = KMEM_CACHE(sigqueue, SLAB_PANIC);
 }
 

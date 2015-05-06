@@ -96,6 +96,8 @@ struct kmem_cache_order_objects {
 /*
  * Slab cache management.
  */
+/** 20150502    
+ **/
 struct kmem_cache {
 	/** 20140510    
 	 * kmem_cache_cpu가 percpu변수로 존재한다.

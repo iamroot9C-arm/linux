@@ -225,22 +225,22 @@ static unsigned long highmem_dirtyable_memory(unsigned long total)
  * page cache.  This is the base value for the global dirty limits.
  */
 /** 20130914
-전역적으로 존재하는 모든 dirtyable한 페이지수를 리턴
-**/
+ * 전역적으로 존재하는 모든 dirtyable한 페이지수를 리턴
+ **/
 static unsigned long global_dirtyable_memory(void)
 {
 	unsigned long x;
 
 	/** 20130914
-	전역적으로 존재하는 모든 dirtyable 한 페이지를 구한다.
-	**/
+	 * 전역적으로 존재하는 모든 dirtyable 한 페이지를 구한다.
+	 **/
 	x = global_page_state(NR_FREE_PAGES) + global_reclaimable_pages() -
 	    dirty_balance_reserve;
 	
 	/** 20130914
-	vm_highmem_is_dirtyable은 항상 0일듯 (다른값을 세팅해주는 부분없음)
-	구한 x에서 모든 노드의 ZONE_HIGHMEM에 존재하는 dirtyable 페이지를 빼준다.	
-	**/
+	 * vm_highmem_is_dirtyable은 항상 0일듯 (다른값을 세팅해주는 부분없음)
+	 * 구한 x에서 모든 노드의 ZONE_HIGHMEM에 존재하는 dirtyable 페이지를 빼준다.
+	 **/
 	if (!vm_highmem_is_dirtyable)
 		x -= highmem_dirtyable_memory(x);
 
@@ -258,6 +258,8 @@ static unsigned long global_dirtyable_memory(void)
  */
 /** 20140118    
  * 추후 분석???
+ *
+ * background-writeback 임계치와 dirty-throttling 임계치를 계산하는 함수.
  **/
 void global_dirty_limits(unsigned long *pbackground, unsigned long *pdirty)
 {
@@ -1652,17 +1654,35 @@ void laptop_sync_completion(void)
  * thresholds.
  */
 
+/** 20150502    
+ * dirty page를 writeback 할 때 사용할 ratelimit 값을 계산한다.
+ *
+ * 이 값이 너무 크다면 동시에 많은 dirty-data가 몰려 오버로드가 높아질 수 있고,
+ * 반대로 너무 작다면 빈번하게 호출되어 writeback 상태에 오래 머물 수 있으므로
+ * 적당한 수치를 계산한다.
+ **/
 void writeback_set_ratelimit(void)
 {
 	unsigned long background_thresh;
 	unsigned long dirty_thresh;
+	/** 20150502    
+	 * background_thresh, dirty_thresh를 계산하고, 
+	 * global_dirty_limit에 dirty_thresh를 저장한다. 
+	 **/
 	global_dirty_limits(&background_thresh, &dirty_thresh);
 	global_dirty_limit = dirty_thresh;
+	/** 20150502    
+	 * dirty memory threshold를 모든 cpu에서 동시에 수행할 때를 기준으로
+	 * ratelimit_pages를 계산하고, 최저값은 16으로 정한다.
+	 **/
 	ratelimit_pages = dirty_thresh / (num_online_cpus() * 32);
 	if (ratelimit_pages < 16)
 		ratelimit_pages = 16;
 }
 
+/** 20150502    
+ * ratelimit을 다시 계산하는 핸들러 함수.
+ **/
 static int __cpuinit
 ratelimit_handler(struct notifier_block *self, unsigned long u, void *v)
 {
@@ -1670,6 +1690,11 @@ ratelimit_handler(struct notifier_block *self, unsigned long u, void *v)
 	return NOTIFY_DONE;
 }
 
+/** 20150502    
+ * ratelimit notifier_block 선언.
+ *
+ * cpu_notify가 호출되면 여기 등록된 핸들러 함수가 호출된다.
+ **/
 static struct notifier_block __cpuinitdata ratelimit_nb = {
 	.notifier_call	= ratelimit_handler,
 	.next		= NULL,
@@ -1693,8 +1718,15 @@ static struct notifier_block __cpuinitdata ratelimit_nb = {
  * But we might still want to scale the dirty_ratio by how
  * much memory the box has..
  */
+/** 20150502    
+ * 추후 분석???
+ **/
 void __init page_writeback_init(void)
 {
+	/** 20150502    
+	 * writeback시 사용될 ratelimit을 계산하고,
+	 * cpu on/off 이벤트시 호출되도록 notifier를 등록한다.
+	 **/
 	writeback_set_ratelimit();
 	register_cpu_notifier(&ratelimit_nb);
 

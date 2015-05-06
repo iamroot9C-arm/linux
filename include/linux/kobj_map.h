@@ -7,6 +7,9 @@
 
 #include <linux/mutex.h>
 
+/** 20150502    
+ * kobj_probe 함수 포인터 타입.
+ **/
 typedef struct kobject *kobj_probe_t(dev_t, int *, void *);
 struct kobj_map;
 

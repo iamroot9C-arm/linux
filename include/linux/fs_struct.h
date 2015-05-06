@@ -6,6 +6,12 @@
 #include <linux/seqlock.h>
 
 /** 20150425    
+ * 각 task와 연관된 자료구조로 특정 파일시스템에 대한 정보를 나타낸다.
+ *
+ * root, pwd 지정시 set_fs_{root,pwd}가 사용된다.
+ *
+ * fs 전체 동작은 spinlock으로 보호된다.
+ * struct path인 root와 pwd는 sequence lock으로 보호된다.
  **/
 struct fs_struct {
 	int users;

@@ -396,6 +396,9 @@ int inode_permission(struct inode *inode, int mask)
  *
  * Given a path increment the reference count to the dentry and the vfsmount.
  */
+/** 20150502    
+ * path내 저장된 VFS 오브젝트인 vfsmount와 dentry의 레퍼런스 카운트를 증가시킨다.
+ **/
 void path_get(struct path *path)
 {
 	mntget(path->mnt);
@@ -409,6 +412,9 @@ EXPORT_SYMBOL(path_get);
  *
  * Given a path decrement the reference count to the dentry and the vfsmount.
  */
+/** 20150502    
+ * path내 저장된 VFS 오브젝트인 dentry와 vfsmount의 레퍼런스 카운트를 감소시킨다.
+ **/
 void path_put(struct path *path)
 {
 	dput(path->dentry);

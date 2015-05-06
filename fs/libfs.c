@@ -210,6 +210,8 @@ const struct inode_operations simple_dir_inode_operations = {
 	.lookup		= simple_lookup,
 };
 
+/** 20150502    
+ **/
 static const struct super_operations simple_super_operations = {
 	.statfs		= simple_statfs,
 };
@@ -218,6 +220,12 @@ static const struct super_operations simple_super_operations = {
  * Common helper for pseudo-filesystems (sockfs, pipefs, bdev - stuff that
  * will never be mountable)
  */
+/** 20150502    
+ * pseudo 파일시스템 마운트 함수.
+ *
+ * superblock ops와 dentry ops는 매개변수에 따라 지정한다.
+ * mount는 superblock 생성, root inode 생성, root inode의 dentry 생성해 리턴.
+ **/
 struct dentry *mount_pseudo(struct file_system_type *fs_type, char *name,
 	const struct super_operations *ops,
 	const struct dentry_operations *dops, unsigned long magic)
@@ -227,16 +235,33 @@ struct dentry *mount_pseudo(struct file_system_type *fs_type, char *name,
 	struct inode *root;
 	struct qstr d_name = QSTR_INIT(name, strlen(name));
 
+	/** 20150502    
+	 * fs_type에 대한 superblock을 생성한다.
+	 * pseudo-fs이므로 userspace에서 마운트 할 수 없도록 한다.
+	 **/
 	s = sget(fs_type, NULL, set_anon_super, MS_NOUSER, NULL);
 	if (IS_ERR(s))
 		return ERR_CAST(s);
 
+	/** 20150502    
+	 * superblock의 속성을 채운다.
+	 **/
 	s->s_maxbytes = MAX_LFS_FILESIZE;
 	s->s_blocksize = PAGE_SIZE;
 	s->s_blocksize_bits = PAGE_SHIFT;
+	/** 20150502    
+	 * superblock에 magic number를 채운다.
+	 **/
 	s->s_magic = magic;
+	/** 20150502    
+	 * ops가 넘어왔다면 넘어온 ops를 사용하고,
+	 * 그렇지 않다면 simple_super_operations를 지정한다.
+	 **/
 	s->s_op = ops ? ops : &simple_super_operations;
 	s->s_time_gran = 1;
+	/** 20150502    
+	 * superblock에 대한 inode를 하나 할당받아 온다.
+	 **/
 	root = new_inode(s);
 	if (!root)
 		goto Enomem;
@@ -245,14 +270,23 @@ struct dentry *mount_pseudo(struct file_system_type *fs_type, char *name,
 	 * after this must take care not to collide with it (by passing
 	 * max_reserved of 1 to iunique).
 	 */
+	/** 20150502    
+	 * 생성한 inode의 멤버를 설정한다.
+	 **/
 	root->i_ino = 1;
 	root->i_mode = S_IFDIR | S_IRUSR | S_IWUSR;
 	root->i_atime = root->i_mtime = root->i_ctime = CURRENT_TIME;
+	/** 20150502    
+	 * dentry를 할당하고 초기화하여 리턴한다.
+	 **/
 	dentry = __d_alloc(s, &d_name);
 	if (!dentry) {
 		iput(root);
 		goto Enomem;
 	}
+	/** 20150502    
+	 * dentry의 inode 정보를 채워 인스턴스화 시킨다.
+	 **/
 	d_instantiate(dentry, root);
 	s->s_root = dentry;
 	s->s_d_op = dops;

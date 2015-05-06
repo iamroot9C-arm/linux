@@ -53,6 +53,9 @@ static void proc_evict_inode(struct inode *inode)
 		ns_ops->put(PROC_I(inode)->ns);
 }
 
+/** 20150502    
+ * proc_init_inodecache에서 초기화 한다.
+ **/
 static struct kmem_cache * proc_inode_cachep;
 
 static struct inode *proc_alloc_inode(struct super_block *sb)
@@ -94,6 +97,9 @@ static void init_once(void *foo)
 	inode_init_once(&ei->vfs_inode);
 }
 
+/** 20150502    
+ * "proc_inode_cache" kmem_cache를 생성한다.
+ **/
 void __init proc_init_inodecache(void)
 {
 	proc_inode_cachep = kmem_cache_create("proc_inode_cache",

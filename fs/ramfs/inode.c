@@ -329,6 +329,8 @@ int ramfs_fill_super(struct super_block *sb, void *data, int silent)
 	return 0;
 }
 
+/** 20150502    
+ **/
 struct dentry *ramfs_mount(struct file_system_type *fs_type,
 	int flags, const char *dev_name, void *data)
 {

@@ -799,6 +799,10 @@ static struct mount *skip_mnt_tree(struct mount *p)
 /** 20150411    
  * VFS에 파일시스템을 마운트하고, vfsmount 객체에 정보를 채워 리턴한다.
  *
+ * 마운트의 내부 동작은
+ * VFS 오브젝트인 mount 오브젝트를 생성하고,
+ * 역시 VFS 오브젝트인 superblock을 채우고 그 dentry를 리턴해 mount 오브젝트에 저장한다.
+ *
  * kernel에 의해 호출되는 경우와 user에 의해 호출되는 경우 모두에 해당.
  **/
 struct vfsmount *
@@ -818,7 +822,7 @@ vfs_kern_mount(struct file_system_type *type, int flags, const char *name, void 
 		return ERR_PTR(-ENOMEM);
 
 	/** 20150307    
-	 * vfs_kern_mount에서는 KERNMOUNT를 지정해 넘겨준다.
+	 * kern_mount_data()에서는 KERNMOUNT를 지정해 넘겨준다.
 	 **/
 	if (flags & MS_KERNMOUNT)
 		mnt->mnt.mnt_flags = MNT_INTERNAL;
@@ -2705,6 +2709,10 @@ out0:
 	return error;
 }
 
+/** 20150502    
+ * init_rootfs에서 등록한 "rootfs" 파일시스템을 mount하고,
+ * 그 정보를 init task의 nxproxy->mnt_ns와 fs_struct->{root,pwd}에 채운다.
+ **/
 static void __init init_mount_tree(void)
 {
 	struct vfsmount *mnt;
@@ -2726,22 +2734,33 @@ static void __init init_mount_tree(void)
 		panic("Can't allocate initial namespace");
 
 	/** 20150425    
-	 * init_task의 nsproxy에 생성한 mnt_namespace를 지정하고,
+	 * 생성한 mnt_namespace를 init_task의 nsproxy에 지정하고,
 	 * task의 ns_proxy에 연결되었으므로 reference count를 증가시킨다.
 	 **/
 	init_task.nsproxy->mnt_ns = ns;
 	get_mnt_ns(ns);
 
 	/** 20150425    
-	 * struct root 자료구조를 채운다.
+	 * struct path 자료구조를 채운다.
 	 **/
 	root.mnt = mnt;
 	root.dentry = mnt->mnt_root;
 
+	/** 20150502    
+	 * "rootfs"를 mount한 struct path를 현재(init) task의 fs->{pwd/root}로 지정한다.
+	 **/
 	set_fs_pwd(current->fs, &root);
 	set_fs_root(current->fs, &root);
 }
 
+/** 20150502    
+ * mnt 관련 초기화를 수행한다.
+ *
+ * 1. struct mount 슬랩캐시를 생성하고, mount_hashtable을 생성한다.
+ * 2. CONFIG_SYS인 경우 sysfs를 초기화 한다.
+ * 3. "fs"를 kobject로 추가한다.
+ * 4. "rootfs" 파일시스템을 등록하고 마운트한다.
+ **/
 void __init mnt_init(void)
 {
 	unsigned u;
@@ -2776,6 +2795,8 @@ void __init mnt_init(void)
 
 	/** 20150221    
 	 * vfsmount lock을 초기화 한다.
+	 *
+	 * 읽기시 local lock, 쓰기시 global lock인 big-reader lock을 사용한다.
 	 **/
 	br_lock_init(&vfsmount_lock);
 

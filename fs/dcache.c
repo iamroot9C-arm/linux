@@ -1440,6 +1440,9 @@ struct dentry *__d_alloc(struct super_block *sb, const struct qstr *name)
 	INIT_LIST_HEAD(&dentry->d_subdirs);
 	INIT_HLIST_NODE(&dentry->d_alias);
 	INIT_LIST_HEAD(&dentry->d_u.d_child);
+	/** 20150502    
+	 * dentry에 dentry operations를 지정한다.
+	 **/
 	d_set_d_op(dentry, dentry->d_sb->s_d_op);
 
 	/** 20150328    
@@ -1500,7 +1503,7 @@ struct dentry *d_alloc_name(struct dentry *parent, const char *name)
 EXPORT_SYMBOL(d_alloc_name);
 
 /** 20150328    
- * dentry_operations에 존재하는 op에 대해 dentry의 d_flags에 표시한다.
+ * dentry_operations에 존재하는 op 각각에 대해 d_flags에 표시한다.
  **/
 void d_set_d_op(struct dentry *dentry, const struct dentry_operations *op)
 {
@@ -3367,6 +3370,11 @@ static void __init dcache_init(void)
 }
 
 /* SLAB cache for __getname() consumers */
+/** 20150502    
+ * __getname() 호출시 할당받을 kmem_cache.
+ *
+ * vfs_caches_init에서 초기화.
+ **/
 struct kmem_cache *names_cachep __read_mostly;
 EXPORT_SYMBOL(names_cachep);
 
@@ -3383,6 +3391,12 @@ void __init vfs_caches_init_early(void)
 	inode_init_early();
 }
 
+/** 20150502    
+ * VFS 관련 초기화 수행.
+ *
+ * vfs에서 사용하는 dcache, inode, mnt 등의 kmem_cache 생성,
+ * rootfs 생성 및 마운트 등 초기화를 수행한다.
+ **/
 void __init vfs_caches_init(unsigned long mempages)
 {
 	unsigned long reserve;
@@ -3399,6 +3413,9 @@ void __init vfs_caches_init(unsigned long mempages)
 
 	/** 20150214    
 	 * "names_cache" kmem_cache 생성.
+	 *
+	 * getname()에서 userspace에서 넘어온 이름을 저장할 메모리 공간을 할당한다.
+	 * 예제) sys_symlinkat에서 getname()으로 할당.
 	 **/
 	names_cachep = kmem_cache_create("names_cache", PATH_MAX, 0,
 			SLAB_HWCACHE_ALIGN|SLAB_PANIC, NULL);
@@ -3416,8 +3433,15 @@ void __init vfs_caches_init(unsigned long mempages)
 	 **/
 	files_init(mempages);
 	/** 20150221    
+	 * mount 관련 초기화를 수행한다 : mount kmem_cache 생성, INIT task에 "rootfs" 마운트 등
 	 **/
 	mnt_init();
+	/** 20150502    
+	 * block device에 대한 초기화를 수행한다: "bdev_cache" 생성, "bdev" 등록 및 마운트.
+	 **/
 	bdev_cache_init();
+	/** 20150502    
+	 * character device에 대한 초기화를 수행한다 : "kobj_map", "directly_mappable_cdev_bdi" 초기화.
+	 **/
 	chrdev_init();
 }

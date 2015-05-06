@@ -121,8 +121,8 @@ extern unsigned int full_name_hash(const unsigned char *, unsigned int);
 #endif
 
 /** 20150328    
- * dentry 자료구조.
- *
+ * dentry : directory entry를 표현하는 오브젝트. 한 경로에서 한 컴포넌트를 표현.
+ * 
  * dentry는 spinlock으로 보호된다.
  * name을 갱신할 때 사용하는 seqlock이 별도로 존재한다.
  **/

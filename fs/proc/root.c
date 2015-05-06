@@ -22,16 +22,33 @@
 
 #include "internal.h"
 
+/** 20150502    
+ * 등록된 filesystem에서 proc superblock를 찾아올 때 사용되는 함수.
+ *
+ * s_fs_info에 저장해둔 ns가 data와 일치해야 한다.
+ **/
 static int proc_test_super(struct super_block *sb, void *data)
 {
 	return sb->s_fs_info == data;
 }
 
+/** 20150502    
+ * proc filesystem 타입의 superblock을 설정하는 콜백 함수.
+ *
+ * userspace에서 마운트 했을 때의 data를 s_fs_info에 저장해 비교하므로
+ * 각 task마다 다른 proc 정보를 접근할 수 있다.
+ **/
 static int proc_set_super(struct super_block *sb, void *data)
 {
+	/** 20150502    
+	 * superblock에 anonymous block 디바이스 번호를 저장하고, bdi를 지정한다.
+	 **/
 	int err = set_anon_super(sb, NULL);
 	if (!err) {
 		struct pid_namespace *ns = (struct pid_namespace *)data;
+		/** 20150502    
+		 * ns를 받아와 s_fs_info에 저장한다.
+		 **/
 		sb->s_fs_info = get_pid_ns(ns);
 	}
 	return err;
@@ -103,6 +120,10 @@ static struct dentry *proc_mount(struct file_system_type *fs_type,
 	struct proc_inode *ei;
 	char *options;
 
+	/** 20150502    
+	 * flags에 MS_KERNMOUNT가 주어졌다면, 즉 커널 내에서 호출된 경우와
+	 * userspace에서 mount한 경우에 대해 namespace와 options를 달린다.
+	 **/
 	if (flags & MS_KERNMOUNT) {
 		ns = (struct pid_namespace *)data;
 		options = NULL;
@@ -111,6 +132,10 @@ static struct dentry *proc_mount(struct file_system_type *fs_type,
 		options = data;
 	}
 
+	/** 20150502    
+	 * filesystem의 superblock을 받아온다.
+	 * proc용 test, set 함수를 지정하고, fs specific한 데이터로 ns를 저장한다.
+	 **/
 	sb = sget(fs_type, proc_test_super, proc_set_super, flags, ns);
 	if (IS_ERR(sb))
 		return ERR_CAST(sb);
@@ -149,6 +174,9 @@ static void proc_kill_sb(struct super_block *sb)
 	put_pid_ns(ns);
 }
 
+/** 20150502    
+ * "proc" filesystem 속성.
+ **/
 static struct file_system_type proc_fs_type = {
 	.name		= "proc",
 	.mount		= proc_mount,
@@ -159,10 +187,20 @@ void __init proc_root_init(void)
 {
 	int err;
 
+	/** 20150502    
+	 * proc의 inode용 object를 할당할 kmem_cache를 생성한다.
+	 **/
 	proc_init_inodecache();
+	/** 20150502    
+	 * proc파일시스템을 등록한다.
+	 **/
 	err = register_filesystem(&proc_fs_type);
 	if (err)
 		return;
+	/** 20150502    
+	 * 20150509 여기부터...
+	 * proc_root_init 이후 memory reclaim 스터디.
+	 **/
 	err = pid_ns_prepare_proc(&init_pid_ns);
 	if (err) {
 		unregister_filesystem(&proc_fs_type);

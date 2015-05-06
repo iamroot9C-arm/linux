@@ -712,6 +712,9 @@ struct address_space {
 	 */
 struct request_queue;
 
+/** 20150502    
+ * block device 자료구조
+ **/
 struct block_device {
 	dev_t			bd_dev;  /* not a kdev_t - it's a search key */
 	int			bd_openers;
@@ -1650,6 +1653,9 @@ struct super_block {
 	 * generic_show_options()
 	 */
 	char __rcu *s_options;
+	/** 20150502    
+	 * dentry operations.
+	 **/
 	const struct dentry_operations *s_d_op; /* default d_op for dentries */
 
 	/*
@@ -2328,6 +2334,9 @@ extern void __init vfs_caches_init(unsigned long);
 
 extern struct kmem_cache *names_cachep;
 
+/** 20150502    
+ * __getname()시 커널에서 사용할 메모리를 names_cachep로부터 할당 받는다.
+ **/
 #define __getname_gfp(gfp)	kmem_cache_alloc(names_cachep, (gfp))
 #define __getname()		__getname_gfp(GFP_KERNEL)
 #define __putname(name)		kmem_cache_free(names_cachep, (void *)(name))

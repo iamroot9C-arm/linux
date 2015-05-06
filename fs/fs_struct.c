@@ -10,17 +10,32 @@
  * Replace the fs->{rootmnt,root} with {mnt,dentry}. Put the old values.
  * It can block.
  */
+/** 20150502    
+ * fs_struct의 root path를 주어진 path로 지정한다.
+ * 이전에 root가 지정되어 있었다면 put (reference count 감소 및 release처리)한다.
+ **/
 void set_fs_root(struct fs_struct *fs, struct path *path)
 {
 	struct path old_root;
 
+	/** 20150502    
+	 * 새로운 path의 reference count를 증가시킨다.
+	 **/
 	path_get(path);
 	spin_lock(&fs->lock);
+	/** 20150502    
+	 * fs의 root/pwd 변경시 write sequnece lock을 사용한다.
+	 **/
 	write_seqcount_begin(&fs->seq);
 	old_root = fs->root;
 	fs->root = *path;
 	write_seqcount_end(&fs->seq);
 	spin_unlock(&fs->lock);
+	/** 20150502    
+	 * dentry가 존재하는지 검사하는데
+	 * vfsmount와 dentry가 항상 같이 지정되기 때문에 하나만 검사한 것인지,
+	 * vfsmount만 지정되어 있다면 path_put이 필요없다는 것인지???
+	 **/
 	if (old_root.dentry)
 		path_put(&old_root);
 }
@@ -29,21 +44,31 @@ void set_fs_root(struct fs_struct *fs, struct path *path)
  * Replace the fs->{pwdmnt,pwd} with {mnt,dentry}. Put the old values.
  * It can block.
  */
-/** 20150425    
- * 20150501 여기부터...
+/** 20150502    
+ * fs_struct의 pwd path를 주어진 path로 지정한다.
+ * 이전에 root가 지정되어 있었다면 put (reference count 감소 및 release처리)한다.
  **/
 void set_fs_pwd(struct fs_struct *fs, struct path *path)
 {
 	struct path old_pwd;
 
+	/** 20150502    
+	 * 새로운 path의 reference count를 증가시킨다.
+	 **/
 	path_get(path);
 	spin_lock(&fs->lock);
+	/** 20150502    
+	 * fs의 struct path를 변경할 때는 write sequence lock이 사용된다.
+	 **/
 	write_seqcount_begin(&fs->seq);
 	old_pwd = fs->pwd;
 	fs->pwd = *path;
 	write_seqcount_end(&fs->seq);
 	spin_unlock(&fs->lock);
 
+	/** 20150502    
+	 * 이전 pwd가 지정되어 있었다면 put 한다.
+	 **/
 	if (old_pwd.dentry)
 		path_put(&old_pwd);
 }

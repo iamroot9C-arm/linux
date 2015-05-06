@@ -900,7 +900,13 @@ asmlinkage void __init start_kernel(void)
 	 * CONFIG_KGDB가 설정되지 않아 NULL 함수.
 	 **/
 	dbg_late_init();
+	/** 20150502    
+	 * VFS에서 사용되는 kmem_cache 초기화, rootfs 초기화 등을 수행하는 함수.
+	 **/
 	vfs_caches_init(totalram_pages);
+	/** 20150502    
+	 * 시그널 초기화 함수.
+	 **/
 	signals_init();
 	/* rootfs populating might need page-writeback */
 	page_writeback_init();

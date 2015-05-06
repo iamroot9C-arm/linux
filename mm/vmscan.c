@@ -4064,8 +4064,10 @@ void wakeup_kswapd(struct zone *zone, int order, enum zone_type classzone_idx)
  * - dirty pages, which is not "instantly" reclaimable
  */
 /** 20130914
-전역적으로 회수가능한 page수를 리턴 
-**/
+ * 전역적으로 회수가능한 page수를 리턴.
+ *
+ * 모든 FILE로부터 읽어온 페이지와 
+ **/
 unsigned long global_reclaimable_pages(void)
 {
 	int nr;
@@ -4088,18 +4090,18 @@ unsigned long zone_reclaimable_pages(struct zone *zone)
 	int nr;
 
 	/** 20130914
-	해당 zone의 NR_ACTIVE_FILE, NR_INACTIVE_FILE의 vm_stat을 가져와 
-	nr에 더한다.
-	**/
+	 * 해당 zone의 NR_ACTIVE_FILE, NR_INACTIVE_FILE의 vm_stat을 가져와 
+	 * nr에 더한다.
+	 **/
 	nr = zone_page_state(zone, NR_ACTIVE_FILE) +
 	     zone_page_state(zone, NR_INACTIVE_FILE);
 	/** 20130914
-	nr_swap_pages가 0보다 클 경우
-	해당 zone의 NR_ACTIVE_ANON, NR_INACTIVE_ANON의 vm_stat을 가져와 
-	nr에 더한다.
-
-	nr_swap_pages 와 ANONYMOUS 타입의 관계는???
-	**/
+	 * nr_swap_pages가 0보다 클 경우
+	 * 해당 zone의 NR_ACTIVE_ANON, NR_INACTIVE_ANON의 vm_stat을 가져와 
+	 * nr에 더한다.
+	 *
+	 * nr_swap_pages 와 ANONYMOUS 타입의 관계는???
+	 **/
 	if (nr_swap_pages > 0)
 		nr += zone_page_state(zone, NR_ACTIVE_ANON) +
 		      zone_page_state(zone, NR_INACTIVE_ANON);

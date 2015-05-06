@@ -222,7 +222,7 @@ static struct inode *alloc_inode(struct super_block *sb)
 	struct inode *inode;
 
 	/** 20150321    
-	 * sb의 콜백인 s_op에 등록된 alloc_inode가 존재하면 호출한다.
+	 * sb의 ops에 alloc_inode가 지정되어 있으면 호출한다.
 	 * 존재하지 않는다면, inode_init에서 생성한 inode kmem_cache에서 할당받는다.
 	 *
 	 * sysfs의 경우, sysfs_fill_super에서 등록한 sysfs_ops에는 alloc_inode가 
