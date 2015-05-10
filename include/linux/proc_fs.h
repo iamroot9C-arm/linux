@@ -48,6 +48,16 @@ typedef	int (read_proc_t)(char *page, char **start, off_t off,
 typedef	int (write_proc_t)(struct file *file, const char __user *buffer,
 			   unsigned long count, void *data);
 
+/** 20150509    
+ * proc directory entry.
+ *
+ * proc 자체를 위한 자료구조와 VFS의 inode에 필요한 정보를 포함하는 구조체.
+ *
+ * low_ino : inode number (동적할당시 ida에서 받아온다)
+ * nlink : hard link 수.
+ * count : usage count. pde_get(), pde_put()으로 조작.
+ * name  : proc_dir_entry의 이름을 별도로 저장하기 위한 포인터.
+ **/
 struct proc_dir_entry {
 	unsigned int low_ino;
 	umode_t mode;
@@ -149,6 +159,10 @@ extern struct proc_dir_entry *proc_mkdir(const char *,struct proc_dir_entry *);
 extern struct proc_dir_entry *proc_mkdir_mode(const char *name, umode_t mode,
 			struct proc_dir_entry *parent);
 
+/** 20150510    
+ * proc entry를 새로 생성하고 주어진 argument로 설정하고 parent에 추가한다.
+ * data에 NULL을 지정한다.
+ **/
 static inline struct proc_dir_entry *proc_create(const char *name, umode_t mode,
 	struct proc_dir_entry *parent, const struct file_operations *proc_fops)
 {
@@ -263,6 +277,9 @@ union proc_op {
 struct ctl_table_header;
 struct ctl_table;
 
+/** 20150509    
+ * 'procfs'에서 inode를 관리하기 위해 사용한다.
+ **/
 struct proc_inode {
 	struct pid *pid;
 	int fd;
@@ -275,6 +292,10 @@ struct proc_inode {
 	struct inode vfs_inode;
 };
 
+/** 20150509    
+ * struct proc_inode는 inode를 포함하고 있으므로 이를 이용해
+ * 매개변수로 전달된 inode를 포함하는 struct proc_inode를 리턴한다.
+ **/
 static inline struct proc_inode *PROC_I(const struct inode *inode)
 {
 	return container_of(inode, struct proc_inode, vfs_inode);

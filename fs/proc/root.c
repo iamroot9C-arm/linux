@@ -58,12 +58,19 @@ enum {
 	Opt_gid, Opt_hidepid, Opt_err,
 };
 
+/** 20150509    
+ * proc option용 match_table.
+ **/
 static const match_table_t tokens = {
 	{Opt_hidepid, "hidepid=%u"},
 	{Opt_gid, "gid=%u"},
 	{Opt_err, NULL},
 };
 
+/** 20150509    
+ * proc용 mount 옵션 처리 함수.
+ * 자세한 내용은 추후 분석???
+ **/
 static int proc_parse_options(char *options, struct pid_namespace *pid)
 {
 	char *p;
@@ -73,12 +80,18 @@ static int proc_parse_options(char *options, struct pid_namespace *pid)
 	if (!options)
 		return 1;
 
+	/** 20150509    
+	 * ","를 기준으로 파싱해 옵션을 처리한다.
+	 **/
 	while ((p = strsep(&options, ",")) != NULL) {
 		int token;
 		if (!*p)
 			continue;
 
 		args[0].to = args[0].from = 0;
+		/** 20150509    
+		 * tokens에 존재하는 token별로 값을 가져와 처리한다.
+		 **/
 		token = match_token(p, tokens, args);
 		switch (token) {
 		case Opt_gid:
@@ -111,6 +124,12 @@ int proc_remount(struct super_block *sb, int *flags, char *data)
 	return !proc_parse_options(data, pid);
 }
 
+/** 20150509    
+ * proc filesystem의 mount 콜백 함수.
+ *
+ * proc_inode라는 구조체가 VFS inode에 대응되는 개념으로 사용되며,
+ * data로 전달된 struct pid_namespace에서 1에 해당하는 struct pid가 저장된다.
+ **/
 static struct dentry *proc_mount(struct file_system_type *fs_type,
 	int flags, const char *dev_name, void *data)
 {
@@ -122,7 +141,7 @@ static struct dentry *proc_mount(struct file_system_type *fs_type,
 
 	/** 20150502    
 	 * flags에 MS_KERNMOUNT가 주어졌다면, 즉 커널 내에서 호출된 경우와
-	 * userspace에서 mount한 경우에 대해 namespace와 options를 달린다.
+	 * userspace에서 mount한 경우에 대해 namespace와 options를 달리한다.
 	 **/
 	if (flags & MS_KERNMOUNT) {
 		ns = (struct pid_namespace *)data;
@@ -140,11 +159,18 @@ static struct dentry *proc_mount(struct file_system_type *fs_type,
 	if (IS_ERR(sb))
 		return ERR_CAST(sb);
 
+	/** 20150509    
+	 * mount시 제공된 options들을 파싱해 처리한다.
+	 **/
 	if (!proc_parse_options(options, ns)) {
 		deactivate_locked_super(sb);
 		return ERR_PTR(-EINVAL);
 	}
 
+	/** 20150509    
+	 * superblock의 root dentry가 비어 있는 상태라면
+	 * 새로 할당된 superblock이므로 proc을 위한 superblock 정보를 채운다.
+	 **/
 	if (!sb->s_root) {
 		err = proc_fill_super(sb);
 		if (err) {
@@ -152,16 +178,31 @@ static struct dentry *proc_mount(struct file_system_type *fs_type,
 			return ERR_PTR(err);
 		}
 
+		/** 20150509    
+		 * superblock flag에 동작 중임을 표시.
+		 **/
 		sb->s_flags |= MS_ACTIVE;
 	}
 
+	/** 20150509    
+	 * root dentry의 inode를 멤버로 포함하는 proc_inode를 받아온다.
+	 **/
 	ei = PROC_I(sb->s_root->d_inode);
+	/** 20150509    
+	 * pid 정보가 비어있다면 
+	 **/
 	if (!ei->pid) {
 		rcu_read_lock();
+		/** 20150509    
+		 * ns에서 pid 1번에 해당하는 struct pid를 struct proc_inode에 저장한다.
+		 **/
 		ei->pid = get_pid(find_pid_ns(1, ns));
 		rcu_read_unlock();
 	}
 
+	/** 20150509    
+	 * superblock의 root inode의 dentry를 리턴한다.
+	 **/
 	return dget(sb->s_root);
 }
 
@@ -198,8 +239,7 @@ void __init proc_root_init(void)
 	if (err)
 		return;
 	/** 20150502    
-	 * 20150509 여기부터...
-	 * proc_root_init 이후 memory reclaim 스터디.
+	 * proc파일시스템이 등록된 후, init_pid_ns를 위한 proc mount를 수행한다.
 	 **/
 	err = pid_ns_prepare_proc(&init_pid_ns);
 	if (err) {
@@ -207,11 +247,23 @@ void __init proc_root_init(void)
 		return;
 	}
 
+	/** 20150509    
+	 * /proc 아래 "self/mounts"를 대상으로 하는 심볼릭 링크 "mounts"를 생성한다.
+	 **/
 	proc_symlink("mounts", NULL, "self/mounts");
 
+	/** 20150509    
+	 * proc net 관련 초기화를 한다.
+	 **/
 	proc_net_init();
 
+	/** 20150509    
+	 * CONFIG_SYSVIPC가 설정되어 있다.
+	 **/
 #ifdef CONFIG_SYSVIPC
+	/** 20150509    
+	 * /proc 아래 "sysvipic", "fs", "driver", "fs/nfsd" 디렉토리 entry를 생성한다.
+	 **/
 	proc_mkdir("sysvipc", NULL);
 #endif
 	proc_mkdir("fs", NULL);
@@ -221,10 +273,19 @@ void __init proc_root_init(void)
 	/* just give it a mountpoint */
 	proc_mkdir("openprom", NULL);
 #endif
+	/** 20150509    
+	 * "/proc/tty" 아래 entry를 생성한다.
+	 **/
 	proc_tty_init();
 #ifdef CONFIG_PROC_DEVICETREE
+	/** 20150509    
+	 * CONFIG_PROC_DEVICETREE 설정하지 않음.
+	 **/
 	proc_device_tree_init();
 #endif
+	/** 20150509    
+	 * /proc 아래 "bus" 디렉토리 entry를 생성한다.
+	 **/
 	proc_mkdir("bus", NULL);
 	proc_sys_init();
 }
@@ -276,6 +337,9 @@ static const struct file_operations proc_root_operations = {
 /*
  * proc root can do almost nothing..
  */
+/** 20150509    
+ * proc root inode ops.
+ **/
 static const struct inode_operations proc_root_inode_operations = {
 	.lookup		= proc_root_lookup,
 	.getattr	= proc_root_getattr,
@@ -284,6 +348,9 @@ static const struct inode_operations proc_root_inode_operations = {
 /*
  * This is the root "inode" in the /proc tree..
  */
+/** 20150509    
+ * proc filesystem에서 entry 관리를 위해 사용되는 proc_dir_entry 중 root를 정의.
+ **/
 struct proc_dir_entry proc_root = {
 	.low_ino	= PROC_ROOT_INO, 
 	.namelen	= 5, 
@@ -296,10 +363,21 @@ struct proc_dir_entry proc_root = {
 	.name		= "/proc",
 };
 
+/** 20150509    
+ * 특정 ns에 대하여 proc 파일시스템을 마운트 한다.
+ * 마운트 후 생성된 vfsmount 객체 주소를 ns에 저장한다.
+ **/
 int pid_ns_prepare_proc(struct pid_namespace *ns)
 {
 	struct vfsmount *mnt;
 
+	/** 20150509    
+	 * proc filesystem을 mount 한다. mountdata로 ns를 전달한다.
+	 * proc fs에 해당하는 proc_mount가 호출된다.
+	 *
+	 * 내부에서 superblock에 root inode의 dentry가 저장되고,
+	 * struct vfsmount 객체가 설정되어 리턴된다.
+	 **/
 	mnt = kern_mount_data(&proc_fs_type, ns);
 	if (IS_ERR(mnt))
 		return PTR_ERR(mnt);

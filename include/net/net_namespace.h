@@ -237,6 +237,10 @@ static inline struct net *read_pnet(struct net * const *pnet)
 #define for_each_net_rcu(VAR)				\
 	list_for_each_entry_rcu(VAR, &net_namespace_list, list)
 
+/** 20150509    
+ * CONIFG_NET_NS가 정의되지 않아 일반 섹션으로 지정한다.
+ * 왜 CONFIG가 되어 있다면 section 정보를 날리는 것일까???
+ **/
 #ifdef CONFIG_NET_NS
 #define __net_init
 #define __net_exit

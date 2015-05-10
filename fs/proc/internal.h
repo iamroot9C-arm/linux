@@ -113,6 +113,9 @@ unsigned long task_statm(struct mm_struct *,
 	unsigned long *, unsigned long *, unsigned long *, unsigned long *);
 void task_mem(struct seq_file *, struct mm_struct *);
 
+/** 20150509    
+ * proc_dir_entry의 reference count를 증가시킨다.
+ **/
 static inline struct proc_dir_entry *pde_get(struct proc_dir_entry *pde)
 {
 	atomic_inc(&pde->count);

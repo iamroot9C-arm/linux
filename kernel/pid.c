@@ -37,8 +37,16 @@
 #include <linux/init_task.h>
 #include <linux/syscalls.h>
 
+/** 20150509    
+ * pid용 hash 함수.
+ * 특정 ns의 nr을 바탕으로 hash table의 index를 계산한다.
+ **/
 #define pid_hashfn(nr, ns)	\
 	hash_long((unsigned long)nr + (unsigned long)ns, pidhash_shift)
+/** 20150509    
+ * pid_hash는 pid hash table.
+ * pidhash_init()에서 생성한다.
+ **/
 static struct hlist_head *pid_hash;
 static unsigned int pidhash_shift = 4;
 /** 20150203
@@ -80,8 +88,7 @@ static inline int mk_pid(struct pid_namespace *pid_ns,
  * the scheme scales to up to 4 million PIDs, runtime.
  */
 /** 20150131    
- * init을 위한 pid_namespace.
- * init_pid_ns 선언.
+ * init_pid_ns는 init을 위한 pid_namespace로 level 0이다.
  **/
 struct pid_namespace init_pid_ns = {
 	.kref = {
@@ -342,11 +349,21 @@ out_free:
 	goto out;
 }
 
+/** 20150509    
+ * pid 번호와 당시의 namespace를 통해 struct pid를 리턴하는 함수.
+ **/
 struct pid *find_pid_ns(int nr, struct pid_namespace *ns)
 {
 	struct hlist_node *elem;
 	struct upid *pnr;
 
+	/** 20150509    
+	 * 1. pid_hashfn을 이용해 hash table의 index를 가져온다.
+	 * 2. 해당 index의 hash list를 순회하며 hash node를 탐색한다.
+	 *    이 때 hlist_node를 멤버로 보유하는 struct upid도 찾아온다.
+	 * 3. pid nr와 pid_namespace가 일치하는 struct upid라면
+	 *    해당 struct upid를 포함하는 pid를 리턴한다.
+	 **/
 	hlist_for_each_entry_rcu(pnr, elem,
 			&pid_hash[pid_hashfn(nr, ns)], pid_chain)
 		if (pnr->nr == nr && pnr->ns == ns)
@@ -366,6 +383,9 @@ EXPORT_SYMBOL_GPL(find_vpid);
 /*
  * attach_pid() must be called with the tasklist_lock write-held.
  */
+/** 20150509    
+ * task의 pid_link를 통해 pid 구조체와 연결한다.
+ **/
 void attach_pid(struct task_struct *task, enum pid_type type,
 		struct pid *pid)
 {
@@ -416,11 +436,19 @@ void transfer_pid(struct task_struct *old, struct task_struct *new,
 	hlist_replace_rcu(&old->pids[type].node, &new->pids[type].node);
 }
 
+/** 20150509    
+ * 특정 struct pid의 pid_type에 연결된 첫번째 task_struct를 반환.
+ **/
 struct task_struct *pid_task(struct pid *pid, enum pid_type type)
 {
 	struct task_struct *result = NULL;
 	if (pid) {
 		struct hlist_node *first;
+		/** 20150509    
+		 * struct pid의 tasks[PIDTYPE_MAX] 에서 type에 해당하는 hlist_head를 찾고
+		 * 그 첫번째 hlist_node를 가져온다.
+		 * 첫번째 hlist_node가 존재하면 그 hlist_node가 속한 task_struct을 리턴한다.
+		 **/
 		first = rcu_dereference_check(hlist_first_rcu(&pid->tasks[type]),
 					      lockdep_tasklist_lock_is_held());
 		if (first)
@@ -585,7 +613,7 @@ void __init pidhash_init(void)
 
 /** 20150131    
  * pid_max값과 pid_max_min값을 구한다.
- * init_pid_ns를 초기화 한다.
+ * init_pid_ns의 pidmap을 설정하고, pid를 할당하기 위한 kmem_cache를 생성한다.
  **/
 void __init pidmap_init(void)
 {

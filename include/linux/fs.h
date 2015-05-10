@@ -233,6 +233,8 @@ struct inodes_stat_t {
 #define MS_NOSEC	(1<<28)
 /** 20150307    
  * mount_fs에서 superblock의 flags에 추가한다.
+ *
+ * MS_ACTION : mount된 superblock이 활성상태이다.
  **/
 #define MS_BORN		(1<<29)
 #define MS_ACTIVE	(1<<30)
@@ -2036,6 +2038,7 @@ struct super_operations {
  * I_NEW는 mutex와 completion notification용으로 사용된다.
  *
  * inode object가 할당되었지만, disk의 inode로부터 데이터가 아직 읽히지 않았을 때
+ * 즉, 할당되어 inode number는 받았지만, 그 외 정보는 비어 있는 상태다.
  **/
 #define I_DIRTY_SYNC		(1 << 0)
 #define I_DIRTY_DATASYNC	(1 << 1)

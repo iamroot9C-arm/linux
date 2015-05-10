@@ -1173,6 +1173,9 @@ EXPORT_SYMBOL(ida_get_new_above);
  *
  * @p_id returns a value in the range %0 ... %0x7fffffff.
  */
+/** 20150509    
+ * 0 다음의 새로운 id를 할당 받아 p_id에 저장한다.
+ **/
 int ida_get_new(struct ida *ida, int *p_id)
 {
 	return ida_get_new_above(ida, 0, p_id);

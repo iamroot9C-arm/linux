@@ -530,6 +530,9 @@ static void unregister_pernet_operations(struct pernet_operations *ops)
  *	are called in the reverse of the order with which they were
  *	registered.
  */
+/** 20150509    
+ * 추후 분석???
+ **/
 int register_pernet_subsys(struct pernet_operations *ops)
 {
 	int error;

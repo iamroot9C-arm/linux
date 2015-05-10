@@ -2839,6 +2839,7 @@ void put_mnt_ns(struct mnt_namespace *ns)
  * 파일시스템과 data를 받아 vfs에 mount하고, vfsmount 결과를 리턴한다.
  *
  * kern_mount로 호출된 경우 data는 항상 NULL로 호출.
+ * proc는 ns가 data로 전달된다.
  **/
 struct vfsmount *kern_mount_data(struct file_system_type *type, void *data)
 {

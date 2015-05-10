@@ -809,6 +809,16 @@ static inline void hlist_move_list(struct hlist_head *old,
 	old->first = NULL;
 }
 
+/** 20150509    
+ * hlist_node를 포함하는 entry를 의미한다.
+ *
+ * 예를 들어 아래의 구조에서
+ * struct AAA {
+ *     ...
+ *     struct hlist_node x;
+ * };
+ * ptr은 x의 주소이고, type은 struct AAA, member는 x이다.
+ **/
 #define hlist_entry(ptr, type, member) container_of(ptr,type,member)
 
 #define hlist_for_each(pos, head) \

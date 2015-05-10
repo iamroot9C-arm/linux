@@ -1275,6 +1275,12 @@ void kill_block_super(struct super_block *sb)
 EXPORT_SYMBOL(kill_block_super);
 #endif
 
+/** 20150509    
+ * nodev 파일시스템 공통 mount 함수.
+ *
+ * superblock을 생성하고, 파일시스템별 fill_super 함수를 호출해
+ * root의 inode 할당 및 dentry 할당 후 superblock에 정보를 채우고 dentry를 리턴한다.
+ **/
 struct dentry *mount_nodev(struct file_system_type *fs_type,
 	int flags, void *data,
 	int (*fill_super)(struct super_block *, void *, int))

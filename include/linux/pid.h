@@ -3,6 +3,9 @@
 
 #include <linux/rcupdate.h>
 
+/** 20150509    
+ * PID 타입은 PID, PGID, SID가 있다.
+ **/
 enum pid_type
 {
 	PIDTYPE_PID,
@@ -47,6 +50,21 @@ enum pid_type
  * find_pid_ns() using the int nr and struct pid_namespace *ns.
  */
 
+/** 20150509    
+ * pid_hash 해시 테이블에 연결되는 구조체로,
+ * struct pid가 namespace에 따라 보이는 id를 저장하는 용도로 사용된다.
+ *
+ * find_pid_ns()에서 nr와 namespace가 주어졌을 때 struct pid를 찾기 위한
+ * 멤버로 사용된다.
+ *
+ * 전체 구조는 다음을 참고한다.
+ * Professional Linux kernel Architecture의 
+ *   Figure 2-5: Overview of data structures used to implement a namespace-aware representation of IDs.
+ *
+ * nr        : pid 번호.
+ * ns        : 특정 level의 struct pid_namespace를 가리킨다.
+ * pid_chain : pid_hash 테이블의 hash list 연결시 사용되는 member.
+ **/
 struct upid {
 	/* Try to keep pid_chain in the same cacheline as nr for find_vpid */
 	int nr;
@@ -57,6 +75,7 @@ struct upid {
 /** 20150207    
  * pid 구조체.
  *
+ * count   : usage count.
  * numbers : level에 따라 가변적이므로
  *           'variable length array in structure'로 선언되었다.
  **/
@@ -72,12 +91,23 @@ struct pid
 
 extern struct pid init_struct_pid;
 
+/** 20150509    
+ * task_struct에 존재하여 task_struct와 pid를 연결하기 위한 구조체.
+ *
+ * hlist_node는 struct pid의 struct hlist_head에 연결하는 node이다.
+ * pid는 struct pid 자체를 가리킨다.
+ *
+ * attach_pid(), detach_pid()로 task에 pid를 연결하고 해제할 수 있다.
+ **/
 struct pid_link
 {
 	struct hlist_node node;
 	struct pid *pid;
 };
 
+/** 20150509    
+ * struct pid의 usage count를 증가시킨다.
+ **/
 static inline struct pid *get_pid(struct pid *pid)
 {
 	if (pid)

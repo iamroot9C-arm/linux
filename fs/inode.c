@@ -1248,7 +1248,8 @@ EXPORT_SYMBOL(iget5_locked);
  * before unlocking it via unlock_new_inode().
  */
 /** 20150321    
- * mount된 filesystem에서inode 번호에 해당하는 inode object를 찾아 reference count를 증가시켜 리턴한다.
+ * mount된 filesystem에서 inode 번호에 해당하는 inode object를 hash list에서 찾아
+ * reference count를 증가시켜 리턴한다.
  * 존재하지 않는다면 할당받아 리턴한다.
  **/
 struct inode *iget_locked(struct super_block *sb, unsigned long ino)
@@ -1311,6 +1312,10 @@ struct inode *iget_locked(struct super_block *sb, unsigned long ino)
 			/* Return the locked inode with I_NEW set, the
 			 * caller is responsible for filling in the contents
 			 */
+			/** 20150509    
+			 * I_NEW 상태로 리턴하면,
+			 * inode number 이외의 정보를 호출자가 채워야 한다.
+			 **/
 			return inode;
 		}
 

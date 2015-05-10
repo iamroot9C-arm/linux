@@ -330,6 +330,7 @@ int ramfs_fill_super(struct super_block *sb, void *data, int silent)
 }
 
 /** 20150502    
+ * ramfs용 mount 함수. mount_nodev를 사용한다.
  **/
 struct dentry *ramfs_mount(struct file_system_type *fs_type,
 	int flags, const char *dev_name, void *data)
@@ -337,6 +338,9 @@ struct dentry *ramfs_mount(struct file_system_type *fs_type,
 	return mount_nodev(fs_type, flags, data, ramfs_fill_super);
 }
 
+/** 20150509    
+ * rootfs용 mount 함수. mount_nodev를 사용한다.
+ **/
 static struct dentry *rootfs_mount(struct file_system_type *fs_type,
 	int flags, const char *dev_name, void *data)
 {

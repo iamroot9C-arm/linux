@@ -53,11 +53,10 @@ struct sysfs_dirent sysfs_root = {
 };
 
 /** 20150321    
- * superblock 오브젝트를 받아 관련 정보를 채운다.
+ * sysfs용으로 superblock의 정보를 채우는 함수.
  *
- * sysfs_root에 대한 inode를 받아오고(없으면 생성), 
- * 해당 inode에 대한 dentry를 생성한다.
- * struct super_operations 's_op'도 여기서 채워진다.
+ * root inode를 받아오고(없으면 생성), dentry를 생성한다.
+ * struct super_operations와 root inode의 dentry 등을 채운다.
  **/
 static int sysfs_fill_super(struct super_block *sb, void *data, int silent)
 {

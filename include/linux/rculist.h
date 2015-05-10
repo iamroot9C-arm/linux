@@ -397,6 +397,9 @@ static inline void hlist_replace_rcu(struct hlist_node *old,
 /*
  * return the first or the next element in an RCU protected hlist
  */
+/** 20150509    
+ * rcu로 보호되는 hlist에서 head의 first, node의 next, pprev 노드를 리턴한다.
+ **/
 #define hlist_first_rcu(head)	(*((struct hlist_node __rcu **)(&(head)->first)))
 #define hlist_next_rcu(node)	(*((struct hlist_node __rcu **)(&(node)->next)))
 #define hlist_pprev_rcu(node)	(*((struct hlist_node __rcu **)((node)->pprev)))
@@ -503,6 +506,10 @@ static inline void hlist_add_after_rcu(struct hlist_node *prev,
  * the _rcu list-mutation primitives such as hlist_add_head_rcu()
  * as long as the traversal is guarded by rcu_read_lock().
  */
+/** 20150509    
+ * rcu로 보호되는 hlist_head부터 pos를 loop cursor로 삼아 리스트를 순회.
+ * tpos는 loop cursor가 되는 hlist_node를 포함하는 구조체이다.
+ **/
 #define hlist_for_each_entry_rcu(tpos, pos, head, member)		\
 	for (pos = rcu_dereference_raw(hlist_first_rcu(head));		\
 		pos &&							 \

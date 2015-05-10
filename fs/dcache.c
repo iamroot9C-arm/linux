@@ -1577,7 +1577,7 @@ static void __d_instantiate(struct dentry *dentry, struct inode *inode)
  
 /** 20150328    
  * dentry에 inode 정보를 채워 인스턴스화 시킨다.
- * inode가 NULL인 경우 invalid dentry.
+ * inode가 NULL인 경우 invalid dentry로 사용된다.
  **/
 void d_instantiate(struct dentry *entry, struct inode * inode)
 {
@@ -1674,7 +1674,7 @@ struct dentry *d_instantiate_unique(struct dentry *entry, struct inode *inode)
 EXPORT_SYMBOL(d_instantiate_unique);
 
 /** 20150404    
- * root_inode가 주어지면, 해당 inode를 위한 dentry를 할당받고 초기화해 리턴한다.
+ * root_inode를 받아 이 inode를 위한 dentry를 할당받고 초기화해 리턴한다.
  **/
 struct dentry *d_make_root(struct inode *root_inode)
 {
