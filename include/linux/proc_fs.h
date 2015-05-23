@@ -54,7 +54,7 @@ typedef	int (write_proc_t)(struct file *file, const char __user *buffer,
  * proc 자체를 위한 자료구조와 VFS의 inode에 필요한 정보를 포함하는 구조체.
  *
  * low_ino : inode number (동적할당시 ida에서 받아온다)
- * nlink : hard link 수.
+ * nlink : link 수.
  * count : usage count. pde_get(), pde_put()으로 조작.
  * name  : proc_dir_entry의 이름을 별도로 저장하기 위한 포인터.
  **/
@@ -279,6 +279,8 @@ struct ctl_table;
 
 /** 20150509    
  * 'procfs'에서 inode를 관리하기 위해 사용한다.
+ *
+ * 구조체 내에 struct inode가 포함되어 있다.
  **/
 struct proc_inode {
 	struct pid *pid;
@@ -293,8 +295,7 @@ struct proc_inode {
 };
 
 /** 20150509    
- * struct proc_inode는 inode를 포함하고 있으므로 이를 이용해
- * 매개변수로 전달된 inode를 포함하는 struct proc_inode를 리턴한다.
+ * 주어진 inode를 멤버로 갖고 있는 struct proc_inode 위치를 리턴한다.
  **/
 static inline struct proc_inode *PROC_I(const struct inode *inode)
 {

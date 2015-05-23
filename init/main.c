@@ -911,6 +911,9 @@ asmlinkage void __init start_kernel(void)
 	/* rootfs populating might need page-writeback */
 	page_writeback_init();
 #ifdef CONFIG_PROC_FS
+	/** 20150516    
+	 * proc 파일시스템을 초기화 한다.
+	 **/
 	proc_root_init();
 #endif
 	cgroup_init();

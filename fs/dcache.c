@@ -3433,11 +3433,11 @@ void __init vfs_caches_init(unsigned long mempages)
 	 **/
 	files_init(mempages);
 	/** 20150221    
-	 * mount 관련 초기화를 수행한다 : mount kmem_cache 생성, INIT task에 "rootfs" 마운트 등
+	 * mount 관련 초기화를 수행한다 : mount kmem_cache 생성, INIT task에 "rootfs" 파일시스템 마운트 등
 	 **/
 	mnt_init();
 	/** 20150502    
-	 * block device에 대한 초기화를 수행한다: "bdev_cache" 생성, "bdev" 등록 및 마운트.
+	 * block device에 대한 초기화를 수행한다: "bdev_cache" 생성, "bdev" 파일시스템 등록 및 마운트.
 	 **/
 	bdev_cache_init();
 	/** 20150502    

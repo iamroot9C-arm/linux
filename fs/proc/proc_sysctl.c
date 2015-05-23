@@ -27,6 +27,9 @@ void proc_sys_poll_notify(struct ctl_table_poll *poll)
 	wake_up_interruptible(&poll->wait);
 }
 
+/** 20150516    
+ * sysctl_table_root용 sysctl table.
+ **/
 static struct ctl_table root_table[] = {
 	{
 		.procname = "",
@@ -34,6 +37,9 @@ static struct ctl_table root_table[] = {
 	},
 	{ }
 };
+/** 20150516    
+ * sysctl table hierarchy의 root.
+ **/
 static struct ctl_table_root sysctl_table_root = {
 	.default_set.dir.header = {
 		{{.count = 1,
@@ -1396,6 +1402,9 @@ out:
  *
  * See __register_sysctl_table for more details.
  */
+/** 20150516    
+ * sysctl table hierarchy를 등록한다.
+ **/
 struct ctl_table_header *__register_sysctl_paths(
 	struct ctl_table_set *set,
 	const struct ctl_path *path, struct ctl_table *table)
@@ -1467,6 +1476,9 @@ err_register_leaves:
  *
  * See __register_sysctl_paths for more details.
  */
+/** 20150516    
+ * sysctl table hierarchy(table)를 path라는 경로로 등록한다.
+ **/
 struct ctl_table_header *register_sysctl_paths(const struct ctl_path *path,
 						struct ctl_table *table)
 {
@@ -1484,6 +1496,9 @@ EXPORT_SYMBOL(register_sysctl_paths);
  *
  * See register_sysctl_paths for more details.
  */
+/** 20150516    
+ * sysctl table hierarchy를 추가한다.
+ **/
 struct ctl_table_header *register_sysctl_table(struct ctl_table *table)
 {
 	static const struct ctl_path null_path[] = { {} };
@@ -1593,12 +1608,16 @@ void retire_sysctl_set(struct ctl_table_set *set)
 	WARN_ON(!RB_EMPTY_ROOT(&set->dir.root));
 }
 
+/** 20150516    
+ * "/proc/sys" 디렉토리 entry를 생성하고, sysctl 초기화를 진행한다.
+ **/
 int __init proc_sys_init(void)
 {
 	struct proc_dir_entry *proc_sys_root;
 
 	/** 20150509    
-	 * "/proc/sys" 디렉토리 entry를 생성하고, proc_iops, proc_fops를 지정한다. 
+	 * "/proc/sys" 디렉토리 entry를 생성하고, sys를 위한
+	 * proc_iops, proc_fops를 지정한다. 
 	 **/
 	proc_sys_root = proc_mkdir("sys", NULL);
 	proc_sys_root->proc_iops = &proc_sys_dir_operations;
@@ -1606,7 +1625,7 @@ int __init proc_sys_init(void)
 	proc_sys_root->nlink = 0;
 
 	/** 20150509    
-	 * 20150516 여기부터...
+	 * 추후분석???
 	 **/
 	return sysctl_init();
 }

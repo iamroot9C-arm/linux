@@ -224,6 +224,12 @@ static struct file_system_type proc_fs_type = {
 	.kill_sb	= proc_kill_sb,
 };
 
+/** 20150516    
+ * proc 사용을 위한 초기화.
+ *   - kmem cache 생성
+ *   - proc 파일시스템 등록 및 마운트.
+ *   - sysctl 초기화
+ **/
 void __init proc_root_init(void)
 {
 	int err;
@@ -287,6 +293,9 @@ void __init proc_root_init(void)
 	 * /proc 아래 "bus" 디렉토리 entry를 생성한다.
 	 **/
 	proc_mkdir("bus", NULL);
+	/** 20150516    
+	 * /proc 아래 "sys" 디렉토리 entry를 생성하고, sysctl을 등록한다.
+	 **/
 	proc_sys_init();
 }
 

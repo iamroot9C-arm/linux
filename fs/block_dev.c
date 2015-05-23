@@ -522,6 +522,9 @@ static const struct super_operations bdev_sops = {
 	.evict_inode = bdev_evict_inode,
 };
 
+/** 20150516    
+ * bdev 파일시스템을 mount 한다.
+ **/
 static struct dentry *bd_mount(struct file_system_type *fs_type,
 	int flags, const char *dev_name, void *data)
 {

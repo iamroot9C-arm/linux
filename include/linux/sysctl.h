@@ -1011,6 +1011,10 @@ static inline void *proc_sys_poll_event(struct ctl_table_poll *poll)
 	struct ctl_table_poll name = __CTL_TABLE_POLL_INITIALIZER(name)
 
 /* A sysctl table is an array of struct ctl_table: */
+/** 20150516    
+ * 각 sysctl entry 정보를 나타내는 자료구조.
+ * tree 형태로 구성된다.
+ **/
 struct ctl_table 
 {
 	const char *procname;		/* Text ID for /proc/sys, or zero */
@@ -1031,6 +1035,9 @@ struct ctl_node {
 
 /* struct ctl_table_header is used to maintain dynamic lists of
    struct ctl_table trees. */
+/** 20150516    
+ * struct ctl_table 트리를 동적 리스트로 관리하기 위한 자료구조.
+ **/
 struct ctl_table_header
 {
 	union {
@@ -1070,6 +1077,9 @@ struct ctl_table_root {
 };
 
 /* struct ctl_path describes where in the hierarchy a table is added */
+/** 20150516    
+ * sysctl table hierarchy가 추가될 ctl_path.
+ **/
 struct ctl_path {
 	const char *procname;
 };

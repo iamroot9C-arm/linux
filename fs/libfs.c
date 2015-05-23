@@ -225,6 +225,8 @@ static const struct super_operations simple_super_operations = {
  *
  * superblock ops와 dentry ops는 매개변수에 따라 지정한다.
  * mount는 superblock 생성, root inode 생성, root inode의 dentry 생성해 리턴.
+ *
+ * d_make_root() 함수로 dentry를 생성하지 않고, 각각 주어진 name으로 생성한다.
  **/
 struct dentry *mount_pseudo(struct file_system_type *fs_type, char *name,
 	const struct super_operations *ops,
