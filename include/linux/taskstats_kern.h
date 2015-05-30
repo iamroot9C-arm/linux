@@ -28,6 +28,9 @@ static inline void taskstats_exit(struct task_struct *tsk, int group_dead)
 {}
 static inline void taskstats_tgid_free(struct signal_struct *sig)
 {}
+/** 20150523    
+ * TASKSTATS 정의되지 않음.
+ **/
 static inline void taskstats_init_early(void)
 {}
 #endif /* CONFIG_TASKSTATS */

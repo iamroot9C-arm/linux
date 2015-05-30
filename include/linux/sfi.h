@@ -184,6 +184,9 @@ static inline void disable_sfi(void)
 
 #else /* !CONFIG_SFI */
 
+/** 20150523    
+ * CONFIG_SFI 정의되지 않음.
+ **/
 static inline void sfi_init(void)
 {
 }

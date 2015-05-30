@@ -505,6 +505,9 @@ static inline void __ftrace_enabled_restore(int enabled)
 #ifdef CONFIG_FTRACE_MCOUNT_RECORD
 extern void ftrace_init(void);
 #else
+/** 20150523    
+ * CONFIG_FTRACE_MCOUNT_RECORD 정의되지 않음.
+ **/
 static inline void ftrace_init(void) { }
 #endif
 

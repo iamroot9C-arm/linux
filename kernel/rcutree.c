@@ -3503,6 +3503,9 @@ static int __cpuinit rcu_cpu_notify(struct notifier_block *self,
  * idle tasks are prohibited from containing RCU read-side critical
  * sections.  This function also enables RCU lockdep checking.
  */
+/** 20150523    
+ * init task의 끝에서 rcu scheduler가 활성화되도록 설정한다.
+ **/
 void rcu_scheduler_starting(void)
 {
 	WARN_ON(num_online_cpus() != 1);

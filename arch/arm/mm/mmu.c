@@ -577,7 +577,7 @@ write-alloc를 사용해서 다른 프로세서가 write된 최신값을 snoopin
 		if (cpu_arch >= CPU_ARCH_ARMv7 && (cr & CR_TRE)) {
 			/* Non-cacheable Normal is XCB = 001 */
 /** 20130202
-* cache 사용하지 않지만 write 시 cpu -> buffer -> physical memmory 순으로 동작하도록 설정.
+* cache 사용하지 않지만 write 시 cpu -> buffer -> physical memory 순으로 동작하도록 설정.
 * 실제 sram 영역이 해당 됨. ???
 */
 			mem_types[MT_MEMORY_NONCACHED].prot_sect |=

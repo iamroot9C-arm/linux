@@ -84,6 +84,9 @@ extern void __pgd_error(const char *file, int line, pgd_t);
 extern pgprot_t		pgprot_user;
 extern pgprot_t		pgprot_kernel;
 
+/** 20150523    
+ * (p) | (b)
+ **/
 #define _MOD_PROT(p, b)	__pgprot(pgprot_val(p) | (b))
 
 #define PAGE_NONE		_MOD_PROT(pgprot_user, L_PTE_XN | L_PTE_RDONLY)
@@ -94,11 +97,11 @@ extern pgprot_t		pgprot_kernel;
 #define PAGE_READONLY		_MOD_PROT(pgprot_user, L_PTE_USER | L_PTE_RDONLY | L_PTE_XN)
 #define PAGE_READONLY_EXEC	_MOD_PROT(pgprot_user, L_PTE_USER | L_PTE_RDONLY)
 /** 20130511 
-pgprot_kernel = __pgprot(L_PTE_PRESENT | L_PTE_YOUNG |
-				 L_PTE_DIRTY | kern_pgprot);
-#define L_PTE_XN		(_AT(pteval_t, 1) << 9)
-이러한 속성으로 페이지 속성을 설정.
-**/
+ * pgprot_kernel = __pgprot(L_PTE_PRESENT | L_PTE_YOUNG |
+ *			     L_PTE_DIRTY | kern_pgprot);
+ * #define L_PTE_XN		(_AT(pteval_t, 1) << 9)
+ * 이러한 속성으로 페이지 속성을 설정.
+ **/
 #define PAGE_KERNEL		_MOD_PROT(pgprot_kernel, L_PTE_XN)
 #define PAGE_KERNEL_EXEC	pgprot_kernel
 

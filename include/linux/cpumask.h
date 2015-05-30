@@ -474,6 +474,9 @@ static inline bool cpumask_equal(const struct cpumask *src1p,
  * @src1p: the first input
  * @src2p: the second input
  */
+/** 20150523    
+ * 두 cpumask의 비트맵 중 교차되는 비트가 하나라도 있는지 검사한다.
+ **/
 static inline bool cpumask_intersects(const struct cpumask *src1p,
 				     const struct cpumask *src2p)
 {
@@ -592,6 +595,10 @@ static inline void cpumask_copy(struct cpumask *dstp,
  *
  * Returns >= nr_cpu_ids if no cpus set.
  */
+/** 20150523    
+ * 두 cpumask 에 공통으로 포함된 비트를 찾는 방식으로
+ * 첫번째 cpu를 선택하는 방식을 취한다.
+ **/
 #define cpumask_any_and(mask1, mask2) cpumask_first_and((mask1), (mask2))
 
 /**
@@ -794,6 +801,9 @@ static inline void free_bootmem_cpumask_var(cpumask_var_t mask)
  * bitmap mask를 cpumask로 변환해 cpu_all_mask라 선언한다.
  **/
 extern const DECLARE_BITMAP(cpu_all_bits, NR_CPUS);
+/** 20150523    
+ * SMP에서 존재하는 모든 cpu에서 실행될 수 있도록 설정하는 mask.
+ **/
 #define cpu_all_mask to_cpumask(cpu_all_bits)
 
 /* First bits of cpu_bit_bitmap are in fact unset. */

@@ -214,10 +214,20 @@ void update_mmu_cache(struct vm_area_struct *vma, unsigned long addr,
  * we have several shared mappings of the same object in user
  * space.
  */
+/** 20150523    
+ * write buffer가 물리주소 aliasing 이슈가 있는지 검사한다.
+ * 이슈가 있다면 1이 리턴된다.
+ **/
 static int __init check_writebuffer(unsigned long *p1, unsigned long *p2)
 {
 	register unsigned long zero = 0, one = 1, val;
 
+	/** 20150523    
+	 * 인터럽트를 금지한 상태에서,
+	 * 다른 가상 주소에 각각 1을 쓰고, 0을 쓰고, 먼저 쓴 곳의 값을 읽어
+	 * 나중에 쓴 값과 다른지 검사한다.
+	 * write 순서를 보장하기 위해 mb를 사용한다.
+	 **/
 	local_irq_disable();
 	mb();
 	*p1 = one;
@@ -230,6 +240,10 @@ static int __init check_writebuffer(unsigned long *p1, unsigned long *p2)
 	return val != zero;
 }
 
+/** 20150523    
+ * writebuffer일 경우 발생할 수 있는 bug(physical address aliasing)가 있는지
+ * 검사하고 조치한다.
+ **/
 void __init check_writebuffer_bugs(void)
 {
 	struct page *page;
@@ -238,15 +252,28 @@ void __init check_writebuffer_bugs(void)
 
 	printk(KERN_INFO "CPU: Testing write buffer coherency: ");
 
+	/** 20150523    
+	 * KERNEL에서 사용할 페이지 하나 할당.
+	 **/
 	page = alloc_page(GFP_KERNEL);
 	if (page) {
 		unsigned long *p1, *p2;
+		/** 20150523    
+		 * PAGE_KERNEL 속성에서 memory type을 지우고 BUFFERABLE로 설정.
+		 **/
 		pgprot_t prot = __pgprot_modify(PAGE_KERNEL,
 					L_PTE_MT_MASK, L_PTE_MT_BUFFERABLE);
 
+		/** 20150523    
+		 * 할당받은 page를 가상 주소 공간에 VM_IOREMAP로 각각 매핑한다.
+		 **/
 		p1 = vmap(&page, 1, VM_IOREMAP, prot);
 		p2 = vmap(&page, 1, VM_IOREMAP, prot);
 
+		/** 20150523    
+		 * 각각 매핑한 주소를 check_writebuffer로 검사해
+		 * 같지 않은지 결과를 받아온다.
+		 **/
 		if (p1 && p2) {
 			v = check_writebuffer(p1, p2);
 			reason = "enabling work-around";
@@ -254,6 +281,9 @@ void __init check_writebuffer_bugs(void)
 			reason = "unable to map memory\n";
 		}
 
+		/** 20150523    
+		 * 매핑한 공간을 해제하고, 할당받은 페이지를 반환한다.
+		 **/
 		vunmap(p1);
 		vunmap(p2);
 		put_page(page);
@@ -261,6 +291,10 @@ void __init check_writebuffer_bugs(void)
 		reason = "unable to grab page\n";
 	}
 
+	/** 20150523    
+	 * write buffer로 인한 physical address aliasing 이슈가 있다면 failed.
+	 * shared_pte_mask에 대해 L_PTE_MT_UNCACHED 속성을 지정한다.
+	 **/
 	if (v) {
 		printk("failed, %s\n", reason);
 		shared_pte_mask = L_PTE_MT_UNCACHED;

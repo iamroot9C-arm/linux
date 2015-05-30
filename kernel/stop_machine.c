@@ -25,6 +25,11 @@
  * Structure to determine completion condition and record errors.  May
  * be shared by works on different cpus.
  */
+/** 20150524    
+ * 완료 조건을 검사하고, 결과를 기록하는 구조체.
+ *
+ * 예를 들어 cpu_stop_signal_done()에서 nr_todo가 0이 되면 completion을 호출한다.
+ **/
 struct cpu_stop_done {
 	atomic_t		nr_todo;	/* nr left to execute */
 	bool			executed;	/* actually executed? */
@@ -75,7 +80,6 @@ static void cpu_stop_signal_done(struct cpu_stop_done *done, bool executed)
 			done->executed = true;
 		/** 20130720    
 		 * done->nr_todo를 하나 감소시키고, 0일 경우 complete 함수 호출
-		 *   complete 함수는 추후 분석 ???
 		 **/
 		if (atomic_dec_and_test(&done->nr_todo))
 			complete(&done->completion);
@@ -83,13 +87,25 @@ static void cpu_stop_signal_done(struct cpu_stop_done *done, bool executed)
 }
 
 /* queue @work to @stopper.  if offline, @work is completed immediately */
+/** 20150524    
+ * cpu_stopper에게 work를 queue시킨다.
+ *
+ * cpu_stopper_thread에서 큐잉된 work을 꺼내와 실행한다.
+ **/
 static void cpu_stop_queue_work(struct cpu_stopper *stopper,
 				struct cpu_stop_work *work)
 {
 	unsigned long flags;
 
+	/** 20150524    
+	 * 인터럽트를 막고, 스핀락으로 stopper의 동기화를 보장한다.
+	 **/
 	spin_lock_irqsave(&stopper->lock, flags);
 
+	/** 20150523    
+	 * stopper가 사용 가능하면 work를 stopper에 달아주고 stopper를 깨운다.
+	 * 그렇지 않다면 실패를 통보한다.
+	 **/
 	if (stopper->enabled) {
 		list_add_tail(&work->list, &stopper->works);
 		wake_up_process(stopper->thread);
@@ -123,13 +139,22 @@ static void cpu_stop_queue_work(struct cpu_stopper *stopper,
  * -ENOENT if @fn(@arg) was not executed because @cpu was offline;
  * otherwise, the return value of @fn.
  */
+/** 20150524    
+ * cpu에서 fn이 돌아가도록 큐잉시키고 완료를 기다린다.
+ **/
 int stop_one_cpu(unsigned int cpu, cpu_stop_fn_t fn, void *arg)
 {
 	struct cpu_stop_done done;
 	struct cpu_stop_work work = { .fn = fn, .arg = arg, .done = &done };
 
 	cpu_stop_init_done(&done, 1);
+	/** 20150524    
+	 * 전달받은 argument로 work을 채워 큐잉시킨다.
+	 **/
 	cpu_stop_queue_work(&per_cpu(cpu_stopper, cpu), &work);
+	/** 20150524    
+	 * done이 완료되길 기다리고, 결과를 리턴한다.
+	 **/
 	wait_for_completion(&done.completion);
 	return done.executed ? done.ret : -ENOENT;
 }

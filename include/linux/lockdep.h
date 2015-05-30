@@ -486,6 +486,8 @@ static inline void print_irqtrace_events(struct task_struct *curr)
  * global define can be used. (Subsystems with multiple levels
  * of nesting should define their own lock-nesting subclasses.)
  */
+/** 20150524    
+ **/
 #define SINGLE_DEPTH_NESTING			1
 
 /*

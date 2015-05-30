@@ -23,7 +23,10 @@
  * INIT_COMPLETION().
  */
 /** 20141025    
- * wait queue
+ * wait_for_completion()을 호출해 완료를 대기.
+ * complete()를 호출해 완료를 통해.
+ *
+ * wait은 완료를 대기하며 sleep할 wait queue.
  **/
 struct completion {
 	unsigned int done;

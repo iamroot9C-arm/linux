@@ -366,12 +366,18 @@ static void __init setup_command_line(char *command_line)
  * gcc-3.4 accidentally inlines this function, so use noinline.
  */
 
+/** 20150523    
+ * kthreadd_done completion 선언 및 초기화.
+ **/
 static __initdata DECLARE_COMPLETION(kthreadd_done);
 
 static noinline void __init_refok rest_init(void)
 {
 	int pid;
 
+	/** 20150523    
+	 * rcu scheduler가 동작하도록 한다.
+	 **/
 	rcu_scheduler_starting();
 	/*
 	 * We need to spawn init first so that it obtains pid 1, however
@@ -916,11 +922,17 @@ asmlinkage void __init start_kernel(void)
 	 **/
 	proc_root_init();
 #endif
+	/** 20150523    
+	 * cgroup_init, cpuset_init 추후 분석 ???
+	 **/
 	cgroup_init();
 	cpuset_init();
 	taskstats_init_early();
 	delayacct_init();
 
+	/** 20150523    
+	 * MMU를 사용하는 경우 writebuffer bug를 체크한다.
+	 **/
 	check_bugs();
 
 	acpi_early_init(); /* before LAPIC and SMP init */
@@ -1135,14 +1147,24 @@ static int __init kernel_init(void * unused)
 	/*
 	 * Wait until kthreadd is all set-up.
 	 */
+	/** 20150523    
+	 * kthreadd가 설정이 완료된 뒤에 동작하도록 대기시킨다.
+	 **/
 	wait_for_completion(&kthreadd_done);
 
 	/* Now the scheduler is fully set up and can do blocking allocations */
+	/** 20150523    
+	 * 커널이 동작할 수 있도록 준비를 마쳤기 때문에
+	 * GFP_BOOT_MASK로 갖고 있던 default 값을 바꿔준다.
+	 **/
 	gfp_allowed_mask = __GFP_BITS_MASK;
 
 	/*
 	 * init can allocate pages on any node
 	 */
+	/** 20150523    
+	 * 현재 task의 mems_allowed를 변경한다.
+	 **/
 	set_mems_allowed(node_states[N_HIGH_MEMORY]);
 	/*
 	 * init can run on any cpu.

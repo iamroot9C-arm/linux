@@ -347,6 +347,9 @@ static inline struct rq *__task_rq_lock(struct task_struct *p)
 /*
  * task_rq_lock - lock p->pi_lock and lock the rq @p resides on.
  */
+/** 20150523    
+ * task와 task의 rq에 lock을 동시에 잡고 리턴한다.
+ **/
 static struct rq *task_rq_lock(struct task_struct *p, unsigned long *flags)
 	__acquires(p->pi_lock)
 	__acquires(rq->lock)
@@ -354,11 +357,27 @@ static struct rq *task_rq_lock(struct task_struct *p, unsigned long *flags)
 	struct rq *rq;
 
 	for (;;) {
+		/** 20150523    
+		 * task에 pi_lock을 먼저 걸고,
+		 * task의 rq 포인터를 가져온다.
+		 *
+		 * 가져온 rq에 lock을 걸고, 다시 rq를 가져와 lock 전과 일치하는지 비교해
+		 * 일치한다면 리턴한다.
+		 *
+		 * 데드락을 피하기 위해 task의 pi_lock을 먼저 잡고,
+		 * rq의 lock을 잡도록 순서가 보장되어야 한다.
+		 **/
 		raw_spin_lock_irqsave(&p->pi_lock, *flags);
 		rq = task_rq(p);
 		raw_spin_lock(&rq->lock);
+		/** 20150523    
+		 **/
 		if (likely(rq == task_rq(p)))
 			return rq;
+		/** 20150523    
+		 * 만약 rq의 lock 전후에 rq가 변경되었다면 잡았던 lock을 해제하고
+		 * 다시 시도한다.
+		 **/
 		raw_spin_unlock(&rq->lock);
 		raw_spin_unlock_irqrestore(&p->pi_lock, *flags);
 	}
@@ -373,6 +392,9 @@ static void __task_rq_unlock(struct rq *rq)
 	raw_spin_unlock(&rq->lock);
 }
 
+/** 20150523    
+ * runqueue와 task의 lock을 순서대로 해제한다.
+ **/
 static inline void
 task_rq_unlock(struct rq *rq, struct task_struct *p, unsigned long *flags)
 	__releases(rq->lock)
@@ -848,6 +870,9 @@ static void enqueue_task(struct rq *rq, struct task_struct *p, int flags)
 	p->sched_class->enqueue_task(rq, p, flags);
 }
 
+/** 20150523    
+ *
+ **/
 static void dequeue_task(struct rq *rq, struct task_struct *p, int flags)
 {
 	update_rq_clock(rq);
@@ -1306,6 +1331,9 @@ void set_task_cpu(struct task_struct *p, unsigned int new_cpu)
 	__set_task_cpu(p, new_cpu);
 }
 
+/** 20150523    
+ * migrate 함수에서 사용하기 위해 task와 dest_cpu를 묶은 구조체
+ **/
 struct migration_arg {
 	struct task_struct *task;
 	int dest_cpu;
@@ -5889,32 +5917,60 @@ int set_cpus_allowed_ptr(struct task_struct *p, const struct cpumask *new_mask)
 	unsigned int dest_cpu;
 	int ret = 0;
 
+	/** 20150523    
+	 * task p와 그 rq의 lock을 획득한다.
+	 **/
 	rq = task_rq_lock(p, &flags);
 
+	/** 20150523    
+	 * 새로운 cpumask가 현재 task의 cpus_allowed와 동일하다면 빠져나간다.
+	 **/
 	if (cpumask_equal(&p->cpus_allowed, new_mask))
 		goto out;
 
+	/** 20150523    
+	 * 새로 주어진 mask와 active 중 교차되는 비트가 하나도 없다면 invalid.
+	 **/
 	if (!cpumask_intersects(new_mask, cpu_active_mask)) {
 		ret = -EINVAL;
 		goto out;
 	}
 
+	/** 20150523    
+	 * 주어진 task 속성에 PF_THREAD_BOUND가 있고,
+	 * 현재 task가 아닐 경우 invalid. 왜???
+	 **/
 	if (unlikely((p->flags & PF_THREAD_BOUND) && p != current)) {
 		ret = -EINVAL;
 		goto out;
 	}
 
+	/** 20150523    
+	 * 현재 task의 cpumask를 new_mask로 변경한다.
+	 **/
 	do_set_cpus_allowed(p, new_mask);
 
 	/* Can the task run on the task's current CPU? If so, we're done */
+	/** 20150523    
+	 * 현재 task가 수행 중인 cpu가 new_mask와 동일하다면
+	 * 다른 조치없이 나간다.
+	 **/
 	if (cpumask_test_cpu(task_cpu(p), new_mask))
 		goto out;
 
+	/** 20150523    
+	 * 만약 현재 task가 실행되는 cpu가 new_mask에 속하지 않는다면,
+	 * new_mask 중 online mask인 cpu를 찾는다.
+	 **/
 	dest_cpu = cpumask_any_and(cpu_active_mask, new_mask);
 	if (p->on_rq) {
 		struct migration_arg arg = { p, dest_cpu };
 		/* Need help from migration thread: drop lock and wait. */
 		task_rq_unlock(rq, p, &flags);
+		/** 20150523    
+		 * rq에 해당하는 cpu에서 stopper thread에 의해
+		 * migration_cpu_stop가 실행되도록 한다.
+		 **/
 		stop_one_cpu(cpu_of(rq), migration_cpu_stop, &arg);
 		tlb_migrate_finish(p->mm);
 		return 0;
@@ -5937,6 +5993,9 @@ EXPORT_SYMBOL_GPL(set_cpus_allowed_ptr);
  *
  * Returns non-zero if task was successfully migrated.
  */
+/** 20150523    
+ * 20150530 여기부터...
+ **/
 static int __migrate_task(struct task_struct *p, int src_cpu, int dest_cpu)
 {
 	struct rq *rq_dest, *rq_src;
@@ -5945,9 +6004,15 @@ static int __migrate_task(struct task_struct *p, int src_cpu, int dest_cpu)
 	if (unlikely(!cpu_active(dest_cpu)))
 		return ret;
 
+	/** 20150523    
+	 * src와 dest rq를 가져온다.
+	 **/
 	rq_src = cpu_rq(src_cpu);
 	rq_dest = cpu_rq(dest_cpu);
 
+	/** 20150523    
+	 * task 먼저, 그리고 src, dest rq를 lock시킨다.
+	 **/
 	raw_spin_lock(&p->pi_lock);
 	double_rq_lock(rq_src, rq_dest);
 	/* Already moved. */
@@ -5961,6 +6026,9 @@ static int __migrate_task(struct task_struct *p, int src_cpu, int dest_cpu)
 	 * If we're not on a rq, the next wake-up will ensure we're
 	 * placed properly.
 	 */
+	/** 20150523    
+	 * migrate 시킬 task가 현재 rq에 있을 때.
+	 **/
 	if (p->on_rq) {
 		dequeue_task(rq_src, p, 0);
 		set_task_cpu(p, dest_cpu);

@@ -152,6 +152,9 @@ sched_info_switch(struct task_struct *prev, struct task_struct *next)
 		__sched_info_switch(prev, next);
 }
 #else
+/** 20150524    
+ * CONFIG_SCHEDSTATS나 CONFIG_TASK_DELAY_ACCT가 정의되지 않다.
+ **/
 #define sched_info_queued(t)			do { } while (0)
 #define sched_info_reset_dequeued(t)	do { } while (0)
 #define sched_info_dequeued(t)			do { } while (0)

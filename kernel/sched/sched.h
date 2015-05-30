@@ -1152,15 +1152,24 @@ static inline void double_unlock_balance(struct rq *this_rq, struct rq *busiest)
  * Note this does not disable interrupts like task_rq_lock,
  * you need to do so manually before calling.
  */
+/** 20150524    
+ * 두 rq를 lock시킨다.
+ **/
 static inline void double_rq_lock(struct rq *rq1, struct rq *rq2)
 	__acquires(rq1->lock)
 	__acquires(rq2->lock)
 {
+	/** 20150524    
+	 * 인터럽트는 함수 호출 전에 disabled 되어 있어야 한다.
+	 **/
 	BUG_ON(!irqs_disabled());
 	if (rq1 == rq2) {
 		raw_spin_lock(&rq1->lock);
 		__acquire(rq2->lock);	/* Fake it out ;) */
 	} else {
+		/** 20150524    
+		 * 낮은 주소의 rq부터 lock을 잡아 데드락에 빠지지 않도록 한다.
+		 **/
 		if (rq1 < rq2) {
 			raw_spin_lock(&rq1->lock);
 			raw_spin_lock_nested(&rq2->lock, SINGLE_DEPTH_NESTING);

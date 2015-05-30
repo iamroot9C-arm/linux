@@ -1136,6 +1136,12 @@ struct sched_domain;
 
 #define DEQUEUE_SLEEP		1
 
+/** 20150524    
+ * sched_class 인터페이스 구조체.
+ *
+ * sched_init()에서 task의 sched_class를 fair_sched_class로 지정하고,
+ * init_idle에서 current의 sched_class가 idle_sched_class로 지정한다.
+ **/
 struct sched_class {
 	const struct sched_class *next;
 
@@ -1515,7 +1521,7 @@ struct task_struct {
 
 	/* Protection of the PI data structures: */
 	/** 20130713    
-	 * Priority Inheritance
+	 * Priority Inversion을 해결할 수 있도록 Priority Inheritance가 구현된다.
 	 **/
 	raw_spinlock_t pi_lock;
 

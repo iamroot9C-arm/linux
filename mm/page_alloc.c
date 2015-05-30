@@ -118,6 +118,9 @@ int percpu_pagelist_fraction;
 /** 20130914
  * 부팅 중 sleep, IO나 filesystem에 대한 접근은 허용되지 않는다.
  * #define GFP_BOOT_MASK (__GFP_BITS_MASK & ~(__GFP_WAIT|__GFP_IO|__GFP_FS))
+ *
+ * 20150523
+ * kernel_init에서 __GFP_BITS_MASK로 설정된다.
  **/
 gfp_t gfp_allowed_mask __read_mostly = GFP_BOOT_MASK;
 

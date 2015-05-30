@@ -103,6 +103,9 @@ struct vm_area_struct;
  */
 #define __GFP_NOTRACK_FALSE_POSITIVE (__GFP_NOTRACK)
 
+/** 20150523    
+ * __GFP_BITS 들을 위한 SHIFT 값과 MASK 값 설정.
+ **/
 #define __GFP_BITS_SHIFT 25	/* Room for N __GFP_FOO bits */
 #define __GFP_BITS_MASK ((__force gfp_t)((1 << __GFP_BITS_SHIFT) - 1))
 

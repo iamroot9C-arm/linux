@@ -755,6 +755,16 @@ static DECLARE_BITMAP(cpu_possible_bits, CONFIG_NR_CPUS) __read_mostly
  **/
 static DECLARE_BITMAP(cpu_possible_bits, CONFIG_NR_CPUS) __read_mostly;
 #endif
+/** 20150523    
+ * cpu_XXX_bits로 cpumask로 변환한다.
+ *
+ * cpu_possible_mask - 해당 비트에 대한 CPU가 존재할 수 있다.
+ * cpu_present_mask - 해당 비트에 대한 CPU가 존재한다.
+ * cpu_online_mask - 해당 비트에 대한 CPU가 존재하며 스케줄러가 이를 관리한다.
+ * cpu_active_mask - 해당 비트에 대한 CPU가 존재하며 task migration 시 이를 이용할 수 있다.
+ *
+ * [출처] http://studyfoss.egloos.com/5444259
+ **/
 const struct cpumask *const cpu_possible_mask = to_cpumask(cpu_possible_bits);
 EXPORT_SYMBOL(cpu_possible_mask);
 

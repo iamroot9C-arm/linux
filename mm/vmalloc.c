@@ -2259,9 +2259,10 @@ struct vm_struct *get_vm_area(unsigned long size, unsigned long flags)
 }
 
 /** 20140419    
- * VMALLOC_START ~ VMALLOC_END 사이에서 vm_struct와 vmap_area를 할당 받고 자료구조에 등록한다.
- *
+ * size크기만큼 VMALLOC_START ~ VMALLOC_END 사이 주소를 할당 받아온다.
  * mapping은 하지 않은 상태.
+ *
+ * 내부적으로 struct vm_struct와 struct vmap_area를 할당 받아 자료구조에 등록한다.
  **/
 struct vm_struct *get_vm_area_caller(unsigned long size, unsigned long flags,
 				const void *caller)
@@ -2417,6 +2418,9 @@ EXPORT_SYMBOL(vunmap);
  *	Maps @count pages from @pages into contiguous kernel virtual
  *	space.
  */
+/** 20150523    
+ * pages들을 연속적인 가상주소로 매핑하고, 매핑된 주소를 리턴한다.
+ **/
 void *vmap(struct page **pages, unsigned int count,
 		unsigned long flags, pgprot_t prot)
 {
@@ -2427,11 +2431,18 @@ void *vmap(struct page **pages, unsigned int count,
 	if (count > totalram_pages)
 		return NULL;
 
+	/** 20150523    
+	 * count 개의 page를 위한 가상주소 공간을 할당 받는다.
+	 **/
 	area = get_vm_area_caller((count << PAGE_SHIFT), flags,
 					__builtin_return_address(0));
 	if (!area)
 		return NULL;
 
+	/** 20150523    
+	 * 받아온 가상 주소 공간을 page table에 매핑한다.
+	 * prot 속성을 지정한다.
+	 **/
 	if (map_vm_area(area, prot, &pages)) {
 		vunmap(area->addr);
 		return NULL;

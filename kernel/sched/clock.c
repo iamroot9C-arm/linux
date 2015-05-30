@@ -333,6 +333,9 @@ void sched_clock_init(void)
 	sched_clock_running = 1;
 }
 
+/** 20150524    
+ * sched_clock이 동작 중이면 sched_clock을 읽어 ns 단위로 리턴한다.
+ **/
 u64 sched_clock_cpu(int cpu)
 {
 	if (unlikely(!sched_clock_running))

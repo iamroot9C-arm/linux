@@ -20,6 +20,9 @@ typedef int (*cpu_stop_fn_t)(void *arg);
 
 #ifdef CONFIG_SMP
 
+/** 20150523    
+ * cpu stopper에 전달해 줄 work.
+ **/
 struct cpu_stop_work {
 	struct list_head	list;		/* cpu_stopper->works */
 	cpu_stop_fn_t		fn;
