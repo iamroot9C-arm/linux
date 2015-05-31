@@ -113,6 +113,9 @@ EXPORT_SYMBOL(fs_overflowgid);
  * this indicates whether you can reboot with ctrl-alt-del: the default is yes
  */
 
+/** 20150530    
+ * ctrl-alt-del PID.
+ **/
 int C_A_D = 1;
 struct pid *cad_pid;
 EXPORT_SYMBOL(cad_pid);

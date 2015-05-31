@@ -16,6 +16,8 @@
  * up and requests are guaranteed to be served as long as the target
  * cpus are online.
  */
+/** 20150530    
+ **/
 typedef int (*cpu_stop_fn_t)(void *arg);
 
 #ifdef CONFIG_SMP

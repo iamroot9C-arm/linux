@@ -837,6 +837,9 @@ EXPORT_SYMBOL(smp_call_function);
 #endif /* USE_GENERIC_SMP_HELPERS */
 
 /* Setup configured maximum number of CPUs to activate */
+/** 20150530    
+ * activate 시킬 최대 cpu 개수.
+ **/
 unsigned int setup_max_cpus = NR_CPUS;
 EXPORT_SYMBOL(setup_max_cpus);
 

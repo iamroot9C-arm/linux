@@ -38,6 +38,11 @@ struct cpu_stop_done {
 };
 
 /* the actual stopper, one per every possible cpu, enabled on online cpus */
+/** 20150530    
+ * cpu_stopper 구조체.
+ *
+ * spinlock으로 보호되며, 실행해야 할 works 리스크가 존재하낟.
+ **/
 struct cpu_stopper {
 	spinlock_t		lock;
 	bool			enabled;	/* is this stopper enabled? */
@@ -88,9 +93,9 @@ static void cpu_stop_signal_done(struct cpu_stop_done *done, bool executed)
 
 /* queue @work to @stopper.  if offline, @work is completed immediately */
 /** 20150524    
- * cpu_stopper에게 work를 queue시킨다.
+ * cpu_stopper에게 work를 queue시키고 깨운다.
  *
- * cpu_stopper_thread에서 큐잉된 work을 꺼내와 실행한다.
+ * 여기서 queue된 작업은 cpu_stopper_thread에서 꺼내져 실행된다.
  **/
 static void cpu_stop_queue_work(struct cpu_stopper *stopper,
 				struct cpu_stop_work *work)
@@ -103,8 +108,8 @@ static void cpu_stop_queue_work(struct cpu_stopper *stopper,
 	spin_lock_irqsave(&stopper->lock, flags);
 
 	/** 20150523    
-	 * stopper가 사용 가능하면 work를 stopper에 달아주고 stopper를 깨운다.
-	 * 그렇지 않다면 실패를 통보한다.
+	 * stopper가 사용 가능하면 work를 stopper 실행 목록의 끝에 달아주고
+	 * stopper를 깨운다. 그렇지 않다면 실패를 통보한다.
 	 **/
 	if (stopper->enabled) {
 		list_add_tail(&work->list, &stopper->works);
@@ -149,7 +154,7 @@ int stop_one_cpu(unsigned int cpu, cpu_stop_fn_t fn, void *arg)
 
 	cpu_stop_init_done(&done, 1);
 	/** 20150524    
-	 * 전달받은 argument로 work을 채워 큐잉시킨다.
+	 * 전달받은 argument로 work을 채워 큐에 넣고 stopper를 깨운다.
 	 **/
 	cpu_stop_queue_work(&per_cpu(cpu_stopper, cpu), &work);
 	/** 20150524    
@@ -307,6 +312,12 @@ int try_stop_cpus(const struct cpumask *cpumask, cpu_stop_fn_t fn, void *arg)
 	return ret;
 }
 
+/** 20150530    
+ * stopper thread.
+ *
+ * 리스트 등록된 work을 순차적으로 꺼내 실행하고 결과를 리턴한다.
+ * work은 cpu_stop_queue_work에서 큐잉된다.
+ **/
 static int cpu_stopper_thread(void *data)
 {
 	struct cpu_stopper *stopper = data;
@@ -316,13 +327,22 @@ static int cpu_stopper_thread(void *data)
 repeat:
 	set_current_state(TASK_INTERRUPTIBLE);	/* mb paired w/ kthread_stop */
 
+	/** 20150530    
+	 * stopper가 정지되어야 한다면 TASK_RUNNING으로 상태를 지정한 후 리턴한다.
+	 **/
 	if (kthread_should_stop()) {
 		__set_current_state(TASK_RUNNING);
 		return 0;
 	}
 
 	work = NULL;
+	/** 20150530    
+	 * stopper는 percpu 변수이지만, spin lock으로 보호되어야 한다.
+	 **/
 	spin_lock_irq(&stopper->lock);
+	/** 20150530    
+	 * stopper가 수행해야 할 work이 존재하면 첫번째 entry를 분리한다.
+	 **/
 	if (!list_empty(&stopper->works)) {
 		work = list_first_entry(&stopper->works,
 					struct cpu_stop_work, list);
@@ -330,6 +350,12 @@ repeat:
 	}
 	spin_unlock_irq(&stopper->lock);
 
+	/** 20150530    
+	 * work이 존재하면 work에 저장되어 있는 함수를 호출한다.
+	 * 결과는 work 내의 done->ret에 저장한다.
+	 *
+	 * work이 없다면 scheduling 된다.
+	 **/
 	if (work) {
 		cpu_stop_fn_t fn = work->fn;
 		void *arg = work->arg;
@@ -339,6 +365,9 @@ repeat:
 		__set_current_state(TASK_RUNNING);
 
 		/* cpu stop callbacks are not allowed to sleep */
+		/** 20150530    
+		 * cpu stop에 의해 호출되는 함수는 실행 중 선점될 수 없다.
+		 **/
 		preempt_disable();
 
 		ret = fn(arg);
@@ -352,6 +381,9 @@ repeat:
 			  kallsyms_lookup((unsigned long)fn, NULL, NULL, NULL,
 					  ksym_buf), arg);
 
+		/** 20150530    
+		 * 실행이 완료되면 work 내의 done에 따라 완료를 통보(complete)한다.
+		 **/
 		cpu_stop_signal_done(done, true);
 	} else
 		schedule();

@@ -113,13 +113,25 @@ DEFINE_PER_CPU_SHARED_ALIGNED(struct rq, runqueues);
 
 static void update_rq_clock_task(struct rq *rq, s64 delta);
 
+/** 20150530    
+ * rq에 해당하는 cpu의 sched_clock 값으로 clock을 업데이트 한다.
+ *
+ * rq에 task를 en/dequeue 할 때, schedule_tick이 발생했을 경우 등일 때 호출된다.
+ **/
 void update_rq_clock(struct rq *rq)
 {
 	s64 delta;
 
+	/** 20150530    
+	 * rq에 대한 clock update를 생략할 경우 리턴.
+	 **/
 	if (rq->skip_clock_update > 0)
 		return;
 
+	/** 20150530    
+	 * cpu의 sched_clock을 읽어와 rq에 마지막 갱신된 clock의 차를 구하고,
+	 * rq->clock, rq->clock_task에 업데이트 한다.
+	 **/
 	delta = sched_clock_cpu(cpu_of(rq)) - rq->clock;
 	rq->clock += delta;
 	update_rq_clock_task(rq, delta);
@@ -274,6 +286,9 @@ const_debug unsigned int sysctl_sched_nr_migrate = 32;
  *
  * default: 1s
  */
+/** 20150530    
+ * RT time 소비를 측정할 기준 단위 (ms)
+ **/
 const_debug unsigned int sysctl_sched_time_avg = MSEC_PER_SEC;
 
 /*
@@ -755,10 +770,21 @@ static inline bool got_nohz_idle_kick(void)
 
 #endif /* CONFIG_NO_HZ */
 
+/** 20150530    
+ * rq의 sched average를 update 한다 ???
+ **/
 void sched_avg_update(struct rq *rq)
 {
+	/** 20150530    
+	 * schedule average를 구할 기간을 계산한다.
+	 * sysctl에 영향을 받는다.
+	 **/
 	s64 period = sched_avg_period();
 
+	/** 20150530    
+	 * schedule average를 구할 period가 확보되는 동안
+	 * rt_avg 를 계속 나눈다.
+	 **/
 	while ((s64)(rq->clock - rq->age_stamp) > period) {
 		/*
 		 * Inline assembly required to prevent the compiler
@@ -863,20 +889,35 @@ static void set_load_weight(struct task_struct *p)
 	load->inv_weight = prio_to_wmult[prio];
 }
 
+/** 20150530    
+ * rq의 clock을 갱신하고 task를 enqueue 한다.
+ **/
 static void enqueue_task(struct rq *rq, struct task_struct *p, int flags)
 {
+	/** 20150530    
+	 * rq의 clock을 sched_clock값으로 업데이트 한다. 
+	 **/
 	update_rq_clock(rq);
 	sched_info_queued(p);
+	/** 20150530    
+	 * task에 지정된 sched_class의 enqueue_task 콜백을 호출한다.
+	 **/
 	p->sched_class->enqueue_task(rq, p, flags);
 }
 
-/** 20150523    
- *
+/** 20150530    
+ * rq의 clock을 갱신하고 task를 dequeue 한다.
  **/
 static void dequeue_task(struct rq *rq, struct task_struct *p, int flags)
 {
+	/** 20150530    
+	 * rq의 clock을 sched_clock값으로 업데이트 한다. 
+	 **/
 	update_rq_clock(rq);
 	sched_info_dequeued(p);
+	/** 20150530    
+	 * task에 지정된 sched_class의 dequeue_task 콜백을 호출한다.
+	 **/
 	p->sched_class->dequeue_task(rq, p, flags);
 }
 
@@ -1026,6 +1067,11 @@ static inline u64 steal_ticks(u64 steal)
 }
 #endif
 
+/** 20150530    
+ * rq의 clock_task 항목을 업데이트 한다.
+ * 
+ * 매크로를 선언하지 않아 rq의 clock과 동일한 값으로 업데이트 될 것이다.
+ **/
 static void update_rq_clock_task(struct rq *rq, s64 delta)
 {
 /*
@@ -1078,6 +1124,9 @@ static void update_rq_clock_task(struct rq *rq, s64 delta)
 	}
 #endif
 
+	/** 20150530    
+	 * delta를 clock_task에 업데이트 한다.
+	 **/
 	rq->clock_task += delta;
 
 #if defined(CONFIG_IRQ_TIME_ACCOUNTING) || defined(CONFIG_PARAVIRT_TIME_ACCOUNTING)
@@ -2670,6 +2719,10 @@ unsigned long this_cpu_load(void)
  */
 
 /* Variables and functions for calc_load */
+/** 20150530    
+ * load를 구할 task들의 수.
+ * 각 rq에서 actvie (running, uninterruptible) 중인 task 수가 합산된다.
+ **/
 static atomic_long_t calc_load_tasks;
 static unsigned long calc_load_update;
 unsigned long avenrun[3];
@@ -2690,10 +2743,17 @@ void get_avenrun(unsigned long *loads, unsigned long offset, int shift)
 	loads[2] = (avenrun[2] + offset) << shift;
 }
 
+/** 20150530    
+ * rq에서 active 중인 task의 수를 새로 계산해 이전에 계산한 값과 다르다면
+ * 차를 구해 리턴하고, calc_load_active를 갱신한다.
+ **/
 static long calc_load_fold_active(struct rq *this_rq)
 {
 	long nr_active, delta = 0;
 
+	/** 20150530    
+	 * running 중인 task와 uninterruptible로 대기 중인 task들을 active로 본다.
+	 **/
 	nr_active = this_rq->nr_running;
 	nr_active += (long) this_rq->nr_uninterruptible;
 
@@ -2987,17 +3047,29 @@ void calc_global_load(unsigned long ticks)
  * Called from update_cpu_load() to periodically update this CPU's
  * active count.
  */
+/** 20150530    
+ * 주기적으로 현재 rq에서 active count를 업데이트 한다.
+ **/
 static void calc_load_account_active(struct rq *this_rq)
 {
 	long delta;
 
+	/** 20150530    
+	 * load를 계산할 때가 되지 않았으면 리턴.
+	 **/
 	if (time_before(jiffies, this_rq->calc_load_update))
 		return;
 
+	/** 20150530    
+	 * rq에서 active task의 수가 변경되었다면 그 차를 전역변수에 업데이트 한다.
+	 **/
 	delta  = calc_load_fold_active(this_rq);
 	if (delta)
 		atomic_long_add(delta, &calc_load_tasks);
 
+	/** 20150530    
+	 * 다음 cpu load를 계산할 시간을 설정한다.
+	 **/
 	this_rq->calc_load_update += LOAD_FREQ;
 }
 
@@ -3077,6 +3149,10 @@ decay_load_missed(unsigned long load, unsigned long missed_updates, int idx)
  * scheduler tick (TICK_NSEC). With tickless idle this will not be called
  * every tick. We fix it up based on jiffies.
  */
+/** 20150530    
+ * rq의 cpu_load를 업데이트 한다.
+ * 대개 scheduler tick에 의해 호출된다.
+ **/
 static void __update_cpu_load(struct rq *this_rq, unsigned long this_load,
 			      unsigned long pending_updates)
 {
@@ -3085,6 +3161,10 @@ static void __update_cpu_load(struct rq *this_rq, unsigned long this_load,
 	this_rq->nr_load_updates++;
 
 	/* Update our load: */
+	/** 20150530    
+	 * rq의 cpu_load를 업데이트 한다.
+	 * 추후 분석???
+	 **/
 	this_rq->cpu_load[0] = this_load; /* Fasttrack for idx 0 */
 	for (i = 1, scale = 2; i < CPU_LOAD_IDX_MAX; i++, scale += scale) {
 		unsigned long old_load, new_load;
@@ -3105,6 +3185,9 @@ static void __update_cpu_load(struct rq *this_rq, unsigned long this_load,
 		this_rq->cpu_load[i] = (old_load * (scale - 1) + new_load) >> i;
 	}
 
+	/** 20150530    
+	 * rq의 sched average를 업데이트한다.
+	 **/
 	sched_avg_update(this_rq);
 }
 
@@ -3173,14 +3256,24 @@ void update_cpu_load_nohz(void)
 /*
  * Called from scheduler_tick()
  */
+/** 20150530    
+ * cpu load와 active count를 update 한다.
+ **/
 static void update_cpu_load_active(struct rq *this_rq)
 {
 	/*
 	 * See the mess around update_idle_cpu_load() / update_cpu_load_nohz().
 	 */
+	/** 20150530    
+	 * 마지막으로 load를 업데이트 한 tick을 기록하고,
+	 * rq의 cpu_load 배열을 load weigth로 업데이트 한다.
+	 **/
 	this_rq->last_load_update_tick = jiffies;
 	__update_cpu_load(this_rq, this_rq->load.weight, 1);
 
+	/** 20150530    
+	 * rq의 active count를 업데이트 한다.
+	 **/
 	calc_load_account_active(this_rq);
 }
 
@@ -3676,8 +3769,17 @@ void scheduler_tick(void)
 	sched_clock_tick();
 
 	raw_spin_lock(&rq->lock);
+	/** 20150530    
+	 * rq의 clock을 업데이트 한다.
+	 **/
 	update_rq_clock(rq);
+	/** 20150530    
+	 * cpu load와 active count를 업데이트 한다.
+	 **/
 	update_cpu_load_active(rq);
+	/** 20150530    
+	 * rq의 sched_class의 task_tick을 호출해 tick이 task에서 발생했음을 처리한다.
+	 **/
 	curr->sched_class->task_tick(rq, curr, 0);
 	raw_spin_unlock(&rq->lock);
 
@@ -5910,6 +6012,11 @@ void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
  * task must not exit() & deallocate itself prematurely. The
  * call is not atomic; no spinlocks may be held.
  */
+/** 20150530    
+ * task의 cpu affinity를 변경한다.
+ * 현재 실행 중인 cpu가 new_mask에 해당하지 않을 경우, new_mask에서 대상을 골라
+ * 해당 cpu에서 실행되도록 migrate 한다.
+ **/
 int set_cpus_allowed_ptr(struct task_struct *p, const struct cpumask *new_mask)
 {
 	unsigned long flags;
@@ -5961,16 +6068,19 @@ int set_cpus_allowed_ptr(struct task_struct *p, const struct cpumask *new_mask)
 	/** 20150523    
 	 * 만약 현재 task가 실행되는 cpu가 new_mask에 속하지 않는다면,
 	 * new_mask 중 online mask인 cpu를 찾는다.
+	 *
+	 * task가 runqueue에 있는 상태라면 stopper thread를 통해
+	 * migration_cpu_stop을 실행해 현재 cpu에서 꺼내 다른 cpu로 수행되도록 한다.
+	 * 수행이 완료될 때까지 대기한다.
+	 *
+	 * stopper thread는 stop_sched_class를 사용하므로
+	 * 이를 통해 실행되는 작업은 선점이 불가능하고 우선순위가 높다.
 	 **/
 	dest_cpu = cpumask_any_and(cpu_active_mask, new_mask);
 	if (p->on_rq) {
 		struct migration_arg arg = { p, dest_cpu };
 		/* Need help from migration thread: drop lock and wait. */
 		task_rq_unlock(rq, p, &flags);
-		/** 20150523    
-		 * rq에 해당하는 cpu에서 stopper thread에 의해
-		 * migration_cpu_stop가 실행되도록 한다.
-		 **/
 		stop_one_cpu(cpu_of(rq), migration_cpu_stop, &arg);
 		tlb_migrate_finish(p->mm);
 		return 0;
@@ -5994,7 +6104,10 @@ EXPORT_SYMBOL_GPL(set_cpus_allowed_ptr);
  * Returns non-zero if task was successfully migrated.
  */
 /** 20150523    
- * 20150530 여기부터...
+ * src cpu에서 실행 중인 task를 dest cpu로 옮겨 실행되도록 한다.
+ *
+ * task와 두 rq의 lock을 모두 획득한 상태에서 src rq에서 꺼내 dest rq에 넣고
+ * preempt 검사 함수를 실행한다.
  **/
 static int __migrate_task(struct task_struct *p, int src_cpu, int dest_cpu)
 {
@@ -6016,6 +6129,9 @@ static int __migrate_task(struct task_struct *p, int src_cpu, int dest_cpu)
 	raw_spin_lock(&p->pi_lock);
 	double_rq_lock(rq_src, rq_dest);
 	/* Already moved. */
+	/** 20150530    
+	 * task가 현재 실행 중인 cpu가 src_cpu가 아니라면 이미 이동한 것으로 본다.
+	 **/
 	if (task_cpu(p) != src_cpu)
 		goto done;
 	/* Affinity changed (again). */
@@ -6028,6 +6144,9 @@ static int __migrate_task(struct task_struct *p, int src_cpu, int dest_cpu)
 	 */
 	/** 20150523    
 	 * migrate 시킬 task가 현재 rq에 있을 때.
+	 *   src rq에서 task를 빼오고, task가 수행 중인 cpu 값을 갱신한 뒤,
+	 *   dst rq에 task를 넣는다.
+	 *   dst rq가 preempt를 수행해야 하는지 검사한다.
 	 **/
 	if (p->on_rq) {
 		dequeue_task(rq_src, p, 0);
@@ -6048,6 +6167,10 @@ fail:
  * and performs thread migration by bumping thread off CPU then
  * 'pushing' onto another runqueue.
  */
+/** 20150530    
+ * 우선순위가 높은 stopper thread에 의해 실행되며,
+ * 현재 cpu에서 수행 중이던 task를 dest_cpu에서 수행되도록 rq를 조정한다.
+ **/
 static int migration_cpu_stop(void *data)
 {
 	struct migration_arg *arg = data;
@@ -6056,6 +6179,10 @@ static int migration_cpu_stop(void *data)
 	 * The original target cpu might have gone down and we might
 	 * be on another cpu but it doesn't matter.
 	 */
+	/** 20150530    
+	 * __migrate_task 내의 double_rq_lock 전에 disable interrupt를 해야 한다.
+	 * task를 현재 cpu에서 dest cpu로 옮겨 실행한다.
+	 **/
 	local_irq_disable();
 	__migrate_task(arg->task, raw_smp_processor_id(), arg->dest_cpu);
 	local_irq_enable();

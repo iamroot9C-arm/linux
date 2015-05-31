@@ -455,7 +455,7 @@ static inline void list_splice_tail_init(struct list_head *list,
  * @member:	the name of the list_struct within the struct.
  */
 /** 20130713    
- * ptr이 가리키는 member를 포함하는 구조체를 리턴
+ * ptr이 가리키는 member를 포함하는 type 구조체의 위치를 리턴
  **/
 #define list_entry(ptr, type, member) \
 	container_of(ptr, type, member)
@@ -468,6 +468,9 @@ static inline void list_splice_tail_init(struct list_head *list,
  *
  * Note, that list is expected to be not empty.
  */
+/** 20150530    
+ * 리스트의 첫번째 member인 type 구조체의 위치를 리턴
+ **/
 #define list_first_entry(ptr, type, member) \
 	list_entry((ptr)->next, type, member)
 

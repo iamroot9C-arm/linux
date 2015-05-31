@@ -2249,6 +2249,8 @@ static inline int security_task_create(unsigned long clone_flags)
 	return 0;
 }
 
+/** 20150530    
+ **/
 static inline void security_task_free(struct task_struct *task)
 { }
 

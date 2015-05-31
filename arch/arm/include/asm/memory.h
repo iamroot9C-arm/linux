@@ -331,9 +331,14 @@ static inline __deprecated void *bus_to_virt(unsigned long x)
 #define ARCH_PFN_OFFSET		PHYS_PFN_OFFSET
 
 /** 20130511
-kaddr에 해당하는 물리주소를 구해서 pfn로 변환한 다음 pfn_to_page로 페이지의 위치를 반환하는 매크로  
+ * kaddr에 해당하는 물리주소를 구해서 pfn로 변환한 다음
+ * pfn_to_page로 페이지의 위치를 반환하는 매크로  
 **/
 #define virt_to_page(kaddr)	pfn_to_page(__pa(kaddr) >> PAGE_SHIFT)
+/** 20150530    
+ * kaddr는 PAGE_OFFSET과 high_memory 이전까지의 영역이어야 valid하다.
+ * 즉, user space에 속하거나 물리메모리와 직접 매핑되지 않은 영역은 포함 안 된다.
+ **/
 #define virt_addr_valid(kaddr)	((unsigned long)(kaddr) >= PAGE_OFFSET && (unsigned long)(kaddr) < (unsigned long)high_memory)
 
 /*

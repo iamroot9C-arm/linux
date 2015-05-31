@@ -5,6 +5,9 @@
 
 #include <linux/cpumask.h>
 
+/** 20150530    
+ * arm용 cpu topology
+ **/
 struct cputopo_arm {
 	int thread_id;
 	int core_id;

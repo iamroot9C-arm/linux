@@ -618,6 +618,8 @@ static inline void unpause_graph_tracing(void)
 #define __irq_entry
 #define INIT_FTRACE_GRAPH
 
+/** 20150530    
+ **/
 static inline void ftrace_graph_init_task(struct task_struct *t) { }
 static inline void ftrace_graph_exit_task(struct task_struct *t) { }
 /** 20140426    

@@ -743,12 +743,18 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
  *
  */
 /** 20130330    
+ * ptr를 member로 가지고 있는 type 구조체의 위치를 반환한다.
+ *
  * ptr : 구조체에 포함된 list_head
  * type : 구조체 자료형
  * member : 구조체 내에서 멤버변수 이름(struct list_head 변수명)
  * 
  * member의 주소에서 member의 offset 크기를 빼 구조체의 시작위치를 구한다.
- * 주로 list_head를 포함하고 있는 구조체의 시작 주소를 얻기 위해 사용된다.
+ *
+ * 주로 list_head 처럼 구조체 내에 자료구조를 위한 멤버가 있을 때,
+ * 실제 의미있는 구조체를 참조하기 위해 사용된다.
+ * 또는 A라는 구조체가 B를 전체 구조체 중 특정 멤버만 가리키고 있을 때, 
+ * A라는 구조체의 멤버를 통해 B 구조체를 참조할 때 사용된다.
  **/
 #define container_of(ptr, type, member) ({			\
 	const typeof( ((type *)0)->member ) *__mptr = (ptr);	\

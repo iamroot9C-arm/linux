@@ -15,11 +15,17 @@
 /*
  * lock for reading
  */
+/** 20150530    
+ * rw_semaphore의 read lock을 잡는다.
+ **/
 void __sched down_read(struct rw_semaphore *sem)
 {
 	might_sleep();
 	rwsem_acquire_read(&sem->dep_map, 0, 0, _RET_IP_);
 
+	/** 20150530    
+	 * __down_read (sem)
+	 **/
 	LOCK_CONTENDED(sem, __down_read_trylock, __down_read);
 }
 
@@ -45,6 +51,9 @@ EXPORT_SYMBOL(down_read_trylock);
 /*
  * lock for writing
  */
+/** 20150530    
+ * rw_semaphore의 write lock을 잡는다.
+ **/
 void __sched down_write(struct rw_semaphore *sem)
 {
 	/** 20140628    
@@ -54,7 +63,7 @@ void __sched down_write(struct rw_semaphore *sem)
 	rwsem_acquire(&sem->dep_map, 0, 0, _RET_IP_);
 
 	/** 20140628    
-	 * __down_write (__down_write_trylock)
+	 * __down_write (sem)
 	 **/
 	LOCK_CONTENDED(sem, __down_write_trylock, __down_write);
 }
@@ -64,6 +73,12 @@ EXPORT_SYMBOL(down_write);
 /*
  * trylock for writing -- returns 1 if successful, 0 if contention
  */
+/** 20150530    
+ * rw semaphore에서 writer side의 lock을 시도한다.
+ *
+ * 다른 writer나 reader가 모두 lock을 획득하고 있지 않고, 대기 중인 waiter도 없어
+ * lock을 획득할 수 있다면 lock을 잡고 1을 리턴한다.
+ **/
 int down_write_trylock(struct rw_semaphore *sem)
 {
 	int ret = __down_write_trylock(sem);
@@ -90,6 +105,9 @@ EXPORT_SYMBOL(up_read);
 /*
  * release a write lock
  */
+/** 20150530    
+ * rw_semaphore의 write lock을 해제한다.
+ **/
 void up_write(struct rw_semaphore *sem)
 {
 	rwsem_release(&sem->dep_map, 1, _RET_IP_);

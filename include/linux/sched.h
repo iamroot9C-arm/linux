@@ -123,6 +123,9 @@ extern void get_avenrun(unsigned long *loads, unsigned long offset, int shift);
 
 #define FSHIFT		11		/* nr of bits of precision */
 #define FIXED_1		(1<<FSHIFT)	/* 1.0 as fixed-point */
+/** 20150530    
+ * cpu load를 갱신할 주기를 설정한다.
+ **/
 #define LOAD_FREQ	(5*HZ+1)	/* 5 sec intervals */
 #define EXP_1		1884		/* 1/exp(5sec/1min) as fixed-point */
 #define EXP_5		2014		/* 1/exp(5sec/5min) */
@@ -1299,6 +1302,10 @@ enum perf_event_task_context {
 struct task_struct {
 	volatile long state;	/* -1 unrunnable, 0 runnable, >0 stopped */
 	void *stack;
+	/** 20150530    
+	 * task_struct의 usage count.
+	 * get_task_struct, pu_task_struct에 의해 증감된다.
+	 **/
 	atomic_t usage;
 	unsigned int flags;	/* per process flags, defined below */
 	unsigned int ptrace;
@@ -1886,15 +1893,22 @@ extern int is_container_init(struct task_struct *tsk);
 extern struct pid *cad_pid;
 
 extern void free_task(struct task_struct *tsk);
+/** 20150530    
+ * task struct의 usage count를 올린다.
+ **/
 #define get_task_struct(tsk) do { atomic_inc(&(tsk)->usage); } while(0)
 
 extern void __put_task_struct(struct task_struct *t);
 
 /** 20140628    
- * task_struct 의 사용을 반납한다.
+ * task_struct 의 사용을 반환한다.
  **/
 static inline void put_task_struct(struct task_struct *t)
 {
+	/** 20150530    
+	 * usage count를 감소시키고 0이 되었다면
+	 * task를 위해 사용 중이던 리소스를 반환한다.
+	 **/
 	if (atomic_dec_and_test(&t->usage))
 		__put_task_struct(t);
 }
@@ -2091,6 +2105,9 @@ extern u64 sched_clock_cpu(int cpu);
 extern void sched_clock_init(void);
 
 #ifndef CONFIG_HAVE_UNSTABLE_SCHED_CLOCK
+/** 20150530    
+ * CONFIG_HAVE_UNSTABLE_SCHED_CLOCK가 정의되지 않음.
+ **/
 static inline void sched_clock_tick(void)
 {
 }
@@ -2208,6 +2225,8 @@ extern void proc_sched_autogroup_show_task(struct task_struct *p, struct seq_fil
 extern int proc_sched_autogroup_set_nice(struct task_struct *p, int nice);
 #endif
 #else
+/** 20150530    
+ **/
 static inline void sched_autogroup_create_attach(struct task_struct *p) { }
 static inline void sched_autogroup_detach(struct task_struct *p) { }
 static inline void sched_autogroup_fork(struct signal_struct *sig) { }

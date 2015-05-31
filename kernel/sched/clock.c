@@ -93,8 +93,14 @@ struct sched_clock_data {
 	u64			clock;
 };
 
+/** 20150530    
+ * percpu 변수 sched_clock_data 선언.
+ **/
 static DEFINE_PER_CPU_SHARED_ALIGNED(struct sched_clock_data, sched_clock_data);
 
+/** 20150530    
+ * 현재 cpu에 해당하는 sched_clock_data 값을 가져온다.
+ **/
 static inline struct sched_clock_data *this_scd(void)
 {
 	return &__get_cpu_var(sched_clock_data);

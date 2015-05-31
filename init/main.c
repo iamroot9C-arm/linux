@@ -1169,10 +1169,19 @@ static int __init kernel_init(void * unused)
 	/*
 	 * init can run on any cpu.
 	 */
+	/** 20150530    
+	 * 현재 task(init)은 모든 cpu에서 실행될 수 있다.
+	 **/
 	set_cpus_allowed_ptr(current, cpu_all_mask);
 
+	/** 20150530    
+	 * cad_pid에 현재 태스크의 pid를 저장한다.
+	 **/
 	cad_pid = task_pid(current);
 
+	/** 20150530    
+	 * 20150606 여기부터...
+	 **/
 	smp_prepare_cpus(setup_max_cpus);
 
 	do_pre_smp_initcalls();

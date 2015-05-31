@@ -114,11 +114,17 @@ int nr_processes(void)
 	return total;
 }
 
+/** 20150530    
+ * arm에서 오버라이드 하지 않는다.
+ **/
 void __weak arch_release_task_struct(struct task_struct *tsk)
 {
 }
 
 #ifndef CONFIG_ARCH_TASK_STRUCT_ALLOCATOR
+/** 20150530    
+ * fork_init에서 kmem_cache를 생성한다.
+ **/
 static struct kmem_cache *task_struct_cachep;
 
 static inline struct task_struct *alloc_task_struct_node(int node)
@@ -126,12 +132,18 @@ static inline struct task_struct *alloc_task_struct_node(int node)
 	return kmem_cache_alloc_node(task_struct_cachep, GFP_KERNEL, node);
 }
 
+/** 20150530    
+ * struct task_struct로 할당받은 메모리를 반환한다.
+ **/
 static inline void free_task_struct(struct task_struct *tsk)
 {
 	kmem_cache_free(task_struct_cachep, tsk);
 }
 #endif
 
+/** 20150530    
+ * arm에서 오버라이드 하지 않음.
+ **/
 void __weak arch_release_thread_info(struct thread_info *ti)
 {
 }
@@ -157,6 +169,9 @@ static struct thread_info *alloc_thread_info_node(struct task_struct *tsk,
 	return page ? page_address(page) : NULL;
 }
 
+/** 20150530    
+ * thread_info로 사용 중인 페이지를 해제한다.
+ **/
 static inline void free_thread_info(struct thread_info *ti)
 {
 	free_pages((unsigned long)ti, THREAD_SIZE_ORDER);
@@ -202,39 +217,73 @@ struct kmem_cache *vm_area_cachep;
 /* SLAB cache for mm_struct structures (tsk->mm) */
 static struct kmem_cache *mm_cachep;
 
+/** 20150530    
+ * thread_info에 대한 account를 해당 zone에 반영한다.
+ **/
 static void account_kernel_stack(struct thread_info *ti, int account)
 {
+	/** 20150530    
+	 * thread_info가 할당된 page가 속한 zone을 찾는다.
+	 **/
 	struct zone *zone = page_zone(virt_to_page(ti));
 
+	/** 20150530    
+	 * zone의 stat 중 NR_KERNEL_STACK 항목을 갱신한다.
+	 **/
 	mod_zone_page_state(zone, NR_KERNEL_STACK, account);
 }
 
+/** 20150530    
+ * task 관리를 위해 사용 중이던 메모리를 반환한다.
+ * task_struct 구조체와 thread_info 구조체.
+ **/
 void free_task(struct task_struct *tsk)
 {
+	/** 20150530    
+	 * kernel_stack 사용량을 하나 감소시킨다.
+	 **/
 	account_kernel_stack(tsk->stack, -1);
 	arch_release_thread_info(tsk->stack);
+	/** 20150530    
+	 * thread_info로 할당된 메모리를 해제한다.
+	 **/
 	free_thread_info(tsk->stack);
 	rt_mutex_debug_task_free(tsk);
 	ftrace_graph_exit_task(tsk);
 	put_seccomp_filter(tsk);
 	arch_release_task_struct(tsk);
+	/** 20150530    
+	 * task_struct로 할당된 메모리를 해제한다.
+	 **/
 	free_task_struct(tsk);
 }
 EXPORT_SYMBOL(free_task);
 
+/** 20150530    
+ * 사용이 끝난 signal_struct 를 반환한다.
+ **/
 static inline void free_signal_struct(struct signal_struct *sig)
 {
 	taskstats_tgid_free(sig);
 	sched_autogroup_exit(sig);
+	/** 20150530    
+	 * struct signal_struct 하나를 해제한다.
+	 **/
 	kmem_cache_free(signal_cachep, sig);
 }
 
+/** 20150530    
+ * signal_struct 하나의 sigcnt를 감소시키고, 0이 되었다면 메모리를 반환한다.
+ **/
 static inline void put_signal_struct(struct signal_struct *sig)
 {
 	if (atomic_dec_and_test(&sig->sigcnt))
 		free_signal_struct(sig);
 }
 
+/** 20150530    
+ * task의 사용이 완료되어 task 관리를 위해 사용 중이던 리소스를 반환한다.
+ **/
 void __put_task_struct(struct task_struct *tsk)
 {
 	WARN_ON(!tsk->exit_state);
@@ -244,8 +293,14 @@ void __put_task_struct(struct task_struct *tsk)
 	security_task_free(tsk);
 	exit_creds(tsk);
 	delayacct_tsk_free(tsk);
+	/** 20150530    
+	 * signal_struct의 사용을 종료한다.
+	 **/
 	put_signal_struct(tsk->signal);
 
+	/** 20150530    
+	 * task 관리를 위해 사용 중이던 메모리를 반환한다.
+	 **/
 	if (!profile_handoff_task(tsk))
 		free_task(tsk);
 }

@@ -18,10 +18,9 @@
 
 struct rw_semaphore;
 
-/** 20140531    
- * rwsem 에 generic spinlock을 사용한다.
- **/
 #ifdef CONFIG_RWSEM_GENERIC_SPINLOCK
+/** 20150530    
+ **/
 #include <linux/rwsem-spinlock.h> /* use a generic implementation */
 #else
 /* All arch specific implementations share the same struct */

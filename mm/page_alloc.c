@@ -4155,7 +4155,7 @@ unsigned long get_zeroed_page(gfp_t gfp_mask)
 EXPORT_SYMBOL(get_zeroed_page);
 
 /** 20130831    
- * page를 받아 reference count를 감소시키고,
+ * page 디스크립터를 받아 reference count를 감소시키고,
  * 0이 되면 order만큼 page들을 free 하는 함수
  **/
 void __free_pages(struct page *page, unsigned int order)
@@ -4175,7 +4175,7 @@ void __free_pages(struct page *page, unsigned int order)
 EXPORT_SYMBOL(__free_pages);
 
 /** 20140322    
- * address와 order를 받아 page를 free 하는 함수
+ * va와 order를 받아 page를 free 하는 함수
  **/
 void free_pages(unsigned long addr, unsigned int order)
 {

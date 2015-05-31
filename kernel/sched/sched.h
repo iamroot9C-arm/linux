@@ -384,7 +384,14 @@ struct rq {
 	 */
 	unsigned int nr_running;
 	#define CPU_LOAD_IDX_MAX 5
+	/** 20150530    
+	 * cpu_load를 각 index에 따라 별도로 유지한다.
+	 *	busy_idx, idle_idx, newidle_idx, wake_idx, forkexec_idx
+	 **/
 	unsigned long cpu_load[CPU_LOAD_IDX_MAX];
+	/** 20150530    
+	 * rq의 load를 마지막으로 update한 tick (jiffies 값)
+	 **/
 	unsigned long last_load_update_tick;
 #ifdef CONFIG_NO_HZ
 	u64 nohz_stamp;
@@ -420,6 +427,13 @@ struct rq {
 	unsigned long next_balance;
 	struct mm_struct *prev_mm;
 
+	/** 20150530    
+	 * timestamp 용도로 사용된다.
+	 * scheduler_tick 등에서 update_rq_clock에 의해 갱신된다.
+	 *
+	 * CONFIG_IRQ_TIME_ACCOUNTING, CONFIG_PARAVIRT_TIME_ACCOUNTING 등이
+	 * 정의되어 있다면 irq가 아닌 task로 수행 중인 시간을 다르게 가져간다.
+	 **/
 	u64 clock;
 	u64 clock_task;
 
@@ -446,6 +460,9 @@ struct rq {
 
 	struct list_head cfs_tasks;
 
+	/** 20150530    
+	 * rt_avg ???
+	 **/
 	u64 rt_avg;
 	u64 age_stamp;
 	u64 idle_stamp;
@@ -1024,6 +1041,9 @@ extern const_debug unsigned int sysctl_sched_time_avg;
 extern const_debug unsigned int sysctl_sched_nr_migrate;
 extern const_debug unsigned int sysctl_sched_migration_cost;
 
+/** 20150530    
+ * scheduling average를 낼 기간을 계산한다.
+ **/
 static inline u64 sched_avg_period(void)
 {
 	return (u64)sysctl_sched_time_avg * NSEC_PER_MSEC / 2;
@@ -1152,14 +1172,14 @@ static inline void double_unlock_balance(struct rq *this_rq, struct rq *busiest)
  * Note this does not disable interrupts like task_rq_lock,
  * you need to do so manually before calling.
  */
-/** 20150524    
+/** 20150523    
  * 두 rq를 lock시킨다.
  **/
 static inline void double_rq_lock(struct rq *rq1, struct rq *rq2)
 	__acquires(rq1->lock)
 	__acquires(rq2->lock)
 {
-	/** 20150524    
+	/** 20150523    
 	 * 인터럽트는 함수 호출 전에 disabled 되어 있어야 한다.
 	 **/
 	BUG_ON(!irqs_disabled());
@@ -1167,7 +1187,7 @@ static inline void double_rq_lock(struct rq *rq1, struct rq *rq2)
 		raw_spin_lock(&rq1->lock);
 		__acquire(rq2->lock);	/* Fake it out ;) */
 	} else {
-		/** 20150524    
+		/** 20150523    
 		 * 낮은 주소의 rq부터 lock을 잡아 데드락에 빠지지 않도록 한다.
 		 **/
 		if (rq1 < rq2) {

@@ -36,6 +36,8 @@ struct kthread_create_info
 	struct list_head list;
 };
 
+/** 20150530    
+ **/
 struct kthread {
 	int should_stop;
 	void *data;
@@ -43,11 +45,10 @@ struct kthread {
 };
 
 /** 20130720    
+ * task로 kthread 구조체의 포인터를 얻어 온다.
+ * 
  * task를 받아서 task의 vfork_done (struct completion *)에 저장된 포인터 주소를
- * struct kthread exited 멤버의 주소로 해석해
- * struct kthread 구조체의 시작 주소를 얻어 온다.
- *
- * 즉, task로 kthread 구조체의 시작 위치를 얻어 온다.
+ * 포함하는 struct kthread 구조체의 시작 주소를 얻어 온다.
  **/
 #define to_kthread(tsk)	\
 	container_of((tsk)->vfork_done, struct kthread, exited)
@@ -268,23 +269,48 @@ EXPORT_SYMBOL(kthread_bind);
  * Returns the result of threadfn(), or %-EINTR if wake_up_process()
  * was never called.
  */
+/** 20150530    
+ * kthread_create로 생성된 task를 정지시킨다.
+ *
+ * should_stop에 표시하고 task를 깨운 뒤, 완료를 기다리다가 완료되면
+ * task의 리턴값을 반환하고 종료한다.
+ **/
 int kthread_stop(struct task_struct *k)
 {
 	struct kthread *kthread;
 	int ret;
 
 	trace_sched_kthread_stop(k);
+	/** 20150530    
+	 * task_struct의 사용을 시작한다.
+	 **/
 	get_task_struct(k);
 
+	/** 20150530    
+	 * task를 통해 kthread 구조체 위치를 찾아온다.
+	 **/
 	kthread = to_kthread(k);
 	barrier(); /* it might have exited */
+	/** 20150530    
+	 * vfork_done이 채워져 있다면 kthread가 할당되어 있는 경우다.
+	 **/
 	if (k->vfork_done != NULL) {
+		/** 20150530    
+		 * 해당 kthread가 멈춰져야 한다고 기록하고,
+		 * task를 깨운 뒤 complete 될 때까지 기다린다.
+		 **/
 		kthread->should_stop = 1;
 		wake_up_process(k);
 		wait_for_completion(&kthread->exited);
 	}
+	/** 20150530    
+	 * kthread의 종료코드를 가져와 반환한다.
+	 **/
 	ret = k->exit_code;
 
+	/** 20150530    
+	 * task_struct의 사용을 종료한다.
+	 **/
 	put_task_struct(k);
 	trace_sched_kthread_stop_ret(ret);
 
