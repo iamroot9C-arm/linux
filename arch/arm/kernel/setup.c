@@ -168,6 +168,9 @@ static union { char c[4]; unsigned long l; } endian_test __initdata = { { 'l', '
  * */
 #define ENDIANNESS ((char)endian_test.l)
 
+/** 20150606    
+ * struct cpuinfo_arm 타입의 percpu 변수 cpu_data 선언.
+ **/
 DEFINE_PER_CPU(struct cpuinfo_arm, cpu_data);
 
 /*

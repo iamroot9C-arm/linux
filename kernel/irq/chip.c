@@ -231,10 +231,16 @@ void irq_disable(struct irq_desc *desc)
 
 void irq_percpu_enable(struct irq_desc *desc, unsigned int cpu)
 {
+	/** 20150606    
+	 * irq desc를 따라가 chip의 irq_enable 콜백이 정의되어 있으면 호출한다.
+	 **/
 	if (desc->irq_data.chip->irq_enable)
 		desc->irq_data.chip->irq_enable(&desc->irq_data);
 	else
 		desc->irq_data.chip->irq_unmask(&desc->irq_data);
+	/** 20150606    
+	 * percpu_enabled mask에 설정한다.
+	 **/
 	cpumask_set_cpu(cpu, desc->percpu_enabled);
 }
 

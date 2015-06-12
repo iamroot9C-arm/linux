@@ -278,7 +278,7 @@ static void tick_setup_device(struct tick_device *td,
  * Check, if the new registered device should be used.
  */
 /** 20141122    
- * clockevents_register_device에서 전역리스트에 새로운 clock device를 등록하고
+ * 전역리스트에 새로운 clock event device를 등록하고,
  * CLOCK_EVT_NOTIFY_ADD notify를 날리면 이 notify handler가 호출된다.
  *
  * 성공적으로 등록한 경우 NOTIFY_STOP이 리턴된다. 
@@ -308,8 +308,7 @@ static int tick_check_new_device(struct clock_event_device *newdev)
 	/* cpu local device ? */
 	/** 20141122    
 	 * 디바이스가 동작할 cpumask가 현재 cpu의 cpumask와 동일하면
-	 * 현재 cpu의 local device이다.
-     * 그렇지 않다면 broadcast device이다.
+	 * 현재 cpu만의 local device이다. 그렇지 않다면
 	 **/
 	if (!cpumask_equal(newdev->cpumask, cpumask_of(cpu))) {
 
@@ -330,7 +329,7 @@ static int tick_check_new_device(struct clock_event_device *newdev)
 		 */
         /** 20141122    
          * 현재 cpu에 local device가 등록되어 있다면
-         * 새로 지정되는 broadcast 디바이스로 교체되지 않도록 한다.
+         * 새로 지정되는 디바이스는 local device가 아니므로 교체하지 않는다.
          **/
 		if (curdev && cpumask_equal(curdev->cpumask, cpumask_of(cpu)))
 			goto out_bc;
@@ -351,6 +350,10 @@ static int tick_check_new_device(struct clock_event_device *newdev)
 		/*
 		 * Prefer one shot capable devices !
 		 */
+		/** 20150606    
+		 * 현재 등록된 디바이스가 ONESHOT이고, 새 디바이스는 ONESHOT이 아니면
+		 * 교체하지 않는다.
+		 **/
 		if ((curdev->features & CLOCK_EVT_FEAT_ONESHOT) &&
 		    !(newdev->features & CLOCK_EVT_FEAT_ONESHOT))
 			goto out_bc;
@@ -358,8 +361,7 @@ static int tick_check_new_device(struct clock_event_device *newdev)
 		 * Check the rating
 		 */
 		/** 20150103    
-		 * 현재 device의 rating 값이 새로 추가한 rating 이상이라면
-		 * device 교체를 하지 않고 out_bc로 이동한다.
+		 * 새로 추가하는 device의 rating이 더 높을 때만 교체한다
 		 **/
 		if (curdev->rating >= newdev->rating)
 			goto out_bc;
@@ -490,7 +492,8 @@ static int tick_notify(struct notifier_block *nb, unsigned long reason,
 	switch (reason) {
 
 	/** 20141115    
-	 * clockevents_register_device에서 CLOCK_EVT_NOTIFY_ADD notify를 준다.
+	 * clockevent_devices 리스트에 새로운 clock event device를 추가한 뒤 보낸다.
+	 * clockevents_register_device, clockevents_notify_released 에서 호출.
 	 **/
 	case CLOCK_EVT_NOTIFY_ADD:
 		return tick_check_new_device(dev);

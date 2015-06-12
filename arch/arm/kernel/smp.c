@@ -228,6 +228,10 @@ void __ref cpu_die(void)
  * Called by both boot and secondaries to move global data into
  * per-processor storage.
  */
+/** 20150606    
+ * 지정된 cpu의 percpu 변수인 cpu_info에 loops_per_jiffy를 저장한다.
+ * cpuid의 cpu topology 정보를 저장하고, 다른 cpu의 정보에 업데이트 한다.
+ **/
 static void __cpuinit smp_store_cpu_info(unsigned int cpuid)
 {
 	struct cpuinfo_arm *cpu_info = &per_cpu(cpu_data, cpuid);
@@ -321,10 +325,20 @@ void __init smp_prepare_boot_cpu(void)
 
 void __init smp_prepare_cpus(unsigned int max_cpus)
 {
+	/** 20150606    
+	 * possible cpu의 수를 구한다.
+	 **/
 	unsigned int ncores = num_possible_cpus();
 
+	/** 20150606    
+	 * cpu topology 구조체 초기화.
+	 * 하나의 cpu만 돌고 있을 때 호출한다.
+	 **/
 	init_cpu_topology();
 
+	/** 20150606    
+	 * 현재 init이 수행 중인 cpu의 정보를 저장한다.
+	 **/
 	smp_store_cpu_info(smp_processor_id());
 
 	/*
@@ -332,11 +346,18 @@ void __init smp_prepare_cpus(unsigned int max_cpus)
 	 */
 	if (max_cpus > ncores)
 		max_cpus = ncores;
+	/** 20150606    
+	 * 동작할 수 있는 core가 2개 이상일 경우
+	 **/
 	if (ncores > 1 && max_cpus) {
 		/*
 		 * Enable the local timer or broadcast device for the
 		 * boot CPU, but only if we have more than one CPU.
 		 */
+		/** 20150606    
+		 * boot cpu에 대한 local timer로 설정을 시도하고,
+		 * 실패하면 broadcast timer로 설정한다.
+		 **/
 		percpu_timer_setup();
 
 		/*
@@ -427,6 +448,9 @@ u64 smp_irq_stat_cpu(unsigned int cpu)
 /*
  * Timer (local or broadcast) support
  */
+/** 20150606    
+ * percpu clock_event_device.
+ **/
 static DEFINE_PER_CPU(struct clock_event_device, percpu_clockevent);
 
 /** 20140830    
@@ -465,6 +489,9 @@ static void broadcast_timer_set_mode(enum clock_event_mode mode,
 
 static void __cpuinit broadcast_timer_setup(struct clock_event_device *evt)
 {
+	/** 20150606    
+	 * dummy_timer clock event device를 선언하고 등록한다. 
+	 **/
 	evt->name	= "dummy_timer";
 	evt->features	= CLOCK_EVT_FEAT_ONESHOT |
 			  CLOCK_EVT_FEAT_PERIODIC |
@@ -477,7 +504,7 @@ static void __cpuinit broadcast_timer_setup(struct clock_event_device *evt)
 }
 
 /** 20140920    
- * vexpress의 twd의 경우 twd_lt_ops가 등록됨.
+ * vexpress의 twd의 경우 twd_local_timer_common_register에서 twd_lt_ops가 등록됨.
  **/
 static struct local_timer_ops *lt_ops;
 
@@ -498,14 +525,32 @@ int local_timer_register(struct local_timer_ops *ops)
 }
 #endif
 
+/** 20150606    
+ * percpu clock_event를 설정하고,
+ * local timer로 설정하여 실패하면 broadcast timer로 등록한다.
+ **/
 static void __cpuinit percpu_timer_setup(void)
 {
+	/** 20150606    
+	 * 현재 함수가 호출되는 cpu의 percpu_clockevent 구조체를 설정한다.
+	 **/
 	unsigned int cpu = smp_processor_id();
 	struct clock_event_device *evt = &per_cpu(percpu_clockevent, cpu);
 
+	/** 20150606    
+	 * cpumask를 현재 cpu로 지정해 설정한다.
+	 **/
 	evt->cpumask = cpumask_of(cpu);
 	evt->broadcast = smp_timer_broadcast;
 
+	/** 20150606    
+	 * lt_ops가 없거나, lt_ops가 존재하지만 setup 실행이 실패할 경우
+	 * broadcast_timer_setup을 호출한다.
+	 *
+	 * vexpress의 경우 twd_lt_ops
+	 *	.setup	= twd_timer_setup,
+	 *  .stop	= twd_timer_stop,
+	 **/
 	if (!lt_ops || lt_ops->setup(evt))
 		broadcast_timer_setup(evt);
 }

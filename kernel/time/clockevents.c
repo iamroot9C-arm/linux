@@ -23,6 +23,9 @@
 /* The registered clock event devices */
 /** 20141122    
  * clockevent_devices 리스트.
+ *
+ * clockevents_released는 clockevents_exchange_device에서
+ * 이전 clock_event_device를 등록하는 리스트이다.
  **/
 static LIST_HEAD(clockevent_devices);
 static LIST_HEAD(clockevents_released);
@@ -78,6 +81,9 @@ EXPORT_SYMBOL_GPL(clockevent_delta2ns);
 void clockevents_set_mode(struct clock_event_device *dev,
 				 enum clock_event_mode mode)
 {
+	/** 20141002
+	 * 현재 디바이스의 mode가 설정할 모드와 다르다면
+	 **/
 	if (dev->mode != mode) {
 		/** 20141002
 		 * sp804_clockevent의 경우 sp804_set_mode,
@@ -302,6 +308,12 @@ static void clockevents_notify_released(void)
 {
 	struct clock_event_device *dev;
 
+	/** 20150606    
+	 * notify add 이후 notifier call로부터 release된 clock event device를
+	 * 활성화 시키기 위해 clockevent devices에 추가한다.
+	 *
+	 * 왜 release된 디바이스를 다시 등록하는 것인가???
+	 **/
 	while (!list_empty(&clockevents_released)) {
 		dev = list_entry(clockevents_released.next,
 				 struct clock_event_device, list);
@@ -325,6 +337,9 @@ void clockevents_register_device(struct clock_event_device *dev)
 		dev->cpumask = cpumask_of(smp_processor_id());
 	}
 
+	/** 20150606    
+	 * irq를 막고 spinlock으로 clockevent 변경을 보호한다.
+	 **/
 	raw_spin_lock_irqsave(&clockevents_lock, flags);
 
 	/** 20141122    
@@ -441,6 +456,10 @@ void clockevents_exchange_device(struct clock_event_device *old,
 	 * released list and do a notify add later.
 	 */
 	if (old) {
+		/** 20150606    
+		 * release된 clock event device는 clockevents_released에 등록한다.
+		 * 추후 notify add로 통지한다.
+		 **/
 		clockevents_set_mode(old, CLOCK_EVT_MODE_UNUSED);
 		list_del(&old->list);
 		list_add(&old->list, &clockevents_released);

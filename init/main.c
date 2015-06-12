@@ -191,6 +191,9 @@ static int __init obsolete_checksetup(char *line)
  * This should be approx 2 Bo*oMips to start (note initial shift), and will
  * still work even if initially too large, it will just take slightly longer
  */
+/** 20150606    
+ * calibrate_delay 함수에서 delay loop 횟수를 저장한다.
+ **/
 unsigned long loops_per_jiffy = (1<<12);
 
 EXPORT_SYMBOL(loops_per_jiffy);
@@ -1180,7 +1183,6 @@ static int __init kernel_init(void * unused)
 	cad_pid = task_pid(current);
 
 	/** 20150530    
-	 * 20150606 여기부터...
 	 **/
 	smp_prepare_cpus(setup_max_cpus);
 

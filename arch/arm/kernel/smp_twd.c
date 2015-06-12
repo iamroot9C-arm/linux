@@ -148,6 +148,9 @@ core_initcall(twd_cpufreq_init);
 
 #endif
 
+/** 20150606    
+ * twd를 직접 조작해 twd_timer_rate를 계산한다.
+ **/
 static void __cpuinit twd_calibrate_rate(void)
 {
 	unsigned long count;
@@ -157,6 +160,10 @@ static void __cpuinit twd_calibrate_rate(void)
 	 * If this is the first time round, we need to work out how fast
 	 * the timer ticks
 	 */
+	/** 20150606    
+	 * local timer를 설정하기 위해 TWD TIMER COUNTER를 최대치로 설정해두고,
+	 * 5개 jiffies 뒤에 읽어 지나간 COUNTER값을 환산해 rate를 계산한다.
+	 **/
 	if (twd_timer_rate == 0) {
 		printk(KERN_INFO "Calibrating local timer... ");
 
@@ -182,6 +189,10 @@ static void __cpuinit twd_calibrate_rate(void)
 
 		twd_timer_rate = (0xFFFFFFFFU - count) * (HZ / 5);
 
+		/** 20150606     
+		 * vexpress on QEMU...
+		 * Calibrating local timer... 97.32MHz.
+		 **/
 		printk("%lu.%02luMHz.\n", twd_timer_rate / 1000000,
 			(twd_timer_rate / 10000) % 100);
 	}
@@ -211,17 +222,26 @@ static irqreturn_t twd_handler(int irq, void *dev_id)
 	return IRQ_NONE;
 }
 
+/** 20150606    
+ * "smp_twd"를 위한 clock을 준비하고 공급한다.
+ **/
 static struct clk *twd_get_clock(void)
 {
 	struct clk *clk;
 	int err;
 
+	/** 20150606    
+	 * "smp_twd"으로 등록된 struct clk을 찾아온다.
+	 **/
 	clk = clk_get_sys("smp_twd", NULL);
 	if (IS_ERR(clk)) {
 		pr_err("smp_twd: clock not found: %d\n", (int)PTR_ERR(clk));
 		return clk;
 	}
 
+	/** 20150606    
+	 * clkops의 prepare 함수를 호출한다.
+	 **/
 	err = clk_prepare(clk);
 	if (err) {
 		pr_err("smp_twd: clock failed to prepare: %d\n", err);
@@ -229,6 +249,9 @@ static struct clk *twd_get_clock(void)
 		return ERR_PTR(err);
 	}
 
+	/** 20150606    
+	 * clkops의 enable 함수를 호출한다.
+	 **/
 	err = clk_enable(clk);
 	if (err) {
 		pr_err("smp_twd: clock failed to enable: %d\n", err);
@@ -243,13 +266,23 @@ static struct clk *twd_get_clock(void)
 /*
  * Setup the local clock events for a CPU.
  */
+/** 20150606    
+ * local clock event를 설정한다.
+ **/
 static int __cpuinit twd_timer_setup(struct clock_event_device *clk)
 {
 	struct clock_event_device **this_cpu_clk;
 
+	/** 20150606    
+	 * twd_clk이 초기화되지 않았으면 twd_get_clock으로 clock 값을 읽어와 설정한다.
+	 **/
 	if (!twd_clk)
 		twd_clk = twd_get_clock();
 
+	/** 20150606    
+	 * twd에 해당하는 struct clk 구조체를 가져왔다면 get_rate를 호출하고,
+	 * 그렇지 않다면 calibrate rate를 통해 설정한다.
+	 **/
 	if (!IS_ERR_OR_NULL(twd_clk))
 		twd_timer_rate = clk_get_rate(twd_clk);
 	else
@@ -257,6 +290,9 @@ static int __cpuinit twd_timer_setup(struct clock_event_device *clk)
 
 	__raw_writel(0, twd_base + TWD_TIMER_CONTROL);
 
+	/** 20150606    
+	 * clock_event_device 구조체를 설정한 뒤 percpu 변수 twd_evt에 저장한다.
+	 **/
 	clk->name = "local_timer";
 	clk->features = CLOCK_EVT_FEAT_PERIODIC | CLOCK_EVT_FEAT_ONESHOT |
 			CLOCK_EVT_FEAT_C3STOP;
@@ -268,8 +304,14 @@ static int __cpuinit twd_timer_setup(struct clock_event_device *clk)
 	this_cpu_clk = __this_cpu_ptr(twd_evt);
 	*this_cpu_clk = clk;
 
+	/** 20150606    
+	 * clockevent를 설정하고 등록한다.
+	 **/
 	clockevents_config_and_register(clk, twd_timer_rate,
 					0xf, 0xffffffff);
+	/** 20150606    
+	 * percpu interrupt를 활성화 한다.
+	 **/
 	enable_percpu_irq(clk->irq, 0);
 
 	return 0;

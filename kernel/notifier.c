@@ -447,6 +447,7 @@ EXPORT_SYMBOL_GPL(raw_notifier_chain_unregister);
  *	of the last notifier function called.
  */
 /** 20140927    
+ * notifier chain에 등록된 콜백 함수들을 호출한다.
  **/
 int __raw_notifier_call_chain(struct raw_notifier_head *nh,
 			      unsigned long val, void *v,
@@ -456,6 +457,10 @@ int __raw_notifier_call_chain(struct raw_notifier_head *nh,
 }
 EXPORT_SYMBOL_GPL(__raw_notifier_call_chain);
 
+/** 20150606    
+ * notifier chain에 등록된 notify block을 콜백 함수를 호출한다.
+ * nr_to_call에 상관 없이 호출한다.
+ **/
 int raw_notifier_call_chain(struct raw_notifier_head *nh,
 		unsigned long val, void *v)
 {

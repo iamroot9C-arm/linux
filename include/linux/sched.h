@@ -892,6 +892,9 @@ enum cpu_idle_type {
 /*
  * Increase resolution of cpu_power calculations
  */
+/** 20150606    
+ * sched power 
+ **/
 #define SCHED_POWER_SHIFT	10
 #define SCHED_POWER_SCALE	(1L << SCHED_POWER_SHIFT)
 
