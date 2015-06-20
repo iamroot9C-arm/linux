@@ -352,6 +352,9 @@ extern int proc_dowatchdog_thresh(struct ctl_table *table, int write,
 extern unsigned int  softlockup_panic;
 void lockup_detector_init(void);
 #else
+/** 20150613    
+ * CONFIG_LOCKUP_DETECTOR 설정하지 않음.
+ **/
 static inline void touch_softlockup_watchdog(void)
 {
 }

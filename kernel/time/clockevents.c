@@ -33,6 +33,11 @@ static LIST_HEAD(clockevents_released);
 /* Notification for clock events */
 /** 20140426    
  * clockevents_chain이라는 이름으로 clockevent notifier head를 선언한다.
+ *
+ * => tick_init만 등록.
+ *
+ * clockevents_register_notifier : notifier block에 등록
+ * clockevents_do_notify : 등록된 notifier block에 통보
  **/
 static RAW_NOTIFIER_HEAD(clockevents_chain);
 
@@ -304,6 +309,10 @@ static void clockevents_do_notify(unsigned long reason, void *dev)
  * Called after a notify add to make devices available which were
  * released from the notifier call.
  */
+/** 20150613    
+ * 새로운 notify를 등록한 뒤,
+ * notifier call로부터 릴리즈된 디바이스를 사용가능하도록 한다.
+ **/
 static void clockevents_notify_released(void)
 {
 	struct clock_event_device *dev;
@@ -313,6 +322,8 @@ static void clockevents_notify_released(void)
 	 * 활성화 시키기 위해 clockevent devices에 추가한다.
 	 *
 	 * 왜 release된 디바이스를 다시 등록하는 것인가???
+	 * => 새로 NOTIFY를 보내지만, mode를 UNUSED로 보내기 때문에
+	 *    clockevent를 다시 보내지 않도록 설정하게 될 것이다.
 	 **/
 	while (!list_empty(&clockevents_released)) {
 		dev = list_entry(clockevents_released.next,
@@ -327,6 +338,9 @@ static void clockevents_notify_released(void)
  * clockevents_register_device - register a clock event device
  * @dev:	device to register
  */
+/** 20150613    
+ * 새로운 clock event device를 등록한다.
+ **/
 void clockevents_register_device(struct clock_event_device *dev)
 {
 	unsigned long flags;
@@ -483,8 +497,14 @@ void clockevents_notify(unsigned long reason, void *arg)
 	int cpu;
 
 	raw_spin_lock_irqsave(&clockevents_lock, flags);
+	/** 20150613    
+	 * clockevents chain에 notify 통보.
+	 **/
 	clockevents_do_notify(reason, arg);
 
+	/** 20150613    
+	 * reason이 CPU DEAD일 때 별도로 처리
+	 **/
 	switch (reason) {
 	case CLOCK_EVT_NOTIFY_CPU_DEAD:
 		/*

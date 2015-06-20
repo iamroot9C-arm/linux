@@ -76,6 +76,9 @@ static void identity_mapping_add(pgd_t *pgd, unsigned long addr, unsigned long e
 
 extern char  __idmap_text_start[], __idmap_text_end[];
 
+/** 20150613    
+ * 20150620 여기부터 ...
+ **/
 static int __init init_static_idmap(void)
 {
 	phys_addr_t idmap_start, idmap_end;

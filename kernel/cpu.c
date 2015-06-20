@@ -822,16 +822,25 @@ void set_cpu_active(unsigned int cpu, bool active)
 		cpumask_clear_cpu(cpu, to_cpumask(cpu_active_bits));
 }
 
+/** 20150613    
+ * 소스 cpumask를 present mask에 복사.
+ **/
 void init_cpu_present(const struct cpumask *src)
 {
 	cpumask_copy(to_cpumask(cpu_present_bits), src);
 }
 
+/** 20150613    
+ * 소스 cpumask를 possible mask에 복사.
+ **/
 void init_cpu_possible(const struct cpumask *src)
 {
 	cpumask_copy(to_cpumask(cpu_possible_bits), src);
 }
 
+/** 20150613    
+ * 소스 cpumask를 online mask에 복사.
+ **/
 void init_cpu_online(const struct cpumask *src)
 {
 	cpumask_copy(to_cpumask(cpu_online_bits), src);

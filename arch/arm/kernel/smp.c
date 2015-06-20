@@ -323,6 +323,9 @@ void __init smp_prepare_boot_cpu(void)
 {
 }
 
+/** 20150613    
+ * smp_init 수행 전에 준비 작업을 한다.
+ **/
 void __init smp_prepare_cpus(unsigned int max_cpus)
 {
 	/** 20150606    
@@ -366,6 +369,12 @@ void __init smp_prepare_cpus(unsigned int max_cpus)
 		 * re-initialize the map in platform_smp_prepare_cpus() if
 		 * present != possible (e.g. physical hotplug).
 		 */
+		/** 20150613    
+		 * possible mask를 복사해 present mask를 채운다.
+		 *
+		 * present와 possible이 같지 않는 platform인 경우
+		 * platform_smp_prepare_cpus에서 재 초기화.
+		 **/
 		init_cpu_present(cpu_possible_mask);
 
 		/*
@@ -487,6 +496,9 @@ static void broadcast_timer_set_mode(enum clock_event_mode mode,
 {
 }
 
+/** 20150613    
+ * broadcast event timer로 dummy_timer를 설정하고 등록시킨다.
+ **/
 static void __cpuinit broadcast_timer_setup(struct clock_event_device *evt)
 {
 	/** 20150606    
@@ -544,7 +556,7 @@ static void __cpuinit percpu_timer_setup(void)
 	evt->broadcast = smp_timer_broadcast;
 
 	/** 20150606    
-	 * lt_ops가 없거나, lt_ops가 존재하지만 setup 실행이 실패할 경우
+	 * lt_ops가 없거나, lt_ops가 존재하지만 setup 실행이 실패할 경우 (0이 아닌값)
 	 * broadcast_timer_setup을 호출한다.
 	 *
 	 * vexpress의 경우 twd_lt_ops

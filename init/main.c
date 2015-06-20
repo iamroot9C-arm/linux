@@ -958,6 +958,8 @@ static void __init do_ctors(void)
 #endif
 }
 
+/** 20150613    
+ **/
 bool initcall_debug;
 core_param(initcall_debug, initcall_debug, bool, 0644);
 
@@ -986,6 +988,9 @@ int __init_or_module do_one_initcall(initcall_t fn)
 	int count = preempt_count();
 	int ret;
 
+	/** 20150613    
+	 * fn()을 수행하고 결과를 받아온다.
+	 **/
 	if (initcall_debug)
 		ret = do_one_initcall_debug(fn);
 	else
@@ -1090,6 +1095,11 @@ static void __init do_basic_setup(void)
 	do_initcalls();
 }
 
+/** 20150613    
+ * __initcall_start ~ __initcall0_start 사이에 배치된 함수들을 호출한다.
+ *
+ * 이곳에 함수를 배치시키려면 early_initcall(...)을 사용한다.
+ **/
 static void __init do_pre_smp_initcalls(void)
 {
 	initcall_t *fn;
@@ -1183,6 +1193,7 @@ static int __init kernel_init(void * unused)
 	cad_pid = task_pid(current);
 
 	/** 20150530    
+	 * smp_init 수행 전에 준비 작업을 한다.
 	 **/
 	smp_prepare_cpus(setup_max_cpus);
 

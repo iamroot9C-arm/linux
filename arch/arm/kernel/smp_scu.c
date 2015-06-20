@@ -40,7 +40,7 @@ unsigned int __init scu_get_core_count(void __iomem *scu_base)
  * Enable the SCU
  */
 /** 20150118    
- * SCU 레지스터에 값을 써 SCU enable 시킨다.
+ * SCU 레지스터에 값을 써 SCU enable 시키고 cache를 flush 한다.
  **/
 void scu_enable(void __iomem *scu_base)
 {

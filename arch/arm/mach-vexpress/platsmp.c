@@ -202,12 +202,23 @@ void __init smp_init_cpus(void)
 
 }
 
+/** 20150613    
+ * smp를 준비하는 vexpress의 platform specific한 코드.
+ *
+ * 현재 cpu을 smp enable로 만들고, secondary CPU가 부팅 후 이동할 함수의
+ * 주소를 sys flag레지스터에 기록한다.
+ *
+ **/
 void __init platform_smp_prepare_cpus(unsigned int max_cpus)
 {
 	/*
 	 * Initialise the present map, which describes the set of CPUs
 	 * actually populated at the present time.
 	 */
+	/** 20150613    
+	 * ct_desc가 정의되어 있다면 등록된 api가 호출.
+	 *   ct_ca9x4의 경우 ct_ca9x4_smp_enable.
+	 **/
 	if (ct_desc)
 		ct_desc->smp_enable(max_cpus);
 	else
@@ -219,5 +230,8 @@ void __init platform_smp_prepare_cpus(unsigned int max_cpus)
 	 * until it receives a soft interrupt, and then the
 	 * secondary CPU branches to this address.
 	 */
+	/** 20150613    
+	 * v2m register에 secondary CPU를 위한 entry 함수를 기록한다.
+	 **/
 	v2m_flags_set(virt_to_phys(versatile_secondary_startup));
 }

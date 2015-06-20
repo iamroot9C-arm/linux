@@ -621,6 +621,9 @@
 		*(.initcall##level##.init)				\
 		*(.initcall##level##s.init)				\
 
+/** 20150613    
+ * INIT_CALLS 부분에 들어가는 매크로.
+ **/
 #define INIT_CALLS							\
 		VMLINUX_SYMBOL(__initcall_start) = .;			\
 		*(.initcallearly.init)					\

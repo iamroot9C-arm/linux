@@ -485,6 +485,8 @@ static void tick_resume(void)
  */
 /** 20140913    
  * tick_notify event handler.
+ *
+ * tick_init에서 clockevents_register_notifier 로 등록한 notify handler.
  **/
 static int tick_notify(struct notifier_block *nb, unsigned long reason,
 			       void *dev)

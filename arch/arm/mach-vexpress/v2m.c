@@ -156,6 +156,10 @@ int v2m_cfg_read(u32 devfn, u32 *data)
 	return !!(val & SYS_CFG_ERR);
 }
 
+/** 20150613    
+ * sysreg_base register에 data를 저장한다.
+ *	 versatile_secondary_startup의 물리주소.
+ **/
 void __init v2m_flags_set(u32 data)
 {
 	writel(~0, v2m_sysreg_base + V2M_SYS_FLAGSCLR);
@@ -543,6 +547,8 @@ static void v2m_restart(char str, const char *cmd)
 
 struct ct_desc *ct_desc;
 
+/** 20150613    
+ **/
 static struct ct_desc *ct_descs[] __initdata = {
 #ifdef CONFIG_ARCH_VEXPRESS_CA9X4
 	&ct_ca9x4_desc,

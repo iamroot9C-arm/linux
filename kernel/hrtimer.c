@@ -2053,6 +2053,9 @@ static int __cpuinit hrtimer_cpu_notify(struct notifier_block *self,
 	case CPU_DEAD:
 	case CPU_DEAD_FROZEN:
 	{
+		/** 20150613    
+		 * CPU_DEAD, CPU_DEAD_FROZEN을 받았을 때 clockevents notify를 보낸다.
+		 **/
 		clockevents_notify(CLOCK_EVT_NOTIFY_CPU_DEAD, &scpu);
 		migrate_hrtimers(scpu);
 		break;

@@ -23,6 +23,9 @@
 #define __pgd_alloc()	kmalloc(PTRS_PER_PGD * sizeof(pgd_t), GFP_KERNEL)
 #define __pgd_free(pgd)	kfree(pgd)
 #else
+/** 20150613    
+ * 2 ** 2개의 page를 KERNEL 속성으로 할당 받는다.
+ **/
 #define __pgd_alloc()	(pgd_t *)__get_free_pages(GFP_KERNEL, 2)
 #define __pgd_free(pgd)	free_pages((unsigned long)pgd, 2)
 #endif
@@ -30,6 +33,9 @@
 /*
  * need to get a 16k page for level 1
  */
+/** 20150613    
+ * 
+ **/
 pgd_t *pgd_alloc(struct mm_struct *mm)
 {
 	pgd_t *new_pgd, *init_pgd;
@@ -37,15 +43,24 @@ pgd_t *pgd_alloc(struct mm_struct *mm)
 	pmd_t *new_pmd, *init_pmd;
 	pte_t *new_pte, *init_pte;
 
+	/** 20150613    
+	 * L1 page table용 크기만큼 page를 할당받는다.
+	 **/
 	new_pgd = __pgd_alloc();
 	if (!new_pgd)
 		goto no_pgd;
 
+	/** 20150613    
+	 * 할당받은 page를 0으로 초기화 한다.
+	 **/
 	memset(new_pgd, 0, USER_PTRS_PER_PGD * sizeof(pgd_t));
 
 	/*
 	 * Copy over the kernel and IO PGD entries
 	 */
+	/** 20150613    
+	 * 새로 할당받은 pgd 영역에 기존의 kernel 영역과 IO PGD entry를 복사한다.
+	 **/
 	init_pgd = pgd_offset_k(0);
 	memcpy(new_pgd + USER_PTRS_PER_PGD, init_pgd + USER_PTRS_PER_PGD,
 		       (PTRS_PER_PGD - USER_PTRS_PER_PGD) * sizeof(pgd_t));

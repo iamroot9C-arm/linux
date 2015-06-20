@@ -192,6 +192,12 @@ extern bool initcall_debug;
  * can point at the same handler without causing duplicate-symbol build errors.
  */
 
+/** 20150613    
+ * __initcall_XXX_early
+ * __initcall_XXX_0
+ * __initcall_XXX_1
+ * ...
+ **/
 #define __define_initcall(level,fn,id) \
 	static initcall_t __initcall_##fn##id __used \
 	__attribute__((__section__(".initcall" level ".init"))) = fn
@@ -201,6 +207,9 @@ extern bool initcall_debug;
  *
  * Only for built-in code, not modules.
  */
+/** 20150613    
+ * SMP init 초기화 전에 호출해야 하는 initcalls 호출
+ **/
 #define early_initcall(fn)		__define_initcall("early",fn,early)
 
 /*

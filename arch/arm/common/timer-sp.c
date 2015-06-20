@@ -199,6 +199,9 @@ static void sp804_set_mode(enum clock_event_mode mode,
 	writel(ctrl, clkevt_base + TIMER_CTRL);
 }
 
+/** 20150613    
+ * 다음 clockevent를 발생시키도록 설정하는 함수.
+ **/
 static int sp804_set_next_event(unsigned long next,
 	struct clock_event_device *evt)
 {

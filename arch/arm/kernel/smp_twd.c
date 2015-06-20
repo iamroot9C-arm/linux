@@ -267,7 +267,9 @@ static struct clk *twd_get_clock(void)
  * Setup the local clock events for a CPU.
  */
 /** 20150606    
- * local clock event를 설정한다.
+ * twd timer를 setup한다.
+ *
+ * clock_event_device를 설정하고 등록한다.
  **/
 static int __cpuinit twd_timer_setup(struct clock_event_device *clk)
 {
@@ -292,6 +294,8 @@ static int __cpuinit twd_timer_setup(struct clock_event_device *clk)
 
 	/** 20150606    
 	 * clock_event_device 구조체를 설정한 뒤 percpu 변수 twd_evt에 저장한다.
+	 *
+	 * cat /proc/timer_list로 확인
 	 **/
 	clk->name = "local_timer";
 	clk->features = CLOCK_EVT_FEAT_PERIODIC | CLOCK_EVT_FEAT_ONESHOT |
@@ -299,6 +303,9 @@ static int __cpuinit twd_timer_setup(struct clock_event_device *clk)
 	clk->rating = 350;
 	clk->set_mode = twd_set_mode;
 	clk->set_next_event = twd_set_next_event;
+	/** 20150613    
+	 * twd_local_timer_common_register에서 등록한 percpu irq.
+	 **/
 	clk->irq = twd_ppi;
 
 	this_cpu_clk = __this_cpu_ptr(twd_evt);
@@ -345,6 +352,8 @@ static int __init twd_local_timer_common_register(void)
 	 * percpu irq로 twd_ppi(IRQ_LOCALTIMER, 29) 등록.
 	 * handler는 twd_handler
 	 * dev_id는 twd_evt
+	 *
+	 * cat /proc/interrupts에서 확인 가능.
 	 **/
 	err = request_percpu_irq(twd_ppi, twd_handler, "twd", twd_evt);
 	if (err) {
