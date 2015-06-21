@@ -130,6 +130,9 @@ EXPORT_SYMBOL(outer_cache);
  * C code should use the cpu_architecture() function instead of accessing this
  * variable directly.
  */
+/** 20150620    
+ * setup_processor()에서 armv7를 저장한다.
+ **/
 int __cpu_architecture __read_mostly = CPU_ARCH_UNKNOWN;
 
 struct stack {

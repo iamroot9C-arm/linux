@@ -77,6 +77,9 @@ ENTRY(cpu_v7_do_idle)
 	mov	pc, lr
 ENDPROC(cpu_v7_do_idle)
 
+/** 20150620
+ * dcache line size 단위로 address 부터 size만큼을 clear 한다.
+ **/
 ENTRY(cpu_v7_dcache_clean_area)
 #ifndef TLB_CAN_READ_FROM_L1_CACHE
 	dcache_line_size r2, r3
@@ -293,6 +296,9 @@ __v7_setup:
 	TTBCR, Translation Table Base Control Register, VMSA
 	mcr	p15, 0, r10, c2, c0, 2	@ TTB control register
 
+	    r4 :
+		r8 : 
+
 	r4 = r8 = 0x60004000 [PA] page table address
 	orr	r4, r4, #TTB_FLAGS_SMP
 	orr	r8, r8, #TTB_FLAGS_SMP
@@ -408,6 +414,9 @@ __v7_setup_stack:
 	/*
 	 * Standard v7 proc info content
 	 */
+ /** 20150620    
+  * struct proc_info_list 에서 __cpu_mm_mmu_flags부터 시작.
+  **/
 .macro __v7_proc initfunc, mm_mmuflags = 0, io_mmuflags = 0, hwcaps = 0
 	ALT_SMP(.long	PMD_TYPE_SECT | PMD_SECT_AP_WRITE | PMD_SECT_AP_READ | \
 			PMD_SECT_AF | PMD_FLAGS_SMP | \mm_mmuflags)

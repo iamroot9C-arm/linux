@@ -36,6 +36,9 @@
 
 #ifndef __ASSEMBLY__
 
+/** 20150620    
+ * cortex-a9은 ARM architecture 버전이 4 이상이므로 high vector 비트를 검사한다.
+ **/
 #if __LINUX_ARM_ARCH__ >= 4
 #define vectors_high()	(cr_alignment & CR_V)
 #else

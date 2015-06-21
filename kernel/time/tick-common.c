@@ -484,7 +484,7 @@ static void tick_resume(void)
  * Notification about clock event devices
  */
 /** 20140913    
- * tick_notify event handler.
+ * tick_notify event handler로 clock event에 대한 통보를 받아 처리한다.
  *
  * tick_init에서 clockevents_register_notifier 로 등록한 notify handler.
  **/
@@ -550,7 +550,7 @@ static struct notifier_block tick_notifier = {
  * Register the notifier with the clockevents framework
  */
 /** 20140825    
- * tick notifier 등록.
+ * clockevents framework에 이벤트 발생시 통보받을 tick notifier 등록.
  **/
 void __init tick_init(void)
 {

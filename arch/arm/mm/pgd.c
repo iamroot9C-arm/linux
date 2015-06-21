@@ -34,7 +34,8 @@
  * need to get a 16k page for level 1
  */
 /** 20150613    
- * 
+ * Level 1 page table을 위한 page를 할당받고,
+ * 초기화된 page table로부터 kernel 영역과 IO 영역의 page table을 복사한다.
  **/
 pgd_t *pgd_alloc(struct mm_struct *mm)
 {
@@ -44,7 +45,7 @@ pgd_t *pgd_alloc(struct mm_struct *mm)
 	pte_t *new_pte, *init_pte;
 
 	/** 20150613    
-	 * L1 page table용 크기만큼 page를 할당받는다.
+	 * L1 page table 크기만큼 page를 할당받는다.
 	 **/
 	new_pgd = __pgd_alloc();
 	if (!new_pgd)
@@ -65,6 +66,9 @@ pgd_t *pgd_alloc(struct mm_struct *mm)
 	memcpy(new_pgd + USER_PTRS_PER_PGD, init_pgd + USER_PTRS_PER_PGD,
 		       (PTRS_PER_PGD - USER_PTRS_PER_PGD) * sizeof(pgd_t));
 
+	/** 20150620    
+	 * new_pgd 영역의 dcache를 클린시킨다.
+	 **/
 	clean_dcache_area(new_pgd, PTRS_PER_PGD * sizeof(pgd_t));
 
 #ifdef CONFIG_ARM_LPAE
@@ -81,6 +85,9 @@ pgd_t *pgd_alloc(struct mm_struct *mm)
 		goto no_pmd;
 #endif
 
+	/** 20150620    
+	 * high vector가 아닌 경우 vector table에 대한 pte entry를 설정한다.
+	 **/
 	if (!vectors_high()) {
 		/*
 		 * On ARM, first page must always be allocated since it

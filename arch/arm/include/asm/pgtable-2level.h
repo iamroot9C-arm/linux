@@ -122,6 +122,8 @@
 
 /** 20150613    
  * TASK_SIZE 영역을 표현할 PGDIR entry의 수를 구한다.
+ *
+ * TASK_SIZE 영역까지 entry 수를 의미한다.
  **/
 #define USER_PTRS_PER_PGD	(TASK_SIZE / PGDIR_SIZE)
 

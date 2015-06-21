@@ -212,6 +212,16 @@ ENDPROC(cpu_v7_set_pte_ext)
 	 * Macro for setting up the TTBRx and TTBCR registers.
 	 * - \ttb0 and \ttb1 updated with the corresponding flags.
 	 */
+	 /** 20150620    
+	  * ttbcr 레지스터를 설정. 0을 쓴다.
+	  *
+	  *  ARM Document
+	  *  TTBCR format when using the Short-descriptor translation table format
+	  *
+	  *  ARM Document
+	  *  Selecting between TTBR0 and TTBR1, Short-descriptor translation table format
+	  *    N : 0일 때, TTBR1 not used.
+	  **/
 	.macro	v7_ttb_setup, zero, ttbr0, ttbr1, tmp
 	mcr	p15, 0, \zero, c2, c0, 2	@ TTB control register
 	ALT_SMP(orr	\ttbr0, \ttbr0, #TTB_FLAGS_SMP)

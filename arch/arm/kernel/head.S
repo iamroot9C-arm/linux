@@ -542,6 +542,7 @@ ENTRY(secondary_startup)
 	mov	r13, r12			@ __secondary_switched address
 	/** 20150117    
 		arch/arm/mm/proc-v7.S
+		r10:
 			__v7_proc __v7_ca9mp_setup
 
 		branch가 아니므로 #PROCINFO_INITFUNC 이후 리턴 주소는
@@ -568,6 +569,9 @@ ENDPROC(__secondary_switched)
 
 	.align
 
+/** 20150620    
+ * __secondary_data
+ **/
 	.type	__secondary_data, %object
 __secondary_data:
 	.long	.
@@ -639,6 +643,14 @@ __enable_mmu:
 	mcr	p15, 0, r8, c2, c0, 1	@ load TTB1
 
 	현 시점에서 TTBR0, TTBR1 는 같은 값임.
+
+	20150620
+	secondary_startup에서 r4: idmap_pgd, r8: swapper_pg_dir이 들어간다.
+
+	__v7_ca9mp_setup에서 
+		mcr	p15, 0, r8, c2, c0, 1	@ load TTB1
+	아래에서
+		mcr	p15, 0, r4, c2, c0, 0		@ load page table pointer
 **/
 	mcr	p15, 0, r4, c2, c0, 0		@ load page table pointer
 #endif
@@ -677,14 +689,23 @@ ENTRY(__turn_mmu_on)
 **/
 	mov	r0, r0
 	instr_sync
+	/** 20150620    
+	 * SCTLR 레지스터에 r0 레지스터의 값을 써준다.
+	 * r0 레지스터의 값은 __enable_mmu에서부터 넘어온다.
+	 * SCTLR 0번 비트가 Enables the MMU를 조작.
+	 **/
 	mcr	p15, 0, r0, c1, c0, 0		@ write control reg
 	mrc	p15, 0, r3, c0, c0, 0		@ read id reg
 	instr_sync
 	mov	r3, r3
-/** 20121020
-	r13 : __mmap_switched		
-	__mmap_switched 로 b. 20121027 여기서부터 보기로 함. 
-**/
+	/** 20121020
+	 * r13 : __mmap_switched		
+	 * __mmap_switched 로 b.
+	 *
+	 * 20150620
+	 * SMP로 secondary_startup에서 들어올 때,
+	 * r13은 [VA] __secondary_switched이다.
+	 **/
 	mov	r3, r13
 	mov	pc, r3
 __turn_mmu_on_end:
