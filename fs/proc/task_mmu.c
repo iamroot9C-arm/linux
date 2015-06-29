@@ -458,12 +458,14 @@ static int smaps_pte_range(pmd_t *pmd, unsigned long addr, unsigned long end,
 	pte_t *pte;
 	spinlock_t *ptl;
 
+#ifdef CONFIG_TRANSPARENT_HUGEPAGE
 	if (pmd_trans_huge_lock(pmd, vma) == 1) {
 		smaps_pte_entry(*(pte_t *)pmd, addr, HPAGE_PMD_SIZE, walk);
 		spin_unlock(&walk->mm->page_table_lock);
 		mss->anonymous_thp += HPAGE_PMD_SIZE;
 		return 0;
 	}
+#endif
 
 	if (pmd_trans_unstable(pmd))
 		return 0;

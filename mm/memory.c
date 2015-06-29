@@ -1018,6 +1018,7 @@ static inline int copy_pmd_range(struct mm_struct *dst_mm, struct mm_struct *src
 	src_pmd = pmd_offset(src_pud, addr);
 	do {
 		next = pmd_addr_end(addr, end);
+#ifdef CONFIG_TRANSPARENT_HUGEPAGE
 		if (pmd_trans_huge(*src_pmd)) {
 			int err;
 			VM_BUG_ON(next-addr != HPAGE_PMD_SIZE);
@@ -1029,6 +1030,7 @@ static inline int copy_pmd_range(struct mm_struct *dst_mm, struct mm_struct *src
 				continue;
 			/* fall through */
 		}
+#endif
 		if (pmd_none_or_clear_bad(src_pmd))
 			continue;
 		if (copy_pte_range(dst_mm, src_mm, dst_pmd, src_pmd,
@@ -1260,6 +1262,8 @@ static inline unsigned long zap_pmd_range(struct mmu_gather *tlb,
 	pmd = pmd_offset(pud, addr);
 	do {
 		next = pmd_addr_end(addr, end);
+
+#ifdef CONFIG_TRANSPARENT_HUGEPAGE
 		if (pmd_trans_huge(*pmd)) {
 			if (next - addr != HPAGE_PMD_SIZE) {
 #ifdef CONFIG_DEBUG_VM
@@ -1276,6 +1280,7 @@ static inline unsigned long zap_pmd_range(struct mmu_gather *tlb,
 				goto next;
 			/* fall through */
 		}
+#endif
 		/*
 		 * Here there can be other concurrent MADV_DONTNEED or
 		 * trans huge page faults running, and if the pmd is
@@ -1549,8 +1554,10 @@ struct page *follow_page(struct vm_area_struct *vma, unsigned long address,
 				spin_unlock(&mm->page_table_lock);
 				wait_split_huge_page(vma->anon_vma, pmd);
 			} else {
+#ifdef CONFIG_TRANSPARENT_HUGEPAGE
 				page = follow_trans_huge_pmd(mm, address,
 							     pmd, flags);
+#endif
 				spin_unlock(&mm->page_table_lock);
 				goto out;
 			}
@@ -3005,8 +3012,9 @@ static int do_swap_page(struct mm_struct *mm, struct vm_area_struct *vma,
 
 	if (ksm_might_need_to_copy(page, vma, address)) {
 		swapcache = page;
+#ifdef CONFIG_KSM
 		page = ksm_does_need_to_copy(page, vma, address);
-
+#endif
 		if (unlikely(!page)) {
 			ret = VM_FAULT_OOM;
 			page = swapcache;

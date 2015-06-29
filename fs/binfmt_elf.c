@@ -2118,3 +2118,90 @@ static void __exit exit_elf_binfmt(void)
 core_initcall(init_elf_binfmt);
 module_exit(exit_elf_binfmt);
 MODULE_LICENSE("GPL");
+
+
+// add No OP
+uint64_t __udivdi3(uint64_t num, uint64_t den) {
+	uint64_t result = 0;
+	int steps = 0;
+	int i;
+
+	if (0 == den) {
+		return 0;
+	}
+	while (0x8000000000000000 != (den & 0x8000000000000000)) {
+		den <<= 1;
+		steps++;
+	}
+
+	for (i = 0; i <= steps; i++) {
+		result <<= 1;
+		if (num >= den) {
+			result += 1;
+			num -= den;
+		}
+		den >>= 1;
+	}
+	return result;
+}
+
+int64_t __divdi3(int64_t num, int64_t den) {
+	int minus = 0;
+	int64_t v;
+
+	if (num < 0) {
+		num = -num;
+		minus = 1;
+	}
+	if (den < 0) {
+		den = -den;
+		minus ^= 1;
+	}
+
+	v = __udivdi3(num, den);
+	if (minus)
+		v = -v;
+
+	return v;
+}
+
+uint64_t __umoddi3(uint64_t num, uint64_t den) {
+	uint64_t res;
+
+	res = __udivdi3(num,den);
+
+	return num - res * den;
+}
+
+int64_t __moddi3(int64_t num, int64_t den) {
+	int res;
+	res = __divdi3(num,den);
+	return num - res * den;
+}
+
+
+void __aeabi_ldivmod(int64_t u, int64_t v) {
+	uint64_t res;
+	uint64_t mod;
+	res = __divdi3(u, v);
+	mod = __moddi3(u, v);
+	{
+		register uint32_t r0 __asm__ ("r0") = (res & 0xFFFFFFFF);
+		register uint32_t r1 __asm__ ("r1") = (res >> 32);
+		register uint32_t r2 __asm__ ("r2") = (mod & 0xFFFFFFFF);
+		register uint32_t r3 __asm__ ("r3") = (mod >> 32);
+		asm volatile(""
+			 : "+r"(r0), "+r"(r1), "+r"(r2),"+r"(r3)  // output
+			 : "r"(r0), "r"(r1), "r"(r2), "r"(r3));   // input
+		return ;//r0;
+	}
+}
+EXPORT_SYMBOL(__aeabi_ldivmod);
+
+void __bad_cmpxchg(volatile void *ptr, int size)
+{
+	printk("cmpxchg: bad data size: pc 0x%p, ptr 0x%p, size %d\n",
+		__builtin_return_address(0), ptr, size);
+	BUG();
+}
+EXPORT_SYMBOL(__bad_cmpxchg);

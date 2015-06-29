@@ -158,10 +158,12 @@ static void mincore_pmd_range(struct vm_area_struct *vma, pud_t *pud,
 	do {
 		next = pmd_addr_end(addr, end);
 		if (pmd_trans_huge(*pmd)) {
+#ifdef CONFIG_TRANSPARENT_HUGEPAGE
 			if (mincore_huge_pmd(vma, pmd, addr, next, vec)) {
 				vec += (next - addr) >> PAGE_SHIFT;
 				continue;
 			}
+#endif
 			/* fall through */
 		}
 		if (pmd_none_or_trans_huge_or_clear_bad(pmd))

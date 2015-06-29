@@ -88,6 +88,7 @@ static inline void change_pmd_range(struct vm_area_struct *vma, pud_t *pud,
 	pmd = pmd_offset(pud, addr);
 	do {
 		next = pmd_addr_end(addr, end);
+#ifdef CONFIG_TRANSPARENT_HUGEPAGE
 		if (pmd_trans_huge(*pmd)) {
 			if (next - addr != HPAGE_PMD_SIZE)
 				split_huge_page_pmd(vma->vm_mm, pmd);
@@ -95,6 +96,7 @@ static inline void change_pmd_range(struct vm_area_struct *vma, pud_t *pud,
 				continue;
 			/* fall through */
 		}
+#endif
 		if (pmd_none_or_clear_bad(pmd))
 			continue;
 		change_pte_range(vma->vm_mm, pmd, addr, next, newprot,

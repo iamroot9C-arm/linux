@@ -243,8 +243,11 @@ extern void __cpu_flush_kern_tlb_range(unsigned long, unsigned long);
 
 extern struct cpu_tlb_fns cpu_tlb;
 
+#ifdef MULTI_TLB
 #define __cpu_tlb_flags			cpu_tlb.tlb_flags
-
+#else
+#define __cpu_tlb_flags			0
+#endif
 /*
  *	TLB Management
  *	==============

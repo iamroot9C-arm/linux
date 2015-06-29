@@ -325,11 +325,13 @@ static inline pgoff_t linear_page_index(struct vm_area_struct *vma,
 					unsigned long address)
 {
 	pgoff_t pgoff;
+#ifdef CONFIG_HUGETLBFS
 	/** 20140531    
 	 * hugepage를 사용한다면 hugepage index를 구해 리턴한다.
 	 **/
 	if (unlikely(is_vm_hugetlb_page(vma)))
 		return linear_hugepage_index(vma, address);
+#endif
 	pgoff = (address - vma->vm_start) >> PAGE_SHIFT;
 	pgoff += vma->vm_pgoff;
 	return pgoff >> (PAGE_CACHE_SHIFT - PAGE_SHIFT);

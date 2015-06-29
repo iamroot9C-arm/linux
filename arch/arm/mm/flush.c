@@ -208,6 +208,7 @@ void __flush_dcache_page(struct address_space *mapping, struct page *page)
 		**/
 		__cpuc_flush_dcache_area(page_address(page), PAGE_SIZE);
 	} else {
+#ifdef CONFIG_HIGHMEM
 		void *addr = kmap_high_get(page);
 		if (addr) {
 			__cpuc_flush_dcache_area(addr, PAGE_SIZE);
@@ -218,6 +219,7 @@ void __flush_dcache_page(struct address_space *mapping, struct page *page)
 			__cpuc_flush_dcache_area(addr, PAGE_SIZE);
 			kunmap_atomic(addr);
 		}
+#endif
 	}
 
 	/*

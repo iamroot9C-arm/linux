@@ -146,6 +146,7 @@ unsigned long move_page_tables(struct vm_area_struct *vma,
 		new_pmd = alloc_new_pmd(vma->vm_mm, vma, new_addr);
 		if (!new_pmd)
 			break;
+#ifdef CONFIG_TRANSPARENT_HUGEPAGE
 		if (pmd_trans_huge(*old_pmd)) {
 			int err = 0;
 			if (extent == HPAGE_PMD_SIZE)
@@ -160,6 +161,7 @@ unsigned long move_page_tables(struct vm_area_struct *vma,
 			}
 			VM_BUG_ON(pmd_trans_huge(*old_pmd));
 		}
+#endif
 		if (pmd_none(*new_pmd) && __pte_alloc(new_vma->vm_mm, new_vma,
 						      new_pmd, new_addr))
 			break;

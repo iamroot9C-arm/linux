@@ -806,6 +806,7 @@ int page_referenced_one(struct page *page, struct vm_area_struct *vma,
 	int referenced = 0;
 
 	if (unlikely(PageTransHuge(page))) {
+#ifdef CONFIG_TRANSPARENT_HUGEPAGE
 		pmd_t *pmd;
 
 		spin_lock(&mm->page_table_lock);
@@ -831,6 +832,7 @@ int page_referenced_one(struct page *page, struct vm_area_struct *vma,
 		if (pmdp_clear_flush_young_notify(vma, address, pmd))
 			referenced++;
 		spin_unlock(&mm->page_table_lock);
+#endif
 	} else {
 		pte_t *pte;
 		spinlock_t *ptl;
