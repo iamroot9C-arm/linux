@@ -85,6 +85,10 @@ static void identity_mapping_add(pgd_t *pgd, unsigned long addr, unsigned long e
 
 	/** 20150620    
 	 * addr부터 end까지 영역을 mapping 시킨다. 
+	 *
+	 * pgd_index에 해당하는 address는 보통 가상메모리를 주고, 그에 해당하는
+	 * entry의 위치를 찾아오기 위함인데, 여기서 넘어온 address는 physical이다.
+	 * 물리주소를 가상주소와 동일하게 매핑하기 위한 것이다.
 	 **/
 	pgd += pgd_index(addr);
 	do {
@@ -128,7 +132,8 @@ static int __init init_static_idmap(void)
 	pr_info("Setting up static identity map for 0x%llx - 0x%llx\n",
 		(long long)idmap_start, (long long)idmap_end);
 	/** 20150620    
-	 * idmap_pgd에 idmap_start, idmap_end 영역에 대한 mapping을 추가한다.
+	 * idmap_pgd에 idmap_start ~ idmap_end 영역에 대한 mapping을 추가한다.
+	 * 물리주소와 가상주소를 동일하게 매핑시킨다.
 	 * 
 	 * kernel 빌드 후 System.map을 확인하면 __idmap_text_start ~ __idmap_text_end
 	 * 사이의 심볼을 확인할 수 있다.

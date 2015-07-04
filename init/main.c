@@ -938,12 +938,17 @@ asmlinkage void __init start_kernel(void)
 	 **/
 	check_bugs();
 
+	/** 20150523
+	 * 아래 함수들은 config에 따라 분석하지 않음.
+	 **/
 	acpi_early_init(); /* before LAPIC and SMP init */
 	sfi_init_late();
 
 	ftrace_init();
 
 	/* Do the rest non-__init'ed, we're now alive */
+	/** 20150523    
+	 **/
 	rest_init();
 }
 
@@ -1097,6 +1102,7 @@ static void __init do_basic_setup(void)
 
 /** 20150613    
  * __initcall_start ~ __initcall0_start 사이에 배치된 함수들을 호출한다.
+ * 배치된 함수는 System.map에서 __initcall_start로 검색해 찾을 수 있다.
  *
  * 이곳에 함수를 배치시키려면 early_initcall(...)을 사용한다.
  **/

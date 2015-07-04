@@ -82,7 +82,7 @@ EXPORT_SYMBOL(jiffies_64);
  *  +-------+-------+-------+-------+-------+
  *
  *  timer_jiffies을 기준으로 bit shift하여 index를 구한다.
- *  tv1은 256개의 슬롯, 그 외에 64개의 슬롯을 가지며,
+ *  tvec_root(tv1)은 256개의 슬롯, 그 외 tvec은 64개의 슬롯을 가지며,
  *  각 slot은 timer_list의 list_head이다.
  **/
 struct tvec {
@@ -1328,6 +1328,10 @@ static inline void __run_timers(struct tvec_base *base)
 		/** 20141101    
 		 * TVR index가 0일 경우에만 cascade를 실행한다.
 		 * 각 TVN의 index가 0일 경우에 다음 cascade를 실행한다.
+		 *
+		 * cascade의 리턴값은 INDEX에 따른 건데,
+		 * cascade 내의 timer_list를 처리는 진행하고 다음 슬롯을 처리 할 필요가
+		 * 있는지를 검사한다.
 		 **/
 		if (!index &&
 			(!cascade(base, &base->tv2, INDEX(0))) &&

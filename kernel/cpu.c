@@ -180,6 +180,7 @@ static void cpu_hotplug_done(void) {}
 /* Need to know about CPUs going up/down? */
 /** 20130727    
  * cpu_chain이라는 notifier head에 nb를 등록한다.
+ * notifier_block은 우선순위가 높은 순서부터 정렬된다.
  *
  * 이후 cpu_notify를 통해 notify를 준다.
  **/

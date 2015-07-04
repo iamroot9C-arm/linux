@@ -61,6 +61,23 @@ enum {
 	 * managership of all pools on the gcwq to avoid changing binding
 	 * state while create_worker() is in progress.
 	 */
+	/** 20150627    
+	 * global_cwq 속성
+	 *
+	 * bound gcwq는 그 cpu에 associated이거나 disassociated이다.
+	 * - associated일 경우
+	 *   모든 worker들은 그 CPU(bound gcwq가 배정된 cpu)에 bound되고,
+	 *   그 중 어떤 것도 WORKER_UNBOUND가 set되지 않고 동시성 관리가 될 수 있다.
+	 *
+	 * - DISASSOCIATED일 경우
+	 *   그 cpu는 offline일 수 있고, 모든 worker들은 WORKER_UNBOUND가 설정되고,
+	 *   동시성 관리는 불가능하고 어떤 CPU에서도 실행될 수 있다.
+	 *   해당 gcwq는 unbound 된 것처럼 동작한다.
+	 * 
+	 * DISASSOCIATED는 gcwq의 모든 pool들에 대해 managership을 유지하는 경우에만
+	 * 변경될 수 있다. create_worker()가 진행되는 동안 binding state를
+	 * 변경하는 것을 방지하기 위함이다.
+	 **/
 	GCWQ_DISASSOCIATED	= 1 << 0,	/* cpu can't serve workers */
 	GCWQ_FREEZING		= 1 << 1,	/* freeze in progress */
 
@@ -123,6 +140,13 @@ enum {
  * W: workqueue_lock protected.
  */
 
+/** 20150627    
+ * gcwq : worker thread가 각각의 workqueue 단위가 아닌 CPU (gcwq) 단위로 관리한다.
+ * http://studyfoss.egloos.com/5626173
+ *
+ * percpu gcwq과 unbound gcwq가 존재한다.
+ * 각 gcwq 내의 worker thread는 필요에 따라 동적으로 생성되고 제거된다.
+ **/
 struct global_cwq;
 struct worker_pool;
 struct idle_rebind;
@@ -174,6 +198,8 @@ struct worker_pool {
  * and all works are queued and processed here regardless of their
  * target workqueues.
  */
+/** 20150627    
+ **/
 struct global_cwq {
 	spinlock_t		lock;		/* the gcwq lock */
 	unsigned int		cpu;		/* I: the associated cpu */
@@ -283,6 +309,9 @@ EXPORT_SYMBOL_GPL(system_nrt_freezable_wq);
 #define CREATE_TRACE_POINTS
 #include <trace/events/workqueue.h>
 
+/** 20150627    
+ * gcwq의 pools를 
+ **/
 #define for_each_worker_pool(pool, gcwq)				\
 	for ((pool) = &(gcwq)->pools[0];				\
 	     (pool) < &(gcwq)->pools[NR_WORKER_POOLS]; (pool)++)
@@ -291,6 +320,10 @@ EXPORT_SYMBOL_GPL(system_nrt_freezable_wq);
 	for (i = 0; i < BUSY_WORKER_HASH_SIZE; i++)			\
 		hlist_for_each_entry(worker, pos, &gcwq->busy_hash[i], hentry)
 
+/** 20150627    
+ * cpu 다음으로 gcwq를 실행할 cpu 번호를 찾아 리턴.
+ * NR_CPUS + WORK_CPU_UNBOUND까지 해당한다.
+ **/
 static inline int __next_gcwq_cpu(int cpu, const struct cpumask *mask,
 				  unsigned int sw)
 {
@@ -325,6 +358,19 @@ static inline int __next_wq_cpu(int cpu, const struct cpumask *mask,
  * for_each_cwq_cpu()		: possible CPUs for bound workqueues,
  *				  WORK_CPU_UNBOUND for unbound workqueues
  */
+/** 20150627    
+ * gcwq가 실행되는 cpu 번호를 하나씩 가져온다. 
+ *
+ * for_each_gcwq_cpu
+ *   possible CPUs + WORK_CPU_UNBOUND까지 해당한다.
+ *
+ * for_each_online_gcwq_cpu
+ *   online CPUs + WORK_CPU_UNBOUND까지 해당한다.
+ *
+ * for_each_cwq_cpu
+ *   wq가 bound workqueues 일 때는 possible CPUS,
+ *   wq가 unboudn workqueues 일 때는 WORK_CPU_UNBOUND를 순회한다.
+ **/
 #define for_each_gcwq_cpu(cpu)						\
 	for ((cpu) = __next_gcwq_cpu(-1, cpu_possible_mask, 3);		\
 	     (cpu) < WORK_CPU_NONE;					\
@@ -474,6 +520,9 @@ static DEFINE_PER_CPU_SHARED_ALIGNED(atomic_t, pool_nr_running[NR_WORKER_POOLS])
  * gcwq is always online, has GCWQ_DISASSOCIATED set, and all its
  * workers have WORKER_UNBOUND set.
  */
+/** 20150627    
+ * WORK_CPU_UNBOUND에 해당하는 gcwq.
+ **/
 static struct global_cwq unbound_global_cwq;
 static atomic_t unbound_pool_nr_running[NR_WORKER_POOLS] = {
 	[0 ... NR_WORKER_POOLS - 1]	= ATOMIC_INIT(0),	/* always 0 */
@@ -493,6 +542,12 @@ static int worker_pool_pri(struct worker_pool *pool)
 	return pool - pool->gcwq->pools;
 }
 
+/** 20150627    
+ * 해당 cpu에 gcwq를 받아온다.
+ *
+ * WORK_CPU_UNBOUND가 아닐 경우 percpu global_cwq의 위치가 리턴된다.
+ * WORK_CPU_UNBOUND일 경우 unbound_global_cwq의 위치가 리턴된다.
+ **/
 static struct global_cwq *get_gcwq(unsigned int cpu)
 {
 	if (cpu != WORK_CPU_UNBOUND)
@@ -3718,16 +3773,30 @@ static int __init init_workqueues(void)
 	unsigned int cpu;
 	int i;
 
+	/** 20150627    
+	 * workqueue cpu up/down callback notifier를 우선순위를 지정해 등록한다.
+	 * 즉 workqueue cpu up 콜백은 일반 cpu notifier보다 먼저 실행되고,
+	 * workqueue cpu down 콜백은 일반 cpu notifier보다 나중에 실행되게 한다.
+	 **/
 	cpu_notifier(workqueue_cpu_up_callback, CPU_PRI_WORKQUEUE_UP);
 	cpu_notifier(workqueue_cpu_down_callback, CPU_PRI_WORKQUEUE_DOWN);
 
 	/* initialize gcwqs */
+	/** 20150627    
+	 * UNBOUND CPU를 포함해 gcwq가 실행되는 cpu들을 순회한다.
+	 **/
 	for_each_gcwq_cpu(cpu) {
+		/** 20150627    
+		 * 해당 cpu에 대한 gcwq를 받아온다.
+		 **/
 		struct global_cwq *gcwq = get_gcwq(cpu);
 		struct worker_pool *pool;
 
 		spin_lock_init(&gcwq->lock);
 		gcwq->cpu = cpu;
+		/** 20150627    
+		 * 기본 속성을 GCWQ_DISASSOCIATED로 준다.
+		 **/
 		gcwq->flags |= GCWQ_DISASSOCIATED;
 
 		for (i = 0; i < BUSY_WORKER_HASH_SIZE; i++)

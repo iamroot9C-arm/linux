@@ -1225,13 +1225,27 @@ static struct notifier_block __cpuinitdata cpu_nfb = {
 	.notifier_call = cpu_callback
 };
 
+/** 20150627    
+ * smp prepare 단계로 부팅된 cpu를 위한 notify를 직접 호출한다.
+ * ksoftirqd가 생성되고 구동된다.
+ **/
 static __init int spawn_ksoftirqd(void)
 {
+	/** 20150627    
+	 * 현재 cpu 번호를 받아와 cpu_callback을 직접 호출한다.
+	 * CPU_UP_PREPARE를 보내 ksoftirqd 를 생성시킨다.
+	 **/
 	void *cpu = (void *)(long)smp_processor_id();
 	int err = cpu_callback(&cpu_nfb, CPU_UP_PREPARE, cpu);
 
 	BUG_ON(err != NOTIFY_OK);
+	/** 20150627    
+	 * CPU_ONLINE을 보내 ksoftirqd 를 구동시킨다.
+	 **/
 	cpu_callback(&cpu_nfb, CPU_ONLINE, cpu);
+	/** 20150627    
+	 * softirqd용 cpu notifier를 등록시킨다.
+	 **/
 	register_cpu_notifier(&cpu_nfb);
 	return 0;
 }

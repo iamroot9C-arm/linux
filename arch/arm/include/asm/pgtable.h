@@ -178,7 +178,8 @@ extern pgd_t swapper_pg_dir[PTRS_PER_PGD];
 
 /* to find an entry in a page-table-directory */
 /** 20130216
- * 2MB(PGDIR_SHIFT) 단위의 인덱스를 구한다.
+ * page table directory의 entry를 찾기 위한 인덱스를 구한다.
+ * 2MB(PGDIR_SHIFT) 단위.
  * */
 #define pgd_index(addr)		((addr) >> PGDIR_SHIFT)
 

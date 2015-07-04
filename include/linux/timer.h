@@ -61,6 +61,10 @@ extern struct tvec_base boot_tvec_bases;
  * the timer will be serviced when the CPU eventually wakes up with a
  * subsequent non-deferrable timer.
  */
+/** 20150627    
+ * tvec_bases는 2바이트 정렬되어 있고, timer_list 내의 base의 lower bit는 0임이 보장된다.
+ * 이 LSB는 timer가 deferrable 가능 여부를 나타낸다.
+ **/
 #define TBASE_DEFERRABLE_FLAG		(0x1)
 
 #define TIMER_INITIALIZER(_function, _expires, _data) {		\

@@ -53,6 +53,9 @@ extern ssize_t arch_print_cpu_modalias(struct device *dev,
 /*
  * CPU notifier priorities.
  */
+/** 20150627    
+ * cpu notifier 우선순위. 
+ **/
 enum {
 	/*
 	 * SCHED_ACTIVE marks a cpu which is coming up active during
@@ -74,6 +77,10 @@ enum {
 	CPU_PRI_PERF		= 20,
 	CPU_PRI_MIGRATION	= 10,
 	/* bring up workqueues before normal notifiers and down after */
+	/** 20150627    
+	 * up시에는 일반 notifier보다 workqueue 관련 notifier를 앞에 위치시키고,
+	 * down시에는 일반 notifier보다 workqueue 관련 notifier를 뒤에 위치시킨다.
+	 **/
 	CPU_PRI_WORKQUEUE_UP	= 5,
 	CPU_PRI_WORKQUEUE_DOWN	= -5,
 };
@@ -116,7 +123,9 @@ enum {
 #if defined(CONFIG_HOTPLUG_CPU) || !defined(MODULE)
 /** 20130727    
  * notifier_block을 하나 선언하고, register_cpu_notifier를 통해 cpu_chain에 등록.
- * HOTPLUG_CPU인 경우 cpu event에 따라 호출할 notifier block을 등록
+ * HOTPLUG_CPU인 경우 cpu event에 따라 호출할 notifier block을 등록.
+ *
+ * 이를 통해 등록한 notify block은 cpu_notify() 함수를 통해 호출된다.
  **/
 #define cpu_notifier(fn, pri) {					\
 	static struct notifier_block fn##_nb __cpuinitdata =	\
