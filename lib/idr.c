@@ -1316,6 +1316,9 @@ EXPORT_SYMBOL(ida_simple_remove);
  * This function is use to set up the handle (@ida) that you will pass
  * to the rest of the functions.
  */
+/** 20150704    
+ * IDA 핸들을 초기화 한다.
+ **/
 void ida_init(struct ida *ida)
 {
 	memset(ida, 0, sizeof(struct ida));

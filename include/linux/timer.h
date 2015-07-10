@@ -11,6 +11,8 @@ struct tvec_base;
 /** 20130601
  * per_cpu 변수인 tvec_bases의 tvN의 리스트에 등록되는 자료구조.
  * expires와 만료시 호출할 function으로 이뤄져 있다.
+ *
+ * 해당 timer가 deferrable일 경우 tvec_base의 LSB 비트를 1로 설정해 표시한다.
 **/
 struct timer_list {
 	/*
@@ -78,6 +80,9 @@ extern struct tvec_base boot_tvec_bases;
 			__FILE__ ":" __stringify(__LINE__))	\
 	}
 
+/** 20150704    
+ * tvec_base 포인터의 LSB 한 비트를 켜 지연가능한 tbase로 만든다.
+ **/
 #define TBASE_MAKE_DEFERRED(ptr) ((struct tvec_base *)		\
 		  ((unsigned char *)(ptr) + TBASE_DEFERRABLE_FLAG))
 
@@ -231,6 +236,10 @@ extern void setup_deferrable_timer_on_stack_key(struct timer_list *timer,
  *
  * return value: 1 if the timer is pending, 0 if not.
  */
+/** 20150704    
+ * timer의 list entry가 존재한다면 timer가 추가되어 있다고 간주해
+ * pending으로 판단한다.
+ **/
 static inline int timer_pending(const struct timer_list * timer)
 {
 	return timer->entry.next != NULL;

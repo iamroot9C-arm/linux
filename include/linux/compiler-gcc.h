@@ -97,6 +97,10 @@
  */
 #define __pure				__attribute__((pure))
 #define __aligned(x)			__attribute__((aligned(x)))
+/** 20150704    
+ * 직접 구현한 printf, scanf의 parameter typechecking을 위해
+ * format string이 시작되는 위치, 첫번째 가변 파라미터의 위치를 지정한다.
+ **/
 #define __printf(a, b)			__attribute__((format(printf, a, b)))
 #define __scanf(a, b)			__attribute__((format(scanf, a, b)))
 #define  noinline			__attribute__((noinline))

@@ -4784,6 +4784,9 @@ out_unlock:
 	__task_rq_unlock(rq);
 }
 #endif
+/** 20150704    
+ * 추후 분석???
+ **/
 void set_user_nice(struct task_struct *p, long nice)
 {
 	int old_prio, delta, on_rq;

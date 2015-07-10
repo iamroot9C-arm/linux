@@ -95,6 +95,7 @@ struct tvec_root {
 
 /** 20141025    
  * timer_jiffies : timer가 알고 있는 jiffies 값?
+ *		아직 체크되어야 할 dynamic timer들의 만료 시간 중 가장 빨리 만료되는 값
  *		init_timers_cpu는 현재 jiffies가 저장된다.
  *		이후 __run_timers()에서 증가된다.
  * next_timer
@@ -134,6 +135,9 @@ static inline struct tvec_base *tbase_get_base(struct tvec_base *base)
 	return ((struct tvec_base *)((unsigned long)base & ~TBASE_DEFERRABLE_FLAG));
 }
 
+/** 20150704    
+ * timer의 tvec base를 변경해 지연가능한 timer로 설정한다.
+ **/
 static inline void timer_set_deferrable(struct timer_list *timer)
 {
 	timer->base = TBASE_MAKE_DEFERRED(timer->base);
@@ -366,23 +370,22 @@ void set_timer_slack(struct timer_list *timer, int slack_hz)
 EXPORT_SYMBOL_GPL(set_timer_slack);
 
 /** 20141101    
- * timer 리스트의 expires를 기준으로 tvec의 index를 계산하고,
- * timer_list를 해당 tvec에 등록한다.
+ * timer 리스트의 expires와 timer_jiffies의 차로 index를 계산하고,
+ * timer_list를 해당 tvec index에 등록한다.
  **/
 static void
 __internal_add_timer(struct tvec_base *base, struct timer_list *timer)
 {
 	/** 20141101    
-	 * 등록된 timer의 expires를 가져오고,
-	 * timer_jiffies에서 delta를 구해 새로운 index를 계산한다.
+	 * timer의 expires값과의 차를 구해 새로운 index를 계산한다.
 	 **/
 	unsigned long expires = timer->expires;
 	unsigned long idx = expires - base->timer_jiffies;
 	struct list_head *vec;
 
 	/** 20141101    
-	 * index에 따라 tvec을 찾고, 각 리스트에서의 index에 해당하는 
-	 * list_head를 가져온다.
+	 * index에 따라 tvec을 찾고,
+	 * 각 리스트에서의 index에 해당하는 list_head를 가져온다.
 	 **/
 	if (idx < TVR_SIZE) {
 		int i = expires & TVR_MASK;
@@ -426,7 +429,7 @@ __internal_add_timer(struct tvec_base *base, struct timer_list *timer)
 	 * Timers are FIFO:
 	 */
 	/** 20141101    
-	 * timer entry를 tvec에 등록시킨다.
+	 * timer entry를 해당 tvec의 끝에 등록시킨다.
 	 **/
 	list_add_tail(&timer->entry, vec);
 }
@@ -729,7 +732,7 @@ EXPORT_SYMBOL_GPL(setup_deferrable_timer_on_stack_key);
  * other timer functions.
  */
 /** 20150221    
- * timer를 name과 key로 초기화 한다.
+ * timer를 초기화 한다.
  **/
 void init_timer_key(struct timer_list *timer,
 		    const char *name,
@@ -740,6 +743,9 @@ void init_timer_key(struct timer_list *timer,
 }
 EXPORT_SYMBOL(init_timer_key);
 
+/** 20150704    
+ * timer를 초기화 하고, 지연 가능한 타이머로 설정한다.
+ **/
 void init_timer_deferrable_key(struct timer_list *timer,
 			       const char *name,
 			       struct lock_class_key *key)
@@ -1216,7 +1222,7 @@ static int cascade(struct tvec_base *base, struct tvec *tv, int index)
 	struct list_head tv_list;
 
 	/** 20141101    
-	 * tv->vec의 slot 에 있던 list를 떼어와 지역변수 리스트에 달아준다.
+	 * tv->vec의 slot 중 index번째 list를 떼어와 지역변수 리스트에 달아준다.
 	 **/
 	list_replace_init(tv->vec + index, &tv_list);
 
@@ -1285,7 +1291,7 @@ static void call_timer_fn(struct timer_list *timer, void (*fn)(unsigned long),
 }
 
 /** 20141101    
- * timer_jiffies에서 각 TVN에 해당하는 index값을 뽑아온다.
+ * timer_jiffies로부터 각 N내에서의 index값을 뽑아온다.
  * [nnnnnn|nnnnnn|nnnnnn|nnnnnn|rrrrrrrr]
  *   TVN4   TVN3   TVN2   TVN1    TVR
  **/
@@ -1305,9 +1311,16 @@ static void call_timer_fn(struct timer_list *timer, void (*fn)(unsigned long),
  * 현재 jiffies가 timer_jiffies보다 크다면 그 사이의 timer들은 만료된 것이므로
  * 하나씩 가져와 실행시키고 list에서 제거한다.
  * 이 때 각 TVR/TVN의 경계값에서 cascade로 상위 TVN의 list를
- * 적절한 위치를 새로 계산해 옮겨준다.
+ * 적절한 위치로 옮겨준다.
  *
  * tvec_base에 spinlock을 건 상태로 수행한다.
+ *
+ *
+ * timer는 jiffies + delta 값으로 expires 값을 삼는다.
+ * __internal_add_timer에서 expires와 현재 jiffies 차를 index로 삼아 리스트에 등록한다.
+ * 효과적으로 처리하기 위해 __run_timers에서 각 tvn의 index가 0이 되는 시점에만
+ * 다시 jiffies 차를 계산해 tvn의 위치를 옮겨주며,
+ * 결국 tv1의 index가 같은 timer들만 만료시켜 호출한다.
  **/
 static inline void __run_timers(struct tvec_base *base)
 {
@@ -1329,9 +1342,8 @@ static inline void __run_timers(struct tvec_base *base)
 		 * TVR index가 0일 경우에만 cascade를 실행한다.
 		 * 각 TVN의 index가 0일 경우에 다음 cascade를 실행한다.
 		 *
-		 * cascade의 리턴값은 INDEX에 따른 건데,
-		 * cascade 내의 timer_list를 처리는 진행하고 다음 슬롯을 처리 할 필요가
-		 * 있는지를 검사한다.
+		 * cascade의 리턴값은 매개변수로 넘어간 INDEX인데,
+		 * 0이라면 해당 tvec의 체크 범위를 넘어서므로 다음 tvec을 조회한다.
 		 **/
 		if (!index &&
 			(!cascade(base, &base->tv2, INDEX(0))) &&

@@ -85,6 +85,9 @@ enum {
 	POOL_MANAGE_WORKERS	= 1 << 0,	/* need to manage workers */
 
 	/* worker flags */
+	/** 20150704    
+	 * start_worker에서 WORKER_STARTED로 변경한다.
+	 **/
 	WORKER_STARTED		= 1 << 0,	/* started */
 	WORKER_DIE		= 1 << 1,	/* die die die */
 	WORKER_IDLE		= 1 << 2,	/* is idle */
@@ -155,6 +158,12 @@ struct idle_rebind;
  * The poor guys doing the actual heavy lifting.  All on-duty workers
  * are either serving the manager role, on idle list or on busy hash.
  */
+/** 20150704    
+ * worker 구조체
+ *
+ * last_active : 마지막으로 worker_enter_idle로 진입한 시점의 jiffies를 저장한다.
+ *               이후 timer를 동작시켜 처리한다.
+ **/
 struct worker {
 	/* on idle list while idle, on busy hash table while busy */
 	union {
@@ -177,6 +186,12 @@ struct worker {
 	struct work_struct	rebind_work;	/* L: for busy worker */
 };
 
+/** 20150704    
+ * gcwq에 속하는 pool descriptor
+ *
+ * nr_workers : pool 내의 전체 worker 수
+ * nr_idle    : 현재 idle 상태인 worker 수
+ **/
 struct worker_pool {
 	struct global_cwq	*gcwq;		/* I: the owning gcwq */
 	unsigned int		flags;		/* X: flags */
@@ -199,6 +214,7 @@ struct worker_pool {
  * target workqueues.
  */
 /** 20150627    
+ * global per cpu workqueue
  **/
 struct global_cwq {
 	spinlock_t		lock;		/* the gcwq lock */
@@ -209,6 +225,9 @@ struct global_cwq {
 	struct hlist_head	busy_hash[BUSY_WORKER_HASH_SIZE];
 						/* L: hash of busy workers */
 
+	/** 20150704    
+	 * normal과 highpri pool 두 개가 존재한다.
+	 **/
 	struct worker_pool	pools[2];	/* normal and highpri pools */
 
 	wait_queue_head_t	rebind_hold;	/* rebind hold wait */
@@ -310,7 +329,10 @@ EXPORT_SYMBOL_GPL(system_nrt_freezable_wq);
 #include <trace/events/workqueue.h>
 
 /** 20150627    
- * gcwq의 pools를 
+ * gcwq의 worker pools의 worker를 순회한다.
+ * NORMAL과 HIGHPRI 두 가지 pool이 존재한다.
+ *
+ * https://lwn.net/Articles/506029/
  **/
 #define for_each_worker_pool(pool, gcwq)				\
 	for ((pool) = &(gcwq)->pools[0];				\
@@ -531,6 +553,8 @@ static atomic_t unbound_pool_nr_running[NR_WORKER_POOLS] = {
 static int worker_thread(void *__worker);
 
 /** 20130720    
+ * worker_pool이 normal pool인지 highpri pool인지 결정한다.
+ *
  * struct worker_pool pools의 index를 얻어온다.
  **/
 static int worker_pool_pri(struct worker_pool *pool)
@@ -718,12 +742,24 @@ static bool need_to_manage_workers(struct worker_pool *pool)
 }
 
 /* Do we have too many workers and should some go away? */
+/** 20150704    
+ * 너무 많은 worker가 존재하는가 판단한다.
+ **/
 static bool too_many_workers(struct worker_pool *pool)
 {
+	/** 20150704    
+	 * manager_mutex가 잠겨져 있는지 가져온다.
+	 * nr_idle에 managing인 것까지 idle 상태로 간주한다.
+	 * pool의 worker 수에 idle task를 제외한 수를 busy로 간주한다.
+	 **/
 	bool managing = mutex_is_locked(&pool->manager_mutex);
 	int nr_idle = pool->nr_idle + managing; /* manager is considered idle */
 	int nr_busy = pool->nr_workers - nr_idle;
 
+	/** 20150704    
+	 * idle worker가 둘을 넘고
+	 * nr_busy 수가 MAX IDLE RATIO 두 배보다 작으면 too many worker다.
+	 **/
 	return nr_idle > 2 && (nr_idle - 2) * MAX_IDLE_WORKERS_RATIO >= nr_busy;
 }
 
@@ -1269,6 +1305,11 @@ EXPORT_SYMBOL_GPL(queue_delayed_work_on);
  * LOCKING:
  * spin_lock_irq(gcwq->lock).
  */
+/** 20150704    
+ * 해당 worker를 idle 상태로 만들고 pool의 idle_list에 추가한다.
+ *
+ * idle 상태로 너무 많은 worker가 존재하면 IDLE_WORKER_TIMEOUT를 시작시킨다.
+ **/
 static void worker_enter_idle(struct worker *worker)
 {
 	struct worker_pool *pool = worker->pool;
@@ -1279,13 +1320,24 @@ static void worker_enter_idle(struct worker *worker)
 	       (worker->hentry.next || worker->hentry.pprev));
 
 	/* can't use worker_set_flags(), also called from start_worker() */
+	/** 20150704    
+	 * worker의 flags를 WORKER_IDLE로 변경하고 nr_idle 을 증가시킨다.
+	 * 마지막 idle로 지정된 시간을 현재 jiffies로 설정한다.
+	 **/
 	worker->flags |= WORKER_IDLE;
 	pool->nr_idle++;
 	worker->last_active = jiffies;
 
 	/* idle_list is LIFO */
+	/** 20150704    
+	 * worker를 pool의 idle_list에 추가한다.
+	 **/
 	list_add(&worker->entry, &pool->idle_list);
 
+	/** 20150704    
+	 * pool에 idle 상태인 worker가 많고, idle_timer가 pending 되어 있지 않다면
+	 * idle_timer를 TIMEOUT 시간 뒤에 걸어둔다.
+	 **/
 	if (too_many_workers(pool) && !timer_pending(&pool->idle_timer))
 		mod_timer(&pool->idle_timer, jiffies + IDLE_WORKER_TIMEOUT);
 
@@ -1532,16 +1584,28 @@ retry:
 	}
 }
 
+/** 20150704    
+ * worker를 할당받는다.
+ **/
 static struct worker *alloc_worker(void)
 {
 	struct worker *worker;
 
+	/** 20150704    
+	 * worker 메모리를 할당 받아온다.
+	 **/
 	worker = kzalloc(sizeof(*worker), GFP_KERNEL);
 	if (worker) {
 		INIT_LIST_HEAD(&worker->entry);
 		INIT_LIST_HEAD(&worker->scheduled);
+		/** 20150704    
+		 * busy_worker_rebind_fn을 rebind_work에서 실행할 함수로 등록한다.
+		 **/
 		INIT_WORK(&worker->rebind_work, busy_worker_rebind_fn);
 		/* on creation a worker is in !idle && prep state */
+		/** 20150704    
+		 * woker의 상태를 WORKER_PREP로 만든다. 
+		 **/
 		worker->flags = WORKER_PREP;
 	}
 	return worker;
@@ -1561,6 +1625,9 @@ static struct worker *alloc_worker(void)
  * RETURNS:
  * Pointer to the newly created worker.
  */
+/** 20150704    
+ * pool 내에 worker thread를 생성해 넣고, id를 할당해 리턴한다.
+ **/
 static struct worker *create_worker(struct worker_pool *pool)
 {
 	struct global_cwq *gcwq = pool->gcwq;
@@ -1569,6 +1636,10 @@ static struct worker *create_worker(struct worker_pool *pool)
 	int id = -1;
 
 	spin_lock_irq(&gcwq->lock);
+	/** 20150704    
+	 * worker_ida로부터 id를 받아온다.
+	 * 실패할 경우 ida 자원을 새로 할당받는다.
+	 **/
 	while (ida_get_new(&pool->worker_ida, &id)) {
 		spin_unlock_irq(&gcwq->lock);
 		if (!ida_pre_get(&pool->worker_ida, GFP_KERNEL))
@@ -1577,6 +1648,9 @@ static struct worker *create_worker(struct worker_pool *pool)
 	}
 	spin_unlock_irq(&gcwq->lock);
 
+	/** 20150704    
+	 * worker 메모리를 할당받고 pool과 id를 초기화 한다.
+	 **/
 	worker = alloc_worker();
 	if (!worker)
 		goto fail;
@@ -1584,6 +1658,13 @@ static struct worker *create_worker(struct worker_pool *pool)
 	worker->pool = pool;
 	worker->id = id;
 
+	/** 20150704    
+	 * gcwq가 unbound인지 cpu bound인지에 따라 다른 worker thread를 생성한다.
+	 *
+	 * CPU bound : kworker/0:0
+	 *    highpri: kworker/0:0H
+	 * Unbound   : kworker/u:0
+	 **/
 	if (gcwq->cpu != WORK_CPU_UNBOUND)
 		worker->task = kthread_create_on_node(worker_thread,
 					worker, cpu_to_node(gcwq->cpu),
@@ -1594,6 +1675,12 @@ static struct worker *create_worker(struct worker_pool *pool)
 	if (IS_ERR(worker->task))
 		goto fail;
 
+	/** 20150704    
+	 * highpri worker pool인 경우 
+	 * task의 nice를 HIGHPRI_NICE_LEVEL 설정한다.
+	 *
+	 * 스케쥴링시 Highest static priority를 가지며 보다 많은 작업시간을 보장한다.
+	 **/
 	if (worker_pool_pri(pool))
 		set_user_nice(worker->task, HIGHPRI_NICE_LEVEL);
 
@@ -1606,6 +1693,14 @@ static struct worker *create_worker(struct worker_pool *pool)
 	 * As an unbound worker may later become a regular one if CPU comes
 	 * online, make sure every worker has %PF_THREAD_BOUND set.
 	 */
+	/** 20150704    
+	 * cpu associated gcwq인 경우 생성한 worker thread를 gcwq cpu로 bind한다.
+	 * 그렇지 않은 경우 task의 상태는 thread_bound로 만들고, worker의 flags는
+	 * UNBOUND로 표시한다. 
+	 *
+	 * PF_THREAD_BOUND는 추후 PF_NO_SETAFFINITY로 이름이 변경되고, 
+	 * cpu affinity를 지정할 수 없음을 나타낸다.
+	 **/
 	if (!(gcwq->flags & GCWQ_DISASSOCIATED)) {
 		kthread_bind(worker->task, gcwq->cpu);
 	} else {
@@ -1633,8 +1728,16 @@ fail:
  * CONTEXT:
  * spin_lock_irq(gcwq->lock).
  */
+/** 20150704    
+ * 새로 생성한 worker를 시작시킨다.
+ **/
 static void start_worker(struct worker *worker)
 {
+	/** 20150704    
+	 * worker의 flags를 WORKER_STARTED로 변경시킨다.
+	 * pool의 worker 수를 증가시키고, worker를 idle 상태로 만든 뒤
+	 * task를 실행시킨다.
+	 **/
 	worker->flags |= WORKER_STARTED;
 	worker->pool->nr_workers++;
 	worker_enter_idle(worker);
@@ -2152,6 +2255,11 @@ static int worker_thread(void *__worker)
 	struct global_cwq *gcwq = pool->gcwq;
 
 	/* tell the scheduler that this is a workqueue worker */
+	/** 20150704    
+	 * workqueue worker task를 worker로 표시한다.
+	 * 추후 scheduler에서 worker를 깨어거나 슬리핑 시킬 때 workqueue에 통보해
+	 * 처리한다.
+	 **/
 	worker->task->flags |= PF_WQ_WORKER;
 woke_up:
 	spin_lock_irq(&gcwq->lock);
@@ -3799,14 +3907,24 @@ static int __init init_workqueues(void)
 		 **/
 		gcwq->flags |= GCWQ_DISASSOCIATED;
 
+		/** 20150704    
+		 * busy worker hash list를 초기화 한다.
+		 **/
 		for (i = 0; i < BUSY_WORKER_HASH_SIZE; i++)
 			INIT_HLIST_HEAD(&gcwq->busy_hash[i]);
 
+		/** 20150704    
+		 * gcwq의 pool을 순회하며 초기화 한다.
+		 **/
 		for_each_worker_pool(pool, gcwq) {
 			pool->gcwq = gcwq;
 			INIT_LIST_HEAD(&pool->worklist);
 			INIT_LIST_HEAD(&pool->idle_list);
 
+			/** 20150704    
+			 * idle_timer, mayday_timer를 설정한다.
+			 * 만료시 idle_worker_timeout, gcwq_mayday_timeout이 실행된다.
+			 **/
 			init_timer_deferrable(&pool->idle_timer);
 			pool->idle_timer.function = idle_worker_timeout;
 			pool->idle_timer.data = (unsigned long)pool;
@@ -3815,6 +3933,9 @@ static int __init init_workqueues(void)
 				    (unsigned long)pool);
 
 			mutex_init(&pool->manager_mutex);
+			/** 20150704    
+			 * ida_init으로 worker_ida를 준비한다.
+			 **/
 			ida_init(&pool->worker_ida);
 		}
 
@@ -3822,13 +3943,22 @@ static int __init init_workqueues(void)
 	}
 
 	/* create the initial worker */
+	/** 20150704    
+	 * online CPUs + WORK_CPU_UNBOUND를 순회한다.
+	 **/
 	for_each_online_gcwq_cpu(cpu) {
 		struct global_cwq *gcwq = get_gcwq(cpu);
 		struct worker_pool *pool;
 
+		/** 20150704    
+		 * cpu unbound가 아닌 percpu일 경우 GCWQ_DISASSOCIATED 비트를 제거한다.
+		 **/
 		if (cpu != WORK_CPU_UNBOUND)
 			gcwq->flags &= ~GCWQ_DISASSOCIATED;
 
+		/** 20150704    
+		 * gcwq의 pool을 순회한다.
+		 **/
 		for_each_worker_pool(pool, gcwq) {
 			struct worker *worker;
 
