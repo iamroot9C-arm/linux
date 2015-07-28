@@ -330,8 +330,14 @@ static inline void cpumask_clear_cpu(int cpu, struct cpumask *dstp)
  *
  * test_and_set_bit wrapper for cpumasks.
  */
+/** 20150711    
+ * cpumask에 현재 cpu가 세팅되어 있는지 리턴하고, 새로 설정한다.
+ **/
 static inline int cpumask_test_and_set_cpu(int cpu, struct cpumask *cpumask)
 {
+	/** 20150711    
+	 * cpumask에 cpu의 설정여부를 리턴하고, 새로 setting한다.
+	 **/
 	return test_and_set_bit(cpumask_check(cpu), cpumask_bits(cpumask));
 }
 
@@ -761,7 +767,7 @@ static inline bool alloc_cpumask_var_node(cpumask_var_t *mask, gfp_t flags,
 }
 
 /** 20140419    
- * OFFSTACK이 아니므로 주어진 mask를 0으로 클리어 한다.
+ * CPUMASK_OFFSTACK이 아니므로 주어진 mask를 0으로 클리어 한다.
  **/
 static inline bool zalloc_cpumask_var(cpumask_var_t *mask, gfp_t flags)
 {

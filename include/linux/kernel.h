@@ -49,6 +49,8 @@
 
 /** 20130803    
  * x를 a단위로 ALIGN을 맞춘다 (__ALIGN_KERNEL에서 round up으로 구현)
+ *
+ * PTR_ALIGN : pointer의 align을 맞춘다.
  **/
 #define ALIGN(x, a)		__ALIGN_KERNEL((x), (a))
 #define __ALIGN_MASK(x, mask)	__ALIGN_KERNEL_MASK((x), (mask))
@@ -721,6 +723,11 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
  * type and min and max are literals that will otherwise be assigned a signed
  * integer type.
  */
+/** 20150711    
+ * value와 min과 max를 넘어가면 value를 min과 max로 잡아준다.
+ *
+ * value는 unsigned 값이고, min과 max는 literal이어서 signed 일 때 유용하다.
+ **/
 #define clamp_val(val, min, max) ({		\
 	typeof(val) __val = (val);		\
 	typeof(val) __min = (min);		\

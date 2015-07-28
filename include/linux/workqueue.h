@@ -21,6 +21,9 @@ typedef void (*work_func_t)(struct work_struct *work);
  * The first word is the work queue pointer and the flags rolled into
  * one
  */
+/** 20150725    
+ * work의 data에 workqueue pointer와 flags가 같이 들어가 있다.
+ **/
 #define work_data_bits(work) ((unsigned long *)(&(work)->data))
 
 enum {
@@ -262,6 +265,12 @@ static inline unsigned int work_static(struct work_struct *work) { return 0; }
  * Workqueue flags and constants.  For details, please refer to
  * Documentation/workqueue.txt.
  */
+/** 20150711    
+ * WQ의 flags와 몇몇 상수들.
+ *
+ * WQ_FREEZABLE  : suspend 중 freeze 시키는 속성
+ * WQ_MAX_ACTIVE : bound WQ의 MAX ACTIVE값.
+ **/
 enum {
 	WQ_NON_REENTRANT	= 1 << 0, /* guarantee non-reentrance */
 	WQ_UNBOUND		= 1 << 1, /* not bound to any cpu */
@@ -279,6 +288,9 @@ enum {
 };
 
 /* unbound wq's aren't per-cpu, scale max_active according to #cpus */
+/** 20150711    
+ * unbound WQ는 per-cpu가 아니므로 WQ_MAX_ACTIVE와 4 * #cpus 중 큰 값을 택한다.
+ **/
 #define WQ_UNBOUND_MAX_ACTIVE	\
 	max_t(int, WQ_MAX_ACTIVE, num_possible_cpus() * WQ_MAX_UNBOUND_PER_CPU)
 
@@ -350,6 +362,9 @@ __alloc_workqueue_key(const char *fmt, unsigned int flags, int max_active,
 			      &__key, __lock_name, ##args);	\
 })
 #else
+/** 20150711    
+ * workqueue를 할당한다.
+ **/
 #define alloc_workqueue(fmt, flags, max_active, args...)	\
 	__alloc_workqueue_key((fmt), (flags), (max_active),	\
 			      NULL, NULL, ##args)

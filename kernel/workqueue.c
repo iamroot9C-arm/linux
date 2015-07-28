@@ -238,6 +238,9 @@ struct global_cwq {
  * work_struct->data are used for flags and thus cwqs need to be
  * aligned at two's power of the number of flag bits.
  */
+/** 20150725    
+ * per-cpu workqueue 자료구조.
+ **/
 struct cpu_workqueue_struct {
 	struct worker_pool	*pool;		/* I: the associated pool */
 	struct workqueue_struct *wq;		/* I: the owning workqueue */
@@ -265,10 +268,24 @@ struct wq_flusher {
  */
 #ifdef CONFIG_SMP
 typedef cpumask_var_t mayday_mask_t;
+/** 20150711    
+ * mayday을 요청한 mask에 cpu가 설정되어 있는지 검사하고, 설정해 리턴한다.
+ **/
 #define mayday_test_and_set_cpu(cpu, mask)	\
 	cpumask_test_and_set_cpu((cpu), (mask))
+/** 20150711    
+ * mayday mask의 cpu를 클리어
+ **/
 #define mayday_clear_cpu(cpu, mask)		cpumask_clear_cpu((cpu), (mask))
+/** 20150711    
+ * mayday mask의 cpu들을 순회하면서
+ **/
 #define for_each_mayday_cpu(cpu, mask)		for_each_cpu((cpu), (mask))
+/** 20150711    
+ * mayday mask를 할당한다.
+ *
+ * CPUMASK_OFFSTACK 설정이 아닌 경우 cpumask를 0으로 초기화 한다.
+ **/
 #define alloc_mayday_mask(maskp, gfp)		zalloc_cpumask_var((maskp), (gfp))
 #define free_mayday_mask(mask)			free_cpumask_var((mask))
 #else
@@ -284,6 +301,11 @@ typedef unsigned long mayday_mask_t;
  * The externally visible workqueue abstraction is an array of
  * per-CPU workqueues:
  */
+/** 20150711    
+ * workqueue 구조체.
+ *
+ * name은 가변길이. 가변인자를 받아 포맷스트링에 의해 이름이 결정된다.
+ **/
 struct workqueue_struct {
 	unsigned int		flags;		/* W: WQ_* flags */
 	union {
@@ -391,7 +413,7 @@ static inline int __next_wq_cpu(int cpu, const struct cpumask *mask,
  *
  * for_each_cwq_cpu
  *   wq가 bound workqueues 일 때는 possible CPUS,
- *   wq가 unboudn workqueues 일 때는 WORK_CPU_UNBOUND를 순회한다.
+ *   wq가 unbound workqueues 일 때는 WORK_CPU_UNBOUND를 순회한다.
  **/
 #define for_each_gcwq_cpu(cpu)						\
 	for ((cpu) = __next_gcwq_cpu(-1, cpu_possible_mask, 3);		\
@@ -520,6 +542,9 @@ void destroy_work_on_stack(struct work_struct *work)
 EXPORT_SYMBOL_GPL(destroy_work_on_stack);
 
 #else
+/** 20150725    
+ * CONFIG_DEBUG_OBJECTS_WORK가 정의되지 않아 NULL.
+ **/
 static inline void debug_work_activate(struct work_struct *work) { }
 static inline void debug_work_deactivate(struct work_struct *work) { }
 #endif
@@ -534,7 +559,13 @@ static bool workqueue_freezing;		/* W: have wqs started freezing? */
  * which is expected to be used frequently by other cpus via
  * try_to_wake_up().  Put it in a separate cacheline.
  */
+/** 20150711    
+ * cpu bound인 global_cwq의 percpu 선언.
+ **/
 static DEFINE_PER_CPU(struct global_cwq, global_cwq);
+/** 20150711    
+ * atomit으로 선언된 pool_nr_running [normal,highpri]
+ **/
 static DEFINE_PER_CPU_SHARED_ALIGNED(atomic_t, pool_nr_running[NR_WORKER_POOLS]);
 
 /*
@@ -580,6 +611,9 @@ static struct global_cwq *get_gcwq(unsigned int cpu)
 		return &unbound_global_cwq;
 }
 
+/** 20150711    
+ * pool의 pool_nr_running 의 수를 리턴한다.
+ **/
 static atomic_t *get_pool_nr_running(struct worker_pool *pool)
 {
 	/** 20130720    
@@ -589,7 +623,8 @@ static atomic_t *get_pool_nr_running(struct worker_pool *pool)
 	int idx = worker_pool_pri(pool);
 
 	/** 20130720    
-	 * 분석하지 않음
+	 * pool에 연결된 cpu가 cpu bound라면 해당 cpu의 pool_nr_running를 가져온다.
+	 * unbound라면 unbound에 해당하는 pool_nr_running를 가져온다.
 	 **/
 	if (cpu != WORK_CPU_UNBOUND)
 		return &per_cpu(pool_nr_running, cpu)[idx];
@@ -597,6 +632,10 @@ static atomic_t *get_pool_nr_running(struct worker_pool *pool)
 		return &unbound_pool_nr_running[idx];
 }
 
+/** 20150711    
+ * WQ에서 cpu에 해당하는 cwq 포인터를 가져온다.
+ * UNBOUND일 경우 single 포인터를 리턴한다.
+ **/
 static struct cpu_workqueue_struct *get_cwq(unsigned int cpu,
 					    struct workqueue_struct *wq)
 {
@@ -645,6 +684,10 @@ static inline void set_work_data(struct work_struct *work, unsigned long data,
 	atomic_long_set(&work->data, data | flags | work_static(work));
 }
 
+/** 20150711    
+ * work_struct의 dta 부분에 cwq 포인터를 저장한다.
+ * WORK_STRUCT_PENDING | WORK_STRUCT_CWQ가 추기되어 이를 구분한다.
+ **/
 static void set_work_cwq(struct work_struct *work,
 			 struct cpu_workqueue_struct *cwq,
 			 unsigned long extra_flags)
@@ -663,6 +706,9 @@ static void clear_work_data(struct work_struct *work)
 	set_work_data(work, WORK_STRUCT_NO_CPU, 0);
 }
 
+/** 20150711    
+ * work의 data를 읽어 WORK_STRUCT_CWQ인 경우 cwq 포인터만 추출해 리턴한다.
+ **/
 static struct cpu_workqueue_struct *get_work_cwq(struct work_struct *work)
 {
 	unsigned long data = atomic_long_read(&work->data);
@@ -696,6 +742,11 @@ static struct global_cwq *get_work_gcwq(struct work_struct *work)
  * they're being called with gcwq->lock held.
  */
 
+/** 20150711    
+ * pool에 worker가 더 필요한지 판단하는 함수.
+ *
+ * pool에서 work를 받아 깨어나 작업 중인 worker 수가 0이라면 worker가 필요하다.
+ **/
 static bool __need_more_worker(struct worker_pool *pool)
 {
 	return !atomic_read(get_pool_nr_running(pool));
@@ -709,28 +760,55 @@ static bool __need_more_worker(struct worker_pool *pool)
  * function will always return %true for unbound gcwq as long as the
  * worklist isn't empty.
  */
+/** 20150711    
+ * pool에서 worker가 더 필요한지 파악한다.
+ *
+ * pool의 worklist가 비어있지 않고, pool이 worker를 더 필요로 하는 경우
+ **/
 static bool need_more_worker(struct worker_pool *pool)
 {
 	return !list_empty(&pool->worklist) && __need_more_worker(pool);
 }
 
 /* Can I start working?  Called from busy but !running workers. */
+/** 20150711    
+ * pool에 working 할 수 있는 worker가 존재하는지 판단하는 함수.
+ *
+ * pool에서 현재 idle 상태인 worker의 수를 리턴한다.
+ **/
 static bool may_start_working(struct worker_pool *pool)
 {
 	return pool->nr_idle;
 }
 
 /* Do I need to keep working?  Called from currently running workers. */
+/** 20150725    
+ * worker가 pool에서 처리해야 할 work이 남아 있는지 판단하기 위해 호출한다.
+ **/
 static bool keep_working(struct worker_pool *pool)
 {
+	/** 20150725    
+	 * pool의 nr_running을 가져온다.
+	 **/
 	atomic_t *nr_running = get_pool_nr_running(pool);
 
+	/** 20150725    
+	 * pool의 worklist가 차 있고, nr_running이 1 이하려면 참을 리턴한다.
+	 **/
 	return !list_empty(&pool->worklist) && atomic_read(nr_running) <= 1;
 }
 
 /* Do we need a new worker?  Called from manager. */
+/** 20150711    
+ * pool에 새로운 worker 생성이 필요한지 리턴하는 함수. 
+ *
+ * manager에 의해 호출됨.
+ **/
 static bool need_to_create_worker(struct worker_pool *pool)
 {
+	/** 20150711    
+	 * pool에 worker가 더 필요하고, working을 시작한 worker가 없다면 참이 리턴.
+	 **/
 	return need_more_worker(pool) && !may_start_working(pool);
 }
 
@@ -768,11 +846,21 @@ static bool too_many_workers(struct worker_pool *pool)
  */
 
 /* Return the first worker.  Safe with preemption disabled */
+/** 20150725    
+ * worker에게 work을 할당 할 때
+ * pool의 idle_list에서 대기 중인 worker를 꺼내 리턴한다.
+ **/
 static struct worker *first_worker(struct worker_pool *pool)
 {
+	/** 20150725    
+	 * pool의 idle_list가 비어있으면 NULL 리턴.
+	 **/
 	if (unlikely(list_empty(&pool->idle_list)))
 		return NULL;
 
+	/** 20150725    
+	 * pool의 idle_list에 들어가 있는 첫번째 worker를 꺼내 리턴한다.
+	 **/
 	return list_first_entry(&pool->idle_list, struct worker, entry);
 }
 
@@ -785,6 +873,9 @@ static struct worker *first_worker(struct worker_pool *pool)
  * CONTEXT:
  * spin_lock_irq(gcwq->lock).
  */
+/** 20150725    
+ * pool의 idle_list에서 worker를 찾아와 해당 worker task를 깨운다.
+ **/
 static void wake_up_worker(struct worker_pool *pool)
 {
 	struct worker *worker = first_worker(pool);
@@ -951,6 +1042,9 @@ static inline void worker_clr_flags(struct worker *worker, unsigned int flags)
  * RETURNS:
  * Pointer to the hash head.
  */
+/** 20150725    
+ * busy worker의 head 위치를 찾아 리턴한다.
+ **/
 static struct hlist_head *busy_worker_head(struct global_cwq *gcwq,
 					   struct work_struct *work)
 {
@@ -982,6 +1076,10 @@ static struct hlist_head *busy_worker_head(struct global_cwq *gcwq,
  * Pointer to worker which is executing @work if found, NULL
  * otherwise.
  */
+/** 20150725    
+ * bwh의 worker들을 순회하며 현재 실행 중인 work가 'work'인
+ * worker를 찾아 리턴한다.
+ **/
 static struct worker *__find_worker_executing_work(struct global_cwq *gcwq,
 						   struct hlist_head *bwh,
 						   struct work_struct *work)
@@ -1281,6 +1379,9 @@ int queue_delayed_work_on(int cpu, struct workqueue_struct *wq,
 
 		set_work_cwq(work, get_cwq(lcpu, wq), 0);
 
+		/** 20150725    
+		 * delay 만큼의 jiffies 이후에 work을 queue시키도록 한다.
+		 **/
 		timer->expires = jiffies + delay;
 		timer->data = (unsigned long)dwork;
 		timer->function = delayed_work_timer_fn;
@@ -1306,8 +1407,9 @@ EXPORT_SYMBOL_GPL(queue_delayed_work_on);
  * spin_lock_irq(gcwq->lock).
  */
 /** 20150704    
- * 해당 worker를 idle 상태로 만들고 pool의 idle_list에 추가한다.
+ * worker를 idle 상태로 진입시킨다.
  *
+ * 해당 worker를 idle 상태로 설정하고, worker가 속한 pool의 idle_list에 추가한다.
  * idle 상태로 너무 많은 worker가 존재하면 IDLE_WORKER_TIMEOUT를 시작시킨다.
  **/
 static void worker_enter_idle(struct worker *worker)
@@ -1401,9 +1503,17 @@ static void worker_leave_idle(struct worker *worker)
  * %true if the associated gcwq is online (@worker is successfully
  * bound), %false if offline.
  */
+/** 20150711    
+ * worker를 가능하다면 그 cpu에 bind시킨다.
+ * 성공 여부는 리턴값으로 리턴하고, 성공여부와 관계없이 lock을 걸고 리턴한다.
+ **/
 static bool worker_maybe_bind_and_lock(struct worker *worker)
 __acquires(&gcwq->lock)
 {
+	/** 20150711    
+	 * worker의 pool로부터 gcwq를 찾아온다.
+	 * rescuer의 경우 rescue할 target cpu의 pool로 지정한다.
+	 **/
 	struct global_cwq *gcwq = worker->pool->gcwq;
 	struct task_struct *task = worker->task;
 
@@ -1414,12 +1524,24 @@ __acquires(&gcwq->lock)
 		 * it races with cpu hotunplug operation.  Verify
 		 * against GCWQ_DISASSOCIATED.
 		 */
+		/** 20150711    
+		 * GCWQ_DISASSOCIATED가 없어야 특정 cpu에서 수행 가능하다.
+		 * worker task의 cpu affinity를 gcwq의 cpu로 지정하고, 필요하다면 migrate 한다. 즉 bind를 시도한다.
+		 **/
 		if (!(gcwq->flags & GCWQ_DISASSOCIATED))
 			set_cpus_allowed_ptr(task, get_cpu_mask(gcwq->cpu));
 
+		/** 20150711    
+		 * GCWQ_DISASSOCIATED이어서 cpu에 bind가 되지 않을 때도
+		 * lock을 걸고 false를 리턴한다.
+		 **/
 		spin_lock_irq(&gcwq->lock);
 		if (gcwq->flags & GCWQ_DISASSOCIATED)
 			return false;
+		/** 20150711    
+		 * task가 현재 gcwq의 cpu에서 수행 중이며,
+		 * cpus_allowed 같다면 정상적으로 bind 되었으므로 리턴한다.
+		 **/
 		if (task_cpu(task) == gcwq->cpu &&
 		    cpumask_equal(&current->cpus_allowed,
 				  get_cpu_mask(gcwq->cpu)))
@@ -1432,6 +1554,9 @@ __acquires(&gcwq->lock)
 		 * otherwise, we might deadlock against cpu_stop trying to
 		 * bring down the CPU on non-preemptive kernel.
 		 */
+		/** 20150711    
+		 * cpu hotplug와 경쟁 중일 경우 migration되도록 시간을 두고 시도한다.
+		 **/
 		cpu_relax();
 		cond_resched();
 	}
@@ -1807,25 +1932,46 @@ static void idle_worker_timeout(unsigned long __pool)
 	spin_unlock_irq(&gcwq->lock);
 }
 
+/** 20150711    
+ * work을 위한 rescuer worker에 mayday를 요청(rescuer thread를 깨운다)한다.
+ **/
 static bool send_mayday(struct work_struct *work)
 {
+	/** 20150711    
+	 * work의 data에 저장해뒀던 cwq 정보와 wq를 찾아온다.
+	 **/
 	struct cpu_workqueue_struct *cwq = get_work_cwq(work);
 	struct workqueue_struct *wq = cwq->wq;
 	unsigned int cpu;
 
+	/** 20150711    
+	 * wq 생성시 WQ_RESCUER가 지정되어 있지 않다면 mayday 요청할 rescuer가 없다.
+	 **/
 	if (!(wq->flags & WQ_RESCUER))
 		return false;
 
 	/* mayday mayday mayday */
+	/** 20150711    
+	 * cwq로부터 pool을 찾고 gcwq를 찾아 연결된 cpu를 가져온다.
+	 *
+	 * 연결된 cpu가 UNBOUND일 경우 cpu 0으로 지정한다.
+	 **/
 	cpu = cwq->pool->gcwq->cpu;
 	/* WORK_CPU_UNBOUND can't be set in cpumask, use cpu 0 instead */
 	if (cpu == WORK_CPU_UNBOUND)
 		cpu = 0;
+	/** 20150711    
+	 * cpu가 이전에 mayday를 요청하지 않은 경우 wq의 rescuer를 깨운다.
+	 * (rescuer는 rescuer_thread를 실행한다)
+	 * 이전 실행 여부와 상관없이 mayday_mask에 cpu가 설정된다.
+	 **/
 	if (!mayday_test_and_set_cpu(cpu, wq->mayday_mask))
 		wake_up_process(wq->rescuer->task);
 	return true;
 }
 
+/** 20150711    
+ **/
 static void gcwq_mayday_timeout(unsigned long __pool)
 {
 	struct worker_pool *pool = (void *)__pool;
@@ -1834,6 +1980,9 @@ static void gcwq_mayday_timeout(unsigned long __pool)
 
 	spin_lock_irq(&gcwq->lock);
 
+	/** 20150711    
+	 * pool에 worker를 더 생성해야 할 필요가 있다면
+	 **/
 	if (need_to_create_worker(pool)) {
 		/*
 		 * We've been trying to create a new worker but
@@ -1841,12 +1990,19 @@ static void gcwq_mayday_timeout(unsigned long __pool)
 		 * allocation deadlock.  Send distress signals to
 		 * rescuers.
 		 */
+		/** 20150711    
+		 * 새로운 worker를 생성하는 과정에서 완료가 안 되었으므로
+		 * pool의 worklist 내의 work들을 mayday를 호출해 처리한다.
+		 **/
 		list_for_each_entry(work, &pool->worklist, entry)
 			send_mayday(work);
 	}
 
 	spin_unlock_irq(&gcwq->lock);
 
+	/** 20150711    
+	 * mayday_timer를 MAYDAY_INTERVAL 이후에 동작하도록 다시 걸어준다.
+	 **/
 	mod_timer(&pool->mayday_timer, jiffies + MAYDAY_INTERVAL);
 }
 
@@ -2011,6 +2167,9 @@ static bool manage_workers(struct worker *worker)
  * CONTEXT:
  * spin_lock_irq(gcwq->lock).
  */
+/** 20150725    
+ * 스케쥴 링크된 work들을 head 리스트로 옮기고, 마지막 스케쥴된 work 다음 work 위치를 업데이트 한다.
+ **/
 static void move_linked_works(struct work_struct *work, struct list_head *head,
 			      struct work_struct **nextp)
 {
@@ -2020,6 +2179,10 @@ static void move_linked_works(struct work_struct *work, struct list_head *head,
 	 * Linked worklist will always end before the end of the list,
 	 * use NULL for list head.
 	 */
+	/** 20150725    
+	 * work의 data에 WORK_STRUCT_LINKED가 없을 때까지
+	 * queue된 work들을 head 리스트로 옮겨단다.
+	 **/
 	list_for_each_entry_safe_from(work, n, NULL, entry) {
 		list_move_tail(&work->entry, head);
 		if (!(*work_data_bits(work) & WORK_STRUCT_LINKED))
@@ -2031,6 +2194,9 @@ static void move_linked_works(struct work_struct *work, struct list_head *head,
 	 * multiple works to the scheduled queue, the next position
 	 * needs to be updated.
 	 */
+	/** 20150725    
+	 * 다음 work의 위치를 업데이트 한다.
+	 **/
 	if (nextp)
 		*nextp = n;
 }
@@ -2109,13 +2275,23 @@ static void cwq_dec_nr_in_flight(struct cpu_workqueue_struct *cwq, int color,
  * CONTEXT:
  * spin_lock_irq(gcwq->lock) which is released and regrabbed.
  */
+/** 20150711    
+ * worker로 work을 수행한다.
+ * work 넣는 부분 이후 추후 분석???
+ **/
 static void process_one_work(struct worker *worker, struct work_struct *work)
 __releases(&gcwq->lock)
 __acquires(&gcwq->lock)
 {
+	/** 20150725    
+	 * work이 속한 cwq를 가져온다.
+	 **/
 	struct cpu_workqueue_struct *cwq = get_work_cwq(work);
 	struct worker_pool *pool = worker->pool;
 	struct global_cwq *gcwq = pool->gcwq;
+	/** 20150725    
+	 * gcwq에서 work가 속한 hash list 위치를 가져온다.
+	 **/
 	struct hlist_head *bwh = busy_worker_head(gcwq, work);
 	bool cpu_intensive = cwq->wq->flags & WQ_CPU_INTENSIVE;
 	work_func_t f = work->func;
@@ -2148,6 +2324,9 @@ __acquires(&gcwq->lock)
 	 * already processing the work.  If so, defer the work to the
 	 * currently executing one.
 	 */
+	/** 20150725    
+	 * work을 실행 중인 worker를 bwh에서 찾는다.
+	 **/
 	collision = __find_worker_executing_work(gcwq, bwh, work);
 	if (unlikely(collision)) {
 		move_linked_works(work, &collision->scheduled, NULL);
@@ -2156,6 +2335,10 @@ __acquires(&gcwq->lock)
 
 	/* claim and process */
 	debug_work_deactivate(work);
+	/** 20150725    
+	 * bwh에 worker를 추가한다.
+	 * worker의 current_work와 current_cwq를 지정한다.
+	 **/
 	hlist_add_head(&worker->hentry, bwh);
 	worker->current_work = work;
 	worker->current_cwq = cwq;
@@ -2229,11 +2412,26 @@ __acquires(&gcwq->lock)
  * spin_lock_irq(gcwq->lock) which may be released and regrabbed
  * multiple times.
  */
+/** 20150725    
+ * worker에 schedule된 work을 처리한다.
+ *
+ * work을 처리하는동안 scheduled 리스트가 계속 변경될 수 있으므로
+ * 매번 첫번째 work을 새로 찾아 처리한다.
+ **/
 static void process_scheduled_works(struct worker *worker)
 {
+	/** 20150725    
+	 * worker의 scheduled 리스트가 빌 때까지 수행한다.
+	 **/
 	while (!list_empty(&worker->scheduled)) {
+		/** 20150711    
+		 * worker->scheduled 리스트의 첫번째 work_struct를 가져온다.
+		 **/
 		struct work_struct *work = list_first_entry(&worker->scheduled,
 						struct work_struct, entry);
+		/** 20150725    
+		 * worker로 work을 수행한다.
+		 **/
 		process_one_work(worker, work);
 	}
 }
@@ -2358,6 +2556,28 @@ sleep:
  *
  * This should happen rarely.
  */
+/** 20150711    
+ * rescuer(worker) thread.
+ *
+ * workqueue 생성시 WQ_MEM_RECLAIM(내부 flag는 WQ_RESCUER)가 주어진 경우 생성된다.
+ * 이후 mayday 신호에 의해 깨어나 mayday를 보낸 cwq의 pool에서 work을 가져와
+ * 실행시킨다.
+ *
+ * cwq에 schedule된 모든 work을 수행한 뒤 schedule out 되어 대기한다.
+ *
+ *
+ * 영문주석 번역:
+ *
+ * __wq는 rescuer용 kthread_create시 data로 설정한 rescuer의 wq.
+ *
+ * gcwq에서 처리되는 일반 work은 GFP_KERNEL 할당을 사용하는 새로운 worker를
+ * 생성하기 위해 block될 수 있고, 같은 queue에 위치한 work들이 (GFP_KERNEL 할당을
+ * 만족시키기 위해) 처리되어야 할 때 deadlock에 빠질 수 있다.
+ * 이것이 rescuer가 해결해야 할 문제이다.
+ *
+ * 그런 조건이 가능하다면, gcwq에 queue된 work을 보유한 모든 workqueues에
+ * rescuer들을 소환하고 이것들이 work을 처리하도록 하여 진행을 보장한다.
+ **/
 static int rescuer_thread(void *__wq)
 {
 	struct workqueue_struct *wq = __wq;
@@ -2366,10 +2586,16 @@ static int rescuer_thread(void *__wq)
 	bool is_unbound = wq->flags & WQ_UNBOUND;
 	unsigned int cpu;
 
+	/** 20150711    
+	 * rescuer로 동작하므로 nice를 낮춰 priority를 높여준다.
+	 **/
 	set_user_nice(current, RESCUER_NICE_LEVEL);
 repeat:
 	set_current_state(TASK_INTERRUPTIBLE);
 
+	/** 20150711    
+	 * kthread가 멈춰야 하면 thread를 종료한다.
+	 **/
 	if (kthread_should_stop())
 		return 0;
 
@@ -2377,17 +2603,31 @@ repeat:
 	 * See whether any cpu is asking for help.  Unbounded
 	 * workqueues use cpu 0 in mayday_mask for CPU_UNBOUND.
 	 */
+	/** 20150711    
+	 * mayday, 즉 구조를 요청한 cpu들을 순회하면서 구조 작업을 수행.
+	 **/
 	for_each_mayday_cpu(cpu, wq->mayday_mask) {
+		/** 20150711    
+		 * 구조할 target cpu를 찾고, 해당 cpu의 cpu_workqueue를 받아온다.
+		 **/
 		unsigned int tcpu = is_unbound ? WORK_CPU_UNBOUND : cpu;
 		struct cpu_workqueue_struct *cwq = get_cwq(tcpu, wq);
 		struct worker_pool *pool = cwq->pool;
 		struct global_cwq *gcwq = pool->gcwq;
 		struct work_struct *work, *n;
 
+		/** 20150711    
+		 * rescuer task를 RUNNING으로 바꾸고,
+		 * mayday_mask에서 현재 순회하는 cpu를 제거한다.
+		 **/
 		__set_current_state(TASK_RUNNING);
 		mayday_clear_cpu(cpu, wq->mayday_mask);
 
 		/* migrate to the target cpu if possible */
+		/** 20150711    
+		 * cwq의 pool을 rescuer pool로 지정하고,
+		 * rescuer를 pool의 cpu로 bind시키고 lock을 건다.
+		 **/
 		rescuer->pool = pool;
 		worker_maybe_bind_and_lock(rescuer);
 
@@ -2396,10 +2636,17 @@ repeat:
 		 * process'em.
 		 */
 		BUG_ON(!list_empty(&rescuer->scheduled));
+		/** 20150711    
+		 * pool의 worklist에 등록된 work를 순회하며
+		 *   work에 지정된 cwq가 구조할 cwq인 경우 work을 rescuer의 scheduled로 옮긴다.
+		 **/
 		list_for_each_entry_safe(work, n, &pool->worklist, entry)
 			if (get_work_cwq(work) == cwq)
 				move_linked_works(work, scheduled, &n);
 
+		/** 20150725    
+		 * rescuer로 옮겨단 work들을 수행한다.
+		 **/
 		process_scheduled_works(rescuer);
 
 		/*
@@ -2407,12 +2654,18 @@ repeat:
 		 * regular worker; otherwise, we end up with 0 concurrency
 		 * and stalling the execution.
 		 */
+		/** 20150725    
+		 * 해당 pool에 처리할 work이 있다면 regular worker를 깨워 work을 처리한다.
+		 **/
 		if (keep_working(pool))
 			wake_up_worker(pool);
 
 		spin_unlock_irq(&gcwq->lock);
 	}
 
+	/** 20150725    
+	 * 처리가 끝난 뒤 schedule out으로 대기한다.
+	 **/
 	schedule();
 	goto repeat;
 }
@@ -3225,6 +3478,9 @@ int keventd_up(void)
 	return system_wq != NULL;
 }
 
+/** 20150711    
+ * workqueue 구조체 내의 cpu_wq 부분을 할당한다.
+ **/
 static int alloc_cwqs(struct workqueue_struct *wq)
 {
 	/*
@@ -3233,9 +3489,18 @@ static int alloc_cwqs(struct workqueue_struct *wq)
 	 * unsigned long long.
 	 */
 	const size_t size = sizeof(struct cpu_workqueue_struct);
+	/** 20150711    
+	 * align은 (1 << WORK_STRUCT_FLAG_BITS)와 unsigned long long 중 큰 값.
+	 **/
 	const size_t align = max_t(size_t, 1 << WORK_STRUCT_FLAG_BITS,
 				   __alignof__(unsigned long long));
 
+	/** 20150711    
+	 * WQ_UNBOUND가 아닌 경우, percpu이므로 percpu 메모리를 할당 받아
+	 * cpu_wq.pcpu에 저장한다.
+	 *
+	 * WQ_UNBOUND인 경우, GFP_KERNEL로 메모리를 할당 받아 cpu_wq.single에 저장한다.
+	 **/
 	if (!(wq->flags & WQ_UNBOUND))
 		wq->cpu_wq.pcpu = __alloc_percpu(size, align);
 	else {
@@ -3246,6 +3511,11 @@ static int alloc_cwqs(struct workqueue_struct *wq)
 		 * pointer at the end pointing back to the originally
 		 * allocated pointer which will be used for free.
 		 */
+		/** 20150711    
+		 * ptr은 size와 align과 원본 포인터까지 고려해 할당받은 메모리 위치.
+		 * cpu_wq.single에 저장할 때는 align시킨 pointer를 저장하고,
+		 * 메모리 해제시 사용하기 위해 할당받은 ptr은 마지막에 추가로 저장한다.
+		 **/
 		ptr = kzalloc(size + align + sizeof(void *), GFP_KERNEL);
 		if (ptr) {
 			wq->cpu_wq.single = PTR_ALIGN(ptr, align);
@@ -3268,9 +3538,16 @@ static void free_cwqs(struct workqueue_struct *wq)
 	}
 }
 
+/** 20150711    
+ * WQ의 max active의 최대/최소치 범위가 넘지 않도록 한다.
+ * unbound와 bound WQ의 max active는 달라질 수 있다.
+ **/
 static int wq_clamp_max_active(int max_active, unsigned int flags,
 			       const char *name)
 {
+	/** 20150711    
+	 * unbound와 bound 인지에 따라 MAX ACTIVE가 달라진다.
+	 **/
 	int lim = flags & WQ_UNBOUND ? WQ_UNBOUND_MAX_ACTIVE : WQ_MAX_ACTIVE;
 
 	if (max_active < 1 || max_active > lim)
@@ -3278,9 +3555,16 @@ static int wq_clamp_max_active(int max_active, unsigned int flags,
 		       "is out of range, clamping between %d and %d\n",
 		       max_active, name, 1, lim);
 
+	/** 20150711    
+	 * max_active의 최소치와 최대치를 넘을 경우 최소치 최대치로 리턴한다.
+	 **/
 	return clamp_val(max_active, 1, lim);
 }
 
+/** 20150725    
+ * workqueue를 할당받고 flags에 따라 설정한다.
+ * max_active가 0인 경우 WQ_DFL_ACTIVE가 지정된다.
+ **/
 struct workqueue_struct *__alloc_workqueue_key(const char *fmt,
 					       unsigned int flags,
 					       int max_active,
@@ -3293,6 +3577,11 @@ struct workqueue_struct *__alloc_workqueue_key(const char *fmt,
 	size_t namelen;
 
 	/* determine namelen, allocate wq and format name */
+	/** 20150711    
+	 * name 
+	 * 가변인자 매개변수로 길이를 구하고, 그것을 감안한 크기로
+	 * wq를 할당받는다.
+	 **/
 	va_start(args, lock_name);
 	va_copy(args1, args);
 	namelen = vsnprintf(NULL, 0, fmt, args) + 1;
@@ -3309,13 +3598,27 @@ struct workqueue_struct *__alloc_workqueue_key(const char *fmt,
 	 * Workqueues which may be used during memory reclaim should
 	 * have a rescuer to guarantee forward progress.
 	 */
+	/** 20150711    
+	 * 메모리 회수시에 workqueue가 필요할 수 있다.
+	 * 그럴 경우 rescuer를 별도로 가져 deadlock에 빠지지 않고 진행시켜야 한다.
+	 *
+	 * WQ_MEM_RECLAIM 요청은 내부 플래그 WQ_RESCUER를 추가한다.
+	 **/
 	if (flags & WQ_MEM_RECLAIM)
 		flags |= WQ_RESCUER;
 
+	/** 20150711    
+	 * max_active는 각 CPU에서 하나의 wq당 몇 개의 work item이 동시에 실행될 수
+	 * 있는지를 나타낸다.
+	 * API 요청시 지정되지 않았으면 기본값을 사용한다.
+	 **/
 	max_active = max_active ?: WQ_DFL_ACTIVE;
 	max_active = wq_clamp_max_active(max_active, flags, wq->name);
 
 	/* init wq */
+	/** 20150711    
+	 * 할당한 wq 구조체를 초기화 한다.
+	 **/
 	wq->flags = flags;
 	wq->saved_max_active = max_active;
 	mutex_init(&wq->flush_mutex);
@@ -3326,10 +3629,20 @@ struct workqueue_struct *__alloc_workqueue_key(const char *fmt,
 	lockdep_init_map(&wq->lockdep_map, lock_name, key, 0);
 	INIT_LIST_HEAD(&wq->list);
 
+	/** 20150711    
+	 * cpu bound인지 unbound인지에 따라 cpu_wq 메모리를 할당 받는다.
+	 **/
 	if (alloc_cwqs(wq) < 0)
 		goto err;
 
+	/** 20150711    
+	 * cpus + (unbound)만큼 순회하며 cwq를 초기화 한다.
+	 **/
 	for_each_cwq_cpu(cpu, wq) {
+		/** 20150711    
+		 * wq 내의 cpu에 대한 cwq 포인터를 받아오고,
+		 * 마찬가지로 gcwq 내의 cpu에 대한 gcwq 포인터를 받아온다.
+		 **/
 		struct cpu_workqueue_struct *cwq = get_cwq(cpu, wq);
 		struct global_cwq *gcwq = get_gcwq(cpu);
 		int pool_idx = (bool)(flags & WQ_HIGHPRI);
@@ -3342,21 +3655,36 @@ struct workqueue_struct *__alloc_workqueue_key(const char *fmt,
 		INIT_LIST_HEAD(&cwq->delayed_works);
 	}
 
+	/** 20150711    
+	 * flags 에 WQ_RESCUER가 지정되면 추가로 rescuer thread를 생성한다.
+	 **/
 	if (flags & WQ_RESCUER) {
 		struct worker *rescuer;
 
+		/** 20150711    
+		 * mayday_mask를 할당받고 0으로 초기화 한다. 실패한 경우 err.
+		 **/
 		if (!alloc_mayday_mask(&wq->mayday_mask, GFP_KERNEL))
 			goto err;
 
+		/** 20150711    
+		 * rescuer worker를 생성해 wq에 저장한다.
+		 **/
 		wq->rescuer = rescuer = alloc_worker();
 		if (!rescuer)
 			goto err;
 
+		/** 20150711    
+		 * rescuer worker를 위한 thread를 생성해 저장한다.
+		 **/
 		rescuer->task = kthread_create(rescuer_thread, wq, "%s",
 					       wq->name);
 		if (IS_ERR(rescuer->task))
 			goto err;
 
+		/** 20150711    
+		 * 생성한 rescuer thread를 THREAD_BOUND로 설정하고 동작시킨다.
+		 **/
 		rescuer->task->flags |= PF_THREAD_BOUND;
 		wake_up_process(rescuer->task);
 	}
@@ -3368,14 +3696,24 @@ struct workqueue_struct *__alloc_workqueue_key(const char *fmt,
 	 */
 	spin_lock(&workqueue_lock);
 
+	/** 20150725    
+	 * workqueue_freezing 상태이면서 wq 생성 flag로 WQ_FREEZABLE가 지정되었다면
+	 * cwq를 순회하며 max_active를 0으로 만들어 준다.
+	 **/
 	if (workqueue_freezing && wq->flags & WQ_FREEZABLE)
 		for_each_cwq_cpu(cpu, wq)
 			get_cwq(cpu, wq)->max_active = 0;
 
+	/** 20150725    
+	 * 생성한 wq를 전역 workqueues에 등록한다.
+	 **/
 	list_add(&wq->list, &workqueues);
 
 	spin_unlock(&workqueue_lock);
 
+	/** 20150725    
+	 * 생성한 wq를 리턴한다.
+	 **/
 	return wq;
 err:
 	if (wq) {
@@ -3876,6 +4214,12 @@ out_unlock:
 }
 #endif /* CONFIG_FREEZER */
 
+/** 20150725    
+ * workqueues 초기화를 수행한다.
+ *
+ * gcwq의 pool을 생성하고 worker를 생성한다.
+ * 시스템에 필요한 workqueue를 생성한다.
+ **/
 static int __init init_workqueues(void)
 {
 	unsigned int cpu;
@@ -3939,6 +4283,9 @@ static int __init init_workqueues(void)
 			ida_init(&pool->worker_ida);
 		}
 
+		/** 20150711    
+		 * rebind_hold waitqueue를 초기화 한다.
+		 **/
 		init_waitqueue_head(&gcwq->rebind_hold);
 	}
 
@@ -3957,11 +4304,14 @@ static int __init init_workqueues(void)
 			gcwq->flags &= ~GCWQ_DISASSOCIATED;
 
 		/** 20150704    
-		 * gcwq의 pool을 순회한다.
+		 * gcwq의 pool (normal, highpri)을 순회한다.
 		 **/
 		for_each_worker_pool(pool, gcwq) {
 			struct worker *worker;
 
+			/** 20150711    
+			 * pool에 worker를 생성해 넣고 worker thread를 시작시킨다.
+			 **/
 			worker = create_worker(pool);
 			BUG_ON(!worker);
 			spin_lock_irq(&gcwq->lock);
@@ -3970,6 +4320,12 @@ static int __init init_workqueues(void)
 		}
 	}
 
+	/** 20150725    
+	 * system에 필요한 workqueue를 생성한다.
+	 *
+	 * schedule_work 으로 호출할 경우 system_wq에서 work을 처리한다.
+	 * 시스템에서 필수로 요구되는 workqueue이므로 생성에 실패하면 BUG.
+	 **/
 	system_wq = alloc_workqueue("events", 0, 0);
 	system_long_wq = alloc_workqueue("events_long", 0, 0);
 	system_nrt_wq = alloc_workqueue("events_nrt", WQ_NON_REENTRANT, 0);
