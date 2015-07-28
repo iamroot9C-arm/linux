@@ -206,7 +206,7 @@ extern int _find_next_bit_be(const unsigned long *p, int size, int offset);
 #define clear_bit(nr,p)			ATOMIC_BITOP(clear_bit,nr,p)
 #define change_bit(nr,p)		ATOMIC_BITOP(change_bit,nr,p)
 /** 20130406    
- * 현재 설정값을 리턴하고, 비트를 설정하는 atomic operation 호출
+ * 현재 설정값을 리턴하고, 새로 비트를 설정하는 atomic operation 호출
  **/
 #define test_and_set_bit(nr,p)		ATOMIC_BITOP(test_and_set_bit,nr,p)
 #define test_and_clear_bit(nr,p)	ATOMIC_BITOP(test_and_clear_bit,nr,p)

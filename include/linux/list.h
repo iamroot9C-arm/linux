@@ -469,7 +469,7 @@ static inline void list_splice_tail_init(struct list_head *list,
  * Note, that list is expected to be not empty.
  */
 /** 20150530    
- * 리스트의 첫번째 member인 type 구조체의 위치를 리턴
+ * 리스트의 첫번째 member를 가져와 이것을 포함하고 있는 type 구조체를 리턴한다.
  **/
 #define list_first_entry(ptr, type, member) \
 	list_entry((ptr)->next, type, member)
@@ -646,6 +646,10 @@ static inline void list_splice_tail_init(struct list_head *list,
  * Iterate over list of given type from current point, safe against
  * removal of list entry.
  */
+/** 20150725    
+ * list를 순회하되, 처리 과정에서 node가 제거되어도 미리 복사해 놓은 next 포인터로
+ * 에러 없이 동작시키는 매크로.
+ **/
 #define list_for_each_entry_safe_from(pos, n, head, member) 			\
 	for (n = list_entry(pos->member.next, typeof(*pos), member);		\
 	     &pos->member != (head);						\

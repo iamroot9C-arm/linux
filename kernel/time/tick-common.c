@@ -551,6 +551,8 @@ static struct notifier_block tick_notifier = {
  */
 /** 20140825    
  * clockevents framework에 이벤트 발생시 통보받을 tick notifier 등록.
+ *
+ * clockevents_notify에서 호출되며, hrtimer_cpu_notify에서 호출된다.
  **/
 void __init tick_init(void)
 {

@@ -41,7 +41,7 @@ struct cpu_stop_done {
 /** 20150530    
  * cpu_stopper 구조체.
  *
- * spinlock으로 보호되며, 실행해야 할 works 리스크가 존재하낟.
+ * spinlock으로 보호되며, 실행해야 할 works 리스트가 존재한다.
  **/
 struct cpu_stopper {
 	spinlock_t		lock;
@@ -50,6 +50,9 @@ struct cpu_stopper {
 	struct task_struct	*thread;	/* stopper thread */
 };
 
+/** 20150725    
+ * percpu cpu_stopper 선언.
+ **/
 static DEFINE_PER_CPU(struct cpu_stopper, cpu_stopper);
 static bool stop_machine_initialized = false;
 
@@ -401,7 +404,13 @@ static int __cpuinit cpu_stop_cpu_callback(struct notifier_block *nfb,
 	struct cpu_stopper *stopper = &per_cpu(cpu_stopper, cpu);
 	struct task_struct *p;
 
+	/** 20150725    
+	 * CPU_TASKS_FROZEN를 제외한 action을 보고 필요한 동작을 한다.
+	 **/
 	switch (action & ~CPU_TASKS_FROZEN) {
+	/** 20150725    
+	 * migration thread를 생성한다.
+	 **/
 	case CPU_UP_PREPARE:
 		BUG_ON(stopper->thread || stopper->enabled ||
 		       !list_empty(&stopper->works));
@@ -457,6 +466,10 @@ static int __cpuinit cpu_stop_cpu_callback(struct notifier_block *nfb,
  * cpu notifiers.  It currently shares the same priority as sched
  * migration_notifier.
  */
+/** 20150725    
+ * cpu_stop을 위한 cpu notifier을 선언한다.
+ * priority를 높게 주어 migration_notifier와 같은 priority를 사용한다.
+ **/
 static struct notifier_block __cpuinitdata cpu_stop_cpu_notifier = {
 	.notifier_call	= cpu_stop_cpu_callback,
 	.priority	= 10,
@@ -468,7 +481,13 @@ static int __init cpu_stop_init(void)
 	unsigned int cpu;
 	int err;
 
+	/** 20150725    
+	 * possible cpu들을 순회한다.
+	 **/
 	for_each_possible_cpu(cpu) {
+		/** 20150725    
+		 * 해당 cpu에 대한 cpu_stopper를 가져와 lock과 works를 초기화 한다.
+		 **/
 		struct cpu_stopper *stopper = &per_cpu(cpu_stopper, cpu);
 
 		spin_lock_init(&stopper->lock);

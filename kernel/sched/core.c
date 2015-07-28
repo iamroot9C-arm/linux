@@ -6017,8 +6017,8 @@ void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
  */
 /** 20150530    
  * task의 cpu affinity를 변경한다.
- * 현재 실행 중인 cpu가 new_mask에 해당하지 않을 경우, new_mask에서 대상을 골라
- * 해당 cpu에서 실행되도록 migrate 한다.
+ * 현재 실행 중인 cpu가 new_mask에 해당하지 않을 경우,
+ * new_mask에서 수행할 cpu대상을 골라 실행되도록 migrate 한다.
  **/
 int set_cpus_allowed_ptr(struct task_struct *p, const struct cpumask *new_mask)
 {
@@ -6455,7 +6455,7 @@ static void unregister_sched_domain_sysctl(void)
 
 /** 20140426    
  * rq가 현재 online 상태가 아니라면
- *   rq의 상태를 변경하고, 
+ *   rq에 해당하는 cpu를 online mask에 추가하고, 
  *   sched class의 콜백을 호출해 스케쥴링 대상에 포함시킨다.
  **/
 static void set_rq_online(struct rq *rq)
@@ -6528,6 +6528,9 @@ migration_call(struct notifier_block *nfb, unsigned long action, void *hcpu)
 
 	switch (action & ~CPU_TASKS_FROZEN) {
 
+	/** 20150725    
+	 * CPU_UP_PREPARE인 경우 전역 calc_load_update 값을 rq 내에 복사한다.
+	 **/
 	case CPU_UP_PREPARE:
 		rq->calc_load_update = calc_load_update;
 		break;
@@ -6535,6 +6538,10 @@ migration_call(struct notifier_block *nfb, unsigned long action, void *hcpu)
 	case CPU_ONLINE:
 		/* Update our root-domain */
 		raw_spin_lock_irqsave(&rq->lock, flags);
+		/** 20150725    
+		 * runqueue의 rootdomain이 지정되어 있으면
+		 * rq에 해당하는 cpu를 online mask에 넣고, 스케쥴 대상에 포함시킨다.
+		 **/
 		if (rq->rd) {
 			BUG_ON(!cpumask_test_cpu(cpu, rq->rd->span));
 
@@ -6572,14 +6579,24 @@ migration_call(struct notifier_block *nfb, unsigned long action, void *hcpu)
  * happens before everything else.  This has to be lower priority than
  * the notifier in the perf_event subsystem, though.
  */
+/** 20150725    
+ * migration notifier block.
+ **/
 static struct notifier_block __cpuinitdata migration_notifier = {
 	.notifier_call = migration_call,
 	.priority = CPU_PRI_MIGRATION,
 };
 
+/** 20150725    
+ * cpu_notifier 블럭으로 등록되어 호출되는 함수로,
+ * action에 따라 active mask에 추가한다.
+ **/
 static int __cpuinit sched_cpu_active(struct notifier_block *nfb,
 				      unsigned long action, void *hcpu)
 {
+	/** 20150725    
+	 * action에서 FROZEN을 제외한 동작을 보고 수행한다.
+	 **/
 	switch (action & ~CPU_TASKS_FROZEN) {
 	case CPU_STARTING:
 	case CPU_DOWN_FAILED:
@@ -6590,6 +6607,10 @@ static int __cpuinit sched_cpu_active(struct notifier_block *nfb,
 	}
 }
 
+/** 20150725    
+ * cpu_notifier 블럭으로 등록되어 호출되는 함수로,
+ * action에 따라 active mask에 제거한다.
+ **/
 static int __cpuinit sched_cpu_inactive(struct notifier_block *nfb,
 					unsigned long action, void *hcpu)
 {
@@ -6602,18 +6623,33 @@ static int __cpuinit sched_cpu_inactive(struct notifier_block *nfb,
 	}
 }
 
+/** 20150725    
+ * migration 초기화를 수행한다.
+ *
+ * migration_call로 부트 cpu에 대한 초기화를 직접 수행하고,
+ * migration_notifier을 notifier로 등록한다.
+ *
+ * cpu_notifier를 등록한다.
+ **/
 static int __init migration_init(void)
 {
 	void *cpu = (void *)(long)smp_processor_id();
 	int err;
 
 	/* Initialize migration for the boot CPU */
+	/** 20150725    
+	 * 현재 cpu에 대해 CPU_UP_PREPARE, CPU_ONLINE을 직접 날리고,
+	 * migration_notifier을 cpu notifier로 등록한다.
+	 **/
 	err = migration_call(&migration_notifier, CPU_UP_PREPARE, cpu);
 	BUG_ON(err == NOTIFY_BAD);
 	migration_call(&migration_notifier, CPU_ONLINE, cpu);
 	register_cpu_notifier(&migration_notifier);
 
 	/* Register cpu active notifiers */
+	/** 20150725    
+	 * cpu active/inactive notifier block을 선언하고 cpu notifier로 등록한다.
+	 **/
 	cpu_notifier(sched_cpu_active, CPU_PRI_SCHED_ACTIVE);
 	cpu_notifier(sched_cpu_inactive, CPU_PRI_SCHED_INACTIVE);
 

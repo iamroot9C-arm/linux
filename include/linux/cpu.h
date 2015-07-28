@@ -74,6 +74,10 @@ enum {
 	CPU_PRI_CPUSET_INACTIVE	= INT_MIN,
 
 	/* migration should happen before other stuff but after perf */
+	/** 20150725    
+	 * notifier의 priority를 정의한다.
+	 * PERF가 가장 높고, MIGRATION이 그 다음으로 한다.
+	 **/
 	CPU_PRI_PERF		= 20,
 	CPU_PRI_MIGRATION	= 10,
 	/* bring up workqueues before normal notifiers and down after */

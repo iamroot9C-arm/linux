@@ -815,6 +815,9 @@ void set_cpu_online(unsigned int cpu, bool online)
 		cpumask_clear_cpu(cpu, to_cpumask(cpu_online_bits));
 }
 
+/** 20150725    
+ * active에 따라 cpu를 active mask에 포함하거나 제거한다.
+ **/
 void set_cpu_active(unsigned int cpu, bool active)
 {
 	if (active)

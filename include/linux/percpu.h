@@ -187,6 +187,9 @@ extern phys_addr_t per_cpu_ptr_to_phys(void *addr);
 
 /** 20140517    
  * type을 저장할 percpu 공간(메모리)을 할당하고, 위치를 리턴.
+ *
+ * alloc_percpu는 type을 받고,
+ * __alloc_percpu는 size와 align을 받는다.
  **/
 #define alloc_percpu(type)	\
 	(typeof(type) __percpu *)__alloc_percpu(sizeof(type), __alignof__(type))
