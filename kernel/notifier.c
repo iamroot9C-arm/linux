@@ -84,6 +84,9 @@ static int notifier_chain_unregister(struct notifier_block **nl,
  * notifier list를 순회하며
  * nr_to_call만큼 호출했거나 callback 함수가 STOP_MASK를 리턴할 때까지
  * 등록된 callback 함수를 호출한다.
+ *
+ * nr_to_call : 몇 개의 callback들을 호출할 것인지 지정한다. -1은 무제한.
+ * nr_calls   : 몇 개의 callback들이 호출되었는지 저장한다.
  **/
 static int __kprobes notifier_call_chain(struct notifier_block **nl,
 					unsigned long val, void *v,
@@ -448,6 +451,8 @@ EXPORT_SYMBOL_GPL(raw_notifier_chain_unregister);
  */
 /** 20140927    
  * notifier chain에 등록된 콜백 함수들을 호출한다.
+ *
+ * v : notifier function에 전달할 값.
  **/
 int __raw_notifier_call_chain(struct raw_notifier_head *nh,
 			      unsigned long val, void *v,

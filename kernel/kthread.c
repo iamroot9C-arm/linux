@@ -19,9 +19,17 @@
 #include <trace/events/sched.h>
 
 static DEFINE_SPINLOCK(kthread_create_lock);
+/** 20150801    
+ * kthread_create 할 구조체를 list로 관리
+ **/
 static LIST_HEAD(kthread_create_list);
 struct task_struct *kthreadd_task;
 
+/** 20150801    
+ * kthreadd와 kthread_create 사이에 주고받는 구조체.
+ *
+ * kthreadd로 전달해 주는 부분과 kthreadd로부터 결과를 리턴받는 부분으로 구성.
+ **/
 struct kthread_create_info
 {
 	/* Information passed to kthread() from kthreadd. */
@@ -188,6 +196,14 @@ static void create_kthread(struct kthread_create_info *create)
  *
  * Returns a task_struct or ERR_PTR(-ENOMEM).
  */
+/** 20150801    
+ * kthreadd에게 새로운 thread로 수행할 threadfn을 요청.
+ *
+ * threadfn : 새로운 kthread가 수행할 함수
+ * data     : threadfn에 전달할 매개변수
+ * node     : 수행될 노드. NUMA인 경우
+ * namefmt  : task_struct의 comm에 지정되는 이름
+ **/
 struct task_struct *kthread_create_on_node(int (*threadfn)(void *data),
 					   void *data,
 					   int node,
@@ -196,22 +212,44 @@ struct task_struct *kthread_create_on_node(int (*threadfn)(void *data),
 {
 	struct kthread_create_info create;
 
+	/** 20150801    
+	 * kthread_create_info에서 ktheadd로 전달할 자료구조를 채운다.
+	 **/
 	create.threadfn = threadfn;
 	create.data = data;
 	create.node = node;
+	/** 20150801    
+	 * kthreadd의 complete를 기다릴 completion을 초기화 한다.
+	 **/
 	init_completion(&create.done);
 
 	spin_lock(&kthread_create_lock);
+	/** 20150801    
+	 * 전역 리스트에 kthread_create 요청 자료구조를 등록한다.
+	 * kthread_create_list의 접근은 spinlock으로 보호된다.
+	 **/
 	list_add_tail(&create.list, &kthread_create_list);
 	spin_unlock(&kthread_create_lock);
 
+	/** 20150801    
+	 * kthreadd_task를 깨워 kthread 생성을 진행시킨다.
+	 **/
 	wake_up_process(kthreadd_task);
+	/** 20150801    
+	 * kthreadd로부터 complete()를 기다리며 대기한다.
+	 **/
 	wait_for_completion(&create.done);
 
+	/** 20150801    
+	 * result가 에러가 아니라면
+	 **/
 	if (!IS_ERR(create.result)) {
 		static const struct sched_param param = { .sched_priority = 0 };
 		va_list args;
 
+		/** 20150801    
+		 * kthead_create을 요청한 곳에서 넘어온 이름대로 task의 comm을 지정.
+		 **/
 		va_start(args, namefmt);
 		vsnprintf(create.result->comm, sizeof(create.result->comm),
 			  namefmt, args);
@@ -220,7 +258,13 @@ struct task_struct *kthread_create_on_node(int (*threadfn)(void *data),
 		 * root may have changed our (kthreadd's) priority or CPU mask.
 		 * The kernel thread should not inherit these properties.
 		 */
+		/** 20150801    
+		 * kthreadd로부터 생성된 task의 scheduling policy와 RT priority를 지정한다.
+		 **/
 		sched_setscheduler_nocheck(create.result, SCHED_NORMAL, &param);
+		/** 20150801    
+		 * 생성된 task는 모든 cpu에서 수행될 수 있다.
+		 **/
 		set_cpus_allowed_ptr(create.result, cpu_all_mask);
 	}
 	return create.result;

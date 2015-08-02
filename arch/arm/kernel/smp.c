@@ -75,6 +75,12 @@ enum ipi_msg_type {
 
 static DECLARE_COMPLETION(cpu_running);
 
+/** 20150801    
+ * cpu를 부팅시킨다.
+ *
+ * cpu에게 전달할 secondary_data를 채우고, 
+ * platform 에서 지정된 코드를 통해 부팅시킨다.
+ **/
 int __cpuinit __cpu_up(unsigned int cpu, struct task_struct *idle)
 {
 	int ret;
@@ -101,15 +107,27 @@ int __cpuinit __cpu_up(unsigned int cpu, struct task_struct *idle)
 	/*
 	 * Now bring the CPU into our world.
 	 */
+	/** 20150801    
+	 * cpu를 booting 시킨다.
+	 *
+	 * 실패시 failed to boot 메모리가 출력된다.
+	 **/
 	ret = boot_secondary(cpu, idle);
 	if (ret == 0) {
 		/*
 		 * CPU was successfully started, wait for it
 		 * to come online or time out.
 		 */
+		/** 20150801    
+		 * secondary_start_kernel에서 kernel 부팅이 진행되어 complete시킬 때까지
+		 * timeout을 대기한다.
+		 **/
 		wait_for_completion_timeout(&cpu_running,
 						 msecs_to_jiffies(1000));
 
+		/** 20150801    
+		 * 해당 cpu가 부팅되지 않았다면 에러.
+		 **/
 		if (!cpu_online(cpu)) {
 			pr_crit("CPU%u: failed to come online\n", cpu);
 			ret = -EIO;
@@ -118,6 +136,9 @@ int __cpuinit __cpu_up(unsigned int cpu, struct task_struct *idle)
 		pr_err("CPU%u: failed to boot: %d\n", cpu, ret);
 	}
 
+	/** 20150801    
+	 * secondary_data의 stack과 pgdir을 비워준다.
+	 **/
 	secondary_data.stack = NULL;
 	secondary_data.pgdir = 0;
 
@@ -248,6 +269,8 @@ static void percpu_timer_setup(void);
  * idle thread stack, but a set of temporary page tables.
  */
 /** 20150118    
+ * 부팅된 secondary cpu에서 실행하는 함수.
+ * mmu가 enable 된 상태.
  **/
 asmlinkage void __cpuinit secondary_start_kernel(void)
 {
@@ -258,13 +281,31 @@ asmlinkage void __cpuinit secondary_start_kernel(void)
 	 * All kernel threads share the same mm context; grab a
 	 * reference and switch to it.
 	 */
+	/** 20150801    
+	 * mm의 reference count를 증가시키고,
+	 * current task의 active_mm으로 mm을 지정한다.
+	 **/
 	atomic_inc(&mm->mm_count);
 	current->active_mm = mm;
+	/** 20150801    
+	 * mm의 cpumask에 cpu를 지정한다.
+	 **/
 	cpumask_set_cpu(cpu, mm_cpumask(mm));
+	/** 20150801    
+	 * translation table base 레지스터를 설정한다.
+	 *
+	 * init_mm의 pgd는 swapper_pg_dir. 
+	 **/
 	cpu_switch_mm(mm->pgd, mm);
 	enter_lazy_tlb(mm, current);
+	/** 20150801    
+	 * pgd가 변경되었으니 이전 tlb를 flush 한다.
+	 **/
 	local_flush_tlb_all();
 
+	/** 20150801    
+	 * 해당 cpu가 부팅되었음을 메시지로 출력한다.
+	 **/
 	printk("CPU%u: Booted secondary processor\n", cpu);
 
 	cpu_init();

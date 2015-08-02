@@ -3975,16 +3975,29 @@ static int __devinit workqueue_cpu_up_callback(struct notifier_block *nfb,
 
 	switch (action & ~CPU_TASKS_FROZEN) {
 	case CPU_UP_PREPARE:
+		/** 20150801    
+		 * gcwq의 worker pool을 순회하면서
+		 **/
 		for_each_worker_pool(pool, gcwq) {
 			struct worker *worker;
 
+			/** 20150801    
+			 * pool에 worker가 존재한다면 (nr_workers이 양수)
+			 * PREPARE에 해당하는 동작을 호출할 필요가 없으므로 continue.
+			 **/
 			if (pool->nr_workers)
 				continue;
 
+			/** 20150801    
+			 * 그렇지 않은 경우 pool에 해당하는 worker를 생성해 놓는다.
+			 **/
 			worker = create_worker(pool);
 			if (!worker)
 				return NOTIFY_BAD;
 
+			/** 20150801    
+			 * 생성한 worker를 시작시킨다.
+			 **/
 			spin_lock_irq(&gcwq->lock);
 			start_worker(worker);
 			spin_unlock_irq(&gcwq->lock);

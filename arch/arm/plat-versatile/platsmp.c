@@ -109,7 +109,7 @@ int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
 	 * and branch to the address found there.
 	 */
 	/** 20150124    
-	 * 깨울 cpu를 지정해 irq 0(SGI)을 날린다.
+	 * 깨울 cpu로 cpumask로 생성해 그 mask에 gic를 통해 irq 0(SGI)을 날린다.
 	 **/
 	gic_raise_softirq(cpumask_of(cpu), 0);
 
@@ -131,5 +131,8 @@ int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
 	 */
 	spin_unlock(&boot_lock);
 
+	/** 20150801    
+	 * pen_release가 -1이면 up시킬 cpu가 정상 부팅이 된 것이다.
+	 **/
 	return pen_release != -1 ? -ENOSYS : 0;
 }

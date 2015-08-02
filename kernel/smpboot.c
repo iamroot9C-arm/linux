@@ -29,7 +29,7 @@ struct task_struct * __cpuinit idle_thread_get(unsigned int cpu)
 	if (!tsk)
 		return ERR_PTR(-ENOMEM);
 	/** 20150117    
-	 * 해당 cpu(깨울 cpu)에 대한 idle thread를 지정한다.
+	 * percpu idle_threads인 task를 가져와 cpu에 대한 idle task로 설정한다.
 	 **/
 	init_idle(tsk, cpu);
 	return tsk;
@@ -49,10 +49,19 @@ void __init idle_thread_set_boot_cpu(void)
  *
  * Creates the thread if it does not exist.
  */
+/** 20150801    
+ * cpu를 위한 idle task를 초기화 한다.
+ *
+ * percpu idle_threads가 지정되지 않은 경우 idle task를 복사해 초기화 하고,
+ * percpu idle_threads로 지정한다.
+ **/
 static inline void idle_init(unsigned int cpu)
 {
 	struct task_struct *tsk = per_cpu(idle_threads, cpu);
 
+	/** 20150801    
+	 * percpu idle_threads에서 해당 cpu에 대한 변수에 접근해 지정되지 않았을 경우
+	 **/
 	if (!tsk) {
 		/** 20150118    
 		 * 현재 thread(init_task)를 복사해 지정한 cpu가 사용할 task를 받아온다.
@@ -73,14 +82,17 @@ static inline void idle_init(unsigned int cpu)
  * idle_threads_init - Initialize idle threads for all cpus
  */
 /** 20150118    
+ * boot cpu를 제외한 cpu들에 대해 idle_init을 진행한다.
+ *
+ * idle task를 생성해 idle_threads에 지정한다.
  **/
 void __init idle_threads_init(void)
 {
 	unsigned int cpu, boot_cpu;
 
 	/** 20150118    
-	 * 현재 task가 실행 중인 cpu는 boot_cpu이므로,
-	 * cpu_possible_mask에서 boot_cpu를 제외한 cpu에 대해 idle_init.
+	 * 현재 task가 실행 중인 cpu는 boot_cpu로 이미 초기화 시켜두었다.
+	 * cpu_possible_mask에서 boot_cpu를 제외한 cpu에 대해 idle_init을 실행한다.
 	 **/
 	boot_cpu = smp_processor_id();
 

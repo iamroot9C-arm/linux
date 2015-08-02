@@ -44,6 +44,9 @@
 
 #ifdef __KERNEL__
 
+/** 20150801    
+ * sched param.
+ **/
 struct sched_param {
 	int sched_priority;
 };
@@ -1481,6 +1484,10 @@ struct task_struct {
 	 **/
 	const struct cred __rcu *cred;	/* effective (overridable) subjective task
 					 * credentials (COW) */
+	/** 20150801    
+	 * executable name.
+	 * kthread_create류로 호출할 때 namefmt으로 지정된 이름이 들어간다.
+	 **/
 	char comm[TASK_COMM_LEN]; /* executable name excluding path
 				     - access with [gs]et_task_comm (which lock
 				       it with task_lock())

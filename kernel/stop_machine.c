@@ -54,6 +54,9 @@ struct cpu_stopper {
  * percpu cpu_stopper 선언.
  **/
 static DEFINE_PER_CPU(struct cpu_stopper, cpu_stopper);
+/** 20150801    
+ * cpu_stop_init이 완료되면 true.
+ **/
 static bool stop_machine_initialized = false;
 
 /** 20130720    
@@ -320,6 +323,8 @@ int try_stop_cpus(const struct cpumask *cpumask, cpu_stop_fn_t fn, void *arg)
  *
  * 리스트 등록된 work을 순차적으로 꺼내 실행하고 결과를 리턴한다.
  * work은 cpu_stop_queue_work에서 큐잉된다.
+ *
+ * kthreadd(로 생성될 때 percpu로 해당 cpu의 cpu_stopper를 매개변수로 전달한다.
  **/
 static int cpu_stopper_thread(void *data)
 {
@@ -397,10 +402,18 @@ repeat:
 extern void sched_set_stop_task(int cpu, struct task_struct *stop);
 
 /* manage stopper for a cpu, mostly lifted from sched migration thread mgmt */
+/** 20150801    
+ * cpu event 발생시 호출되는 콜백 함수.
+ *
+ * cpu notifier chain에 등록할 때 cpu_stop_cpu_notifier가 가장 높은 우선순위를 갖기 때문에 이 콜백이 먼저 호출된다.
+ **/
 static int __cpuinit cpu_stop_cpu_callback(struct notifier_block *nfb,
 					   unsigned long action, void *hcpu)
 {
 	unsigned int cpu = (unsigned long)hcpu;
+	/** 20150801    
+	 * percpu cpu_stopper에서 해당 cpu에 해당하는 변수위치를 받아온다.
+	 **/
 	struct cpu_stopper *stopper = &per_cpu(cpu_stopper, cpu);
 	struct task_struct *p;
 
@@ -410,6 +423,8 @@ static int __cpuinit cpu_stop_cpu_callback(struct notifier_block *nfb,
 	switch (action & ~CPU_TASKS_FROZEN) {
 	/** 20150725    
 	 * migration thread를 생성한다.
+	 *
+	 * cpu_stopper_thread를 생성하고, percpu stopper를 매개변수로 전달한다.
 	 **/
 	case CPU_UP_PREPARE:
 		BUG_ON(stopper->thread || stopper->enabled ||
@@ -421,11 +436,21 @@ static int __cpuinit cpu_stop_cpu_callback(struct notifier_block *nfb,
 		if (IS_ERR(p))
 			return notifier_from_errno(PTR_ERR(p));
 		get_task_struct(p);
+		/** 20150801    
+		 * kthreadd로 생성한 task를 지정된 cpu에서만 실행하도록 설정한다.
+		 * cpu의 stop task로 생성한 task를 지정한다.
+		 *   stop sched class는 다음 실행할 task를 고를 때 가장 먼저 선택된다.
+		 * percpu stopper의 thread로 생성한 task를 저장한다.
+		 **/
 		kthread_bind(p, cpu);
 		sched_set_stop_task(cpu, p);
 		stopper->thread = p;
 		break;
 
+	/** 20150801    
+	 * CPU_ONLINE시 stopper thread를 깨운다.
+	 * stopper에 enabled를 기록한다.
+	 **/
 	case CPU_ONLINE:
 		/* strictly unnecessary, as first user will wake it */
 		wake_up_process(stopper->thread);
@@ -436,6 +461,17 @@ static int __cpuinit cpu_stop_cpu_callback(struct notifier_block *nfb,
 		break;
 
 #ifdef CONFIG_HOTPLUG_CPU
+	/** 20150801    
+	 * HOTPLUG CPU일 경우
+	 * CPU_UP_CANCELED, CPU_POST_DEAD 이벤트에 대한 처리.
+	 *
+	 * 해당 cpu의 stop task를 NULL로 날린다.
+	 * stopper의 thread를 정지시킨다.
+	 * stopper에 pending되어 있는 works를 false로 실패를 통지한다.
+	 * stopper의 thread를 날린다.
+	 *
+	 * percpu 변수 stopper에 대한 접근시에는 spinlock을 사용한다.
+	 **/
 	case CPU_UP_CANCELED:
 	case CPU_POST_DEAD:
 	{
@@ -475,6 +511,11 @@ static struct notifier_block __cpuinitdata cpu_stop_cpu_notifier = {
 	.priority	= 10,
 };
 
+/** 20150801    
+ * cpu_stop관련 초기화.
+ *
+ * percpu cpu_stopper를 초기화 하고, cpu notifier chain 콜백 함수를 등록시킨다.
+ **/
 static int __init cpu_stop_init(void)
 {
 	void *bcpu = (void *)(long)smp_processor_id();
@@ -495,6 +536,10 @@ static int __init cpu_stop_init(void)
 	}
 
 	/* start one for the boot cpu */
+	/** 20150801    
+	 * boot cpu를 위해 직접 CPU_UP_PREPARE, CPU_ONLINE를 호출하고
+	 * 다른 cpu를 위해 cpu notifier로 등록한다.
+	 **/
 	err = cpu_stop_cpu_callback(&cpu_stop_cpu_notifier, CPU_UP_PREPARE,
 				    bcpu);
 	BUG_ON(err != NOTIFY_OK);

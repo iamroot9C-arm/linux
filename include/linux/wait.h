@@ -25,6 +25,9 @@
 #include <asm/current.h>
 
 /** 20150314    
+ * wait_queue_t 자료구조. 
+ *
+ * wait_queue_head_t로부터 연결.
  **/
 typedef struct __wait_queue wait_queue_t;
 typedef int (*wait_queue_func_t)(wait_queue_t *wait, unsigned mode, int flags, void *key);

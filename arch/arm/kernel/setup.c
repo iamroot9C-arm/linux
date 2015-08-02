@@ -152,6 +152,9 @@ struct stack {
 	 **/
 } ____cacheline_aligned;
 
+/** 20150801    
+ * CPU 개수만큼 stack 배열을 선언한다.
+ **/
 static struct stack stacks[NR_CPUS];
 
 char elf_platform[ELF_PLATFORM_SIZE];
@@ -461,12 +464,17 @@ static void __init feat_v6_fixup(void)
  */
 /** 20121215
  * CPU 0번에 대해 irq, abt, und 모드의 stack pointer를 설정한다.
+ *
+ * SMP인 경우 그 외 cpu에 대해 secondary_start_kernel에서 호출된다.
  **/
 void cpu_init(void)
 {
 	/** 20121215
 	 * current_thread_info()->cpu는 0.
 	 * 부트 프로세스에서 실행되는 cpu를 의미함
+	 *
+	 * 20150801
+	 * 현재 실행 중인 cpu의 번호를 받아온다.
 	 **/
 	unsigned int cpu = smp_processor_id();
 	/** 20121215

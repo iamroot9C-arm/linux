@@ -1630,6 +1630,9 @@ fork_out:
 	return ERR_PTR(retval);
 }
 
+/** 20150801    
+ * idle task를 위한 pt_regs를 받아 0으로 초기화 한다.
+ **/
 noinline struct pt_regs * __cpuinit __attribute__((weak)) idle_regs(struct pt_regs *regs)
 {
 	memset(regs, 0, sizeof(struct pt_regs));
@@ -1637,12 +1640,16 @@ noinline struct pt_regs * __cpuinit __attribute__((weak)) idle_regs(struct pt_re
 }
 
 /** 20150118    
- * 추후 분석 ???
+ * taks의 pid_link 포인터를 받아와 PIDTYPE만큼 돌며 초기화 한다.
  **/
 static inline void init_idle_pids(struct pid_link *links)
 {
 	enum pid_type type;
 
+	/** 20150801    
+	 * task의 pids를 순회하며 각 pid_link를 초기화 한다.
+	 *   hlist_node를 초기화 하고, struct pid를 init_struct_pid로 지정한다.
+	 **/
 	for (type = PIDTYPE_PID; type < PIDTYPE_MAX; ++type) {
 		INIT_HLIST_NODE(&links[type].node); /* not really needed */
 		links[type].pid = &init_struct_pid;
@@ -1658,11 +1665,15 @@ struct task_struct * __cpuinit fork_idle(int cpu)
 	struct pt_regs regs;
 
 	/** 20150118    
-	 * current task를 복사한다.
+	 * current task를 복사해 새로운 task_struct를 생성한다.
+	 * pt_regs는 idle_regs로 설정하고 struct pid는 init_struct_pid를 지정한다.
 	 **/
 	task = copy_process(CLONE_VM, 0, idle_regs(&regs), 0, NULL,
 			    &init_struct_pid, 0);
 	if (!IS_ERR(task)) {
+		/** 20150801    
+		 * task의 pids를 초기화 한다.
+		 **/
 		init_idle_pids(task->pids);
 		/** 20150117    
 		 * cpu에 해당하는 rq의 idle thread로 task를 지정한다.

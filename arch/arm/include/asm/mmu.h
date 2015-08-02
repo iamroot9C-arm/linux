@@ -4,6 +4,9 @@
 #ifdef CONFIG_MMU
 
 typedef struct {
+	/** 20150801    
+	 * CONFIG_CPU_HAS_ASID가 정의되어 있다.
+	 **/
 #ifdef CONFIG_CPU_HAS_ASID
 	unsigned int id;
 	raw_spinlock_t id_lock;

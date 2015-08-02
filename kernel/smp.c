@@ -916,6 +916,10 @@ void __init smp_init(void)
 {
 	unsigned int cpu;
 
+	/** 20150801    
+	 * boot cpu를 제외한 cpu들에 해당하는 idle task를 init한다.
+	 * idle task는 percpu로 존재한다.
+	 **/
 	idle_threads_init();
 
 	/* FIXME: This should be done in userspace --RR */

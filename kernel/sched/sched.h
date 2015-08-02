@@ -423,6 +423,12 @@ struct rq {
 	 */
 	unsigned long nr_uninterruptible;
 
+	/** 20150801    
+	 * runqueue 내에 curr, idle, stop task를 저장하는 포인터.
+	 *
+	 * sched_class에 따라 접근하는 task가 달라진다.
+	 * 예를 들어 cpu_rq(cpu)->stop
+	 **/
 	struct task_struct *curr, *idle, *stop;
 	unsigned long next_balance;
 	struct mm_struct *prev_mm;
@@ -945,6 +951,8 @@ enum cpuacct_stat_index {
 /** 20130713    
  * sched_class_highest부터 loop을 수행
  *   아래 명시된 stop_sched_class -> rt_sched_class -> fair_sched_class -> idle_sched_class
+ *
+ *   http://criticalblue.com/news/wp-content/uploads/2013/12/linux_scheduler.pdf
  **/
 #define for_each_class(class) \
    for (class = sched_class_highest; class; class = class->next)

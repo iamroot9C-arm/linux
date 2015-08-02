@@ -1172,8 +1172,19 @@ static int irqtime_account_si_update(void)
 
 #endif
 
+/** 20150801    
+ * 해당 cpu의 stop task로 매개변수로 넘어온 stop task를 지정한다.
+ *
+ * (stop과 idle task는 percpu로 지정된다 - runqueue가 이미 percpu.)
+ **/
 void sched_set_stop_task(int cpu, struct task_struct *stop)
 {
+	/** 20150801    
+	 * task_struct에 sched 관련 설정을 할 때 사용되는 parameter.
+	 * 구조체에는 sched_priority를 지정하는 부분만 존재한다.
+	 *
+	 * cpu_stopper의 priority는 가장 높은 값인 MAX_RT_PRIO - 1로 지정한다.
+	 **/
 	struct sched_param param = { .sched_priority = MAX_RT_PRIO - 1 };
 	struct task_struct *old_stop = cpu_rq(cpu)->stop;
 
@@ -1186,13 +1197,25 @@ void sched_set_stop_task(int cpu, struct task_struct *stop)
 		 * much confusion -- but then, stop work should not
 		 * rely on PI working anyway.
 		 */
+		/** 20150801    
+		 * stop task를 SCHED_FIFO, param에 저장된 priority로 설정한다.
+		 **/
 		sched_setscheduler_nocheck(stop, SCHED_FIFO, &param);
 
+		/** 20150801    
+		 * task의 sched_class를 stop_sched_class로 지정한다.
+		 **/
 		stop->sched_class = &stop_sched_class;
 	}
 
+	/** 20150801    
+	 * 해당 cpu runqueue의 stop task로 설정한다.
+	 **/
 	cpu_rq(cpu)->stop = stop;
 
+	/** 20150801    
+	 * 새로운 stop task 이전에 지정되었던 stop task는 RT sched class로 지정한다.
+	 **/
 	if (old_stop) {
 		/*
 		 * Reset it back to a normal scheduling class so that
@@ -2188,7 +2211,7 @@ int wake_up_state(struct task_struct *p, unsigned int state)
  * __sched_fork() is basic setup used by init_idle() too:
  */
 /** 20140426    
- * 'current' task에서 fork된 task p에 대해 sched 관련 자료구조를 초기화 한다.
+ * 'current' task에서 fork된 task p의 sched 관련 자료구조를 초기화 한다.
  **/
 static void __sched_fork(struct task_struct *p)
 {
@@ -4395,7 +4418,8 @@ EXPORT_SYMBOL_GPL(__wake_up_sync);	/* For internal use only */
  * changing the task state if and only if any tasks are woken up.
  */
 /** 20141025    
- * 'completion' 이벤트를 기다리는 하나의 task를 꺠운다.
+ * 'completion' 이벤트를 기다리는 하나의 task를 깨운다.
+ * (대기하는 task는 wait_for_complete로 대기 중)
  *
  * complete는 spinlock을 사용하고 irq를 막기 때문에 SMP에서 병렬적으로
  * 수행되지 않음을 보장한다.
@@ -4521,7 +4545,9 @@ wait_for_common(struct completion *x, long timeout, int state)
  * and interrupt capability. Also see complete().
  */
 /** 20141025    
- * completion을 기다리며 TASK_UNINTERRUPTIBLE 상태로 queue에 들어가 대기한다.
+ * 완료를 기다리며 TASK_UNINTERRUPTIBLE 상태로 queue에 들어가 대기한다.
+ *
+ * 신호를 보내는 쪽은 complete()/complete_all()을 호출한다.
  **/
 void __sched wait_for_completion(struct completion *x)
 {
@@ -4992,6 +5018,9 @@ static bool check_same_owner(struct task_struct *p)
 	return match;
 }
 
+/** 20150801    
+ * 추후 분석 ???
+ **/
 static int __sched_setscheduler(struct task_struct *p, int policy,
 				const struct sched_param *param, bool user)
 {
@@ -5173,6 +5202,9 @@ EXPORT_SYMBOL_GPL(sched_setscheduler);
  * stop_machine(): we create temporary high priority worker threads,
  * but our caller might not have that capability.
  */
+/** 20150801    
+ * task의 scheduling policy와 RT priority를 지정한다.
+ **/
 int sched_setscheduler_nocheck(struct task_struct *p, int policy,
 			       const struct sched_param *param)
 {
@@ -5927,7 +5959,7 @@ void __cpuinit init_idle(struct task_struct *idle, int cpu)
 	 * Silence PROVE_RCU
 	 */
 	/** 20140426    
-	 * task idle의 cpu를 전달받은 cpu 값(현재 init task가 실행 중인 cpu)으로 지정
+	 * task idle의 cpu를 설정.
 	 **/
 	rcu_read_lock();
 	__set_task_cpu(idle, cpu);

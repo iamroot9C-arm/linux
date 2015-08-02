@@ -1084,7 +1084,7 @@ __kuser_helper_end:
 	 *
 	 *   vector_stub 진행 중 svc 모드로 전환된다.
 	 *
-	 *   name : exception mode 이름. __vector_start에서 호출. 예) irq, dabt, ...
+	 *   name : exception mode 이름. __vectors_start에서 호출. 예) irq, dabt, ...
 	 *   mode : macro로 정의하고자 하는 mode
 	 *   correction : exception에 따른 복귀 주소 보정
 	 *
@@ -1352,8 +1352,10 @@ __vectors_start:
 	W(b)	vector_dabt + stubs_offset
 	W(b)	vector_addrexcptn + stubs_offset
 	/** 20130309    
-	       (stubs_start + 0) + (__vectors_start + 0x200 - __stubs_start)
-		   => _vectors_start + 0x200 + 0
+	 *		(stubs_start + 0) + (__vectors_start + 0x200 - __stubs_start)
+	 *			=> __vectors_start + 0x200 + 0
+	 *
+	 *		early_trap_init에서 __stubs_start부터 vectors + 0x200에 복사.
 	 **/	
 	W(b)	vector_irq + stubs_offset
 	W(b)	vector_fiq + stubs_offset

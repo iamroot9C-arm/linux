@@ -1808,6 +1808,9 @@ static void rcu_cpu_kthread_setrt(int cpu, int to_rt)
 {
 }
 
+/** 20150801    
+ * early initcall 함수에서 rcu_scheduler_fully_active만 1로 설정한다.
+ **/
 static int __init rcu_scheduler_really_started(void)
 {
 	rcu_scheduler_fully_active = 1;

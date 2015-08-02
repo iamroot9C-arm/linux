@@ -40,8 +40,21 @@
  *	It is assumed that:
  *	- we are not using split page tables
  */
+/** 20150801    
+ * translation table base pointer를 설정한다.
+ * 
+ * r0: pgd의 물리주소.
+ * r1: mm_struct (context.id를 추출하기 위해 쓴다)
+ *
+ * MM_CONTEXT_ID : offset은 arch/arm/kernel/asm-offsets.c에 의해 생성되는 파일에 정의된다.
+ **/
 ENTRY(cpu_v7_switch_mm)
 #ifdef CONFIG_MMU
+	/** 20150801    
+	 * r0: pgd의 물리주소 | TTB_FLAGS_SMP => TTBR 레지스터에 설정 값을 생성.
+	 * r1 <- mm->context.id
+	 * r2 <- 0
+	 **/
 	mov	r2, #0
 	ldr	r1, [r1, #MM_CONTEXT_ID]	@ get mm->context.id
 	ALT_SMP(orr	r0, r0, #TTB_FLAGS_SMP)
@@ -57,6 +70,11 @@ ENTRY(cpu_v7_switch_mm)
 #ifdef CONFIG_ARM_ERRATA_754322
 	dsb
 #endif
+	/** 20150801    
+	 * B4.1.36 CONTEXTIDR, Context ID Register, VMSA
+	 * r1 -> context.id에 설정.
+	 * r0 -> TTBR0 레지스터에 설정값.
+	 **/
 	mcr	p15, 0, r1, c13, c0, 1		@ set context ID
 	isb
 	mcr	p15, 0, r0, c2, c0, 0		@ set TTB 0

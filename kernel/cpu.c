@@ -24,6 +24,9 @@
 
 #ifdef CONFIG_SMP
 /* Serializes the updates to cpu_online_mask, cpu_present_mask */
+/** 20150801    
+ * cpu_add_remove_lock으로 cpu_online_mask, cpu_present_mask을 보호한다.
+ **/
 static DEFINE_MUTEX(cpu_add_remove_lock);
 
 /*
@@ -51,6 +54,9 @@ void cpu_maps_update_done(void)
 
 /** 20130727    
  * cpu_chain이라는 이름으로 notifier head를 선언한다.
+ *
+ * notifier block이 등록되는 전역 chain.
+ * 추후 cpu_notify가 호출되었을 때 이 리스트의 nb의 callback이 호출된다.
  **/
 static RAW_NOTIFIER_HEAD(cpu_chain);
 
@@ -201,6 +207,11 @@ int __ref register_cpu_notifier(struct notifier_block *nb)
 
 /** 20140927    
  * cpu_chain에 등록된 notifier_block을 호출한다.
+ *
+ * val : 전달할 event
+ * v   : 보통 cpu번호를 전달한다.
+ * nr_to_call : 호출할 콜백 갯수
+ * nr_calls   : 호출된 콜백 갯수
  **/
 static int __cpu_notify(unsigned long val, void *v, int nr_to_call,
 			int *nr_calls)
@@ -426,7 +437,15 @@ static int __cpuinit _cpu_up(unsigned int cpu, int tasks_frozen)
 		goto out;
 	}
 
+	/** 20150801    
+	 * __cpu_up 이전에 CPU_UP_PREPARE notify를 보낸다.
+	 * 
+	 * 등록되어 있는 각 nb의 callback 함수들에서 CPU_UP_PREPARE에 해당하는 동작을 실행한다.
+	 **/
 	ret = __cpu_notify(CPU_UP_PREPARE | mod, hcpu, -1, &nr_calls);
+	/** 20150801    
+	 *
+	 **/
 	if (ret) {
 		nr_calls--;
 		printk(KERN_WARNING "%s: attempt to bring up CPU %u failed\n",
@@ -444,6 +463,10 @@ static int __cpuinit _cpu_up(unsigned int cpu, int tasks_frozen)
 	cpu_notify(CPU_ONLINE | mod, hcpu);
 
 out_notify:
+	/** 20150801    
+	 * ret이 0이 아닌 경우, 성공한 notifier chain의 callback 함수들에게
+	 * CPU_UP_CANCELED notify를 보낸다.
+	 **/
 	if (ret != 0)
 		__cpu_notify(CPU_UP_CANCELED | mod, hcpu, nr_calls, NULL);
 out:
@@ -461,6 +484,9 @@ int __cpuinit cpu_up(unsigned int cpu)
 	pg_data_t	*pgdat;
 #endif
 
+	/** 20150801    
+	 * cpu가 possible하지 않는다면 error.
+	 **/
 	if (!cpu_possible(cpu)) {
 		printk(KERN_ERR "can't online cpu %d because it is not "
 			"configured as may-hotadd at boot time\n", cpu);
@@ -471,6 +497,9 @@ int __cpuinit cpu_up(unsigned int cpu)
 		return -EINVAL;
 	}
 
+	/** 20150801    
+	 * MEMORY HOTPLUG가 정의되어 있지 않다.
+	 **/
 #ifdef	CONFIG_MEMORY_HOTPLUG
 	nid = cpu_to_node(cpu);
 	if (!node_online(nid)) {
@@ -493,6 +522,9 @@ int __cpuinit cpu_up(unsigned int cpu)
 	}
 #endif
 
+	/** 20150801    
+	 * cpu online, present mask가 변경되는 작업을 serialize 한다.
+	 **/
 	cpu_maps_update_begin();
 
 	if (cpu_hotplug_disabled) {

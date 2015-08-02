@@ -414,6 +414,9 @@ struct mm_struct {
 	unsigned long free_area_cache;		/* first hole of size cached_hole_size or larger */
 	pgd_t * pgd;
 	atomic_t mm_users;			/* How many users with user space? */
+	/** 20150801    
+	 * 이 mm_struct가 참조되는 count.
+	 **/
 	atomic_t mm_count;			/* How many references to "struct mm_struct" (users count as 1) */
 	int map_count;				/* number of VMAs */
 
@@ -458,6 +461,9 @@ struct mm_struct {
 
 	struct linux_binfmt *binfmt;
 
+	/** 20150801    
+	 * cpu_vm_mask 변수
+	 **/
 	cpumask_var_t cpu_vm_mask_var;
 
 	/* Architecture-specific MM context */
@@ -507,6 +513,9 @@ static inline void mm_init_cpumask(struct mm_struct *mm)
 }
 
 /* Future-safe accessor for struct mm_struct's cpu_vm_mask. */
+/** 20150801    
+ * mm_struct 구조체 내의 cpu_vm_mask_var 위치를 리턴한다.
+ **/
 static inline cpumask_t *mm_cpumask(struct mm_struct *mm)
 {
 	return mm->cpu_vm_mask_var;

@@ -2083,6 +2083,7 @@ void __init hrtimers_init(void)
 {
 	/** 20141011    
 	 * cpu_notifier를 등록하기 전에, callback을 직접 호출해 init을 호출한다.
+	 * 이후 cpu notify chain에 hrtimers_nb을 등록해 event를 받아 실행되도록 한다.
 	 **/
 	hrtimer_cpu_notify(&hrtimers_nb, (unsigned long)CPU_UP_PREPARE,
 			  (void *)(long)smp_processor_id());

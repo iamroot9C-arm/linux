@@ -199,6 +199,9 @@ static inline int notifier_from_errno(int err)
 }
 
 /* Restore (negative) errno value from notify return value. */
+/** 20150801    
+ * notifier의 ret을 정상인 경우 0, 에러인 경우 errno로 반환한다.
+ **/
 static inline int notifier_to_errno(int ret)
 {
 	ret &= ~NOTIFY_STOP_MASK;
