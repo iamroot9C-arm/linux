@@ -242,6 +242,12 @@ __irq_svc:
  UNWIND(.fnend		)
 ENDPROC(__irq_svc)
 
+	/** 20150801
+	 * literal pool의 현재 contents를 이 위치로 dump 시킨다.
+	 *
+	 * This directive causes the current contents of the literal pool to be dumped into the current section
+	 * (which is assumed to be the .text section) at the current location (aligned to a word boundary). 
+	 **/
 	.ltorg
 
 #ifdef CONFIG_PREEMPT
@@ -1104,7 +1110,7 @@ __kuser_helper_end:
 	 **/
 	.macro	vector_stub, name, mode, correction=0
 	/** 20130309    
-	 * 2^5 (cache line 단위) align
+	 * 2 ** 5 (cache line 단위) align
 	 **/
 	.align	5
 
@@ -1180,7 +1186,8 @@ vector_\name:
 ENDPROC(vector_\name)
 
 	/** 20130309    
-	 * 2^2 (4 byte) align
+	 * vector_stub 함수 선언 아래 handler address에 table에 대한 align을 정의한다.
+	 * 2 ** 2 (4 byte) align
 	 **/
 	.align	2
 	@ handler addresses follow this label

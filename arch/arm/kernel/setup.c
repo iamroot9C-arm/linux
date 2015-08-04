@@ -138,10 +138,16 @@ int __cpu_architecture __read_mostly = CPU_ARCH_UNKNOWN;
 struct stack {
 	/** 20121215
 	 * 왜 3개씩 가지고 있는 것일까???
-	 **/
-	 /** 20130810
-	 irq, abt, und 세가지 모드가 각각 12byte의 스택 크기를
-	 가지고 있는듯 한데 이정도로 충분할까???
+	 *
+	 * 20130810
+	 * irq, abt, und 세가지 모드의 스택으로 각각 3word만 가지는데
+	 * 이정도로 충분할까???
+	 *
+	 * 20150801
+	 * entry-armv.S를 보면 vector table (__vector_start)에서 macro vector_stub을 사용해 선언한
+	 * 코드로 branch 한다.
+	 * vector_stub에서는 어떤 exception이든 해당 모드의 stack에 r0, lr, spsr만을 저장하고
+	 * cpsr을 조작해 svc 모드의 핸들러로 진입한다.
 	 **/
 	u32 irq[3];
 	u32 abt[3];
