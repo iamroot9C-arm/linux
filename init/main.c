@@ -1203,6 +1203,9 @@ static int __init kernel_init(void * unused)
 	 **/
 	smp_prepare_cpus(setup_max_cpus);
 
+	/** 20150808    
+	 * __initcall_start ~ __initcall0_start 사이에 배치된 함수를 호출한다.
+	 **/
 	do_pre_smp_initcalls();
 	lockup_detector_init();
 

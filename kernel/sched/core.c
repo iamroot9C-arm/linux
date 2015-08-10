@@ -6477,6 +6477,9 @@ static void unregister_sched_domain_sysctl(void)
 		sd_free_ctl_entry(&sd_ctl_dir[0].child);
 }
 #else
+/** 20150808    
+ * CONFIG_SCHED_DEBUG 정의되지 않아 NULL 함수
+ **/
 static void register_sched_domain_sysctl(void)
 {
 }
@@ -7022,6 +7025,9 @@ static void init_defrootdomain(void)
 	atomic_set(&def_root_domain.refcount, 1);
 }
 
+/** 20150808    
+ * rootdomain을 위한 메모리를 할당받아 init시켜 리턴.
+ **/
 static struct root_domain *alloc_rootdomain(void)
 {
 	struct root_domain *rd;
@@ -7215,12 +7221,17 @@ static const struct cpumask *cpu_cpu_mask(int cpu)
 	return cpumask_of_node(cpu_to_node(cpu));
 }
 
+/** 20150808    
+ **/
 struct sd_data {
 	struct sched_domain **__percpu sd;
 	struct sched_group **__percpu sg;
 	struct sched_group_power **__percpu sgp;
 };
 
+/** 20150808    
+ * percpu 이중 포인터 sched_domain과 root_domain으로 구성된 구조체
+ **/
 struct s_data {
 	struct sched_domain ** __percpu sd;
 	struct root_domain	*rd;
@@ -7240,6 +7251,8 @@ typedef const struct cpumask *(*sched_domain_mask_f)(int cpu);
 
 #define SDTL_OVERLAP	0x01
 
+/** 20150808    
+ **/
 struct sched_domain_topology_level {
 	sched_domain_init_f init;
 	sched_domain_mask_f mask;
@@ -7481,6 +7494,11 @@ int __weak arch_sd_sibling_asym_packing(void)
 # define SD_INIT_NAME(sd, type)		do { } while (0)
 #endif
 
+/** 20150808    
+ * sd_init_XXX라는 init 함수 선언 매크로.
+ *
+ * 매크로 아래에서 CONFIG가 설정되어 있는 타입의 init 함수를 선언한다.
+ **/
 #define SD_INIT_FUNC(type)						\
 static noinline struct sched_domain *					\
 sd_init_##type(struct sched_domain_topology_level *tl, int cpu) 	\
@@ -7555,13 +7573,23 @@ static void __free_domain_allocs(struct s_data *d, enum s_alloc what,
 	}
 }
 
+/** 20150808    
+ * 전체 sched_domain topology를 위한 메모리를 할당받아 구성하고,
+ * 전달받은 s_data에 메모리를 할당받아 저장한 뒤 sa_rootdomain을 리턴한다.
+ **/
 static enum s_alloc __visit_domain_allocation_hell(struct s_data *d,
 						   const struct cpumask *cpu_map)
 {
 	memset(d, 0, sizeof(*d));
 
+	/** 20150808    
+	 * sched domain topology을 위한 메모리를 할당받는다.
+	 **/
 	if (__sdt_alloc(cpu_map))
 		return sa_sd_storage;
+	/** 20150808    
+	 * s_data의 sched_domain과 root_domain 을 위한 메모리를 할당받아 저장한다.
+	 **/
 	d->sd = alloc_percpu(struct sched_domain *);
 	if (!d->sd)
 		return sa_sd_storage;
@@ -7600,6 +7628,11 @@ static const struct cpumask *cpu_smt_mask(int cpu)
 /*
  * Topology list, bottom-up.
  */
+/** 20150808    
+ * default_topology이라는 배열을 선언한다. 
+ *
+ * init 함수는 SD_INIT_FUNC(XXX)에 의해서 선언된다.
+ **/
 static struct sched_domain_topology_level default_topology[] = {
 #ifdef CONFIG_SCHED_SMT
 	{ sd_init_SIBLING, cpu_smt_mask, },
@@ -7614,6 +7647,9 @@ static struct sched_domain_topology_level default_topology[] = {
 	{ NULL, },
 };
 
+/** 20150808    
+ * sched_domain_topology
+ **/
 static struct sched_domain_topology_level *sched_domain_topology = default_topology;
 
 #ifdef CONFIG_NUMA
@@ -7836,19 +7872,33 @@ static void sched_init_numa(void)
 	sched_domain_topology = tl;
 }
 #else
+/** 20150808    
+ * CONFIG_NUMA가 아니므로 NULL.
+ **/
 static inline void sched_init_numa(void)
 {
 }
 #endif /* CONFIG_NUMA */
 
+/** 20150808    
+ * 각 sched_domain_topology_level의 sd_data를 할당받아 채운다.
+ **/
 static int __sdt_alloc(const struct cpumask *cpu_map)
 {
 	struct sched_domain_topology_level *tl;
 	int j;
 
+	/** 20150808    
+	 * sched_domain_topology_level를 순회하며 
+	 * 각 toplogy level의 sd_data 초기화 한다.
+	 **/
 	for (tl = sched_domain_topology; tl->init; tl++) {
 		struct sd_data *sdd = &tl->data;
 
+		/** 20150808    
+		 * sd_data의 각 멤버를 percpu 변수 포인터로 할당받고,
+		 * 다시 cpu를 순회하며 메모리 공간을 할당받아 초기화 한다.
+		 **/
 		sdd->sd = alloc_percpu(struct sched_domain *);
 		if (!sdd->sd)
 			return -ENOMEM;
@@ -7861,6 +7911,9 @@ static int __sdt_alloc(const struct cpumask *cpu_map)
 		if (!sdd->sgp)
 			return -ENOMEM;
 
+		/** 20150808    
+		 * cpu_map에 포함된 각 core들을 순회하며 구조체를 초기화 한다.
+		 **/
 		for_each_cpu(j, cpu_map) {
 			struct sched_domain *sd;
 			struct sched_group *sg;
@@ -7926,11 +7979,23 @@ static void __sdt_free(const struct cpumask *cpu_map)
 	}
 }
 
+/** 20150808    
+ * 해당 sched domain topology level에 대한 sched domain을 생성하고
+ * 전달된 argument로 설정한다.
+ *
+ * 1. 해당 tl의 init 함수로 sched_domain을 초기화 (메모리를 alloc된 상태)
+ * 2. sched_domain의 span을 cpu_map과 해당 tl의 mask 함수를 and해 저장.
+ * 3. child가 존재하면 level과 hierarchy 관련 멤버 설정
+ * 4. 생성한 sched_domain의 attr 설정
+ **/
 struct sched_domain *build_sched_domain(struct sched_domain_topology_level *tl,
 		struct s_data *d, const struct cpumask *cpu_map,
 		struct sched_domain_attr *attr, struct sched_domain *child,
 		int cpu)
 {
+	/** 20150808    
+	 * 해당 level의 init 함수(SD_INIT_FUNC 매크로로 level별 선언)로 cpu에 대한 sched_domain을 초기화.
+	 **/
 	struct sched_domain *sd = tl->init(tl, cpu);
 	if (!sd)
 		return child;
@@ -7959,15 +8024,27 @@ static int build_sched_domains(const struct cpumask *cpu_map,
 	struct s_data d;
 	int i, ret = -ENOMEM;
 
+	/** 20150808    
+	 * 전체 sched_domain_topology_level과 전달한 s_data를 위한 메모리를 할당 받는다.
+	 **/
 	alloc_state = __visit_domain_allocation_hell(&d, cpu_map);
 	if (alloc_state != sa_rootdomain)
 		goto error;
 
 	/* Set up domains for cpus specified by the cpu_map. */
+	/** 20150808    
+	 * cpu_map의 각 cpu를 순회한다.
+	 **/
 	for_each_cpu(i, cpu_map) {
 		struct sched_domain_topology_level *tl;
 
 		sd = NULL;
+		/** 20150808    
+		 * sched_domain_topology를 낮은 레벨부터 순회하며
+		 * 각 레벨의 sched_domain을 설정한다.
+		 *
+		 * for문을 수행하여 한 레벨 올라가면 이전 level의 sd가 child로 넘어간다.
+		 **/
 		for (tl = sched_domain_topology; tl->init; tl++) {
 			sd = build_sched_domain(tl, &d, cpu_map, attr, sd, i);
 			if (tl->flags & SDTL_OVERLAP || sched_feat(FORCE_SD_OVERLAP))
@@ -8021,6 +8098,9 @@ error:
 	return ret;
 }
 
+/** 20150808    
+ * 현재 sched domains와 그 숫자.
+ **/
 static cpumask_var_t *doms_cur;	/* current sched domains */
 static int ndoms_cur;		/* number of sched domains in 'doms_cur' */
 static struct sched_domain_attr *dattr_cur;
@@ -8043,6 +8123,9 @@ int __attribute__((weak)) arch_update_cpu_topology(void)
 	return 0;
 }
 
+/** 20150808    
+ * ndoms만큼 sched_domain을 위한 공간을 할당 받는다.
+ **/
 cpumask_var_t *alloc_sched_domains(unsigned int ndoms)
 {
 	int i;
@@ -8077,12 +8160,27 @@ static int init_sched_domains(const struct cpumask *cpu_map)
 {
 	int err;
 
+	/** 20150808    
+	 * architecture에서 정의한 cpu topology update 함수가 실행된다.
+	 * arm은 별도로 정의하지 않는다.
+	 **/
 	arch_update_cpu_topology();
+	/** 20150808    
+	 * ndoms_cur를 1개로 설정해 sched_domains를 할당 받아오고,
+	 * 실패할 경우 fallback_doms를 사용한다.
+	 **/
 	ndoms_cur = 1;
 	doms_cur = alloc_sched_domains(ndoms_cur);
 	if (!doms_cur)
 		doms_cur = &fallback_doms;
+	/** 20150808    
+	 * 매개변수 cpu_map에서 cpu_isolated_map에 포함된 것을 제외한 나머지를 
+	 * doms_cur[0]에 저장한다.
+	 **/
 	cpumask_andnot(doms_cur[0], cpu_map, cpu_isolated_map);
+	/** 20150808    
+	 * current sched_domain 0번에 대한 sched_domains를 구성한다.
+	 **/
 	err = build_sched_domains(doms_cur[0], NULL);
 	register_sched_domain_sysctl();
 
@@ -8273,11 +8371,23 @@ void __init sched_init_smp(void)
 {
 	cpumask_var_t non_isolated_cpus;
 
+	/** 20150808    
+	 * non_isolated_cpus, fallback_doms용 cpumask를 동적으로 생성한다.
+	 * config에서 CPUMASK_OFFSTACK가 정의되지 않은 경우 수행하는 내용이 없다.
+	 **/
 	alloc_cpumask_var(&non_isolated_cpus, GFP_KERNEL);
 	alloc_cpumask_var(&fallback_doms, GFP_KERNEL);
 
+	/** 20150808    
+	 * CONFIG_NUMA가 아닌 경우 NULL.
+	 **/
 	sched_init_numa();
 
+	/** 20150808    
+	 * CPU HOTPLUG에 대한 refcount를 올린다.
+	 *
+	 * 아래 put_online_cpus와 쌍이다.
+	 **/
 	get_online_cpus();
 	mutex_lock(&sched_domains_mutex);
 	init_sched_domains(cpu_active_mask);

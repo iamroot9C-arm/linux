@@ -440,6 +440,10 @@ static inline void cpumask_xor(struct cpumask *dstp,
  *
  * If *@dstp is empty, returns 0, else returns 1
  */
+/** 20150808    
+ * *dstp = *src1p & ~*src2p
+ * src1에 포함된 것 중 src2에 포함되지 않은 것으로 cpumask를 생성해 리턴한다.
+ **/
 static inline int cpumask_andnot(struct cpumask *dstp,
 				  const struct cpumask *src1p,
 				  const struct cpumask *src2p)

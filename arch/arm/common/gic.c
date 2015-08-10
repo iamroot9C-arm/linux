@@ -95,6 +95,8 @@ struct irq_chip gic_arch_extn = {
 
 /** 20140906    
  * GIC 개수만큼 gic_data를 선언.
+ *
+ * gic_init_bases에서 dist, cpu의 base address를 설정한다.
  **/
 static struct gic_chip_data gic_data[MAX_GIC_NR] __read_mostly;
 
@@ -877,10 +879,16 @@ void __init gic_init_bases(unsigned int gic_nr, int irq_start,
 	gic_pm_init(gic);
 }
 
+/** 20150808    
+ * gic_nr에 해당하는 gic_data로 gic의 cpu관련 레지스터를 설정한다.
+ **/
 void __cpuinit gic_secondary_init(unsigned int gic_nr)
 {
 	BUG_ON(gic_nr >= MAX_GIC_NR);
 
+	/** 20150808    
+	 * gic_nr에 해당하는 gic_data 구조체를 전달해 gic cpu 설정을 업데이트 한다.
+	 **/
 	gic_cpu_init(&gic_data[gic_nr]);
 }
 

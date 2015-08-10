@@ -471,7 +471,8 @@ static void __init feat_v6_fixup(void)
 /** 20121215
  * CPU 0번에 대해 irq, abt, und 모드의 stack pointer를 설정한다.
  *
- * SMP인 경우 그 외 cpu에 대해 secondary_start_kernel에서 호출된다.
+ * SMP인 경우 다른 cpu에 대해서도 코어마다 각 stack pointer를 설정한다.
+ * secondary_start_kernel에서 호출된다.
  **/
 void cpu_init(void)
 {

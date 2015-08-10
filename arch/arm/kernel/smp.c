@@ -73,6 +73,9 @@ enum ipi_msg_type {
 	IPI_CPU_STOP,
 };
 
+/** 20150808    
+ * 부팅이 완료된 cpu의 동작완료를 대기하기 위한 wait - complete.
+ **/
 static DECLARE_COMPLETION(cpu_running);
 
 /** 20150801    
@@ -126,7 +129,7 @@ int __cpuinit __cpu_up(unsigned int cpu, struct task_struct *idle)
 						 msecs_to_jiffies(1000));
 
 		/** 20150801    
-		 * 해당 cpu가 부팅되지 않았다면 에러.
+		 * 해당 cpu가 online mask에 추가되지 않았다면 에러.
 		 **/
 		if (!cpu_online(cpu)) {
 			pr_crit("CPU%u: failed to come online\n", cpu);
@@ -270,7 +273,11 @@ static void percpu_timer_setup(void);
  */
 /** 20150118    
  * 부팅된 secondary cpu에서 실행하는 함수.
- * mmu가 enable 된 상태.
+ *
+ * mmu가 enable 된 상태이며, 가장 먼저 init_mm으로 translation table을 교체한다.
+ * 이후 cpu 초기화 등 커널 수준에서 실행해야 하는 작업을 진행한다.
+ *
+ * 이후 interrupt를 활성화 시키고 idle 상태로 진입해 scheduler에 의해 동작한다.
  **/
 asmlinkage void __cpuinit secondary_start_kernel(void)
 {
@@ -308,19 +315,39 @@ asmlinkage void __cpuinit secondary_start_kernel(void)
 	 **/
 	printk("CPU%u: Booted secondary processor\n", cpu);
 
+	/** 20150808    
+	 * per-cpu로 und, irq, abr 상태의 stacks 주소를 설정한다.
+	 **/
 	cpu_init();
+	/** 20150808    
+	 * 선점 불가 상태로 진행
+	 **/
 	preempt_disable();
 	trace_hardirqs_off();
 
 	/*
 	 * Give the platform a chance to do its own initialisation.
 	 */
+	/** 20150808    
+	 * platform에서 제공하는 부팅 이후 초기화 작업을 수행한다.
+	 **/
 	platform_secondary_init(cpu);
 
+	/** 20150808    
+	 * 이 cpu가 깨어났음을 cpu_notify로 통보한다.
+	 *
+	 * - sched는 active mask에 이 cpu를 추가한다.
+	 **/
 	notify_cpu_starting(cpu);
 
+	/** 20150808    
+	 * 해당 core의 bogoMips를 계산한다. 출력은 booting core에서만 호출한다.
+	 **/
 	calibrate_delay();
 
+	/** 20150808    
+	 * loops_per_jiffy와 topology 등 cpu 관련 정보를 해당 core 변수에 저장한다.
+	 **/
 	smp_store_cpu_info(cpu);
 
 	/*
@@ -328,31 +355,57 @@ asmlinkage void __cpuinit secondary_start_kernel(void)
 	 * the CPU migration code to notice that the CPU is online
 	 * before we continue - which happens after __cpu_up returns.
 	 */
+	/** 20150808    
+	 * 해당 cpu를 online mask에 추가한다.
+	 * kernel 함수로 부팅 완료를 대기 중이던 boot core에게 완료를 통지한다.
+	 **/
 	set_cpu_online(cpu, true);
 	complete(&cpu_running);
 
 	/*
 	 * Setup the percpu timer for this CPU.
 	 */
+	/** 20150808    
+	 * 이 cpu를 위한 percpu timer를 설정한다.
+	 **/
 	percpu_timer_setup();
 
+	/** 20150808    
+	 * cpu에서 irq와 fiq 신호를 받도록 설정한다.
+	 **/
 	local_irq_enable();
 	local_fiq_enable();
 
 	/*
 	 * OK, it's off to the idle thread for us
 	 */
+	/** 20150808    
+	 * idle 상태로 진입해 스케쥴링을 시작한다.
+	 **/
 	cpu_idle();
 }
 
+/** 20150808    
+ * smp 작업이 완료된 뒤 호출되는 함수로 bogomips를 합산해 출력한다.
+ **/
 void __init smp_cpus_done(unsigned int max_cpus)
 {
 	int cpu;
 	unsigned long bogosum = 0;
 
+	/** 20150808    
+	 * online 상태의 cpu들을 순회하며 각 core에서 가지고 있는
+	 * loops_per_jiffy를 update하여 bogosum을 계산한다.
+	 *
+	 * 부팅된 cpu가 percpu 변수에 전역변수를 복사해 가지고 있는 상태이다.
+	 **/
 	for_each_online_cpu(cpu)
 		bogosum += per_cpu(cpu_data, cpu).loops_per_jiffy;
 
+	/** 20150808    
+	 * qemu vexpress 출력 예:
+	 * SMP: Total of 4 processors activated (1216.10 BogoMIPS).
+	 **/
 	printk(KERN_INFO "SMP: Total of %d processors activated "
 	       "(%lu.%02lu BogoMIPS).\n",
 	       num_online_cpus(),

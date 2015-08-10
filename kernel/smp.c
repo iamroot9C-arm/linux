@@ -839,6 +839,7 @@ EXPORT_SYMBOL(smp_call_function);
 /* Setup configured maximum number of CPUs to activate */
 /** 20150530    
  * activate 시킬 최대 cpu 개수.
+ * boot option 등으로 처리할 수 있도록 별도의 변수로 두어 처리한다.
  **/
 unsigned int setup_max_cpus = NR_CPUS;
 EXPORT_SYMBOL(setup_max_cpus);
@@ -912,6 +913,12 @@ void __init setup_nr_cpu_ids(void)
 }
 
 /* Called by boot processor to activate the rest. */
+/** 20150808    
+ * boot processor로 나머지 프로세서를 깨운다.
+ *
+ * 나머지 코어들이 처음 실행하는 어셈 코드는 secondary_startup,
+ * 커널 함수는 secondary_start_kernel이다.
+ **/
 void __init smp_init(void)
 {
 	unsigned int cpu;
@@ -924,7 +931,7 @@ void __init smp_init(void)
 
 	/* FIXME: This should be done in userspace --RR */
 	/** 20150117    
-	 * cpu_present_mask 에서 각 cpu의 번호가 cpu에 담겨 cpu_up으로 전달.
+	 * cpu_present_mask의 각 cpu를 보며, 현 상태가 online이 아닌 경우 up시킴.
 	 **/
 	for_each_present_cpu(cpu) {
 		if (num_online_cpus() >= setup_max_cpus)
@@ -934,6 +941,9 @@ void __init smp_init(void)
 	}
 
 	/* Any cleanup work */
+	/** 20150808    
+	 * 출력 예 : Brought up 4 CPUs
+	 **/
 	printk(KERN_INFO "Brought up %ld CPUs\n", (long)num_online_cpus());
 	smp_cpus_done(setup_max_cpus);
 }

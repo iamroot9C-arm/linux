@@ -86,7 +86,7 @@ static struct {
  **/
 /** 20130720    
  * cpu_hotplug를 참조하는 refcount를 증가시킨다.
- *     cpu_hotplug_begin 에서 refcount가 0이 아닐 경우 수행하지 않고 리턴한다.
+ *     cpu_hotplug_begin 에서 refcount가 0이 될 때까지 반복하며 대기한다.
  **/
 void get_online_cpus(void)
 {
@@ -96,7 +96,7 @@ void get_online_cpus(void)
 	might_sleep();
 	/** 20130706    
 	 * cpu_hotplug_begin 전에는 초기값 NULL.
-	 * cpu_hotplug_begin에서 active_write를 current로 넣어 수행 중인 task를 기록한다.
+	 * cpu_hotplug_begin에서 active_writer를 current로 넣어 수행 중인 task를 기록한다.
 	 * activate_writer가 현재 함수를 수행 중인 task와 같다면
 	 * refcount를 증가하지 않고 리턴한다.
 	 **/
@@ -158,10 +158,20 @@ EXPORT_SYMBOL_GPL(put_online_cpus);
  * get_online_cpus() not an api which is called all that often.
  *
  */
+/** 20150808    
+ * hotplug operation 작업 전에, refcount가 0인 경우에만 진입하도록 함.
+ * cpu_maps_update_begin 이후 호출되므로 하나의 writer만 활성화되는 것이 보장된다.
+ **/
 static void cpu_hotplug_begin(void)
 {
+	/** 20150808    
+	 * 현재 task를 active_writer로 기록한다.
+	 **/
 	cpu_hotplug.active_writer = current;
 
+	/** 20150808    
+	 * refcount가 0일 때(get_online_cpus가 아닌 상태)까지 lock을 잡은 상태로 리턴.
+	 **/
 	for (;;) {
 		mutex_lock(&cpu_hotplug.lock);
 		if (likely(!cpu_hotplug.refcount))
@@ -172,6 +182,9 @@ static void cpu_hotplug_begin(void)
 	}
 }
 
+/** 20150808    
+ * cpu_hotplug의 active_writer를 비우고, hotplug lock을 해제한다.
+ **/
 static void cpu_hotplug_done(void)
 {
 	cpu_hotplug.active_writer = NULL;
@@ -416,6 +429,10 @@ EXPORT_SYMBOL(cpu_down);
 #endif /*CONFIG_HOTPLUG_CPU*/
 
 /* Requires cpu_add_remove_lock to be held */
+/** 20150808    
+ * 주어진 cpu를 up시킨다. 
+ * 임계구역의 직렬화를 위해 cpu_maps_update_begin ~ cpu_maps_update_done 사이에서 진행한다.
+ **/
 static int __cpuinit _cpu_up(unsigned int cpu, int tasks_frozen)
 {
 	int ret, nr_calls = 0;
@@ -426,10 +443,14 @@ static int __cpuinit _cpu_up(unsigned int cpu, int tasks_frozen)
 	if (cpu_online(cpu) || !cpu_present(cpu))
 		return -EINVAL;
 
+	/** 20150808    
+	 * cpu hotplug 동작이 진행되므로 lock을 잡은 상태로 진행한다.
+	 **/
 	cpu_hotplug_begin();
 
 	/** 20150118    
-	 * idle_threads_init에서 넣어둔 idle thread를 가져온다.
+	 * idle_threads_init에서 넣어둔 idle thread를 cpu에 대한 idle task로 지정하고,
+	 * 해당 task를 받아온다.
 	 **/
 	idle = idle_thread_get(cpu);
 	if (IS_ERR(idle)) {
@@ -454,12 +475,18 @@ static int __cpuinit _cpu_up(unsigned int cpu, int tasks_frozen)
 	}
 
 	/* Arch-specific enabling code. */
+	/** 20150808    
+	 * architecture에서 제공하는 방식으로 cpu를 up시킨다.
+	 **/
 	ret = __cpu_up(cpu, idle);
 	if (ret != 0)
 		goto out_notify;
 	BUG_ON(!cpu_online(cpu));
 
 	/* Now call notifier in preparation. */
+	/** 20150808    
+	 * cpu가 up 되었으므로 CPU_ONLINE notify를 날린다.
+	 **/
 	cpu_notify(CPU_ONLINE | mod, hcpu);
 
 out_notify:
@@ -470,11 +497,17 @@ out_notify:
 	if (ret != 0)
 		__cpu_notify(CPU_UP_CANCELED | mod, hcpu, nr_calls, NULL);
 out:
+	/** 20150808    
+	 * cpu hotplug 작업을 마치고 lock을 해제한다.
+	 **/
 	cpu_hotplug_done();
 
 	return ret;
 }
 
+/** 20150808    
+ * 해당 cpu를 up시킨다.
+ **/
 int __cpuinit cpu_up(unsigned int cpu)
 {
 	int err = 0;
@@ -532,9 +565,17 @@ int __cpuinit cpu_up(unsigned int cpu)
 		goto out;
 	}
 
+	/** 20150808    
+	 * cpu를 up시킨다.
+	 *
+	 * 내부에서 platform 의존적인 함수를 호출한다.
+	 **/
 	err = _cpu_up(cpu, 0);
 
 out:
+	/** 20150808    
+	 * cpu online, present mask가 변경되는 임계구역의 끝.
+	 **/
 	cpu_maps_update_done();
 	return err;
 }
@@ -719,14 +760,29 @@ core_initcall(cpu_hotplug_pm_sync_init);
  * It must be called by the arch code on the new cpu, before the new cpu
  * enables interrupts and before the "boot" cpu returns from __cpu_up().
  */
+/** 20150808    
+ * 해당 cpu가 시작했음을 cpu_notify로 통보한다.
+ *
+ * PM_SLEEP에서 깨어난 경우 CPU_STARTING_FROZEN를 그렇지 않은 경우 CPU_STARTING.
+ **/
 void __cpuinit notify_cpu_starting(unsigned int cpu)
 {
 	unsigned long val = CPU_STARTING;
 
+	/** 20150808    
+	 * PM_SLEEP_SMP가 정의되어 있고, 이 cpu가 frozen_cpus에 들어 있다면
+	 * val를 CPU_STARTING_FROZEN로 지정한다.
+	 **/
 #ifdef CONFIG_PM_SLEEP_SMP
 	if (frozen_cpus != NULL && cpumask_test_cpu(cpu, frozen_cpus))
 		val = CPU_STARTING_FROZEN;
 #endif /* CONFIG_PM_SLEEP_SMP */
+	/** 20150808    
+	 * 설정된 val로 cpu notify를 날린다.
+	 *
+	 * PM_SLEEP이 아닌 경우 CPU_STARTING notify를 날리고, 
+	 * 예를 들어 sched의 경우, active mask에 해당 cpu를 추가한다.
+	 **/
 	cpu_notify(val, (void *)(long)cpu);
 }
 
@@ -836,8 +892,10 @@ void set_cpu_present(unsigned int cpu, bool present)
 }
 
 /** 20121208
- online=true이면 cpu_online_bits변수에 cpu bit를 1로 세팅한다
- online=false이면 cpu_online_bits변수에 cpu bit를 0으로 클리어한다
+ * cpu online bits에 cpu에 해당하는 비트를 설정/제거한다.
+ *
+ * online=true이면 cpu_online_bits변수에 cpu bit를 1로 세팅한다
+ * online=false이면 cpu_online_bits변수에 cpu bit를 0으로 클리어한다
  **/
 void set_cpu_online(unsigned int cpu, bool online)
 {

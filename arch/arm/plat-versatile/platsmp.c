@@ -48,6 +48,9 @@ static void __cpuinit write_pen_release(int val)
 
 static DEFINE_SPINLOCK(boot_lock);
 
+/** 20150808    
+ * 깨어난 core가 platform 종속적인 작업을 수행한다.
+ **/
 void __cpuinit platform_secondary_init(unsigned int cpu)
 {
 	/*
@@ -55,6 +58,9 @@ void __cpuinit platform_secondary_init(unsigned int cpu)
 	 * core (e.g. timer irq), then they will not have been enabled
 	 * for us: do so
 	 */
+	/** 20150808    
+	 * secondary core가 부팅함에 따로 필요한 설정을 한다.
+	 **/
 	gic_secondary_init(0);
 
 	/*
@@ -62,8 +68,8 @@ void __cpuinit platform_secondary_init(unsigned int cpu)
 	 * pen, then head off into the C entry point
 	 */
 	/** 20150124    
-	 * pen_release에 -1을 넣어 primary processor (boot cpu)에서
-	 * 다음 부분을 수행한다.
+	 * pen_release에 -1을 넣어주면 부팅시킨 후 대기 중이던
+	 * primary processor (boot cpu)가 다음 부분을 수행한다.
 	 **/
 	write_pen_release(-1);
 
@@ -71,7 +77,8 @@ void __cpuinit platform_secondary_init(unsigned int cpu)
 	 * Synchronise with the boot thread.
 	 */
 	/** 20150124    
-	 * pen_release 이후 boot thread가 먼저 걸어둔 spinlock을 해제하고 진행한다.
+	 * pen_release 이후 boot thread가 대기를 마치고 진행하면 spinlock을 해제한다.
+	 * 그것을 대기하기 위한 코드이다.
 	 **/
 	spin_lock(&boot_lock);
 	spin_unlock(&boot_lock);
@@ -79,7 +86,7 @@ void __cpuinit platform_secondary_init(unsigned int cpu)
 
 /** 20150124    
  * 특정 cpu를 pen_release 방식으로 깨우고,
- * 깨어날 때까지 timeout을 두고 대기한다.
+ * 깨어난 뒤에 spinlock으로 동기화를 맞추고 진행한다.
  **/
 int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
 {
@@ -110,11 +117,17 @@ int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
 	 */
 	/** 20150124    
 	 * 깨울 cpu로 cpumask로 생성해 그 mask에 gic를 통해 irq 0(SGI)을 날린다.
+	 *
+	 * platform_smp_prepare_cpus에서 secondary startup 주소를 기록해 두었다.
+	 * boot monitor가 soft interrupt를 받을 때까지 대기 중이므로 SGI를 날린다.
+	 * 아마 wfi로 작업되어 있을 것이다.
 	 **/
 	gic_raise_softirq(cpumask_of(cpu), 0);
 
 	/** 20150124    
 	 * 깨어난 cpu가 init 과정을 마치고 pen_release에 -1을 넣어줄 때까지 대기한다.
+	 *
+	 * platform_secondary_init에서 부팅을 마친 코어가 pen_release에 -1을 쓴다.
 	 **/
 	timeout = jiffies + (1 * HZ);
 	while (time_before(jiffies, timeout)) {
