@@ -248,6 +248,11 @@ cleanup:
  * cpupri_cleanup - clean up the cpupri structure
  * @cp: The cpupri context
  */
+/** 20150815    
+ * cpupri 구조체를 정리한다.
+ *
+ * CPUMASK_OFFSTACK이 아닌 경우 동적할당 하지 않았으므로 해제할 메모리도 없다.
+ **/
 void cpupri_cleanup(struct cpupri *cp)
 {
 	int i;

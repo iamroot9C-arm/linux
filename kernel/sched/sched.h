@@ -446,6 +446,9 @@ struct rq {
 	atomic_t nr_iowait;
 
 #ifdef CONFIG_SMP
+	/** 20150815    
+	 * rq 자료구조에 root_domain과 sched_domain을 두고 있다.
+	 **/
 	struct root_domain *rd;
 	struct sched_domain *sd;
 
@@ -567,7 +570,7 @@ DECLARE_PER_CPU(struct rq, runqueues);
  * preempt-disabled sections.
  */
 /** 20141108    
- * cpu rq의 sched_domain들을 순회한다.
+ * cpu rq의 sched_domain들을 child에서 parent 순으로 순회한다.
  **/
 #define for_each_domain(cpu, __sd) \
 	for (__sd = rcu_dereference_check_sched_domain(cpu_rq(cpu)->sd); \
@@ -584,6 +587,10 @@ DECLARE_PER_CPU(struct rq, runqueues);
  *
  * Returns the highest sched_domain of a cpu which contains the given flag.
  */
+/** 20150815    
+ * cpu의 sched_domain에서 flag를 포함하는 가장 높은 (child -> parent 순서)
+ * sched_domain을 리턴한다.
+ **/
 static inline struct sched_domain *highest_flag_domain(int cpu, int flag)
 {
 	struct sched_domain *sd, *hsd = NULL;

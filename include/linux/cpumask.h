@@ -175,6 +175,9 @@ static inline unsigned int cpumask_any_but(const struct cpumask *mask,
  *
  * Returns >= nr_cpu_ids if no cpus set.
  */
+/** 20150815    
+ * cpumask 내에서 첫번째 cpu의 위치를 리턴한다.
+ **/
 static inline unsigned int cpumask_first(const struct cpumask *srcp)
 {
 	return find_first_bit(cpumask_bits(srcp), nr_cpumask_bits);

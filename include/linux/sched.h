@@ -957,6 +957,9 @@ struct sched_group {
 	unsigned long cpumask[0];
 };
 
+/** 20150815    
+ * sched_group의 cpumask.
+ **/
 static inline struct cpumask *sched_group_cpus(struct sched_group *sg)
 {
 	return to_cpumask(sg->cpumask);
@@ -966,6 +969,9 @@ static inline struct cpumask *sched_group_cpus(struct sched_group *sg)
  * cpumask masking which cpus in the group are allowed to iterate up the domain
  * tree.
  */
+/** 20150815    
+ * sched_group->sched_group_power의 cpumask.
+ **/
 static inline struct cpumask *sched_group_mask(struct sched_group *sg)
 {
 	return to_cpumask(sg->sgp->cpumask);
@@ -1064,6 +1070,9 @@ struct sched_domain {
 	 * by attaching extra space to the end of the structure,
 	 * depending on how many CPUs the kernel has booted up with)
 	 */
+	/** 20150815    
+	 * build_sched_domain에서 해당 domain에 속하는 모든 cpumask를 저장.
+	 **/
 	unsigned long span[0];
 };
 

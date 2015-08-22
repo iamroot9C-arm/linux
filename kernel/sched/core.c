@@ -6834,6 +6834,9 @@ static inline bool sched_debug(void)
 
 static int sd_degenerate(struct sched_domain *sd)
 {
+	/** 20150815    
+	 * sched_domain에 속한 cpu 개수가 1개면 바로 리턴.
+	 **/
 	if (cpumask_weight(sched_domain_span(sd)) == 1)
 		return 1;
 
@@ -6883,6 +6886,9 @@ sd_parent_degenerate(struct sched_domain *sd, struct sched_domain *parent)
 	return 1;
 }
 
+/** 20150815    
+ * root_domain을 위해 할당한 메모리를 해제한다.
+ **/
 static void free_rootdomain(struct rcu_head *rcu)
 {
 	struct root_domain *rd = container_of(rcu, struct root_domain, rcu);
@@ -6895,6 +6901,8 @@ static void free_rootdomain(struct rcu_head *rcu)
 }
 
 /** 20140426    
+ * rq의 rd로 새로운 root_domain을 지정한다.
+ *
  * rq를 새로운 root domain에 추가한 경우
  *		기존 domain에서 제거하고, 새로운 domain에 추가하면서
  *		sched domain의 콜백을 호출한다.
@@ -6947,7 +6955,7 @@ static void rq_attach_root(struct rq *rq, struct root_domain *rd)
 	rq->rd = rd;
 
 	/** 20140426    
-	 * span cpumask에 변경하는 runqueue의 cpu를 설정한다.
+	 * rd의 span cpumask에 runqueue cpu를 설정한다.
 	 **/
 	cpumask_set_cpu(rq->cpu, rd->span);
 	/** 20140426    
@@ -7063,6 +7071,9 @@ static void free_sched_groups(struct sched_group *sg, int free_sgp)
 	} while (sg != first);
 }
 
+/** 20150815    
+ * sched_domain 해제를 위한 rcu 콜백함수.
+ **/
 static void free_sched_domain(struct rcu_head *rcu)
 {
 	struct sched_domain *sd = container_of(rcu, struct sched_domain, rcu);
@@ -7080,11 +7091,18 @@ static void free_sched_domain(struct rcu_head *rcu)
 	kfree(sd);
 }
 
+/** 20150815    
+ * sched_domain 관련 rcu의 해제를 대기한다.
+ * callback으로 free_sched_domain가 호출된다.
+ **/
 static void destroy_sched_domain(struct sched_domain *sd, int cpu)
 {
 	call_rcu(&sd->rcu, free_sched_domain);
 }
 
+/** 20150815    
+ * sched_domain의 parent를 순회하며 cpu의 sched_domain을 해제한다.
+ **/
 static void destroy_sched_domains(struct sched_domain *sd, int cpu)
 {
 	for (; sd; sd = sd->parent)
@@ -7105,6 +7123,13 @@ static void destroy_sched_domains(struct sched_domain *sd, int cpu)
  * the cpumask of the domain), this allows us to quickly tell if
  * two cpus are in the same cache domain, see cpus_share_cache().
  */
+/** 20150815    
+ * SD_SHARE_PKG_RESOURCE을 가진 가장 높은 sched_domain을 특별한 포인터로 가리킨다.
+ * 이렇게 하면 select_idle_sibling()에서 pointer chasing을 회피하도록 한다.
+ *
+ * sched domain과 sched groups의 하위탐색을 반복하여,
+ * CPU들에게 select_idle_sibling()의 hw 버디가 되도록 지정한다.
+ **/
 DEFINE_PER_CPU(struct sched_domain *, sd_llc);
 /** 20130720    
  * sd_llc_id라는 이름으로 int 타입의 per cpu 변수 선언
@@ -7117,6 +7142,10 @@ static void update_top_cache_domain(int cpu)
 	struct sched_domain *sd;
 	int id = cpu;
 
+	/** 20150815    
+	 * cpu의 sched_domain 중 SD_SHARE_PKG_RESOURCES flags가 포함된 가장 높은
+	 * sched_domain을 찾는다.
+	 **/
 	sd = highest_flag_domain(cpu, SD_SHARE_PKG_RESOURCES);
 	if (sd) {
 		struct sched_domain *tmp = sd;
@@ -7128,14 +7157,30 @@ static void update_top_cache_domain(int cpu)
 		 * to cpu from there, switching direction on each
 		 * hop, never ever pointing the last CPU rightward.
 		 */
+		/** 20150815    
+		 * sched_group에서 첫번째 cpu를 탐색하고, 거기에서 cpu까지 hop을 세고,
+		 * 각 hop에서 direction을 변경하여 마지막 CPU 오른쪽으로 가리키지 않는다.
+		 **/
 		do {
+			/** 20150815    
+			 * tmp sched_domain의 첫번째 cpu를 id로 찾는다.
+			 **/
 			id = cpumask_first(sched_domain_span(tmp));
 			prev = sg = tmp->groups;
 			right = 1;
 
+			/** 20150815    
+			 * sched_group의 첫번째 cpu가 sched_domain의 첫번째 cpu와 같을 때까지
+			 * 찾는다. 즉, sched_domain의 첫번째 sched_group을 찾는다.
+			 * (sched_group은 환형 연결 리스크 구조이다)
+			 **/
 			while (cpumask_first(sched_group_cpus(sg)) != id)
 				sg = sg->next;
 
+			/** 20150815    
+			 * 찾은 sched_group에 cpu가 들어있지 않다면
+			 * 이전 sched_group을 저장하고 다음 sched_group으로 이동한다.
+			 **/
 			while (!cpumask_test_cpu(cpu, sched_group_cpus(sg))) {
 				prev = sg;
 				sg = sg->next;
@@ -7143,9 +7188,16 @@ static void update_top_cache_domain(int cpu)
 			}
 
 			/* A CPU went down, never point back to domain start. */
+			/** 20150815    
+			 * right가 true지만, sg의 next의 첫번째 cpu가 id와 같다면
+			 **/
 			if (right && cpumask_first(sched_group_cpus(sg->next)) == id)
 				right = false;
 
+			/** 20150815    
+			 * rigth 면 sched_group next, 아니면 prev에서
+			 * 첫번째 cpu를 가져와 idle_buddy에 지정한다.
+			 **/
 			sg = right ? sg->next : prev;
 			tmp->idle_buddy = cpumask_first(sched_group_cpus(sg));
 		} while ((tmp = tmp->child));
@@ -7168,6 +7220,9 @@ cpu_attach_domain(struct sched_domain *sd, struct root_domain *rd, int cpu)
 	struct sched_domain *tmp;
 
 	/* Remove the sched domains which do not contribute to scheduling. */
+	/** 20150815    
+	 * schduling에 관련 없는 sched_domains를 제거한다.
+	 **/
 	for (tmp = sd; tmp; ) {
 		struct sched_domain *parent = tmp->parent;
 		if (!parent)
@@ -7192,6 +7247,12 @@ cpu_attach_domain(struct sched_domain *sd, struct root_domain *rd, int cpu)
 
 	sched_domain_debug(sd, cpu);
 
+	/** 20150815    
+	 * rq에 root_domain을 붙인다.
+	 *
+	 * 새로운 sd를 rq->sd로 지정한다.
+	 * 현재 rq의 sd에 지정된 sched_domain이 존재한다면 제거한다.
+	 **/
 	rq_attach_root(rq, rd);
 	tmp = rq->sd;
 	rcu_assign_pointer(rq->sd, sd);
@@ -7222,6 +7283,7 @@ static const struct cpumask *cpu_cpu_mask(int cpu)
 }
 
 /** 20150808    
+ * sched_domain, sched_group, scehd_group_power 모두 percpu 이중 포인터이다.
  **/
 struct sd_data {
 	struct sched_domain **__percpu sd;
@@ -7375,14 +7437,29 @@ fail:
 	return -ENOMEM;
 }
 
+/** 20150815    
+ * sd_data에서 cpu에 해당하는 per_cpu_ptr에 접근해 sched_group를 설정한다.
+ *
+ * 해당 sched_domain이 child를 가지고 있는 경우 child sched_domain의 첫번째 cpu,
+ * child가 없는 경우 넘어온 cpu가 리턴된다.
+ **/
 static int get_group(int cpu, struct sd_data *sdd, struct sched_group **sg)
 {
+	/** 20150815
+	 * sd_data의 sched_domain 중 현재 cpu에 해당하는 sched_domain을 받아온다.
+	 **/
 	struct sched_domain *sd = *per_cpu_ptr(sdd->sd, cpu);
 	struct sched_domain *child = sd->child;
 
+	/** 20150815    
+	 * child가 존재하면 child의 sched_domain 비트맵에서 첫번째 cpu 위치를 얻는다.
+	 **/
 	if (child)
 		cpu = cpumask_first(sched_domain_span(child));
 
+	/** 20150815    
+	 * sched_group이 유효한 주소라면 sdd에서 해당 cpu의 포인터를 저장한다.
+	 **/
 	if (sg) {
 		*sg = *per_cpu_ptr(sdd->sg, cpu);
 		(*sg)->sgp = *per_cpu_ptr(sdd->sgp, cpu);
@@ -7399,6 +7476,11 @@ static int get_group(int cpu, struct sd_data *sdd, struct sched_group **sg)
  *
  * Assumes the sched_domain tree is fully constructed
  */
+/** 20150815    
+ * sched_domain 내에 cpu에 대한 sched_group을 구성한다.
+ *
+ * sched_group은 sched_domain의 sched_groups에 환형 연결 리스트로 구성된다.
+ **/
 static int
 build_sched_groups(struct sched_domain *sd, int cpu)
 {
@@ -7408,29 +7490,54 @@ build_sched_groups(struct sched_domain *sd, int cpu)
 	struct cpumask *covered;
 	int i;
 
+	/** 20150815    
+	 * sd_data에서 cpu에 해당하는 sched_group 정보를 sd->groups에 저장하고,
+	 * reference count를 증가시킨다.
+	 **/
 	get_group(cpu, sdd, &sd->groups);
 	atomic_inc(&sd->groups->ref);
 
+	/** 20150815    
+	 * 이후 동작은 cpu가 sched_domain의 첫번째 cpu일 경우만 수행한다.
+	 **/
 	if (cpu != cpumask_first(sched_domain_span(sd)))
 		return 0;
 
 	lockdep_assert_held(&sched_domains_mutex);
+	/** 20150815    
+	 * covered로 tmpmask를 사용한다.
+	 **/
 	covered = sched_domains_tmpmask;
 
 	cpumask_clear(covered);
 
+	/** 20150815    
+	 * span의 각 cpu를 순회하며
+	 **/
 	for_each_cpu(i, span) {
 		struct sched_group *sg;
 		int group = get_group(i, sdd, &sg);
 		int j;
 
+		/** 20150815    
+		 * 해당 sched_class에 대해 그룹 구성을
+		 * 한번만 처리하기 위해 이미 covered에 속해 있는 cpu일 경우 패스.
+		 **/
 		if (cpumask_test_cpu(i, covered))
 			continue;
 
+		/** 20150815    
+		 * sched_group의 cpumask를 클리어하고, mask를 설정한다.
+		 **/
 		cpumask_clear(sched_group_cpus(sg));
 		sg->sgp->power = 0;
 		cpumask_setall(sched_group_mask(sg));
 
+		/** 20150815    
+		 * span의 각 cpu를 다시 순회하며 i와 같은 그룹인 j를
+		 * sg의 cpumask에 표시한다.
+		 * covered는 이중 반복의 비교횟수를 줄이기 위한 체크.
+		 **/
 		for_each_cpu(j, span) {
 			if (get_group(j, sdd, NULL) != group)
 				continue;
@@ -7439,12 +7546,19 @@ build_sched_groups(struct sched_domain *sd, int cpu)
 			cpumask_set_cpu(j, sched_group_cpus(sg));
 		}
 
+		/** 20150815    
+		 * 첫번째 sched_group이 비어 있다면, sched_group을 first로 둔다.
+		 * 마지막 sched_group으로 설정한다.
+		 **/
 		if (!first)
 			first = sg;
 		if (last)
 			last->next = sg;
 		last = sg;
 	}
+	/** 20150815    
+	 * 환형 구조로 구성한다.
+	 **/
 	last->next = first;
 
 	return 0;
@@ -7460,6 +7574,10 @@ build_sched_groups(struct sched_domain *sd, int cpu)
  * having more cpu_power will pickup more load compared to the group having
  * less cpu_power.
  */
+/** 20150815    
+ * sched_group의 cpu_power를 초기화 한다.
+ * 추후 분석???
+ **/
 static void init_sched_groups_power(int cpu, struct sched_domain *sd)
 {
 	struct sched_group *sg = sd->groups;
@@ -7557,6 +7675,9 @@ static void set_domain_attribute(struct sched_domain *sd,
 static void __sdt_free(const struct cpumask *cpu_map);
 static int __sdt_alloc(const struct cpumask *cpu_map);
 
+/** 20150815    
+ * s_alloc 된 상태에 따라 해제하는 함수를 호출한다.
+ **/
 static void __free_domain_allocs(struct s_data *d, enum s_alloc what,
 				 const struct cpumask *cpu_map)
 {
@@ -7604,6 +7725,10 @@ static enum s_alloc __visit_domain_allocation_hell(struct s_data *d,
  * sched_group structure so that the subsequent __free_domain_allocs()
  * will not free the data we're using.
  */
+/** 20150815    
+ * sched_domain과 sched_group 구조체를 빌드하기 위해 사용되었던
+ * sd_data에서 cpu에 해당하는 percpu 부분을 NULL로 초기화 한다.
+ **/
 static void claim_allocations(int cpu, struct sched_domain *sd)
 {
 	struct sd_data *sdd = sd->private;
@@ -7913,6 +8038,8 @@ static int __sdt_alloc(const struct cpumask *cpu_map)
 
 		/** 20150808    
 		 * cpu_map에 포함된 각 core들을 순회하며 구조체를 초기화 한다.
+		 *
+		 * 추후 각 cpu들을 순회하며 sched_domain을 구성할 때 사용된다.
 		 **/
 		for_each_cpu(j, cpu_map) {
 			struct sched_domain *sd;
@@ -7984,7 +8111,7 @@ static void __sdt_free(const struct cpumask *cpu_map)
  * 전달된 argument로 설정한다.
  *
  * 1. 해당 tl의 init 함수로 sched_domain을 초기화 (메모리를 alloc된 상태)
- * 2. sched_domain의 span을 cpu_map과 해당 tl의 mask 함수를 and해 저장.
+ * 2. cpu_map과 tl의 mask 함수로 취한 mask와 and해 sched_domain의 span을 저장.
  * 3. child가 존재하면 level과 hierarchy 관련 멤버 설정
  * 4. 생성한 sched_domain의 attr 설정
  **/
@@ -8033,7 +8160,7 @@ static int build_sched_domains(const struct cpumask *cpu_map,
 
 	/* Set up domains for cpus specified by the cpu_map. */
 	/** 20150808    
-	 * cpu_map의 각 cpu를 순회한다.
+	 * cpu_map의 cpu들을 순회하며 각각을 위한 sched_domain을 구성한다.
 	 **/
 	for_each_cpu(i, cpu_map) {
 		struct sched_domain_topology_level *tl;
@@ -8053,16 +8180,35 @@ static int build_sched_domains(const struct cpumask *cpu_map,
 				break;
 		}
 
+		/** 20150815    
+		 * 구성한 sched_domain의 child를 따라 내려가 최하위 레벨을
+		 * per_cpu 포인터에 저장한다.
+		 **/
 		while (sd->child)
 			sd = sd->child;
 
+		/** 20150815    
+		 * build된 sched_domain을 s_data의 percpu sd에 저장한다.
+		 **/
 		*per_cpu_ptr(d.sd, i) = sd;
 	}
 
 	/* Build the groups for the domains */
+	/** 20150815    
+	 * cpu_map 상의 cpu들을 순회한다.
+	 **/
 	for_each_cpu(i, cpu_map) {
+		/** 20150815    
+		 * d.sd에 저장해둔 sched_domain의 자식에서 부모를 따라가며,
+		 **/
 		for (sd = *per_cpu_ptr(d.sd, i); sd; sd = sd->parent) {
+			/** 20150815    
+			 * sched_domain에 속한 모든 cpu의 수를 구해 span_weight에 저장.
+			 **/
 			sd->span_weight = cpumask_weight(sched_domain_span(sd));
+			/** 20150815    
+			 * flags에 OVERLAP 설정 여부에 따라 sched_groups 구성 함수를 호출한다.
+			 **/
 			if (sd->flags & SD_OVERLAP) {
 				if (build_overlap_sched_groups(sd, i))
 					goto error;
@@ -8074,6 +8220,12 @@ static int build_sched_domains(const struct cpumask *cpu_map,
 	}
 
 	/* Calculate CPU power for physical packages and nodes */
+	/** 20150815    
+	 * 전체 cpumask를 순회하며 cpu_map에 포함된 각 cpu에 대해
+	 * sched_domain을 child에서 parent 순서로 순회하여
+	 *   - 빌드하기 위해 사용했던 자료구조를 정리한다.
+	 *   - 
+	 **/
 	for (i = nr_cpumask_bits-1; i >= 0; i--) {
 		if (!cpumask_test_cpu(i, cpu_map))
 			continue;
@@ -8124,7 +8276,7 @@ int __attribute__((weak)) arch_update_cpu_topology(void)
 }
 
 /** 20150808    
- * ndoms만큼 sched_domain을 위한 공간을 할당 받는다.
+ * ndoms개의 sched_domain을 위한 공간을 할당 받는다.
  **/
 cpumask_var_t *alloc_sched_domains(unsigned int ndoms)
 {
@@ -8166,7 +8318,7 @@ static int init_sched_domains(const struct cpumask *cpu_map)
 	 **/
 	arch_update_cpu_topology();
 	/** 20150808    
-	 * ndoms_cur를 1개로 설정해 sched_domains를 할당 받아오고,
+	 * ndoms_cur를 1개로 설정해 sched_domains(cpumask)를 할당 받아오고,
 	 * 실패할 경우 fallback_doms를 사용한다.
 	 **/
 	ndoms_cur = 1;
