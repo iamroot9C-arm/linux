@@ -339,9 +339,12 @@ struct rt_rq {
  *
  */
 /** 20140426    
- * root_domain 관련 함수는 core.c에 위치.
+ * 도메인별 변수를 정의하기 위해 사용되는 자료구조.
  *
- * cpuset이 생성될 때마다 새로운 root_domain을 생성한다.
+ * cpuset마다 root_domain을 독자적으로 가지므로 cpuset이 생성될 때마다
+ * 새 root_domain을 생성한다.
+ *
+ * root_domain 관련 함수는 core.c에 위치.
  **/
 struct root_domain {
 	atomic_t refcount;

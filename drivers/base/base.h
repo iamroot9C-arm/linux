@@ -136,5 +136,8 @@ static inline void module_remove_driver(struct device_driver *drv) { }
 #ifdef CONFIG_DEVTMPFS
 extern int devtmpfs_init(void);
 #else
+/** 20150822    
+ * CONIFG_DEVTMPFS가 정의되어 있지 않다.
+ **/
 static inline int devtmpfs_init(void) { return 0; }
 #endif

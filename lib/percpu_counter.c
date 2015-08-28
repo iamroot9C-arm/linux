@@ -151,6 +151,9 @@ int __percpu_counter_init(struct percpu_counter *fbc, s64 amount,
 }
 EXPORT_SYMBOL(__percpu_counter_init);
 
+/** 20150822    
+ * percpu_counter 구조체를 제거하기 위한 작업을 한다.
+ **/
 void percpu_counter_destroy(struct percpu_counter *fbc)
 {
 	if (!fbc->counters)
@@ -159,6 +162,9 @@ void percpu_counter_destroy(struct percpu_counter *fbc)
 	debug_percpu_counter_deactivate(fbc);
 
 #ifdef CONFIG_HOTPLUG_CPU
+	/** 20150822    
+	 * 전역 리스트에서 제거한다.
+	 **/
 	spin_lock(&percpu_counters_lock);
 	list_del(&fbc->list);
 	spin_unlock(&percpu_counters_lock);

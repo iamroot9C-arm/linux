@@ -504,6 +504,9 @@ void hrtick_start(struct rq *rq, u64 delay)
 	}
 }
 
+/** 20150822    
+ * cpu hotplug 이벤트를 처리하기 위한 콜백 함수. 추후 분석???
+ **/
 static int
 hotplug_hrtick(struct notifier_block *nfb, unsigned long action, void *hcpu)
 {
@@ -523,6 +526,9 @@ hotplug_hrtick(struct notifier_block *nfb, unsigned long action, void *hcpu)
 	return NOTIFY_DONE;
 }
 
+/** 20150822    
+ * hrtick 초기화로 hotplug_hrtick 함수를 cpu notify로 등록한다.
+ **/
 static __init void init_hrtick(void)
 {
 	hotcpu_notifier(hotplug_hrtick, 0);
@@ -562,12 +568,15 @@ static void init_rq_hrtick(struct rq *rq)
 	rq->hrtick_timer.function = hrtick;
 }
 #else	/* CONFIG_SCHED_HRTICK */
+/** 20150822    
+ * CONFIG_SCHED_HRTICK이 정의되어 있지 않으면 NULL 함수.
+ **/
 static inline void hrtick_clear(struct rq *rq)
 {
 }
 
 /** 20140426    
- * CONFIG_SCHED_HRTICK이 정의되어 있지 않으므로 NULL 함수.
+ * CONFIG_SCHED_HRTICK이 정의되어 있지 않으면 NULL 함수.
  **/
 static inline void init_rq_hrtick(struct rq *rq)
 {
@@ -6491,7 +6500,7 @@ static void unregister_sched_domain_sysctl(void)
 /** 20140426    
  * rq가 현재 online 상태가 아니라면
  *   rq에 해당하는 cpu를 online mask에 추가하고, 
- *   sched class의 콜백을 호출해 스케쥴링 대상에 포함시킨다.
+ *   sched class의 rq_online 콜백을 호출해 스케쥴링 대상에 포함시킨다.
  **/
 static void set_rq_online(struct rq *rq)
 {
@@ -6825,6 +6834,9 @@ static void sched_domain_debug(struct sched_domain *sd, int cpu)
 	}
 }
 #else /* !CONFIG_SCHED_DEBUG */
+/** 20150822    
+ * SCHED_DEBUG 설정하지 않음.
+ **/
 # define sched_domain_debug(sd, cpu) do { } while (0)
 static inline bool sched_debug(void)
 {
@@ -6832,15 +6844,22 @@ static inline bool sched_debug(void)
 }
 #endif /* CONFIG_SCHED_DEBUG */
 
+/** 20150822    
+ * sched_domain이 degenerate 되어야 하면 1, 그렇지 않으면 0이 리턴.
+ **/
 static int sd_degenerate(struct sched_domain *sd)
 {
 	/** 20150815    
-	 * sched_domain에 속한 cpu 개수가 1개면 바로 리턴.
+	 * sched_domain에 속한 cpu 개수가 1개면 바로 1 리턴.
 	 **/
 	if (cpumask_weight(sched_domain_span(sd)) == 1)
 		return 1;
 
 	/* Following flags need at least 2 groups */
+	/** 20150822    
+	 * sched_domain의 flag 중 2개 이상의 그룹이 필요한 속성이 있다면
+	 * 하나의 그룹만 존재하지 않는 이상 degenerate 하지 않는다.
+	 **/
 	if (sd->flags & (SD_LOAD_BALANCE |
 			 SD_BALANCE_NEWIDLE |
 			 SD_BALANCE_FORK |
@@ -6949,13 +6968,13 @@ static void rq_attach_root(struct rq *rq, struct root_domain *rd)
 	}
 
 	/** 20140426    
-	 * 새로운 root domain의 refcount를 증가하고, runqueue 자료구조에 연결한다.
+	 * root domain의 refcount를 증가하고, runqueue의 root_domain으로 지정한다.
 	 **/
 	atomic_inc(&rd->refcount);
 	rq->rd = rd;
 
 	/** 20140426    
-	 * rd의 span cpumask에 runqueue cpu를 설정한다.
+	 * root domain의 span 맵에 runqueue를 추가한다.
 	 **/
 	cpumask_set_cpu(rq->cpu, rd->span);
 	/** 20140426    
@@ -6975,7 +6994,7 @@ static void rq_attach_root(struct rq *rq, struct root_domain *rd)
 }
 
 /** 20140419    
- * rootdomain 초기화
+ * rootdomain 데이터 초기화
  **/
 static int init_rootdomain(struct root_domain *rd)
 {
@@ -7034,7 +7053,7 @@ static void init_defrootdomain(void)
 }
 
 /** 20150808    
- * rootdomain을 위한 메모리를 할당받아 init시켜 리턴.
+ * rootdomain을 위한 메모리를 할당받고 초기화해 리턴.
  **/
 static struct root_domain *alloc_rootdomain(void)
 {
@@ -7137,6 +7156,9 @@ DEFINE_PER_CPU(struct sched_domain *, sd_llc);
  **/
 DEFINE_PER_CPU(int, sd_llc_id);
 
+/** 20150822    
+ * percpu 캐시에 sched_domain과 domain id를 업데이트 한다.
+ **/
 static void update_top_cache_domain(int cpu)
 {
 	struct sched_domain *sd;
@@ -7205,6 +7227,9 @@ static void update_top_cache_domain(int cpu)
 		id = cpumask_first(sched_domain_span(sd));
 	}
 
+	/** 20150822    
+	 * percpu인 sd_llc와 sd_llc_id에 sd와 id를 지정한다.
+	 **/
 	rcu_assign_pointer(per_cpu(sd_llc, cpu), sd);
 	per_cpu(sd_llc_id, cpu) = id;
 }
@@ -7213,6 +7238,9 @@ static void update_top_cache_domain(int cpu)
  * Attach the domain 'sd' to 'cpu' as its base domain. Callers must
  * hold the hotplug lock.
  */
+/** 20150822    
+ * sd를 cpu에 대한 base domain으로 붙인다.
+ **/
 static void
 cpu_attach_domain(struct sched_domain *sd, struct root_domain *rd, int cpu)
 {
@@ -7221,7 +7249,7 @@ cpu_attach_domain(struct sched_domain *sd, struct root_domain *rd, int cpu)
 
 	/* Remove the sched domains which do not contribute to scheduling. */
 	/** 20150815    
-	 * schduling에 관련 없는 sched_domains를 제거한다.
+	 * scheduling에 관련 없는 sched_domains를 제거한다.
 	 **/
 	for (tmp = sd; tmp; ) {
 		struct sched_domain *parent = tmp->parent;
@@ -7237,6 +7265,9 @@ cpu_attach_domain(struct sched_domain *sd, struct root_domain *rd, int cpu)
 			tmp = tmp->parent;
 	}
 
+	/** 20150822    
+	 * sd가 degenerate되어야 하는지 검사해 해당 sd를 제거한다.
+	 **/
 	if (sd && sd_degenerate(sd)) {
 		tmp = sd;
 		sd = sd->parent;
@@ -7248,7 +7279,7 @@ cpu_attach_domain(struct sched_domain *sd, struct root_domain *rd, int cpu)
 	sched_domain_debug(sd, cpu);
 
 	/** 20150815    
-	 * rq에 root_domain을 붙인다.
+	 * rq에 새 root_domain을 붙인다.
 	 *
 	 * 새로운 sd를 rq->sd로 지정한다.
 	 * 현재 rq의 sd에 지정된 sched_domain이 존재한다면 제거한다.
@@ -7258,6 +7289,9 @@ cpu_attach_domain(struct sched_domain *sd, struct root_domain *rd, int cpu)
 	rcu_assign_pointer(rq->sd, sd);
 	destroy_sched_domains(tmp, cpu);
 
+	/** 20150822    
+	 * domain cache를 업데이트 한다.
+	 **/
 	update_top_cache_domain(cpu);
 }
 
@@ -7535,7 +7569,7 @@ build_sched_groups(struct sched_domain *sd, int cpu)
 
 		/** 20150815    
 		 * span의 각 cpu를 다시 순회하며 i와 같은 그룹인 j를
-		 * sg의 cpumask에 표시한다.
+		 * sched_group의 cpumask에 표시한다.
 		 * covered는 이중 반복의 비교횟수를 줄이기 위한 체크.
 		 **/
 		for_each_cpu(j, span) {
@@ -7714,6 +7748,9 @@ static enum s_alloc __visit_domain_allocation_hell(struct s_data *d,
 	d->sd = alloc_percpu(struct sched_domain *);
 	if (!d->sd)
 		return sa_sd_storage;
+	/** 20150822    
+	 * root_domain을 위한 메모리를 할당 받고, 초기화 한다.
+	 **/
 	d->rd = alloc_rootdomain();
 	if (!d->rd)
 		return sa_sd;
@@ -8143,6 +8180,9 @@ struct sched_domain *build_sched_domain(struct sched_domain_topology_level *tl,
  * Build sched domains for a given set of cpus and attach the sched domains
  * to the individual cpus
  */
+/** 20150822    
+ * cpu_map을 위한 sched_domain을 구성하고, 각 cpu들의 base domain으로 지정한다.
+ **/
 static int build_sched_domains(const struct cpumask *cpu_map,
 			       struct sched_domain_attr *attr)
 {
@@ -8224,7 +8264,7 @@ static int build_sched_domains(const struct cpumask *cpu_map,
 	 * 전체 cpumask를 순회하며 cpu_map에 포함된 각 cpu에 대해
 	 * sched_domain을 child에서 parent 순서로 순회하여
 	 *   - 빌드하기 위해 사용했던 자료구조를 정리한다.
-	 *   - 
+	 *   - init_sched_groups_power 추후 분석???
 	 **/
 	for (i = nr_cpumask_bits-1; i >= 0; i--) {
 		if (!cpumask_test_cpu(i, cpu_map))
@@ -8237,6 +8277,9 @@ static int build_sched_domains(const struct cpumask *cpu_map,
 	}
 
 	/* Attach the domains */
+	/** 20150822    
+	 * 구성한 sched_domain을 cpu_map에 속하는 각 cpu의 base domain으로 지정한다.
+	 **/
 	rcu_read_lock();
 	for_each_cpu(i, cpu_map) {
 		sd = *per_cpu_ptr(d.sd, i);
@@ -8246,6 +8289,9 @@ static int build_sched_domains(const struct cpumask *cpu_map,
 
 	ret = 0;
 error:
+	/** 20150822    
+	 * alloc 성공 상태에 따라 할당했던 메모리를 해제한다.
+	 **/
 	__free_domain_allocs(&d, alloc_state, cpu_map);
 	return ret;
 }
@@ -8308,6 +8354,11 @@ void free_sched_domains(cpumask_var_t doms[], unsigned int ndoms)
  * For now this just excludes isolated cpus, but could be used to
  * exclude other special cases in the future.
  */
+/** 20150822    
+ * scheduler domain, group들을 설정한다.
+ *
+ * 대상이 되는 cpu_map 중 isolate된 cpu들은 제외한 map에 대해 설정한다.
+ **/
 static int init_sched_domains(const struct cpumask *cpu_map)
 {
 	int err;
@@ -8467,6 +8518,9 @@ static int num_cpus_frozen;	/* used to mark begin/end of suspend/resume */
  * If we come here as part of a suspend/resume, don't touch cpusets because we
  * want to restore it back to its original state upon resume anyway.
  */
+/** 20150822    
+ * hotplug 사용시 호출되는 콜백함수. 추후분석???
+ **/
 static int cpuset_cpu_active(struct notifier_block *nfb, unsigned long action,
 			     void *hcpu)
 {
@@ -8502,6 +8556,9 @@ static int cpuset_cpu_active(struct notifier_block *nfb, unsigned long action,
 	return NOTIFY_OK;
 }
 
+/** 20150822    
+ * hotplug 사용시 호출되는 콜백함수. 추후분석???
+ **/
 static int cpuset_cpu_inactive(struct notifier_block *nfb, unsigned long action,
 			       void *hcpu)
 {
@@ -8519,6 +8576,13 @@ static int cpuset_cpu_inactive(struct notifier_block *nfb, unsigned long action,
 	return NOTIFY_OK;
 }
 
+/** 20150822    
+ * smp에서 sched 관련 초기화를 수행한다.
+ *
+ * - NUMA인 경우 sched_init_numa
+ * - sched_domain, sched_group을 초기화 한다.
+ * - sched policy 관련 초기화 한다.
+ **/
 void __init sched_init_smp(void)
 {
 	cpumask_var_t non_isolated_cpus;
@@ -8542,24 +8606,48 @@ void __init sched_init_smp(void)
 	 **/
 	get_online_cpus();
 	mutex_lock(&sched_domains_mutex);
+	/** 20150822    
+	 * cpu_active_mask로 sched_domain, sched_group을 구성하고
+	 * 각 cpu의 base domain으로 지정한다.
+	 **/
 	init_sched_domains(cpu_active_mask);
+	/** 20150822    
+	 * possible_mask에서 isolate되지 않은 map을 뽑아낸다.
+	 * non_isolated_cpus가 없으면 현재 cpu만 포함시킨다.
+	 **/
 	cpumask_andnot(non_isolated_cpus, cpu_possible_mask, cpu_isolated_map);
 	if (cpumask_empty(non_isolated_cpus))
 		cpumask_set_cpu(smp_processor_id(), non_isolated_cpus);
 	mutex_unlock(&sched_domains_mutex);
 	put_online_cpus();
 
+	/** 20150822    
+	 * cpu notify 콜백으로 cpuset_cpu_active와 cpuset_cpu_inactive 를 지정한다.
+	 * 각각 호출 순서에 해당하는 priority를 가진다.
+	 **/
 	hotcpu_notifier(cpuset_cpu_active, CPU_PRI_CPUSET_ACTIVE);
 	hotcpu_notifier(cpuset_cpu_inactive, CPU_PRI_CPUSET_INACTIVE);
 
 	/* RT runtime code needs to handle some hotplug events */
+	/** 20150822    
+	 * RT runtime을 update하는 콜백 함수 지정.
+	 **/
 	hotcpu_notifier(update_runtime, 0);
 
+	/** 20150822    
+	 * hrtick 관련 초기화를 수행한다 - 콜백 함수 등록
+	 **/
 	init_hrtick();
 
 	/* Move init over to a non-isolated CPU */
+	/** 20150822    
+	 * 현재 task를 non-isolated cpu에서 수행하도록 한다.
+	 **/
 	if (set_cpus_allowed_ptr(current, non_isolated_cpus) < 0)
 		BUG();
+	/** 20150822    
+	 * sched 관련 설정가능한 단위를 초기화 한다.
+	 **/
 	sched_init_granularity();
 	free_cpumask_var(non_isolated_cpus);
 

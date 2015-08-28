@@ -1542,6 +1542,9 @@ next_idx:
 	return next;
 }
 
+/** 20150822    
+ * percpu 변수 local_cpu_mask
+ **/
 static DEFINE_PER_CPU(cpumask_var_t, local_cpu_mask);
 
 static int find_lowest_rq(struct task_struct *task)
@@ -1969,10 +1972,16 @@ static void switched_from_rt(struct rq *rq, struct task_struct *p)
 		pull_rt_task(rq);
 }
 
+/** 20150822    
+ * sched_rt class 관련 초기화를 수행한다.
+ **/
 void init_sched_rt_class(void)
 {
 	unsigned int i;
 
+	/** 20150822    
+	 * 각 possible cpu들에 대해 percpu 변수인 local_cpu_mask를 초기화 한다.
+	 **/
 	for_each_possible_cpu(i) {
 		zalloc_cpumask_var_node(&per_cpu(local_cpu_mask, i),
 					GFP_KERNEL, cpu_to_node(i));

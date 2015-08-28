@@ -1091,7 +1091,13 @@ static void __init do_initcalls(void)
 static void __init do_basic_setup(void)
 {
 	cpuset_init_smp();
+	/** 20150822    
+	 * "khelper" workqueue를 생성한다.
+	 **/
 	usermodehelper_init();
+	/** 20150822    
+	 * shmem 초기화를 수행한다.
+	 **/
 	shmem_init();
 	driver_init();
 	init_irq_proc();
@@ -1209,7 +1215,13 @@ static int __init kernel_init(void * unused)
 	do_pre_smp_initcalls();
 	lockup_detector_init();
 
+	/** 20150822    
+	 * boot core로 나머지들을 깨운다.
+	 **/
 	smp_init();
+	/** 20150822    
+	 * SMP 환경에서 sched 관련 초기화를 호출한다
+	 **/
 	sched_init_smp();
 
 	do_basic_setup();

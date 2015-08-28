@@ -24,6 +24,9 @@ struct percpu_counter {
 	raw_spinlock_t lock;
 	s64 count;
 #ifdef CONFIG_HOTPLUG_CPU
+	/** 20150822    
+	 * percpu_counters 전역 리스트에 연결하는 포인트.
+	 **/
 	struct list_head list;	/* All percpu_counters are on a list */
 #endif
 	s32 __percpu *counters;

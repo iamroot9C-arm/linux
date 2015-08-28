@@ -22,6 +22,11 @@ struct shmem_inode_info {
 	struct inode		vfs_inode;
 };
 
+/** 20150822    
+ * superblock 중 shmem filesystem private info.
+ *
+ * used_blocks : 얼마나 할당 받았는지 percpu로 저장.
+ **/
 struct shmem_sb_info {
 	unsigned long max_blocks;   /* How many blocks are allowed */
 	struct percpu_counter used_blocks;  /* How many are allocated */

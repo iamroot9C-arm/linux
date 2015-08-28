@@ -119,8 +119,14 @@ unsigned int sysctl_sched_cfs_bandwidth_slice = 5000UL;
  *
  * This idea comes from the SD scheduler of Con Kolivas:
  */
+/** 20150822    
+ * sysctl_sched_tunable_scaling 에 따라 factor 설정
+ **/
 static int get_update_sysctl_factor(void)
 {
+	/** 20150822    
+	 * cpus의 값은 최소 8.
+	 **/
 	unsigned int cpus = min_t(int, num_online_cpus(), 8);
 	unsigned int factor;
 
@@ -140,6 +146,9 @@ static int get_update_sysctl_factor(void)
 	return factor;
 }
 
+/** 20150822    
+ * sysctl에서 사용할 factor를 받아와 다른 sysctl 값을 초기화 한다.
+ **/
 static void update_sysctl(void)
 {
 	unsigned int factor = get_update_sysctl_factor();
@@ -152,6 +161,11 @@ static void update_sysctl(void)
 #undef SET_SYSCTL
 }
 
+/** 20150822    
+ * sched에서 granularity를 초기화 한다.
+ *
+ * sysctl default 값으로 설정한다.
+ **/
 void sched_init_granularity(void)
 {
 	update_sysctl();

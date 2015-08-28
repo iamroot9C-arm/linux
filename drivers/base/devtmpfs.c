@@ -61,6 +61,11 @@ static struct dentry *dev_mount(struct file_system_type *fs_type, int flags,
 #endif
 }
 
+/** 20150822    
+ * "devtmpfs" 파일시스템 타입.
+ *
+ * .mount시 dev_mount
+ **/
 static struct file_system_type dev_fs_type = {
 	.name = "devtmpfs",
 	.mount = dev_mount,

@@ -56,6 +56,8 @@ DEFINE_MUTEX(slab_mutex);
 
 /** 20140510    
  * kmem_cache를 생성한다.
+ *
+ * ctor는 새로운 slab을 만들기 위해 페이지들을 할당 받은 뒤 초기화 하는 콜백 함수.
  **/
 struct kmem_cache *kmem_cache_create(const char *name, size_t size, size_t align,
 		unsigned long flags, void (*ctor)(void *))

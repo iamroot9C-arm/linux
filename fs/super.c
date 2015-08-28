@@ -1320,6 +1320,10 @@ struct dentry *mount_single(struct file_system_type *fs_type,
 	struct super_block *s;
 	int error;
 
+	/** 20150822    
+	 * fs_type에서 superblock을 찾아 compare_single로 검사하고,
+	 * 없다면 set_anon_super로 지정하고 superblock을 리턴한다.
+	 **/
 	s = sget(fs_type, compare_single, set_anon_super, flags, NULL);
 	if (IS_ERR(s))
 		return ERR_CAST(s);

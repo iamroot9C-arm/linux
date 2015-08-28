@@ -1012,6 +1012,9 @@ struct sched_domain {
 	unsigned int wake_idx;
 	unsigned int forkexec_idx;
 	unsigned int smt_gain;
+	/** 20150822    
+	 * build_sched_domain()로 구성 후 tl->flags를 참조해 초기화 한다.
+	 **/
 	int flags;			/* See SD_* */
 	int level;
 	int idle_buddy;			/* cpu assigned to select_idle_sibling() */

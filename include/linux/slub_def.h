@@ -123,6 +123,9 @@ struct kmem_cache {
 	struct kmem_cache_order_objects min;
 	gfp_t allocflags;	/* gfp flags to use on each alloc */
 	int refcount;		/* Refcount for slab cache destroy */
+	/** 20150822    
+	 * 새 slab을 생성할 때 page를 할당받은 뒤 호출되는 함수.
+	 **/
 	void (*ctor)(void *);
 	/** 20140510    
 	 * object에 의해 실제 사용되는 공간. 정렬된 크기를 가져야 한다.

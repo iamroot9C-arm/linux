@@ -707,6 +707,9 @@ struct ctl_table usermodehelper_table[] = {
 	{ }
 };
 
+/** 20150822    
+ * "khelper"라는 unbound workqueue를 생성한다.
+ **/
 void __init usermodehelper_init(void)
 {
 	khelper_wq = create_singlethread_workqueue("khelper");

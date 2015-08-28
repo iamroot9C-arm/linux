@@ -2222,6 +2222,9 @@ static int cpuset_track_online_nodes(struct notifier_block *self,
  * Description: Finish top cpuset after cpu, node maps are initialized
  **/
 
+/** 20150822    
+ * cpuset_init, cpuset_init_smp 추후분석???
+ **/
 void __init cpuset_init_smp(void)
 {
 	cpumask_copy(top_cpuset.cpus_allowed, cpu_active_mask);
