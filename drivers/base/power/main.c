@@ -60,6 +60,9 @@ static int async_error;
  * device_pm_init - Initialize the PM-related part of a device object.
  * @dev: Device object being initialized.
  */
+/** 20150829    
+ * 각 device object의 PM 관련 함수를 초기화 한다.
+ **/
 void device_pm_init(struct device *dev)
 {
 	dev->power.is_prepared = false;

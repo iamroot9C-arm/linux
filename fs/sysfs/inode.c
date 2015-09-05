@@ -379,6 +379,9 @@ void sysfs_evict_inode(struct inode *inode)
 	sysfs_put(sd);
 }
 
+/** 20150905    
+ * sysfs에서 hash로 찾아 제거한다.
+ **/
 int sysfs_hash_and_remove(struct sysfs_dirent *dir_sd, const void *ns, const char *name)
 {
 	struct sysfs_addrm_cxt acxt;
@@ -390,6 +393,10 @@ int sysfs_hash_and_remove(struct sysfs_dirent *dir_sd, const void *ns, const cha
 		return -ENOENT;
 	}
 
+	/** 20150905    
+	 * dir_sd 아래에서 name이 동일한 sysfs_dirent를 찾아 존재하면 제거한다.
+	 * sysfs dirent 추가/제거 동작이므로 context를 보호한다.
+	 **/
 	sysfs_addrm_start(&acxt, dir_sd);
 
 	sd = sysfs_find_dirent(dir_sd, ns, name);

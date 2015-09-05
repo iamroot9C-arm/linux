@@ -96,6 +96,9 @@ static struct kobj_type class_ktype = {
 };
 
 /* Hotplug events for classes go to the class subsys */
+/** 20150829    
+ * classes_init()에서 생성해 저장한다.
+ **/
 static struct kset *class_kset;
 
 
@@ -592,6 +595,12 @@ void class_compat_remove_link(struct class_compat *cls, struct device *dev,
 }
 EXPORT_SYMBOL_GPL(class_compat_remove_link);
 
+/** 20150829    
+ * "class" kset을 생성하고 등록한다.
+ * uevent_ops는 지정하지 않는다.
+ *
+ * "/sys/class" 생성.
+ **/
 int __init classes_init(void)
 {
 	class_kset = kset_create_and_add("class", NULL, NULL);

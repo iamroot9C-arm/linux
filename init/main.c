@@ -1090,6 +1090,9 @@ static void __init do_initcalls(void)
  */
 static void __init do_basic_setup(void)
 {
+	/** 20150829    
+	 * cpuset_init_smp 추후분석???
+	 **/
 	cpuset_init_smp();
 	/** 20150822    
 	 * "khelper" workqueue를 생성한다.

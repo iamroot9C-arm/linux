@@ -26,6 +26,10 @@
 #define to_platform_driver(drv)	(container_of((drv), struct platform_driver, \
 				 driver))
 
+/** 20150829    
+ * device hierarchy 구성용 platform device.
+ * "/sys/devices/platform/" 생성
+ **/
 struct device platform_bus = {
 	.init_name	= "platform",
 };

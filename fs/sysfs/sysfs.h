@@ -30,6 +30,9 @@ struct sysfs_elem_dir {
 	struct rb_root		children;
 };
 
+/** 20150905    
+ * 심볼릭 링크의 타겟 sysfs_dirent를 가리킨다.
+ **/
 struct sysfs_elem_symlink {
 	struct sysfs_dirent	*target_sd;
 };

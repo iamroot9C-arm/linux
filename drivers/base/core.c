@@ -43,13 +43,22 @@ static __init int sysfs_deprecated_setup(char *arg)
 early_param("sysfs.deprecated", sysfs_deprecated_setup);
 #endif
 
+/** 20150829    
+ * device 추가시 platform에 notify를 주기 위한 콜백을 등록한다.
+ **/
 int (*platform_notify)(struct device *dev) = NULL;
 int (*platform_notify_remove)(struct device *dev) = NULL;
 static struct kobject *dev_kobj;
+/** 20150905    
+ * devices_init에서 "/sys/dev/block", "/sys/dev/char"에 대한 kobject.
+ **/
 struct kobject *sysfs_dev_char_kobj;
 struct kobject *sysfs_dev_block_kobj;
 
 #ifdef CONFIG_BLOCK
+/** 20150905    
+ * device type이 part_type이 아니면 partition되어 있지 않은 디바이스.
+ **/
 static inline int device_is_not_partition(struct device *dev)
 {
 	return !(dev->type == &part_type);
@@ -87,6 +96,9 @@ EXPORT_SYMBOL(dev_driver_string);
 
 #define to_dev_attr(_attr) container_of(_attr, struct device_attribute, attr)
 
+/** 20150829    
+ * 디바이스 등록시 지정한 attribute show 콜백 함수를 호출한다.
+ **/
 static ssize_t dev_attr_show(struct kobject *kobj, struct attribute *attr,
 			     char *buf)
 {
@@ -115,6 +127,9 @@ static ssize_t dev_attr_store(struct kobject *kobj, struct attribute *attr,
 	return ret;
 }
 
+/** 20150829    
+ * dev의 sysfs 콜백함수 구조체.
+ **/
 static const struct sysfs_ops dev_sysfs_ops = {
 	.show	= dev_attr_show,
 	.store	= dev_attr_store,
@@ -208,6 +223,11 @@ static const void *device_namespace(struct kobject *kobj)
 	return ns;
 }
 
+/** 20150829    
+ * device ktype.
+ *
+ * .sysfs_ops
+ **/
 static struct kobj_type device_ktype = {
 	.release	= device_release,
 	.sysfs_ops	= &dev_sysfs_ops,
@@ -240,6 +260,10 @@ static const char *dev_uevent_name(struct kset *kset, struct kobject *kobj)
 	return NULL;
 }
 
+/** 20150829    
+ * "devices" kset의 ops에 해당하는 uevent 함수.
+ * 자세한 내용은 추후분석???
+ **/
 static int dev_uevent(struct kset *kset, struct kobject *kobj,
 		      struct kobj_uevent_env *env)
 {
@@ -362,15 +386,26 @@ static ssize_t store_uevent(struct device *dev, struct device_attribute *attr,
 	return count;
 }
 
+/** 20150829    
+ * device의 sysfs에서 uevent 파일에 대한 attribute.
+ **/
 static struct device_attribute uevent_attr =
 	__ATTR(uevent, S_IRUGO | S_IWUSR, show_uevent, store_uevent);
 
+/** 20150905    
+ * device에 attribute를 추가한다.
+ * sysfs에서 각 device_attribute가 파일로 생성된다.
+ **/
 static int device_add_attributes(struct device *dev,
 				 struct device_attribute *attrs)
 {
 	int error = 0;
 	int i;
 
+	/** 20150905    
+	 * 속성 이름이 NULL이 아닐 때까지 device에
+	 * attribute들을 각각 sysfs 파일로 생성한다.
+	 **/
 	if (attrs) {
 		for (i = 0; attr_name(attrs[i]); i++) {
 			error = device_create_file(dev, &attrs[i]);
@@ -394,12 +429,20 @@ static void device_remove_attributes(struct device *dev,
 			device_remove_file(dev, &attrs[i]);
 }
 
+/** 20150905    
+ * device에 bin attribute를 추가한다.
+ * sysfs에서 각 device_attribute가 BIN 파일로 생성된다.
+ **/
 static int device_add_bin_attributes(struct device *dev,
 				     struct bin_attribute *attrs)
 {
 	int error = 0;
 	int i;
 
+	/** 20150905    
+	 * 속성 이름이 NULL이 아닐 때까지 device에
+	 * attribute들을 각각 sysfs BIN 파일로 생성한다.
+	 **/
 	if (attrs) {
 		for (i = 0; attr_name(attrs[i]); i++) {
 			error = device_create_bin_file(dev, &attrs[i]);
@@ -423,12 +466,18 @@ static void device_remove_bin_attributes(struct device *dev,
 			device_remove_bin_file(dev, &attrs[i]);
 }
 
+/** 20150905    
+ * 디바이스 파일에 attribute 그룹을 추가한다.
+ **/
 static int device_add_groups(struct device *dev,
 			     const struct attribute_group **groups)
 {
 	int error = 0;
 	int i;
 
+	/** 20150905    
+	 * 각 attribute 그룹들을 순회하며 디렉토리 kobject에 추가한다.
+	 **/
 	if (groups) {
 		for (i = 0; groups[i]; i++) {
 			error = sysfs_create_group(&dev->kobj, groups[i]);
@@ -453,12 +502,20 @@ static void device_remove_groups(struct device *dev,
 			sysfs_remove_group(&dev->kobj, groups[i]);
 }
 
+/** 20150905    
+ * device에 attribute 들을 추가한다.
+ * class와 type의 attribute들과 device의 attribute가 sysfs dirent로 생성된다.
+ **/
 static int device_add_attrs(struct device *dev)
 {
 	struct class *class = dev->class;
 	const struct device_type *type = dev->type;
 	int error;
 
+	/** 20150905    
+	 * class가 존재하면 device에 class용 attributes를 추가한다.
+	 * sysfs에서 attirubte가 파일로 추가된다.
+	 **/
 	if (class) {
 		error = device_add_attributes(dev, class->dev_attrs);
 		if (error)
@@ -468,12 +525,18 @@ static int device_add_attrs(struct device *dev)
 			goto err_remove_class_attrs;
 	}
 
+	/** 20150905    
+	 * type이 지정되어 있으면 type의 attribute 그룹들을 추가한다.
+	 **/
 	if (type) {
 		error = device_add_groups(dev, type->groups);
 		if (error)
 			goto err_remove_class_bin_attrs;
 	}
 
+	/** 20150905    
+	 * 디바이스에 지정된 attribute 그룹들을 추가한다.
+	 **/
 	error = device_add_groups(dev, dev->groups);
 	if (error)
 		goto err_remove_type_groups;
@@ -516,10 +579,17 @@ static ssize_t show_dev(struct device *dev, struct device_attribute *attr,
 	return print_dev_t(buf, dev->devt);
 }
 
+/** 20150905    
+ * device를 위한 device_attribute를 생성한다.
+ **/
 static struct device_attribute devt_attr =
 	__ATTR(dev, S_IRUGO, show_dev, NULL);
 
 /* /sys/devices/ */
+/** 20150829    
+ * "devices" kset.
+ * devices_init() 함수에서 kset을 생성해 저정한다.
+ **/
 struct kset *devices_kset;
 
 /**
@@ -527,6 +597,9 @@ struct kset *devices_kset;
  * @dev: device.
  * @attr: device attribute descriptor.
  */
+/** 20150829    
+ * sysfs에 device를 위한 attribute 파일을 생성한다.
+ **/
 int device_create_file(struct device *dev,
 		       const struct device_attribute *attr)
 {
@@ -553,6 +626,9 @@ void device_remove_file(struct device *dev,
  * @dev: device.
  * @attr: device binary attribute descriptor.
  */
+/** 20150905    
+ * device에 sysfs bin 속성파일을 생성한다.
+ **/
 int device_create_bin_file(struct device *dev,
 			   const struct bin_attribute *attr)
 {
@@ -609,6 +685,10 @@ int device_schedule_callback_owner(struct device *dev,
 }
 EXPORT_SYMBOL_GPL(device_schedule_callback_owner);
 
+/** 20150829    
+ * children klist_node로 children을 가져오고,
+ * 그 children의 device의 reference count를 증가시킨다.
+ **/
 static void klist_children_get(struct klist_node *n)
 {
 	struct device_private *p = to_device_private_parent(n);
@@ -617,6 +697,10 @@ static void klist_children_get(struct klist_node *n)
 	get_device(dev);
 }
 
+/** 20150829    
+ * children klist_node로 children을 가져오고,
+ * 그 children의 device의 reference count를 감소시킨다.
+ **/
 static void klist_children_put(struct klist_node *n)
 {
 	struct device_private *p = to_device_private_parent(n);
@@ -645,9 +729,20 @@ static void klist_children_put(struct klist_node *n)
  * NOTE: Use put_device() to give up your reference instead of freeing
  * @dev directly once you have called this function.
  */
+/** 20150829    
+ * device 구조체를 초기화 한다.
+ * - kobject 초기화 (device에 해당하는 kset과 ktype 지정)
+ * - 자료구조 초기화
+ **/
 void device_initialize(struct device *dev)
 {
+	/** 20150829    
+	 * device kobject는 devices_kset kset 내에 등록한다.
+	 **/
 	dev->kobj.kset = devices_kset;
+	/** 20150829    
+	 * device_ktype로 kobject를 추가한다.
+	 **/
 	kobject_init(&dev->kobj, &device_ktype);
 	INIT_LIST_HEAD(&dev->dma_pools);
 	mutex_init(&dev->mutex);
@@ -658,10 +753,17 @@ void device_initialize(struct device *dev)
 	set_dev_node(dev, -1);
 }
 
+/** 20150829    
+ * device에 상관없이 virtual device에 해당하는 "virtual"이 리턴된다.
+ **/
 static struct kobject *virtual_device_parent(struct device *dev)
 {
 	static struct kobject *virtual_dir = NULL;
 
+	/** 20150829    
+	 * virtual_dir이 지정되어 않았다면 "virtual" kobject를 생성해 devices 아래 추가한다.
+	 * "/sys/devices/virtual"
+	 **/
 	if (!virtual_dir)
 		virtual_dir = kobject_create_and_add("virtual",
 						     &devices_kset->kobj);
@@ -695,6 +797,9 @@ static struct kobj_type class_dir_ktype = {
 	.child_ns_type	= class_dir_child_ns_type
 };
 
+/** 20150829    
+ * device를 class hierarchy에 추가한다.
+ **/
 static struct kobject *
 class_dir_create_and_add(struct class *class, struct kobject *parent_kobj)
 {
@@ -719,6 +824,11 @@ class_dir_create_and_add(struct class *class, struct kobject *parent_kobj)
 }
 
 
+/** 20150829    
+ * device의 parent 디바이스의 kobject를 리턴한다.
+ *
+ * class device인지 먼저 판단해 처리한다.
+ **/
 static struct kobject *get_device_parent(struct device *dev,
 					 struct device *parent)
 {
@@ -742,6 +852,16 @@ static struct kobject *get_device_parent(struct device *dev,
 		 * Class-devices with a non class-device as parent, live
 		 * in a "glue" directory to prevent namespace collisions.
 		 */
+		/** 20150829    
+		 * parent가 지정되지 않았다면 virtual 디바이스. 예를 들어 cpuid.
+		 * parent_kobj로 virtual root에 해당하는 "virtual"이 지정된다.
+		 *
+		 * parent의 class가 정의되어 있고 ns_type이 지정되지 않았다면
+		 * parent의 kobj를 리턴한다.
+		 *
+		 * class devices가 parent로 non-class 디바이스를 가진다면
+		 * namespace 충돌을 방지하기 위해 "glue" 디렉토리를 사용한다.
+		 **/
 		if (parent == NULL)
 			parent_kobj = virtual_device_parent(dev);
 		else if (parent->class && !dev->class->ns_type)
@@ -753,6 +873,10 @@ static struct kobject *get_device_parent(struct device *dev,
 
 		/* find our class-directory at the parent and reference it */
 		spin_lock(&dev->class->p->glue_dirs.list_lock);
+		/** 20150829    
+		 * device가 속한 class의 subsystem의 glue_dirs를 순회하며
+		 * parent_kobj를 parent로 가지는 entry를 찾아 kobj로 삼는다.
+		 **/
 		list_for_each_entry(k, &dev->class->p->glue_dirs.list, entry)
 			if (k->parent == parent_kobj) {
 				kobj = kobject_get(k);
@@ -795,6 +919,11 @@ static void cleanup_device_parent(struct device *dev)
 	cleanup_glue_dir(dev, dev->kobj.parent);
 }
 
+/** 20150905    
+ * 새 디바이스의 class 관련 심볼릭 링크를 생성한다.
+ *
+ * sysfs 상에서 subsystem과 서로 심볼릭 링크로 가리킨다.
+ **/
 static int device_add_class_symlinks(struct device *dev)
 {
 	int error;
@@ -802,12 +931,21 @@ static int device_add_class_symlinks(struct device *dev)
 	if (!dev->class)
 		return 0;
 
+	/** 20150905    
+	 * device 디렉토리 아래에 class의 "subsystem"에 대한 링크를 만든다.
+	 *
+	 * 즉, sysfs에서 이 디바이스가 어떤 클래스의 subsystem에 속하는지 알 수 있다.
+	 **/
 	error = sysfs_create_link(&dev->kobj,
 				  &dev->class->p->subsys.kobj,
 				  "subsystem");
 	if (error)
 		goto out;
 
+	/** 20150905    
+	 * parent가 존재하고,
+	 * partition 디바이스가 아닐 경우 "device"에 대한 링크를 만든다.
+	 **/
 	if (dev->parent && device_is_not_partition(dev)) {
 		error = sysfs_create_link(&dev->kobj, &dev->parent->kobj,
 					  "device");
@@ -817,11 +955,17 @@ static int device_add_class_symlinks(struct device *dev)
 
 #ifdef CONFIG_BLOCK
 	/* /sys/block has directories and does not need symlinks */
+	/** 20150905    
+	 * sysfs_deprecated이고 block class인 경우 리턴.
+	 **/
 	if (sysfs_deprecated && dev->class == &block_class)
 		return 0;
 #endif
 
 	/* link in the class directory pointing to the device */
+	/** 20150905    
+	 * 디바이스가 속한 subsystem에 지정된 디바이스에 대한 링크를 걸어준다.
+	 **/
 	error = sysfs_create_link(&dev->class->p->subsys.kobj,
 				  &dev->kobj, dev_name(dev));
 	if (error)
@@ -858,6 +1002,9 @@ static void device_remove_class_symlinks(struct device *dev)
  * @dev: device
  * @fmt: format string for the device's name
  */
+/** 20150829    
+ * device의 포맷스트링을 파싱해 kobject의 name에 저장한다.
+ **/
 int dev_set_name(struct device *dev, const char *fmt, ...)
 {
 	va_list vargs;
@@ -881,6 +1028,12 @@ EXPORT_SYMBOL_GPL(dev_set_name);
  * device_remove_sys_dev_entry() will disagree about the presence of
  * the link.
  */
+/** 20150905    
+ * device를 위한 "/sys/dev/" 디렉토리를 선택한다.
+ *
+ * device에 class가 존재하면 class의 dev_kobj를 가져오고,
+ * 그렇지 않으면 character device의 kobj를 가져온다.
+ **/
 static struct kobject *device_to_dev_kobj(struct device *dev)
 {
 	struct kobject *kobj;
@@ -893,12 +1046,18 @@ static struct kobject *device_to_dev_kobj(struct device *dev)
 	return kobj;
 }
 
+/** 20150829    
+ * "/sys/dev" 아래 device를 위한 심볼릭 링크를 생성한다.
+ **/
 static int device_create_sys_dev_entry(struct device *dev)
 {
 	struct kobject *kobj = device_to_dev_kobj(dev);
 	int error = 0;
 	char devt_str[15];
 
+	/** 20150905    
+	 * kobj가 존재하면 "MAJOR:MINOR" 번호로 심볼릭 링크를 생성한다.
+	 **/
 	if (kobj) {
 		format_dev_t(devt_str, dev->devt);
 		error = sysfs_create_link(kobj, &dev->kobj, devt_str);
@@ -918,12 +1077,22 @@ static void device_remove_sys_dev_entry(struct device *dev)
 	}
 }
 
+/** 20150829    
+ * device 내의 device_private 구조체를 초기화 한다.
+ **/
 int device_private_init(struct device *dev)
 {
+	/** 20150829    
+	 * device_private 구조체로 사용할 메모리를 할당 받는다.
+	 **/
 	dev->p = kzalloc(sizeof(*dev->p), GFP_KERNEL);
 	if (!dev->p)
 		return -ENOMEM;
 	dev->p->device = dev;
+	/** 20150829    
+	 * klist_children klist를 초기화 한다.
+	 * children용 get/put 함수가 전달된다.
+	 **/
 	klist_init(&dev->p->klist_children, klist_children_get,
 		   klist_children_put);
 	INIT_LIST_HEAD(&dev->p->deferred_probe);
@@ -959,10 +1128,16 @@ int device_add(struct device *dev)
 	struct class_interface *class_intf;
 	int error = -EINVAL;
 
+	/** 20150829    
+	 * device를 참조한다.
+	 **/
 	dev = get_device(dev);
 	if (!dev)
 		goto done;
 
+	/** 20150829    
+	 * device_private이 정의되지 않았다면 할당받아 초기화 한다.
+	 **/
 	if (!dev->p) {
 		error = device_private_init(dev);
 		if (error)
@@ -974,15 +1149,26 @@ int device_add(struct device *dev)
 	 * some day, we need to initialize the name. We prevent reading back
 	 * the name, and force the use of dev_name()
 	 */
+	/** 20150829    
+	 * device의 init_name이 지정되었다면 device 내의 kobject 이름으로 저장하고
+	 * init_name을 초기화 한다.
+	 **/
 	if (dev->init_name) {
 		dev_set_name(dev, "%s", dev->init_name);
 		dev->init_name = NULL;
 	}
 
 	/* subsystems can specify simple device enumeration */
+	/** 20150829    
+	 * device의 name이 지정되지 않고 bus가 존재하면 bus의 이름을 device 이름으로
+	 * 지정한다.
+	 **/
 	if (!dev_name(dev) && dev->bus && dev->bus->dev_name)
 		dev_set_name(dev, "%s%u", dev->bus->dev_name, dev->id);
 
+	/** 20150829    
+	 * 여전히 device의 이름이 없다면 error.
+	 **/
 	if (!dev_name(dev)) {
 		error = -EINVAL;
 		goto name_error;
@@ -990,44 +1176,77 @@ int device_add(struct device *dev)
 
 	pr_debug("device: '%s': %s\n", dev_name(dev), __func__);
 
+	/** 20150829    
+	 * parent의 reference count를 증가시키고 가져와
+	 * 추가하는 device의 parent로 지정한다.
+	 **/
 	parent = get_device(dev->parent);
 	kobj = get_device_parent(dev, parent);
 	if (kobj)
 		dev->kobj.parent = kobj;
 
 	/* use parent numa_node */
+	/** 20150829    
+	 * parent가 존재하는 경우, 추가하는 device는 parent의 node를 따른다.
+	 **/
 	if (parent)
 		set_dev_node(dev, dev_to_node(parent));
 
 	/* first, register with generic layer. */
 	/* we require the name to be set before, and pass NULL */
+	/** 20150829    
+	 * kobject hierarchy에 device의 parent의 child entry로 추가한다.
+	 **/
 	error = kobject_add(&dev->kobj, dev->kobj.parent, NULL);
 	if (error)
 		goto Error;
 
 	/* notify platform of device entry */
+	/** 20150829    
+	 * 플랫폼 notify 콜백이 지정되었다면 디바이스가 추가된 시점이므로 추가한다.
+	 **/
 	if (platform_notify)
 		platform_notify(dev);
 
+	/** 20150829    
+	 * device의 uevent attribute로 파일을 생성한다.
+	 **/
 	error = device_create_file(dev, &uevent_attr);
 	if (error)
 		goto attrError;
 
+	/** 20150829    
+	 * 디바이스의 major 번호가 지정된 경우라면
+	 * device의 dev attribute로 파일을 생성한다. ("dev"파일)
+	 * 
+	 **/
 	if (MAJOR(dev->devt)) {
 		error = device_create_file(dev, &devt_attr);
 		if (error)
 			goto ueventattrError;
 
+		/** 20150905    
+		 * "/sys/dev/XXXX" 아래 dev를 위한 심볼릭 링크를 생성한다
+		 **/
 		error = device_create_sys_dev_entry(dev);
 		if (error)
 			goto devtattrError;
 
+		/** 20150905    
+		 * devtmpfs 를 위한 node를 생성한다.
+		 **/
 		devtmpfs_create_node(dev);
 	}
 
+	/** 20150905    
+	 * device를 위한 class 관련 심볼릭 링크를 생성한다.
+	 **/
 	error = device_add_class_symlinks(dev);
 	if (error)
 		goto SymlinkError;
+	/** 20150905    
+	 * device의 class, type, device 자신의 attribute들이 추가된다.
+	 **/
 	error = device_add_attrs(dev);
 	if (error)
 		goto AttrsError;
@@ -1129,6 +1348,9 @@ int device_register(struct device *dev)
  * we do take care to provide for the case that we get a NULL
  * pointer passed in.
  */
+/** 20150829    
+ * device가 존재하면 kobject 레퍼런스 카운트를 증가시키고 device를 리턴한다.
+ **/
 struct device *get_device(struct device *dev)
 {
 	return dev ? kobj_to_dev(kobject_get(&dev->kobj)) : NULL;
@@ -1349,11 +1571,22 @@ struct device *device_find_child(struct device *parent, void *data,
 	return child;
 }
 
+/** 20150829    
+ * device 등록을 위해 필요한 "devices"와 "dev"를 생성하고 sysfs에 추가한다.
+ **/
 int __init devices_init(void)
 {
+	/** 20150829    
+	 * "devices"라는 kset을 동적으로 생성하고, sysfs에 붙여준다.
+	 * kset에 해당하는 uevent ops를 지정한다.
+	 **/
 	devices_kset = kset_create_and_add("devices", &device_uevent_ops, NULL);
 	if (!devices_kset)
 		return -ENOMEM;
+	/** 20150829    
+	 * "dev"라는 kobject를 할당받아 sysfs에 붙여준다.
+	 *     dev 아래 "block", "char"라는 kobject를 생성한다.
+	 **/
 	dev_kobj = kobject_create_and_add("dev", NULL);
 	if (!dev_kobj)
 		goto dev_kobj_err;

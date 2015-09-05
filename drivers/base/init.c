@@ -21,6 +21,14 @@ void __init driver_init(void)
 {
 	/* These are the core pieces */
 	devtmpfs_init();
+	/** 20150829    
+	 * sysfs에 kset과 kobject를 추가한다.
+	 *
+	 * "/sys/devices"
+	 * "/sys/dev"
+	 * "/sys/class", "/sys/devices/system"
+	 * "/sys/firmware"
+	 **/
 	devices_init();
 	buses_init();
 	classes_init();

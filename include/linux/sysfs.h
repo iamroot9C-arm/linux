@@ -23,6 +23,11 @@ struct kobject;
 struct module;
 enum kobj_ns_type;
 
+/** 20150905    
+ * sysfs 속성 파일.
+ *
+ * 이름과 VFS의 모드를 포함한다.
+ **/
 struct attribute {
 	const char		*name;
 	umode_t			mode;
@@ -54,6 +59,9 @@ do {							\
 #define sysfs_attr_init(attr) do {} while(0)
 #endif
 
+/** 20150905    
+ * attribute 집합 구조체.
+ **/
 struct attribute_group {
 	const char		*name;
 	umode_t			(*is_visible)(struct kobject *,
@@ -68,6 +76,9 @@ struct attribute_group {
  * for examples..
  */
 
+/** 20150905    
+ * device_attribute 구조체 오브젝트를 구성한다.
+ **/
 #define __ATTR(_name,_mode,_show,_store) { \
 	.attr = {.name = __stringify(_name), .mode = _mode },	\
 	.show	= _show,					\
@@ -97,6 +108,10 @@ struct attribute_group {
 struct file;
 struct vm_area_struct;
 
+/** 20150905    
+ * sysfs의 binary 속성 파일.
+ * read, write, mmap 콜백 지정이 가능하다.
+ **/
 struct bin_attribute {
 	struct attribute	attr;
 	size_t			size;

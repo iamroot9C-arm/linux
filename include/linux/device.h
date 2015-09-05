@@ -475,6 +475,14 @@ struct device_type {
 };
 
 /* interface for exporting device attributes */
+/** 20150829    
+ * device의 attribute 구조체.
+ *
+ * vfs에서 사용할 attritube 구조체를 포함하고 있고,
+ * show, store 콜백 함수를 저장한다.
+ *
+ * show 콜백은 dev_attr_show에서, store 콜백은 dev_attr_store에서 호출한다.
+ **/
 struct device_attribute {
 	struct attribute	attr;
 	ssize_t (*show)(struct device *dev, struct device_attribute *attr,
@@ -694,6 +702,9 @@ struct device {
 	struct iommu_group	*iommu_group;
 };
 
+/** 20150829    
+ * struct device내의 kobj로부터 device 구조체를 찾아온다.
+ **/
 static inline struct device *kobj_to_dev(struct kobject *kobj)
 {
 	return container_of(kobj, struct device, kobj);
@@ -702,6 +713,9 @@ static inline struct device *kobj_to_dev(struct kobject *kobj)
 /* Get the wakeup routines, which depend on struct device */
 #include <linux/pm_wakeup.h>
 
+/** 20150829    
+ * device의 init_name이 있다면 가져오고, 없다면 kobject의 name을 가져온다.
+ **/
 static inline const char *dev_name(const struct device *dev)
 {
 	/* Use the init name until the kobject becomes available */
@@ -724,6 +738,9 @@ static inline void set_dev_node(struct device *dev, int node)
 	dev->numa_node = node;
 }
 #else
+/** 20150829    
+ * NUMA가 config되지 않아 device <-> node 함수는 의미가 없다.
+ **/
 static inline int dev_to_node(struct device *dev)
 {
 	return -1;

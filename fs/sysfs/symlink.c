@@ -21,6 +21,10 @@
 
 #include "sysfs.h"
 
+/** 20150905    
+ * target kobj에 대한 심볼릭 링크를 kobj 아래 name으로 생성한다.
+ * warn은 sysfs dirent 연결시 warning 메시지의 출력 여부를 결정한다.
+ **/
 static int sysfs_do_create_link(struct kobject *kobj, struct kobject *target,
 				const char *name, int warn)
 {
@@ -33,6 +37,10 @@ static int sysfs_do_create_link(struct kobject *kobj, struct kobject *target,
 
 	BUG_ON(!name);
 
+	/** 20150905    
+	 * 심볼릭 링크를 생성할 디렉토리가 지정되지 않았으면 sysfs root로부터
+	 * 지정되었으면 지정된 디렉토리의 sysfs dirent를 받아온다.
+	 **/
 	if (!kobj)
 		parent_sd = &sysfs_root;
 	else
@@ -45,6 +53,10 @@ static int sysfs_do_create_link(struct kobject *kobj, struct kobject *target,
 	/* target->sd can go away beneath us but is protected with
 	 * sysfs_assoc_lock.  Fetch target_sd from it.
 	 */
+	/** 20150905    
+	 * sysfs 접근(특히 제거)에 lock을 걸고,
+	 * 링크 대상 object의 sysfs_dirent를 받아온다.
+	 **/
 	spin_lock(&sysfs_assoc_lock);
 	if (target->sd)
 		target_sd = sysfs_get(target->sd);
@@ -55,16 +67,27 @@ static int sysfs_do_create_link(struct kobject *kobj, struct kobject *target,
 		goto out_put;
 
 	error = -ENOMEM;
+	/** 20150905    
+	 * name으로 심볼릭 링크 타입의 sysfs dirent를 생성한다.
+	 **/
 	sd = sysfs_new_dirent(name, S_IFLNK|S_IRWXUGO, SYSFS_KOBJ_LINK);
 	if (!sd)
 		goto out_put;
 
+	/** 20150905    
+	 * parent sd의 NS_TYPE이 존재하면 ktype별 namespace를 가져오는 함수를 이용해
+	 * 생성하는 링크의 s_ns를 지정한다.
+	 **/
 	ns_type = sysfs_ns_type(parent_sd);
 	if (ns_type)
 		sd->s_ns = target->ktype->namespace(target);
 	sd->s_symlink.target_sd = target_sd;
 	target_sd = NULL;	/* reference is now owned by the symlink */
 
+	/** 20150905    
+	 * parent_sd에 sysfs_dirent를 추가/제거하기 위한 context에서
+	 * parent sysfs dirent에 생성한 심볼릭 sysfs dirent를 연결한다.
+	 **/
 	sysfs_addrm_start(&acxt, parent_sd);
 	/* Symlinks must be between directories with the same ns_type */
 	if (!ns_type ||
@@ -101,6 +124,9 @@ static int sysfs_do_create_link(struct kobject *kobj, struct kobject *target,
  *	@target:	object we're pointing to.
  *	@name:		name of the symlink.
  */
+/** 20150905    
+ * target kobj에 대한 심볼릭 링크를 kobj 아래 name으로 생성한다.
+ **/
 int sysfs_create_link(struct kobject *kobj, struct kobject *target,
 		      const char *name)
 {

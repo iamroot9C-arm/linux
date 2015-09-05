@@ -318,6 +318,9 @@ int kobject_set_name_vargs(struct kobject *kobj, const char *fmt,
  * kobject to the system, you must call kobject_rename() in order to
  * change the name of the kobject.
  */
+/** 20150829    
+ * fmt를 파싱해 kobj의 name을 채운다.
+ **/
 int kobject_set_name(struct kobject *kobj, const char *fmt, ...)
 {
 	va_list vargs;
@@ -842,6 +845,9 @@ EXPORT_SYMBOL_GPL(kobject_create_and_add);
  * kset_init - initialize a kset for use
  * @k: kset
  */
+/** 20150829    
+ * kset의 각 멤버를 초기화 한다.
+ **/
 void kset_init(struct kset *k)
 {
 	kobject_init_internal(&k->kobj);
@@ -874,6 +880,9 @@ static ssize_t kobj_attr_store(struct kobject *kobj, struct attribute *attr,
 	return ret;
 }
 
+/** 20150829    
+ *
+ **/
 const struct sysfs_ops kobj_sysfs_ops = {
 	.show	= kobj_attr_show,
 	.store	= kobj_attr_store,
@@ -883,6 +892,10 @@ const struct sysfs_ops kobj_sysfs_ops = {
  * kset_register - initialize and add a kset.
  * @k: kset.
  */
+/** 20150829    
+ * kset을 초기화 하고, kset 내의 kobject를 hierarchy에 등록한다.
+ * 등록 후 추가에 대한 uevent를 호출한다.
+ **/
 int kset_register(struct kset *k)
 {
 	int err;
@@ -890,10 +903,20 @@ int kset_register(struct kset *k)
 	if (!k)
 		return -EINVAL;
 
+	/** 20150829    
+	 * kset을 등록하기 전 초기화 한다.
+	 * kset 내부의 kobject를 초기화 한다.
+	 **/
 	kset_init(k);
+	/** 20150829    
+	 * kset에 해당하는 kobject를 추가한다. (sys 상의 디렉토리 생성 포함)
+	 **/
 	err = kobject_add_internal(&k->kobj);
 	if (err)
 		return err;
+	/** 20150829    
+	 * kset의 kobj에 KOBJ_ADD가 발생했다는 uevent를 보낸다.
+	 **/
 	kobject_uevent(&k->kobj, KOBJ_ADD);
 	return 0;
 }
@@ -944,6 +967,9 @@ static void kset_release(struct kobject *kobj)
 	kfree(kset);
 }
 
+/** 20150829    
+ * kset에 해당하는 ktype 정의.
+ **/
 static struct kobj_type kset_ktype = {
 	.sysfs_ops	= &kobj_sysfs_ops,
 	.release = kset_release,
@@ -964,6 +990,9 @@ static struct kobj_type kset_ktype = {
  *
  * If the kset was not able to be created, NULL will be returned.
  */
+/** 20150829    
+ * kset을 동적 할당받아 내부 kobject와 관련 자료구조를 초기화 한다.
+ **/
 static struct kset *kset_create(const char *name,
 				const struct kset_uevent_ops *uevent_ops,
 				struct kobject *parent_kobj)
@@ -971,14 +1000,24 @@ static struct kset *kset_create(const char *name,
 	struct kset *kset;
 	int retval;
 
+	/** 20150829    
+	 * kset으로 사용할 메모리를 동적 할당 받는다.
+	 **/
 	kset = kzalloc(sizeof(*kset), GFP_KERNEL);
 	if (!kset)
 		return NULL;
+	/** 20150829    
+	 * kset의 이름은 kset내의 kobject에 저장한다.
+	 **/
 	retval = kobject_set_name(&kset->kobj, name);
 	if (retval) {
 		kfree(kset);
 		return NULL;
 	}
+	/** 20150829    
+	 * kset의 uevent_ops를 채우고,
+	 * 넘어온 parent를 kset의 kobject의 parent로 지정한다. (NULL도 포함)
+	 **/
 	kset->uevent_ops = uevent_ops;
 	kset->kobj.parent = parent_kobj;
 
@@ -987,6 +1026,9 @@ static struct kset *kset_create(const char *name,
 	 * no kset itself.  That way we can properly free it when it is
 	 * finished being used.
 	 */
+	/** 20150829    
+	 * kset의 kobject의 ktype은 kset_ktype으로 지정.
+	 **/
 	kset->kobj.ktype = &kset_ktype;
 	kset->kobj.kset = NULL;
 
@@ -1007,6 +1049,9 @@ static struct kset *kset_create(const char *name,
  *
  * If the kset was not able to be created, NULL will be returned.
  */
+/** 20150829    
+ * name이라는 kset을 동적 생성하고, 내부 자료구조체 추가하고 리턴한다.
+ **/
 struct kset *kset_create_and_add(const char *name,
 				 const struct kset_uevent_ops *uevent_ops,
 				 struct kobject *parent_kobj)
@@ -1014,9 +1059,15 @@ struct kset *kset_create_and_add(const char *name,
 	struct kset *kset;
 	int error;
 
+	/** 20150829    
+	 * name이라는 kset을 동적 할당 받고 매개변수로 멤버를 채운다.
+	 **/
 	kset = kset_create(name, uevent_ops, parent_kobj);
 	if (!kset)
 		return NULL;
+	/** 20150829    
+	 * kset을 내부 hierarchy에 등록하고 uevent를 보낸다.
+	 **/
 	error = kset_register(kset);
 	if (error) {
 		kfree(kset);

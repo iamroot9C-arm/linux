@@ -82,6 +82,10 @@ static void knode_kill(struct klist_node *knode)
  * functions that take and release references on the embedding
  * objects.
  */
+/** 20150829    
+ * struct klist를 초기화 한다.
+ * 매개변수로 넘어온 콜백을 .get, .put으로 지정한다.
+ **/
 void klist_init(struct klist *k, void (*get)(struct klist_node *),
 		void (*put)(struct klist_node *))
 {

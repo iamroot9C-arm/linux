@@ -117,6 +117,9 @@ extern void kobject_put(struct kobject *kobj);
 extern char *kobject_get_path(struct kobject *kobj, gfp_t flag);
 
 /** 20150411    
+ * ktype 구조체
+ *
+ * .sysfs_ops 콜백 구조체를 저장한다.
  **/
 struct kobj_type {
 	void (*release)(struct kobject *kobj);
@@ -173,6 +176,8 @@ struct sock;
  * 특정 type의 kobject들을 관리하기 위한 kset 자료구조.
  * kset에 속하는 kobject는 list에 등록되며,
  * kset 자신 역시 내부에 kobject를 두고 reference count 등으로 관리된다.
+ *
+ * list : 이 kset에 포함되는 kobject 리스트.
  **/
 struct kset {
 	struct list_head list;

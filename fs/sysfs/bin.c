@@ -497,11 +497,17 @@ void unmap_bin_file(struct sysfs_dirent *attr_sd)
  *	@attr:	attribute descriptor.
  */
 
+/** 20150905    
+ * sysfs의 kobj에 bin 속성의 파일을 생성한다.
+ **/
 int sysfs_create_bin_file(struct kobject *kobj,
 			  const struct bin_attribute *attr)
 {
 	BUG_ON(!kobj || !kobj->sd || !attr);
 
+	/** 20150905    
+	 * sysfs에 BIN 타입의 attribute 파일을 생성한다.
+	 **/
 	return sysfs_add_file(kobj->sd, &attr->attr, SYSFS_KOBJ_BIN_ATTR);
 }
 

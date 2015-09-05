@@ -35,6 +35,11 @@ static struct kset *system_kset;
 static int __must_check bus_rescan_devices_helper(struct device *dev,
 						void *data);
 
+/** 20150905    
+ * bus를 사용한다.
+ *
+ * bus_type 내의 subsys로 reference count를 증가시킨다.
+ **/
 static struct bus_type *bus_get(struct bus_type *bus)
 {
 	if (bus) {
@@ -158,10 +163,19 @@ static int bus_uevent_filter(struct kset *kset, struct kobject *kobj)
 	return 0;
 }
 
+/** 20150829    
+ * bus kset의 uevent ops.
+ * filter만 정의하고 있다.
+ *
+ * bus의 uevent 콜백은 struct bus_type 구조체 내의 uevent 함수 포인터로 가리킨다.
+ **/
 static const struct kset_uevent_ops bus_uevent_ops = {
 	.filter = bus_uevent_filter,
 };
 
+/** 20150829    
+ * bus kset. buses_init()에서 kset을 할당받아 저장한다.
+ **/
 static struct kset *bus_kset;
 
 
@@ -455,6 +469,9 @@ int bus_for_each_drv(struct bus_type *bus, struct device_driver *start,
 }
 EXPORT_SYMBOL_GPL(bus_for_each_drv);
 
+/** 20150905    
+ * device에 bus attribute를 추가한다.
+ **/
 static int device_add_attrs(struct bus_type *bus, struct device *dev)
 {
 	int error = 0;
@@ -497,11 +514,19 @@ int bus_add_device(struct device *dev)
 	struct bus_type *bus = bus_get(dev->bus);
 	int error = 0;
 
+	/** 20150905    
+	 * device의 bus가 존재하면 
+	 *   device에 bus attribute들을 추가한다.
+	 **/
 	if (bus) {
 		pr_debug("bus: '%s': add device %s\n", bus->name, dev_name(dev));
 		error = device_add_attrs(bus, dev);
 		if (error)
 			goto out_put;
+		/** 20150905    
+		 * bus 디렉토리에 device에 대한 심블릭 링크를 device 이름으로 생성하고,
+		 * 디바이스 디렉토리에 bus에 대한 심볼릭 링크를 "subsystem"으로 생성한다.
+		 **/
 		error = sysfs_create_link(&bus->p->devices_kset->kobj,
 						&dev->kobj, dev_name(dev));
 		if (error)
@@ -1279,12 +1304,27 @@ err_dev:
 }
 EXPORT_SYMBOL_GPL(subsys_system_register);
 
+/** 20150829    
+ * device의 bus관련 kset을 추가한다.
+ *
+ * system은 왜 buses_init에서 해주는 것일까???
+ **/
 int __init buses_init(void)
 {
+	/** 20150829    
+	 * "bus" kset을 생성해 sysfs에 등록한다.
+	 * "/sys/bus"
+	 *
+	 * uevent ops가 별도로 지정된다.
+	 **/
 	bus_kset = kset_create_and_add("bus", &bus_uevent_ops, NULL);
 	if (!bus_kset)
 		return -ENOMEM;
 
+	/** 20150829    
+	 * "system" kset을 생성해 sysfs에 등록한다.
+	 * "/sys/devices/system"
+	 **/
 	system_kset = kset_create_and_add("system", NULL, &devices_kset->kobj);
 	if (!system_kset)
 		return -ENOMEM;

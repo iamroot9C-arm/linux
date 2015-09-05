@@ -843,6 +843,9 @@ void sysfs_addrm_finish(struct sysfs_addrm_cxt *acxt)
  *	RETURNS:
  *	Pointer to sysfs_dirent if found, NULL if not.
  */
+/** 20150905    
+ * parent_sd 아래로 ns, name이 동일한 sysfs dirent를 찾아 리턴한다.
+ **/
 struct sysfs_dirent *sysfs_find_dirent(struct sysfs_dirent *parent_sd,
 				       const void *ns,
 				       const unsigned char *name)
@@ -857,11 +860,19 @@ struct sysfs_dirent *sysfs_find_dirent(struct sysfs_dirent *parent_sd,
 		return NULL;
 	}
 
+	/** 20150905    
+	 * ns와 name으로 hash를 생성해
+	 * RBtree를 node에서부터 순회하여 동일한 name을 가진 sysfs dirent를 찾는다.
+	 **/
 	hash = sysfs_name_hash(ns, name);
 	while (node) {
 		struct sysfs_dirent *sd;
 		int result;
 
+		/** 20150905    
+		 * node에 해당하는 sysfs dirent를 가져와 동일한 이름을 가지고 있는지
+		 * 비교한다.  효율성을 높이기 위해 생성해둔 hash를 먼저 비교한다.
+		 **/
 		sd = to_sysfs_dirent(node);
 		result = sysfs_name_compare(hash, ns, name, sd);
 		if (result < 0)
@@ -904,7 +915,7 @@ struct sysfs_dirent *sysfs_get_dirent(struct sysfs_dirent *parent_sd,
 EXPORT_SYMBOL_GPL(sysfs_get_dirent);
 
 /** 20150418    
- * kobj에 해당하는 새로운 sd를 생성해 parent_sd 아래에 추가한다.
+ * kobj에 새로운 sd를 생성해 parent_sd 아래에 추가한다.
  **/
 static int create_dir(struct kobject *kobj, struct sysfs_dirent *parent_sd,
 	enum kobj_ns_type type, const void *ns, const char *name,
@@ -953,6 +964,10 @@ static int create_dir(struct kobject *kobj, struct sysfs_dirent *parent_sd,
 	return rc;
 }
 
+/** 20150905    
+ * kobject에 name이라는 이름의 하위 디렉토리를 생성해 kobj->sd아래에 추가한다.
+ * 생성된 디렉토리 sysfs dirent는 p_sd에 저장된다.
+ **/
 int sysfs_create_subdir(struct kobject *kobj, const char *name,
 			struct sysfs_dirent **p_sd)
 {

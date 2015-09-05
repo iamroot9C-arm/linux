@@ -36,6 +36,11 @@ struct klist {
 extern void klist_init(struct klist *k, void (*get)(struct klist_node *),
 		       void (*put)(struct klist_node *));
 
+/** 20150829    
+ * klist node에 대한 구조체.
+ *
+ * list_head에 reference count를 가지고 있다.
+ **/
 struct klist_node {
 	void			*n_klist;	/* never access directly */
 	struct list_head	n_node;

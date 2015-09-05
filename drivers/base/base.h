@@ -70,6 +70,13 @@ struct driver_private {
  *
  * Nothing outside of the driver core should ever touch these fields.
  */
+/** 20150829    
+ * device 구조체에서 driver에 관련된 private 자료구조를 저장하는 구조체.
+ *
+ * klist_node는 각 리스트에 연결하기 위한 entry point.
+ * .klist_children : 이 디바이스의 children이 엮인 klist
+ * .device : 이 privates 구조체가 연결된 device 구조체를 가리킨다.
+ **/
 struct device_private {
 	struct klist klist_children;
 	struct klist_node knode_parent;
@@ -96,6 +103,9 @@ extern int firmware_init(void);
 #ifdef CONFIG_SYS_HYPERVISOR
 extern int hypervisor_init(void);
 #else
+/** 20150829    
+ * CONFIG_SYS_HYPERVISOR가 정의되지 않음.
+ **/
 static inline int hypervisor_init(void) { return 0; }
 #endif
 extern int platform_bus_init(void);

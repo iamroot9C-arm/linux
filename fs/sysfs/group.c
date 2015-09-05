@@ -26,18 +26,28 @@ static void remove_files(struct sysfs_dirent *dir_sd, struct kobject *kobj,
 		sysfs_hash_and_remove(dir_sd, NULL, (*attr)->name);
 }
 
+/** 20150905    
+ * 디렉토리 sysfs dirent에 attribute group을 파일로 각각 추가한다.
+ **/
 static int create_files(struct sysfs_dirent *dir_sd, struct kobject *kobj,
 			const struct attribute_group *grp, int update)
 {
 	struct attribute *const* attr;
 	int error = 0, i;
 
+	/** 20150905    
+	 * attribute group의 attribute를 각각 파일로 생성한다.
+	 **/
 	for (i = 0, attr = grp->attrs; *attr && !error; i++, attr++) {
 		umode_t mode = 0;
 
 		/* in update mode, we're changing the permissions or
 		 * visibility.  Do this by first removing then
 		 * re-adding (if required) the file */
+		/** 20150905    
+		 * update라면 기존 name을 가지는 sysfs dirent를 찾아 제거한다.
+		 * is_visible이 정의되어 있다면 콜백을 호출해 결정된 mode를 사용한다.
+		 **/
 		if (update)
 			sysfs_hash_and_remove(dir_sd, NULL, (*attr)->name);
 		if (grp->is_visible) {
@@ -45,6 +55,9 @@ static int create_files(struct sysfs_dirent *dir_sd, struct kobject *kobj,
 			if (!mode)
 				continue;
 		}
+		/** 20150905    
+		 * 디렉토리 sysfs dirent에 파일을 지정한 mode로 추가한다.
+		 **/
 		error = sysfs_add_file_mode(dir_sd, *attr, SYSFS_KOBJ_ATTR,
 					    (*attr)->mode | mode);
 		if (unlikely(error))
@@ -56,6 +69,9 @@ static int create_files(struct sysfs_dirent *dir_sd, struct kobject *kobj,
 }
 
 
+/** 20150905    
+ * kobject 에 attribute 그룹을 sysfs dirent 파일로 생성한다.
+ **/
 static int internal_create_group(struct kobject *kobj, int update,
 				 const struct attribute_group *grp)
 {
@@ -72,12 +88,20 @@ static int internal_create_group(struct kobject *kobj, int update,
 			kobj->name, grp->name ? "" : grp->name);
 		return -EINVAL;
 	}
+	/** 20150905    
+	 * attribute 그룹에 이름이 존재하면 하위디렉토리를 생성하고,
+	 * 생성된 sysfs dirent가 sd에 저장되어 리턴된다.
+	 **/
 	if (grp->name) {
 		error = sysfs_create_subdir(kobj, grp->name, &sd);
 		if (error)
 			return error;
 	} else
 		sd = kobj->sd;
+	/** 20150905    
+	 * sysfs dirent의 권한을 획득하고,
+	 * 디렉토리 아래 attribute 그룹 속성 파일을 생성한다.
+	 **/
 	sysfs_get(sd);
 	error = create_files(sd, kobj, grp, update);
 	if (error) {
@@ -98,6 +122,9 @@ static int internal_create_group(struct kobject *kobj, int update,
  *
  * Returns 0 on success or error.
  */
+/** 20150905    
+ * 디렉토리 kobject에 attribute 그룹을 생성한다.
+ **/
 int sysfs_create_group(struct kobject *kobj,
 		       const struct attribute_group *grp)
 {

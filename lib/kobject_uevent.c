@@ -330,6 +330,9 @@ EXPORT_SYMBOL_GPL(kobject_uevent_env);
  */
 /** 20150418    
  * 추후 분석???
+ *
+ * 20150829
+ * kobject에 action이 발생했음을 uevent를 통해 userspace에 전달하는 함수.
  **/
 int kobject_uevent(struct kobject *kobj, enum kobject_action action)
 {
