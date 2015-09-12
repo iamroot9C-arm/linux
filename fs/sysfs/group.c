@@ -188,6 +188,9 @@ void sysfs_remove_group(struct kobject * kobj,
  * files already exist in that group, in which case none of the new files
  * are created.
  */
+/** 20150905    
+ * 이미 attribute 그룹을 보유 중인 kobj에 새로운 attribute 그룹을 추가한다.
+ **/
 int sysfs_merge_group(struct kobject *kobj,
 		       const struct attribute_group *grp)
 {
@@ -196,16 +199,26 @@ int sysfs_merge_group(struct kobject *kobj,
 	struct attribute *const *attr;
 	int i;
 
+	/** 20150905    
+	 * kobj->sd 아래에서 group name을 갖는 sysfs dirent를 받아온다.
+	 * merge는 이미 그룹이 존재해야 하기 때문에 존재하지 않는 경우 에러.
+	 **/
 	dir_sd = sysfs_get_dirent(kobj->sd, NULL, grp->name);
 	if (!dir_sd)
 		return -ENOENT;
 
+	/** 20150905    
+	 * merge시킬 group의 attribute를 sysfs에 추가한다.
+	 **/
 	for ((i = 0, attr = grp->attrs); *attr && !error; (++i, ++attr))
 		error = sysfs_add_file(dir_sd, *attr, SYSFS_KOBJ_ATTR);
 	if (error) {
 		while (--i >= 0)
 			sysfs_hash_and_remove(dir_sd, NULL, (*--attr)->name);
 	}
+	/** 20150905    
+	 * 획득했던 접근을 해제한다.
+	 **/
 	sysfs_put(dir_sd);
 
 	return error;

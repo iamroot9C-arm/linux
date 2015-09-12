@@ -703,6 +703,9 @@ static void kobject_cleanup(struct kobject *kobj)
 
 	/** 20150418    
 	 * ktype이 존재하고 release 처리 함수가 존재하면 호출한다.
+	 *
+	 * ex) driver_ktype의 .release
+	 *     device_ktype의 .release
 	 **/
 	if (t && t->release) {
 		pr_debug("kobject: '%s' (%p): calling ktype release\n",
@@ -1051,6 +1054,7 @@ static struct kset *kset_create(const char *name,
  */
 /** 20150829    
  * name이라는 kset을 동적 생성하고, 내부 자료구조체 추가하고 리턴한다.
+ * parent_kobj 아래에 추가된다.
  **/
 struct kset *kset_create_and_add(const char *name,
 				 const struct kset_uevent_ops *uevent_ops,

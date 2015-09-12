@@ -25,6 +25,12 @@
  * bus_type/class to be statically allocated safely.  Nothing outside of the
  * driver core should ever touch these fields.
  */
+/** 20150905    
+ * driver core에 대한 private data를 저장하는 자료구조.
+ *
+ * subsys : 이 subsystem에 대한 정보를 정의하는 kset.
+ * mutex : devices와 interfaces 리스트를 보호한다.
+ **/
 struct subsys_private {
 	struct kset subsys;
 	struct kset *devices_kset;
@@ -121,6 +127,10 @@ extern void bus_remove_driver(struct device_driver *drv);
 extern void driver_detach(struct device_driver *drv);
 extern int driver_probe_device(struct device_driver *drv, struct device *dev);
 extern void driver_deferred_probe_del(struct device *dev);
+/** 20150905    
+ * driver 버스에 match 함수가 존재하면 호출해 결과 리턴. 그렇지 않다면 1 리턴.
+ * match된다면 nonzero가 리턴된다.
+ **/
 static inline int driver_match_device(struct device_driver *drv,
 				      struct device *dev)
 {

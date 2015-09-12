@@ -102,6 +102,9 @@ static inline void pm_runtime_mark_last_busy(struct device *dev)
 
 #else /* !CONFIG_PM_RUNTIME */
 
+/** 20150905    
+ * CONFIG_PM_RUNTIME 정의하지 않아 생략.
+ **/
 static inline int __pm_runtime_idle(struct device *dev, int rpmflags)
 {
 	return -ENOSYS;

@@ -39,6 +39,10 @@
 /** 20121117
  * struct mutex 자료구조를 초기화 한다. 
  * 	mutex가 spin_lock을 통해 구현되는듯. ???
+ *
+ * 20150905
+ * mutex 내에서 사용되는 spinlock은 wait_list를 관리하기 위한 것이다.
+ * mutex_lock()/mutex_unlock()에서 핵심 변수인 owner는 원자적 연산으로 접근한다.
  */
 void
 __mutex_init(struct mutex *lock, const char *name, struct lock_class_key *key)

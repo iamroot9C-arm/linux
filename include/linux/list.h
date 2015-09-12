@@ -439,6 +439,9 @@ static inline void list_splice_init(struct list_head *list,
  * Each of the lists is a queue.
  * The list at @list is reinitialised
  */
+/** 20150905    
+ * head 끝에 list를 추가하고, empty list로 초기화 한다.
+ **/
 static inline void list_splice_tail_init(struct list_head *list,
 					 struct list_head *head)
 {

@@ -829,6 +829,9 @@ static const struct dev_pm_ops platform_dev_pm_ops = {
 	USE_PLATFORM_PM_SLEEP_OPS
 };
 
+/** 20150905    
+ * "platform"이라는 bus type을 정의한다.
+ **/
 struct bus_type platform_bus_type = {
 	.name		= "platform",
 	.dev_attrs	= platform_dev_attrs,

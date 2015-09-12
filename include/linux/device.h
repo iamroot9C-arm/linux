@@ -44,6 +44,9 @@ struct bus_attribute {
 	ssize_t (*store)(struct bus_type *bus, const char *buf, size_t count);
 };
 
+/** 20150905    
+ * bus_attr_#NAME으로 bus_attribute를 초기화 하는 매크로.
+ **/
 #define BUS_ATTR(_name, _mode, _show, _store)	\
 struct bus_attribute bus_attr_##_name = __ATTR(_name, _mode, _show, _store)
 
@@ -88,6 +91,12 @@ extern void bus_remove_file(struct bus_type *, struct bus_attribute *);
  * default attributes, the bus' methods, PM operations, and the driver core's
  * private data.
  */
+/** 20150905    
+ * 디바이스의 버스 타입 정의 구조체.
+ *
+ * match : 주어진 device가 주어진 driver로 구동될 수 있다면 nonzero 리턴.
+ * p     : subsys_private. 드라이버 코어의 private data.
+ **/
 struct bus_type {
 	const char		*name;
 	const char		*dev_name;
@@ -114,6 +123,9 @@ struct bus_type {
 
 /* This is a #define to keep the compiler from merging different
  * instances of the __key variable */
+/** 20150905    
+ * bus register.
+ **/
 #define bus_register(subsys)			\
 ({						\
 	static struct lock_class_key __key;	\
@@ -660,6 +672,9 @@ struct device {
 					   device */
 	void		*platform_data;	/* Platform specific data, device
 					   core doesn't touch it */
+	/** 20150905    
+	 * PM 관련 구조체.
+	 **/
 	struct dev_pm_info	power;
 	struct dev_pm_domain	*pm_domain;
 
@@ -765,6 +780,9 @@ static inline void dev_set_uevent_suppress(struct device *dev, int val)
 	dev->kobj.uevent_suppress = val;
 }
 
+/** 20150905    
+ * device가 이미 sysfs에 추가되어 있다면 등록된 디바이스이다.
+ **/
 static inline int device_is_registered(struct device *dev)
 {
 	return dev->kobj.state_in_sysfs;
@@ -792,6 +810,9 @@ static inline void pm_suspend_ignore_children(struct device *dev, bool enable)
 	dev->power.ignore_children = enable;
 }
 
+/** 20150905    
+ * device mutex lock.
+ **/
 static inline void device_lock(struct device *dev)
 {
 	mutex_lock(&dev->mutex);

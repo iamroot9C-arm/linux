@@ -69,6 +69,9 @@ struct wakeup_source {
  * Changes to device_may_wakeup take effect on the next pm state change.
  */
 
+/** 20150905    
+ * device가 wakeup 가능한지 여부를 리턴한다.
+ **/
 static inline bool device_can_wakeup(struct device *dev)
 {
 	return dev->power.can_wakeup;

@@ -148,6 +148,9 @@ static int dev_pm_qos_constraints_allocate(struct device *dev)
  * Called from the device PM subsystem during device insertion under
  * device_pm_lock().
  */
+/** 20150905    
+ * device의 PM QoS constraints 를 초기화 한다.
+ **/
 void dev_pm_qos_constraints_init(struct device *dev)
 {
 	mutex_lock(&dev_pm_qos_mtx);

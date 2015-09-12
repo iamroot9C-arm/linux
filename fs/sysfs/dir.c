@@ -899,6 +899,10 @@ struct sysfs_dirent *sysfs_find_dirent(struct sysfs_dirent *parent_sd,
  *	RETURNS:
  *	Pointer to sysfs_dirent if found, NULL if not.
  */
+/** 20150905    
+ * parent sysfs dirent 아래에서 name을 가지는 sysfs dirent를 찾아 접근을 획득해
+ * 리턴한다.
+ **/
 struct sysfs_dirent *sysfs_get_dirent(struct sysfs_dirent *parent_sd,
 				      const void *ns,
 				      const unsigned char *name)

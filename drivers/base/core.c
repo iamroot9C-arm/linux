@@ -1250,22 +1250,41 @@ int device_add(struct device *dev)
 	error = device_add_attrs(dev);
 	if (error)
 		goto AttrsError;
+	/** 20150905    
+	 * device를 bus에 추가한다.
+	 **/
 	error = bus_add_device(dev);
 	if (error)
 		goto BusError;
+	/** 20150905    
+	 * device에 PM 관련 attirubte 그룹을 추가한다.
+	 **/
 	error = dpm_sysfs_add(dev);
 	if (error)
 		goto DPMError;
+	/** 20150905    
+	 * device를 PM list에 추가한다.
+	 **/
 	device_pm_add(dev);
 
 	/* Notify clients of device addition.  This call must come
 	 * after dpm_sysfs_add() and before kobject_uevent().
 	 */
+	/** 20150905    
+	 * device의 bus가 존재하면
+	 * bus notifier 리스트에 새로운 device가 추가되었음을 통보한다.
+	 **/
 	if (dev->bus)
 		blocking_notifier_call_chain(&dev->bus->p->bus_notifier,
 					     BUS_NOTIFY_ADD_DEVICE, dev);
 
+	/** 20150905    
+	 * device의 kobj가 추가되었음을 userspace에 알린다.
+	 **/
 	kobject_uevent(&dev->kobj, KOBJ_ADD);
+	/** 20150905    
+	 * 새로운 device에 대해 bus probe 한다.
+	 **/
 	bus_probe_device(dev);
 	if (parent)
 		klist_add_tail(&dev->p->knode_parent,

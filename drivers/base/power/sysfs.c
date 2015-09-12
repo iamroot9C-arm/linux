@@ -520,6 +520,11 @@ static struct attribute *power_attrs[] = {
 #endif /* CONFIG_PM_ADVANCED_DEBUG */
 	NULL,
 };
+/** 20150905    
+ * PM attribute 그룹.
+ *
+ * "power"라는 이름 아래 위에서 지정한 속성들이 추가된다.
+ **/
 static struct attribute_group pm_attr_group = {
 	.name	= power_group_name,
 	.attrs	= power_attrs,
@@ -575,20 +580,33 @@ static struct attribute_group pm_qos_attr_group = {
 	.attrs	= pm_qos_attrs,
 };
 
+/** 20150905    
+ * device에 PM 관련 attribute 그룹을 추가한다.
+ **/
 int dpm_sysfs_add(struct device *dev)
 {
 	int rc;
 
+	/** 20150905    
+	 * device에 pm 관련 attribute 그룹을 추가한다.
+	 **/
 	rc = sysfs_create_group(&dev->kobj, &pm_attr_group);
 	if (rc)
 		return rc;
 
+	/** 20150905    
+	 * 정의하지 않음.
+	 **/
 	if (pm_runtime_callbacks_present(dev)) {
 		rc = sysfs_merge_group(&dev->kobj, &pm_runtime_attr_group);
 		if (rc)
 			goto err_out;
 	}
 
+	/** 20150905    
+	 * device가 PM wakeup 가능한 타입이라면
+	 * wakeup 관련 attribute 그룹을 추가한다.
+	 **/
 	if (device_can_wakeup(dev)) {
 		rc = sysfs_merge_group(&dev->kobj, &pm_wakeup_attr_group);
 		if (rc) {

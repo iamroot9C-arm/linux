@@ -56,6 +56,9 @@ static bool knode_dead(struct klist_node *knode)
 	return (unsigned long)knode->n_klist & KNODE_DEAD;
 }
 
+/** 20150905    
+ * klist_node에 klist를 지정한다.
+ **/
 static void knode_set_klist(struct klist_node *knode, struct klist *klist)
 {
 	knode->n_klist = klist;
@@ -103,6 +106,9 @@ static void add_head(struct klist *k, struct klist_node *n)
 	spin_unlock(&k->k_lock);
 }
 
+/** 20150905    
+ * klist에 klist_node를 리스트의 마지막에 추가한다.
+ **/
 static void add_tail(struct klist *k, struct klist_node *n)
 {
 	spin_lock(&k->k_lock);
@@ -110,8 +116,15 @@ static void add_tail(struct klist *k, struct klist_node *n)
 	spin_unlock(&k->k_lock);
 }
 
+/** 20150905    
+ * klist에 속할 klist_node를 초기화 한다.
+ **/
 static void klist_node_init(struct klist *k, struct klist_node *n)
 {
+	/** 20150905    
+	 * klist_node의 멤버를 초기화 한다.
+	 * klist의 get 콜백함수가 지정되어 있다면 호출한다.
+	 **/
 	INIT_LIST_HEAD(&n->n_node);
 	kref_init(&n->n_ref);
 	knode_set_klist(n, k);
@@ -136,6 +149,9 @@ EXPORT_SYMBOL_GPL(klist_add_head);
  * @n: node we're adding.
  * @k: klist it's going on.
  */
+/** 20150905    
+ * klist_node를 초기화 하고, klist에 추가한다.
+ **/
 void klist_add_tail(struct klist_node *n, struct klist *k)
 {
 	klist_node_init(k, n);
@@ -267,6 +283,9 @@ EXPORT_SYMBOL_GPL(klist_remove);
  * klist_node_attached - Say whether a node is bound to a list or not.
  * @n: Node that we're testing.
  */
+/** 20150905    
+ * klist_node가 klist에 연결되어 있는지 여부를 리턴.
+ **/
 int klist_node_attached(struct klist_node *n)
 {
 	return (n->n_klist != NULL);
@@ -282,6 +301,9 @@ EXPORT_SYMBOL_GPL(klist_node_attached);
  * Similar to klist_iter_init(), but starts the action off with @n,
  * instead of with the list head.
  */
+/** 20150905    
+ * klist를 iterate하기 위해 klist_iter 구조체를 채워 넣는다.
+ **/
 void klist_iter_init_node(struct klist *k, struct klist_iter *i,
 			  struct klist_node *n)
 {
@@ -313,6 +335,9 @@ EXPORT_SYMBOL_GPL(klist_iter_init);
  * refcount of the current node. Necessary in case iteration exited before
  * the end of the list was reached, and always good form.
  */
+/** 20150905    
+ * klist iterate를 종료한다.
+ **/
 void klist_iter_exit(struct klist_iter *i)
 {
 	if (i->i_cur) {

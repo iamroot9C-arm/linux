@@ -16,6 +16,12 @@
 #include <linux/kref.h>
 #include <linux/list.h>
 
+/** 20150905    
+ * klist 구조체.
+ *
+ * k_lock : klist의 k_list 접근을 원자적으로 보호하는 락.
+ * k_list : list_head를 가리키고 있다.
+ **/
 struct klist_node;
 struct klist {
 	spinlock_t		k_lock;
@@ -39,7 +45,7 @@ extern void klist_init(struct klist *k, void (*get)(struct klist_node *),
 /** 20150829    
  * klist node에 대한 구조체.
  *
- * list_head에 reference count를 가지고 있다.
+ * list_head와 reference count를 가지고 있다.
  **/
 struct klist_node {
 	void			*n_klist;	/* never access directly */
