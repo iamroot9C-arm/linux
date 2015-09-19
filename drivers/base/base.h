@@ -92,6 +92,9 @@ struct device_private {
 	void *driver_data;
 	struct device *device;
 };
+/** 20150912    
+ * klist에 연결하기 위한 각 knode를 받아 device_private 자료구조를 찾아오는 매크로
+ **/
 #define to_device_private_parent(obj)	\
 	container_of(obj, struct device_private, knode_parent)
 #define to_device_private_driver(obj)	\

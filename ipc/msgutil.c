@@ -27,6 +27,12 @@ DEFINE_SPINLOCK(mq_lock);
  * compiled when either CONFIG_SYSVIPC and CONFIG_POSIX_MQUEUE
  * and not CONFIG_IPC_NS.
  */
+/** 20150912    
+ * ipc namespace 구조체 중 두 멤버만 초기화 한다.
+ * CONFIG_IPC_NS가 정의되지 않아도
+ * CONFIG_SYSVIPC 와 CONFIG_POSIX_MQUEUE 중 하나가 정의되었을 경우 사용.
+ * 
+ **/
 struct ipc_namespace init_ipc_ns = {
 	.count		= ATOMIC_INIT(1),
 	.user_ns = &init_user_ns,

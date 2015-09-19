@@ -64,6 +64,12 @@ extern void klist_remove(struct klist_node *n);
 extern int klist_node_attached(struct klist_node *n);
 
 
+/** 20150912    
+ * klist 순회용 iterator.
+ *
+ * i_klist : 이 iterator가 가리키는 klist에 대한 포인터
+ * i_cur   : 이 iterator가 현재 가리키는 klist_node에 대한 포인터
+ **/
 struct klist_iter {
 	struct klist		*i_klist;
 	struct klist_node	*i_cur;

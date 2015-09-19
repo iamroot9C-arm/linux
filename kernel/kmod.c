@@ -353,6 +353,9 @@ static DECLARE_WAIT_QUEUE_HEAD(running_helpers_waitq);
  * Used by usermodehelper_read_lock_wait() to wait for usermodehelper_disabled
  * to become 'false'.
  */
+/** 20150912    
+ * usermodehelper disabled wait를 선언한다.
+ **/
 static DECLARE_WAIT_QUEUE_HEAD(usermodehelper_disabled_waitq);
 
 /*
@@ -431,6 +434,10 @@ EXPORT_SYMBOL_GPL(usermodehelper_read_unlock);
  * Change the value of usermodehelper_disabled (under umhelper_sem locked for
  * writing) and wakeup tasks waiting for it to change.
  */
+/** 20150912    
+ * semaphore 안에서 usermodehelper 의 상태를 depth로 변경한다.
+ * disabled_waitq에서 대기 중인 task를 깨운다.
+ **/
 void __usermodehelper_set_disable_depth(enum umh_disable_depth depth)
 {
 	down_write(&umhelper_sem);

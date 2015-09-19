@@ -335,6 +335,9 @@ raw_spin_lock_init(&(_lock)->rlock);
  */
 /** 20130706    
  * spin_lock 실행 함수
+ *   - 선점불가 preempt_disable()
+ *   - spin_lock 자체는 인터럽트를 금지하지 않음
+ *     따라서, 인터럽트 핸들러와 공유하는 자원이 있다면 interrupt를 막아야 한다.
  **/
 static inline void spin_lock(spinlock_t *lock)
 {

@@ -19,6 +19,9 @@
 #include <linux/atomic.h>
 #include <linux/kernel.h>
 
+/** 20150912    
+ * 참조카운터용 구조체.
+ **/
 struct kref {
 	atomic_t refcount;
 };
@@ -41,6 +44,9 @@ static inline void kref_init(struct kref *kref)
  * kref_get - increment refcount for object.
  * @kref: object.
  */
+/** 20150912    
+ * 오브젝트의 kref를 받아 참조 카운터를 증가시킨다.
+ **/
 static inline void kref_get(struct kref *kref)
 {
 	WARN_ON(!atomic_read(&kref->refcount));

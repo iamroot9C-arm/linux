@@ -21,6 +21,9 @@
 #include "power/power.h"
 
 /* /sys/devices/system */
+/** 20150912    
+ * buses_init에서 /sys/devices/system을 생성한다.
+ **/
 static struct kset *system_kset;
 
 #define to_bus_attr(_attr) container_of(_attr, struct bus_attribute, attr)
@@ -130,7 +133,7 @@ static const struct sysfs_ops bus_sysfs_ops = {
 };
 
 /** 20150905    
- * bus에 attribute로 지정된 파일을 생성한다.
+ * bus에 attribute로 지정된 파일을 sysfs에 생성한다.
  **/
 int bus_create_file(struct bus_type *bus, struct bus_attribute *attr)
 {
@@ -269,6 +272,9 @@ static ssize_t store_drivers_probe(struct bus_type *bus,
 {
 	struct device *dev;
 
+	/** 20150912    
+	 * bus에 속한 디바이스들 중 buf라는 이름을 가진 device를 찾는다.
+	 **/
 	dev = bus_find_device_by_name(bus, NULL, buf);
 	if (!dev)
 		return -ENODEV;
@@ -278,12 +284,23 @@ static ssize_t store_drivers_probe(struct bus_type *bus,
 }
 #endif
 
+/** 20150912    
+ * device - device_private - knode 포함 구조에서
+ * klist_iter로 다음 knode를 찾고, 이를 포함하는 device 자료구조를 찾아 리턴한다.
+ **/
 static struct device *next_device(struct klist_iter *i)
 {
+	/** 20150912    
+	 * iterator로부터 다음 klist 노드를 받아온다.
+	 **/
 	struct klist_node *n = klist_next(i);
 	struct device *dev = NULL;
 	struct device_private *dev_prv;
 
+	/** 20150912    
+	 * 다음 klist 노드가 존재하면, 해당 노드를 사용하는 dev_private를 찾아온다.
+	 * dev_prv가 속한 device를 찾아 리턴한다.
+	 **/
 	if (n) {
 		dev_prv = to_device_private_bus(n);
 		dev = dev_prv->device;
@@ -344,6 +361,10 @@ EXPORT_SYMBOL_GPL(bus_for_each_dev);
  * if it does.  If the callback returns non-zero, this function will
  * return to the caller and not iterate over any more devices.
  */
+/** 20150912    
+ * 버스에 속하는 device 리스트에서 start 이후부터 match 조건에 해당하는
+ * 디바이스를 찾아 리턴한다.
+ **/
 struct device *bus_find_device(struct bus_type *bus,
 			       struct device *start, void *data,
 			       int (*match)(struct device *dev, void *data))
@@ -354,8 +375,15 @@ struct device *bus_find_device(struct bus_type *bus,
 	if (!bus)
 		return NULL;
 
+	/** 20150912    
+	 * klist_devices 리스트를 순회하기 위한 iterator를 초기화 한다.
+	 **/
 	klist_iter_init_node(&bus->p->klist_devices, &i,
 			     (start ? &start->p->knode_bus : NULL));
+	/** 20150912    
+	 * 다음 device가 존재하는 동안 계속 찾는다.
+	 * match 함수로 비교해 일치하면 device의 참조 카운터를 증가시키고 리턴한다. 
+	 **/
 	while ((dev = next_device(&i)))
 		if (match(dev, data) && get_device(dev))
 			break;
@@ -364,6 +392,9 @@ struct device *bus_find_device(struct bus_type *bus,
 }
 EXPORT_SYMBOL_GPL(bus_find_device);
 
+/** 20150912    
+ * name을 비교대상으로 삼는 비교함수.
+ **/
 static int match_name(struct device *dev, void *data)
 {
 	const char *name = data;
@@ -381,6 +412,9 @@ static int match_name(struct device *dev, void *data)
  * searching by a name automatically, no need to write another strcmp matching
  * function.
  */
+/** 20150912    
+ * bus에서 start 이후의 device 중 name과 이름을 비교해 동일한 device를 찾아 리턴.
+ **/
 struct device *bus_find_device_by_name(struct bus_type *bus,
 				       struct device *start, const char *name)
 {
@@ -544,7 +578,7 @@ int bus_add_device(struct device *dev)
 	int error = 0;
 
 	/** 20150905    
-	 * device의 bus가 존재하면 
+	 * device의 bus가 존재하면 bus 에 등록한다.
 	 **/
 	if (bus) {
 		pr_debug("bus: '%s': add device %s\n", bus->name, dev_name(dev));
@@ -718,10 +752,20 @@ static void remove_bind_files(struct device_driver *drv)
 	driver_remove_file(drv, &driver_attr_unbind);
 }
 
+/** 20150912    
+ * 매크로로 BUS attribute 정의
+ * struct bus_attribute bus_attr_drivers_probe
+ * struct bus_attribute bus_attr_drivers_autoprobe
+ *
+ * ex) "/sys/bus/usb" 아래 drivers_probe, drivers_autoprobe 생성
+ **/
 static BUS_ATTR(drivers_probe, S_IWUSR, NULL, store_drivers_probe);
 static BUS_ATTR(drivers_autoprobe, S_IWUSR | S_IRUGO,
 		show_drivers_autoprobe, store_drivers_autoprobe);
 
+/** 20150912    
+ * 버스에 drivers_probe, drivers_autoprobe 파일을 생성한다.
+ **/
 static int add_probe_files(struct bus_type *bus)
 {
 	int retval;
@@ -930,11 +974,17 @@ struct bus_type *find_bus(char *name)
  * @bus: Bus that has just been registered.
  */
 
+/** 20150912    
+ * 버스에 대한 기본 attribute를 파일로 추가한다.
+ **/
 static int bus_add_attrs(struct bus_type *bus)
 {
 	int error = 0;
 	int i;
 
+	/** 20150912    
+	 * 버스의 default attribute들을 순회하며 각 attribute를 파일로 생성한다.
+	 **/
 	if (bus->bus_attrs) {
 		for (i = 0; attr_name(bus->bus_attrs[i]); i++) {
 			error = bus_create_file(bus, &bus->bus_attrs[i]);
@@ -996,6 +1046,12 @@ static BUS_ATTR(uevent, S_IWUSR, NULL, bus_uevent_store);
  * infrastructure, then register the children subsystems it has:
  * the devices and drivers that belong to the subsystem.
  */
+/** 20150912    
+ * 버스를 드라이버 코어 서브시스템에 등록한다.
+ *
+ * 내부 관리용 subsys_private을 생성하고, subsys를 초기화 한다.
+ * 속성 파일과 probe 파일을 생성한다.
+ **/
 int __bus_register(struct bus_type *bus, struct lock_class_key *key)
 {
 	int retval;
@@ -1051,7 +1107,7 @@ int __bus_register(struct bus_type *bus, struct lock_class_key *key)
 		goto bus_uevent_fail;
 
 	/** 20150905    
-	 * bus subsys 아레 "devices" kset을 생성하고 devices_kset에 저장한다.
+	 * bus subsys 아래 "devices" kset을 생성하고 devices_kset에 저장한다.
 	 * 예 "/sys/bus/i2c/devices"
 	 **/
 	priv->devices_kset = kset_create_and_add("devices", NULL,
@@ -1062,7 +1118,7 @@ int __bus_register(struct bus_type *bus, struct lock_class_key *key)
 	}
 
 	/** 20150905    
-	 * bus subsys 아레 "drivers" kset을 생성하고 devices_kset에 저장한다.
+	 * bus subsys 아래 "drivers" kset을 생성하고 devices_kset에 저장한다.
 	 * 예 "/sys/bus/i2c/drivers"
 	 **/
 	priv->drivers_kset = kset_create_and_add("drivers", NULL,
@@ -1082,10 +1138,16 @@ int __bus_register(struct bus_type *bus, struct lock_class_key *key)
 	klist_init(&priv->klist_devices, klist_devices_get, klist_devices_put);
 	klist_init(&priv->klist_drivers, NULL, NULL);
 
+	/** 20150912    
+	 * bus에 probe 파일을 생성한다.
+	 **/
 	retval = add_probe_files(bus);
 	if (retval)
 		goto bus_probe_files_fail;
 
+	/** 20150912    
+	 * 버스에 기본 attribute를 생성한다.
+	 **/
 	retval = bus_add_attrs(bus);
 	if (retval)
 		goto bus_attrs_fail;
@@ -1328,6 +1390,9 @@ void subsys_interface_unregister(struct subsys_interface *sif)
 }
 EXPORT_SYMBOL_GPL(subsys_interface_unregister);
 
+/** 20150912    
+ * system의 root device release 콜백.
+ **/
 static void system_root_device_release(struct device *dev)
 {
 	kfree(dev);
@@ -1350,34 +1415,58 @@ static void system_root_device_release(struct device *dev)
  * directory itself and not some create fake root-device placed in
  * /sys/devices/system/<name>.
  */
+/** 20150912    
+ * bus를 "/sys/bus" 아래 등록한다.
+ * "/sys/devices/system/" 아래 등록한다.
+ **/
 int subsys_system_register(struct bus_type *subsys,
 			   const struct attribute_group **groups)
 {
 	struct device *dev;
 	int err;
 
+	/** 20150912    
+	 * subsys 버스를 등록한다.
+	 **/
 	err = bus_register(subsys);
 	if (err < 0)
 		return err;
 
+	/** 20150912    
+	 * device를 위한 메모리를 할당 받는다.
+	 **/
 	dev = kzalloc(sizeof(struct device), GFP_KERNEL);
 	if (!dev) {
 		err = -ENOMEM;
 		goto err_dev;
 	}
 
+	/** 20150912    
+	 * device 이름을 bus의 이름으로 설정한다.
+	 **/
 	err = dev_set_name(dev, "%s", subsys->name);
 	if (err < 0)
 		goto err_name;
 
+	/** 20150912    
+	 * system을 새로 추가된 system 디바이스의 parent으로 지정한다.
+	 * 매개변수로 넘어온 attributes 그룹을 디바이스에 지정한다.
+	 * device의 release 함수를 지정한다.
+	 **/
 	dev->kobj.parent = &system_kset->kobj;
 	dev->groups = groups;
 	dev->release = system_root_device_release;
 
+	/** 20150912    
+	 * 위에서 설정한 디바이스를 "/sys/devices/system/"아래 추가한다.
+	 **/
 	err = device_register(dev);
 	if (err < 0)
 		goto err_dev_reg;
 
+	/** 20150912    
+	 * 버스와 동일한 이름으로 생성한 디바이스를 dev_root로 지정한다.
+	 **/
 	subsys->dev_root = dev;
 	return 0;
 

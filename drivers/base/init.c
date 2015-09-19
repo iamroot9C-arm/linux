@@ -17,6 +17,9 @@
  * Call the driver model init functions to initialize their
  * subsystems. Called early from init/main.c.
  */
+/** 20150912    
+ * 리눅스 드라이버 모델을 초기화 한다.
+ **/
 void __init driver_init(void)
 {
 	/* These are the core pieces */
@@ -38,7 +41,17 @@ void __init driver_init(void)
 	/* These are also core pieces, but must come after the
 	 * core core pieces.
 	 */
+	/** 20150912    
+	 * 플랫폼 버스를 추가 한다.
+	 * "/sys/devices/platform"
+	 * "/sys/bus/platform"
+	 **/
 	platform_bus_init();
+	/** 20150912    
+	 * cpu를 버스와 디바이스에 추가 한다.
+	 * "/sys/bus/cpu"
+	 * "/sys/devices/system/cpu"
+	 **/
 	cpu_dev_init();
 	memory_dev_init();
 }

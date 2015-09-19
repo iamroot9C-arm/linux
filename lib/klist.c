@@ -51,6 +51,9 @@ static struct klist *knode_klist(struct klist_node *knode)
 		((unsigned long)knode->n_klist & KNODE_KLIST_MASK);
 }
 
+/** 20150912    
+ * 해당 knode가 지워진 노드로 마킹되었는지 판단한다.
+ **/
 static bool knode_dead(struct klist_node *knode)
 {
 	return (unsigned long)knode->n_klist & KNODE_DEAD;
@@ -347,6 +350,10 @@ void klist_iter_exit(struct klist_iter *i)
 }
 EXPORT_SYMBOL_GPL(klist_iter_exit);
 
+/** 20150912    
+ * klist는 내부에 list_head를 가지고 있다.
+ * 이 함수는 list_head를 전달받아 이를 포함하는 klist_node를 리턴한다.
+ **/
 static struct klist_node *to_klist_node(struct list_head *n)
 {
 	return container_of(n, struct klist_node, n_node);
@@ -360,14 +367,24 @@ static struct klist_node *to_klist_node(struct list_head *n)
  * node, if there was one. Grab the next node, increment its reference
  * count, drop the lock, and return that next node.
  */
+/** 20150912    
+ * klist iterator를 전달받아 다음 노드를 찾아 리턴한다.
+ **/
 struct klist_node *klist_next(struct klist_iter *i)
 {
 	void (*put)(struct klist_node *) = i->i_klist->put;
 	struct klist_node *last = i->i_cur;
 	struct klist_node *next;
 
+	/** 20150912    
+	 * klist의 노드에 접근하는 spinlock을 잡는 구간.
+	 **/
 	spin_lock(&i->i_klist->k_lock);
 
+	/** 20150912    
+	 * klist_iter가 마지막으로 가리키고 있던 노드가 있다면 그 다음 노드를,
+	 * 그렇지 않다면 리스트의 첫 노드를 가리킨다.
+	 **/
 	if (last) {
 		next = to_klist_node(last->n_node.next);
 		if (!klist_dec_and_del(last))
@@ -375,18 +392,37 @@ struct klist_node *klist_next(struct klist_iter *i)
 	} else
 		next = to_klist_node(i->i_klist->k_list.next);
 
+	/** 20150912    
+	 * 다음 노드 선택의 실패를 대비해 일단 현재 노드를 비운다.
+	 **/
 	i->i_cur = NULL;
+	/** 20150912    
+	 * klist를 한 바퀴 돌 때까지 반복한다.
+	 **/
 	while (next != to_klist_node(&i->i_klist->k_list)) {
+		/** 20150912    
+		 * 다음 노드가 지워진 노드가 아니라면
+		 * 노드의 참조카운터를 증가시키고, iterator를 업데이트 시키고 벗어난다.
+		 **/
 		if (likely(!knode_dead(next))) {
 			kref_get(&next->n_ref);
 			i->i_cur = next;
 			break;
 		}
+		/** 20150912    
+		 * 다음 노드를 순회한다.
+		 **/
 		next = to_klist_node(next->n_node.next);
 	}
 
 	spin_unlock(&i->i_klist->k_lock);
 
+	/** 20150912    
+	 * klist의 노드 참조 해제함수가 존재하고,
+	 * iterator가 순회 전 마지막으로 가리키던 노드가 존재하면 해제한다.
+	 *
+	 * iterator가 가리키는 knode를 리턴한다.
+	 **/
 	if (put && last)
 		put(last);
 	return i->i_cur;

@@ -366,6 +366,9 @@ int is_valid_bugaddr(unsigned long pc)
 
 #endif
 
+/** 20150912    
+ * undef hook 리스트
+ **/
 static LIST_HEAD(undef_hook);
 static DEFINE_RAW_SPINLOCK(undef_lock);
 

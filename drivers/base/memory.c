@@ -37,6 +37,9 @@ static inline int base_memory_block_id(int section_nr)
 	return section_nr / sections_per_block;
 }
 
+/** 20150912    
+ * "/sys/devices/system/memory"
+ **/
 static struct bus_type memory_subsys = {
 	.name = MEMORY_CLASS_NAME,
 	.dev_name = MEMORY_CLASS_NAME,

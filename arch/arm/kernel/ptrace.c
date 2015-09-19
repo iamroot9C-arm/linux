@@ -239,6 +239,19 @@ static struct undef_hook thumb2_break_hook = {
 	.fn		= break_trap,
 };
 
+/** 20150912    
+ * Process Trace를 위한 초기화 함수.
+ *   https://en.wikipedia.org/wiki/Ptrace
+ *   http://www.linuxjournal.com/article/6100
+ *   http://linux4u.kr/manpage/ptrace.2.html
+ *
+ * arm, thumb, thumb2에 따른 break hook을 등록시킨다.
+ *
+ * __und_fault:
+ *		b do_undefinstr
+ *			call_undef_hook()
+ *				fn(...)
+ **/
 static int __init ptrace_break_init(void)
 {
 	register_undef_hook(&arm_break_hook);

@@ -526,6 +526,10 @@ EXPORT_SYMBOL(strsep);
  * geared for use with sysfs input strings, which generally terminate
  * with newlines but are compared against values without newlines.
  */
+/** 20150912    
+ * sysfs용 문자열 비교 함수.
+ * NUL과 '\n'NULL은 동일한 것으로 간주한다.
+ **/
 bool sysfs_streq(const char *s1, const char *s2)
 {
 	while (*s1 && *s1 == *s2) {

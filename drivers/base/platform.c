@@ -831,6 +831,8 @@ static const struct dev_pm_ops platform_dev_pm_ops = {
 
 /** 20150905    
  * "platform"이라는 bus type을 정의한다.
+ *
+ * "/sys/bus/platform"
  **/
 struct bus_type platform_bus_type = {
 	.name		= "platform",
@@ -841,15 +843,24 @@ struct bus_type platform_bus_type = {
 };
 EXPORT_SYMBOL_GPL(platform_bus_type);
 
+/** 20150912    
+ * "platform" device와 "platform" bus를 등록한다.
+ **/
 int __init platform_bus_init(void)
 {
 	int error;
 
 	early_platform_cleanup();
 
+	/** 20150912    
+	 * "platform" 디바이스를 생성하고 등록한다.
+	 **/
 	error = device_register(&platform_bus);
 	if (error)
 		return error;
+	/** 20150912    
+	 * "platform" 버스를 등록한다.
+	 **/
 	error =  bus_register(&platform_bus_type);
 	if (error)
 		device_unregister(&platform_bus);

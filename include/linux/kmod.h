@@ -83,6 +83,9 @@ call_usermodehelper(char *path, char **argv, char **envp, int wait)
 
 extern struct ctl_table usermodehelper_table[];
 
+/** 20150912    
+ * UserModeHelper depth 설정값
+ **/
 enum umh_disable_depth {
 	UMH_ENABLED = 0,
 	UMH_FREEZING,
@@ -99,6 +102,9 @@ static inline int usermodehelper_disable(void)
 	return __usermodehelper_disable(UMH_DISABLED);
 }
 
+/** 20150912    
+ * usermodehelper 의 설정값을 enable로 변경한다.
+ **/
 static inline void usermodehelper_enable(void)
 {
 	__usermodehelper_set_disable_depth(UMH_ENABLED);

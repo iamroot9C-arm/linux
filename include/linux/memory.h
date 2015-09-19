@@ -80,6 +80,9 @@ struct mem_section;
 #define IPC_CALLBACK_PRI        10
 
 #ifndef CONFIG_MEMORY_HOTPLUG_SPARSE
+/** 20150912    
+ * CONFIG_MEMORY_HOTPLUG_SPARSE가 정의되지 않아 "memory" 디바이스가 생성되지 않음
+ **/
 static inline int memory_dev_init(void)
 {
 	return 0;

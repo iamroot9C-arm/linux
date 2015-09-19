@@ -18,6 +18,8 @@
 
 struct user_namespace;
 
+/** 20150912    
+ **/
 struct ipc_ids {
 	int in_use;
 	unsigned short seq;

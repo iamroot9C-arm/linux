@@ -16,6 +16,11 @@
 
 #include "base.h"
 
+/** 20150912    
+ * "/sys/bus/cpu"
+ *
+ * "/sys/devices/cpu" - 이 디바이스를 생성해 주는 부분???
+ **/
 struct bus_type cpu_subsys = {
 	.name = "cpu",
 	.dev_name = "cpu",
@@ -173,6 +178,11 @@ static ssize_t show_cpus_attr(struct device *dev,
 	{ __ATTR(name, 0444, show_cpus_attr, NULL), map }
 
 /* Keep in sync with cpu_subsys_attrs */
+/** 20150912    
+ * bus "cpu" 의 cpu attribute.
+ *
+ * "/sys/devices/system/cpu" 아래 생성되는 attribute.
+ **/
 static struct cpu_attr cpu_attrs[] = {
 	_CPU_ATTR(online, &cpu_online_mask),
 	_CPU_ATTR(possible, &cpu_possible_mask),
@@ -326,8 +336,14 @@ EXPORT_SYMBOL_GPL(cpu_is_hotpluggable);
 static DEFINE_PER_CPU(struct cpu, cpu_devices);
 #endif
 
+/** 20150912    
+ * cpu device를 GENERIC으로 등록
+ **/
 static void __init cpu_dev_register_generic(void)
 {
+	/** 20150912    
+	 * CONFIG_GENERIC_CPU_DEVICES가 정의되지 않았다.
+	 **/
 #ifdef CONFIG_GENERIC_CPU_DEVICES
 	int i;
 
@@ -338,6 +354,9 @@ static void __init cpu_dev_register_generic(void)
 #endif
 }
 
+/** 20150912    
+ * cpu_subsys 버스를 등록하고, "/sys/devices/system" 아래 디바이스로 추가한다.
+ **/
 void __init cpu_dev_init(void)
 {
 	if (subsys_system_register(&cpu_subsys, cpu_root_attr_groups))

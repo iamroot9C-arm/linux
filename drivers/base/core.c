@@ -1121,6 +1121,10 @@ int device_private_init(struct device *dev)
  * if it returned an error! Always use put_device() to give up your
  * reference instead.
  */
+/** 20150912    
+ * 디바이스를 디바이스 hierarchy에 등록한다.
+ * device_register()에서는 device_initailize() 된 상태에서 호출된다.
+ **/
 int device_add(struct device *dev)
 {
 	struct device *parent = NULL;
@@ -1283,13 +1287,19 @@ int device_add(struct device *dev)
 	 **/
 	kobject_uevent(&dev->kobj, KOBJ_ADD);
 	/** 20150905    
-	 * 새로운 device에 대해 bus probe 한다.
+	 * 새로운 device에 대해 bus가 지정되어 있다면 버스의 드라이버를 probe 한다.
 	 **/
 	bus_probe_device(dev);
+	/** 20150912    
+	 * parent device가 존재하면 디바이스를 parent의 children 리스트에 등록한다.
+	 **/
 	if (parent)
 		klist_add_tail(&dev->p->knode_parent,
 			       &parent->p->klist_children);
 
+	/** 20150912    
+	 * class가 존재하면 클래스의 디바이스 리스트에 등록한다.
+	 **/
 	if (dev->class) {
 		mutex_lock(&dev->class->p->mutex);
 		/* tie the class to the device */
@@ -1297,6 +1307,10 @@ int device_add(struct device *dev)
 			       &dev->class->p->klist_devices);
 
 		/* notify any interfaces that the device is here */
+		/** 20150912    
+		 * class의 인터페이스 리스트의 인터페이스들을 순회하며
+		 * add_dev 콜백들을 호출한다.
+		 **/
 		list_for_each_entry(class_intf,
 				    &dev->class->p->interfaces, node)
 			if (class_intf->add_dev)
@@ -1353,6 +1367,12 @@ name_error:
  * if it returned an error! Always use put_device() to give up the
  * reference initialized in this function instead.
  */
+/** 20150912    
+ * 디바이스를 시스템에 등록한다.
+ *
+ * device 초기화를 수행하는 device_initialize와
+ * 생성된 device를 등록하는 device_add 과정을 거친다.
+ **/
 int device_register(struct device *dev)
 {
 	device_initialize(dev);

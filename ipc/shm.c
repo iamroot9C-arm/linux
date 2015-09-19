@@ -56,6 +56,9 @@ struct shm_file_data {
 static const struct file_operations shm_file_operations;
 static const struct vm_operations_struct shm_vm_ops;
 
+/** 20150912    
+ * ns ids 중 shm에 해당하는 ids 엔트리.
+ **/
 #define shm_ids(ns)	((ns)->ids[IPC_SHM_IDS])
 
 #define shm_unlock(shp)			\
@@ -69,6 +72,9 @@ static void shm_destroy (struct ipc_namespace *ns, struct shmid_kernel *shp);
 static int sysvipc_shm_proc_show(struct seq_file *s, void *it);
 #endif
 
+/** 20150912    
+ * ipc_namespace의 shm용 멤버를 초기화 한다.
+ **/
 void shm_init_ns(struct ipc_namespace *ns)
 {
 	ns->shm_ctlmax = SHMMAX;
@@ -76,6 +82,9 @@ void shm_init_ns(struct ipc_namespace *ns)
 	ns->shm_ctlmni = SHMMNI;
 	ns->shm_rmid_forced = 0;
 	ns->shm_tot = 0;
+	/** 20150912    
+	 * 넘어온 ns의 shm ids를 초기화 한다.
+	 **/
 	ipc_init_ids(&shm_ids(ns));
 }
 
@@ -105,6 +114,11 @@ void shm_exit_ns(struct ipc_namespace *ns)
 }
 #endif
 
+/** 20150912    
+ * pure initcall (0번)로 등록된 함수.
+ *
+ * ipc의 ns용 init 함수로 init_ipc_ns의 shm 관련 부분을 초기화 한다.
+ **/
 static int __init ipc_ns_init(void)
 {
 	shm_init_ns(&init_ipc_ns);

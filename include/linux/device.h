@@ -94,6 +94,8 @@ extern void bus_remove_file(struct bus_type *, struct bus_attribute *);
 /** 20150905    
  * 디바이스의 버스 타입 정의 구조체.
  *
+ * name  :
+ * dev_name
  * match : 주어진 device가 주어진 driver로 구동될 수 있다면 nonzero 리턴.
  * p     : subsys_private. 드라이버 코어의 private data.
  **/
@@ -124,7 +126,7 @@ struct bus_type {
 /* This is a #define to keep the compiler from merging different
  * instances of the __key variable */
 /** 20150905    
- * bus register.
+ * 새로운 버스를 등록한다.
  **/
 #define bus_register(subsys)			\
 ({						\

@@ -953,6 +953,9 @@ asmlinkage void __init start_kernel(void)
 }
 
 /* Call all constructor functions linked into the kernel. */
+/** 20150912    
+ * CONFIG_CONSTRUCTORS 를 설정하지 않아 NULL 함수.
+ **/
 static void __init do_ctors(void)
 {
 #ifdef CONFIG_CONSTRUCTORS
@@ -1033,6 +1036,17 @@ extern initcall_t __initcall6_start[];
 extern initcall_t __initcall7_start[];
 extern initcall_t __initcall_end[];
 
+/** 20150912    
+ * initcall level
+ * 0 - ealry
+ * 1 - core
+ * 2 - postcore
+ * 3 - arch
+ * 4 - subsys
+ * 5 - fs
+ * 6 - device
+ * 7 - late
+ **/
 static initcall_t *initcall_levels[] __initdata = {
 	__initcall0_start,
 	__initcall1_start,
@@ -1077,6 +1091,9 @@ static void __init do_initcalls(void)
 {
 	int level;
 
+	/** 20150912    
+	 * initcall 0부터 initcall 7까지 초기화 함수를 수행한다.
+	 **/
 	for (level = 0; level < ARRAY_SIZE(initcall_levels) - 1; level++)
 		do_initcall_level(level);
 }
@@ -1102,9 +1119,18 @@ static void __init do_basic_setup(void)
 	 * shmem 초기화를 수행한다.
 	 **/
 	shmem_init();
+	/** 20150912    
+	 * device model을 초기화 한다.
+	 **/
 	driver_init();
+	/** 20150912    
+	 * "/proc/irq/" 아래 irq 번호에 해당하는 파일을 생성한다.
+	 **/
 	init_irq_proc();
 	do_ctors();
+	/** 20150912    
+	 * usermodehelper 상태를 enable로 변경한다.
+	 **/
 	usermodehelper_enable();
 	do_initcalls();
 }
