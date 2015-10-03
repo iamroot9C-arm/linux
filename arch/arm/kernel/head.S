@@ -117,7 +117,7 @@ ENTRY(stext)
  THUMB(1:			)
 
 /** 20120922
-	setmode(.macro 매크로) : CPSR_C의 모드를 지정해준다(FIQ,IRQ,SVC비트를 setting)
+	setmode(.macro 매크로) : CPSR_C의 모드를 지정해준다(FIQ,IRQ,SVC_MODE비트를 setting)
 **/
 
 /** 20121006

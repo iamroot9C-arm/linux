@@ -592,6 +592,9 @@ static void __init v2m_map_io(void)
 	v2m_populate_ct_desc();
 	/** 20130330
 	 *  ct_desc는 v2m_populate_ct_desc에서 찾아 채워넣은 구조체
+	 *
+	 *  vexpress의 ct_desc : ct_ca9x4_desc
+	 *    .map_io = ct_ca9x4_map_io,
 	 **/
 	ct_desc->map_io();
 }

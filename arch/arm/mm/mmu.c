@@ -1520,6 +1520,8 @@ void __init arm_mm_memblock_reserve(void)
 /** 20130330    
  * vector table, mdesc->map_io (peripheral) 영역 등에 대한 mapping 생성 후,
  * tlb와 cache를 flush 함.
+ *
+ * vector table은 VA: 0xffff0000에 매핑함
  **/
 static void __init devicemaps_init(struct machine_desc *mdesc)
 {

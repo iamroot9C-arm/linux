@@ -151,9 +151,24 @@ ENDPROC(__und_invalid)
 #define SPFIX(code...)
 #endif
 
+	/** 20150919    
+	 * SVC mode.
+	 *
+	 * ex)
+	 *	user mode -> (exception 발생) -> und mode -> (vector_stub) -> svc mode
+	 *
+	 *  arm이 exception 발생시 und mode로 전환해 주지만, kernel은 svc mode에서
+	 *	실제 필요한 handler 코드를 동작시킨다.
+	 *
+	 *  svc_entry 매크로에서 svc mode 진입시 svc의 stack에 exception 발생 전
+	 *  사용 중이던 register들을 저장하는 동작을 한다.
+	 **/
 	.macro	svc_entry, stack_hole=0
  UNWIND(.fnstart		)
  UNWIND(.save {r0 - pc}		)
+	/** 20150919    
+	 * pt_reg를 저장하기 위한 공간을 확보한다.
+	 **/
 	sub	sp, sp, #(S_FRAME_SIZE + \stack_hole - 4)
 #ifdef CONFIG_THUMB2_KERNEL
  SPFIX(	str	r0, [sp]	)	@ temporarily saved
@@ -163,17 +178,41 @@ ENDPROC(__und_invalid)
 #else
  SPFIX(	tst	sp, #4		)
 #endif
+ /** 20150919    
+  * tst : Works like ands, but does not store the result.
+  * sp의 마지막이 0x0, 0x8인 경우 Z flag가 set.
+  * subeq는 z set일 경우 4를 빼 alignment를 맞춘다.
+  *
+  * 왜 sp의 alignment를 0 또는 8로 맞추는 것일까???
+  * http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.faqs/14269.html
+  **/
  SPFIX(	subeq	sp, sp, #4	)
+	/** 20150919    
+	 * svc stack에 exception 발생 전 mode의 r1-r12를 svc 스택에 저장한다.
+	 * sp는 갱신되지 않았다.
+	 **/
 	stmia	sp, {r1 - r12}
 
+	/** 20150919    
+	 * vector_stub에서 exception mode의 stack에 
+	 * r0, lr, spsr을 저장하고, r0에 그 sp를 복사해 두었다.
+	 * 그 내용을 가져온다.
+	 **/
 	ldmia	r0, {r3 - r5}
 	add	r7, sp, #S_SP - 4	@ here for interlock avoidance
 	mov	r6, #-1			@  ""  ""      ""       ""
 	add	r2, sp, #(S_FRAME_SIZE + \stack_hole - 4)
  SPFIX(	addeq	r2, r2, #4	)
+	/** 20150919    
+	 * exception mode의 stack에서 exception 발생 전 mode의 r0 레지스터값을 가져와
+	 * sp의 pt_reg[0] 에 저장한다.
+	 **/
 	str	r3, [sp, #-4]!		@ save the "real" r0 copied
 					@ from the exception stack
 
+	/** 20150919    
+	 * r3에 svc mode의 lr 레지스터를 저장한다.
+	 **/
 	mov	r3, lr
 
 	@
@@ -185,6 +224,9 @@ ENDPROC(__und_invalid)
 	@  r5 - spsr_<exception>
 	@  r6 - orig_r0 (see pt_regs definition in ptrace.h)
 	@
+	/** 20150919    
+	 * ptrace.h에 정의된 pt_regs layout만큼 준비한 스택의 나머지 위치에 저장한다.
+	 **/
 	stmia	r7, {r2 - r6}
 
 #ifdef CONFIG_TRACE_IRQFLAGS
@@ -279,6 +321,9 @@ __und_fault:
 	b	do_undefinstr
 ENDPROC(__und_fault)
 
+	/** 20150919    
+	 * 공통으로 svc_entry를 호출한다.
+	 **/
 	.align	5
 __und_svc:
 #ifdef CONFIG_KPROBES
@@ -296,6 +341,10 @@ __und_svc:
 	@
 	@  r0 - instruction
 	@
+	/** 20150919    
+	 * svc_entry에서 r4에는 correction이 적용된 lr_<exception>를 저장해 두었다.
+	 * exception을 발생시킨 instruction을 r0에 받아온다.
+	 **/
 #ifndef CONFIG_THUMB2_KERNEL
 	ldr	r0, [r4, #-4]
 #else
@@ -1382,7 +1431,9 @@ cr_no_alignment:
 #ifdef CONFIG_MULTI_IRQ_HANDLER
 	/** 20140816    
 	 * architecture의 irq 핸들러의 위치를 저장할 전역변수.
-	 * setup_arch에서 할당한다.
+	 *
+	 * setup_arch에서 machine의 handle_irq를 저장한다.
+	 * vexpress의 경우 gic_handle_irq가 저장
 	 **/
 	.globl	handle_arch_irq
 handle_arch_irq:
