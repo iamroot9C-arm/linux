@@ -311,16 +311,26 @@ void __init sched_clock_postinit(void)
 	sched_clock_poll(sched_clock_timer.data);
 }
 
+/** 20151003    
+ * sched_clock이 suspend될 때, sched_clock timer를 재설정해
+ * resume 되고 data 시간 후 scheduling이 되도록 한다.
+ **/
 static int sched_clock_suspend(void)
 {
 	sched_clock_poll(sched_clock_timer.data);
 	return 0;
 }
 
+/** 20151003    
+ * sched clock ops.
+ **/
 static struct syscore_ops sched_clock_ops = {
 	.suspend = sched_clock_suspend,
 };
 
+/** 20151003    
+ * syscore ops에 sched_clock ops를 등록한다.
+ **/
 static int __init sched_clock_syscore_init(void)
 {
 	register_syscore_ops(&sched_clock_ops);

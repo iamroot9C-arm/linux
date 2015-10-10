@@ -127,6 +127,11 @@ struct cpu_user_fns v6_user_fns __initdata = {
 	.cpu_copy_user_highpage	= v6_copy_user_highpage_nonaliasing,
 };
 
+/** 20151003    
+ * v6의 userpage 처리 콜백을 등록한다.
+ *
+ * cortex-a9은 vipt_aliasing이 0.
+ **/
 static int __init v6_userpage_init(void)
 {
 	if (cache_is_vipt_aliasing()) {

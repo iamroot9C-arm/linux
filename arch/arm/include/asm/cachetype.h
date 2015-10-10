@@ -19,8 +19,8 @@ extern unsigned int cacheid;
  **/
 #define cache_is_vipt_nonaliasing()	cacheid_is(CACHEID_VIPT_NONALIASING)
 /** 20130511
-vexpress에서는 cache_is_vipt_aliasing은 0
-**/
+ * vexpress에서는 cache_is_vipt_aliasing은 0
+ **/
 #define cache_is_vipt_aliasing()	cacheid_is(CACHEID_VIPT_ALIASING)
 #define icache_is_vivt_asid_tagged()	cacheid_is(CACHEID_ASID_TAGGED)
 #define icache_is_vipt_aliasing()	cacheid_is(CACHEID_VIPT_I_ALIASING)

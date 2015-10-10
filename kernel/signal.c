@@ -1038,6 +1038,9 @@ static inline void userns_fixup_signal_uid(struct siginfo *info, struct task_str
 	rcu_read_unlock();
 }
 #else
+/** 20151003    
+ * CONFIG_USER_NS 정의하지 않은 경우 NULL 함수.
+ **/
 static inline void userns_fixup_signal_uid(struct siginfo *info, struct task_struct *t)
 {
 	return;

@@ -318,6 +318,9 @@ static void oops_end(unsigned long flags, struct pt_regs *regs, int signr)
 /*
  * This function is protected against re-entrancy.
  */
+/** 20151003    
+ * 추후분석???
+ **/
 void die(const char *str, struct pt_regs *regs, int err)
 {
 	enum bug_trap_type bug_type = BUG_TRAP_TYPE_NONE;
@@ -335,6 +338,10 @@ void die(const char *str, struct pt_regs *regs, int err)
 	oops_end(flags, regs, sig);
 }
 
+/** 20151003    
+ * pt_regs가 user mode인 경우, 전달된 sig을 강제로 전달한다.
+ * user mode가 아닌 경우 die() 호출.
+ **/
 void arm_notify_die(const char *str, struct pt_regs *regs,
 		struct siginfo *info, unsigned long err, unsigned long trap)
 {
@@ -367,15 +374,21 @@ int is_valid_bugaddr(unsigned long pc)
 #endif
 
 /** 20150912    
- * undef hook 리스트
+ * undef hook 리스트와 리스트를 보호하기 위한 스핀락.
  **/
 static LIST_HEAD(undef_hook);
 static DEFINE_RAW_SPINLOCK(undef_lock);
 
+/** 20151003    
+ * 전달된 undef_hook을 전역 리스트에 등록한다.
+ **/
 void register_undef_hook(struct undef_hook *hook)
 {
 	unsigned long flags;
 
+	/** 20151003    
+	 * 원자적 실행을 보장한다.
+	 **/
 	raw_spin_lock_irqsave(&undef_lock, flags);
 	list_add(&hook->node, &undef_hook);
 	raw_spin_unlock_irqrestore(&undef_lock, flags);
@@ -390,12 +403,20 @@ void unregister_undef_hook(struct undef_hook *hook)
 	raw_spin_unlock_irqrestore(&undef_lock, flags);
 }
 
+/** 20151003    
+ * hook리스트에 등록해둔 hook의 처리 조건과 일치하는 경우 해당 fn으로 처리하고
+ * 결과를 리턴한다.
+ **/
 static int call_undef_hook(struct pt_regs *regs, unsigned int instr)
 {
 	struct undef_hook *hook;
 	unsigned long flags;
 	int (*fn)(struct pt_regs *regs, unsigned int instr) = NULL;
 
+	/** 20151003    
+	 * undef_hook 리스트에 등록해 둔 hook을 순회해 instr.과 cpsr이 일치하는 경우
+	 * 해당 fn을 호출한다.
+	 **/
 	raw_spin_lock_irqsave(&undef_lock, flags);
 	list_for_each_entry(hook, &undef_hook, node)
 		if ((instr & hook->instr_mask) == hook->instr_val &&
@@ -406,6 +427,13 @@ static int call_undef_hook(struct pt_regs *regs, unsigned int instr)
 	return fn ? fn(regs, instr) : 1;
 }
 
+/** 20151003    
+ * undefinstr에 대한 처리 핸들러.
+ * 
+ * 이 함수는 브랜치로 들어왔기 때문에 __und_fault 다음으로 리턴된다.
+ *
+ * ptrace에 의한 und exception도 이 함수를 통해 SIGTRAP을 발생시킨다.
+ **/
 asmlinkage void __exception do_undefinstr(struct pt_regs *regs)
 {
 	unsigned int instr;
@@ -414,6 +442,10 @@ asmlinkage void __exception do_undefinstr(struct pt_regs *regs)
 
 	pc = (void __user *)instruction_pointer(regs);
 
+	/** 20151003    
+	 * und. exception이 발생한 모드가 svc모드라면 바로 명령을 가져온다.
+	 * 그렇지 않다면 get_user 명령으로 명령을 가져온다.
+	 **/
 	if (processor_mode(regs) == SVC_MODE) {
 #ifdef CONFIG_THUMB2_KERNEL
 		if (thumb_mode(regs)) {
@@ -437,6 +469,9 @@ asmlinkage void __exception do_undefinstr(struct pt_regs *regs)
 		get_user(instr, (u32 __user *)pc);
 	}
 
+	/** 20151003    
+	 * 해당 명령을 처리할 hook 함수를 호출한다. 정상적으로 처리되었다면 return.
+	 **/
 	if (call_undef_hook(regs, instr) == 0)
 		return;
 
@@ -448,6 +483,9 @@ asmlinkage void __exception do_undefinstr(struct pt_regs *regs)
 	}
 #endif
 
+	/** 20151003    
+	 * SIGILL로 sig info를 준비한다.
+	 **/
 	info.si_signo = SIGILL;
 	info.si_errno = 0;
 	info.si_code  = ILL_ILLOPC;

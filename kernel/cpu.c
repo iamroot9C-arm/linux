@@ -743,6 +743,9 @@ cpu_hotplug_pm_callback(struct notifier_block *nb,
 }
 
 
+/** 20151003    
+ * 다음주 여기부터...
+ **/
 static int __init cpu_hotplug_pm_sync_init(void)
 {
 	pm_notifier(cpu_hotplug_pm_callback, 0);

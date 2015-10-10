@@ -137,6 +137,9 @@ struct pt_regs {
 
 #ifdef __KERNEL__
 
+/** 20151003    
+ * pt_regs의 ARM_cpsr을 조회해 user mode인지 검사한다.
+ **/
 #define user_mode(regs)	\
 	(((regs)->ARM_cpsr & 0xf) == 0)
 
@@ -151,6 +154,9 @@ struct pt_regs {
 	((((regs)->ARM_cpsr & PSR_J_BIT) >> 23) | \
 	 (((regs)->ARM_cpsr & PSR_T_BIT) >> 5))
 
+/** 20151003    
+ * pt_regs의 ARM_cpsr에서 MODE 부분을 추출
+ **/
 #define processor_mode(regs) \
 	((regs)->ARM_cpsr & MODE_MASK)
 
@@ -194,6 +200,9 @@ static inline long regs_return_value(struct pt_regs *regs)
 	return regs->ARM_r0;
 }
 
+/** 20151003    
+ * pt_regs에서 ARM_pc 레지스터의 위치.
+ **/
 #define instruction_pointer(regs)	(regs)->ARM_pc
 
 #ifdef CONFIG_SMP

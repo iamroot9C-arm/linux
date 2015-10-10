@@ -21,6 +21,12 @@
 @  lr  = unrecognised instruction return address
 @  IRQs disabled.
 @
+	/** 20151003    
+	 * vfp entry point.
+	 *
+	 * 선점을 지원하면 선점 불가로 설정.
+	 * irq를 enable 하고, vfp_vector에 저장된 handler를 호출해 처리.
+	 **/
 ENTRY(do_vfp)
 #ifdef CONFIG_PREEMPT
 	ldr	r4, [r10, #TI_PREEMPT]	@ get preempt count
@@ -44,6 +50,9 @@ ENTRY(vfp_null_entry)
 	mov	pc, lr
 ENDPROC(vfp_null_entry)
 
+	/** 20151003    
+	 * vfp_vector handler 주소
+	 **/
 	.align	2
 .LCvfp:
 	.word	vfp_vector

@@ -105,6 +105,13 @@ extern int __get_user_1(void *);
 extern int __get_user_2(void *);
 extern int __get_user_4(void *);
 
+/** 20151003    
+ * get_user 매크로는 포인터가 가리키는 대상체의 크기에 따라 
+ * 1바이트, 2바이트, 4바이트를 읽어오는 함수를 호출한다.
+ *
+ * 전달시 r0에 __p가 저장되어 있고, 리턴시 r0는 __e에 저장된다.
+ * r2 = __r2에는 읽어온 값이 저장된다.
+ **/
 #define __get_user_x(__r2,__p,__e,__s,__i...)				\
 	   __asm__ __volatile__ (					\
 		__asmeq("%0", "r0") __asmeq("%1", "r2")			\
@@ -113,6 +120,10 @@ extern int __get_user_4(void *);
 		: "0" (__p)						\
 		: __i, "cc")
 
+	/** 20151003    
+	 * r0에 p를 저장한 상태에서 __get_user_X로 p에 저장된 값을 가져온다.
+	 * 읽어온 값은 r2에 저장되고 x 위치에 저장한다.
+	 **/
 #define get_user(x,p)							\
 	({								\
 		register const typeof(*(p)) __user *__p asm("r0") = (p);\

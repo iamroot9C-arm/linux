@@ -226,6 +226,9 @@ ENDPROC(__und_invalid)
 	@
 	/** 20150919    
 	 * ptrace.h에 정의된 pt_regs layout만큼 준비한 스택의 나머지 위치에 저장한다.
+	 * 
+	 * 구조체 pt_regs의 #S_SP, #S_LR, #S_PC, #S_PSR, #S_OLD_R0에
+	 * sp_svc, lr_svc, lr_<exception>, spsr_<exception>, orig_r0를 저장한다.
 	 **/
 	stmia	r7, {r2 - r6}
 
@@ -315,6 +318,9 @@ __und_fault:
 	@ subtract 4.  Otherwise, it is Thumb, and the PC will be
 	@ pointing at the second half of the Thumb instruction.  We
 	@ have to subtract 2.
+	/** 20151003    
+	 * svc_entry에서 저장해둔 lr_<exception>를 가져와 r1(4)을 빼 다시 저장한다.
+	 **/
 	ldr	r2, [r0, #S_PC]
 	sub	r2, r2, r1
 	str	r2, [r0, #S_PC]
@@ -343,6 +349,7 @@ __und_svc:
 	@
 	/** 20150919    
 	 * svc_entry에서 r4에는 correction이 적용된 lr_<exception>를 저장해 두었다.
+	 *  (exception을 발생시킨 다음 명령)
 	 * exception을 발생시킨 instruction을 r0에 받아온다.
 	 **/
 #ifndef CONFIG_THUMB2_KERNEL
@@ -357,12 +364,27 @@ __und_svc:
 	str	r4, [sp, #S_PC]
 	orr	r0, r9, r0, lsl #16
 #endif
+	/** 20151003    
+	 * emulated code가 처리된 뒤 리턴할 심볼의 주소를 r9에 저장한다.
+	 * svc_entry에서 받아온 lr_<exception> 주소를 r2에 저장한다.
+	 **/
 	adr	r9, BSYM(__und_svc_finish)
 	mov	r2, r4
+	/** 20151003    
+	 * float point처리가 가능하면 handler로 처리하고 __und_svc_finish로 리턴한다.
+	 * (VFP, FPE에 해당)
+	 * 그렇지 않은 경우 __und_fault로 이동.
+	 **/
 	bl	call_fpe
 
 	mov	r1, #4				@ PC correction to apply
 __und_svc_fault:
+	/** 20151003    
+	 * svc_entry에서 sp에 pt_regs 구조체에 해당하는 레지스터 값을 저장해 두었다.
+	 * r0에 넣어 argument로 전달.
+	 *
+	 * 리턴된 이후 다음 라인부터 수행.
+	 **/
 	mov	r0, sp				@ struct pt_regs *regs
 	bl	__und_fault
 
@@ -375,6 +397,9 @@ __und_svc_finish:
 	@
 	@ restore SPSR and restart the instruction
 	@
+	/** 20151003    
+	 * svc_entry에서 저장한 spsr_<exception>을 r5에 저장한다.
+	 **/
 	ldr	r5, [sp, #S_PSR]		@ Get SVC cpsr
 #ifdef CONFIG_TRACE_IRQFLAGS
 	tst	r5, #PSR_I_BIT
@@ -382,6 +407,9 @@ __und_svc_finish:
 	tst	r5, #PSR_I_BIT
 	blne	trace_hardirqs_off
 #endif
+	/** 20151003    
+	 * svc_exit를 호출해 exception 처리 후 복귀주소로 돌아간다.
+	 **/
 	svc_exit r5				@ return from exception
  UNWIND(.fnend		)
 ENDPROC(__und_svc)
@@ -414,6 +442,11 @@ ENDPROC(__pabt_svc)
 .LCprocfns:
 	.word	processor
 #endif
+	/** 20151003    
+	 * fp_enter 주소를 저장하는 포인터 변수.
+	 * 기본값은 no_fp이지만,
+	 * nwfpe가 선택된 경우 nwfpe_enter 주소가 fp_enter 포인터 변수에 저장된다.
+	 **/
 .LCfp:
 	.word	fp_enter
 
@@ -636,8 +669,19 @@ ENDPROC(__und_usr)
 	adr	r6, .LCneon_thumb_opcodes
 	b	2f
 #endif
+	/** 20151003    
+	 * FPE : floating point emulator
+	 **/
 call_fpe:
 #ifdef CONFIG_NEON
+	/** 20151003    
+	 * .LCneon_arm_opcodes에서 값을 가져와 mask값이 0이 아닐 때까지 반복.
+	 * r0에는 instruction이 들어 있고, neon_opcode mask와 연산해 opcode가 나오면
+	 * r10에 thread info를 받아온다.
+	 *
+	 *  arm neon pipeline
+	 *  http://i.stack.imgur.com/9dQt4.png
+	 **/
 	adr	r6, .LCneon_arm_opcodes
 2:
 	ldr	r7, [r6], #4			@ mask value
@@ -648,12 +692,23 @@ call_fpe:
 	cmp	r8, r7				@ NEON instruction?
 	bne	2b
 	get_thread_info r10
+	/** 20151003    
+	 * struct thread_info의 used_cp 10, 11번에 mark를 하고 
+	 * do_vfp로 이동한다.
+	 **/
 	mov	r7, #1
 	strb	r7, [r10, #TI_USED_CP + 10]	@ mark CP#10 as used
 	strb	r7, [r10, #TI_USED_CP + 11]	@ mark CP#11 as used
 	b	do_vfp				@ let VFP handler handle this
 1:
 #endif
+	/** 20151003    
+	 * instruction의 bit 27, 26을 검사해 해당하지 않으면 리턴.
+	 *
+	 * 해당하면 instruction을 decoding 해 몇 번 cp를 사용하는지 식별하고,
+	 * thread_info의 used_cp의 해당 번호를 설정한 뒤,
+	 * 아래 테이블에서 coprocessor에 해당하는 entry로 이동해 실행한다.
+	 **/
 	tst	r0, #0x08000000			@ only CDP/CPRT/LDC/STC have bit 27
 	tstne	r0, #0x04000000			@ bit 26 set on both ARM and Thumb-2
 	moveq	pc, lr
@@ -676,6 +731,11 @@ call_fpe:
  THUMB(	add	pc, r8			)
 	nop
 
+	/** 20151003    
+	 * coprocessor 에 따른 branch instruction table.
+	 *
+	 * 1,2는 do_fpe로, 10, 11은 do_vfp로 처리하고, 그 외 리턴 주소로 점프.
+	 **/
 	movw_pc	lr				@ CP#0
 	W(b)	do_fpe				@ CP#1 (FPE)
 	W(b)	do_fpe				@ CP#2 (FPE)
@@ -749,6 +809,9 @@ do_fpe:
  *  lr  = unrecognised FP instruction return address
  */
 
+	/** 20151003    
+	 * fp_enter의 기본값은 no_fp.
+	 **/
 	.pushsection .data
 ENTRY(fp_enter)
 	.word	no_fp

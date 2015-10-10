@@ -6,6 +6,8 @@
 struct pt_regs;
 struct task_struct;
 
+/** 20151003    
+ **/
 struct undef_hook {
 	struct list_head node;
 	u32 instr_mask;

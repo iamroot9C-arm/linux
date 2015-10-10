@@ -11,6 +11,9 @@
 #include <linux/module.h>
 #include <linux/interrupt.h>
 
+/** 20151003    
+ * syscore_ops_list와 mutex.
+ **/
 static LIST_HEAD(syscore_ops_list);
 static DEFINE_MUTEX(syscore_ops_lock);
 
@@ -18,6 +21,9 @@ static DEFINE_MUTEX(syscore_ops_lock);
  * register_syscore_ops - Register a set of system core operations.
  * @ops: System core operations to register.
  */
+/** 20151003    
+ * system core ops 리스트에 전달된 ops를 등록한다.
+ **/
 void register_syscore_ops(struct syscore_ops *ops)
 {
 	mutex_lock(&syscore_ops_lock);

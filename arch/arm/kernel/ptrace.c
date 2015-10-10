@@ -197,6 +197,9 @@ void ptrace_disable(struct task_struct *child)
 /*
  * Handle hitting a breakpoint.
  */
+/** 20151003    
+ * breakpoint에서 SIGTRAP을 task에 강제(block시켜도 받도록 설정)로 발생시킨다.
+ **/
 void ptrace_break(struct task_struct *tsk, struct pt_regs *regs)
 {
 	siginfo_t info;
@@ -209,12 +212,21 @@ void ptrace_break(struct task_struct *tsk, struct pt_regs *regs)
 	force_sig_info(SIGTRAP, &info, tsk);
 }
 
+/** 20151003    
+ * hook이 걸렸을 때 실행되는 함수.
+ **/
 static int break_trap(struct pt_regs *regs, unsigned int instr)
 {
 	ptrace_break(current, regs);
 	return 0;
 }
 
+/** 20151003    
+ * arm instruction break hook
+ * instr_mask를 씌워 instr_val이고,
+ * cpsr(thumb 모드인지 판단) mask를 씌워 cpsr이 나오면
+ * 해당 .fn을 호출해 처리한다.
+ **/
 static struct undef_hook arm_break_hook = {
 	.instr_mask	= 0x0fffffff,
 	.instr_val	= 0x07f001f0,
@@ -245,7 +257,8 @@ static struct undef_hook thumb2_break_hook = {
  *   http://www.linuxjournal.com/article/6100
  *   http://linux4u.kr/manpage/ptrace.2.html
  *
- * arm, thumb, thumb2에 따른 break hook을 등록시킨다.
+ * ptrace용 break hook을 등록시킨다.
+ * arm, thumb, thumb2에 따라 약속된 instruction과 호출할 함수를 등록한다.
  *
  * __und_fault:
  *		b do_undefinstr

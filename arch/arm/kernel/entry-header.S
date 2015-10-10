@@ -132,6 +132,9 @@
 	@
 	@ 32-bit wide "mov pc, reg"
 	@
+	/** 20151003    
+	 * mov 명령으로 reg값을 pc에 넣어 이동한다.
+	 **/
 	.macro	movw_pc, reg
 	mov	pc, \reg
 	.endm

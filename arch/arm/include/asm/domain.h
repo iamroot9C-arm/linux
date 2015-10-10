@@ -92,6 +92,9 @@ static inline void modify_domain(unsigned dom, unsigned type)	{ }
  * Generate the T (user) versions of the LDR/STR and related
  * instructions (inline assembly)
  */
+/** 20151003    
+ * CPU_USE_DOMAINS가 정의되지 않아 단순히 instruction을 사용한다.
+ **/
 #ifdef CONFIG_CPU_USE_DOMAINS
 #define TUSER(instr)	#instr "t"
 #else
