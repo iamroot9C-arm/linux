@@ -170,6 +170,9 @@ extern pgprot_t phys_mem_access_prot(struct file *file, unsigned long pfn,
  * ZERO_PAGE is a global shared page that is always zero: used
  * for zero-mapped memory areas etc..
  */
+/** 20151010    
+ * ZERO_PAGE() 매크로는 항상empty_zero_page을 가리킨다.
+ **/
 extern struct page *empty_zero_page;
 #define ZERO_PAGE(vaddr)	(empty_zero_page)
 

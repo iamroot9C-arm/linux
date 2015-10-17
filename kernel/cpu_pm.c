@@ -25,6 +25,9 @@
 static DEFINE_RWLOCK(cpu_pm_notifier_lock);
 static RAW_NOTIFIER_HEAD(cpu_pm_notifier_chain);
 
+/** 20151010    
+ * cpu_pm_notifier_chain에 등록된 nb에 event를 보낸다.
+ **/
 static int cpu_pm_notify(enum cpu_pm_event event, int nr_to_call, int *nr_calls)
 {
 	int ret;
@@ -98,11 +101,17 @@ EXPORT_SYMBOL_GPL(cpu_pm_unregister_notifier);
  *
  * Return conditions are same as __raw_notifier_call_chain.
  */
+/** 20151010    
+ * cpu가 pm enter 상태로 진입한다. notifier chain에 notify한다.
+ **/
 int cpu_pm_enter(void)
 {
 	int nr_calls;
 	int ret = 0;
 
+	/** 20151010    
+	 * read_lock구간에서 cpu_pm_notifier chain에 CPU_PM_ENTER notify를 날린다.
+	 **/
 	read_lock(&cpu_pm_notifier_lock);
 	ret = cpu_pm_notify(CPU_PM_ENTER, -1, &nr_calls);
 	if (ret)
@@ -157,6 +166,9 @@ EXPORT_SYMBOL_GPL(cpu_pm_exit);
  *
  * Return conditions are same as __raw_notifier_call_chain.
  */
+/** 20151010    
+ * cpu_pm notifier chain에 CPU_CLUSTER_PM_ENTER를 날린다.
+ **/
 int cpu_cluster_pm_enter(void)
 {
 	int nr_calls;
@@ -204,18 +216,30 @@ int cpu_cluster_pm_exit(void)
 EXPORT_SYMBOL_GPL(cpu_cluster_pm_exit);
 
 #ifdef CONFIG_PM
+/** 20151010    
+ * cpu pm의 suspend 과정을 수행한다.
+ **/
 static int cpu_pm_suspend(void)
 {
 	int ret;
 
+	/** 20151010    
+	 * cpu를 pm enter 상태로 진입한다.
+	 **/
 	ret = cpu_pm_enter();
 	if (ret)
 		return ret;
 
+	/** 20151010    
+	 * cpu cluster를 pm enter 상태로 진입한다.
+	 **/
 	ret = cpu_cluster_pm_enter();
 	return ret;
 }
 
+/** 20151010    
+ * cpu pm의 resume 과정을 수행한다.
+ **/
 static void cpu_pm_resume(void)
 {
 	cpu_cluster_pm_exit();
@@ -227,8 +251,14 @@ static struct syscore_ops cpu_pm_syscore_ops = {
 	.resume = cpu_pm_resume,
 };
 
+/** 20151010    
+ * cpu pm 관련 초기화로 cpu pm syscore_ops를 등록한다.
+ **/
 static int cpu_pm_init(void)
 {
+	/** 20151010    
+	 * cpu_pm_syscore_ops라는 syscore_ops를 등록한다.
+	 **/
 	register_syscore_ops(&cpu_pm_syscore_ops);
 	return 0;
 }

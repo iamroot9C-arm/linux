@@ -66,6 +66,9 @@ static int elf_core_dump(struct coredump_params *cprm);
 #define ELF_PAGEOFFSET(_v) ((_v) & (ELF_MIN_ALIGN-1))
 #define ELF_PAGEALIGN(_v) (((_v) + ELF_MIN_ALIGN - 1) & ~(ELF_MIN_ALIGN - 1))
 
+/** 20151010    
+ * elf binary format을 load하기 위한 함수 구조체 정의.
+ **/
 static struct linux_binfmt elf_format = {
 	.module		= THIS_MODULE,
 	.load_binary	= load_elf_binary,
@@ -2103,6 +2106,9 @@ out:
 
 #endif		/* CONFIG_ELF_CORE */
 
+/** 20151010    
+ * elf binfmt를 등록한다.
+ **/
 static int __init init_elf_binfmt(void)
 {
 	register_binfmt(&elf_format);

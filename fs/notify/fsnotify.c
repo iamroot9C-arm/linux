@@ -297,12 +297,18 @@ out:
 }
 EXPORT_SYMBOL_GPL(fsnotify);
 
+/** 20151010    
+ * fsnotify 관련 초기화를 수행한다.
+ **/
 static __init int fsnotify_init(void)
 {
 	int ret;
 
 	BUG_ON(hweight32(ALL_FSNOTIFY_EVENTS) != 23);
 
+	/** 20151010    
+	 * fsnotify_mark_srcu를 초기화 한다.
+	 **/
 	ret = init_srcu_struct(&fsnotify_mark_srcu);
 	if (ret)
 		panic("initializing fsnotify_mark_srcu");

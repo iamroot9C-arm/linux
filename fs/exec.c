@@ -79,9 +79,17 @@ static atomic_t call_count = ATOMIC_INIT(1);
 
 /* The maximal length of core_pattern is also specified in sysctl.c */
 
+/** 20151010    
+ * rwlock으로 보호되는 binary format 구조체 전역 리스트.
+ **/
 static LIST_HEAD(formats);
 static DEFINE_RWLOCK(binfmt_lock);
 
+/** 20151010    
+ * linux_binfmt를 formats 리스트에 등록한다.
+ * 
+ * insert면 head에, 그렇지 않으면 tail에 추가한다.
+ **/
 void __register_binfmt(struct linux_binfmt * fmt, int insert)
 {
 	BUG_ON(!fmt);

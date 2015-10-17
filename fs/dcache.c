@@ -1462,6 +1462,10 @@ struct dentry *__d_alloc(struct super_block *sb, const struct qstr *name)
  * available. On a success the dentry is returned. The name passed in is
  * copied and the copy passed in may be reused after this call.
  */
+/** 20151010    
+ * parent superblock으로부터 name을 가지는 새로운 dentry cache를 할당 받고,
+ * parent와 서로 연결시킨다.
+ **/
 struct dentry *d_alloc(struct dentry * parent, const struct qstr *name)
 {
 	struct dentry *dentry = __d_alloc(parent->d_sb, name);
@@ -1491,6 +1495,9 @@ struct dentry *d_alloc_pseudo(struct super_block *sb, const struct qstr *name)
 }
 EXPORT_SYMBOL(d_alloc_pseudo);
 
+/** 20151010    
+ * parent 아래 name이라는 정보를 가지는 새로운 dentry를 할당받아 연결시킨다.
+ **/
 struct dentry *d_alloc_name(struct dentry *parent, const char *name)
 {
 	struct qstr q;

@@ -143,6 +143,11 @@ struct kset_uevent_ops {
 		      struct kobj_uevent_env *env);
 };
 
+/** 20151010    
+ * kobj_attribute 구조체.
+ *
+ * attribute 자체와 attribute를 설정하고 보기 위한 콜백 함수를 저장한다.
+ **/
 struct kobj_attribute {
 	struct attribute attr;
 	ssize_t (*show)(struct kobject *kobj, struct kobj_attribute *attr,

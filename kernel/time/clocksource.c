@@ -535,6 +535,7 @@ static u32 clocksource_max_adjustment(struct clocksource *cs)
  *
  */
 /** 20141227    
+ * 이 클럭소스가 지연될 수 있는 최대값을 리턴한다.
  **/
 static u64 clocksource_max_deferment(struct clocksource *cs)
 {
@@ -554,6 +555,9 @@ static u64 clocksource_max_deferment(struct clocksource *cs)
 	 * any rounding errors, ensure the above inequality is satisfied and
 	 * no overflow will occur.
 	 */
+	/** 20151010    
+	 * clocksource의 mult와 maxadj로 최대 사이클을 계산한다.
+	 **/
 	max_cycles = 1ULL << (63 - (ilog2(cs->mult + cs->maxadj) + 1));
 
 	/*
@@ -562,6 +566,10 @@ static u64 clocksource_max_deferment(struct clocksource *cs)
 	 * Note: Here we subtract the maxadj to make sure we don't sleep for
 	 * too long if there's a large negative adjustment.
 	 */
+	/** 20151010    
+	 * max_cycles와 mask값 중에 작은 값을 취한다.
+	 * 계산된 max_cycles 값으로 max_nsecs를 구한다.
+	 **/
 	max_cycles = min_t(u64, max_cycles, (u64) cs->mask);
 	max_nsecs = clocksource_cyc2ns(max_cycles, cs->mult - cs->maxadj,
 					cs->shift);
@@ -793,17 +801,32 @@ EXPORT_SYMBOL_GPL(__clocksource_register_scale);
  *
  * Returns -EBUSY if registration fails, zero otherwise.
  */
+/** 20151010    
+ * 새로운 클럭소스를 등록한다.
+ *
+ * 최대치에 대한 몇 가지 항목을 계산해 채우고, 전역 리스트에 등록한 뒤
+ * best 클럭소스를 새로 선택한다.
+ **/
 int clocksource_register(struct clocksource *cs)
 {
 	/* calculate max adjustment for given mult/shift */
+	/** 20151010    
+	 * 주어진 mult/shift를 위한 max adjustment를 구한다.
+	 **/
 	cs->maxadj = clocksource_max_adjustment(cs);
 	WARN_ONCE(cs->mult + cs->maxadj < cs->mult,
 		"Clocksource %s might overflow on 11%% adjustment\n",
 		cs->name);
 
 	/* calculate max idle time permitted for this clocksource */
+	/** 20151010    
+	 * 이 클럭소스가 지연될 수 있는 최대 idle 시간을 계산한다.
+	 **/
 	cs->max_idle_ns = clocksource_max_deferment(cs);
 
+	/** 20151010    
+	 * clocksource를 rating 기준 내림차순으로 등록하고, 새로 best 클럭소스를 선택한다.
+	 **/
 	mutex_lock(&clocksource_mutex);
 	clocksource_enqueue(cs);
 	clocksource_enqueue_watchdog(cs);

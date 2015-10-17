@@ -140,6 +140,9 @@ enum {
 	Opt_err
 };
 
+/** 20151010    
+ * debugfs mount시 처리하는 옵션 토큰 정의.
+ **/
 static const match_table_t tokens = {
 	{Opt_uid, "uid=%u"},
 	{Opt_gid, "gid=%u"},
@@ -147,10 +150,16 @@ static const match_table_t tokens = {
 	{Opt_err, NULL}
 };
 
+/** 20151010    
+ * debugfs는 mount_single로 mount 하여 하나의 instance를 공유한다.
+ **/
 struct debugfs_fs_info {
 	struct debugfs_mount_opts mount_opts;
 };
 
+/** 20151010    
+ * debugfs mount시 주어진 옵션을 파싱해 구조체에 설정한다.
+ **/
 static int debugfs_parse_options(char *data, struct debugfs_mount_opts *opts)
 {
 	substring_t args[MAX_OPT_ARGS];
@@ -191,8 +200,14 @@ static int debugfs_parse_options(char *data, struct debugfs_mount_opts *opts)
 	return 0;
 }
 
+/** 20151010    
+ * debugfs을 위한 옵션을 적용한다.
+ **/
 static int debugfs_apply_options(struct super_block *sb)
 {
+	/** 20151010    
+	 * superblock의 root dentry에 s_fs_info에 저장해뒀던 옵션을 적용한다.
+	 **/
 	struct debugfs_fs_info *fsi = sb->s_fs_info;
 	struct inode *inode = sb->s_root->d_inode;
 	struct debugfs_mount_opts *opts = &fsi->mount_opts;
@@ -242,6 +257,9 @@ static const struct super_operations debugfs_super_operations = {
 	.show_options	= debugfs_show_options,
 };
 
+/** 20151010    
+ * debugfs의 superblock 정보를 채운다.
+ **/
 static int debug_fill_super(struct super_block *sb, void *data, int silent)
 {
 	static struct tree_descr debug_files[] = {{""}};
@@ -250,6 +268,9 @@ static int debug_fill_super(struct super_block *sb, void *data, int silent)
 
 	save_mount_options(sb, data);
 
+	/** 20151010    
+	 * debugfs_fs용 구조체를 할당해 superblock의 filesystem private으로 저장한다.
+	 **/
 	fsi = kzalloc(sizeof(struct debugfs_fs_info), GFP_KERNEL);
 	sb->s_fs_info = fsi;
 	if (!fsi) {
@@ -257,14 +278,23 @@ static int debug_fill_super(struct super_block *sb, void *data, int silent)
 		goto fail;
 	}
 
+	/** 20151010    
+	 * 마운트 옵션을 파싱해 mount_opts에 저장한다.
+	 **/
 	err = debugfs_parse_options(data, &fsi->mount_opts);
 	if (err)
 		goto fail;
 
+	/** 20151010    
+	 * superblock 정보를 채운다.
+	 **/
 	err  =  simple_fill_super(sb, DEBUGFS_MAGIC, debug_files);
 	if (err)
 		goto fail;
 
+	/** 20151010    
+	 * debugfs superblock operation을 채운다.
+	 **/
 	sb->s_op = &debugfs_super_operations;
 
 	debugfs_apply_options(sb);
@@ -277,6 +307,11 @@ fail:
 	return err;
 }
 
+/** 20151010    
+ * debugfs를 mount한다.
+ *
+ * mount_single로 mount하여 하나의 instance를 공유한다.
+ **/
 static struct dentry *debug_mount(struct file_system_type *fs_type,
 			int flags, const char *dev_name,
 			void *data)
@@ -284,6 +319,9 @@ static struct dentry *debug_mount(struct file_system_type *fs_type,
 	return mount_single(fs_type, flags, data, debug_fill_super);
 }
 
+/** 20151010    
+ * debugfs 파일시스템 정의.
+ **/
 static struct file_system_type debug_fs_type = {
 	.owner =	THIS_MODULE,
 	.name =		"debugfs",
@@ -668,14 +706,23 @@ EXPORT_SYMBOL_GPL(debugfs_initialized);
 
 static struct kobject *debug_kobj;
 
+/** 20151010    
+ * debugfs를 사용하기 위해 초기화 한다.
+ **/
 static int __init debugfs_init(void)
 {
 	int retval;
 
+	/** 20151010    
+	 * "kernel" kobj 아래 "debug" kobj를 생성해 등록한다.
+	 **/
 	debug_kobj = kobject_create_and_add("debug", kernel_kobj);
 	if (!debug_kobj)
 		return -EINVAL;
 
+	/** 20151010    
+	 * debugfs filesystem 을 등록한다.
+	 **/
 	retval = register_filesystem(&debug_fs_type);
 	if (retval)
 		kobject_put(debug_kobj);

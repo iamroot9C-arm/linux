@@ -16,6 +16,16 @@
 #include <linux/slab.h>
 #include <linux/bug.h>
 
+/** 20151010    
+ * fsnotify는 filesystem notification의 backend이다.
+ * dnotify, inotify, fanotify 같은 다른 notification의 base를 제공한다.
+ *
+ * 각 filesystem의 이벤트가 발생할 때마다(open 등) 해당 dentry의 parent와 해당
+ * dentry에 fsnotify를 날린다. 
+ *
+ * http://kernelnewbies.org/Linux_2_6_31#head-082d9a34a245a3a3211244078f276bf3348bf0d6
+ **/
+
 /*
  * fsnotify_d_instantiate - instantiate a dentry for inode
  */

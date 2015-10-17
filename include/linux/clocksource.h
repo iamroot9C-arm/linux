@@ -163,6 +163,12 @@ extern u64 timecounter_cyc2time(struct timecounter *tc,
  * @resume:		resume function for the clocksource, if necessary
  * @cycle_last:		most recent cycle counter value seen by ::read()
  */
+/** 20151010    
+ * clocksource : 
+ *   동작 카운터에 대한 하드웨어 추상 구조체이다.
+ *   상태에 상관없이 하위 하드웨어에 대한 접근자를 제공한다.
+ *   system time을 위한 구조체이다.
+ **/
 struct clocksource {
 	/*
 	 * Hotpath data, fits in a single cache line when the
@@ -275,6 +281,9 @@ static inline u32 clocksource_hz2mult(u32 hz, u32 shift_constant)
  *
  * XXX - This could use some mult_lxl_ll() asm optimization
  */
+/** 20151010    
+ * 전달된 cycles을 ns로 변환.
+ **/
 static inline s64 clocksource_cyc2ns(cycle_t cycles, u32 mult, u32 shift)
 {
 	return ((u64) cycles * mult) >> shift;

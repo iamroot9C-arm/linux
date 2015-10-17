@@ -122,8 +122,14 @@ unsigned long highest_memmap_pfn __read_mostly;
 /*
  * CONFIG_MMU architectures set up ZERO_PAGE in their paging_init()
  */
+/** 20151010    
+ * zero page의 pfn을 저장한다.
+ **/
 static int __init init_zero_pfn(void)
 {
+	/** 20151010    
+	 * VA에 대한 ZERO_PAGE를 받아 page frame number로 변환해 저장한다.
+	 **/
 	zero_pfn = page_to_pfn(ZERO_PAGE(0));
 	return 0;
 }

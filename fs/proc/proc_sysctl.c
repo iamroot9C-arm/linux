@@ -1201,6 +1201,13 @@ out:
  * This routine returns %NULL on a failure to register, and a pointer
  * to the table header on success.
  */
+/** 20151010    
+ * sysctl table을 ctl_table_set에 추가한다.
+ *
+ * path : ctl_table이 등록될 path.
+ * table : top level table 구조체
+ *
+ **/
 struct ctl_table_header *__register_sysctl_table(
 	struct ctl_table_set *set,
 	const char *path, struct ctl_table *table)
@@ -1213,14 +1220,24 @@ struct ctl_table_header *__register_sysctl_table(
 	struct ctl_node *node;
 	int nr_entries = 0;
 
+	/** 20151010    
+	 * ctl_table array의 각 entry가 procname을 존재할 때까지 순회하여
+	 * entry의 수를 계산한다.
+	 **/
 	for (entry = table; entry->procname; entry++)
 		nr_entries++;
 
+	/** 20151010    
+	 * 동적 관리를 위한 ctl_table_header와 카운팅한 entry 수만큼 메모리를 할당받는다.
+	 **/
 	header = kzalloc(sizeof(struct ctl_table_header) +
 			 sizeof(struct ctl_node)*nr_entries, GFP_KERNEL);
 	if (!header)
 		return NULL;
 
+	/** 20151010    
+	 * ctl_node를 위한 공간은 header 다음에 이어서 위치한다.
+	 **/
 	node = (struct ctl_node *)(header + 1);
 	init_header(header, root, set, node, table);
 	if (sysctl_check_table(path, table))
@@ -1278,8 +1295,15 @@ fail:
  *
  * See __register_sysctl_table for more details.
  */
+/** 20151010    
+ * sysctl table을 등록한다.
+ **/
 struct ctl_table_header *register_sysctl(const char *path, struct ctl_table *table)
 {
+	/** 20151010    
+	 * sysctl_table_root의 default_set에 ctl_table을 등록한다.
+	 * 등록된 table은 proc에 path로 나타난다. 
+	 **/
 	return __register_sysctl_table(&sysctl_table_root.default_set,
 					path, table);
 }

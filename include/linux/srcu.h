@@ -41,6 +41,8 @@ struct rcu_batch {
 };
 
 /** 20140517    
+ * sleepable-RCU 구조체.
+ *
  * init_srcu_struct_fields 함수를 이용해 초기화
  **/
 struct srcu_struct {

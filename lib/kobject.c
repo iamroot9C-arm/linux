@@ -816,6 +816,8 @@ struct kobject *kobject_create(void)
  */
 /** 20150418    
  * parent에 name이름을 갖는 새로운 kobject를 할당받아 추가한다.
+ *
+ * parnet가 NULL로 지정되면 최상단에 생성된다. ("/sys/{name}")
  **/
 struct kobject *kobject_create_and_add(const char *name, struct kobject *parent)
 {

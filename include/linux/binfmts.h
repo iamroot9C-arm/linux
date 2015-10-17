@@ -83,6 +83,9 @@ struct coredump_params {
  * This structure defines the functions that are used to load the binary formats that
  * linux accepts.
  */
+/** 20151010    
+ * linux가 받아들일 수 있는 binary format을 load하기 위한 함수들을 정의한다.
+ **/
 struct linux_binfmt {
 	struct list_head lh;
 	struct module *module;
@@ -95,6 +98,9 @@ struct linux_binfmt {
 extern void __register_binfmt(struct linux_binfmt *fmt, int insert);
 
 /* Registration of default binfmt handlers */
+/** 20151010    
+ * linux_binfmt 구조체를 등록한다.
+ **/
 static inline void register_binfmt(struct linux_binfmt *fmt)
 {
 	__register_binfmt(fmt, 0);

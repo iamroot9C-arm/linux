@@ -77,7 +77,8 @@ struct attribute_group {
  */
 
 /** 20150905    
- * device_attribute 구조체 오브젝트를 구성한다.
+ * attribute 구조체 오브젝트를 구성한다.
+ * ex) device_attribute, kobj_attribute
  **/
 #define __ATTR(_name,_mode,_show,_store) { \
 	.attr = {.name = __stringify(_name), .mode = _mode },	\
@@ -85,6 +86,10 @@ struct attribute_group {
 	.store	= _store,					\
 }
 
+/** 20151010    
+ * read-only attribute 구조체 오브젝트를 구성한다.
+ * .store 콜백을 지정하지 않고, .show 콜백은 name에 _show를 붙인 함수를 사용한다.
+ **/
 #define __ATTR_RO(_name) { \
 	.attr	= { .name = __stringify(_name), .mode = 0444 },	\
 	.show	= _name##_show,					\

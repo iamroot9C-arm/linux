@@ -172,6 +172,8 @@ void unlock_flocks(void)
 }
 EXPORT_SYMBOL_GPL(unlock_flocks);
 
+/** 20151010    
+ **/
 static struct kmem_cache *filelock_cache __read_mostly;
 
 static void locks_init_lock_heads(struct file_lock *fl)
@@ -2353,6 +2355,9 @@ int lock_may_write(struct inode *inode, loff_t start, unsigned long len)
 
 EXPORT_SYMBOL(lock_may_write);
 
+/** 20151010    
+ * "file_lock_cache" kmem_cache를 생성한다.
+ **/
 static int __init filelock_init(void)
 {
 	filelock_cache = kmem_cache_create("file_lock_cache",

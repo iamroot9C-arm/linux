@@ -60,6 +60,12 @@ static cycle_t jiffies_read(struct clocksource *cs)
 
 /** 20141227    
  * clocksource jiffies.
+ *
+ * jiffies를 사용한 클럭소스는 모든 시스템에서 항상 제공하고 있다.
+ * 따라서 default clock으로 사용된다.
+ *
+ * rating이 1로 가장 낮게 설정되어 높은 rating을 가진 clocksource를 등록한다면
+ * 해당 clocksource가 사용된다.
  **/
 struct clocksource clocksource_jiffies = {
 	.name		= "jiffies",
@@ -87,6 +93,9 @@ EXPORT_SYMBOL(get_jiffies_64);
 
 EXPORT_SYMBOL(jiffies);
 
+/** 20151010    
+ * 시스템 공통으로 제공되는 jiffies를 기준으로 한 클럭소스를 등록한다.
+ **/
 static int __init init_jiffies_clocksource(void)
 {
 	return clocksource_register(&clocksource_jiffies);

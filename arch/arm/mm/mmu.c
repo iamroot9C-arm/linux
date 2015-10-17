@@ -38,6 +38,11 @@
  * empty_zero_page is a special page that is used for
  * zero-initialized data and COW.
  */
+/** 20151010    
+ * paging_init()에서 early_alloc(memblock)으로 할당한 page의 정보.
+ *
+ * 0으로 초기화된 데이터와 COW시에 사용된다.
+ **/
 struct page *empty_zero_page;
 EXPORT_SYMBOL(empty_zero_page);
 

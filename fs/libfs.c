@@ -521,6 +521,9 @@ int simple_fill_super(struct super_block *s, unsigned long magic,
 	s->s_op = &simple_super_operations;
 	s->s_time_gran = 1;
 
+	/** 20151010    
+	 * superblock을 위한 새로운 inode를 할당 받아 등록한다.
+	 **/
 	inode = new_inode(s);
 	if (!inode)
 		return -ENOMEM;
@@ -528,12 +531,18 @@ int simple_fill_super(struct super_block *s, unsigned long magic,
 	 * because the root inode is 1, the files array must not contain an
 	 * entry at index 1
 	 */
+	/** 20151010    
+	 * root inode 값으로 inode를 설정한다.
+	 **/
 	inode->i_ino = 1;
 	inode->i_mode = S_IFDIR | 0755;
 	inode->i_atime = inode->i_mtime = inode->i_ctime = CURRENT_TIME;
 	inode->i_op = &simple_dir_inode_operations;
 	inode->i_fop = &simple_dir_operations;
 	set_nlink(inode, 2);
+	/** 20151010    
+	 * root inode를 위한 dentry를 할당 받고 초기화 한다.
+	 **/
 	root = d_make_root(inode);
 	if (!root)
 		return -ENOMEM;

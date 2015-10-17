@@ -63,6 +63,13 @@ static RAW_NOTIFIER_HEAD(cpu_chain);
 /* If set, cpu_up and cpu_down will return -EBUSY and do nothing.
  * Should always be manipulated under cpu_add_remove_lock
  */
+/** 20151010    
+ * cpu hotplug 동작을 불가능하게 하는 조건 변수.
+ * 이 변수가 설정되어 있으면 cpu_up, cpu_down시 -EBUSY가 리턴된다.
+ *
+ * cpu_add_remove_lock ( cpu_maps_update_begin()과 cpu_maps_update_done() )으로
+ * 보호된다.
+ **/
 static int cpu_hotplug_disabled;
 
 #ifdef CONFIG_HOTPLUG_CPU
@@ -582,6 +589,9 @@ out:
 EXPORT_SYMBOL_GPL(cpu_up);
 
 #ifdef CONFIG_PM_SLEEP_SMP
+/** 20151010    
+ * PM_SLEEP_SMP가 선언되어 있으므로 frozen_cpus인 cpumask를 사용한다.
+ **/
 static cpumask_var_t frozen_cpus;
 
 void __weak arch_disable_nonboot_cpus_begin(void)
@@ -670,6 +680,11 @@ out:
 	cpu_maps_update_done();
 }
 
+/** 20151010    
+ * frozen_cpus를 위한 cpumask 변수를 할당한다.
+ *
+ * CPUMASK_OFFSTACK를 선언하지 않았으므로 실제로 취하는 동작은 없다.
+ **/
 static int __init alloc_frozen_cpus(void)
 {
 	if (!alloc_cpumask_var(&frozen_cpus, GFP_KERNEL|__GFP_ZERO))
@@ -689,6 +704,10 @@ core_initcall(alloc_frozen_cpus);
  * (and hence the freezer) will block here until any currently running CPU
  * hotplug operation gets completed.
  */
+/** 20151010    
+ * CPU hotplug 동작과 freezer 사이의 경쟁을 방지하기 위해 freeze 동작 전
+ * hotplug 불가상태로 만든다.
+ **/
 void cpu_hotplug_disable_before_freeze(void)
 {
 	cpu_maps_update_begin();
@@ -701,6 +720,9 @@ void cpu_hotplug_disable_before_freeze(void)
  * When tasks have been thawed, re-enable regular CPU hotplug (which had been
  * disabled while beginning to freeze tasks).
  */
+/** 20151010    
+ * tasks들(freezer 포함)의 재개가 이뤄진 후, CPU hotplug 동작을 가능하도록 한다.
+ **/
 void cpu_hotplug_enable_after_thaw(void)
 {
 	cpu_maps_update_begin();
@@ -719,6 +741,15 @@ void cpu_hotplug_enable_after_thaw(void)
  * hotplug and Suspend/Hibernate call paths by hooking onto the Suspend/
  * Hibernate notifications.
  */
+/** 20151010    
+ * PM 관련 작업이 이뤄지기 전, CPU hotplug와 freezer 사이의 경쟁을 회피하기 위한
+ * 콜백 함수.
+ *
+ * suspend : machine state is saved in RAM
+ * hibernate : machine state is saved in swap
+ *
+ * http://events.linuxfoundation.org/sites/events/files/slides/kernel_PM_plain.pdf
+ **/
 static int
 cpu_hotplug_pm_callback(struct notifier_block *nb,
 			unsigned long action, void *ptr)
@@ -744,7 +775,7 @@ cpu_hotplug_pm_callback(struct notifier_block *nb,
 
 
 /** 20151003    
- * 다음주 여기부터...
+ * PM 관련 동기화를 위한 cpu hotplug notifier block을 선언하고 등록한다.
  **/
 static int __init cpu_hotplug_pm_sync_init(void)
 {

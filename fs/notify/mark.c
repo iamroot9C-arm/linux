@@ -97,6 +97,9 @@
 #include <linux/fsnotify_backend.h>
 #include "fsnotify.h"
 
+/** 20151010    
+ * fsnotify_mark_srcu를 선언.
+ **/
 struct srcu_struct fsnotify_mark_srcu;
 static DEFINE_SPINLOCK(destroy_lock);
 static LIST_HEAD(destroy_list);

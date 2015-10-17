@@ -752,12 +752,15 @@ void free_cpumask_var(cpumask_var_t mask);
 void free_bootmem_cpumask_var(cpumask_var_t mask);
 
 #else
+/** 20151010    
+ * CPUMASK_OFFSTACK은 정의되어 있지 않다.
+ *
+ * CPUMASK_OFFSTACK은 CPUMASK를 stack에 저장하지 않고 동적 메모리를 할당해 저장하는 것을 의미.
+ **/
 typedef struct cpumask cpumask_var_t[1];
 
 /** 20140419    
  * default로 CPUMASK_OFFSTACK가 정의되어 있지 않아 true 리턴.
- *
- * CPUMASK_OFFSTACK은 CPUMASK를 stack에 저장하지 않고 동적 메모리를 할당해 저장하는 것을 의미.
  **/
 static inline bool alloc_cpumask_var(cpumask_var_t *mask, gfp_t flags)
 {

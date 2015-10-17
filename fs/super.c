@@ -915,6 +915,10 @@ rescan:
  *
  *	Alters the mount options of a mounted file system.
  */
+/** 20151010    
+ * 주어진 flags와 data로 다시 mount 시킨다.
+ * 자세한 내용은 분석하지 않음???
+ **/
 int do_remount_sb(struct super_block *sb, int flags, void *data, int force)
 {
 	int retval;
@@ -1308,11 +1312,19 @@ struct dentry *mount_nodev(struct file_system_type *fs_type,
 }
 EXPORT_SYMBOL(mount_nodev);
 
+/** 20151010    
+ * compare_single은 항상 1을 리턴.
+ **/
 static int compare_single(struct super_block *s, void *p)
 {
 	return 1;
 }
 
+/** 20151010    
+ * 모든 mount 사이에 하나의 instance를 공유한다.
+ *
+ * https://www.kernel.org/doc/Documentation/filesystems/vfs.txt
+ **/
 struct dentry *mount_single(struct file_system_type *fs_type,
 	int flags, void *data,
 	int (*fill_super)(struct super_block *, void *, int))
@@ -1321,12 +1333,18 @@ struct dentry *mount_single(struct file_system_type *fs_type,
 	int error;
 
 	/** 20150822    
-	 * fs_type에서 superblock을 찾아 compare_single로 검사하고,
+	 * fs_type에서 superblock을 찾아 compare_single로 검사하고(항상 참),
 	 * 없다면 set_anon_super로 지정하고 superblock을 리턴한다.
 	 **/
 	s = sget(fs_type, compare_single, set_anon_super, flags, NULL);
 	if (IS_ERR(s))
 		return ERR_CAST(s);
+	/** 20151010    
+	 * superblock의 root dentry가 존재하지 않으면, 즉 처음 mount하는 경우
+	 * 전달된 함수로 superblock을 채운다.
+	 *
+	 * 만약 이미 root dentry가 존재하면 전달된 flags로 재마운트만 시킨다.
+	 **/
 	if (!s->s_root) {
 		error = fill_super(s, data, flags & MS_SILENT ? 1 : 0);
 		if (error) {
@@ -1337,6 +1355,9 @@ struct dentry *mount_single(struct file_system_type *fs_type,
 	} else {
 		do_remount_sb(s, flags, data, 0);
 	}
+	/** 20151010    
+	 * root dentry의 reference count를 증가시키고 리턴한다.
+	 **/
 	return dget(s->s_root);
 }
 EXPORT_SYMBOL(mount_single);

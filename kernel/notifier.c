@@ -256,7 +256,12 @@ EXPORT_SYMBOL_GPL(atomic_notifier_call_chain);
  *	Currently always returns zero.
  */
 /** 20140719
- * 세마포어를 통해 block가능한 notifier함수를 notifier head에 등록시키는 함수
+ * blocking_notifier_chain:
+ *	notifier chain에 대한 접근이 rwsem을 통해 동기화 된다.
+ *	따라서 호출이 blocking될 수 있다.
+ *
+ * notifier함수를 blocking notifier head에 등록시키는 함수
+ *
  */
 int blocking_notifier_chain_register(struct blocking_notifier_head *nh,
 		struct notifier_block *n)
