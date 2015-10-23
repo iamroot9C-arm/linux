@@ -64,6 +64,9 @@ pmd_t *top_pmd;
 
 static unsigned int cachepolicy __initdata = CPOLICY_WRITEBACK;
 static unsigned int ecc_mask __initdata = 0;
+/** 20151017    
+ * user, kernel에 대한 page protection 속성 정의
+ **/
 pgprot_t pgprot_user;
 pgprot_t pgprot_kernel;
 
@@ -611,19 +614,17 @@ write-alloc를 사용해서 다른 프로세서가 write된 최신값을 snoopin
 
 	for (i = 0; i < 16; i++) {
 		unsigned long v = pgprot_val(protection_map[i]);
-/** 20130202
-* user_pgprot는 현재 = L_PTE_MT_WRITEALLOC | L_PTE_SHARED
-* vecs_pgprot는 현재 = L_PTE_MT_WRITEALLOC | L_PTE_SHARED
-* protection_map에 user_pgprot값을 추가
-*/
+		/** 20130202
+		 * user_pgprot는 현재 = L_PTE_MT_WRITEALLOC | L_PTE_SHARED
+		 * vecs_pgprot는 현재 = L_PTE_MT_WRITEALLOC | L_PTE_SHARED
+		 * protection_map에 user_pgprot값을 추가
+		 */
 		protection_map[i] = __pgprot(v | user_pgprot);
 	}
 
 	mem_types[MT_LOW_VECTORS].prot_pte |= vecs_pgprot;
 	mem_types[MT_HIGH_VECTORS].prot_pte |= vecs_pgprot;
 
-/** 20130216 여기서부터
-*/
 	pgprot_user   = __pgprot(L_PTE_PRESENT | L_PTE_YOUNG | user_pgprot);
 	pgprot_kernel = __pgprot(L_PTE_PRESENT | L_PTE_YOUNG |
 				 L_PTE_DIRTY | kern_pgprot);

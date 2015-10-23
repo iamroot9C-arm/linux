@@ -33,6 +33,9 @@ struct backing_dev_info noop_backing_dev_info = {
 };
 EXPORT_SYMBOL_GPL(noop_backing_dev_info);
 
+/** 20151017    
+ * bdi_class_init에서 생성하고 등록.
+ **/
 static struct class *bdi_class;
 
 /*
@@ -241,10 +244,16 @@ static struct device_attribute bdi_dev_attrs[] = {
 
 static __init int bdi_class_init(void)
 {
+	/** 20151017    
+	 * bdi_class를 "bdi"라는 이름으로 생성하고 등록한다.
+	 **/
 	bdi_class = class_create(THIS_MODULE, "bdi");
 	if (IS_ERR(bdi_class))
 		return PTR_ERR(bdi_class);
 
+	/** 20151017    
+	 * bid_class의 device attribute 지정.
+	 **/
 	bdi_class->dev_attrs = bdi_dev_attrs;
 	bdi_debug_init();
 	return 0;

@@ -2156,6 +2156,10 @@ static struct pernet_operations __net_initdata netlink_net_ops = {
 	.exit = netlink_net_exit,
 };
 
+/** 20151017    
+ * kernel <-> userspace 인터페이스로 사용되는 netlink 소켓을 초기화 한다.
+ * 자세한 분석은 생략???
+ **/
 static int __init netlink_proto_init(void)
 {
 	struct sk_buff *dummy_skb;

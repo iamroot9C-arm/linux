@@ -423,6 +423,7 @@ EXPORT_SYMBOL(address_space_init_once);
  * inode를 최초에 한 번 초기화 한다.
  *
  * hlist와 address_space_init_one 등이 호출된다.
+ * 주석에서 설명하는 inode의 init이 필요한 이유의 의미는???
  **/
 void inode_init_once(struct inode *inode)
 {

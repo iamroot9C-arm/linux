@@ -237,11 +237,21 @@ static int move_addr_to_user(struct sockaddr_storage *kaddr, int klen,
 
 static struct kmem_cache *sock_inode_cachep __read_mostly;
 
+/** 20151017    
+ * socket을 할당하고 초기화 해 리턴한다.
+ *
+ * 실제로 socket과 inode를 묶은 struct socket_alloc 구조체를 할당한다.
+ **/
 static struct inode *sock_alloc_inode(struct super_block *sb)
 {
 	struct socket_alloc *ei;
 	struct socket_wq *wq;
 
+	/** 20151017    
+	 * socket_alloc 구조체를 통해 socket을 할당 받는다.
+	 *
+	 * 내부의 inode 구조체는 object 생성시 호출되어 vfs inode를 초기화 한다.
+	 **/
 	ei = kmem_cache_alloc(sock_inode_cachep, GFP_KERNEL);
 	if (!ei)
 		return NULL;
@@ -263,17 +273,26 @@ static struct inode *sock_alloc_inode(struct super_block *sb)
 	return &ei->vfs_inode;
 }
 
+/** 20151017    
+ * inode를 받아 socket_alloc 제거함수.
+ **/
 static void sock_destroy_inode(struct inode *inode)
 {
 	struct socket_alloc *ei;
 	struct socket_wq *wq;
 
+	/** 20151017    
+	 * 전달받은 inode로 구조체를 받아와 할당받은 메모리를 해제하는 등 정리한다.
+	 **/
 	ei = container_of(inode, struct socket_alloc, vfs_inode);
 	wq = rcu_dereference_protected(ei->socket.wq, 1);
 	kfree_rcu(wq, rcu);
 	kmem_cache_free(sock_inode_cachep, ei);
 }
 
+/** 20151017    
+ * inode 객체를 생성 후 init_init_once 함수로 초기화 한다.
+ **/
 static void init_once(void *foo)
 {
 	struct socket_alloc *ei = (struct socket_alloc *)foo;
@@ -281,8 +300,17 @@ static void init_once(void *foo)
 	inode_init_once(&ei->vfs_inode);
 }
 
+/** 20151017    
+ * socket inode를 위한 kmem_cache를 생성한다.
+ **/
 static int init_inodecache(void)
 {
+	/** 20151017    
+	 * socket_alloc을 위한 kmem_cache를 생성한다.
+	 *
+	 * inode cache이므로 reclaimable 속성을 갖고 있고,
+	 * object 생성 후 init_once로 초기화 한다.
+	 **/
 	sock_inode_cachep = kmem_cache_create("sock_inode_cache",
 					      sizeof(struct socket_alloc),
 					      0,
@@ -295,6 +323,9 @@ static int init_inodecache(void)
 	return 0;
 }
 
+/** 20151017    
+ * sockfs의 superblock operation.
+ **/
 static const struct super_operations sockfs_ops = {
 	.alloc_inode	= sock_alloc_inode,
 	.destroy_inode	= sock_destroy_inode,
@@ -314,15 +345,29 @@ static const struct dentry_operations sockfs_dentry_operations = {
 	.d_dname  = sockfs_dname,
 };
 
+/** 20151017    
+ * sockfs 마운트 함수.
+ **/
 static struct dentry *sockfs_mount(struct file_system_type *fs_type,
 			 int flags, const char *dev_name, void *data)
 {
+	/** 20151017    
+	 * 가상 파일시스템(nodev)으로 mount 한다.
+	 **/
 	return mount_pseudo(fs_type, "socket:", &sockfs_ops,
 		&sockfs_dentry_operations, SOCKFS_MAGIC);
 }
 
+/** 20151017    
+ * sockfs mount 후 설정되는 vfsmount 구조체.
+ **/
 static struct vfsmount *sock_mnt __read_mostly;
 
+/** 20151017    
+ * sock fs 구조체.
+ *
+ * socket 구조체가 VFS 서브시스템과 연동시켜 파일 연산이 가능하도록 한다.
+ **/
 static struct file_system_type sock_fs_type = {
 	.name =		"sockfs",
 	.mount =	sockfs_mount,
@@ -2517,12 +2562,20 @@ void sock_unregister(int family)
 }
 EXPORT_SYMBOL(sock_unregister);
 
+/** 20151017    
+ * socket을 사용하기 위한 초기화 함수.
+ *
+ * - kmem_cache 생성, sockfs 등록, vfs 마운트.
+ **/
 static int __init sock_init(void)
 {
 	int err;
 	/*
 	 *      Initialize the network sysctl infrastructure.
 	 */
+	/** 20151017    
+	 * network sysctl 초기화.
+	 **/
 	err = net_sysctl_init();
 	if (err)
 		goto out;
@@ -2544,6 +2597,9 @@ static int __init sock_init(void)
 
 	init_inodecache();
 
+	/** 20151017    
+	 * sock_fs_type을 등록한다.
+	 **/
 	err = register_filesystem(&sock_fs_type);
 	if (err)
 		goto out_fs;

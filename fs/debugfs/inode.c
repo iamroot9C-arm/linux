@@ -338,6 +338,9 @@ struct dentry *__create_file(const char *name, umode_t mode,
 
 	pr_debug("debugfs: creating file '%s'\n",name);
 
+	/** 20151017    
+	 * debugfs의 mount가 해제되지 않도록 mount 카운트를 증가시킨다.
+	 **/
 	error = simple_pin_fs(&debug_fs_type, &debugfs_mount,
 			      &debugfs_mount_count);
 	if (error)
@@ -348,6 +351,9 @@ struct dentry *__create_file(const char *name, umode_t mode,
 	 * block. A pointer to that is in the struct vfsmount that we
 	 * have around.
 	 */
+	/** 20151017    
+	 * parent가 NULL인 경우 root를 mount 시킨다.
+	 **/
 	if (!parent)
 		parent = debugfs_mount->mnt_root;
 

@@ -80,6 +80,9 @@ __init int net_sysctl_init(void)
 	 * registering "/proc/sys/net" as an empty directory not in a
 	 * network namespace.
 	 */
+	/** 20151017    
+	 * "net" sysctl을 등록한다.
+	 **/
 	net_header = register_sysctl("net", empty);
 	if (!net_header)
 		goto out;

@@ -1284,6 +1284,11 @@ static inline struct kiocb *siocb_to_kiocb(struct sock_iocb *si)
 	return si->kiocb;
 }
 
+/** 20151017    
+ * socket은 VFS상에서 파일이므로 vfs_inode를 갖는다.
+ *
+ * "sock_inode_cache"는 이 구조체를 위한 kmem_cache이다.
+ **/
 struct socket_alloc {
 	struct socket socket;
 	struct inode vfs_inode;

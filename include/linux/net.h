@@ -119,6 +119,9 @@ enum sock_shutdown_cmd {
 	SHUT_RDWR	= 2,
 };
 
+/** 20151017    
+ * socket wait queue.
+ **/
 struct socket_wq {
 	/* Note: wait MUST be first field of socket_wq */
 	wait_queue_head_t	wait;

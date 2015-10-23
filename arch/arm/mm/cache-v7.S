@@ -374,6 +374,9 @@ ENDPROC(v7_dma_clean_range)
  *	- start   - virtual start address of region
  *	- end     - virtual end address of region
  */
+/** 20151017    
+ * start ~ end 사이의 data cache와 unified cache를 clean & invalid 시킨다.
+ **/
 ENTRY(v7_dma_flush_range)
 	dcache_line_size r2, r3
 	sub	r3, r2, #1

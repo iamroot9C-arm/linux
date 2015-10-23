@@ -463,6 +463,9 @@ extern void class_destroy(struct class *cls);
 
 /* This is a #define to keep the compiler from merging different
  * instances of the __key variable */
+/** 20151017    
+ * class 생성
+ **/
 #define class_create(owner, name)		\
 ({						\
 	static struct lock_class_key __key;	\

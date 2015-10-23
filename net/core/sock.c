@@ -1463,6 +1463,12 @@ void sk_setup_caps(struct sock *sk, struct dst_entry *dst)
 }
 EXPORT_SYMBOL_GPL(sk_setup_caps);
 
+/** 20151017    
+ * sk 초기화.
+ *
+ * 전체 페이지 수에 따라 sysctl 값을 조정한다.
+ * 추후 sysctl을 통해 변경이 가능하다.
+ **/
 void __init sk_init(void)
 {
 	if (totalram_pages <= 4096) {

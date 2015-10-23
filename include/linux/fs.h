@@ -1556,6 +1556,9 @@ struct sb_writers {
 
 /** 20150307    
  * super_block 자료구조.
+ *
+ * superblock은 파일시스템의 metadata로 종류, 크기, 상태 정보 등을 가진다.
+ * 각 파일시스템은 sget() 공통 인터페이스에 전달하는 함수를 통해 초기화 한다.
  **/
 struct super_block {
 	struct list_head	s_list;		/* Keep this first */

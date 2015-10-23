@@ -219,6 +219,11 @@ extern bool initcall_debug;
  * This only exists for built-in code, not for modules.
  * Keep main.c:initcall_level_names[] in sync.
  */
+/** 20151017    
+ * init level 정의 매크로.
+ * 0을 제외한 각 레벨별로 sync 함수가 존재하여 해당 phase의 함수들이 완료된 뒤
+ * 호출된다.
+ **/
 #define pure_initcall(fn)		__define_initcall("0",fn,0)
 
 #define core_initcall(fn)		__define_initcall("1",fn,1)

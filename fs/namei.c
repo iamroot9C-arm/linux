@@ -2074,6 +2074,10 @@ static struct dentry *lookup_hash(struct nameidata *nd)
  * nameidata argument is passed to the filesystem methods and a filesystem
  * using this helper needs to be prepared for that.
  */
+/** 20151017    
+ * name으로 dentry를 찾아 리턴한다.
+ * 
+ **/
 struct dentry *lookup_one_len(const char *name, struct dentry *base, int len)
 {
 	struct qstr this;

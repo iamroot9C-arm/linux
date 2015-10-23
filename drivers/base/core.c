@@ -34,6 +34,9 @@
 #ifdef CONFIG_SYSFS_DEPRECATED_V2
 long sysfs_deprecated = 1;
 #else
+/** 20151017    
+ * sysfs는 deprecated 되지 않았다.
+ **/
 long sysfs_deprecated = 0;
 #endif
 static __init int sysfs_deprecated_setup(char *arg)

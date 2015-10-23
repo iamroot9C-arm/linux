@@ -3097,6 +3097,12 @@ done:
 }
 EXPORT_SYMBOL_GPL(skb_gro_receive);
 
+/** 20151017    
+ * socket buffer init.
+ *
+ * sk_buff를 위한 kmem_cache와 fast clone을 위한 kmem_cache를 생성한다.
+ * fclone은 tcp에서 FIN, SYN packet을 보낼 때 사용된다.
+ **/
 void __init skb_init(void)
 {
 	skbuff_head_cache = kmem_cache_create("skbuff_head_cache",

@@ -581,10 +581,16 @@ out:
 
 static DEFINE_SPINLOCK(pin_fs_lock);
 
+/** 20151017    
+ * 파일시스템의 마운트 카운트를 증가시켜 마운트를 고정시킨다.
+ **/
 int simple_pin_fs(struct file_system_type *type, struct vfsmount **mount, int *count)
 {
 	struct vfsmount *mnt = NULL;
 	spin_lock(&pin_fs_lock);
+	/** 20151017    
+	 * 아직 vfs mount되지 않은 파일시스템인 경우 mount해서 정보를 채운다.
+	 **/
 	if (unlikely(!*mount)) {
 		spin_unlock(&pin_fs_lock);
 		mnt = vfs_kern_mount(type, MS_KERNMOUNT, type->name, NULL);
@@ -594,6 +600,9 @@ int simple_pin_fs(struct file_system_type *type, struct vfsmount **mount, int *c
 		if (!*mount)
 			*mount = mnt;
 	}
+	/** 20151017    
+	 * mount의 참조 카운트를 확보한 상태에서 mount count를 증가시킨다.
+	 **/
 	mntget(*mount);
 	++*count;
 	spin_unlock(&pin_fs_lock);

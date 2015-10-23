@@ -113,6 +113,9 @@ extern pgprot_t		pgprot_kernel;
 #define __PAGE_READONLY		__pgprot(_L_PTE_DEFAULT | L_PTE_USER | L_PTE_RDONLY | L_PTE_XN)
 #define __PAGE_READONLY_EXEC	__pgprot(_L_PTE_DEFAULT | L_PTE_USER | L_PTE_RDONLY)
 
+/** 20151017    
+ * 기존 protection 값을 복사해 mask부분을 날리고 bits으로 새로 정의한다.
+ **/
 #define __pgprot_modify(prot,mask,bits)		\
 	__pgprot((pgprot_val(prot) & ~(mask)) | (bits))
 
@@ -126,6 +129,10 @@ extern pgprot_t		pgprot_kernel;
 	__pgprot_modify(prot, L_PTE_MT_MASK, L_PTE_MT_UNCACHED)
 
 #ifdef CONFIG_ARM_DMA_MEM_BUFFERABLE
+/** 20151017    
+ * dmacoherent를 위한 pgprot 정의 매크로.
+ * CONFIG_ARM_DMA_MEM_BUFFERABLE가 정의되어 있으므로 BUFFERABLE 속성이 추가된다.
+ **/
 #define pgprot_dmacoherent(prot) \
 	__pgprot_modify(prot, L_PTE_MT_MASK, L_PTE_MT_BUFFERABLE | L_PTE_XN)
 #define __HAVE_PHYS_MEM_ACCESS_PROT
