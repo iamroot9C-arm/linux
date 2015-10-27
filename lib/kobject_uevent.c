@@ -421,6 +421,11 @@ found:
 	kfree(ue_sk);
 }
 
+/** 20151024    
+ * uevent pernet operations.
+ *
+ * 다음주 init 부터...
+ **/
 static struct pernet_operations uevent_net_ops = {
 	.init	= uevent_net_init,
 	.exit	= uevent_net_exit,
@@ -428,6 +433,9 @@ static struct pernet_operations uevent_net_ops = {
 
 static int __init kobject_uevent_init(void)
 {
+	/** 20151024    
+	 * netlink table 중 NETLINK_KOBJECT_UEVENT에 해당하는 nonroot 정보를 저장한다.
+	 **/
 	netlink_set_nonroot(NETLINK_KOBJECT_UEVENT, NL_NONROOT_RECV);
 	return register_pernet_subsys(&uevent_net_ops);
 }

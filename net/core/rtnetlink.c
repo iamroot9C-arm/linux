@@ -60,6 +60,9 @@ struct rtnl_link {
 	rtnl_calcit_func 	calcit;
 };
 
+/** 20151024    
+ * route table netlink mutex.
+ **/
 static DEFINE_MUTEX(rtnl_mutex);
 
 void rtnl_lock(void)

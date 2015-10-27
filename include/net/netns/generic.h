@@ -24,6 +24,10 @@
  * accessed with the net_generic() call.
  */
 
+/** 20151024    
+ *
+ * 가변 배열 ptr의 의미는?
+ **/
 struct net_generic {
 	unsigned int len;
 	struct rcu_head rcu;

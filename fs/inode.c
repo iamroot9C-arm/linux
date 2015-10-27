@@ -389,6 +389,9 @@ EXPORT_SYMBOL(set_nlink);
  * direct filesystem manipulation of i_nlink.  Currently,
  * it is only here for parity with dec_nlink().
  */
+/** 20151024    
+ * directory의 inode 링크 카운트를 증가시킨다.
+ **/
 void inc_nlink(struct inode *inode)
 {
 	if (WARN_ON(inode->i_nlink == 0))

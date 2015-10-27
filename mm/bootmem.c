@@ -1006,6 +1006,9 @@ static void * __init alloc_bootmem_core(unsigned long size,
 
 /** 20130518    
  * alloc_bootmem_core를 사용해 size만큼(page 단위)의 영역을 할당받음
+ *
+ * ptr을 할당받을 때까지 반복해서 수행한다.
+ * 실패시 goal을 날려버려 다시 할당을 시도한다.
  **/
 static void * __init ___alloc_bootmem_nopanic(unsigned long size,
 					      unsigned long align,
@@ -1039,6 +1042,11 @@ restart:
  *
  * Returns NULL on failure.
  */
+/** 20151024    
+ * boot memory로부터 size 크기만큼 메모리를 할당 받는다.
+ *
+ * panic은 허용되지 않는다.
+ **/
 void * __init __alloc_bootmem_nopanic(unsigned long size, unsigned long align,
 					unsigned long goal)
 {

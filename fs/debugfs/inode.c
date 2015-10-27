@@ -34,16 +34,29 @@ static struct vfsmount *debugfs_mount;
 static int debugfs_mount_count;
 static bool debugfs_registered;
 
+/** 20151024    
+ * inode를 새로 할당받아 파일 타입에 맞게 debugfs의 정보를 채워 리턴한다.
+ **/
 static struct inode *debugfs_get_inode(struct super_block *sb, umode_t mode, dev_t dev,
 				       void *data, const struct file_operations *fops)
 
 {
+	/** 20151024    
+	 * 새로운 inode를 할당 받는다.
+	 **/
 	struct inode *inode = new_inode(sb);
 
 	if (inode) {
+		/** 20151024    
+		 * inode에 ino, mode, time 정보를 저장한다.
+		 **/
 		inode->i_ino = get_next_ino();
 		inode->i_mode = mode;
 		inode->i_atime = inode->i_mtime = inode->i_ctime = CURRENT_TIME;
+		/** 20151024    
+		 * mode에서 파일 종류 마스크만 비교해 일반 파일, 링크, 디렉토리인 경우
+		 * 구조체를 채운다.
+		 **/
 		switch (mode & S_IFMT) {
 		default:
 			init_special_inode(inode, mode, dev);
@@ -71,6 +84,9 @@ static struct inode *debugfs_get_inode(struct super_block *sb, umode_t mode, dev
 }
 
 /* SMP-safe */
+/** 20151024    
+ * debugfs의 새로운 node를 생성한다.
+ **/
 static int debugfs_mknod(struct inode *dir, struct dentry *dentry,
 			 umode_t mode, dev_t dev, void *data,
 			 const struct file_operations *fops)
@@ -81,8 +97,15 @@ static int debugfs_mknod(struct inode *dir, struct dentry *dentry,
 	if (dentry->d_inode)
 		return -EEXIST;
 
+	/** 20151024    
+	 * 새로운 inode를 할당 받아 debugfs의 정보를 채워온다.
+	 **/
 	inode = debugfs_get_inode(dir->i_sb, mode, dev, data, fops);
 	if (inode) {
+		/** 20151024    
+		 * 성공적으로 받아왔다면 받아온 inode와 dentry 정보를 서로 연결시킨다.
+		 * dentry의 reference count를 증가시킨다.
+		 **/
 		d_instantiate(dentry, inode);
 		dget(dentry);
 		error = 0;
@@ -329,6 +352,9 @@ static struct file_system_type debug_fs_type = {
 	.kill_sb =	kill_litter_super,
 };
 
+/** 20151024    
+ * debugfs 내에 name을 가지는 새로운 파일을 생성한다.
+ **/
 struct dentry *__create_file(const char *name, umode_t mode,
 				   struct dentry *parent, void *data,
 				   const struct file_operations *fops)
@@ -359,7 +385,14 @@ struct dentry *__create_file(const char *name, umode_t mode,
 
 	dentry = NULL;
 	mutex_lock(&parent->d_inode->i_mutex);
+	/** 20151024    
+	 * name과 parent dentry로 dentry를 찾는다.
+	 **/
 	dentry = lookup_one_len(name, parent, strlen(name));
+	/** 20151024    
+	 * 찾은 결과 error가 없었다면 mode에 따라 debugfs 파일을 만든다.
+	 * 공통으로 inode를 할당 받고, dentry와 연결하는 과정을 거친다.
+	 **/
 	if (!IS_ERR(dentry)) {
 		switch (mode & S_IFMT) {
 		case S_IFDIR:
@@ -448,6 +481,9 @@ EXPORT_SYMBOL_GPL(debugfs_create_file);
  * If debugfs is not enabled in the kernel, the value -%ENODEV will be
  * returned.
  */
+/** 20151024    
+ * debugfs내에 dir entry를 생성한다.
+ **/
 struct dentry *debugfs_create_dir(const char *name, struct dentry *parent)
 {
 	return __create_file(name, S_IFDIR | S_IRWXU | S_IRUGO | S_IXUGO,

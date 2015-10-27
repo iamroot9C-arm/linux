@@ -251,6 +251,12 @@ static inline struct net *read_pnet(struct net * const *pnet)
 #define __net_initdata	__initdata
 #endif
 
+/** 20151024    
+ * network operations.
+ *
+ * register_pernet_operations로 등록한다.
+ * 각 network protocol에서 register_pernet_subsys로 등록한다.
+ **/
 struct pernet_operations {
 	struct list_head list;
 	int (*init)(struct net *net);

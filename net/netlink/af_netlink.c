@@ -129,6 +129,9 @@ struct netlink_table {
 	int			registered;
 };
 
+/** 20151024    
+ * netlink_proto_init에서 MAX_LINKS만큼 할당 받았다.
+ **/
 static struct netlink_table *nl_table;
 
 static DECLARE_WAIT_QUEUE_HEAD(nl_table_wait);
@@ -1676,6 +1679,11 @@ void netlink_clear_multicast_users(struct sock *ksk, unsigned int group)
 	netlink_table_ungrab();
 }
 
+/** 20151024    
+ * protocol에 해당하는 nl_table entry의 nonroot에 flags를 저장한다.
+ *
+ * nl_nonroot는 현재 capable 검사시에만 사용한다???
+ **/
 void netlink_set_nonroot(int protocol, unsigned int flags)
 {
 	if ((unsigned int)protocol < MAX_LINKS)

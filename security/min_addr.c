@@ -55,6 +55,8 @@ int mmap_min_addr_handler(struct ctl_table *table, int write,
 	return ret;
 }
 
+/** 20151024    
+ **/
 static int __init init_mmap_min_addr(void)
 {
 	update_mmap_min_addr();

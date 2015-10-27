@@ -299,6 +299,9 @@ struct inodes_stat_t {
 #define IS_IMMUTABLE(inode)	((inode)->i_flags & S_IMMUTABLE)
 #define IS_POSIXACL(inode)	__IS_FLG(inode, MS_POSIXACL)
 
+/** 20151024    
+ * inode flags에 
+ **/
 #define IS_DEADDIR(inode)	((inode)->i_flags & S_DEAD)
 #define IS_NOCMTIME(inode)	((inode)->i_flags & S_NOCMTIME)
 #define IS_SWAPFILE(inode)	((inode)->i_flags & S_SWAPFILE)
@@ -1605,6 +1608,9 @@ struct super_block {
 	 **/
 	struct list_head	s_mounts;	/* list of mounts; _not_ for fs use */
 	/* s_dentry_lru, s_nr_dentry_unused protected by dcache.c lru locks */
+	/** 20151024    
+	 * 사용이 끝난 unused dentry 들이 등록될 lru 리스트.
+	 **/
 	struct list_head	s_dentry_lru;	/* unused dentry lru */
 	int			s_nr_dentry_unused;	/* # of dentry on lru */
 

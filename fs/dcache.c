@@ -2128,11 +2128,18 @@ seqretry:
  * dentry is returned. The caller must use dput to free the entry when it has
  * finished using it. %NULL is returned if the dentry does not exist.
  */
+/** 20151024    
+ * parent dentry와 qstr로 dentry를 hashtable에서 찾는다.
+ **/
 struct dentry *d_lookup(struct dentry *parent, struct qstr *name)
 {
 	struct dentry *dentry;
 	unsigned seq;
 
+	/** 20151024    
+	 * dentry lookup을 하는 중에 seq이 변경되었는지 검사해 변경되었다면 다시 시도.
+	 * 그렇지 않다면 찾은 dentry를 리턴.
+	 **/
         do {
                 seq = read_seqbegin(&rename_lock);
                 dentry = __d_lookup(parent, name);
@@ -2158,11 +2165,20 @@ EXPORT_SYMBOL(d_lookup);
  *
  * __d_lookup callers must be commented.
  */
+/** 20151024    
+ * dentry hashtable에서 dentry를 찾아 리턴한다.
+ *
+ * 먼저 hash list head를 찾고, hash list를 순회하며 비교함수를 통해
+ * 일치하는 hash 값과 이름을 갖는 dentry를 찾는다.
+ **/
 struct dentry *__d_lookup(struct dentry *parent, struct qstr *name)
 {
 	unsigned int len = name->len;
 	unsigned int hash = name->hash;
 	const unsigned char *str = name->name;
+	/** 20151024    
+	 * parent dentry와 hash로 hashtable의 hash list head를 찾아온다.
+	 **/
 	struct hlist_bl_head *b = d_hash(parent, hash);
 	struct hlist_bl_node *node;
 	struct dentry *found = NULL;
@@ -2190,11 +2206,20 @@ struct dentry *__d_lookup(struct dentry *parent, struct qstr *name)
 	 */
 	rcu_read_lock();
 	
+	/** 20151024    
+	 * hash list의 각 entry를 순회한다.
+	 **/
 	hlist_bl_for_each_entry_rcu(dentry, node, b, d_hash) {
 
+		/** 20151024    
+		 * 찾아온 dentry의 hash와 넘어온 qstr의 hash가 다르면 다음 검색.
+		 **/
 		if (dentry->d_name.hash != hash)
 			continue;
 
+		/** 20151024    
+		 * name을 제외한 dentry 멤버는 spinlock으로 보호된다.
+		 **/
 		spin_lock(&dentry->d_lock);
 		if (dentry->d_parent != parent)
 			goto next;
@@ -2205,6 +2230,11 @@ struct dentry *__d_lookup(struct dentry *parent, struct qstr *name)
 		 * It is safe to compare names since d_move() cannot
 		 * change the qstr (protected by d_lock).
 		 */
+		/** 20151024    
+		 * parent의 dentry flags를 통해 해당 FS가 자체 COMPARE 함수를 제공하는지
+		 * 검사해 있다면 호출해 검사한다.
+		 * 일반적인 경우 dentry_cmp로 검사한다.
+		 **/
 		if (parent->d_flags & DCACHE_OP_COMPARE) {
 			int tlen = dentry->d_name.len;
 			const char *tname = dentry->d_name.name;
@@ -2219,6 +2249,10 @@ struct dentry *__d_lookup(struct dentry *parent, struct qstr *name)
 				goto next;
 		}
 
+		/** 20151024    
+		 * 비교함수를 통과해 현재 dentry가 찾고자하는 dentry이므로
+		 * 사용 중 상태를 만들고 리턴한다.
+		 **/
 		dentry->d_count++;
 		found = dentry;
 		spin_unlock(&dentry->d_lock);
@@ -3312,6 +3346,7 @@ static void __init dcache_init_early(void)
 	 * 초기값 0을 갖고 있을 것이다.
 	 *
 	 * dentry용 hash table을 생성한다.
+	 * HASH_EARLY로 만들기 때문에 bootmem에서 메모리를 할당 받는다.
 	 *
 	 * 출력 예)
 	 * Dentry cache hash table entries: 131072 (order: 7, 524288 bytes)
@@ -3356,7 +3391,9 @@ static void __init dcache_init(void)
 
 	/* Hash may have been set up in dcache_init_early */
 	/** 20150214    
-	 * CONFIG_NUMA가 설정되지 않은 경우, hashdisk는 0.
+	 * CONFIG_NUMA가 설정되지 않은 경우, hashdist는 0.
+	 *
+	 * UMA인 경우 dcache_init_early에서 생성되었으므로 여기에서는 생성하지 않는다.
 	 **/
 	if (!hashdist)
 		return;

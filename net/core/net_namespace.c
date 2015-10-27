@@ -20,6 +20,9 @@
  *	Our network namespace constructor/destructor lists
  */
 
+/** 20151024    
+ * network namespace 리스트인 pernet_list.
+ **/
 static LIST_HEAD(pernet_list);
 static struct list_head *first_device = &pernet_list;
 static DEFINE_MUTEX(net_mutex);
@@ -27,6 +30,9 @@ static DEFINE_MUTEX(net_mutex);
 LIST_HEAD(net_namespace_list);
 EXPORT_SYMBOL_GPL(net_namespace_list);
 
+/** 20151024    
+ * init_net.
+ **/
 struct net init_net = {
 	.dev_base_head = LIST_HEAD_INIT(init_net.dev_base_head),
 };
@@ -36,8 +42,15 @@ EXPORT_SYMBOL(init_net);
 
 static unsigned int max_gen_ptrs = INITIAL_NET_GEN_PTRS;
 
+/** 20151024    
+ * net_generic을 위한 메모리를 할당 받는다.
+ **/
 static struct net_generic *net_alloc_generic(void)
 {
+	/** 20151024    
+	 * max generic pointer 크기를 포함하여 메모리를 할당 받는다.
+	 * len에 max_gen_ptrs의 수를 저장한다.
+	 **/
 	struct net_generic *ng;
 	size_t generic_size = offsetof(struct net_generic, ptr[max_gen_ptrs]);
 
@@ -48,6 +61,12 @@ static struct net_generic *net_alloc_generic(void)
 	return ng;
 }
 
+/** 20151024    
+ * net의 net_generic의 ptr에 id에 해당하는 data를 저장한다.
+ *
+ * 기존 net_generic의 len보다 큰 id라면 가변 배열이 부족하므로
+ * 메모리를 새로 할당해 기존 데이터를 복사해 추가하고, 기존 net_generic은 제거한다.
+ **/
 static int net_assign_generic(struct net *net, int id, void *data)
 {
 	struct net_generic *ng, *old_ng;
@@ -55,12 +74,20 @@ static int net_assign_generic(struct net *net, int id, void *data)
 	BUG_ON(!mutex_is_locked(&net_mutex));
 	BUG_ON(id == 0);
 
+	/** 20151024    
+	 * 현재 net에 저장되어 있는 net_generic을 받아온다.
+	 *
+	 * 현재 net_generic이 저장할 ops id 이상이라면 assign된 것으로 간주한다.
+	 **/
 	old_ng = rcu_dereference_protected(net->gen,
 					   lockdep_is_held(&net_mutex));
 	ng = old_ng;
 	if (old_ng->len >= id)
 		goto assign;
 
+	/** 20151024    
+	 * 새 net_generic을 할당 받는다.
+	 **/
 	ng = net_alloc_generic();
 	if (ng == NULL)
 		return -ENOMEM;
@@ -75,31 +102,53 @@ static int net_assign_generic(struct net *net, int id, void *data)
 	 * That said, we simply duplicate this array and schedule
 	 * the old copy for kfree after a grace period.
 	 */
-
+	/** 20151024    
+	 * 기존 net_generic의 ptr는 그대로 복사한다.
+	 **/
 	memcpy(&ng->ptr, &old_ng->ptr, old_ng->len * sizeof(void*));
 
+	/** 20151024    
+	 * 주어진 net의 net_generic 포인터가 새로 생성된 net_generic을 가리키게 한다.
+	 * 기존의 net_generic은 삭제한다.
+	 **/
 	rcu_assign_pointer(net->gen, ng);
 	kfree_rcu(old_ng, rcu);
 assign:
+	/** 20151024    
+	 * data를 새로 생성된 net_generic의 ptr 위치에 저장한다.
+	 **/
 	ng->ptr[id - 1] = data;
 	return 0;
 }
 
+/** 20151024    
+ * ops의 id와 size가 있을 경우 net_generic에 등록하고,
+ * init 함수가 제공될 경우 init 함수를 호출한다.
+ **/
 static int ops_init(const struct pernet_operations *ops, struct net *net)
 {
 	int err = -ENOMEM;
 	void *data = NULL;
 
+	/** 20151024    
+	 * id와 size가 주어졌다면 size크기만큼 0으로 초기화된 메모리를 받아온다.
+	 **/
 	if (ops->id && ops->size) {
 		data = kzalloc(ops->size, GFP_KERNEL);
 		if (!data)
 			goto out;
 
+		/** 20151024    
+		 * net의 net_generic의 ptr에 id에 해당하는 위치에 data를 저장한다.
+		 **/
 		err = net_assign_generic(net, *ops->id, data);
 		if (err)
 			goto cleanup;
 	}
 	err = 0;
+	/** 20151024    
+	 * ops에서 init 함수를 제공하면 호출한다.
+	 **/
 	if (ops->init)
 		err = ops->init(net);
 	if (!err)
@@ -145,6 +194,9 @@ static void ops_free_list(const struct pernet_operations *ops,
 /*
  * setup_net runs the initializers for the network namespace object.
  */
+/** 20151024    
+ * network namespace object를 초기화 한다.
+ **/
 static __net_init int setup_net(struct net *net)
 {
 	/* Must be called with net_mutex held */
@@ -160,6 +212,9 @@ static __net_init int setup_net(struct net *net)
 	atomic_set(&net->use_count, 0);
 #endif
 
+	/** 20151024    
+	 * pernet_list의 멤버를 순회하며 ops init으로 초기화 한다.
+	 **/
 	list_for_each_entry(ops, &pernet_list, list) {
 		error = ops_init(ops, net);
 		if (error < 0)
@@ -380,10 +435,16 @@ struct net *get_net_ns_by_pid(pid_t pid)
 }
 EXPORT_SYMBOL_GPL(get_net_ns_by_pid);
 
+/** 20151024    
+ * network namespace를 초기화 한다.
+ **/
 static int __init net_ns_init(void)
 {
 	struct net_generic *ng;
 
+	/** 20151024    
+	 * CONFIG_NET_NS 정의되지 않음.
+	 **/
 #ifdef CONFIG_NET_NS
 	net_cachep = kmem_cache_create("net_namespace", sizeof(struct net),
 					SMP_CACHE_BYTES,
@@ -395,17 +456,29 @@ static int __init net_ns_init(void)
 		panic("Could not create netns workq");
 #endif
 
+	/** 20151024    
+	 * net_generic 구조체를 할당 받는다.
+	 **/
 	ng = net_alloc_generic();
 	if (!ng)
 		panic("Could not allocate generic netns");
 
+	/** 20151024    
+	 * struct net의 gen 포인터에 할당 받은 주소를 저장한다.
+	 **/
 	rcu_assign_pointer(init_net.gen, ng);
 
 	mutex_lock(&net_mutex);
+	/** 20151024    
+	 * mutex 구간 안에서 init_net을 초기화 한다.
+	 **/
 	if (setup_net(&init_net))
 		panic("Could not setup the initial network namespace");
 
 	rtnl_lock();
+	/** 20151024    
+	 * network namespace 리스트에 init_net을 등록한다.
+	 **/
 	list_add_tail_rcu(&init_net.list, &net_namespace_list);
 	rtnl_unlock();
 
@@ -473,6 +546,9 @@ static void __unregister_pernet_operations(struct pernet_operations *ops)
 
 #endif /* CONFIG_NET_NS */
 
+/** 20151024    
+ * net_generic용 ida 정의.
+ **/
 static DEFINE_IDA(net_generic_ids);
 
 static int register_pernet_operations(struct list_head *list,
@@ -482,6 +558,9 @@ static int register_pernet_operations(struct list_head *list,
 
 	if (ops->id) {
 again:
+		/** 20151024    
+		 * 1 보다 큰 id를 할당 받아 ops에 저장한다.
+		 **/
 		error = ida_get_new_above(&net_generic_ids, 1, ops->id);
 		if (error < 0) {
 			if (error == -EAGAIN) {
@@ -490,6 +569,9 @@ again:
 			}
 			return error;
 		}
+		/** 20151024    
+		 * 할당 받은 id가 max_gen_ptrs보다 크면 갱신한다.
+		 **/
 		max_gen_ptrs = max_t(unsigned int, max_gen_ptrs, *ops->id);
 	}
 	error = __register_pernet_operations(list, ops);
@@ -532,6 +614,8 @@ static void unregister_pernet_operations(struct pernet_operations *ops)
  */
 /** 20150509    
  * 추후 분석???
+ *
+ * network namespace 서브시스템을 등록한다.
  **/
 int register_pernet_subsys(struct pernet_operations *ops)
 {

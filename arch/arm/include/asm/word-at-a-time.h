@@ -60,7 +60,8 @@ static inline unsigned long find_zero(unsigned long mask)
  * return zeroes in the non-existing part.
  */
 /** 20150404    
- * unaligned word에 대한 비교 함수.
+ * kernel space에서 정렬되지 않은 워드를 읽어오는 함수.
+ *
  * 자세한 내용은 추후 분석???
  **/
 static inline unsigned long load_unaligned_zeropad(const void *addr)
@@ -86,6 +87,19 @@ static inline unsigned long load_unaligned_zeropad(const void *addr)
 	"	.popsection"
 	: "=&r" (ret), "=&r" (offset)
 	: "r" (addr), "Qo" (*(unsigned long *)addr));
+	/** 20151024    
+	 * ret = *addr;
+	 *
+	 * 아래 코드 블럭을 .fixup섹션으로 배치시킨다. 2**2 정렬.
+	 * offset = addr & 0x3;
+	 * addr = addr & ~(0x3);
+	 * ret = *addr;
+	 * offset <<= 3;
+	 * ret = ret >> 1;
+	 *
+	 * 2: 로 이동한다. 즉, .fixup 섹션이 아니라 원래 섹션으로 이동한다.
+	 * 다시 아래로 실행흐름이 내려오면 __ex_table로 섹션을 변경시킨다. 2**3 정렬.
+	 **/
 
 	return ret;
 }

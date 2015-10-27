@@ -70,8 +70,14 @@ void bdi_lock_two(struct bdi_writeback *wb1, struct bdi_writeback *wb2)
 
 static struct dentry *bdi_debug_root;
 
+/** 20151024    
+ * "bdi"라는 debugfs 디렉토리를 생성한다.
+ **/
 static void bdi_debug_init(void)
 {
+	/** 20151024    
+	 * debugfs의 root 아래에 "bdi" 디렉토리를 생성한다.
+	 **/
 	bdi_debug_root = debugfs_create_dir("bdi", NULL);
 }
 
@@ -242,6 +248,9 @@ static struct device_attribute bdi_dev_attrs[] = {
 	__ATTR_NULL,
 };
 
+/** 20151024    
+ * bdi를 위한 class를 생성하고, debugfs에 "bdi" 디렉토리를 생성한다.
+ **/
 static __init int bdi_class_init(void)
 {
 	/** 20151017    
@@ -255,6 +264,9 @@ static __init int bdi_class_init(void)
 	 * bid_class의 device attribute 지정.
 	 **/
 	bdi_class->dev_attrs = bdi_dev_attrs;
+	/** 20151024    
+	 * debugfs에 "bdi"를 생성한다.
+	 **/
 	bdi_debug_init();
 	return 0;
 }

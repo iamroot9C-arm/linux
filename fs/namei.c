@@ -254,6 +254,10 @@ static int acl_permission_check(struct inode *inode, int mask)
  * request cannot be satisfied (eg. requires blocking or too much complexity).
  * It would then be called again in ref-walk mode.
  */
+/** 20151024    
+ * posix-like FS에서 access 권한을 체크한다.
+ * 추후 분석???
+ **/
 int generic_permission(struct inode *inode, int mask)
 {
 	int ret;
@@ -300,6 +304,9 @@ int generic_permission(struct inode *inode, int mask)
  * flag in inode->i_opflags, that says "this has not special
  * permission function, use the fast case".
  */
+/** 20151024    
+ * inode 퍼미션 체크.
+ **/
 static inline int do_inode_permission(struct inode *inode, int mask)
 {
 	if (unlikely(!(inode->i_opflags & IOP_FASTPERM))) {
@@ -326,10 +333,16 @@ static inline int do_inode_permission(struct inode *inode, int mask)
  * This does not check for a read-only file system.  You probably want
  * inode_permission().
  */
+/** 20151024    
+ * 주어진 inode에 대한 접근 권한을 검사한다.
+ **/
 int __inode_permission(struct inode *inode, int mask)
 {
 	int retval;
 
+	/** 20151024    
+	 * IMMUTABLE inode에 대한 write access는 금지된다.
+	 **/
 	if (unlikely(mask & MAY_WRITE)) {
 		/*
 		 * Nobody gets write access to an immutable file.
@@ -338,14 +351,23 @@ int __inode_permission(struct inode *inode, int mask)
 			return -EACCES;
 	}
 
+	/** 20151024    
+	 * 기본적인 inode 접근권한을 검사.
+	 **/
 	retval = do_inode_permission(inode, mask);
 	if (retval)
 		return retval;
 
+	/** 20151024    
+	 * DEVICE CGROUP 권한을 검사.
+	 **/
 	retval = devcgroup_inode_permission(inode, mask);
 	if (retval)
 		return retval;
 
+	/** 20151024    
+	 * security 권한을 검사.
+	 **/
 	return security_inode_permission(inode, mask);
 }
 
@@ -380,6 +402,9 @@ static int sb_permission(struct super_block *sb, struct inode *inode, int mask)
  *
  * When checking for MAY_APPEND, MAY_WRITE must also be set in @mask.
  */
+/** 20151024    
+ * 해당 inode에 대한 권한이 있는지 확인한다.
+ **/
 int inode_permission(struct inode *inode, int mask)
 {
 	int retval;
@@ -1215,6 +1240,11 @@ static void follow_dotdot(struct nameidata *nd)
  *
  * dir->d_inode->i_mutex must be held
  */
+/** 20151024    
+ * dcache에서 name을 가지는 dentry를 검색한다.
+ *
+ * old dentry인 경우 revalidate 할 수도 있고, 찾지 못한 경우 새로 생성해 리턴한다.
+ **/
 static struct dentry *lookup_dcache(struct qstr *name, struct dentry *dir,
 				    unsigned int flags, bool *need_lookup)
 {
@@ -1222,10 +1252,20 @@ static struct dentry *lookup_dcache(struct qstr *name, struct dentry *dir,
 	int error;
 
 	*need_lookup = false;
+	/** 20151024    
+	 * hash table에서 parent dentry와 name으로 dentry를 찾는다.
+	 **/
 	dentry = d_lookup(dir, name);
 	if (dentry) {
+		/** 20151024    
+		 * dcache가 need_lookup 인지 검사한다.
+		 **/
 		if (d_need_lookup(dentry)) {
 			*need_lookup = true;
+		/** 20151024    
+		 * need_lookup이 아니라면 fs에서 revalidate ops을 제공하는지 검사해
+		 * 제공하는 함수를 호출한다.
+		 **/
 		} else if (dentry->d_flags & DCACHE_OP_REVALIDATE) {
 			error = d_revalidate(dentry, flags);
 			if (unlikely(error <= 0)) {
@@ -1240,6 +1280,10 @@ static struct dentry *lookup_dcache(struct qstr *name, struct dentry *dir,
 		}
 	}
 
+	/** 20151024    
+	 * hashtable에서 dentry를 찾지 못했을 경우 새로 할당 받는다.
+	 * need_lookup이 참이 된다.
+	 **/
 	if (!dentry) {
 		dentry = d_alloc(dir, name);
 		if (unlikely(!dentry))
@@ -1256,6 +1300,9 @@ static struct dentry *lookup_dcache(struct qstr *name, struct dentry *dir,
  *
  * dir->d_inode->i_mutex must be held
  */
+/** 20151024    
+ * dir inode와 빈 dentry를 받아 i_op->lookup으로 찾고 dentry 정보를 채워 리턴한다.
+ **/
 static struct dentry *lookup_real(struct inode *dir, struct dentry *dentry,
 				  unsigned int flags)
 {
@@ -1267,24 +1314,42 @@ static struct dentry *lookup_real(struct inode *dir, struct dentry *dentry,
 		return ERR_PTR(-ENOENT);
 	}
 
+	/** 20151024    
+	 * inode operations의 lookup 함수를 호출해 inode를 찾고,
+	 * 껍데기 dentry와 inode를 서로 연결시킨 뒤(d_instantiate류),
+	 * dcache (dentry hash table)에 등록한다 (d_add/d_rehash류).
+	 **/
 	old = dir->i_op->lookup(dir, dentry, flags);
 	if (unlikely(old)) {
 		dput(dentry);
 		dentry = old;
 	}
+	/** 20151024    
+	 * 찾은 inode에 대한 dentry를 리턴한다.
+	 **/
 	return dentry;
 }
 
+/** 20151024    
+ * name과 base dentry를 받아 dcache에서 찾아 리턴하고,
+ * 없으면 dentry를 생성해서 dcache에 등록한 뒤 리턴한다.
+ **/
 static struct dentry *__lookup_hash(struct qstr *name,
 		struct dentry *base, unsigned int flags)
 {
 	bool need_lookup;
 	struct dentry *dentry;
 
+	/** 20151024    
+	 * dcache에서 name을 가지는 dentry를 찾아 리턴한다.
+	 **/
 	dentry = lookup_dcache(name, base, flags, &need_lookup);
 	if (!need_lookup)
 		return dentry;
 
+	/** 20151024    
+	 * dcache에서 찾지 못한 경우 inode에서부터 검색을 시작한다.
+	 **/
 	return lookup_real(base->d_inode, dentry, flags);
 }
 
@@ -1626,10 +1691,16 @@ static inline unsigned int fold_hash(unsigned long hash)
 
 #else	/* 32-bit case */
 
+/** 20151024    
+ * 32bit에서는 값을 그대로 사용한다.
+ **/
 #define fold_hash(x) (x)
 
 #endif
 
+/** 20151024    
+ * 전체 길이만큼 name을 돌면서 한 word씩 가져와 hash값을 생성한다.
+ **/
 unsigned int full_name_hash(const unsigned char *name, unsigned int len)
 {
 	unsigned long a, mask;
@@ -2075,8 +2146,7 @@ static struct dentry *lookup_hash(struct nameidata *nd)
  * using this helper needs to be prepared for that.
  */
 /** 20151017    
- * name으로 dentry를 찾아 리턴한다.
- * 
+ * name으로 qstr을 생성하고, base dentry로 dcache에서 찾아 리턴한다.
  **/
 struct dentry *lookup_one_len(const char *name, struct dentry *base, int len)
 {
@@ -2086,12 +2156,18 @@ struct dentry *lookup_one_len(const char *name, struct dentry *base, int len)
 
 	WARN_ON_ONCE(!mutex_is_locked(&base->d_inode->i_mutex));
 
+	/** 20151024    
+	 * qstr을 채운다. name으로 hash를 생성한다.
+	 **/
 	this.name = name;
 	this.len = len;
 	this.hash = full_name_hash(name, len);
 	if (!len)
 		return ERR_PTR(-EACCES);
 
+	/** 20151024    
+	 * 하나의 이름의 '/'나 '\0'가 들어올 수 없다.
+	 **/
 	while (len--) {
 		c = *(const unsigned char *)name++;
 		if (c == '/' || c == '\0')
@@ -2101,16 +2177,26 @@ struct dentry *lookup_one_len(const char *name, struct dentry *base, int len)
 	 * See if the low-level filesystem might want
 	 * to use its own hash..
 	 */
+	/** 20151024    
+	 * filesystem이 자체 hash 함수를 가지고 있다면
+	 * 해당 함수를 호출한다.
+	 **/
 	if (base->d_flags & DCACHE_OP_HASH) {
 		int err = base->d_op->d_hash(base, base->d_inode, &this);
 		if (err < 0)
 			return ERR_PTR(err);
 	}
 
+	/** 20151024    
+	 * 해당 inode에 대한 권한을 확인한다.
+	 **/
 	err = inode_permission(base->d_inode, MAY_EXEC);
 	if (err)
 		return ERR_PTR(err);
 
+	/** 20151024    
+	 * qstr과 base dentry로 dcache에서 찾아 dentry를 리턴한다.
+	 **/
 	return __lookup_hash(&this, base, 0);
 }
 

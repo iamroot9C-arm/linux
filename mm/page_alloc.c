@@ -7467,22 +7467,31 @@ __setup("hashdist=", set_hashdist);
  * - limit is the number of hash buckets, not the total allocation size
  */
 /** 20130727    
-   예를 들어 pidhash_init
-    tablename : "PID"
-	bucketsize : 4
-	numentries : 0
-	scale      : 18
-	flags      : HASH_EARLY | HASH_SMALL
-	_hash_shift : pidhash_shift
-	_hash_mask  : NULL
-	low_limit   : 0
-	high_limit  : 4096
-
-	1. nr_kernel_pages를 MB 단위로 올려 numentries에 저장한다.
-	2. 1 bucket이 2^scale 단위로 cover할 수 있도록 bucket의 수를 구한 뒤,
-	   그만큼 할당할 수 없다면 절반씩 줄인다.
-	3. bucketsize * bucket 수만큼 hash table을 할당한다.
-	4. hash table을 생성할 때 결정된 log2qty 값을 _hash_shift에 저장한다.
+ * 대형 system hash table을 할당 받아 사용한다.
+ * flags에 HASH_EARLY가 있는 경우 bootmem에서 할당.
+ *
+ * 예를 들어 pidhash_init
+ * tablename : "PID"
+ * bucketsize : 4
+ * numentries : 0
+ * scale      : 18
+ * flags      : HASH_EARLY | HASH_SMALL
+ * _hash_shift : pidhash_shift
+ * _hash_mask  : NULL
+ * low_limit   : 0
+ * high_limit  : 4096
+ * 
+ * 1. nr_kernel_pages를 MB 단위로 올려 numentries에 저장한다.
+ * 2. 1 bucket이 2^scale 단위로 cover할 수 있도록 bucket의 수를 구한 뒤,
+ * 그만큼 할당할 수 없다면 절반씩 줄인다.
+ * 3. bucketsize * bucket 수만큼 hash table을 할당한다.
+ * 4. hash table을 생성할 때 결정된 log2qty 값을 _hash_shift에 저장한다.
+ *
+ * 부팅시 출력물
+ * PID hash table entries: 4096 (order: 2, 16384 bytes)
+ * Dentry cache hash table entries: 131072 (order: 7, 524288 bytes)
+ * Inode-cache hash table entries: 65536 (order: 6, 262144 bytes)
+ * ...
  **/
 void *__init alloc_large_system_hash(const char *tablename,
 				     unsigned long bucketsize,
@@ -7515,6 +7524,9 @@ void *__init alloc_large_system_hash(const char *tablename,
 
 		/* limit to 1 bucket per 2^scale bytes of low memory */
 		/** 20130727    
+		 * scale은 low memory의 2^scale bytes 당 1개의 bucket이 나오도록 결정하는
+		 * 값이다.
+		 *
 		 * scale > PAGE_SHIFT 일 때
 		 *   numentries = numentries/scale/4096;
 		 **/

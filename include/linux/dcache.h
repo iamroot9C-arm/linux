@@ -130,6 +130,9 @@ struct dentry {
 	/* RCU lookup touched fields */
 	unsigned int d_flags;		/* protected by d_lock */
 	seqcount_t d_seq;		/* per dentry seqlock */
+	/** 20151024    
+	 * hashtable의 각 hash list에 등록하기 위한 entry.
+	 **/
 	struct hlist_bl_node d_hash;	/* lookup hash list */
 	struct dentry *d_parent;	/* parent directory */
 	struct qstr d_name;
