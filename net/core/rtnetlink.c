@@ -2402,6 +2402,11 @@ static struct pernet_operations rtnetlink_net_ops = {
 	.exit = rtnetlink_net_exit,
 };
 
+/** 20151031    
+ * RTNETLINK - routing socket 초기화.
+ *
+ * attribute 등록
+ **/
 void __init rtnetlink_init(void)
 {
 	int i;

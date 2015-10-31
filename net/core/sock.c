@@ -139,6 +139,11 @@
 #include <net/tcp.h>
 #endif
 
+/** 20151031    
+ * 전역 프로토콜 리스트.
+ *
+ * proto_register로 추가한다.
+ **/
 static DEFINE_MUTEX(proto_list_mutex);
 static LIST_HEAD(proto_list);
 
@@ -1169,6 +1174,10 @@ static struct sock *sk_prot_alloc(struct proto *prot, gfp_t priority,
 	struct sock *sk;
 	struct kmem_cache *slab;
 
+	/** 20151031    
+	 * 프로토콜이 slab을 사용한 경우 (proto_register),
+	 * struct sock은 해당 프로토콜에서 생성한 슬랩에서 할당 받는다.
+	 **/
 	slab = prot->slab;
 	if (slab != NULL) {
 		sk = kmem_cache_alloc(slab, priority & ~__GFP_ZERO);
@@ -2425,6 +2434,9 @@ struct prot_inuse {
 	int val[PROTO_INUSE_NR];
 };
 
+/** 20151031    
+ * 비트맵 선언.
+ **/
 static DECLARE_BITMAP(proto_inuse_idx, PROTO_INUSE_NR);
 
 #ifdef CONFIG_NET_NS
@@ -2493,8 +2505,14 @@ int sock_prot_inuse_get(struct net *net, struct proto *prot)
 EXPORT_SYMBOL_GPL(sock_prot_inuse_get);
 #endif
 
+/** 20151031    
+ * procfs를 사용한 경우, 프로토콜을 위한 index를 비트맵에서 할당한다.
+ **/
 static void assign_proto_idx(struct proto *prot)
 {
+	/** 20151031    
+	 * proto index 비트맵에서 비어있는 가장 작은 숫자를 프로토콜에 저장한다.
+	 **/
 	prot->inuse_idx = find_first_zero_bit(proto_inuse_idx, PROTO_INUSE_NR);
 
 	if (unlikely(prot->inuse_idx == PROTO_INUSE_NR - 1)) {
@@ -2502,6 +2520,9 @@ static void assign_proto_idx(struct proto *prot)
 		return;
 	}
 
+	/** 20151031    
+	 * 비트맵에 사용 중임을 표시한다.
+	 **/
 	set_bit(prot->inuse_idx, proto_inuse_idx);
 }
 
@@ -2520,8 +2541,18 @@ static inline void release_proto_idx(struct proto *prot)
 }
 #endif
 
+/** 20151031    
+ * 프로토콜을 추가한다.
+ *
+ * alloc_slab이 주어진 경우 프로토콜의 sock 할당을 위한 자체 슬랩을 생성한다.
+ * 프로토콜을 시스템 전역 리스트에 등록하고, 인덱스를 할당한다.
+ **/
 int proto_register(struct proto *prot, int alloc_slab)
 {
+	/** 20151031    
+	 * alloc_slab을 사용한 경우, struct sock 등을 할당받기 위한
+	 * 프로토콜 자체의 슬랩을 생성한다.
+	 **/
 	if (alloc_slab) {
 		prot->slab = kmem_cache_create(prot->name, prot->obj_size, 0,
 					SLAB_HWCACHE_ALIGN | prot->slab_flags,
@@ -2567,6 +2598,9 @@ int proto_register(struct proto *prot, int alloc_slab)
 		}
 	}
 
+	/** 20151031    
+	 * 프로토콜 전역 리스트에 등록하고, 프로토콜용 인덱스를 할당한다.
+	 **/
 	mutex_lock(&proto_list_mutex);
 	list_add(&prot->node, &proto_list);
 	assign_proto_idx(prot);

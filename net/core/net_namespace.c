@@ -62,7 +62,7 @@ static struct net_generic *net_alloc_generic(void)
 }
 
 /** 20151024    
- * net의 net_generic의 ptr에 id에 해당하는 data를 저장한다.
+ * net의 net_generic의 가변배열에 'id에 해당하는 data'를 저장한다.
  *
  * 기존 net_generic의 len보다 큰 id라면 가변 배열이 부족하므로
  * 메모리를 새로 할당해 기존 데이터를 복사해 추가하고, 기존 net_generic은 제거한다.
@@ -490,6 +490,10 @@ static int __init net_ns_init(void)
 pure_initcall(net_ns_init);
 
 #ifdef CONFIG_NET_NS
+/** 20151031    
+ * 주어진 list에 pernet ops를 등록한다.
+ * init 콜백이 존재하거나 id,size 정보가 주어졌으면 ops_init을 진행한다.
+ **/
 static int __register_pernet_operations(struct list_head *list,
 					struct pernet_operations *ops)
 {
@@ -497,12 +501,23 @@ static int __register_pernet_operations(struct list_head *list,
 	int error;
 	LIST_HEAD(net_exit_list);
 
+	/** 20151031    
+	 * pernet_operations를 list에 등록한다.
+	 **/
 	list_add_tail(&ops->list, list);
+	/** 20151031    
+	 * init 콜백이 존재하거나 id와 size 정보가 존재하면
+	 * 전체 namespace list를 순회하며 ops_init을 호출한다.
+	 **/
 	if (ops->init || (ops->id && ops->size)) {
 		for_each_net(net) {
 			error = ops_init(ops, net);
 			if (error)
 				goto out_undo;
+			/** 20151031    
+			 * net에 추가 중 에러가 발생하면, 이미 다른 net_namespace에 등록한
+			 * 정보까지 초기화 해야 하므로 지역 리스트에 추가해 둔다.
+			 **/
 			list_add_tail(&net->exit_list, &net_exit_list);
 		}
 	}
@@ -551,18 +566,30 @@ static void __unregister_pernet_operations(struct pernet_operations *ops)
  **/
 static DEFINE_IDA(net_generic_ids);
 
+/** 20151031    
+ * list에 pernet ops를 등록한다.
+ *
+ * ops에 id포인터가 지정되어 있다면 id를 할당 받아 저장한다.
+ * list에 ops를 추가하고 init 콜백이나 id/size 정보가 있다면 ops_init을 호출한다.
+ **/
 static int register_pernet_operations(struct list_head *list,
 				      struct pernet_operations *ops)
 {
 	int error;
 
+	/** 20151031    
+	 * ops에 id 포인터가 지정되어 있다면
+	 **/
 	if (ops->id) {
 again:
 		/** 20151024    
-		 * 1 보다 큰 id를 할당 받아 ops에 저장한다.
+		 * 1 보다 큰 id를 할당 받아 id 포인터가 가리키는 곳에 저장한다.
 		 **/
 		error = ida_get_new_above(&net_generic_ids, 1, ops->id);
 		if (error < 0) {
+			/** 20151031    
+			 * id를 위해 할당된 자원이 부족하다면 pool을 채우고 다시 시도한다.
+			 **/
 			if (error == -EAGAIN) {
 				ida_pre_get(&net_generic_ids, GFP_KERNEL);
 				goto again;
@@ -574,6 +601,9 @@ again:
 		 **/
 		max_gen_ptrs = max_t(unsigned int, max_gen_ptrs, *ops->id);
 	}
+	/** 20151031    
+	 * list에 pernet ops를 추가한다.
+	 **/
 	error = __register_pernet_operations(list, ops);
 	if (error) {
 		rcu_barrier();
@@ -613,9 +643,10 @@ static void unregister_pernet_operations(struct pernet_operations *ops)
  *	registered.
  */
 /** 20150509    
- * 추후 분석???
- *
  * network namespace 서브시스템을 등록한다.
+ *
+ * 20151031
+ * init과 exit 함수를 가질 수 있으며, init 함수가 지정되면 등록 과정에서 호출된다.
  **/
 int register_pernet_subsys(struct pernet_operations *ops)
 {

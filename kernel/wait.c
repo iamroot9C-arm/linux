@@ -49,6 +49,9 @@ void add_wait_queue(wait_queue_head_t *q, wait_queue_t *wait)
 }
 EXPORT_SYMBOL(add_wait_queue);
 
+/** 20151031    
+ * queue에 wait 함수를 exclusive로 등록한다.
+ **/
 void add_wait_queue_exclusive(wait_queue_head_t *q, wait_queue_t *wait)
 {
 	unsigned long flags;

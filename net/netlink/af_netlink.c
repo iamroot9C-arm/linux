@@ -61,6 +61,9 @@
 #include <net/scm.h>
 #include <net/netlink.h>
 
+/** 20151031    
+ * group size는 unsigned long * 8 단위로 정렬시킨 뒤 8로 나눈 값
+ **/
 #define NLGRPSZ(x)	(ALIGN(x, sizeof(unsigned long) * 8) / 8)
 #define NLGRPLONGS(x)	(NLGRPSZ(x)/sizeof(unsigned long))
 
@@ -104,6 +107,9 @@ static inline int netlink_is_kernel(struct sock *sk)
 	return nlk_sk(sk)->flags & NETLINK_KERNEL_SOCKET;
 }
 
+/** 20151031    
+ * netlink의 pid hash 관련 정보를 정의한 구조체.
+ **/
 struct nl_pid_hash {
 	struct hlist_head	*table;
 	unsigned long		rehash_time;
@@ -117,6 +123,9 @@ struct nl_pid_hash {
 	u32			rnd;
 };
 
+/** 20151031    
+ * netlink 프로토콜별 table 속성을 정의한 구조체.
+ **/
 struct netlink_table {
 	struct nl_pid_hash	hash;
 	struct hlist_head	mc_list;
@@ -130,6 +139,7 @@ struct netlink_table {
 };
 
 /** 20151024    
+ * netlink 프로토콜 패밀리 테이블.
  * netlink_proto_init에서 MAX_LINKS만큼 할당 받았다.
  **/
 static struct netlink_table *nl_table;
@@ -193,6 +203,10 @@ static void netlink_sock_destruct(struct sock *sk)
  * this, _but_ remember, it adds useless work on UP machines.
  */
 
+/** 20151031    
+ *  nl_table에 대한 write lock을 잡는다.
+ *  nl_table_users가 존재하면 wait에서 대기한다.
+ **/
 void netlink_table_grab(void)
 	__acquires(nl_table_lock)
 {
@@ -200,7 +214,13 @@ void netlink_table_grab(void)
 
 	write_lock_irq(&nl_table_lock);
 
+	/** 20151031    
+	 * nl_table_users가 존재하면, 즉 read lock이 걸려 있다면 wait에서 대기한다.
+	 **/
 	if (atomic_read(&nl_table_users)) {
+		/** 20151031    
+		 * waitqueue 를 정의하고, nl_table_wait에 등록시킨다.
+		 **/
 		DECLARE_WAITQUEUE(wait, current);
 
 		add_wait_queue_exclusive(&nl_table_wait, &wait);
@@ -218,6 +238,9 @@ void netlink_table_grab(void)
 	}
 }
 
+/** 20151031    
+ * nl_table에 대한 write lock을 풀고, 대기 중인 wait을 깨운다.
+ **/
 void netlink_table_ungrab(void)
 	__releases(nl_table_lock)
 {
@@ -225,6 +248,10 @@ void netlink_table_ungrab(void)
 	wake_up(&nl_table_wait);
 }
 
+/** 20151031    
+ * netlink table의 reader lock.
+ * user counter를 증가시킨다.
+ **/
 static inline void
 netlink_lock_table(void)
 {
@@ -235,9 +262,17 @@ netlink_lock_table(void)
 	read_unlock(&nl_table_lock);
 }
 
+/** 20151031    
+ * netlink table의 reader unlock.
+ * 모든 reader가 나갔을 경우 대기 중인 writer를 깨운다.
+ **/
 static inline void
 netlink_unlock_table(void)
 {
+	/** 20151031    
+	 * netlink table의 user count를 감소하고,
+	 * 모든 user가 빠져나가면 대기 중인 writer를 깨운다.
+	 **/
 	if (atomic_dec_and_test(&nl_table_users))
 		wake_up(&nl_table_wait);
 }
@@ -409,6 +444,9 @@ static void netlink_remove(struct sock *sk)
 	netlink_table_ungrab();
 }
 
+/** 20151031    
+ * netlink protocol 정의
+ **/
 static struct proto netlink_proto = {
 	.name	  = "NETLINK",
 	.owner	  = THIS_MODULE,
@@ -2118,15 +2156,30 @@ static const struct proto_ops netlink_ops = {
 	.sendpage =	sock_no_sendpage,
 };
 
+/** 20151031    
+ * netlink family (AF/PF) ops를 추가한다.
+ *
+ * .create는 sock_create()에서 socket 구조체를 생성한 이후 호출되어
+ * struct sock 정보를 채운다.
+ **/
 static const struct net_proto_family netlink_family_ops = {
 	.family = PF_NETLINK,
 	.create = netlink_create,
 	.owner	= THIS_MODULE,	/* for consistency 8) */
 };
 
+/** 20151031    
+ * netlink pernet ops 중 init 콜백.
+ *
+ * proc에 지정한 fops로 netlink라는 파일을 생성한다.
+ **/
 static int __net_init netlink_net_init(struct net *net)
 {
 #ifdef CONFIG_PROC_FS
+	/** 20151031    
+	 * procfs를 사용할 경우 net 아래 netlink 항목을 생성한다.
+	 * 이 항목에 대한 file ops를 지정한다.
+	 **/
 	if (!proc_net_fops_create(net, "netlink", 0, &netlink_seq_fops))
 		return -ENOMEM;
 #endif
@@ -2140,17 +2193,29 @@ static void __net_exit netlink_net_exit(struct net *net)
 #endif
 }
 
+/** 20151031    
+ * netlink table의 usersock 프로토콜에 대한 항목을 채운다.
+ **/
 static void __init netlink_add_usersock_entry(void)
 {
 	struct listeners *listeners;
 	int groups = 32;
 
+	/** 20151031    
+	 * listener와 nl group의 크기만큼 메모리를 할당한다.
+	 **/
 	listeners = kzalloc(sizeof(*listeners) + NLGRPSZ(groups), GFP_KERNEL);
 	if (!listeners)
 		panic("netlink_add_usersock_entry: Cannot allocate listeners\n");
 
+	/** 20151031    
+	 * netlink table에 대한 writer lock을 잡은 상태로 진행한다.
+	 **/
 	netlink_table_grab();
 
+	/** 20151031    
+	 * netlink table의 usersock 항목을 채운다.
+	 **/
 	nl_table[NETLINK_USERSOCK].groups = groups;
 	rcu_assign_pointer(nl_table[NETLINK_USERSOCK].listeners, listeners);
 	nl_table[NETLINK_USERSOCK].module = THIS_MODULE;
@@ -2159,6 +2224,9 @@ static void __init netlink_add_usersock_entry(void)
 	netlink_table_ungrab();
 }
 
+/** 20151031    
+ * netlink pernet ops.
+ **/
 static struct pernet_operations __net_initdata netlink_net_ops = {
 	.init = netlink_net_init,
 	.exit = netlink_net_exit,
@@ -2166,7 +2234,10 @@ static struct pernet_operations __net_initdata netlink_net_ops = {
 
 /** 20151017    
  * kernel <-> userspace 인터페이스로 사용되는 netlink 소켓을 초기화 한다.
- * 자세한 분석은 생략???
+ *
+ * - netlink 프로토콜 등록
+ * - netlink 프로토콜별 nl_table 생성 후 프로토콜 패밀리 등록
+ * - pernet subsys 등록
  **/
 static int __init netlink_proto_init(void)
 {
@@ -2174,6 +2245,9 @@ static int __init netlink_proto_init(void)
 	int i;
 	unsigned long limit;
 	unsigned int order;
+	/** 20151031    
+	 * netlink 프로토콜을 등록한다.
+	 **/
 	int err = proto_register(&netlink_proto, 0);
 
 	if (err != 0)
@@ -2181,10 +2255,16 @@ static int __init netlink_proto_init(void)
 
 	BUILD_BUG_ON(sizeof(struct netlink_skb_parms) > sizeof(dummy_skb->cb));
 
+	/** 20151031    
+	 * netlink 프로토콜 패밀리용 table 배열을 MAX_LINKS만큼 할당 받는다.
+	 **/
 	nl_table = kcalloc(MAX_LINKS, sizeof(*nl_table), GFP_KERNEL);
 	if (!nl_table)
 		goto panic;
 
+	/** 20151031    
+	 * 전체 페이지 수에 따라 limit 크기를 결정한다.
+	 **/
 	if (totalram_pages >= (128 * 1024))
 		limit = totalram_pages >> (21 - PAGE_SHIFT);
 	else
@@ -2194,6 +2274,9 @@ static int __init netlink_proto_init(void)
 	limit = (1UL << order) / sizeof(struct hlist_head);
 	order = get_bitmask_order(min(limit, (unsigned long)UINT_MAX)) - 1;
 
+	/** 20151031    
+	 * 각 netlink 프로토콜별 hash 정보를 초기화 한다.
+	 **/
 	for (i = 0; i < MAX_LINKS; i++) {
 		struct nl_pid_hash *hash = &nl_table[i].hash;
 
@@ -2211,11 +2294,26 @@ static int __init netlink_proto_init(void)
 		hash->rehash_time = jiffies;
 	}
 
+	/** 20151031    
+	 * netlink 테이블의 usersock  entry를 추가한다.
+	 **/
 	netlink_add_usersock_entry();
 
+	/** 20151031    
+	 * netlink 프로토콜 패밀리를 등록한다.
+	 **/
 	sock_register(&netlink_family_ops);
+	/** 20151031    
+	 * netlink 프로토콜의 net ops를 pernet subsystem으로 등록한다.
+	 * 등록 과정에서 init 함수가 호출된다.
+	 **/
 	register_pernet_subsys(&netlink_net_ops);
 	/* The netlink device handler may be needed early. */
+	/** 20151031    
+	 * netlink 핸들러 중 빠르게 초기화 되어야 할 프로토콜 초기화를 직접 호출한다.
+	 *
+	 * routing table 초기화.
+	 **/
 	rtnetlink_init();
 out:
 	return err;

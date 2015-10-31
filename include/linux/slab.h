@@ -283,6 +283,11 @@ size_t ksize(const void *);
  * for general use, and so are not documented here. For a full list of
  * potential flags, always refer to linux/gfp.h.
  */
+/** 20151031    
+ * array를 위한 메모리를 할당 받는다.
+ * n    : 멤버 개수
+ * size : 멤버 하나의 크기
+ **/
 static inline void *kmalloc_array(size_t n, size_t size, gfp_t flags)
 {
 	if (size != 0 && n > SIZE_MAX / size)
@@ -296,6 +301,10 @@ static inline void *kmalloc_array(size_t n, size_t size, gfp_t flags)
  * @size: element size.
  * @flags: the type of memory to allocate (see kmalloc).
  */
+/** 20151031    
+ * calloc 인터페이스로 메모리를 할당 받는다.
+ * 할당 받은 뒤 0으로 초기화 하기 위해 kmalloc_alloc에 __GFP_ZERO를 추가한다.
+ **/
 static inline void *kcalloc(size_t n, size_t size, gfp_t flags)
 {
 	return kmalloc_array(n, size, flags | __GFP_ZERO);

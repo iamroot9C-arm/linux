@@ -178,6 +178,10 @@ const struct file_operations proc_net_operations = {
 };
 
 
+/** 20151031    
+ * proc의 net entry에 새로운 항목을 추가한다.
+ * 사용할 file_operations를 추가한다.
+ **/
 struct proc_dir_entry *proc_net_fops_create(struct net *net,
 	const char *name, umode_t mode, const struct file_operations *fops)
 {

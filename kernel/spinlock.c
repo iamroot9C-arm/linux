@@ -314,6 +314,11 @@ EXPORT_SYMBOL(_raw_write_lock_irqsave);
 #endif
 
 #ifndef CONFIG_INLINE_WRITE_LOCK_IRQ
+/** 20151031    
+ * irq를 막고 rwlock의 write lock을 건다.
+ *
+ * CONFIG_INLINE_WRITE_LOCK_IRQ가 정의되지 않아 아래 함수가 정의된다.
+ **/
 void __lockfunc _raw_write_lock_irq(rwlock_t *lock)
 {
 	__raw_write_lock_irq(lock);

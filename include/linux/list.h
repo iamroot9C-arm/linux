@@ -534,6 +534,10 @@ static inline void list_splice_tail_init(struct list_head *list,
 /** 20130330    
  * list를 전체 순회
  *
+ * pos : list 자료구조로 탐색하고자 하는 구조체 포인터
+ * head : 순회할 list의 head
+ * member : list 자료구조의 구조체내 멤버이름
+ *
  * for ( head->next, 즉 리스트의 첫 entry 주소를 pos에 저장 ;
  *       다음 entry가 head가 아닐 때까지 ;
  *       다음 entry의 시작 주소를 pos에 저장 )

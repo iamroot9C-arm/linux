@@ -204,6 +204,9 @@ static inline unsigned long __raw_write_lock_irqsave(rwlock_t *lock)
 	return flags;
 }
 
+/** 20151031    
+ * 인터럽트를 막고, 선점 불가 상태로 do_raw_write_lock을 사용해 lock을 건다.
+ **/
 static inline void __raw_write_lock_irq(rwlock_t *lock)
 {
 	local_irq_disable();

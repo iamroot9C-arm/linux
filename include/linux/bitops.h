@@ -55,6 +55,9 @@ extern unsigned long __sw_hweight64(__u64 w);
 	     (bit) < (size);					\
 	     (bit) = find_next_zero_bit((addr), (size), (bit) + 1))
 
+/** 20151031    
+ * fls를 사용해 숫자의 bitmask order를 구해온다.
+ **/
 static __inline__ int get_bitmask_order(unsigned int count)
 {
 	int order;

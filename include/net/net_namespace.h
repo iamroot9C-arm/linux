@@ -231,6 +231,9 @@ static inline struct net *read_pnet(struct net * const *pnet)
 
 #endif
 
+/** 20151031    
+ * net_namespace_list 전체를 순회하며 각 멤버를 VAR이라는 이름으로 가리킨다.
+ **/
 #define for_each_net(VAR)				\
 	list_for_each_entry(VAR, &net_namespace_list, list)
 
@@ -256,6 +259,10 @@ static inline struct net *read_pnet(struct net * const *pnet)
  *
  * register_pernet_operations로 등록한다.
  * 각 network protocol에서 register_pernet_subsys로 등록한다.
+ * 또는 network device를 register_pernet_device로 등록한다.
+ *
+ * init 함수가 지정되어 있다면, 등록시 존재하는 모든 network namespace에 대하여
+ * init 함수가 호출된다.
  **/
 struct pernet_operations {
 	struct list_head list;

@@ -383,6 +383,9 @@ static int uevent_net_init(struct net *net)
 		.groups	= 1,
 	};
 
+	/** 20151031    
+	 * uevent_sock 메모리 할당.
+	 **/
 	ue_sk = kzalloc(sizeof(*ue_sk), GFP_KERNEL);
 	if (!ue_sk)
 		return -ENOMEM;

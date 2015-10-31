@@ -216,6 +216,9 @@ extern int _find_next_bit_be(const unsigned long *p, int size, int offset);
 /*
  * These are the little endian, atomic definitions.
  */
+/** 20151031    
+ * pointer에서 size 범위내에 첫번째 0인 비트 인덱스를 리턴한다.
+ **/
 #define find_first_zero_bit(p,sz)	_find_first_zero_bit_le(p,sz)
 /** 20130420    
  *  arch/arm/lib/findbit.S

@@ -155,6 +155,9 @@ static const struct file_operations socket_file_ops = {
  *	The protocol list. Each protocol is registered in here.
  */
 
+/** 20151031    
+ * 프로토콜 개수만큼 프로토콜 패밀리를 저장할 포인터 배열을 정의한다.
+ **/
 static DEFINE_SPINLOCK(net_family_lock);
 static const struct net_proto_family __rcu *net_families[NPROTO] __read_mostly;
 
@@ -513,6 +516,10 @@ static struct socket *sock_alloc(void)
 	struct inode *inode;
 	struct socket *sock;
 
+	/** 20151031    
+	 * sockfs 파일시스템의 inode 생성 함수를 호출한다.
+	 * inode와 socket을 위한 메모리를 할당한다.
+	 **/
 	inode = new_inode_pseudo(sock_mnt->mnt_sb);
 	if (!inode)
 		return NULL;
@@ -1279,6 +1286,11 @@ int __sock_create(struct net *net, int family, int type, int protocol,
 	 *	the protocol is 0, the family is instructed to select an appropriate
 	 *	default.
 	 */
+	/** 20151031    
+	 * struct socket 메모리 할당
+	 *
+	 * inode와 socket 구조체 메모리를 할당한다.
+	 **/
 	sock = sock_alloc();
 	if (!sock) {
 		net_warn_ratelimited("socket: no more sockets\n");
@@ -1315,6 +1327,11 @@ int __sock_create(struct net *net, int family, int type, int protocol,
 	/* Now protected by module ref count */
 	rcu_read_unlock();
 
+	/** 20151031    
+	 * protocol family 별 create 콜백을 호출한다.
+	 *
+	 * struct sock을 할당해 struct socket의 sk에 연결시킨다.
+	 **/
 	err = pf->create(net, sock, protocol, kern);
 	if (err < 0)
 		goto out_module_put;
@@ -2510,6 +2527,10 @@ SYSCALL_DEFINE2(socketcall, int, call, unsigned long __user *, args)
  *	socket interface. The value ops->family coresponds to the
  *	socket system call protocol family.
  */
+/** 20151031    
+ * 새로운 프로토콜 패밀리를 등록한다.
+ * 이 시점 이후부터 시스템이 인식된다.
+ **/
 int sock_register(const struct net_proto_family *ops)
 {
 	int err;
@@ -2520,7 +2541,14 @@ int sock_register(const struct net_proto_family *ops)
 		return -ENOBUFS;
 	}
 
+	/** 20151031    
+	 * net_families 접근은 spin lock으로 보호된다.
+	 **/
 	spin_lock(&net_family_lock);
+	/** 20151031    
+	 * 이미 해당 family가 등록되어 있다면 리턴.
+	 * 그렇지 않다면 family 자리에 새로 ops를 등록한다.
+	 **/
 	if (rcu_dereference_protected(net_families[ops->family],
 				      lockdep_is_held(&net_family_lock)))
 		err = -EEXIST;

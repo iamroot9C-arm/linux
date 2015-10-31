@@ -4,6 +4,9 @@
 #include <linux/socket.h> /* for __kernel_sa_family_t */
 #include <linux/types.h>
 
+/** 20151031    
+ * NETLINK 프로토콜 패밀리를 정의.
+ **/
 #define NETLINK_ROUTE		0	/* Routing/device hook				*/
 #define NETLINK_UNUSED		1	/* Unused number				*/
 #define NETLINK_USERSOCK	2	/* Reserved for user mode socket protocols 	*/
@@ -175,6 +178,9 @@ extern void netlink_table_grab(void);
 extern void netlink_table_ungrab(void);
 
 /* optional Netlink kernel configuration parameters */
+/** 20151031    
+ * netlink kernel 설정 파라미터 구조체.
+ **/
 struct netlink_kernel_cfg {
 	unsigned int	groups;
 	void		(*input)(struct sk_buff *skb);

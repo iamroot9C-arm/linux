@@ -100,6 +100,9 @@ do {								\
 
 #endif
 
+/** 20151031    
+ * read/write lock을 건다.
+ **/
 #define read_lock_irq(lock)		_raw_read_lock_irq(lock)
 #define read_lock_bh(lock)		_raw_read_lock_bh(lock)
 #define write_lock_irq(lock)		_raw_write_lock_irq(lock)
