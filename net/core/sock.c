@@ -1108,6 +1108,11 @@ lenout:
  *
  * (We also register the sk_lock with the lock validator.)
  */
+/** 20151107    
+ * sock의 lock을 초기화 한다.
+ *
+ * 결국 spinlock이지만, lockdep 처리를 위해 다양한 key가 사용된다.
+ **/
 static inline void sock_lock_init(struct sock *sk)
 {
 	sock_lock_init_class_and_name(sk,
@@ -1168,6 +1173,9 @@ void sk_prot_clear_portaddr_nulls(struct sock *sk, int size)
 }
 EXPORT_SYMBOL(sk_prot_clear_portaddr_nulls);
 
+/** 20151107    
+ * protocol에 따라 sock 구조체를 위한 메모리를 할당 받아온다.
+ **/
 static struct sock *sk_prot_alloc(struct proto *prot, gfp_t priority,
 		int family)
 {
@@ -1177,6 +1185,8 @@ static struct sock *sk_prot_alloc(struct proto *prot, gfp_t priority,
 	/** 20151031    
 	 * 프로토콜이 slab을 사용한 경우 (proto_register),
 	 * struct sock은 해당 프로토콜에서 생성한 슬랩에서 할당 받는다.
+	 *
+	 * 그렇지 않은 경우 kmalloc으로 메모리를 할당 받는다.
 	 **/
 	slab = prot->slab;
 	if (slab != NULL) {
@@ -1190,6 +1200,14 @@ static struct sock *sk_prot_alloc(struct proto *prot, gfp_t priority,
 				sk_prot_clear_nulls(sk, prot->obj_size);
 		}
 	} else
+		/** 20151107    
+		 * slab이 별도로 지정되지 않으면
+		 * 프로토콜의 obj_size만큼 메모리를 할당 받는다.
+		 * priority에 지정된 옵션에 따른 초기화를 수행한다.
+		 * 
+		 * 이 때 obj_size는 보통 struct sock을 포함하는, protocol 자체의
+		 * 자료구조의 크기를 나타낸다.
+		 **/
 		sk = kmalloc(prot->obj_size, priority);
 
 	if (sk != NULL) {
@@ -1200,6 +1218,9 @@ static struct sock *sk_prot_alloc(struct proto *prot, gfp_t priority,
 
 		if (!try_module_get(prot->owner))
 			goto out_free_sec;
+		/** 20151107    
+		 * sock의 tx queue 번호를 초기화 한다.
+		 **/
 		sk_tx_queue_clear(sk);
 	}
 
@@ -1261,13 +1282,25 @@ EXPORT_SYMBOL_GPL(sock_update_netprioidx);
  *	@priority: for allocation (%GFP_KERNEL, %GFP_ATOMIC, etc)
  *	@prot: struct proto associated with this new sock instance
  */
+/** 20151107    
+ * protocol별 할당 함수를 통해 sock 구조체를 할당 받고
+ * 간단한 초기화를 진행한다.
+ **/
 struct sock *sk_alloc(struct net *net, int family, gfp_t priority,
 		      struct proto *prot)
 {
 	struct sock *sk;
 
+	/** 20151107    
+	 * protocol별 할당 함수를 통해 sock 구조체를 할당 받는다.
+	 *
+	 * 할당시 __GFP_ZERO 플래그를 넘겨줘 sock 메모리를 초기화 한다.
+	 **/
 	sk = sk_prot_alloc(prot, priority | __GFP_ZERO, family);
 	if (sk) {
+		/** 20151107    
+		 * 할당받은 sock에 protocol family와 protocol 정보를 저장한다.
+		 **/
 		sk->sk_family = family;
 		/*
 		 * See comment in struct sock definition to understand
@@ -1278,6 +1311,9 @@ struct sock *sk_alloc(struct net *net, int family, gfp_t priority,
 		sock_net_set(sk, get_net(net));
 		atomic_set(&sk->sk_wmem_alloc, 1);
 
+		/** 20151107    
+		 * CGROUP 관련 처리를 한다.
+		 **/
 		sock_update_classid(sk);
 		sock_update_netprioidx(sk, current);
 	}
@@ -2140,6 +2176,11 @@ void sk_stop_timer(struct sock *sk, struct timer_list* timer)
 }
 EXPORT_SYMBOL(sk_stop_timer);
 
+/** 20151107    
+ * sock 구조체를 초기화 한다.
+ *
+ * struct socket과 struct sock을 서로 연결한다.
+ **/
 void sock_init_data(struct socket *sock, struct sock *sk)
 {
 	skb_queue_head_init(&sk->sk_receive_queue);

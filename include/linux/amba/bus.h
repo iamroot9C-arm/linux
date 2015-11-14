@@ -52,6 +52,9 @@ enum amba_vendor {
 
 extern struct bus_type amba_bustype;
 
+/** 20151107    
+ * 디바이스 포인터가 가리키는 amba_device를 받아온다.
+ **/
 #define to_amba_device(d)	container_of(d, struct amba_device, dev)
 
 #define amba_get_drvdata(d)	dev_get_drvdata(&d->dev)

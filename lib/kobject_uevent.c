@@ -31,6 +31,9 @@
 u64 uevent_seqnum;
 char uevent_helper[UEVENT_HELPER_PATH_LEN] = CONFIG_UEVENT_HELPER_PATH;
 #ifdef CONFIG_NET
+/** 20151107    
+ * uevent sock list
+ **/
 struct uevent_sock {
 	struct list_head list;
 	struct sock *sk;
@@ -376,6 +379,10 @@ int add_uevent_var(struct kobj_uevent_env *env, const char *format, ...)
 EXPORT_SYMBOL_GPL(add_uevent_var);
 
 #if defined(CONFIG_NET)
+/** 20151107    
+ * NETLINK_KOBJECT_UEVENT 프로토콜의 netlink 커널 소켓을 만들고,
+ * uevent socket 리스트에 등록한다.
+ **/
 static int uevent_net_init(struct net *net)
 {
 	struct uevent_sock *ue_sk;
@@ -390,6 +397,9 @@ static int uevent_net_init(struct net *net)
 	if (!ue_sk)
 		return -ENOMEM;
 
+	/** 20151107    
+	 * NETLINK_KOBJECT_UEVENT 프로토콜의 netlink 커널 소켓을 만들어 저장한다.
+	 **/
 	ue_sk->sk = netlink_kernel_create(net, NETLINK_KOBJECT_UEVENT,
 					  THIS_MODULE, &cfg);
 	if (!ue_sk->sk) {
@@ -399,6 +409,9 @@ static int uevent_net_init(struct net *net)
 		return -ENODEV;
 	}
 	mutex_lock(&uevent_sock_mutex);
+	/** 20151107    
+	 * 생성한 socket을  uevent_sock_list 에 등록한다.
+	 **/
 	list_add_tail(&ue_sk->list, &uevent_sock_list);
 	mutex_unlock(&uevent_sock_mutex);
 	return 0;
@@ -426,14 +439,17 @@ found:
 
 /** 20151024    
  * uevent pernet operations.
- *
- * 다음주 init 부터...
  **/
 static struct pernet_operations uevent_net_ops = {
 	.init	= uevent_net_init,
 	.exit	= uevent_net_exit,
 };
 
+/** 20151107    
+ * uevent를 초기화 하기 위해 pernet subsys operation을 등록한다.
+ * 등록 과정에서 uevent_net_ops의 init 함수가 호출되어
+ * NETLINK_KOBJECT_UEVENT의 netlink kernel socket을 생성한다.
+ **/
 static int __init kobject_uevent_init(void)
 {
 	/** 20151024    

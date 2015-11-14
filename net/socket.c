@@ -165,6 +165,9 @@ static const struct net_proto_family __rcu *net_families[NPROTO] __read_mostly;
  *	Statistics counters of the socket lists
  */
 
+/** 20151107    
+ * 소켓 리스트의 멤버를 나타내는 percpu 변수 sockets_in_use.
+ **/
 static DEFINE_PER_CPU(int, sockets_in_use);
 
 /*
@@ -328,6 +331,9 @@ static int init_inodecache(void)
 
 /** 20151017    
  * sockfs의 superblock operation.
+ *
+ * alloc_inode/destroy_inode 콜백이 지정되어 있으므로 superblock에서 inode를
+ * 할당/해제할 때 지정한 함수가 호출된다.
  **/
 static const struct super_operations sockfs_ops = {
 	.alloc_inode	= sock_alloc_inode,
@@ -362,7 +368,8 @@ static struct dentry *sockfs_mount(struct file_system_type *fs_type,
 }
 
 /** 20151017    
- * sockfs mount 후 설정되는 vfsmount 구조체.
+ * sockfs mount로 설정되는 vfsmount 구조체.
+ * sock_init 함수에서 mount.
  **/
 static struct vfsmount *sock_mnt __read_mostly;
 
@@ -511,27 +518,44 @@ static struct socket *sockfd_lookup_light(int fd, int *err, int *fput_needed)
  *	NULL is returned.
  */
 
+/** 20151107    
+ * 새 inode와 socket와 할당 받는다.
+ *
+ * sockfs의 s_ops 중 alloc_inode을 통해 inode와 socket 오브젝트를 할당 받고,
+ * 할당 받은 inode초기화 후 socket 구조체를 리턴한다.
+ **/
 static struct socket *sock_alloc(void)
 {
 	struct inode *inode;
 	struct socket *sock;
 
 	/** 20151031    
-	 * sockfs 파일시스템의 inode 생성 함수를 호출한다.
-	 * inode와 socket을 위한 메모리를 할당한다.
+	 * sockfs의 mount시 지정한 super_operations의 sock_alloc_inode 함수로
+	 * inode를 할당 받아 온다. socket_alloc 구조체가 할당된다.
+	 *
+	 * 즉, sockfs의 inode를 할당 함수로 inode와 socket을 할당 받는다.
 	 **/
 	inode = new_inode_pseudo(sock_mnt->mnt_sb);
 	if (!inode)
 		return NULL;
 
+	/** 20151107    
+	 * inode와 묶여있는 socket 구조체를 받아온다.
+	 **/
 	sock = SOCKET_I(inode);
 
 	kmemcheck_annotate_bitfield(sock, type);
+	/** 20151107    
+	 * inode 번호를 받아와 채우고, mode는 socket, uid와 gid를 받아온다.
+	 **/
 	inode->i_ino = get_next_ino();
 	inode->i_mode = S_IFSOCK | S_IRWXUGO;
 	inode->i_uid = current_fsuid();
 	inode->i_gid = current_fsgid();
 
+	/** 20151107    
+	 * 현재 cpu에 사용 중인 cpu를 하나 증가시킨다.
+	 **/
 	this_cpu_add(sockets_in_use, 1);
 	return sock;
 }
@@ -1115,21 +1139,33 @@ static long sock_ioctl(struct file *file, unsigned cmd, unsigned long arg)
 	return err;
 }
 
+/** 20151107    
+ * socket을 할당 받고, 전달받은 type으로 설정한다.
+ **/
 int sock_create_lite(int family, int type, int protocol, struct socket **res)
 {
 	int err;
 	struct socket *sock = NULL;
 
+	/** 20151107    
+	 * NULL 함수
+	 **/
 	err = security_socket_create(family, type, protocol, 1);
 	if (err)
 		goto out;
 
+	/** 20151107    
+	 * inode와 socket 구조체를 할당 받는다.
+	 **/
 	sock = sock_alloc();
 	if (!sock) {
 		err = -ENOMEM;
 		goto out;
 	}
 
+	/** 20151107    
+	 * socket을 전달받은 type의 소켓으로 설정한다.
+	 **/
 	sock->type = type;
 	err = security_socket_post_create(sock, family, type, protocol, 1);
 	if (err)
@@ -2626,7 +2662,7 @@ static int __init sock_init(void)
 	init_inodecache();
 
 	/** 20151017    
-	 * sock_fs_type을 등록한다.
+	 * sock_fs_type을 등록하고, kernel mount 한다.
 	 **/
 	err = register_filesystem(&sock_fs_type);
 	if (err)

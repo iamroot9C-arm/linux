@@ -164,11 +164,17 @@ extern void net_drop_ns(void *);
 
 #else
 
+/** 20151107    
+ * CONFIG_NET_NS 정의하지 않았음.
+ **/
 static inline struct net *get_net(struct net *net)
 {
 	return net;
 }
 
+/** 20151107    
+ * CONFIG_NET_NS 정의하지 않았음.
+ **/
 static inline void put_net(struct net *net)
 {
 }
@@ -202,6 +208,9 @@ static inline void release_net(struct net *net)
 		atomic_dec(&net->use_count);
 }
 #else
+/** 20151107    
+ * NETNS_REFCNT_DEBUG를 정의하지 않았음.
+ **/
 static inline struct net *hold_net(struct net *net)
 {
 	return net;
@@ -226,6 +235,9 @@ static inline struct net *read_pnet(struct net * const *pnet)
 
 #else
 
+/** 20151107    
+ * CONFIG_NET_NS를 정의하지 않았음. pernet 대신 net만 사용함.
+ **/
 #define write_pnet(pnet, net)	do { (void)(net);} while (0)
 #define read_pnet(pnet)		(&init_net)
 

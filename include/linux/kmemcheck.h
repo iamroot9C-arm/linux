@@ -159,6 +159,9 @@ static inline bool kmemcheck_is_obj_initialized(unsigned long addr, size_t size)
 	return true;
 }
 
+/** 20151107    
+ * CONFIG_KMEMCHECK 선언되지 않음.
+ **/
 #define kmemcheck_bitfield_begin(name)
 #define kmemcheck_bitfield_end(name)
 #define kmemcheck_annotate_bitfield(ptr, name)	\

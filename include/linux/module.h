@@ -479,6 +479,9 @@ extern void __module_get(struct module *module);
 
 /* This is the Right Way to get a module: if it fails, it's being removed,
  * so pretend it's not there. */
+/** 20151107    
+ * CONFIG_MODULE_UNLOAD가 설정되어 있다.
+ **/
 extern bool try_module_get(struct module *module);
 
 extern void module_put(struct module *module);

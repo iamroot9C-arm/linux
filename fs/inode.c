@@ -132,6 +132,9 @@ int proc_nr_inodes(ctl_table *table, int write,
  */
 /** 20150321    
  * inode의 각 항목을 초기화 한다.
+ *
+ * inode kmem_cache의 init 함수가 초기화 하지 않는 멤버를 초기화 한다.
+ * fs/inode.c의 init_once에 해당
  **/
 int inode_init_always(struct super_block *sb, struct inode *inode)
 {
@@ -215,7 +218,8 @@ out:
 EXPORT_SYMBOL(inode_init_always);
 
 /** 20150321    
- * sb에 따른 inode 할당함수를 호출해 inode를 할당한다.
+ * sb에 alloc_inode가 정의되어 있다면 호출하고,
+ * 아니면 inode_cachep 슬랩에서 할당 받는다.
  **/
 static struct inode *alloc_inode(struct super_block *sb)
 {
@@ -503,7 +507,7 @@ static void inode_lru_list_del(struct inode *inode)
  * @inode: inode to add
  */
 /** 20150321    
- * inode가 속한 superblock의 s_inodes 리스트에서 inode를 등록한다.
+ * inode가 속한 superblock의 s_inodes 리스트에 inode를 등록한다.
  **/
 void inode_sb_list_add(struct inode *inode)
 {
@@ -1052,11 +1056,16 @@ EXPORT_SYMBOL(get_next_ino);
  */
 /** 20150425    
  * superblock에 따라 적절한 inode 할당 함수를 호출해 inode를 할당받아 리턴한다.
+ *
+ * 이 함수에서는 superblock의 s_inodes 리스트에 등록하지 않는다.
+ * 이것은 다음을 의미한다:
+ *	- fs는 umount 되지 않는다.
+ *	- quotas, fsnotify, writeback이 동작하지 않는다.
  **/
 struct inode *new_inode_pseudo(struct super_block *sb)
 {
 	/** 20150425    
-	 * superblock에 지정된 s_op을 사용해 inode를 할당한다.
+	 * superblock에 지정된 alloc_inode를 호출하거나 슬랩에서 inode를 할당한다.
 	 *
 	 * sysfs나 ramfs의 경우 kmem_cache_alloc으로 inode 구조체만 할당 받아온다.
 	 **/
@@ -1103,7 +1112,7 @@ struct inode *new_inode(struct super_block *sb)
 
 	/** 20150425    
 	 * sb에 해당하는 inode를 하나 할당 받는다.
-	 * inode를 superblock에
+	 * 할당에 성공하면 inode를 superblock의 inode 리스트에 등록한다.
 	 **/
 	inode = new_inode_pseudo(sb);
 	if (inode)

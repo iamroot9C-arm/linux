@@ -20,6 +20,9 @@
 
 #include <asm/irq.h>
 
+/** 20151107    
+ *
+ **/
 #define to_amba_driver(d)	container_of(d, struct amba_driver, drv)
 
 static const struct amba_id *
@@ -304,6 +307,9 @@ static const struct dev_pm_ops amba_pm = {
  * Primecells are part of the Advanced Microcontroller Bus Architecture,
  * so we call the bus "amba".
  */
+/** 20151107    
+ * amba bus를 정의한다.
+ **/
 struct bus_type amba_bustype = {
 	.name		= "amba",
 	.dev_attrs	= amba_dev_attrs,
@@ -312,6 +318,9 @@ struct bus_type amba_bustype = {
 	.pm		= AMBA_PM,
 };
 
+/** 20151107    
+ * amba 버스를 등록한다.
+ **/
 static int __init amba_init(void)
 {
 	return bus_register(&amba_bustype);

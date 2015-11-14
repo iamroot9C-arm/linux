@@ -935,6 +935,9 @@ bool try_module_get(struct module *module)
 {
 	bool ret = true;
 
+	/** 20151107    
+	 * MODULE이 아닌 경우, module이 THIS_MODULE에서 0이 들어온다.
+	 **/
 	if (module) {
 		/** 20150425    
 		 * 선점 금지

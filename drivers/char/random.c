@@ -1030,6 +1030,10 @@ static ssize_t extract_entropy_user(struct entropy_store *r, void __user *buf,
  * TCP sequence numbers, etc.  It does not use the hw random number
  * generator, if available; use get_random_bytes_arch() for that.
  */
+/** 20151107    
+ * 커널에서 일반적으로 사용하는 랜덤 넘버 제너레이터.
+ * hw 생성기는 아니다.
+ **/
 void get_random_bytes(void *buf, int nbytes)
 {
 	extract_entropy(&nonblocking_pool, buf, nbytes, 0, 0);

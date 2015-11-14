@@ -27,8 +27,9 @@
  */
 /** 20150905    
  * driver core에 대한 private data를 저장하는 자료구조.
+ *	bus 구조체와 class 구조체 등은 공통으로 subsys_private 구조체를 가지고 있다.
  *
- * subsys : 이 subsystem에 대한 정보를 정의하는 kset.
+ * subsys : 이 subsystem에 대한 kset.
  * mutex : devices와 interfaces 리스트를 보호한다.
  **/
 struct subsys_private {

@@ -2588,12 +2588,18 @@ static inline int security_unix_may_send(struct socket *sock,
 	return 0;
 }
 
+/** 20151107    
+ * CONFIG_SECURITY_NETWORK 설정하지 않았음.
+ **/
 static inline int security_socket_create(int family, int type,
 					 int protocol, int kern)
 {
 	return 0;
 }
 
+/** 20151107    
+ * CONFIG_SECURITY_NETWORK 설정하지 않았음.
+ **/
 static inline int security_socket_post_create(struct socket *sock,
 					      int family,
 					      int type,
@@ -2683,6 +2689,9 @@ static inline int security_socket_getpeersec_dgram(struct socket *sock, struct s
 	return -ENOPROTOOPT;
 }
 
+/** 20151107    
+ * CONFIG_SECURITY_NETWORK 설정하지 않았음.
+ **/
 static inline int security_sk_alloc(struct sock *sk, int family, gfp_t priority)
 {
 	return 0;
