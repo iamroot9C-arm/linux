@@ -1073,6 +1073,11 @@ static struct init_tags {
 	{ 0, ATAG_NONE }
 };
 
+/** 20151114    
+ * machine specific한 처리를 진행한다.
+ *
+ * platform device를 customize 하거나 새로운 디바이스들을 추가한다.
+ **/
 static int __init customize_machine(void)
 {
 	/* customizes platform devices, or adds new ones */

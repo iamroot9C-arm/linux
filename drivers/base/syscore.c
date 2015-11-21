@@ -13,6 +13,8 @@
 
 /** 20151003    
  * syscore_ops_list와 mutex.
+ *
+ * syscore_suspend() 단계에서 호출.
  **/
 static LIST_HEAD(syscore_ops_list);
 static DEFINE_MUTEX(syscore_ops_lock);

@@ -528,8 +528,18 @@ unsigned long arch_randomize_brk(struct mm_struct *mm)
  * atomic helpers and the signal restart code. Insert it into the
  * gate_vma so that it is visible through ptrace and /proc/<pid>/mem.
  */
+/** 20151114    
+ * process vectors page에 대한 vm_area_area 구조체.
+ *
+ * vector page는 user space에서 atomic helper 등에서 사용된다.
+ * 따라서 gate_vma에 그 정보를 저장해 ptrace나 /proc/<pid>/mem 등을 통해 접근할 수 있게 한다.
+ * /proc/<pid>/maps에서 해당 항목을 볼 수 있다.
+ **/
 static struct vm_area_struct gate_vma;
 
+/** 20151114    
+ * gate_vma를 vector table 정보로 설정해둔다.
+ **/
 static int __init gate_vma_init(void)
 {
 	gate_vma.vm_start	= 0xffff0000;
@@ -541,6 +551,9 @@ static int __init gate_vma_init(void)
 }
 arch_initcall(gate_vma_init);
 
+/** 20151114    
+ * __HAVE_ARCH_GATE_AREA이므로 arch_initcall에서 생성해둔 gate_vma를 리턴한다.
+ **/
 struct vm_area_struct *get_gate_vma(struct mm_struct *mm)
 {
 	return &gate_vma;

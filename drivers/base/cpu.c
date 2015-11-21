@@ -355,7 +355,7 @@ static void __init cpu_dev_register_generic(void)
 }
 
 /** 20150912    
- * cpu_subsys 버스를 등록하고, "/sys/devices/system" 아래 디바이스로 추가한다.
+ * cpu_subsys 버스를 등록하고 "/sys/bus/cpu", "/sys/devices/system" 아래 디바이스로 추가한다.
  **/
 void __init cpu_dev_init(void)
 {

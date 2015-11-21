@@ -96,7 +96,11 @@ extern void bus_remove_file(struct bus_type *, struct bus_attribute *);
  *
  * name  :
  * dev_name
- * match : 주어진 device가 주어진 driver로 구동될 수 있다면 nonzero 리턴.
+ * bus_attrs : bus 아래 생성되는 파일에 대한 attributes 항목과 속성 정보
+ * dev_attrs : 이 bus에 속하는 디바이스에 대한 공통 attributes 항목과 속성 정보
+ * drv_attrs : 이 bus에 속하는 드라이버에 대한 공통 attributes 항목과 속성 정보
+ * match : 새 디바이스나 드라이버가 이 버스에 추가될 때마다 호출된다.
+ *		   주어진 device가 주어진 driver로 구동될 수 있다면 nonzero 리턴.
  * p     : subsys_private. 드라이버 코어의 private data.
  **/
 struct bus_type {
@@ -343,6 +347,12 @@ int subsys_system_register(struct bus_type *subsys,
  * to work with devices based on what they do, rather than how they are
  * connected or how they work.
  */
+/** 20151114    
+ * class 자료구조.
+ *
+ * class_attrs : 클래스 자체의 항목과 속성 정보
+ * dev_attrs   : 클래스에 속하는 디바이스의 공통 속성 정보
+ **/
 struct class {
 	const char		*name;
 	struct module		*owner;
@@ -496,7 +506,7 @@ struct device_type {
  * device의 attribute 구조체.
  *
  * vfs에서 사용할 attritube 구조체를 포함하고 있고,
- * show, store 콜백 함수를 저장한다.
+ * sysfs에서 사용되는 show, store 콜백 함수를 저장한다.
  *
  * show 콜백은 dev_attr_show에서, store 콜백은 dev_attr_store에서 호출한다.
  **/

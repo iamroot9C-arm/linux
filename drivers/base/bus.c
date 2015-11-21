@@ -1129,7 +1129,7 @@ int __bus_register(struct bus_type *bus, struct lock_class_key *key)
 	}
 
 	/** 20150905    
-	 * interfaces 리스트를 초기화 한다.
+	 * subsys interfaces 리스트를 초기화 한다.
 	 * mutex를 초기화 한다.
 	 * klist_devices, klist_drivers 리스트를 초기화 한다.
 	 **/

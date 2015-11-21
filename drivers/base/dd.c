@@ -713,15 +713,25 @@ void *dev_get_drvdata(const struct device *dev)
 }
 EXPORT_SYMBOL(dev_get_drvdata);
 
+/** 20151114    
+ * device의 driver_data를 지정한다.
+ **/
 int dev_set_drvdata(struct device *dev, void *data)
 {
 	int error;
 
+	/** 20151114    
+	 * device_private이 초기화 되지 않았다면, driver_data를 지정하기 위해
+	 * device_private을 초기화 한다.
+	 **/
 	if (!dev->p) {
 		error = device_private_init(dev);
 		if (error)
 			return error;
 	}
+	/** 20151114    
+	 * device_private의 driver_data에 넘어온 data를 지정.
+	 **/
 	dev->p->driver_data = data;
 	return 0;
 }

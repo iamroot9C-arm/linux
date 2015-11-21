@@ -1730,6 +1730,9 @@ int __get_user_pages(struct task_struct *tsk, struct mm_struct *mm,
 		struct vm_area_struct *vma;
 
 		vma = find_extend_vma(mm, start);
+		/** 20151114    
+		 * 등록된 vma가 존재하지 않으며, 해당 영역이 gate_area 영역 내라면
+		 **/
 		if (!vma && in_gate_area(mm, start)) {
 			unsigned long pg = start & PAGE_MASK;
 			pgd_t *pgd;
@@ -1740,17 +1743,30 @@ int __get_user_pages(struct task_struct *tsk, struct mm_struct *mm,
 			/* user gate pages are read-only */
 			if (gup_flags & FOLL_WRITE)
 				return i ? : -EFAULT;
+			/** 20151114    
+			 * 커널영역의 주소인 경우 pgd_offset_k를 통해 pgd entry의 주소를 받아온다.
+			 * 유저 영역인 경우, mm의 정보에 따라 pg의 pgd entry의 주소를 받아온다.
+			 **/
 			if (pg > TASK_SIZE)
 				pgd = pgd_offset_k(pg);
 			else
 				pgd = pgd_offset_gate(mm, pg);
 			BUG_ON(pgd_none(*pgd));
+			/** 20151114    
+			 * pud entry의 주소를 받아온다.
+			 **/
 			pud = pud_offset(pgd, pg);
 			BUG_ON(pud_none(*pud));
+			/** 20151114    
+			 * pmd entry의 주소를 받아온다.
+			 **/
 			pmd = pmd_offset(pud, pg);
 			if (pmd_none(*pmd))
 				return i ? : -EFAULT;
 			VM_BUG_ON(pmd_trans_huge(*pmd));
+			/** 20151114    
+			 * pmd에서 pg 주소에 해당하는 pte entry의 주소를 구해온다.
+			 **/
 			pte = pte_offset_map(pmd, pg);
 			if (pte_none(*pte)) {
 				pte_unmap(pte);

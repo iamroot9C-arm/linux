@@ -1125,7 +1125,7 @@ int device_private_init(struct device *dev)
  * reference instead.
  */
 /** 20150912    
- * 디바이스를 디바이스 hierarchy에 등록한다.
+ * 디바이스를 디바이스 hierarchy에 등록한다(kobject에 추가).
  * device_register()에서는 device_initailize() 된 상태에서 호출된다.
  **/
 int device_add(struct device *dev)
@@ -1792,6 +1792,9 @@ static void device_create_release(struct device *dev)
  * Note: the struct class passed to this function must have previously
  * been created with a call to class_create().
  */
+/** 20151114    
+ * device 구조체를 생성해 이름과 속성을 지정하고, hierarchy에 추가한다.
+ **/
 struct device *device_create_vargs(struct class *class, struct device *parent,
 				   dev_t devt, void *drvdata, const char *fmt,
 				   va_list args)
@@ -1802,6 +1805,9 @@ struct device *device_create_vargs(struct class *class, struct device *parent,
 	if (class == NULL || IS_ERR(class))
 		goto error;
 
+	/** 20151114    
+	 * device 구조체 메모리를 할당 받고, 일부 멤버를 초기화 한다.
+	 **/
 	dev = kzalloc(sizeof(*dev), GFP_KERNEL);
 	if (!dev) {
 		retval = -ENOMEM;
@@ -1814,10 +1820,16 @@ struct device *device_create_vargs(struct class *class, struct device *parent,
 	dev->release = device_create_release;
 	dev_set_drvdata(dev, drvdata);
 
+	/** 20151114    
+	 * kobject에 device name을 채운다.
+	 **/
 	retval = kobject_set_name_vargs(&dev->kobj, fmt, args);
 	if (retval)
 		goto error;
 
+	/** 20151114    
+	 * 디바이스의 다른 멤버들을 초기화 하고, device hierarchy에 추가한다.
+	 **/
 	retval = device_register(dev);
 	if (retval)
 		goto error;
@@ -1854,6 +1866,12 @@ EXPORT_SYMBOL_GPL(device_create_vargs);
  * Note: the struct class passed to this function must have previously
  * been created with a call to class_create().
  */
+/** 20151114    
+ * 디바이스 객체를 생성하고, hierarchy에 추가한다.
+ *
+ * class : 이 디바이스가 속할 클래스를 정의한다.
+ * parent : 이 디바이스의 부모 디바이스를 정의한다.
+ **/
 struct device *device_create(struct class *class, struct device *parent,
 			     dev_t devt, void *drvdata, const char *fmt, ...)
 {

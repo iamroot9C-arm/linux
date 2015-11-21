@@ -109,6 +109,9 @@
 #define CON_DRIVER_FLAG_INIT   2
 #define CON_DRIVER_FLAG_ATTR   4
 
+/** 20151114    
+ * 콘솔 드라이버.
+ **/
 struct con_driver {
 	const struct consw *con;
 	const char *desc;
@@ -3443,17 +3446,28 @@ static ssize_t show_name(struct device *dev, struct device_attribute *attr,
 
 }
 
+/** 20151114    
+ * vtconsole인 디바이스에 공통으로 지정되는 속성 정보.
+ **/
 static struct device_attribute device_attrs[] = {
 	__ATTR(bind, S_IRUGO|S_IWUSR, show_bind, store_bind),
 	__ATTR(name, S_IRUGO, show_name, NULL),
 };
 
+/** 20151114    
+ * vtconsole의 device 관련 초기화를 수행한다.
+ * - 속성파일 생성
+ **/
 static int vtconsole_init_device(struct con_driver *con)
 {
 	int i;
 	int error = 0;
 
 	con->flag |= CON_DRIVER_FLAG_ATTR;
+	/** 20151114    
+	 * con 디바이스의 data로 con을 지정하고,
+	 * device 속성들을 sysfs에 파일로 생성한다.
+	 **/
 	dev_set_drvdata(con->dev, con);
 	for (i = 0; i < ARRAY_SIZE(device_attrs); i++) {
 		error = device_create_file(con->dev, &device_attrs[i]);
@@ -3461,6 +3475,9 @@ static int vtconsole_init_device(struct con_driver *con)
 			break;
 	}
 
+	/** 20151114    
+	 * 에러 발생시 이미 만들었던 속성 파일을 제거.
+	 **/
 	if (error) {
 		while (--i >= 0)
 			device_remove_file(con->dev, &device_attrs[i]);
@@ -3738,10 +3755,17 @@ void give_up_console(const struct consw *csw)
 	unregister_con_driver(csw);
 }
 
+/** 20151114    
+ * vtconsole 클래스를 생성하고,
+ * device가 생성되지 않은 기존 con 디바이스들에 대해 디바이스를 생성하고 초기화 한다.
+ **/
 static int __init vtconsole_class_init(void)
 {
 	int i;
 
+	/** 20151114    
+	 * vtconsole class를 생성한다. "/sys/class/vtconsole"
+	 **/
 	vtconsole_class = class_create(THIS_MODULE, "vtconsole");
 	if (IS_ERR(vtconsole_class)) {
 		printk(KERN_WARNING "Unable to create vt console class; "
@@ -3750,6 +3774,11 @@ static int __init vtconsole_class_init(void)
 	}
 
 	/* Add system drivers to sysfs */
+	/** 20151114    
+	 * 등록된 콘솔 드라이버들의 device가 존재하지 않으면
+	 * vtconsole_class인 디바이스를 생성하고 등록한다.
+	 * 디바이스 생성이 성공하면 vtconsole 디바이스 관련 초기화를 수행한다.
+	 **/
 	for (i = 0; i < MAX_NR_CON_DRIVER; i++) {
 		struct con_driver *con = &registered_con_driver[i];
 

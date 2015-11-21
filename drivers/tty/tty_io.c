@@ -3326,6 +3326,9 @@ void __init console_init(void)
 	}
 }
 
+/** 20151114    
+ * tty device node 중 TTYAUX_MAJOR, 지정된 minor인 경우 mode를 설정한다.
+ **/
 static char *tty_devnode(struct device *dev, umode_t *mode)
 {
 	if (!mode)
@@ -3336,8 +3339,15 @@ static char *tty_devnode(struct device *dev, umode_t *mode)
 	return NULL;
 }
 
+/** 20151114    
+ * class "tty"를 추가한다.
+ **/
 static int __init tty_class_init(void)
 {
+	/** 20151114    
+	 * tty class를 생성한다. /sys/class/tty
+	 * devtmpfs로 device node를 추가할 때 호출할 콜백을 지정한다.
+	 **/
 	tty_class = class_create(THIS_MODULE, "tty");
 	if (IS_ERR(tty_class))
 		return PTR_ERR(tty_class);

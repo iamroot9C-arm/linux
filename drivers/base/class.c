@@ -218,7 +218,7 @@ int __class_register(struct class *cls, struct lock_class_key *key)
 	pr_debug("device class '%s': registering\n", cls->name);
 
 	/** 20151017    
-	 * subsys 자료구조를 할당하고 멤버를 초기화 한다.
+	 * subsys_private 자료구조를 할당하고 멤버를 초기화 한다.
 	 **/
 	cp = kzalloc(sizeof(*cp), GFP_KERNEL);
 	if (!cp)

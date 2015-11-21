@@ -209,6 +209,9 @@ static inline int pmd_same(pmd_t pmd_a, pmd_t pmd_b)
 #endif
 
 #ifndef __HAVE_ARCH_PGD_OFFSET_GATE
+/** 20151114    
+ * mm의 pgd에서 addr에 해당하는 page table entry의 주소를 리턴한다.
+ **/
 #define pgd_offset_gate(mm, addr)	pgd_offset(mm, addr)
 #endif
 
@@ -446,6 +449,9 @@ extern void untrack_pfn_vma(struct vm_area_struct *vma, unsigned long pfn,
 #ifdef CONFIG_MMU
 
 #ifndef CONFIG_TRANSPARENT_HUGEPAGE
+/** 20151114    
+ * CONFIG_TRANSPARENT_HUGEPAGE 정의하지 않았음.
+ **/
 static inline int pmd_trans_huge(pmd_t pmd)
 {
 	return 0;

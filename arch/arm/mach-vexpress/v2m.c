@@ -612,6 +612,9 @@ static void __init v2m_init(void)
 {
 	int i;
 
+	/** 20151114    
+	 * ethernet supplies를 등록한다.
+	 **/
 	regulator_register_fixed(0, v2m_eth_supplies,
 			ARRAY_SIZE(v2m_eth_supplies));
 

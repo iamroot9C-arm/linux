@@ -84,6 +84,9 @@ amba_attr_func(resource, "\t%016llx\t%016llx\t%016lx\n",
 	 (unsigned long long)dev->res.start, (unsigned long long)dev->res.end,
 	 dev->res.flags);
 
+/** 20151114    
+ * amba device의 공통 attribute들.
+ **/
 static struct device_attribute amba_dev_attrs[] = {
 	__ATTR_RO(id),
 	__ATTR_RO(resource),
@@ -281,6 +284,9 @@ static int amba_pm_runtime_resume(struct device *dev)
 
 #ifdef CONFIG_PM
 
+/** 20151114    
+ * CONFIG_PM이 설정되어 amba pm ops를 등록한다.
+ **/
 static const struct dev_pm_ops amba_pm = {
 	.suspend	= amba_pm_suspend,
 	.resume		= amba_pm_resume,

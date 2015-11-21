@@ -249,6 +249,8 @@ extern bool initcall_debug;
 
 /** 20150124    
  * fn을 .con_initcall.init 섹션에 넣어준다.
+ *
+ * 이렇게 지정된 con_initcall 섹션의 함수는 console_init에서 호출된다.
  **/
 #define console_initcall(fn) \
 	static initcall_t __initcall_##fn \

@@ -50,6 +50,9 @@ EXPORT_SYMBOL_GPL(platform_bus);
  * And if they don't care they can just call platform_device_register() and
  * everything will just work out.
  */
+/** 20151114    
+ * architecture에서 platform device를 추가하기 전에 platform device의 architecture data를 설정할 수 있도록 함수 자리를 마련한다.
+ **/
 void __weak arch_setup_pdev_archdata(struct platform_device *pdev)
 {
 }
@@ -265,23 +268,46 @@ EXPORT_SYMBOL_GPL(platform_device_add_data);
  * This is part 2 of platform_device_register(), though may be called
  * separately _iff_ pdev was allocated by platform_device_alloc().
  */
+/** 20151114    
+ * platform device를 디바이스 hierarchy에 추가한다.
+ *
+ * platform_device_register의 나머지 phase로,
+ * platform device 정보는 platform_device_alloc으로 할당되었거나 정적 구조체로 설정되어 있어야 한다.
+ *
+ **/
 int platform_device_add(struct platform_device *pdev)
 {
 	int i, ret = 0;
 
+	/** 20151114    
+	 * platform_device 구조체는 메모리 할당이 되어 있어야 한다.
+	 **/
 	if (!pdev)
 		return -EINVAL;
 
+	/** 20151114    
+	 * device의 parent가 지정되지 않았다면 platform_bus 아래 바로 추가한다.
+	 **/
 	if (!pdev->dev.parent)
 		pdev->dev.parent = &platform_bus;
 
+	/** 20151114    
+	 * device의 bus는 platform bus로 지정한다.
+	 **/
 	pdev->dev.bus = &platform_bus_type;
 
+	/** 20151114    
+	 * 플랫폼 디바이스의 id가 -1이면 하나의 디바이스만 존재한다.
+	 * 디바이스의 이름을 설정할 때 id를 이름에 추가한다.
+	 **/
 	if (pdev->id != -1)
 		dev_set_name(&pdev->dev, "%s.%d", pdev->name,  pdev->id);
 	else
 		dev_set_name(&pdev->dev, "%s", pdev->name);
 
+	/** 20151114    
+	 * 지정된 resource의 갯수만큼 resource를 등록한다.
+	 **/
 	for (i = 0; i < pdev->num_resources; i++) {
 		struct resource *p, *r = &pdev->resource[i];
 
@@ -357,6 +383,9 @@ EXPORT_SYMBOL_GPL(platform_device_del);
  */
 int platform_device_register(struct platform_device *pdev)
 {
+	/** 20151114    
+	 * platform 디바이스의 device 구조체를 초기화 한다.
+	 **/
 	device_initialize(&pdev->dev);
 	arch_setup_pdev_archdata(pdev);
 	return platform_device_add(pdev);
@@ -831,6 +860,8 @@ static const struct dev_pm_ops platform_dev_pm_ops = {
 
 /** 20150905    
  * "platform"이라는 bus type을 정의한다.
+ *
+ * platform_bus_init()에서 bus로 등록한다.
  *
  * "/sys/bus/platform"
  **/

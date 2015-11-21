@@ -835,11 +835,19 @@ static int wakeup_sources_stats_show(struct seq_file *m, void *unused)
 	return 0;
 }
 
+/** 20151114    
+ * seq_file을 사용하므로 wakeup_sources_stats_open은 seq_open을 호출해야 한다.
+ * single interface를 사용해 seq_open과 관련된 함수 구현을 대체하였다.
+ **/
 static int wakeup_sources_stats_open(struct inode *inode, struct file *file)
 {
 	return single_open(file, wakeup_sources_stats_show, NULL);
 }
 
+/** 20151114    
+ * wakeup_source_stats 파일에 대한 vfs 콜백 함수를 정의한다.
+ * seq_file 인터페이스를 사용한다.
+ **/
 static const struct file_operations wakeup_sources_stats_fops = {
 	.owner = THIS_MODULE,
 	.open = wakeup_sources_stats_open,
@@ -848,6 +856,10 @@ static const struct file_operations wakeup_sources_stats_fops = {
 	.release = single_release,
 };
 
+/** 20151114    
+ * "wakeup_source"라는 debugfs 파일을 생성한다.
+ * parent가 지정되지 않았으므로 루트에 생성된다.
+ **/
 static int __init wakeup_sources_debugfs_init(void)
 {
 	wakeup_sources_stats_dentry = debugfs_create_file("wakeup_sources",

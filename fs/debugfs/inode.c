@@ -36,6 +36,7 @@ static bool debugfs_registered;
 
 /** 20151024    
  * inode를 새로 할당받아 파일 타입에 맞게 debugfs의 정보를 채워 리턴한다.
+ * 일반 파일인 경우, 전달받은 fops가 있으면 그것을 지정하고, 없으면 기본 속성을 사용한다.
  **/
 static struct inode *debugfs_get_inode(struct super_block *sb, umode_t mode, dev_t dev,
 				       void *data, const struct file_operations *fops)
@@ -86,6 +87,8 @@ static struct inode *debugfs_get_inode(struct super_block *sb, umode_t mode, dev
 /* SMP-safe */
 /** 20151024    
  * debugfs의 새로운 node를 생성한다.
+ *
+ * 생성된 inode와 전달받은 dentry를 연결한다.
  **/
 static int debugfs_mknod(struct inode *dir, struct dentry *dentry,
 			 umode_t mode, dev_t dev, void *data,
@@ -133,12 +136,22 @@ static int debugfs_link(struct inode *dir, struct dentry *dentry, umode_t mode,
 	return debugfs_mknod(dir, dentry, mode, 0, data, NULL);
 }
 
+/** 20151114    
+ * 지정된 속성을 갖는 debugfs node를 생성해 dir 아래 추가한다.
+ * 전달된 dentry는 해당 node의 inode와 연결된다.
+ **/
 static int debugfs_create(struct inode *dir, struct dentry *dentry, umode_t mode,
 			  void *data, const struct file_operations *fops)
 {
 	int res;
 
+	/** 20151114    
+	 * debugfs_create로 생성되는 파일은 일반 파일이므로 파일 속성을 지정한다.
+	 **/
 	mode = (mode & S_IALLUGO) | S_IFREG;
+	/** 20151114    
+	 * debugfs에 새로운 node를 생성한다.
+	 **/
 	res = debugfs_mknod(dir, dentry, mode, 0, data, fops);
 	if (!res)
 		fsnotify_create(dir, dentry);
@@ -447,6 +460,9 @@ exit:
  * If debugfs is not enabled in the kernel, the value -%ENODEV will be
  * returned.
  */
+/** 20151114    
+ * name이라는 이름의 debugfs 파일을 생성한다.
+ **/
 struct dentry *debugfs_create_file(const char *name, umode_t mode,
 				   struct dentry *parent, void *data,
 				   const struct file_operations *fops)
