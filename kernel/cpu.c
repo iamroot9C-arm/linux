@@ -887,6 +887,10 @@ static DECLARE_BITMAP(cpu_possible_bits, CONFIG_NR_CPUS) __read_mostly;
  * cpu_active_mask - 해당 비트에 대한 CPU가 존재하며 task migration 시 이를 이용할 수 있다.
  *
  * [출처] http://studyfoss.egloos.com/5444259
+ *
+ * HOTPLUG 사용시
+ * cpu_possible_mask : all NR_CPUS.
+ * cpu_present_mask  : ACPI가 제공한, 현재 플러그인된 목록으로 동적으로 변한다.
  **/
 const struct cpumask *const cpu_possible_mask = to_cpumask(cpu_possible_bits);
 EXPORT_SYMBOL(cpu_possible_mask);

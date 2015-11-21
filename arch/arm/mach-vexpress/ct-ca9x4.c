@@ -124,6 +124,9 @@ static AMBA_APB_DEVICE(dmc, "ct:dmc", 0, CT_CA9X4_DMC, IRQ_CT_CA9X4_DMC, NULL);
 static AMBA_APB_DEVICE(smc, "ct:smc", 0, CT_CA9X4_SMC, IRQ_CT_CA9X4_SMC, NULL);
 static AMBA_APB_DEVICE(gpio, "ct:gpio", 0, CT_CA9X4_GPIO, IRQ_CT_CA9X4_GPIO, NULL);
 
+/** 20151121    
+ * AMBA_AHB_DEVICE, AMBA_APB_DEVICE 매크로로 선언한 cortex-a9 quad board 디바이스
+ **/
 static struct amba_device *ct_ca9x4_amba_devs[] __initdata = {
 	&clcd_device,
 	&dmc_device,
@@ -162,6 +165,9 @@ static struct resource pmu_resources[] = {
 	},
 };
 
+/** 20151121    
+ * ARM Performance Monitor Unit 디바이스 선언 
+ **/
 static struct platform_device pmu_device = {
 	.name		= "arm-pmu",
 	.id		= ARM_PMU_DEVICE_CPU,
@@ -169,6 +175,14 @@ static struct platform_device pmu_device = {
 	.resource	= pmu_resources,
 };
 
+/** 20151121    
+ * CoreTile cortex-a9x4 관련 초기화를 수행한다.
+ *
+ * - L2 cache register를 페이지 테이블에 매핑하고 초기화.
+ * - 클럭 디바이스를 등록
+ * - ca9x4의 amba 디바이스들을 등록.
+ *
+ **/
 static void __init ct_ca9x4_init(void)
 {
 	int i;
@@ -194,6 +208,9 @@ static void __init ct_ca9x4_init(void)
 	for (i = 0; i < ARRAY_SIZE(ct_ca9x4_amba_devs); i++)
 		amba_device_register(ct_ca9x4_amba_devs[i], &iomem_resource);
 
+	/** 20151121    
+	 * arm pmu를 플랫폼 버스에 추가.
+	 **/
 	platform_device_register(&pmu_device);
 }
 

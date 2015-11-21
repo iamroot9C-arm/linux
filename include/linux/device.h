@@ -231,6 +231,11 @@ extern struct klist *bus_get_device_klist(struct bus_type *bus);
  * can export information and configuration variables that are independent
  * of any specific device.
  */
+/** 20151121    
+ * 드라이버 구조체.
+ *
+ * .p : 이 드라이버 관리를 위해 사용되는 구조체를 가리킨다. 상호 연결.
+ **/
 struct device_driver {
 	const char		*name;
 	struct bus_type		*bus;

@@ -170,6 +170,9 @@ static inline resource_size_t resource_size(const struct resource *res)
 {
 	return res->end - res->start + 1;
 }
+/** 20151121    
+ * resource flags의 TYPE을 리턴.
+ **/
 static inline unsigned long resource_type(const struct resource *res)
 {
 	return res->flags & IORESOURCE_TYPE_BITS;

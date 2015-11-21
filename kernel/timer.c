@@ -1178,6 +1178,9 @@ EXPORT_SYMBOL(try_to_del_timer_sync);
  *
  * The function returns whether it has deactivated a pending timer or not.
  */
+/** 20151121    
+ * timer 핸들러가 다른 cpu에서 동작 중인 경우 timer의 완료를 기다린 뒤에 제거 작업을 진행한다.
+ **/
 int del_timer_sync(struct timer_list *timer)
 {
 #ifdef CONFIG_LOCKDEP

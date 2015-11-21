@@ -265,6 +265,9 @@
 	mcr	p15, 0, ip, c7, c10, 4		@ data write barrier
 	.endm
 
+/** 20151121    
+ * struct processor 구조체에 해당하는 항목.
+ **/
 .macro define_processor_functions name:req, dabort:req, pabort:req, nommu=0, suspend=0
 	.type	\name\()_processor_functions, #object
 	.align 2

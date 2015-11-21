@@ -623,6 +623,9 @@ int dpm_sysfs_add(struct device *dev)
 	return rc;
 }
 
+/** 20151121    
+ * device의 kobject 들에 wakeup 관련 attribute 그룹을 추가한다.
+ **/
 int wakeup_sysfs_add(struct device *dev)
 {
 	return sysfs_merge_group(&dev->kobj, &pm_wakeup_attr_group);

@@ -98,6 +98,9 @@ EXPORT_SYMBOL_GPL(driver_find_device);
  * @drv: driver.
  * @attr: driver attribute descriptor.
  */
+/** 20151121    
+ * 드라이버의 sysfs에 attribute 항목을 추가한다.
+ **/
 int driver_create_file(struct device_driver *drv,
 		       const struct driver_attribute *attr)
 {
@@ -123,12 +126,17 @@ void driver_remove_file(struct device_driver *drv,
 }
 EXPORT_SYMBOL_GPL(driver_remove_file);
 
+/** 20151121    
+ **/
 static int driver_add_groups(struct device_driver *drv,
 			     const struct attribute_group **groups)
 {
 	int error = 0;
 	int i;
 
+	/** 20151121    
+	 * groups가 존재하면 각 groups을 드라이버에 추가한다.
+	 **/
 	if (groups) {
 		for (i = 0; groups[i]; i++) {
 			error = sysfs_create_group(&drv->p->kobj, groups[i]);
@@ -161,6 +169,9 @@ static void driver_remove_groups(struct device_driver *drv,
  * since most of the things we have to do deal with the bus
  * structures.
  */
+/** 20151121    
+ * 드라이버를 버스에 추가한다.
+ **/
 int driver_register(struct device_driver *drv)
 {
 	int ret;
@@ -168,12 +179,20 @@ int driver_register(struct device_driver *drv)
 
 	BUG_ON(!drv->bus->p);
 
+	/** 20151121    
+	 * ???
+	 **/
 	if ((drv->bus->probe && drv->probe) ||
 	    (drv->bus->remove && drv->remove) ||
 	    (drv->bus->shutdown && drv->shutdown))
 		printk(KERN_WARNING "Driver '%s' needs updating - please use "
 			"bus_type methods\n", drv->name);
 
+	/** 20151121    
+	 * 드라이버의 버스에서 name으로 등록된 드라이버가 존재하는지 찾는다.
+	 *
+	 * 이미 존재한다면 에러 리턴.
+	 **/
 	other = driver_find(drv->name, drv->bus);
 	if (other) {
 		printk(KERN_ERR "Error: Driver '%s' is already registered, "
@@ -181,14 +200,23 @@ int driver_register(struct device_driver *drv)
 		return -EBUSY;
 	}
 
+	/** 20151121    
+	 * 버스에 드라이버를 추가한다. 가능하다면 bind까지 진행한다.
+	 **/
 	ret = bus_add_driver(drv);
 	if (ret)
 		return ret;
+	/** 20151121    
+	 * 드라이버에 드라이버 선언시 지정한 그룹들의 attribute를 추가한다.
+	 **/
 	ret = driver_add_groups(drv, drv->groups);
 	if (ret) {
 		bus_remove_driver(drv);
 		return ret;
 	}
+	/** 20151121    
+	 * 드라이버 kobj가 추가되었음을 userspace에게 알린다.
+	 **/
 	kobject_uevent(&drv->p->kobj, KOBJ_ADD);
 
 	return ret;
@@ -224,11 +252,21 @@ EXPORT_SYMBOL_GPL(driver_unregister);
  * from being unregistered or unloaded while the caller is using it.
  * The caller is responsible for preventing this.
  */
+/** 20151121    
+ * bus에 name으로 등록된 드라이버가 존재하면 드라이버 리턴, 없으면 NULL 리턴.
+ **/
 struct device_driver *driver_find(const char *name, struct bus_type *bus)
 {
+	/** 20151121    
+	 * bus에 등록된 driver들 중 name과 같은 이름인 kobject를 찾는다.
+	 **/
 	struct kobject *k = kset_find_obj(bus->p->drivers_kset, name);
 	struct driver_private *priv;
 
+	/** 20151121    
+	 * 찾았다면 kset_find_obj에서 증가시킨 ref count를 감소시키고
+	 * 해당 드라이버 구조체를 리턴한다.
+	 **/
 	if (k) {
 		/* Drop reference added by kset_find_obj() */
 		kobject_put(k);

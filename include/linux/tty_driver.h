@@ -334,6 +334,9 @@ extern struct tty_driver *tty_find_polling_driver(char *name, int *line);
 
 extern void tty_driver_kref_put(struct tty_driver *driver);
 
+/** 20151121    
+ * tty_driver 할당 및 초기화 
+ **/
 #define alloc_tty_driver(lines) __alloc_tty_driver(lines, THIS_MODULE)
 
 static inline struct tty_driver *tty_driver_kref_get(struct tty_driver *d)

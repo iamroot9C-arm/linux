@@ -269,11 +269,11 @@ EXPORT_SYMBOL_GPL(platform_device_add_data);
  * separately _iff_ pdev was allocated by platform_device_alloc().
  */
 /** 20151114    
+ * 플랫폼 디바이스를 플랫폼 버스에 추가하고,
  * platform device를 디바이스 hierarchy에 추가한다.
  *
  * platform_device_register의 나머지 phase로,
  * platform device 정보는 platform_device_alloc으로 할당되었거나 정적 구조체로 설정되어 있어야 한다.
- *
  **/
 int platform_device_add(struct platform_device *pdev)
 {
@@ -311,9 +311,16 @@ int platform_device_add(struct platform_device *pdev)
 	for (i = 0; i < pdev->num_resources; i++) {
 		struct resource *p, *r = &pdev->resource[i];
 
+		/** 20151121    
+		 * resource의 이름이 지정되지 않았으면 device의 이름을 사용한다.
+		 **/
 		if (r->name == NULL)
 			r->name = dev_name(&pdev->dev);
 
+		/** 20151121    
+		 * resource의 parent가 지정되지 않았으면 type을 검사해
+		 * MEM과 IO일 경우 전역 리소스를 parent로 지정한다.
+		 **/
 		p = r->parent;
 		if (!p) {
 			if (resource_type(r) == IORESOURCE_MEM)
@@ -322,6 +329,9 @@ int platform_device_add(struct platform_device *pdev)
 				p = &ioport_resource;
 		}
 
+		/** 20151121    
+		 * parent가 존재해 새로운 리소스를 추가하지만 실패한 경우 failed.
+		 **/
 		if (p && insert_resource(p, r)) {
 			printk(KERN_ERR
 			       "%s: failed to claim resource %d\n",
@@ -331,9 +341,15 @@ int platform_device_add(struct platform_device *pdev)
 		}
 	}
 
+	/** 20151121    
+	 * 리소스를 성공적으로 등록한 경우 platform device를 추가한다.
+	 **/
 	pr_debug("Registering platform device '%s'. Parent at %s\n",
 		 dev_name(&pdev->dev), dev_name(pdev->dev.parent));
 
+	/** 20151121    
+	 * 플랫폼 디바이스 내의 디바이스 구조체를 전체 device hierarchy에 추가한다.
+	 **/
 	ret = device_add(&pdev->dev);
 	if (ret == 0)
 		return ret;

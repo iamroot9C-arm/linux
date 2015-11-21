@@ -299,6 +299,9 @@ static int __get_cpu_architecture(void)
 	return cpu_arch;
 }
 
+/** 20151121    
+ * setup_processor()에서 설정된 정보를 리턴한다.
+ **/
 int __pure cpu_architecture(void)
 {
 	BUG_ON(__cpu_architecture == CPU_ARCH_UNKNOWN);
@@ -1074,7 +1077,7 @@ static struct init_tags {
 };
 
 /** 20151114    
- * machine specific한 처리를 진행한다.
+ * machine specific한 작업을 진행한다.
  *
  * platform device를 customize 하거나 새로운 디바이스들을 추가한다.
  **/
@@ -1406,10 +1409,15 @@ void __init setup_arch(char **cmdline_p)
 }
 
 
+/** 20151121    
+ **/
 static int __init topology_init(void)
 {
 	int cpu;
 
+	/** 20151121    
+	 * 각 possible cpu들을 순회하며 cpu_data의 hotpluggable을 1로 설정한다.
+	 **/
 	for_each_possible_cpu(cpu) {
 		struct cpuinfo_arm *cpuinfo = &per_cpu(cpu_data, cpu);
 		cpuinfo->cpu.hotpluggable = 1;

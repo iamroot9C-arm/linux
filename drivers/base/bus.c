@@ -39,9 +39,9 @@ static int __must_check bus_rescan_devices_helper(struct device *dev,
 						void *data);
 
 /** 20150905    
- * bus를 사용한다.
+ * bus의 참조를 시작한다.
  *
- * bus_type 내의 subsys로 reference count를 증가시킨다.
+ * bus_type 내 subsys의 reference count를 증가시킨다.
  **/
 static struct bus_type *bus_get(struct bus_type *bus)
 {
@@ -52,6 +52,11 @@ static struct bus_type *bus_get(struct bus_type *bus)
 	return NULL;
 }
 
+/** 20151121    
+ * bus의 참조를 끝낸다.
+ *
+ * bus_type 내 subsys의 reference count를 감소시킨다.
+ **/
 static void bus_put(struct bus_type *bus)
 {
 	if (bus)
@@ -221,6 +226,9 @@ static DRIVER_ATTR(unbind, S_IWUSR, NULL, driver_unbind);
  * Note: the driver must want to bind to the device,
  * it is not possible to override the driver's id table.
  */
+/** 20151121    
+ * 수동으로 드라이버를 구동할 드라이버를 붙인다 (probe -> bind)
+ **/
 static ssize_t driver_bind(struct device_driver *drv,
 			   const char *buf, size_t count)
 {
@@ -228,7 +236,14 @@ static ssize_t driver_bind(struct device_driver *drv,
 	struct device *dev;
 	int err = -ENODEV;
 
+	/** 20151121    
+	 * 드라이버가 속한 버스에서 buf에 해당하는 디바이스를 검색.
+	 **/
 	dev = bus_find_device_by_name(bus, NULL, buf);
+	/** 20151121    
+	 * 검색된 디바이스에 드라이버가 존재하지 않고 해당 드라이버와 match되면
+	 * 드라이버로 해당 디바이스를 구동가능한지 검사해 bind시킨다.
+	 **/
 	if (dev && dev->driver == NULL && driver_match_device(drv, dev)) {
 		if (dev->parent)	/* Needed for USB */
 			device_lock(dev->parent);
@@ -327,6 +342,9 @@ static struct device *next_device(struct klist_iter *i)
  * to retain this data, it should do so, and increment the reference
  * count in the supplied callback.
  */
+/** 20151121    
+ * 버스에 등록된 각 디바이스에 대해 fn을 호출한다.
+ **/
 int bus_for_each_dev(struct bus_type *bus, struct device *start,
 		     void *data, int (*fn)(struct device *, void *))
 {
@@ -337,10 +355,19 @@ int bus_for_each_dev(struct bus_type *bus, struct device *start,
 	if (!bus)
 		return -EINVAL;
 
+	/** 20151121    
+	 * 버스의 device 목록을 유지하는 klist를 탐색하기 위한 준비를 한다.
+	 **/
 	klist_iter_init_node(&bus->p->klist_devices, &i,
 			     (start ? &start->p->knode_bus : NULL));
+	/** 20151121    
+	 * 각 디바이스에 대해 fn 콜백을 진행한다.
+	 **/
 	while ((dev = next_device(&i)) && !error)
 		error = fn(dev, data);
+	/** 20151121    
+	 * klist 탐색을 종료한다.
+	 **/
 	klist_iter_exit(&i);
 	return error;
 }
@@ -697,11 +724,17 @@ void bus_remove_device(struct device *dev)
 	bus_put(dev->bus);
 }
 
+/** 20151121    
+ * 드라이버에 버스용 드라이버 attribute들을 추가한다.
+ **/
 static int driver_add_attrs(struct bus_type *bus, struct device_driver *drv)
 {
 	int error = 0;
 	int i;
 
+	/** 20151121    
+	 * bus의 드라이버 attribute 항목이 존재하면 driver에 추가한다.
+	 **/
 	if (bus->drv_attrs) {
 		for (i = 0; attr_name(bus->drv_attrs[i]); i++) {
 			error = driver_create_file(drv, &bus->drv_attrs[i]);
@@ -733,6 +766,9 @@ static void driver_remove_attrs(struct bus_type *bus,
  * Thanks to drivers making their tables __devinit, we can't allow manual
  * bind and unbind from userspace unless CONFIG_HOTPLUG is enabled.
  */
+/** 20151121    
+ * 드라이버에 bind/unbind attribute 파일을 생성한다.
+ **/
 static int __must_check add_bind_files(struct device_driver *drv)
 {
 	int ret;
@@ -808,6 +844,10 @@ static DRIVER_ATTR(uevent, S_IWUSR, NULL, driver_uevent_store);
  * bus_add_driver - Add a driver to the bus.
  * @drv: driver.
  */
+/** 20151121    
+ * 버스에 드라이버를 추가한다.
+ * 추가 후 autoprobe 가능하면 바로 probe까지 진행한다.
+ **/
 int bus_add_driver(struct device_driver *drv)
 {
 	struct bus_type *bus;
@@ -820,33 +860,56 @@ int bus_add_driver(struct device_driver *drv)
 
 	pr_debug("bus: '%s': add driver %s\n", bus->name, drv->name);
 
+	/** 20151121    
+	 * driver_private 구조체 할당.
+	 **/
 	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
 	if (!priv) {
 		error = -ENOMEM;
 		goto out_put_bus;
 	}
+	/** 20151121    
+	 * 드라이버를 사용하는 devices 리스트 초기화.
+	 * 드라이버와 드라이버 private 서로 연결.
+	 * 드라이버의 kset은 버스에 해당하는 드라이버 kset.
+	 **/
 	klist_init(&priv->klist_devices, NULL, NULL);
 	priv->driver = drv;
 	drv->p = priv;
 	priv->kobj.kset = bus->p->drivers_kset;
+	/** 20151121    
+	 * kobject를 초기화 하고 추가한다.
+	 **/
 	error = kobject_init_and_add(&priv->kobj, &driver_ktype, NULL,
 				     "%s", drv->name);
 	if (error)
 		goto out_unregister;
 
+	/** 20151121    
+	 * 버스가 driver autoprobe로 설정되어 있다면 attach 시킨다.
+	 **/
 	if (drv->bus->p->drivers_autoprobe) {
 		error = driver_attach(drv);
 		if (error)
 			goto out_unregister;
 	}
+	/** 20151121    
+	 * bus의 driver klist에 드라이버를 추가한다.
+	 **/
 	klist_add_tail(&priv->knode_bus, &bus->p->klist_drivers);
 	module_add_driver(drv->owner, drv);
 
+	/** 20151121    
+	 * 드라이버에 uevent attribute를 추가한다.
+	 **/
 	error = driver_create_file(drv, &driver_attr_uevent);
 	if (error) {
 		printk(KERN_ERR "%s: uevent attr (%s) failed\n",
 			__func__, drv->name);
 	}
+	/** 20151121    
+	 * 드라이버에 버스용 드라이버 attribute 들을 추가한다.
+	 **/
 	error = driver_add_attrs(bus, drv);
 	if (error) {
 		/* How the hell do we get out of this pickle? Give up */
@@ -854,6 +917,9 @@ int bus_add_driver(struct device_driver *drv)
 			__func__, drv->name);
 	}
 
+	/** 20151121    
+	 * 드라이버의 sysfs를 통한 bind/unbind를 막지 않았다면 bind/unbind 파일을 추가
+	 **/
 	if (!drv->suppress_bind_attrs) {
 		error = add_bind_files(drv);
 		if (error) {

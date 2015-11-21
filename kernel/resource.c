@@ -24,6 +24,9 @@
 #include <asm/io.h>
 
 
+/** 20151121    
+ * IORESOURCE_IO의 parent resource.
+ **/
 struct resource ioport_resource = {
 	.name	= "PCI IO",
 	.start	= 0,
@@ -32,6 +35,9 @@ struct resource ioport_resource = {
 };
 EXPORT_SYMBOL(ioport_resource);
 
+/** 20151121    
+ * IORESOURCE_MEM의 parent resource.
+ **/
 struct resource iomem_resource = {
 	.name	= "PCI mem",
 	.start	= 0,
@@ -607,6 +613,11 @@ struct resource *lookup_resource(struct resource *root, resource_size_t start)
  * Insert a resource into the resource tree. If successful, return NULL,
  * otherwise return the conflicting resource (compare to __request_resource())
  */
+/** 20151121    
+ * resource를 resource tree에 추가한다.
+ *
+ * 자세한 분석 생략???
+ **/
 static struct resource * __insert_resource(struct resource *parent, struct resource *new)
 {
 	struct resource *first, *next;
@@ -669,6 +680,12 @@ static struct resource * __insert_resource(struct resource *parent, struct resou
  * resource is inserted and the conflicting resources become children of
  * the new resource.
  */
+/** 20151121    
+ * resource를 resource tree에 추가한다.
+ * 성공한 경우 0을 리턴, 추가할 수 없는 경우 conflict된 resource 리턴.
+ *
+ * 자세한 분석 생략???
+ **/
 struct resource *insert_resource_conflict(struct resource *parent, struct resource *new)
 {
 	struct resource *conflict;
@@ -686,6 +703,11 @@ struct resource *insert_resource_conflict(struct resource *parent, struct resour
  *
  * Returns 0 on success, -EBUSY if the resource can't be inserted.
  */
+/** 20151121    
+ * resource를 resource tree에 추가한다.
+ *
+ * conflict가 발생한 경우 EBUSY 리턴. 성공할 경우 0을 리턴.
+ **/
 int insert_resource(struct resource *parent, struct resource *new)
 {
 	struct resource *conflict;

@@ -1,3 +1,6 @@
+/** 20151121    
+ * 아래 테이블의 정보는 hook_fault_code에 의해 업데이트 된다.
+ **/
 static struct fsr_info fsr_info[] = {
 	/*
 	 * The following are the standard ARMv3 and ARMv4 aborts.  ARMv5

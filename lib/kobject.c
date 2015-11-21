@@ -480,14 +480,23 @@ EXPORT_SYMBOL(kobject_add);
  * kobject_add().  The same type of error handling after a call to
  * kobject_add() and kobject lifetime rules are the same here.
  */
+/** 20151121    
+ * kobj를 초기화 해 주어진 이름으로 parent에 추가.
+ **/
 int kobject_init_and_add(struct kobject *kobj, struct kobj_type *ktype,
 			 struct kobject *parent, const char *fmt, ...)
 {
 	va_list args;
 	int retval;
 
+	/** 20151121    
+	 * kobj 초기화.
+	 **/
 	kobject_init(kobj, ktype);
 
+	/** 20151121    
+	 * parent에 주어진 이름을 가지는 kobject 추가.
+	 **/
 	va_start(args, fmt);
 	retval = kobject_add_varg(kobj, parent, fmt, args);
 	va_end(args);
@@ -946,13 +955,22 @@ void kset_unregister(struct kset *k)
  * looking for a matching kobject. If matching object is found
  * take a reference and return the object.
  */
+/** 20151121    
+ * kset에서 name이라는 이름을 지닌 kobject를 찾아 리턴한다.
+ **/
 struct kobject *kset_find_obj(struct kset *kset, const char *name)
 {
 	struct kobject *k;
 	struct kobject *ret = NULL;
 
+	/** 20151121    
+	 * kset list 접근은 spinlock으로 보호된다.
+	 **/
 	spin_lock(&kset->list_lock);
 
+	/** 20151121    
+	 * kset (list)에 등록된 kobject를 순회하며 전달된 이름과 같은 object를 찾는다.
+	 **/
 	list_for_each_entry(k, &kset->list, entry) {
 		if (kobject_name(k) && !strcmp(kobject_name(k), name)) {
 			ret = kobject_get(k);

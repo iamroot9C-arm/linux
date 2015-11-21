@@ -3049,10 +3049,17 @@ void tty_unregister_device(struct tty_driver *driver, unsigned index)
 }
 EXPORT_SYMBOL(tty_unregister_device);
 
+/** 20151121    
+ * tty_driver를 위한 메모리를 할당하고 멤버를 초기화 한다.
+ **/
 struct tty_driver *__alloc_tty_driver(int lines, struct module *owner)
 {
 	struct tty_driver *driver;
 
+	/** 20151121    
+	 * tty_driver를 위한 메모리 할당하고 멤버 초기화.
+	 * num은 매개변수로 넘어온 lines가 지정된다.
+	 **/
 	driver = kzalloc(sizeof(struct tty_driver), GFP_KERNEL);
 	if (driver) {
 		kref_init(&driver->kref);
@@ -3103,6 +3110,9 @@ void tty_driver_kref_put(struct tty_driver *driver)
 }
 EXPORT_SYMBOL(tty_driver_kref_put);
 
+/** 20151121    
+ * tty_driver의 ops 지정.
+ **/
 void tty_set_operations(struct tty_driver *driver,
 			const struct tty_operations *op)
 {
@@ -3119,6 +3129,10 @@ EXPORT_SYMBOL(put_tty_driver);
 /*
  * Called by a tty driver to register itself.
  */
+/** 20151121    
+ * tty 드라이버 등록.
+ * 분석 생략???
+ **/
 int tty_register_driver(struct tty_driver *driver)
 {
 	int error;

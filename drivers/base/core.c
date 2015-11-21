@@ -1391,6 +1391,8 @@ int device_register(struct device *dev)
  * pointer passed in.
  */
 /** 20150829    
+ * 디바이스를 참조한다.
+ *
  * device가 존재하면 kobject 레퍼런스 카운트를 증가시키고 device를 리턴한다.
  **/
 struct device *get_device(struct device *dev)
@@ -1402,6 +1404,11 @@ struct device *get_device(struct device *dev)
  * put_device - decrement reference count.
  * @dev: device in question.
  */
+/** 20151121    
+ * 디바이스의 참조를 끝낸다.
+ *
+ * device의 kobject 레퍼런스 카운트를 감소시킨다.
+ **/
 void put_device(struct device *dev)
 {
 	/* might_sleep(); */

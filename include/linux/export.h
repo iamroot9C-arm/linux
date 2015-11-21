@@ -23,6 +23,19 @@ struct kernel_symbol
 };
 
 #ifdef MODULE
+/** 20151121    
+ * __this_module은 커널 빌드 과정에 생성되는 *.mod.c에 자동 생성된다.
+ * 
+ * struct module __this_module
+ * __attribute__((section(".gnu.linkonce.this_module"))) = {
+ * .name = KBUILD_MODNAME,
+ * .init = init_module,
+ * #ifdef CONFIG_MODULE_UNLOAD
+ * .exit = cleanup_module,
+ * #endif
+ * .arch = MODULE_ARCH_INIT,
+};
+ **/
 extern struct module __this_module;
 #define THIS_MODULE (&__this_module)
 #else

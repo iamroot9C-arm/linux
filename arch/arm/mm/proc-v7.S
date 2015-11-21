@@ -401,6 +401,9 @@ __v7_setup_stack:
 	__INITDATA
 
 	@ define struct processor (see <asm/proc-fns.h> and proc-macros.S)
+	/** 20151121    
+	 * 매크로로 v7_processor_functions 정의
+	 **/
 	define_processor_functions v7, dabort=v7_early_abort, pabort=v7_pabort, suspend=1
 
 	.section ".rodata"
@@ -409,6 +412,9 @@ __v7_setup_stack:
 	string	cpu_elf_name, "v7"
 	.align
 
+	/** 20151121    
+	 * .proc.info.init 섹션에 저장.
+	 **/
 	.section ".proc.info.init", #alloc, #execinstr
 
 	/*

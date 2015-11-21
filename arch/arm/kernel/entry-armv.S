@@ -75,6 +75,10 @@
 	@ The abort handler must return the aborted address in r0, and
 	@ the fault status register in r1.  r9 must be preserved.
 	@
+	/** 20151121    
+	 * MULTI_DABORT가 정의되지 않으므로 (glue-df.h 참고)
+	 * CPU_DABORT_HANDLER로 지정된 v7_early_abort로 브랜치.
+	 **/
 #ifdef MULTI_DABORT
 	ldr	ip, .LCprocfns
 	mov	lr, pc

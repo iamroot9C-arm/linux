@@ -2209,6 +2209,11 @@ static const struct tty_port_operations uart_port_ops = {
  *	drv->port should be NULL, and the per-port structures should be
  *	registered using uart_add_one_port after this call has succeeded.
  */
+/** 20151121    
+ * uart  드라이버를 등록한다.
+ *
+ * tty 드라이버를 초기화 하고, tty layer의 각 port 당 상태를 초기화 한다
+ **/
 int uart_register_driver(struct uart_driver *drv)
 {
 	struct tty_driver *normal;
@@ -2220,16 +2225,28 @@ int uart_register_driver(struct uart_driver *drv)
 	 * Maybe we should be using a slab cache for this, especially if
 	 * we have a large number of ports to handle.
 	 */
+	/** 20151121    
+	 * uart 드라이버의 상태 정보를 위한 메모리 lines만큼 할당한다.
+	 **/
 	drv->state = kzalloc(sizeof(struct uart_state) * drv->nr, GFP_KERNEL);
 	if (!drv->state)
 		goto out;
 
+	/** 20151121    
+	 * tty_driver를 할당하고 nr 등 일부를 초기화.
+	 **/
 	normal = alloc_tty_driver(drv->nr);
 	if (!normal)
 		goto out_kfree;
 
+	/** 20151121    
+	 * 생성한 tty_driver를 uart 드라이버에 지정 
+	 **/
 	drv->tty_driver = normal;
 
+	/** 20151121    
+	 * tty_driver의 다른 멤버들을 uart 드라이버 정보로 초기화
+	 **/
 	normal->driver_name	= drv->driver_name;
 	normal->name		= drv->dev_name;
 	normal->major		= drv->major;
@@ -2246,6 +2263,9 @@ int uart_register_driver(struct uart_driver *drv)
 	/*
 	 * Initialise the UART state(s).
 	 */
+	/** 20151121    
+	 * uart 드라이버의 lines 각각에 대해 uart_state내 uart_port 정보 초기화.
+	 **/
 	for (i = 0; i < drv->nr; i++) {
 		struct uart_state *state = drv->state + i;
 		struct tty_port *port = &state->port;
@@ -2256,6 +2276,10 @@ int uart_register_driver(struct uart_driver *drv)
 		port->closing_wait    = 30 * HZ;/* 30 seconds */
 	}
 
+	/** 20151121    
+	 * tty 드라이버를 등록한다.
+	 * "/proc/tty" 에서 확인가능.
+	 **/
 	retval = tty_register_driver(normal);
 	if (retval >= 0)
 		return retval;

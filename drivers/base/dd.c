@@ -566,6 +566,9 @@ out_unlock:
 }
 EXPORT_SYMBOL_GPL(device_attach);
 
+/** 20151121    
+ * 디바이스가 넘어온 드라이버로 구동가능한지 검사해 probe - bind시킨다.
+ **/
 static int __driver_attach(struct device *dev, void *data)
 {
 	struct device_driver *drv = data;
@@ -580,12 +583,18 @@ static int __driver_attach(struct device *dev, void *data)
 	 * is an error.
 	 */
 
+	/** 20151121    
+	 * match 함수가 존재하지만 driver와 device가 match되지 않는다면 리턴.
+	 **/
 	if (!driver_match_device(drv, dev))
 		return 0;
 
 	if (dev->parent)	/* Needed for USB */
 		device_lock(dev->parent);
 	device_lock(dev);
+	/** 20151121    
+	 * 디바이스에 드라이버가 지정되지 않았으면 probe해 성공하면 bind.
+	 **/
 	if (!dev->driver)
 		driver_probe_device(drv, dev);
 	device_unlock(dev);
@@ -604,8 +613,14 @@ static int __driver_attach(struct device *dev, void *data)
  * returns 0 and the @dev->driver is set, we've found a
  * compatible pair.
  */
+/** 20151121    
+ * 버스의 각 디바이스에 대해 드라이버를 bind 시도한다.
+ **/
 int driver_attach(struct device_driver *drv)
 {
+	/** 20151121    
+	 * 각 디바이스에 대해 drv를 매개변수로 __driver_attach를 호출한다.
+	 **/
 	return bus_for_each_dev(drv->bus, NULL, drv, __driver_attach);
 }
 EXPORT_SYMBOL_GPL(driver_attach);

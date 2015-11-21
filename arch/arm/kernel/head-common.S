@@ -184,6 +184,8 @@ ENDPROC(lookup_processor_type)
 	__proc_info_begin부터 __proc_info_end까지 루프를 돌면서
 	cpuid(r9)를 Mask하여 value가 일치하면 processor info의 위치를 리턴한다
 	Processor info의 테이블 => linux/arch/arm/mm/proc-v7.S
+
+	.macro __v7_proc ... 으로 선언.
 **/
 __lookup_processor_type:
 	adr	r3, __lookup_processor_type_data

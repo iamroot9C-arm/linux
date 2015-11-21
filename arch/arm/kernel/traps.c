@@ -340,7 +340,7 @@ void die(const char *str, struct pt_regs *regs, int err)
 
 /** 20151003    
  * pt_regs가 user mode인 경우, 전달된 sig을 강제로 전달한다.
- * user mode가 아닌 경우 die() 호출.
+ * user mode가 아닌 경우, 즉 커널모드에 해당하면 die() 호출.
  **/
 void arm_notify_die(const char *str, struct pt_regs *regs,
 		struct siginfo *info, unsigned long err, unsigned long trap)

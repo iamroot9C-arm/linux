@@ -336,6 +336,9 @@ static AMBA_APB_DEVICE(uart3, "mb:uart3", 0, V2M_UART3, IRQ_V2M_UART3, NULL);
 static AMBA_APB_DEVICE(wdt,   "mb:wdt",   0, V2M_WDT, IRQ_V2M_WDT, NULL);
 static AMBA_APB_DEVICE(rtc,   "mb:rtc",   0, V2M_RTC, IRQ_V2M_RTC, NULL);
 
+/** 20151121    
+ * v2m에서 사용하는 amba 디바이스. amba bus에 등록된다.
+ **/
 static struct amba_device *v2m_amba_devs[] __initdata = {
 	&aaci_device,
 	&mmci_device,
@@ -533,6 +536,8 @@ static void __init v2m_init_early(void)
 	versatile_sched_clock_init(v2m_sysreg_base + V2M_SYS_24MHZ, 24000000);
 }
 
+/** 20151121    
+ **/
 static void v2m_power_off(void)
 {
 	if (v2m_cfg_write(SYS_CFG_SHUTDOWN | SYS_CFG_SITE(SYS_CFG_SITE_MB), 0))
@@ -608,6 +613,12 @@ static void __init v2m_init_irq(void)
 	ct_desc->init_irq();
 }
 
+/** 20151121    
+ * v2m machine에 대한 초기화.
+ *
+ * - platform bus와 amba bus가 초기화된 상태이므로, 플랫폼 디바이스들을 등록한다.
+ * - 플랫폼용 콜백 함수를 지정한다.
+ **/
 static void __init v2m_init(void)
 {
 	int i;
@@ -618,6 +629,12 @@ static void __init v2m_init(void)
 	regulator_register_fixed(0, v2m_eth_supplies,
 			ARRAY_SIZE(v2m_eth_supplies));
 
+	/** 20151121    
+	 * 정적 구조체로 설정한 플랫폼 디바이스들을 추가한다.
+	 *
+	 * 플랫폼 디바이스 구조체를 동적 생성할 때는
+	 * platform_device_alloc을 사용한다.
+	 **/
 	platform_device_register(&v2m_pcie_i2c_device);
 	platform_device_register(&v2m_ddc_i2c_device);
 	platform_device_register(&v2m_flash_device);
@@ -625,6 +642,11 @@ static void __init v2m_init(void)
 	platform_device_register(&v2m_eth_device);
 	platform_device_register(&v2m_usb_device);
 
+	/** 20151121    
+	 * v2m의 amba 디바이스들을 등록한다.
+	 *
+	 * 리소스는 (버스이므로) iomem_resource 아래에 추가된다.
+	 **/
 	for (i = 0; i < ARRAY_SIZE(v2m_amba_devs); i++)
 		amba_device_register(v2m_amba_devs[i], &iomem_resource);
 

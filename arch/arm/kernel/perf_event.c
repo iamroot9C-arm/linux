@@ -615,6 +615,9 @@ int __init armpmu_register(struct arm_pmu *armpmu, char *name, int type)
  * Ensure the PMU has sane values out of reset.
  * This requires SMP to be available, so exists as a separate initcall.
  */
+/** 20151121    
+ * 분석 생략???
+ **/
 static int __init
 cpu_pmu_reset(void)
 {
