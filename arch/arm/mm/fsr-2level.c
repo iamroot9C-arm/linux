@@ -1,5 +1,7 @@
 /** 20151121    
  * 아래 테이블의 정보는 hook_fault_code에 의해 업데이트 된다.
+ *
+ * do_DataAbort, do_PrefetchAbort 에서 이 테이블을 사용한다.
  **/
 static struct fsr_info fsr_info[] = {
 	/*

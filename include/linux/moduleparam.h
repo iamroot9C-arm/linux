@@ -18,6 +18,10 @@
 
 #define ___module_cat(a,b) __mod_ ## a ## b
 #define __module_cat(a,b) ___module_cat(a,b)
+/** 20151128    
+ * module_param(...)으로 선언된 symbol들을 .modinfo 섹션에 배치.
+ * __start___param ~ __stop___param 사이.
+ **/
 #ifdef MODULE
 #define __MODULE_INFO(tag, name, info)					  \
 static const char __module_cat(name,__LINE__)[]				  \
@@ -100,6 +104,8 @@ struct kparam_array
  *	bool: a bool, values 0/1, y/n, Y/N.
  *	invbool: the above, only sense-reversed (N = true).
  */
+/** 20151128    
+ **/
 #define module_param(name, type, perm)				\
 	module_param_named(name, name, type, perm)
 
@@ -114,6 +120,8 @@ struct kparam_array
  * same, but that's harder if the variable must be non-static or is inside a
  * structure.  This allows exposure under a different name.
  */
+/** 20151128    
+ **/
 #define module_param_named(name, value, type, perm)			   \
 	param_check_##type(name, &(value));				   \
 	module_param_cb(name, &param_ops_##type, &value, perm);		   \
@@ -270,6 +278,9 @@ static inline void __kernel_param_unlock(void)
  * with __setup(), and it makes sense as truly core parameters aren't
  * tied to the particular file they're in.
  */
+/** 20151128    
+ * parameter를 등록.
+ **/
 #define core_param(name, var, type, perm)				\
 	param_check_##type(name, &(var));				\
 	__module_param_call("", name, &param_ops_##type, &var, perm, -1)

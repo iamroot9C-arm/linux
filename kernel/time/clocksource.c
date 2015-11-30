@@ -606,6 +606,9 @@ static void clocksource_select(void)
 	if (!finished_booting || list_empty(&clocksource_list))
 		return;
 	/* First clocksource on the list has the best rating. */
+	/** 20151128    
+	 * clocksource_list의 첫번째 entry가 best clocksource.
+	 **/
 	best = list_first_entry(&clocksource_list, struct clocksource, list);
 	/* Check for the override clocksource. */
 	list_for_each_entry(cs, &clocksource_list, list) {
@@ -616,6 +619,10 @@ static void clocksource_select(void)
 		 * capable clocksource if the tick code is in oneshot
 		 * mode (highres or nohz)
 		 */
+		/** 20151128    
+		 * clocksource가 HRES에서 사용 불가능한데 현재 oneshot 모드라면
+		 * override 된 clocksource를 사용할 수 없다.
+		 **/
 		if (!(cs->flags & CLOCK_SOURCE_VALID_FOR_HRES) &&
 		    tick_oneshot_mode_active()) {
 			/* Override clocksource cannot be used. */
@@ -628,6 +635,11 @@ static void clocksource_select(void)
 			best = cs;
 		break;
 	}
+	/** 20151128    
+	 * best가 현재 clocksource가 아니면 curr_clocksource를 바꾼다.
+	 *
+	 * qemu 실행시 "Swtiching to clocksource v2m-timer1"
+	 **/
 	if (curr_clocksource != best) {
 		printk(KERN_INFO "Switching to clocksource %s\n", best->name);
 		curr_clocksource = best;
@@ -651,6 +663,9 @@ static inline void clocksource_select(void) { }
 static int __init clocksource_done_booting(void)
 {
 	mutex_lock(&clocksource_mutex);
+	/** 20151128    
+	 * 현재 clocksource 정보를 default clock으로 설정한다.
+	 **/
 	curr_clocksource = clocksource_default_clock();
 	mutex_unlock(&clocksource_mutex);
 
@@ -880,6 +895,9 @@ EXPORT_SYMBOL(clocksource_unregister);
  *
  * Provides sysfs interface for listing current clocksource.
  */
+/** 20151128    
+ * "/sys/devices/clocksource/clocksource0/current_clocksource"
+ **/
 static ssize_t
 sysfs_show_current_clocksources(struct device *dev,
 				struct device_attribute *attr, char *buf)

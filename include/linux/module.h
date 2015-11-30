@@ -151,6 +151,10 @@ extern const struct gtype##_id __mod_##gtype##_table		\
   local headers in "srcversion".
 */
 
+/** 20151128    
+ * builtin module의 경우 MODULE이 정의되지 않고,
+ * 현재 config에서 CONFIG_SYSFS는 정의되어 else에 해당한다.
+ **/
 #if defined(MODULE) || !defined(CONFIG_SYSFS)
 #define MODULE_VERSION(_version) MODULE_INFO(version, _version)
 #else

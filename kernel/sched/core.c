@@ -910,6 +910,8 @@ static void enqueue_task(struct rq *rq, struct task_struct *p, int flags)
 	sched_info_queued(p);
 	/** 20150530    
 	 * task에 지정된 sched_class의 enqueue_task 콜백을 호출한다.
+	 *
+	 * stop_sched_class의 경우 enqueue_task_stop으로 동작 중인 task 수를 증가.
 	 **/
 	p->sched_class->enqueue_task(rq, p, flags);
 }
@@ -1626,6 +1628,11 @@ out:
 /** 20130720    
  * p의 sched_class에 따라 설정된 select_task_rq를 호출.
  * 내용은 분석하지 않았음 ??? 
+ *
+ * 20151128 
+ * stopper의 경우 :
+ * stop_sched_class로 하나의 stop task만 지정.
+ *   select_task_rq_stop => 해당 task가 배정된 cpu번호가 리턴.
  **/
 static inline
 int select_task_rq(struct task_struct *p, int sd_flags, int wake_flags)
@@ -3930,6 +3937,9 @@ static void put_prev_task(struct rq *rq, struct task_struct *prev)
 /*
  * Pick up the highest-prio task:
  */
+/** 20151128    
+ * 해당 rq에서 다음에 실행할 우선순위가 높은 task를 선택한다.
+ **/
 static inline struct task_struct *
 pick_next_task(struct rq *rq)
 {
@@ -3940,12 +3950,19 @@ pick_next_task(struct rq *rq)
 	 * Optimization: we know that if all tasks are in
 	 * the fair class we can call that function directly:
 	 */
+	/** 20151128    
+	 * 최적화를 위해 rq의 task가 모두 cfs에 enqueue된 task일 경우 바로 호출한다.
+	 **/
 	if (likely(rq->nr_running == rq->cfs.h_nr_running)) {
 		p = fair_sched_class.pick_next_task(rq);
 		if (likely(p))
 			return p;
 	}
 
+	/** 20151128    
+	 * highest class부터 순회하며 해당 sched_class에서 다음 실행할 task를 받는다.
+	 * 즉, 우선순위가 높은 클래스부터 찾아 task가 선택되면 바로 리턴한다.
+	 **/
 	for_each_class(class) {
 		p = class->pick_next_task(rq);
 		if (p)

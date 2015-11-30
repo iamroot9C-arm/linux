@@ -644,6 +644,9 @@ static void __init setup_processor(void)
 
 	/** 20121208
 	 * cr_alignment는 head-common.S 에 __mmap_switched에서 설정함. 
+	 *
+	 * qemu 실행 결과:
+	 * CPU: ARMv7 Processor [410fc090] revision 0 (ARMv7), cr=10c53c7d
 	 * */
 	printk("CPU: %s [%08x] revision %d (ARMv%s), cr=%08lx\n",
 	       cpu_name, read_cpuid_id(), read_cpuid_id() & 15,
@@ -1093,6 +1096,9 @@ static int __init customize_machine(void)
 }
 arch_initcall(customize_machine);
 
+/** 20151128    
+ * MACHINE descriptor에 등록된 init_late가 있다면 호출한다.
+ **/
 static int __init init_machine_late(void)
 {
 	if (machine_desc->init_late)
@@ -1410,14 +1416,12 @@ void __init setup_arch(char **cmdline_p)
 
 
 /** 20151121    
+ * 각 possible cpu들을 순회하며 cpu_data의 hotpluggable을 1로 설정한다.
  **/
 static int __init topology_init(void)
 {
 	int cpu;
 
-	/** 20151121    
-	 * 각 possible cpu들을 순회하며 cpu_data의 hotpluggable을 1로 설정한다.
-	 **/
 	for_each_possible_cpu(cpu) {
 		struct cpuinfo_arm *cpuinfo = &per_cpu(cpu_data, cpu);
 		cpuinfo->cpu.hotpluggable = 1;
@@ -1429,6 +1433,9 @@ static int __init topology_init(void)
 subsys_initcall(topology_init);
 
 #ifdef CONFIG_HAVE_PROC_CPU
+/** 20151128    
+ * "/proc/cpu" 디렉토리 생성
+ **/
 static int __init proc_cpu_init(void)
 {
 	struct proc_dir_entry *res;

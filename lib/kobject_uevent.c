@@ -382,6 +382,8 @@ EXPORT_SYMBOL_GPL(add_uevent_var);
 /** 20151107    
  * NETLINK_KOBJECT_UEVENT 프로토콜의 netlink 커널 소켓을 만들고,
  * uevent socket 리스트에 등록한다.
+ *
+ * pernet subsys 등록과정에서 호출된다.
  **/
 static int uevent_net_init(struct net *net)
 {

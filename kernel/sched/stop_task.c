@@ -10,6 +10,9 @@
  */
 
 #ifdef CONFIG_SMP
+/** 20151128    
+ * stopper task가 할당된 cpu번호가 리턴.
+ **/
 static int
 select_task_rq_stop(struct task_struct *p, int sd_flag, int flags)
 {
@@ -33,6 +36,9 @@ static struct task_struct *pick_next_task_stop(struct rq *rq)
 	return NULL;
 }
 
+/** 20151128    
+ * 해당 runqueue의 running 중인 task 수를 증가.
+ **/
 static void
 enqueue_task_stop(struct rq *rq, struct task_struct *p, int flags)
 {
@@ -82,6 +88,9 @@ get_rr_interval_stop(struct rq *rq, struct task_struct *task)
 /*
  * Simple, special scheduling class for the per-CPU stop tasks:
  */
+/** 20151128    
+ * stop_sched_class
+ **/
 const struct sched_class stop_sched_class = {
 	.next			= &rt_sched_class,
 

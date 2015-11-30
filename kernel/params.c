@@ -807,6 +807,10 @@ void destroy_params(const struct kernel_param *params, unsigned num)
 			params[i].ops->free(params[i].arg);
 }
 
+/** 20151128    
+ * module kset에서 name이라는 module을 찾고,
+ * 있으면 module_kobject로 바로 리턴, 없으면 module_kobject를 생성해 등록해 리턴.
+ **/
 static struct module_kobject * __init locate_module_kobject(const char *name)
 {
 	struct module_kobject *mk;
@@ -876,6 +880,10 @@ static void __init kernel_add_sysfs_param(const char *name,
  * extract the "module" name for all built-in kernel_param-eters,
  * and for all who have the same, call kernel_add_sysfs_param.
  */
+/** 20151128    
+ * module_param(name, type, perm)을 호출한 builtin 모듈들에 대해 
+ * /sys/module/<MODULE NAME>/parameters 파일을 생성한다.
+ **/
 static void __init param_sysfs_builtin(void)
 {
 	struct kernel_param *kp;
@@ -913,12 +921,20 @@ ssize_t __modver_version_show(struct module_attribute *mattr,
 extern const struct module_version_attribute *__start___modver[];
 extern const struct module_version_attribute *__stop___modver[];
 
+/** 20151128    
+ * MODULE_VERSION("...")을 호출한 builtin 모듈들에 대해 
+ * /sys/module/<MODULE NAME>/version 파일을 생성한다.
+ **/
 static void __init version_sysfs_builtin(void)
 {
 	const struct module_version_attribute **p;
 	struct module_kobject *mk;
 	int err;
 
+	/** 20151128    
+	 * __start___modver ~ __stop___modver 의 각 module들을 순회하며
+	 * module version attribute를 등록하고 uevent를 등록한다.
+	 **/
 	for (p = __start___modver; p < __stop___modver; p++) {
 		const struct module_version_attribute *vattr = *p;
 
@@ -999,8 +1015,14 @@ struct kobj_type module_ktype = {
 /*
  * param_sysfs_init - wrapper for built-in params support
  */
+/** 20151128    
+ * builtin module에 대한 sysfs 파일을 생성한다.
+ **/
 static int __init param_sysfs_init(void)
 {
+	/** 20151128    
+	 * sysfs에 "module" kset을 생성한다.
+	 **/
 	module_kset = kset_create_and_add("module", &module_uevent_ops, NULL);
 	if (!module_kset) {
 		printk(KERN_WARNING "%s (%d): error creating kset\n",
@@ -1009,6 +1031,9 @@ static int __init param_sysfs_init(void)
 	}
 	module_sysfs_initialized = 1;
 
+	/** 20151128    
+	 * builtin 모듈들에 대한 version 파일과 parameters를 sysfs에 추가한다.
+	 **/
 	version_sysfs_builtin();
 	param_sysfs_builtin();
 

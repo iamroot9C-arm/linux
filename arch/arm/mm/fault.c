@@ -530,7 +530,7 @@ struct fsr_info {
 #endif
 
 /** 20151121    
- * fault status register 를 지정된 정보를 업데이트한다.
+ * fault status register 테이블을 지정된 정보를 업데이트한다.
  **/
 void __init
 hook_fault_code(int nr, int (*fn)(unsigned long, unsigned int, struct pt_regs *),

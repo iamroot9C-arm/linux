@@ -1038,6 +1038,9 @@ extern void cpuacct_charge(struct task_struct *tsk, u64 cputime);
 static inline void cpuacct_charge(struct task_struct *tsk, u64 cputime) {}
 #endif
 
+/** 20151128    
+ * running 중인 task의 수를 증가.
+ **/
 static inline void inc_nr_running(struct rq *rq)
 {
 	rq->nr_running++;

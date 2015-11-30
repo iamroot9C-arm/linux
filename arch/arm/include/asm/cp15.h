@@ -6,6 +6,10 @@
 /*
  * CR1 bits (CP#15 CR1)
  */
+/** 20151128    
+ * ARM 문서
+ * B4.1.130 SCTLR, System Control Register, VMSA
+ **/
 #define CR_M	(1 << 0)	/* MMU enable				*/
 #define CR_A	(1 << 1)	/* Alignment abort enable		*/
 #define CR_C	(1 << 2)	/* Dcache enable			*/
@@ -59,6 +63,11 @@ static inline unsigned int get_cr(void)
 	return val;
 }
 
+/** 20151128    
+ * SCTRL 레지스터를 설정하는 inline assem.
+ *
+ * 이후 명령이 레지스터 설정보다 먼저 실행되지 않도록 isb를 사용.
+ **/
 static inline void set_cr(unsigned int val)
 {
 	asm volatile("mcr p15, 0, %0, c1, c0, 0	@ set CR"

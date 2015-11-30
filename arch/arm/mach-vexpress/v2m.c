@@ -98,6 +98,8 @@ static void __init v2m_sp804_init(void __iomem *base, unsigned int irq)
 	 * "v2m-timer1"라는 이름으로 common clock framework에서 clk을 받아오고,
 	 * clocksource로 사용하기 위해 register를 설정하고 clocksource 구조체를 설정해 등록한다.
 	 * HW는 TIMER2와 연결한다.
+	 *
+	 * "/sys/devices/system/clocksource/current_clocksource"
 	 **/
 	sp804_clocksource_init(base + TIMER_2_BASE, "v2m-timer1");
 	/** 20140830    

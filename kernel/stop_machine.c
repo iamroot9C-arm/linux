@@ -90,7 +90,7 @@ static void cpu_stop_signal_done(struct cpu_stop_done *done, bool executed)
 		if (executed)
 			done->executed = true;
 		/** 20130720    
-		 * done->nr_todo를 하나 감소시키고, 0일 경우 complete 함수 호출
+		 * nr_todo만큼 모두 실행되었다면 completion 시킨다.
 		 **/
 		if (atomic_dec_and_test(&done->nr_todo))
 			complete(&done->completion);
@@ -114,8 +114,9 @@ static void cpu_stop_queue_work(struct cpu_stopper *stopper,
 	spin_lock_irqsave(&stopper->lock, flags);
 
 	/** 20150523    
-	 * stopper가 사용 가능하면 work를 stopper 실행 목록의 끝에 달아주고
-	 * stopper를 깨운다. 그렇지 않다면 실패를 통보한다.
+	 * stopper가 사용 가능하면 (해당 cpu가 online이면 enabled로 만든다)
+	 * work를 stopper 실행 목록의 끝에 달아주고 stopper를 깨운다.
+	 * 그렇지 않다면 실패를 통보한다.
 	 **/
 	if (stopper->enabled) {
 		list_add_tail(&work->list, &stopper->works);
@@ -195,6 +196,9 @@ static DEFINE_MUTEX(stop_cpus_mutex);
 static DEFINE_PER_CPU(struct cpu_stop_work, stop_cpus_work);
 
 /** 20130720    
+ * cpu_stopper에서 실행할 work을 설정하고, 각 cpu마다 work을 queue시킨 뒤
+ * stopper를 깨운다.
+ *
  * __stop_machine 에서 호출되었을 경우
  *   cpumask : cpu_online_mask
  *   fn      : stop_machine_cpu_stop
@@ -204,12 +208,15 @@ static void queue_stop_cpus_work(const struct cpumask *cpumask,
 				 cpu_stop_fn_t fn, void *arg,
 				 struct cpu_stop_done *done)
 {
+	/** 20151128    
+	 * cpu stopper에게 전달할 작업
+	 **/
 	struct cpu_stop_work *work;
 	unsigned int cpu;
 
 	/* initialize works and done */
 	/** 20130720    
-	 * cpumask의 cpu들을 순회하며
+	 * cpumask의 cpu들을 순회하며 cpu_stopper에서 전달할 각 work을 초기화 한다.
 	 * 자료구조를 등록한다.
 	 **/
 	for_each_cpu(cpu, cpumask) {
@@ -228,22 +235,35 @@ static void queue_stop_cpus_work(const struct cpumask *cpumask,
 	 * to enter @fn which can lead to deadlock.
 	 */
 	preempt_disable();
+	/** 20151128    
+	 * cpumask의 각 cpu에 위에서 설정한 work을 걸고 stopper를 깨운다.
+	 * stopper에 의해 선점되어 다른 stopper들이 기다리지 않도록 선점 불가 상태에서
+	 * work을 건다.
+	 **/
 	for_each_cpu(cpu, cpumask)
 		cpu_stop_queue_work(&per_cpu(cpu_stopper, cpu),
 				    &per_cpu(stop_cpus_work, cpu));
 	preempt_enable();
 }
 
+/** 20151128    
+ * cpumask에 존재하는 cpu들의 cpu_stopper에서 fn을 실행하도록 설정하고
+ * 완료시까지 대기(sleep상태)한다.
+ **/
 static int __stop_cpus(const struct cpumask *cpumask,
 		       cpu_stop_fn_t fn, void *arg)
 {
 	struct cpu_stop_done done;
 
 	/** 20130720    
-	 * 지역변수로 선언한 자료구조와 cpumask의 개수를 인자로 호출.
-	 * done 자료구조 초기화
+	 * cpu_stop에서 사용하는 done 자료구조 초기화.
 	 **/
 	cpu_stop_init_done(&done, cpumask_weight(cpumask));
+	/** 20151128    
+	 * 각 cpu_stopper가 실행할 work을 설정하고, queue시킨다.
+	 * 작업이 완료되어 completion이 도달할 때까지 대기한다.
+	 * 대기가 끝나면 done의 결과를 리턴한다.
+	 **/
 	queue_stop_cpus_work(cpumask, fn, arg, &done);
 	wait_for_completion(&done.completion);
 	return done.executed ? done.ret : -ENOENT;
@@ -277,6 +297,10 @@ static int __stop_cpus(const struct cpumask *cpumask,
  * @cpumask were offline; otherwise, 0 if all executions of @fn
  * returned 0, any non zero return value if any returned non zero.
  */
+/** 20151128    
+ * cpumask 상의 각 online cpu들에서 stopper task로 fn을 실행시킨다.
+ * stopper task의 우선순위는 우선순위가 가장 높다.
+ **/
 int stop_cpus(const struct cpumask *cpumask, cpu_stop_fn_t fn, void *arg)
 {
 	int ret;
@@ -654,6 +678,10 @@ static int stop_machine_cpu_stop(void *data)
 	return err;
 }
 
+/** 20151130    
+ * online 상태의 cpu들에서 stop_machine_cpu_stop() 함수를 실행시켜
+ * fn 함수를 실행하도록 한다.
+ **/
 int __stop_machine(int (*fn)(void *), void *data, const struct cpumask *cpus)
 {
 	/** 20130720    
@@ -708,6 +736,9 @@ int __stop_machine(int (*fn)(void *), void *data, const struct cpumask *cpus)
 	 **/
 	/* Set the initial state and stop all online cpus. */
 	set_state(&smdata, STOPMACHINE_PREPARE);
+	/** 20151128    
+	 * online 상태의 cpu들에서 stop_machine_cpu_stop() 함수를 실행시킨다.
+	 **/
 	return stop_cpus(cpu_online_mask, stop_machine_cpu_stop, &smdata);
 }
 
