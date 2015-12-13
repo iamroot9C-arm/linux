@@ -468,6 +468,8 @@ static void clocksource_enqueue_watchdog(struct clocksource *cs)
 
 static inline void clocksource_dequeue_watchdog(struct clocksource *cs) { }
 static inline void clocksource_resume_watchdog(void) { }
+/** 20151212    
+ **/
 static inline int clocksource_watchdog_kthread(void *data) { return 0; }
 
 #endif /* CONFIG_CLOCKSOURCE_WATCHDOG */
@@ -596,13 +598,14 @@ static u64 clocksource_max_deferment(struct clocksource *cs)
 /** 20141227    
  * best rating값 또는 userspace에 의해 선택된 clocksource를
  * curr_clocksource로 선택한다.
- * 
- * 자세한 내용은 추후 분석.
  **/
 static void clocksource_select(void)
 {
 	struct clocksource *best, *cs;
 
+	/** 20151212    
+	 * 부팅이 되는 중에는 default를 사용한다.
+	 **/
 	if (!finished_booting || list_empty(&clocksource_list))
 		return;
 	/* First clocksource on the list has the best rating. */
@@ -612,6 +615,9 @@ static void clocksource_select(void)
 	best = list_first_entry(&clocksource_list, struct clocksource, list);
 	/* Check for the override clocksource. */
 	list_for_each_entry(cs, &clocksource_list, list) {
+		/** 20151212    
+		 * 등록된 클럭소스 중 override_name인 clocksource를 찾는다.
+		 **/
 		if (strcmp(cs->name, override_name) != 0)
 			continue;
 		/*
@@ -660,6 +666,10 @@ static inline void clocksource_select(void) { }
  * We use fs_initcall because we want this to start before
  * device_initcall but after subsys_initcall.
  */
+/** 20151212    
+ * 부팅이 완료되어 부팅 중 등록한 clocksource 중 rating이 높은 clocksource가
+ * 동작하도록 선택한다.
+ **/
 static int __init clocksource_done_booting(void)
 {
 	mutex_lock(&clocksource_mutex);
@@ -669,6 +679,9 @@ static int __init clocksource_done_booting(void)
 	curr_clocksource = clocksource_default_clock();
 	mutex_unlock(&clocksource_mutex);
 
+	/** 20151212    
+	 * finished_booting을 설정해 clocksource_select()가 즉시 리턴 없이 진행된다.
+	 **/
 	finished_booting = 1;
 
 	/*
@@ -677,6 +690,9 @@ static int __init clocksource_done_booting(void)
 	clocksource_watchdog_kthread(NULL);
 
 	mutex_lock(&clocksource_mutex);
+	/** 20151212    
+	 * 등록된 clocksource 중 높은 우선순위 clocksource로 timekeeper를 동작시킨다.
+	 **/
 	clocksource_select();
 	mutex_unlock(&clocksource_mutex);
 	return 0;

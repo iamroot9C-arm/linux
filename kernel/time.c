@@ -347,6 +347,7 @@ EXPORT_SYMBOL(mktime);
  * For negative values only the tv_sec field is negative !
  */
 /** 20141213
+ * timespec을 sec과 nsec으로 설정.
  * timespec자료구조에 맞게 normalize하여 sec과 nsec을 설정한다.
  **/
 void set_normalized_timespec(struct timespec *ts, time_t sec, s64 nsec)

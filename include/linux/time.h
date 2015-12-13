@@ -148,6 +148,8 @@ void timekeeping_inject_sleeptime(struct timespec *delta);
 #ifdef CONFIG_ARCH_USES_GETTIMEOFFSET
 extern u32 arch_gettimeoffset(void);
 #else
+/** 20151212    
+ **/
 static inline u32 arch_gettimeoffset(void) { return 0; }
 #endif
 
@@ -255,6 +257,9 @@ extern struct timeval ns_to_timeval(const s64 nsec);
  * This must always be inlined because its used from the x86-64 vdso,
  * which cannot call other kernel functions.
  */
+/** 20151212    
+ * timespec에 ns를 더한다. 더해진 nsec 값은 sec에 반영시킨다.
+ **/
 static __always_inline void timespec_add_ns(struct timespec *a, u64 ns)
 {
 	a->tv_sec += __iter_div_u64_rem(a->tv_nsec + ns, NSEC_PER_SEC, &ns);

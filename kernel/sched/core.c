@@ -3969,6 +3969,9 @@ pick_next_task(struct rq *rq)
 			return p;
 	}
 
+	/** 20151212    
+	 * 적어도 idle_sched_class에 의해 task가 선택되므로 여기까지 도달할 수 없다.
+	 **/
 	BUG(); /* the idle class will always have a runnable task */
 }
 

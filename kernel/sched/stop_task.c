@@ -26,6 +26,9 @@ check_preempt_curr_stop(struct rq *rq, struct task_struct *p, int flags)
 	/* we're never preempted */
 }
 
+/** 20151212    
+ * 현재 rq에 지정한 stop task가 있다면 그것을 리턴한다.
+ **/
 static struct task_struct *pick_next_task_stop(struct rq *rq)
 {
 	struct task_struct *stop = rq->stop;

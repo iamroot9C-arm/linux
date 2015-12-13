@@ -99,6 +99,14 @@ static inline s64 div_s64(s64 dividend, s32 divisor)
 
 u32 iter_div_u64_rem(u64 dividend, u32 divisor, u64 *remainder);
 
+/** 20151212    
+ * 아래와 같은 계산을 뺄셈으로 계산한다.
+ *
+ * ret = dividend / divisor;
+ * remainder = dividend - (ret * divisor);
+ *
+ * 왜 modulo operation을 사용하지 않는 것일까???
+ **/
 static __always_inline u32
 __iter_div_u64_rem(u64 dividend, u32 divisor, u64 *remainder)
 {

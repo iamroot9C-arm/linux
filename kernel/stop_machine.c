@@ -742,6 +742,9 @@ int __stop_machine(int (*fn)(void *), void *data, const struct cpumask *cpus)
 	return stop_cpus(cpu_online_mask, stop_machine_cpu_stop, &smdata);
 }
 
+/** 20151212    
+ * cpumask에 속하는 online 상태의 cpu들이 fn을 실행하도록 한다.
+ **/
 int stop_machine(int (*fn)(void *), void *data, const struct cpumask *cpus)
 {
 	int ret;

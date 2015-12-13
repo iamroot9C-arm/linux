@@ -341,6 +341,8 @@ update_vsyscall(struct timespec *ts, struct timespec *wtm,
 			struct clocksource *c, u32 mult);
 extern void update_vsyscall_tz(void);
 #else
+/** 20151212    
+ **/
 static inline void
 update_vsyscall(struct timespec *ts, struct timespec *wtm,
 			struct clocksource *c, u32 mult)

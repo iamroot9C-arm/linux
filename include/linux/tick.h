@@ -131,6 +131,9 @@ extern int tick_oneshot_mode_active(void);
 #   define arch_needs_cpu(cpu) (0)
 #  endif
 # else
+/** 20151212    
+ * vexpress의 config에 따라 TICK_ONESHOT에 해당하지 않는다.
+ **/
 static inline void tick_clock_notify(void) { }
 static inline int tick_check_oneshot_change(int allow_nohz) { return 0; }
 static inline void tick_check_idle(int cpu) { }

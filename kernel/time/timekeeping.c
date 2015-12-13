@@ -30,6 +30,9 @@ struct timekeeper {
 	/* The shift value of the current clocksource. */
 	u32			shift;
 	/* Number of clock cycles in one NTP interval. */
+	/** 20151212    
+	 * 한 NTP interval내에 소비되는 clock cycles 값.
+	 **/
 	cycle_t			cycle_interval;
 	/* Number of clock shifted nano seconds in one NTP interval. */
 	u64			xtime_interval;
@@ -88,6 +91,11 @@ __cacheline_aligned_in_smp DEFINE_SEQLOCK(xtime_lock);
 /* flag for if timekeeping is suspended */
 int __read_mostly timekeeping_suspended;
 
+/** 20151212    
+ * timekeeper의 xtime값을 평준화 한다.
+ *
+ * xtime의 nsec 초과값을 sec에 반영한다.
+ **/
 static inline void tk_normalize_xtime(struct timekeeper *tk)
 {
 	while (tk->xtime_nsec >= ((u64)NSEC_PER_SEC << tk->shift)) {
@@ -97,7 +105,7 @@ static inline void tk_normalize_xtime(struct timekeeper *tk)
 }
 
 /** 20150418    
- * timekeeper로부터 timespec 시간을 얻어낸다.
+ * timekeeper로부터 wall time 시간을 얻어낸다.
  **/
 static struct timespec tk_xtime(struct timekeeper *tk)
 {
@@ -136,13 +144,17 @@ static void tk_xtime_add(struct timekeeper *tk, const struct timespec *ts)
 /** 20141213	
  * clocksource clock을 사용해서 timekeeper변수를 세팅
  **/
-
 static void tk_setup_internals(struct timekeeper *tk, struct clocksource *clock)
 {
 	cycle_t interval;
 	u64 tmp, ntpinterval;
 	struct clocksource *old_clock;
 
+	/** 20151212    
+	 * 새로운 clocksource를 timekeeper에 등록하고 이전 clocksource는 차이값을
+	 * 계산하기 위해 백업.
+	 * 새로운 clocksource로부터 값을 읽어와 cycle_last를 갱신.
+	 **/
 	old_clock = tk->clock;
 	tk->clock = clock;
 	clock->cycle_last = clock->read(clock);
@@ -230,24 +242,46 @@ static inline s64 timekeeping_get_ns_raw(struct timekeeper *tk)
 	return nsec + arch_gettimeoffset();
 }
 
+/** 20151212    
+ * timekeeper의 wall_to_monotonic 값을 역으로 변환해 offs_real 값을 갱신한다.
+ **/
 static void update_rt_offset(struct timekeeper *tk)
 {
 	struct timespec tmp, *wtm = &tk->wall_to_monotonic;
 
+	/** 20151212    
+	 * wall_to_monotonic의 음수값을 취해 monotonic -> clock의 offset값을 만든다.
+	 * 이 값을 다시 ktime_t 포맷으로 변환해 offs_real 값으로 저장한다.
+	 **/
 	set_normalized_timespec(&tmp, -wtm->tv_sec, -wtm->tv_nsec);
 	tk->offs_real = timespec_to_ktime(tmp);
 }
 
 /* must hold write on timekeeper.lock */
+/** 20151212    
+ * timekeeper의 주기적 업데이트될 항목을 업데이트 한다.
+ *
+ * 초기화 과정에서 timekeeping_init에서 한 번 호출하고,
+ * 동작 중에 do_timer -> update_wall_time에서, 그리고 change_clocksource에서 호출.
+ **/
 static void timekeeping_update(struct timekeeper *tk, bool clearntp)
 {
 	struct timespec xt;
 
+	/** 20151212    
+	 * ntp 관련 초기화가 필요하다면 초기화 (timekeeping_init에서는 false)
+	 **/
 	if (clearntp) {
 		tk->ntp_error = 0;
 		ntp_clear();
 	}
+	/** 20151212    
+	 * timekeeper의 realtime offset 값을 업데이트 한다.
+	 **/
 	update_rt_offset(tk);
+	/** 20151212    
+	 * timekeeper로부터 wall time을 얻어온다.
+	 **/
 	xt = tk_xtime(tk);
 	update_vsyscall(&xt, &tk->wall_to_monotonic, tk->clock, tk->mult);
 }
@@ -260,24 +294,43 @@ static void timekeeping_update(struct timekeeper *tk, bool clearntp)
  * update_wall_time(). This is useful before significant clock changes,
  * as it avoids having to deal with this time offset explicitly.
  */
+/** 20151212    
+ * timekeeper 값을 현재 시간값으로 업데이트.
+ * update_wall_time() 이후 현재 clock 값으로 갱신시킨다.
+ *
+ * clocksource를 변경하기 전에 이 함수를 호출함으로써 복잡한 변환을 대신한다.
+ **/
 static void timekeeping_forward_now(struct timekeeper *tk)
 {
 	cycle_t cycle_now, cycle_delta;
 	struct clocksource *clock;
 	s64 nsec;
 
+	/** 20151212    
+	 * timekeeper의 현재 clocksource를 가져와 값을 읽고,
+	 * 마지막에 읽은 값과 차를 구한다. (cycle_delta)
+	 **/
 	clock = tk->clock;
 	cycle_now = clock->read(clock);
 	cycle_delta = (cycle_now - clock->cycle_last) & clock->mask;
 	clock->cycle_last = cycle_now;
 
+	/** 20151212    
+	 * xtime_nsec 값을 구한다.
+	 **/
 	tk->xtime_nsec += cycle_delta * tk->mult;
 
 	/* If arch requires, add in gettimeoffset() */
 	tk->xtime_nsec += arch_gettimeoffset() << tk->shift;
 
+	/** 20151212    
+	 * xtime 값을 평준화 한다.
+	 **/
 	tk_normalize_xtime(tk);
 
+	/** 20151212    
+	 * cycle_delta를 ns으로 변환해서 raw_time에 업데이트.
+	 **/
 	nsec = clocksource_cyc2ns(cycle_delta, clock->mult, clock->shift);
 	timespec_add_ns(&tk->raw_time, nsec);
 }
@@ -488,6 +541,11 @@ EXPORT_SYMBOL(timekeeping_inject_offset);
  *
  * Accumulates current time interval and initializes new clocksource
  */
+/** 20151212    
+ * timekeeper의 clocksource를 주어진 값으로 바꾼다.
+ *
+ * clocksource 변경에 따라 timekeeper의 항목을 갱신한다.
+ **/
 static int change_clocksource(void *data)
 {
 	struct clocksource *new, *old;
@@ -497,13 +555,23 @@ static int change_clocksource(void *data)
 
 	write_seqlock_irqsave(&timekeeper.lock, flags);
 
+	/** 20151212    
+	 * timekeeper의 clocksource를 변경하기 전 timekeeper의 값을 업데이트 한다.
+	 **/
 	timekeeping_forward_now(&timekeeper);
+	/** 20151212    
+	 * 새 clocksource에 enable 함수가 없거나 존재했을 때 호출 결과가 정상이라면
+	 * timekeeper를 새로운 clocksource 값으로 설정한다.
+	 **/
 	if (!new->enable || new->enable(new) == 0) {
 		old = timekeeper.clock;
 		tk_setup_internals(&timekeeper, new);
 		if (old->disable)
 			old->disable(old);
 	}
+	/** 20151212    
+	 * timekeeper의 값을 업데이트 (tk_setup_interval에서 바뀌지 않는 값들)
+	 **/
 	timekeeping_update(&timekeeper, true);
 
 	write_sequnlock_irqrestore(&timekeeper.lock, flags);
@@ -518,11 +586,22 @@ static int change_clocksource(void *data)
  * This function is called from clocksource.c after a new, better clock
  * source has been registered. The caller holds the clocksource_mutex.
  */
+/** 20151212    
+ * 보다 좋은(rating이 높은) 새로운 clock이 등록된 뒤에 호출되어
+ * 새로운 clocksource를 동작시키기 위한 동작을 수행한다.
+ * 높은 우선순위에서 바로 clocksource를 변경한다.
+ **/
 void timekeeping_notify(struct clocksource *clock)
 {
+	/** 20151212    
+	 * 이미 등록된 timekeeper의 clock과 다를 때만 진행한다.
+	 **/
 	if (timekeeper.clock == clock)
 		return;
 	stop_machine(change_clocksource, clock, NULL);
+	/** 20151212    
+	 * TICK_ONESHOT인 경우 async로 clocksource 변경을 기록한다.
+	 **/
 	tick_clock_notify();
 }
 
@@ -911,6 +990,9 @@ static __always_inline int timekeeping_bigadjust(struct timekeeper *tk,
  * this is optimized for the most common adjustments of -1,0,1,
  * for other values we can do a bit more work.
  */
+/** 20151212    
+ * 추후분석???
+ **/
 static void timekeeping_adjust(struct timekeeper *tk, s64 offset)
 {
 	s64 error, interval = tk->cycle_interval;
@@ -1088,6 +1170,9 @@ static inline void accumulate_nsecs_to_secs(struct timekeeper *tk)
  *
  * Returns the unconsumed cycles.
  */
+/** 20151212    
+ * ???
+ **/
 static cycle_t logarithmic_accumulation(struct timekeeper *tk, cycle_t offset,
 						u32 shift)
 {
@@ -1127,6 +1212,11 @@ static cycle_t logarithmic_accumulation(struct timekeeper *tk, cycle_t offset,
  * update_wall_time - Uses the current clocksource to increment the wall time
  *
  */
+/** 20151212    
+ *
+ * do_timer에 의해 timer interrupt 핸들러에 의해 호출.
+ *   timekeeping_update
+ **/
 static void update_wall_time(void)
 {
 	struct clocksource *clock;
@@ -1146,6 +1236,9 @@ static void update_wall_time(void)
 #ifdef CONFIG_ARCH_USES_GETTIMEOFFSET
 	offset = timekeeper.cycle_interval;
 #else
+	/** 20151212    
+	 * 새로 clocksource를 읽어 마지막에 읽은 시간 후 지나간 값을 받아온다.
+	 **/
 	offset = (clock->read(clock) - clock->cycle_last) & clock->mask;
 #endif
 
@@ -1157,6 +1250,9 @@ static void update_wall_time(void)
 	 * chunk in one go, and then try to consume the next smaller
 	 * doubled multiple.
 	 */
+	/** 20151212    
+	 * 추후 분석???
+	 **/
 	shift = ilog2(offset) - ilog2(timekeeper.cycle_interval);
 	shift = max(0, shift);
 	/* Bound shift to one less than what overflows tick_length */
@@ -1182,7 +1278,7 @@ static void update_wall_time(void)
 	* (shifted nanoseconds), this can be killed.
 	*/
 	/** 20150418    
-	 * timekeeperr의 xtime_nsec 에서 remainder를 제외하고
+	 * timekeeper의 xtime_nsec 에서 remainder를 제외하고
 	 * timekeeper.shift 만큼 증감시킨 값을 넣는다.
 	 **/
 	remainder = timekeeper.xtime_nsec & ((1 << timekeeper.shift) - 1);

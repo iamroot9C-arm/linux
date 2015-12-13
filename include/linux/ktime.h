@@ -132,6 +132,9 @@ static inline ktime_t ktime_set(const long secs, const unsigned long nsecs)
 		({ (ktime_t){ .tv64 = (kt).tv64 - (nsval) }; })
 
 /* convert a timespec to ktime_t format: */
+/** 20151212    
+ * timespec을 ktime_t 형태로 변환.
+ **/
 static inline ktime_t timespec_to_ktime(struct timespec ts)
 {
 	return ktime_set(ts.tv_sec, ts.tv_nsec);
