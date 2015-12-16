@@ -36,6 +36,9 @@ enum {
 #undef IRQF_MODIFY_MASK
 #define IRQF_MODIFY_MASK	GOT_YOU_MORON
 
+/** 20151216
+ * status_use_accessors에 플래그를 클리어/설정한다.
+ **/
 static inline void
 irq_settings_clr_and_set(struct irq_desc *desc, u32 clr, u32 set)
 {
@@ -163,7 +166,7 @@ static inline bool irq_settings_can_autoenable(struct irq_desc *desc)
 }
 
 /** 20140913    
- *
+ * 이 desc에 해당하는 인터럽트가 다른 인터럽트 쓰레드를 중첩할 수 있는지 검사한다.
  **/
 static inline bool irq_settings_is_nested_thread(struct irq_desc *desc)
 {

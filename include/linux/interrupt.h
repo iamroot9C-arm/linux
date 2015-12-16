@@ -59,6 +59,11 @@
  * IRQF_EARLY_RESUME - Resume IRQ early during syscore instead of at device
  *                resume time.
  */
+/** 20151216
+ * IRQF_SHARED     : 인터럽트 라인을 공유한다. (한 디바이스의 각 라인 또는 여러 디바이스 사이)
+ * IRQF_TIMER      : 타이머 인터럽트임을 표시
+ * IRQF_NO_THREAD  : 인터럽트가 별도의 thread로 처리되지 않음
+ **/
 #define IRQF_DISABLED		0x00000020
 #define IRQF_SHARED		0x00000080
 #define IRQF_PROBE_SHARED	0x00000100

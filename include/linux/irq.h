@@ -74,6 +74,9 @@ typedef	void (*irq_preflow_handler_t)(struct irq_data *data);
  * IRQ_NESTED_TRHEAD		- Interrupt nests into another thread
  * IRQ_PER_CPU_DEVID		- Dev_id is a per-cpu variable
  */
+/** 20151216
+ * IRQ_NESTED_THREAD :  인터럽트가 다른 인터럽트 스레드를 nesting 할 수 있는지 여부.
+ **/
 enum {
 	IRQ_TYPE_NONE		= 0x00000000,
 	IRQ_TYPE_EDGE_RISING	= 0x00000001,
@@ -510,6 +513,9 @@ static inline void irq_set_thread(unsigned int irq)
 	irq_modify_status(irq, IRQ_NOTHREAD, 0);
 }
 
+/** 20151216
+ * irq_desc에 nest 속성을 추가/제거 한다.
+ **/
 static inline void irq_set_nested_thread(unsigned int irq, bool nest)
 {
 	if (nest)

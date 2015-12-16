@@ -869,6 +869,11 @@ static int irq_thread(void *data)
 	return 0;
 }
 
+/** 20151216
+ * irqaction을 thread에서 실행하도록 설정
+ *
+ * 현재 config에 따라 force_irqthreads는 항상 0.
+ **/
 static void irq_setup_forced_threading(struct irqaction *new)
 {
 	if (!force_irqthreads)
@@ -909,6 +914,9 @@ __setup_irq(unsigned int irq, struct irq_desc *desc, struct irqaction *new)
 	 * Check whether the interrupt nests into another interrupt
 	 * thread.
 	 */
+	/** 20151216
+	 * 해당 irq가 다른 인터럽트 스레드를 중첩할 수 있는지 검사한다.
+	 **/
 	nested = irq_settings_is_nested_thread(desc);
 	if (nested) {
 		if (!new->thread_fn) {
@@ -922,6 +930,10 @@ __setup_irq(unsigned int irq, struct irq_desc *desc, struct irqaction *new)
 		 */
 		new->handler = irq_nested_primary_handler;
 	} else {
+		/** 20151216
+		 * 해당 irq에 대한 설정이 thread로 실행 가능한지 검사해
+		 * irq thread로 실행하도록 설정한다.
+		 **/
 		if (irq_settings_can_thread(desc))
 			irq_setup_forced_threading(new);
 	}
@@ -931,6 +943,9 @@ __setup_irq(unsigned int irq, struct irq_desc *desc, struct irqaction *new)
 	 * and the interrupt does not nest into another interrupt
 	 * thread.
 	 */
+	/** 20151216
+	 * thread_fn이 설정되고 중첩가능하지 않다면 해당 irq를 처리하는 irq thread를 생성한다.
+	 **/
 	if (new->thread_fn && !nested) {
 		struct task_struct *t;
 
@@ -957,7 +972,16 @@ __setup_irq(unsigned int irq, struct irq_desc *desc, struct irqaction *new)
 	/*
 	 * The following block of code has to be executed atomically
 	 */
+	/** 20151216
+	 * desc에 대한 변경은 인터럽트까지 막아 원자적으로 실행한다.
+	 **/
 	raw_spin_lock_irqsave(&desc->lock, flags);
+	/** 20151216
+	 * 현재 irq desc의 action을 가져온다.
+	 *
+	 * 이미 action이 지정되어 있는 경우라면 해당 인터럽트를 공유하겠다는 의미이다.
+	 * 따라서 flags에 SHARED가 빠져 있거나 trigger_mask나 oneshot 이 다르면 잘못된 것이다.
+	 **/
 	old_ptr = &desc->action;
 	old = *old_ptr;
 	if (old) {
@@ -979,6 +1003,9 @@ __setup_irq(unsigned int irq, struct irq_desc *desc, struct irqaction *new)
 			goto mismatch;
 
 		/* add new interrupt at end of irq queue */
+		/** 20151216
+		 * 마지막 irqaction으로 등록되도록 리스트의 끝으로 이동한다.
+		 **/
 		do {
 			/*
 			 * Or all existing action->thread_mask bits,
@@ -1050,6 +1077,9 @@ __setup_irq(unsigned int irq, struct irq_desc *desc, struct irqaction *new)
 		goto out_mask;
 	}
 
+	/** 20151216
+	 * 처음 irq desc를 설정한다.
+	 **/
 	if (!shared) {
 		init_waitqueue_head(&desc->wait_for_threads);
 
