@@ -5,6 +5,7 @@ struct dentry;
 struct vfsmount;
 
 /** 20150425    
+ * file에 대한 path는 특정 vfsmount로부터 생성된 특정 dentry인 경우 unique하다.
  **/
 struct path {
 	struct vfsmount *mnt;

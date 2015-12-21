@@ -42,7 +42,7 @@ struct mount {
 	struct vfsmount mnt;
 #ifdef CONFIG_SMP
 	/** 20150425    
-	 *
+	 * SMP인 경우 percpu로 관리한다.
 	 **/
 	struct mnt_pcp __percpu *mnt_pcp;
 #else
@@ -83,7 +83,7 @@ struct mount {
 #define MNT_NS_INTERNAL ERR_PTR(-EINVAL) /* distinct from any mnt_namespace */
 
 /** 20150411    
- * vfsmount에서 mount 구조체를 추출한다.
+ * vfsmount를 포함하고 있는 mount 구조체를 추출한다.
  **/
 static inline struct mount *real_mount(struct vfsmount *mnt)
 {

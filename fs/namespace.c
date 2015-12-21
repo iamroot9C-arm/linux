@@ -285,6 +285,12 @@ out_free_cache:
  * mnt_want/drop_write() will _keep_ the filesystem
  * r/w.
  */
+/** 20151219    
+ * VFS mount가 readonly인지 검사한다.
+ *
+ * - mount가 옵션에 의해 readonly로 mount된 경우
+ * - superblock 의 속성이 에러 등에 의해 readonly인 경우
+ **/
 int __mnt_is_readonly(struct vfsmount *mnt)
 {
 	if (mnt->mnt_flags & MNT_READONLY)
@@ -295,6 +301,9 @@ int __mnt_is_readonly(struct vfsmount *mnt)
 }
 EXPORT_SYMBOL_GPL(__mnt_is_readonly);
 
+/** 20151219    
+ * mount에 대한 writer를 증가시킨다.
+ **/
 static inline void mnt_inc_writers(struct mount *mnt)
 {
 #ifdef CONFIG_SMP
@@ -304,6 +313,9 @@ static inline void mnt_inc_writers(struct mount *mnt)
 #endif
 }
 
+/** 20151219    
+ * mount에 대한 writer를 감소시킨다.
+ **/
 static inline void mnt_dec_writers(struct mount *mnt)
 {
 #ifdef CONFIG_SMP
@@ -354,12 +366,37 @@ static int mnt_is_readonly(struct vfsmount *mnt)
  * frozen. When the write operation is finished, __mnt_drop_write() must be
  * called. This is effectively a refcount.
  */
+/** 20151219    
+ * mnt가 read-write 가능할 경우 mount에 대한 write access를 획득한다.
+ *
+ * freeze protection은 수행하지 않는다.
+ * 사용이 끝나면 __mnt_drop_write() 를 호출해 write access를 해제한다.
+ *
+ * mnt_writer가 증가 전에 READONLY로 변경되어 write가 실패하는 시나리오
+ *
+ * __mnt_want_writer                            mnt_make_readonly
+ * ----------------------------------------------------------------------
+ * preempt_disable                              hold MNT_WRITE_HOLD
+ *                                              fail on mnt_writer > 0
+ *                                              if not, make READONLY
+ * inc mnt_writers                              
+ * wait release MNT_WRITE_HOLD
+ *          "                                   release MNT_WRITE_HOLD
+ * if mnt_is_readonly -> fail (mnt_dec_writers) 
+ * preempt_enable
+ **/
 int __mnt_want_write(struct vfsmount *m)
 {
 	struct mount *mnt = real_mount(m);
 	int ret = 0;
 
+	/** 20151219    
+	 * 선점불가 구간을 둔다.
+	 **/
 	preempt_disable();
+	/** 20151219    
+	 * 마운트에 대한 writer를 증가시킨다.
+	 **/
 	mnt_inc_writers(mnt);
 	/*
 	 * The store to mnt_inc_writers must be visible before we pass
@@ -397,6 +434,9 @@ int mnt_want_write(struct vfsmount *m)
 {
 	int ret;
 
+	/** 20151219    
+	 * superblock의 FREEZE에 대한 lock을 먼저 건다.
+	 **/
 	sb_start_write(m->mnt_sb);
 	ret = __mnt_want_write(m);
 	if (ret)
@@ -417,12 +457,24 @@ EXPORT_SYMBOL_GPL(mnt_want_write);
  * After finished, mnt_drop_write must be called as usual to
  * drop the reference.
  */
+/** 20151219    
+ * mount에 대한 writer access를 획득한다.
+ *
+ * RO가 아니라면 writer만 증가시킨다.
+ * 사용이 끝나면 mnt_drop_write를 해준다.
+ **/
 int mnt_clone_write(struct vfsmount *mnt)
 {
 	/* superblock may be r/o */
+	/** 20151219    
+	 * superblock이나 mount 옵션이 readonly라면 write 불가능.
+	 **/
 	if (__mnt_is_readonly(mnt))
 		return -EROFS;
 	preempt_disable();
+	/** 20151219    
+	 * mount에 대한 writer를 증가시킨다.
+	 **/
 	mnt_inc_writers(real_mount(mnt));
 	preempt_enable();
 	return 0;
@@ -436,6 +488,12 @@ EXPORT_SYMBOL_GPL(mnt_clone_write);
  * This is like __mnt_want_write, but it takes a file and can
  * do some optimisations if the file is open for write already
  */
+/** 20151219    
+ * file이 WRITE로 열린 상태가 아니거나 special file에 대한 write 시도인 경우
+ * __mnt_want_write로 write access를 획득한다.
+ * 그렇지 않은 경우 이미 WRITE 가능 상태임을 알 수 있으므로 readonly 상태만
+ * 확인하는 mnt_clone_write로 write access를 획득한다.
+ **/
 int __mnt_want_write_file(struct file *file)
 {
 	struct inode *inode = file->f_dentry->d_inode;
@@ -453,6 +511,9 @@ int __mnt_want_write_file(struct file *file)
  * This is like mnt_want_write, but it takes a file and can
  * do some optimisations if the file is open for write already
  */
+/** 20151219    
+ * file의 mount 정보를 가져와 write access를 시도하고 결과를 리턴한다.
+ **/
 int mnt_want_write_file(struct file *file)
 {
 	int ret;

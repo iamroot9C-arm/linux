@@ -53,6 +53,9 @@ void __percpu_counter_add(struct percpu_counter *fbc, s64 amount, s32 batch);
 s64 __percpu_counter_sum(struct percpu_counter *fbc);
 int percpu_counter_compare(struct percpu_counter *fbc, s64 rhs);
 
+/** 20151219    
+ * percpu_counter에 amount를 반영시킨다.
+ **/
 static inline void percpu_counter_add(struct percpu_counter *fbc, s64 amount)
 {
 	__percpu_counter_add(fbc, amount, percpu_counter_batch);
@@ -84,7 +87,8 @@ static inline s64 percpu_counter_read(struct percpu_counter *fbc)
  */
 /** 20150221    
  * percpu_counter의 현재 count 값을 리턴한다.
- * 항상 0 이상이 리턴된다.
+ *
+ * percpu별로 가지고 있는 값은 반영되지 않는다. 항상 0 이상이 리턴된다.
  **/
 static inline s64 percpu_counter_read_positive(struct percpu_counter *fbc)
 {
@@ -177,11 +181,17 @@ static inline int percpu_counter_initialized(struct percpu_counter *fbc)
 
 #endif	/* CONFIG_SMP */
 
+/** 20151219    
+ * percpu_counter에 1 증가.
+ **/
 static inline void percpu_counter_inc(struct percpu_counter *fbc)
 {
 	percpu_counter_add(fbc, 1);
 }
 
+/** 20151219    
+ * percpu_counter에 1 감소.
+ **/
 static inline void percpu_counter_dec(struct percpu_counter *fbc)
 {
 	percpu_counter_add(fbc, -1);

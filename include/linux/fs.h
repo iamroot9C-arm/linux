@@ -1175,6 +1175,9 @@ static inline int file_check_writeable(struct file *f)
 	return -EINVAL;
 }
 #else /* !CONFIG_DEBUG_WRITECOUNT */
+/** 20151219    
+ * CONFIG_DEBUG_WRITECOUNT 설정하지 않음.
+ **/
 static inline void file_take_write(struct file *filp) {}
 static inline void file_release_write(struct file *filp) {}
 static inline void file_reset_write(struct file *filp) {}
@@ -1529,7 +1532,7 @@ extern spinlock_t sb_lock;
 
 /* Possible states of 'frozen' field */
 /** 20150307    
- * sb_writers 필드에 저장되는 상태 값.
+ * sb_writers의 frozen 필드에 저장되는 상태 값.
  *
  * fs에 대한 동작이 금지되어 있는 상태를 의미하는 듯???
  **/
@@ -1544,6 +1547,11 @@ enum {
 
 #define SB_FREEZE_LEVELS (SB_FREEZE_COMPLETE - 1)
 
+/** 20151219    
+ * superblock의 writer를 관리하기 위한 자료구조.
+ *
+ * freeze level별 writer counter와 thaw를 대기하기 위한 wait queue 등이 있다.
+ **/
 struct sb_writers {
 	/* Counters for counting writers at each level */
 	struct percpu_counter	counter[SB_FREEZE_LEVELS];
@@ -2583,6 +2591,9 @@ static inline void i_readcount_inc(struct inode *inode)
 	atomic_inc(&inode->i_readcount);
 }
 #else
+/** 20151219    
+ * CONFIG_IMA가 설정되지 않았다.
+ **/
 static inline void i_readcount_dec(struct inode *inode)
 {
 	return;
@@ -2772,6 +2783,9 @@ void inode_dio_done(struct inode *inode);
 
 extern const struct file_operations generic_ro_fops;
 
+/** 20151219    
+ * CHAR/BLOCK Device 파일이나 FIFO, 소켓인 경우 special 파일이다.
+ **/
 #define special_file(m) (S_ISCHR(m)||S_ISBLK(m)||S_ISFIFO(m)||S_ISSOCK(m))
 
 extern int vfs_readlink(struct dentry *, char __user *, int, const char *);

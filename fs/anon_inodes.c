@@ -22,6 +22,9 @@
 
 #include <asm/uaccess.h>
 
+/** 20151219    
+ * anon_inode_init에서 한 번 mount 시킨다.
+ **/
 static struct vfsmount *anon_inode_mnt __read_mostly;
 static struct inode *anon_inode_inode;
 static const struct file_operations anon_inode_fops;
@@ -29,12 +32,18 @@ static const struct file_operations anon_inode_fops;
 /*
  * anon_inodefs_dname() is called from d_path().
  */
+/** 20151219    
+ * anon_inode_getfile 호출지 지정한 이름을 출력한다.
+ **/
 static char *anon_inodefs_dname(struct dentry *dentry, char *buffer, int buflen)
 {
 	return dynamic_dname(dentry, buffer, buflen, "anon_inode:%s",
 				dentry->d_name.name);
 }
 
+/** 20151219    
+ * anon inode dentry name을 출력하는 ops만 지원한다.
+ **/
 static const struct dentry_operations anon_inodefs_dentry_operations = {
 	.d_dname	= anon_inodefs_dname,
 };
@@ -57,6 +66,9 @@ static const struct address_space_operations anon_aops = {
  * anon_inode inodes have no associated per-instance data, so we need
  * only allocate one of them.
  */
+/** 20151219    
+ * anon_inodefs의 inode 생성.
+ **/
 static struct inode *anon_inode_mkinode(struct super_block *s)
 {
 	struct inode *inode = new_inode_pseudo(s);
@@ -88,9 +100,15 @@ static struct dentry *anon_inodefs_mount(struct file_system_type *fs_type,
 				int flags, const char *dev_name, void *data)
 {
 	struct dentry *root;
+	/** 20151219    
+	 * pseudo 파일시스템을 mount한다.
+	 **/
 	root = mount_pseudo(fs_type, "anon_inode:", NULL,
 			&anon_inodefs_dentry_operations, ANON_INODE_FS_MAGIC);
 	if (!IS_ERR(root)) {
+		/** 20151219    
+		 * superblock에 대한 inode를 생성한다.
+		 **/
 		struct super_block *s = root->d_sb;
 		anon_inode_inode = anon_inode_mkinode(s);
 		if (IS_ERR(anon_inode_inode)) {
@@ -102,6 +120,12 @@ static struct dentry *anon_inodefs_mount(struct file_system_type *fs_type,
 	return root;
 }
 
+/** 20151219    
+ * anonymous inode fs시스템.
+ *
+ * 연결된 directory entry 없이 inode에 접근할 수 있다.
+ * /proc/filesystems에서 확인 가능
+ **/
 static struct file_system_type anon_inode_fs_type = {
 	.name		= "anon_inodefs",
 	.mount		= anon_inodefs_mount,
@@ -124,6 +148,10 @@ static struct file_system_type anon_inode_fs_type = {
  * hence saving memory and avoiding code duplication for the file/inode/dentry
  * setup.  Returns the newly created file* or an error pointer.
  */
+/** 20151219    
+ * anon_inodefs로부터 anonymous inode 에 대한 file 인스턴스를 생성한다.
+ * 전달된 정보를 생성한 file 인스턴스에 채워 리턴한다.
+ **/
 struct file *anon_inode_getfile(const char *name,
 				const struct file_operations *fops,
 				void *priv, int flags)
@@ -147,10 +175,16 @@ struct file *anon_inode_getfile(const char *name,
 	this.name = name;
 	this.len = strlen(name);
 	this.hash = 0;
+	/** 20151219    
+	 * dentry를 생성해 path에 저장한다.
+	 **/
 	path.dentry = d_alloc_pseudo(anon_inode_mnt->mnt_sb, &this);
 	if (!path.dentry)
 		goto err_module;
 
+	/** 20151219    
+	 * anon_inode_mnt의 mount count를 증가시키고, 해당 vfsmount를 pat에 저장한다.
+	 **/
 	path.mnt = mntget(anon_inode_mnt);
 	/*
 	 * We know the anon_inode inode count is always greater than zero,
@@ -158,12 +192,21 @@ struct file *anon_inode_getfile(const char *name,
 	 */
 	ihold(anon_inode_inode);
 
+	/** 20151219    
+	 * 새로 생성한 dentry에 anon_inode_inode의 정보를 채운다.
+	 **/
 	d_instantiate(path.dentry, anon_inode_inode);
 
 	error = -ENFILE;
+	/** 20151219    
+	 * file 구조체를 할당 받고 전달받은 open mode와 fops로 설정한다.
+	 **/
 	file = alloc_file(&path, OPEN_FMODE(flags), fops);
 	if (!file)
 		goto err_dput;
+	/** 20151219    
+	 * inode에 저장된 address_space ops를 복사한다.
+	 **/
 	file->f_mapping = anon_inode_inode->i_mapping;
 
 	file->f_pos = 0;
@@ -223,13 +266,24 @@ err_put_unused_fd:
 }
 EXPORT_SYMBOL_GPL(anon_inode_getfd);
 
+/** 20151219    
+ * anon inodefs를 등록하고 마운트한다.
+ *
+ * eventfs, eventpoll 등에서 anon_inode_getfd를 직접 호출해 사용한다.
+ **/
 static int __init anon_inode_init(void)
 {
 	int error;
 
+	/** 20151219    
+	 * anon_inodefs를 등록한다.
+	 **/
 	error = register_filesystem(&anon_inode_fs_type);
 	if (error)
 		goto err_exit;
+	/** 20151219    
+	 * anon_inodefs를 마운트한다.
+	 **/
 	anon_inode_mnt = kern_mount(&anon_inode_fs_type);
 	if (IS_ERR(anon_inode_mnt)) {
 		error = PTR_ERR(anon_inode_mnt);

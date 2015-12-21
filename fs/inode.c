@@ -474,6 +474,9 @@ void __iget(struct inode *inode)
 /*
  * get additional reference to inode; caller must already hold one.
  */
+/** 20151219    
+ * inode에 대한 reference가 잡혀 있는 상태에서  reference count를 증가시킨다.
+ **/
 void ihold(struct inode *inode)
 {
 	WARN_ON(atomic_inc_return(&inode->i_count) < 2);

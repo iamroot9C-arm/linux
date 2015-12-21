@@ -1360,7 +1360,9 @@ EXPORT_SYMBOL(shrink_dcache_parent);
  */
  
  /** 20150328    
-  * dentry를 kmem_cache로부터 할당받고, name으로 초기화해 리턴한다.
+  * dentry를 kmem_cache로부터 할당받고, name과 기타 항목을 초기화해 리턴한다.
+  *
+  * dentry 생성시 name은 꼭 필요하다.
   **/
 struct dentry *__d_alloc(struct super_block *sb, const struct qstr *name)
 {
@@ -1486,8 +1488,15 @@ struct dentry *d_alloc(struct dentry * parent, const struct qstr *name)
 }
 EXPORT_SYMBOL(d_alloc);
 
+/** 20151219    
+ * pseudo filesystem용 dentry를 생성해 리턴한다.
+ **/
 struct dentry *d_alloc_pseudo(struct super_block *sb, const struct qstr *name)
 {
+	/** 20151219    
+	 * sb에 해당하는 dentry를 생성하고, name과 기타 항목을 초기화 해 리턴한다.
+	 * flag에 DCACHE_DISCONNECTED.
+	 **/
 	struct dentry *dentry = __d_alloc(sb, name);
 	if (dentry)
 		dentry->d_flags |= DCACHE_DISCONNECTED;

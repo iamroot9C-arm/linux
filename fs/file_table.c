@@ -32,6 +32,9 @@
 #include "internal.h"
 
 /* sysctl tunables... */
+/** 20151219    
+ * files_init에서 전체 메모리량을 보고 update 시킨다.
+ **/
 struct files_stat_struct files_stat = {
 	.max_files = NR_FILE
 };
@@ -42,7 +45,9 @@ DEFINE_LGLOCK(files_lglock);
 static struct kmem_cache *filp_cachep __read_mostly;
 
 /** 20150221    
- * percpu counter로 cpu마다 사용 중인 file 구조체의 수를 관리한다.
+ * percpu counter로 nr_files를 선언.
+ * 
+ * threshold를 넘어설 때 업데이트 되는 전역 카운터와 percpu 카운터가 존재.
  **/
 static struct percpu_counter nr_files __cacheline_aligned_in_smp;
 
@@ -64,6 +69,9 @@ static inline void file_free(struct file *f)
 /*
  * Return the total number of open files in the system
  */
+/** 20151219    
+ * percpu_counter로 관리하는 파일 개수를 리턴한다.
+ **/
 static long get_nr_files(void)
 {
 	return percpu_counter_read_positive(&nr_files);
@@ -106,6 +114,9 @@ int proc_nr_files(ctl_table *table, int write,
  * done, you will imbalance int the mount's writer count
  * and a warning at __fput() time.
  */
+/** 20151219    
+ * 시스템 limit에 도달하지 않았다면 file 구조체를 할당 받아 리턴한다.
+ **/
 struct file *get_empty_filp(void)
 {
 	const struct cred *cred = current_cred();
@@ -115,24 +126,40 @@ struct file *get_empty_filp(void)
 	/*
 	 * Privileged users can go above max_files
 	 */
+	/** 20151219    
+	 * 시스템의 파일수가 limit에 도달했을 경우에는 ADMIN의 경우에만 추가 생성이 가능하다.
+	 **/
 	if (get_nr_files() >= files_stat.max_files && !capable(CAP_SYS_ADMIN)) {
 		/*
 		 * percpu_counters are inaccurate.  Do an expensive check before
 		 * we go and fail.
 		 */
+		/** 20151219    
+		 * get_nr_files는 전역 카운트값만 반영하므로 에러 처리 전에
+		 * 정확한 값으로 다시 확인한다.
+		 **/
 		if (percpu_counter_sum_positive(&nr_files) >= files_stat.max_files)
 			goto over;
 	}
 
+	/** 20151219    
+	 * filp 캐시로부터 오브젝트를 할당 받는다.
+	 **/
 	f = kmem_cache_zalloc(filp_cachep, GFP_KERNEL);
 	if (f == NULL)
 		goto fail;
 
+	/** 20151219    
+	 * nr_files 증가.
+	 **/
 	percpu_counter_inc(&nr_files);
 	f->f_cred = get_cred(cred);
 	if (security_file_alloc(f))
 		goto fail_sec;
 
+	/** 20151219    
+	 * filp의 멤버 초기화.
+	 **/
 	INIT_LIST_HEAD(&f->f_u.fu_list);
 	atomic_long_set(&f->f_count, 1);
 	rwlock_init(&f->f_owner.lock);
@@ -170,15 +197,24 @@ fail:
  * If all the callers of init_file() are eliminated, its
  * code should be moved into this function.
  */
+/** 20151219    
+ * file 구조체를 할당 받고,  전달받은 mode와 fop을 채운다.
+ **/
 struct file *alloc_file(struct path *path, fmode_t mode,
 		const struct file_operations *fop)
 {
 	struct file *file;
 
+	/** 20151219    
+	 * file 구조체를 할당 받는다.
+	 **/
 	file = get_empty_filp();
 	if (!file)
 		return NULL;
 
+	/** 20151219    
+	 * 전달받은 argument로 file 구조체를 설정한다.
+	 **/
 	file->f_path = *path;
 	file->f_mapping = path->dentry->d_inode->i_mapping;
 	file->f_mode = mode;
@@ -190,10 +226,16 @@ struct file *alloc_file(struct path *path, fmode_t mode,
 	 * visible.  We do this for consistency, and so
 	 * that we can do debugging checks at __fput()
 	 */
+	/** 20151219    
+	 * write 모드로 열렸고, special file이 아닌 경우 간단히 write access를 획득.
+	 **/
 	if ((mode & FMODE_WRITE) && !special_file(path->dentry->d_inode->i_mode)) {
 		file_take_write(file);
 		WARN_ON(mnt_clone_write(path->mnt));
 	}
+	/** 20151219    
+	 * readonly로 요청된 경우
+	 **/
 	if ((mode & (FMODE_READ | FMODE_WRITE)) == FMODE_READ)
 		i_readcount_inc(path->dentry->d_inode);
 	return file;

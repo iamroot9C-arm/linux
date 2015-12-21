@@ -70,6 +70,9 @@ struct file;
 #ifdef CONFIG_EPOLL
 
 /* Used to initialize the epoll bits inside the "struct file" */
+/** 20151219    
+ * file 구조체의 eventpoll 멤버 초기화.
+ **/
 static inline void eventpoll_init_file(struct file *file)
 {
 	INIT_LIST_HEAD(&file->f_ep_links);

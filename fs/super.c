@@ -1502,6 +1502,9 @@ static void acquire_freeze_lock(struct super_block *sb, int level, bool trylock,
 int __sb_start_write(struct super_block *sb, int level, bool wait)
 {
 retry:
+	/** 20151219    
+	 * 현재 
+	 **/
 	if (unlikely(sb->s_writers.frozen >= level)) {
 		if (!wait)
 			return 0;

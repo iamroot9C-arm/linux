@@ -77,11 +77,25 @@ void percpu_counter_set(struct percpu_counter *fbc, s64 amount)
 }
 EXPORT_SYMBOL(percpu_counter_set);
 
+/** 20151219    
+ * percpu counter에 amount를 반영. threshold 구간은 batch에서 제공.
+ * threshold에 도달하면 전역 카운터에 반영하고, 그렇지 않은 경우 percpu에만 반영.
+ **/
 void __percpu_counter_add(struct percpu_counter *fbc, s64 amount, s32 batch)
 {
 	s64 count;
 
+	/** 20151219    
+	 * 선점불가 구간.
+	 **/
 	preempt_disable();
+	/** 20151219    
+	 * percpu counter를 읽어와 합산.
+	 *
+	 * 누적 카운터가 batch 단위에 도달하면 전역 카운터에 반영하고 percpu를 초기화.
+	 * 전역 카운터에 접근할 때는 spinlock으로 보호.
+	 * 그렇지 않은 경우 percpu에만 반영.
+	 **/
 	count = __this_cpu_read(*fbc->counters) + amount;
 	if (count >= batch || count <= -batch) {
 		raw_spin_lock(&fbc->lock);
@@ -102,6 +116,7 @@ EXPORT_SYMBOL(__percpu_counter_add);
 /** 20150221    
  * percpu_counter의 count에 percpu별로 유지하고 있던 변수까지 더해 리턴한다.
  *
+ * 전역 counter에 합산시키기 때문에 spinlock으로 보호한다.
  * percpu_counter_read_positive보다 느리지만 보다 정확한 값을 리턴한다.
  **/
 s64 __percpu_counter_sum(struct percpu_counter *fbc)
@@ -174,6 +189,9 @@ void percpu_counter_destroy(struct percpu_counter *fbc)
 }
 EXPORT_SYMBOL(percpu_counter_destroy);
 
+/** 20151219    
+ * percpu_counter batch count.
+ **/
 int percpu_counter_batch __read_mostly = 32;
 EXPORT_SYMBOL(percpu_counter_batch);
 
