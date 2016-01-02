@@ -618,6 +618,7 @@ static inline void list_splice_tail_init(struct list_head *list,
  */
 /** 20131123    
  * list head부터 각 entry를 순회한다.
+ *
  * iteration 중에 entry가 삭제되어도 자료구조가 깨어지지 않도록 next entry에
  * 대한 포인터를 미리 저장해두는 안전한 버전.
  **/

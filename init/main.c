@@ -835,6 +835,8 @@ asmlinkage void __init start_kernel(void)
 	/** 20150124    
 	 * INITRD가 잘못 설정되어 있는 경우 (min_low_pfn보다 낮은 경우)
 	 * initrd를 disable 한다.
+	 *
+	 * INITRAMFS가 주어지면, INITRAMFS인지 INITRD인지 검사해 처리된다.
 	 **/
 	if (initrd_start && !initrd_below_start_ok &&
 	    page_to_pfn(virt_to_page((void *)initrd_start)) < min_low_pfn) {

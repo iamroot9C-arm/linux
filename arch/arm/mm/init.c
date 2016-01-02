@@ -38,6 +38,8 @@
 
 /** 20150124    
  * initrd 물리 시작 주소와 크기가 저장되는 변수.
+ *
+ * atags에서 받아올 수도 있고, param으로 initrd의 start, size가 설정되었을 경우.
  **/
 static unsigned long phys_initrd_start __initdata = 0;
 static unsigned long phys_initrd_size __initdata = 0;
@@ -447,8 +449,8 @@ void __init arm_memblock_init(struct meminfo *mi, struct machine_desc *mdesc)
 	 * initrd로 주어진 메모리 공간이 memblock.memory 영역 안에 없다면 initrd를 무시
 	 **/
 	/** 20130810
-	  initrd지정된 영역이 region memory에 존재 하지 않을경우
-	  유효하지 않는 주소로 판단하고 무시
+	 * initrd지정된 영역이 region memory에 존재 하지 않을경우
+	 * 유효하지 않는 주소로 판단하고 무시
 	 **/
 	if (phys_initrd_size &&
 	    !memblock_is_region_memory(phys_initrd_start, phys_initrd_size)) {
@@ -634,6 +636,10 @@ static inline int free_area(unsigned long pfn, unsigned long end, char *s)
  * Poison init memory with an undefined instruction (ARM) or a branch to an
  * undefined instruction (Thumb).
  */
+/** 20160103    
+ * init에서 사용한 메모리에 undefined instruction을 채워 초기화 없이 접근시
+ * exception을 발생.
+ **/
 static inline void poison_init_mem(void *s, size_t count)
 {
 	u32 *p = (u32 *)s;
@@ -1106,8 +1112,16 @@ void free_initmem(void)
 
 static int keep_initrd;
 
+/** 20160103    
+ * initrd용으로 사용한 메모리를 해제한다.
+ **/
 void free_initrd_mem(unsigned long start, unsigned long end)
 {
+	/** 20160103    
+	 * keep_initrd가 설정되지 않았다면
+	 * 초기화 없이 직접 접근시 exception을 발생시키도록 내용을 오염시키고,
+	 * 사용한 메모리를 해제해 lru나 buddy로 이관시킨다.
+	 **/
 	if (!keep_initrd) {
 		poison_init_mem((void *)start, PAGE_ALIGN(end) - start);
 		totalram_pages += free_area(__phys_to_pfn(__pa(start)),

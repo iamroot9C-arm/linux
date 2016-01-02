@@ -24,6 +24,13 @@
 #include <linux/stringify.h>
 #include <asm-generic/vmlinux.lds.h>
 
+/** 20160102    
+ * INITRAMFS_IMAGE가 __irf_start ~ __irf_end 사이에 들어가고,
+ * __initramfs_size 는 __irf_end - __irf_start로 계산결과가 된다.
+
+ * INITRAMFS_IMAGE은 usr/Makefile에서 -D옵션으로 지정된다.
+ * gen_init_cpio 파일과 scripts/gen_initramfs_list.sh  참고.
+ **/
 .section .init.ramfs,"a"
 __irf_start:
 .incbin __stringify(INITRAMFS_IMAGE)

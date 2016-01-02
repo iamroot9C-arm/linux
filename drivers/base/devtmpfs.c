@@ -54,6 +54,9 @@ __setup("devtmpfs.mount=", mount_param);
 static struct dentry *dev_mount(struct file_system_type *fs_type, int flags,
 		      const char *dev_name, void *data)
 {
+/** 20160102    
+ * RAMFS와 파생된 TMPFS 중 TMPFS가 사용 가능하면 TMPFS로 mount.
+ **/
 #ifdef CONFIG_TMPFS
 	return mount_single(fs_type, flags, data, shmem_fill_super);
 #else

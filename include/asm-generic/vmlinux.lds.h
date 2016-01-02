@@ -648,6 +648,11 @@
 		*(.security_initcall.init)				\
 		VMLINUX_SYMBOL(__security_initcall_end) = .;
 
+/** 20160102    
+ * BLK_DEV_INITRD가 정의된 경우 (initramfs, initrd에 모두 해당)
+ *
+ * .init.ramfs와 .init.ramfs.info에 해당하는 영역은 initramfs_data.S 참고.
+ **/
 #ifdef CONFIG_BLK_DEV_INITRD
 #define INIT_RAM_FS							\
 	. = ALIGN(4);							\

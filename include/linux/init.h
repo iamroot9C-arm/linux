@@ -283,7 +283,7 @@ struct obs_kernel_param {
  * __setup_start ~ __setup_end 심볼 사이 .init.setup 섹션에 배치.
  *
  * parse_args
- *     parse_one 에서 처리
+ *     parse_one 에서 이 영역을 검색해 처리
  **/
 #define __setup_param(str, unique_id, fn, early)			\
 	static const char __setup_str_##unique_id[] __initconst	\

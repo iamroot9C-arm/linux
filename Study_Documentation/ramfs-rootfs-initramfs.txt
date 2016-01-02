@@ -1,0 +1,50 @@
+
+	https://www.kernel.org/doc/Documentation/filesystems/ramfs-rootfs-initramfs.txt
+
+	“ramfs”
+		Ramfs는 매우 간단한 파일시스템으로, 리눅스의 디스크 캐시 매커니즘(page cache와 dentry cache)을 export 한다.
+		동적으로 재조정 가능한 ram-based 파일시스템이다.
+
+		ramfs로 사용된 페이지들은 backing device에 쓰이지 못하기 때문에 clean되지 않는다.
+
+		=> 리눅스에서 다음과 같이 mount 해 사용 가능하다. 주어진 size 이상으로 data를 계속 쓸 수 있다.
+		mount -t ramfs -o size=5m tmpfs /mnt/ram1
+
+		=> 다음과 같이 mount 하였을 경우, block device operation이 호출될까???
+		mount -t ramfs /dev/ram0 /mnt/ram2
+
+	“ram disk”
+		보다 오래된 ram disk 메커니즘은 RAM 외에 공간에 파일시스템을 위한 의미론적 block device를 만들고 backing store로 사용한다.
+		block device는 고정된 크기이므로 그곳에 마운트된 파일시스템도 고정된 크기다.
+		fack block device와 page cache 사이에 불필요한 메모리 복사가 일어난다. 여기에 dentry까지 생성하고 삭제된다.
+		ext2 같이 이를 포맷하고 데이터를 처리할 파일시스템도 필요하다.
+
+		ramdisk는 보다 유연하고 편리한 인터페이스를 제공하는 loopback device의 등장으로 구식이 되었다.
+		loopback device는 메모리 덩어리가 아니라 파일에 의미론적 블럭 디바이스를 생성한다.
+
+	“tmpfs”
+		ramfs는 모든 메모리를 다 쓸 때까지 계속해서 쓸 수 있고, VM은 ramfs가 backing store를 갖지 못하므로 free시키지 못한다.
+		root나 권한이 부여된 user만이 ramfs mount에 write access가 허용된다.
+
+		ramfs에서 파생된 tmpfs는 size제한을 둘 수 있고, swap space에 data를 쓸 수 있다. 따라서 일반 user도 사용 가능하다.
+		See Documentation/filesystems/tmpfs.txt.
+
+	“rootfs”
+		ramfs의 특별한 인스턴스이다(tmpfs가 선택되었다면 tmpfs). init process를 죽이지 못하는 것과 같은 이유로 rootfs를 언마운트를 할 수 없다.
+		kernel은 empty list를 처리하는대신 empty list가 될 수 없도록 처리했다.
+
+		대개 시스템은 rootfs 위로 다른 파일시스템을 마운트하고 rootfs를 무시한다.
+
+	“initramfs”
+		2.6버전부터 gziped “cpio” format archive를 포함되는데, 부팅하며 rootfs에 풀린다.
+		압축 해제 후, rootfs 내에서 init을 찾아 PID 1로 실행시킬 수 있는지 검사하는데, 가능하다면 init으로 real root device를 위치시키고 마운트 시킨다.
+		init을 찾지 못하면 이전 코드부분에서 root partition을 배치시키고 마운트 시켜 /sbin/init의 변종을 실행한다.
+
+
+	TBD...
+
+
+[refs]
+	https://www.kernel.org/doc/Documentation/early-userspace/buffer-format.txt
+	https://www.kernel.org/doc/Documentation/blockdev/ramdisk.txt
+	https://www.kernel.org/doc/Documentation/early-userspace/README
