@@ -95,7 +95,7 @@ bool parameq(const char *a, const char *b)
  * val			: /dev/nfs 
  * doing		: early_options
  * params		: NULL
- * num_params	: 0
+ * num_params	: 0			=> handle_unknown 함수로 바로 실행
  * min_level	: 0
  * max_level	: 0
  * handle_unknown : do_early_param
@@ -282,6 +282,10 @@ int parse_args(const char *doing,
 
 		args = next_arg(args, &param, &val);
 		irq_was_disabled = irqs_disabled();
+		/** 20151226    
+		 *
+		 * unknown은 parsing 후 핸들되지 못한 argument를 처리.
+		 **/
 		ret = parse_one(param, val, doing, params, num,
 				min_level, max_level, unknown);
 		if (irq_was_disabled && !irqs_disabled())
@@ -335,6 +339,12 @@ int parse_args(const char *doing,
 	EXPORT_SYMBOL(param_ops_##name)
 
 
+/** 20151226    
+ * standard type은 macro로 일괄적으로 param_ops를 선언.
+ * byte, short, ...
+ *
+ * 아래 charp나 bool은 param_ops를 각각 선언.
+ **/
 STANDARD_PARAM_DEF(byte, unsigned char, "%c", unsigned long, strict_strtoul);
 STANDARD_PARAM_DEF(short, short, "%hi", long, strict_strtol);
 STANDARD_PARAM_DEF(ushort, unsigned short, "%hu", unsigned long, strict_strtoul);

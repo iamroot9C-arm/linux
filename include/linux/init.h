@@ -153,6 +153,10 @@
 /*
  * Used for initialization calls..
  */
+/** 20151226    
+ * initcall : argument를 받지 않고 실행 결과 int를 리턴하는 function pointer
+ * exitcall : argument를 받지 않고 리턴도 하지 않는 function pointer
+ **/
 typedef int (*initcall_t)(void);
 typedef void (*exitcall_t)(void);
 
@@ -197,6 +201,9 @@ extern bool initcall_debug;
  * __initcall_XXX_0
  * __initcall_XXX_1
  * ...
+ *
+ * arch/arm/kernel/vmlinux.lds.S -> arch/arm/kernel/vmlinux.lds
+ * .init.data section에 function pointer로 배치.
  **/
 #define __define_initcall(level,fn,id) \
 	static initcall_t __initcall_##fn##id __used \
@@ -272,6 +279,12 @@ struct obs_kernel_param {
  * Force the alignment so the compiler doesn't space elements of the
  * obs_kernel_param "array" too far apart in .init.setup.
  */
+/** 20151226    
+ * __setup_start ~ __setup_end 심볼 사이 .init.setup 섹션에 배치.
+ *
+ * parse_args
+ *     parse_one 에서 처리
+ **/
 #define __setup_param(str, unique_id, fn, early)			\
 	static const char __setup_str_##unique_id[] __initconst	\
 		__aligned(1) = str; \
@@ -280,6 +293,10 @@ struct obs_kernel_param {
 		__attribute__((aligned((sizeof(long)))))	\
 		= { __setup_str_##unique_id, fn, early }
 
+/** 20151226    
+ * argument_str=val
+ * argument_str에 해당하는 str이 들어왔을 경우, fn을 호출해 argument 파싱.
+ **/
 #define __setup(str, fn)					\
 	__setup_param(str, fn, fn, 0)
 

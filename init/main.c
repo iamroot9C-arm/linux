@@ -417,6 +417,8 @@ static int __init do_early_param(char *param, char *val, const char *unused)
 	 * __setup_start, __setup_end 는 early_param macro를 통해 .init.setup section에 들어간다.
 	 * vexpress에서 earlycon 정의되어 있는 부분은 없음. early 단계에서 console 옵션이 활성화되지 않음.
 	 *
+	 * early_param(...)으로 선언하면 obs_kernel_param으로 .init.setup 섹션에
+	 *
  	 * param와 .init.setup section에 있는 early bit == 1 인 경우, 또는.. 
 	 * 	param에 "console"이 지정되어 있고, .init.setup section에 "earlycon"이 포함된 경우,
 	 * 	==> 해당 section에서 setup_func 핸들러를 수행한다. 
@@ -669,6 +671,8 @@ asmlinkage void __init start_kernel(void)
 	parse_early_param();
 	/** 20130727    
 	 * setup_command_line에서 복사해둔 static_command_line 파라미터에서 
+	 *
+	 * 파싱되지 못한 구식 argument들은 unknown_bootoption으로 처리.
 	 **/
 	parse_args("Booting kernel", static_command_line, __start___param,
 		   __stop___param - __start___param,
@@ -1073,6 +1077,9 @@ static char *initcall_level_names[] __initdata = {
 
 static void __init do_initcall_level(int level)
 {
+	/** 20151226    
+	 * include/asm-generic/vmlinux.lds.h에 선언.
+	 **/
 	extern const struct kernel_param __start___param[], __stop___param[];
 	initcall_t *fn;
 
@@ -1083,6 +1090,10 @@ static void __init do_initcall_level(int level)
 		   level, level,
 		   &repair_env_string);
 
+	/** 20151226    
+	 * level이 5라면, __initcall5_start <= fn < __initcall6_start 이므로
+	 * initcall 5s와 rootfs까지도 수행된다.
+	 **/
 	for (fn = initcall_levels[level]; fn < initcall_levels[level+1]; fn++)
 		do_one_initcall(*fn);
 }

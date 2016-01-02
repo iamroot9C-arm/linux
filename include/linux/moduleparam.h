@@ -147,6 +147,9 @@ struct kparam_array
  *
  * The ops can have NULL set or get functions.
  */
+/** 20151226    
+ * level의 지정하여 parameter 선언.
+ **/
 #define __level_param_cb(name, ops, arg, perm, level)			\
 	__module_param_call(MODULE_PARAM_PREFIX, name, ops, arg, perm, level)
 
@@ -183,6 +186,11 @@ struct kparam_array
 
 /* This is the fundamental function for registering boot/module
    parameters. */
+/** 20151226    
+ * 새로운 parameter를 __param 섹션에 배치시키는 매크로.
+ *
+ * include/asm-generic/vmlinux.lds.h의 RO_DATA_SECTION 매크로 참고.
+ **/
 #define __module_param_call(prefix, name, ops, arg, perm, level)	\
 	/* Default value instead of permissions? */			\
 	static int __param_perm_check_##name __attribute__((unused)) =	\
@@ -350,6 +358,9 @@ static inline void destroy_params(const struct kernel_param *params,
 #define __param_check(name, p, type) \
 	static inline type *__check_##name(void) { return(p); }
 
+/** 20151226    
+ * param 구조체의 type별 get/set 함수.
+ **/
 extern struct kernel_param_ops param_ops_byte;
 extern int param_set_byte(const char *val, const struct kernel_param *kp);
 extern int param_get_byte(char *buffer, const struct kernel_param *kp);
