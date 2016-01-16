@@ -515,12 +515,18 @@ static char * __init unpack_to_rootfs(char *buf, unsigned len)
 			continue;
 		}
 		this_header = 0;
+		/** 20160109    
+		 * gzip으로 지정된 경우decompress는 "gunzip"
+		 **/
 		decompress = decompress_method(buf, len, &compress_name);
 		if (decompress) {
 			res = decompress(buf, len, NULL, flush_buffer, NULL,
 				   &my_inptr, error);
 			if (res)
 				error("decompressor failed");
+		/** 20160109    
+		 * gzip으로 압축한 이미지가 주어진 경우 compress_name은 "gzip"
+		 **/
 		} else if (compress_name) {
 			if (!message) {
 				snprintf(msg_buf, sizeof msg_buf,
@@ -653,7 +659,7 @@ static void __init clean_rootfs(void)
 #endif
 
 /** 20160103    
- *
+ * 마운트 되어 있는 rootfs에 initramfs 이미지 또는 initrd 이미지를 풀어 구성한다.
  *
  * CONFIG_BLK_DEV_INITRD가 지정되지 않았다면 populate_rootfs 대신 default_rootfs가 호출.
  **/
@@ -663,7 +669,6 @@ static int __init populate_rootfs(void)
 	 * CONFIG_BLK_DEV_INITRD가 지정되었다면 __initramfs_start는 항상 포함된다.
 	 * CONFIG_INITRAMFS_SOURCE을 지정하지 않은 경우에는 스크립트로 기본 정보가
 	 * 생성된다 (gen_init_cpio, gen_initramfs_list.sh)
-	 *
 	 **/
 	char *err = unpack_to_rootfs(__initramfs_start, __initramfs_size);
 	if (err)
@@ -695,6 +700,11 @@ static int __init populate_rootfs(void)
 		}
 		printk(KERN_INFO "rootfs image is not initramfs (%s)"
 				"; looks like an initrd\n", err);
+		/** 20160109    
+		 * unpack이 실패한 initrd data를 initrd.image에 저장한다.
+		 * 이 이미지는 추후 mount_initrd 옵션이 주어졌을 경우 initrd_load에서
+		 * 사용한다.
+		 **/
 		fd = sys_open("/initrd.image",
 			      O_WRONLY|O_CREAT, 0700);
 		if (fd >= 0) {

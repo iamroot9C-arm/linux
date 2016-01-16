@@ -57,6 +57,12 @@ EXPORT_SYMBOL_GPL(init_user_ns);
 #define __uidhashfn(uid)	(((uid >> UIDHASH_BITS) + uid) & UIDHASH_MASK)
 #define uidhashentry(uid)	(uidhash_table + __uidhashfn((__kuid_val(uid))))
 
+/** 20160109    
+ * uid_cache_init()에서 초기화
+ *
+ * user_struct 구조체를 위한 kmem cache.
+ * uidhash_table
+ **/
 static struct kmem_cache *uid_cachep;
 struct hlist_head uidhash_table[UIDHASH_SZ];
 
@@ -198,6 +204,9 @@ static int __init uid_cache_init(void)
 {
 	int n;
 
+	/** 20160109    
+	 * user_struct을 위한 slab cache 생성.
+	 **/
 	uid_cachep = kmem_cache_create("uid_cache", sizeof(struct user_struct),
 			0, SLAB_HWCACHE_ALIGN|SLAB_PANIC, NULL);
 

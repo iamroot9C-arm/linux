@@ -516,6 +516,11 @@ EXPORT_SYMBOL(idr_get_new_above);
  *
  * @id returns a value in the range %0 ... %0x7fffffff
  */
+/** 20160109    
+ * idr에서 ptr에 대한 핸들을 받아 리턴한다.
+ *
+ * starting id, 즉 최저 id 값을 지정하지 않는 버전.
+ **/
 int idr_get_new(struct idr *idp, void *ptr, int *id)
 {
 	int rv;

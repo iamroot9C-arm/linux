@@ -311,6 +311,11 @@ static int __init init_setup(char *str)
 }
 __setup("init=", init_setup);
 
+/** 20160109    
+ * rdinit 옵션을 주었을 경우, 파라미터를 ramdisk 실행 명령을 지정한다.
+ *
+ * qemu 실행환경에서 rdinit=/sbin/init을 지정
+ **/
 static int __init rdinit_setup(char *str)
 {
 	unsigned int i;
@@ -1279,9 +1284,16 @@ static int __init kernel_init(void * unused)
 	 * the work
 	 */
 
+	/** 20160109    
+	 * ramdisk_execute_command가 없는 경우 /init으로 지정한다.
+	 **/
 	if (!ramdisk_execute_command)
 		ramdisk_execute_command = "/init";
 
+	/** 20160109    
+	 * ramdisk_execute_command에 대한 접근이 실패했을 경우
+	 * prepare_namespace를 진행한다.
+	 **/
 	if (sys_access((const char __user *) ramdisk_execute_command, 0) != 0) {
 		ramdisk_execute_command = NULL;
 		prepare_namespace();

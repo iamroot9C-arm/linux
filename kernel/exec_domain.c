@@ -44,6 +44,12 @@ struct exec_domain default_exec_domain = {
 };
 
 
+/** 20160109    
+ * execdomain에 대해 bad_syscall이 발생해 default 핸들러가 실행되었을 경우,
+ * exec_domain의 핸들러가 default_handler임에도(즉 별도의 execdomain이 아님에도)
+ * 처리하지 못했다면, syscall이 잘못된 것이므로 SIGSEGV를 보낸다.
+ * 
+ **/
 static void
 default_handler(int segment, struct pt_regs *regp)
 {

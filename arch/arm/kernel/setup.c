@@ -840,6 +840,9 @@ static void __init request_standard_resources(struct machine_desc *mdesc)
 	/** 20130518    
 	 * memblock의 memory의 각 region을 resource 구조체로 만들어
 	 * iomem_resource에 등록.
+	 *
+	 * 20160109
+	 * /proc/iomem으로 확인 가능.
 	 **/
 	for_each_memblock(memory, region) {
 		res = alloc_bootmem_low(sizeof(*res));

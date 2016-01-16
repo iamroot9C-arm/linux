@@ -69,7 +69,13 @@
 /*
  * Lets keep our timers in a slab cache :-)
  */
+/** 20160109    
+ * struct k_itimer 용 구조체 캐시(슬랩)
+ **/
 static struct kmem_cache *posix_timers_cache;
+/** 20160109    
+ * posix timer 핸들용 idr.
+ **/
 static struct idr posix_timers_id;
 static DEFINE_SPINLOCK(idr_lock);
 
@@ -129,6 +135,9 @@ static DEFINE_SPINLOCK(idr_lock);
  *	    which we beg off on and pass to do_sys_settimeofday().
  */
 
+/** 20160109    
+ * posix_timers_register_clock 에서 초기화
+ **/
 static struct k_clock posix_clocks[MAX_CLOCKS];
 
 /*
@@ -225,6 +234,9 @@ static int posix_get_boottime(const clockid_t which_clock, struct timespec *tp)
 /*
  * Initialize everything, well, just everything in Posix clocks/timers ;)
  */
+/** 20160109    
+ * POSIX clocks/timers에서 사용할 timer를 등록시킨다.
+ **/
 static __init int init_posix_timers(void)
 {
 	struct k_clock clock_realtime = {
@@ -279,6 +291,10 @@ static __init int init_posix_timers(void)
 	posix_timers_register_clock(CLOCK_MONOTONIC_COARSE, &clock_monotonic_coarse);
 	posix_timers_register_clock(CLOCK_BOOTTIME, &clock_boottime);
 
+	/** 20160109    
+	 * posix timer에서 사용하는 k_itimer 캐시를 생성한다.
+	 * posix timer 핸들용 idr을 초기화 한다.
+	 **/
 	posix_timers_cache = kmem_cache_create("posix_timers_cache",
 					sizeof (struct k_itimer), 0, SLAB_PANIC,
 					NULL);
@@ -286,6 +302,9 @@ static __init int init_posix_timers(void)
 	return 0;
 }
 
+/** 20160109    
+ * device_initcall
+ **/
 __initcall(init_posix_timers);
 
 static void schedule_next_timer(struct k_itimer *timr)
@@ -453,6 +472,9 @@ static struct pid *good_sigevent(sigevent_t * event)
 	return task_pid(rtn);
 }
 
+/** 20160109    
+ * posix timer를 지원하기 위해 지정된 clock_id에 해당하는 k_clock 구조체를 지정한다.
+ **/
 void posix_timers_register_clock(const clockid_t clock_id,
 				 struct k_clock *new_clock)
 {
@@ -477,6 +499,9 @@ void posix_timers_register_clock(const clockid_t clock_id,
 }
 EXPORT_SYMBOL_GPL(posix_timers_register_clock);
 
+/** 20160109    
+ * 슬랩에서 struct k_timer를 할당받아 초기화 해 리턴.
+ **/
 static struct k_itimer * alloc_posix_timer(void)
 {
 	struct k_itimer *tmr;
@@ -513,6 +538,9 @@ static void release_posix_timer(struct k_itimer *tmr, int it_id_set)
 	call_rcu(&tmr->it.rcu, k_itimer_rcu_free);
 }
 
+/** 20160109    
+ * timer 핸들로 posix_timers_register_clock()에서 등록한 k_clock을 찾아간다.
+ **/
 static struct k_clock *clockid_to_kclock(const clockid_t id)
 {
 	if (id < 0)
@@ -524,6 +552,9 @@ static struct k_clock *clockid_to_kclock(const clockid_t id)
 	return &posix_clocks[id];
 }
 
+/** 20160109    
+ * hrtimer를 주어진 clock(CLOCK_REALTIME, CLOCK_MONOTONIC, ...)으로 초기화 한다.
+ **/
 static int common_timer_create(struct k_itimer *new_timer)
 {
 	hrtimer_init(&new_timer->it.real.timer, new_timer->it_clock, 0);
@@ -536,6 +567,9 @@ SYSCALL_DEFINE3(timer_create, const clockid_t, which_clock,
 		struct sigevent __user *, timer_event_spec,
 		timer_t __user *, created_timer_id)
 {
+	/** 20160109    
+	 * clock_id에 해당하는 k_clock을 받아온다.
+	 **/
 	struct k_clock *kc = clockid_to_kclock(which_clock);
 	struct k_itimer *new_timer;
 	int error, new_timer_id;
@@ -547,6 +581,9 @@ SYSCALL_DEFINE3(timer_create, const clockid_t, which_clock,
 	if (!kc->timer_create)
 		return -EOPNOTSUPP;
 
+	/** 20160109    
+	 * k_itimer 할당 받아 리턴
+	 **/
 	new_timer = alloc_posix_timer();
 	if (unlikely(!new_timer))
 		return -EAGAIN;
@@ -557,6 +594,9 @@ SYSCALL_DEFINE3(timer_create, const clockid_t, which_clock,
 		error = -EAGAIN;
 		goto out;
 	}
+	/** 20160109    
+	 * 새로 생성한 k_itimer에 대한 핸들을 받아온다.
+	 **/
 	spin_lock_irq(&idr_lock);
 	error = idr_get_new(&posix_timers_id, new_timer, &new_timer_id);
 	spin_unlock_irq(&idr_lock);
@@ -601,12 +641,18 @@ SYSCALL_DEFINE3(timer_create, const clockid_t, which_clock,
 	new_timer->sigq->info.si_tid   = new_timer->it_id;
 	new_timer->sigq->info.si_code  = SI_TIMER;
 
+	/** 20160109    
+	 * timer 핸들을 user에게 복사.
+	 **/
 	if (copy_to_user(created_timer_id,
 			 &new_timer_id, sizeof (new_timer_id))) {
 		error = -EFAULT;
 		goto out;
 	}
 
+	/** 20160109    
+	 * k_clock별 timer_create 콜백 함수를 호출한다.
+	 **/
 	error = kc->timer_create(new_timer);
 	if (error)
 		goto out;
@@ -635,11 +681,22 @@ out:
  * the find to the timer lock.  To avoid a dead lock, the timer id MUST
  * be release with out holding the timer lock.
  */
+/** 20160109    
+ * 핸들이 가리키는 k_itimer 구조체에 대한 락을 건다.
+ *
+ * id lookup결과를 lock down시킬 때까지 보호해서 우리 소유 중에 삭제되지 않도록
+ * 보호해야 한다. idr spinlock을 보유한 중에 rcu unlock을 해서 find 이후
+ * timer 스핀락에게 브릿지 시킨다. dead lock을 피하기 위해 timer id (timr)는
+ * spinlock을 해제하지 않고 release (unlock_timer) 되지 말아야 한다.
+ **/
 static struct k_itimer *__lock_timer(timer_t timer_id, unsigned long *flags)
 {
 	struct k_itimer *timr;
 
 	rcu_read_lock();
+	/** 20160109    
+	 * idr에서 핸들로 timer 구조체를 받아온다.
+	 **/
 	timr = idr_find(&posix_timers_id, (int)timer_id);
 	if (timr) {
 		spin_lock_irqsave(&timr->it_lock, *flags);

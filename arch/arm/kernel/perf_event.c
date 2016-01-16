@@ -652,6 +652,9 @@ static int __devinit armpmu_device_probe(struct platform_device *pdev)
 	return 0;
 }
 
+/** 20160109    
+ * arm-pmu 드라이버
+ **/
 static struct platform_driver armpmu_driver = {
 	.driver		= {
 		.name	= "arm-pmu",
@@ -661,6 +664,9 @@ static struct platform_driver armpmu_driver = {
 	.id_table	= armpmu_plat_device_ids,
 };
 
+/** 20160109    
+ * arm pmu 드라이버를 등록한다.
+ **/
 static int __init register_pmu_driver(void)
 {
 	return platform_driver_register(&armpmu_driver);

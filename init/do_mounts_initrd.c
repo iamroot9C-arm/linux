@@ -25,6 +25,9 @@ unsigned int real_root_dev;	/* do_proc_dointvec cannot handle kdev_t */
 static int __initdata old_fd, root_fd;
 static int __initdata mount_initrd = 1;
 
+/** 20160109    
+ * mount_initrd는 default 값이 1이고, noinitrd가 주어지면 0을 리턴한다.
+ **/
 static int __init no_initrd(char *str)
 {
 	mount_initrd = 0;

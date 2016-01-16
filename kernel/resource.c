@@ -26,6 +26,8 @@
 
 /** 20151121    
  * IORESOURCE_IO의 parent resource.
+ *
+ * /proc/ioport로 등록된 resource 확인 가능
  **/
 struct resource ioport_resource = {
 	.name	= "PCI IO",
@@ -37,6 +39,8 @@ EXPORT_SYMBOL(ioport_resource);
 
 /** 20151121    
  * IORESOURCE_MEM의 parent resource.
+ *
+ * /proc/iomem으로 등록된 resource 확인 가능
  **/
 struct resource iomem_resource = {
 	.name	= "PCI mem",
@@ -147,6 +151,9 @@ static const struct file_operations proc_iomem_operations = {
 	.release	= seq_release,
 };
 
+/** 20160109    
+ * ioport와 iomem을 proc에서 확인할 수 있도록 생성한다.
+ **/
 static int __init ioresources_init(void)
 {
 	proc_create("ioports", 0, NULL, &proc_ioports_operations);

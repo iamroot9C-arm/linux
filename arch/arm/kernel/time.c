@@ -176,11 +176,17 @@ static void timer_resume(void)
 #define timer_resume NULL
 #endif
 
+/** 20160109    
+ * timer syscore ops 선언.
+ **/
 static struct syscore_ops timer_syscore_ops = {
 	.suspend	= timer_suspend,
 	.resume		= timer_resume,
 };
 
+/** 20160109    
+ * timer syscore 함수 등록.
+ **/
 static int __init timer_init_syscore_ops(void)
 {
 	register_syscore_ops(&timer_syscore_ops);

@@ -114,6 +114,20 @@ struct thread_group_cred {
  * temporarily to point to another security context, but normally points to the
  * same context as task->real_cred.
  */
+/** 20160109    
+ * task의 security 관련 정보들을 설명하는 구조체.
+ *
+ * 이 구조체는 크게 두 카테고리로 분류된다.
+ * object context : 객관적
+ * subjective context : 주관적
+ * 몇몇 멤버는 두 카테고리에 다 해당하기도 한다.
+ *
+ * task 구조체는 두 security 포인터를 가지고 있다.
+ * real_cred : objective context
+ * cred : subjective context
+ *
+ * struct task_struct -> struct cred -> struct user_struct
+ **/
 struct cred {
 	atomic_t	usage;
 #ifdef CONFIG_DEBUG_CREDENTIALS
