@@ -318,6 +318,8 @@ static inline void numa_policy_init(void)
 {
 }
 
+/** 20160116    
+ **/
 static inline void numa_default_policy(void)
 {
 }

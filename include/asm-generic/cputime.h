@@ -39,6 +39,9 @@ typedef u64 __nocast cputime64_t;
 /*
  * Convert cputime to timespec and back.
  */
+/** 20160116    
+ * cputime과 timespec 사이의 변환.
+ **/
 #define timespec_to_cputime(__val)	\
 	jiffies_to_cputime(timespec_to_jiffies(__val))
 #define cputime_to_timespec(__ct,__val)	\

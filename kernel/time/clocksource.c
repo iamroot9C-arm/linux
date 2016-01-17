@@ -477,6 +477,9 @@ static inline int clocksource_watchdog_kthread(void *data) { return 0; }
 /**
  * clocksource_suspend - suspend the clocksource(s)
  */
+/** 20160116    
+ * clocksource를 순회하며 등록된 clocksource에 대해 suspend 콜백을 호출한다.
+ **/
 void clocksource_suspend(void)
 {
 	struct clocksource *cs;
@@ -704,6 +707,8 @@ fs_initcall(clocksource_done_booting);
  */
 /** 20141227    
  * 새로운 clocksource를 rating 값을 기준으로 내림차순으로 등록한다.
+ *
+ * vexpress 환경에서 "v2m-timer1", "jiffies" 가 호출된다.
  **/
 static void clocksource_enqueue(struct clocksource *cs)
 {
@@ -808,6 +813,8 @@ EXPORT_SYMBOL_GPL(__clocksource_updatefreq_scale);
 /** 20141227    
  * 새로운 clocksource를 rating이 높은 순서로 queue에 추가하고,
  * 가장 높은 rating 값을 가진 clocksource를 선택한다.
+ *
+ * scale : freq를 hz로 만들기 위해 곱해야 하는 값.
  **/
 int __clocksource_register_scale(struct clocksource *cs, u32 scale, u32 freq)
 {
@@ -1008,20 +1015,40 @@ static DEVICE_ATTR(current_clocksource, 0644, sysfs_show_current_clocksources,
 static DEVICE_ATTR(available_clocksource, 0444,
 		   sysfs_show_available_clocksources, NULL);
 
+/** 20160116    
+ * clocksource 
+ **/
 static struct bus_type clocksource_subsys = {
 	.name = "clocksource",
 	.dev_name = "clocksource",
 };
 
+/** 20160116    
+ * device clocksource
+ **/
 static struct device device_clocksource = {
 	.id	= 0,
 	.bus	= &clocksource_subsys,
 };
 
+/** 20160116    
+ * sysfs에 clocksource 관련 파일을 생성한다.
+ **/
 static int __init init_clocksource_sysfs(void)
 {
+	/** 20160116    
+	 * "/sys/bus/clocksource"
+	 * "/sys/devices/system/clocksource"
+	 *     clocksource0/available_clocksource
+	 *       > v2m-timer1 jiffies
+	 *     clocksource0/current_clocksource
+	 *       > v2m-timer1
+	 **/
 	int error = subsys_system_register(&clocksource_subsys, NULL);
 
+	/** 20160116    
+	 * clocksource를 장치로 등록한다.
+	 **/
 	if (!error)
 		error = device_register(&device_clocksource);
 	if (!error)

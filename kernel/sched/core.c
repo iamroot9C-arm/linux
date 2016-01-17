@@ -4098,6 +4098,8 @@ EXPORT_SYMBOL(schedule);
  * Returns with preemption disabled. Note: preempt_count must be 1
  */
 /** 20130713    
+ * 처음 스케쥴러가 동작.
+ *
  * 선점 불가 상태에서 호출되어
  *   선점 가능 상태로 변경 후 schedule 함수를 호출하고, 깨어났을 때 다시 선점 불가로 리턴
  **/
@@ -8671,6 +8673,9 @@ void __init sched_init_smp(void)
 	sched_init_granularity();
 	free_cpumask_var(non_isolated_cpus);
 
+	/** 20150822    
+	 * sched_rt class 관련 초기화를 수행한다.
+	 **/
 	init_sched_rt_class();
 }
 #else

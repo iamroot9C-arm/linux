@@ -638,6 +638,10 @@ out_cleanup:
 #define create_hash_tables()			({ 0; })
 #endif
 
+/** 20160116    
+ * profile 관련 함수.
+ * profile 설정이 되지 않으면 바로 리턴.
+ **/
 int __ref create_proc_profile(void) /* false positive from hotcpu_notifier */
 {
 	struct proc_dir_entry *entry;

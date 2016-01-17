@@ -235,6 +235,9 @@ print_tickdevice(struct seq_file *m, struct tick_device *td, int cpu)
 	SEQ_printf(m, " retries:        %lu\n", dev->retries);
 }
 
+/** 20160116    
+ * timer list에서 tick device 목록을 출력.
+ **/
 static void timer_list_show_tickdevices(struct seq_file *m)
 {
 	int cpu;
@@ -257,6 +260,9 @@ static void timer_list_show_tickdevices(struct seq_file *m)
 static void timer_list_show_tickdevices(struct seq_file *m) { }
 #endif
 
+/** 20160116    
+ * /proc/timer_list 출력함수.
+ **/
 static int timer_list_show(struct seq_file *m, void *v)
 {
 	u64 now = ktime_to_ns(ktime_get());
@@ -285,6 +291,8 @@ static int timer_list_open(struct inode *inode, struct file *filp)
 	return single_open(filp, timer_list_show, NULL);
 }
 
+/** 20160116    
+ **/
 static const struct file_operations timer_list_fops = {
 	.open		= timer_list_open,
 	.read		= seq_read,
@@ -292,6 +300,9 @@ static const struct file_operations timer_list_fops = {
 	.release	= single_release,
 };
 
+/** 20160116    
+ * "/proc/timer_list"를 생성하고, fops를 등록한다.
+ **/
 static int __init init_timer_list_procfs(void)
 {
 	struct proc_dir_entry *pe;

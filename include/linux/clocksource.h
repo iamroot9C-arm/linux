@@ -314,6 +314,8 @@ __clocksource_updatefreq_scale(struct clocksource *cs, u32 scale, u32 freq);
 
 /** 20141227    
  * clocksource와 hz를 받아 계산해 등록하고 clocksource를 선택하는 함수.
+ *
+ * hz frequency를 갖는 jiffies의 결과를 1 hz로 변환하기 위해 곱하는 값은 1.
  **/
 static inline int clocksource_register_hz(struct clocksource *cs, u32 hz)
 {

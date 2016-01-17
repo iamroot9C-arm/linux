@@ -1105,6 +1105,9 @@ static void __init do_initcall_level(int level)
 		do_one_initcall(*fn);
 }
 
+/** 20160116    
+ * level별로 init 함수를 호출한다.
+ **/
 static void __init do_initcalls(void)
 {
 	int level;
@@ -1123,6 +1126,12 @@ static void __init do_initcalls(void)
  *
  * Now we can finally start doing some real work..
  */
+/** 20160116    
+ * subsystem을 초기화 한다.
+ *
+ * - 드라이버 모델 초기화
+ * - initcall 수행
+ **/
 static void __init do_basic_setup(void)
 {
 	/** 20150829    
@@ -1214,6 +1223,10 @@ static noinline int init_post(void)
 	      "See Linux Documentation/init.txt for guidance.");
 }
 
+/** 20160116    
+ *
+ * rest_init()에서 생성한 task지만, kthreadd_done 까지 대기 후 동작한다.
+ **/
 static int __init kernel_init(void * unused)
 {
 	/*

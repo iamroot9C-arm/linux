@@ -20,6 +20,8 @@ enum tick_device_mode {
 };
 
 /** 20141115    
+ * percpu 변수로 설정된다.
+ * vexpress의 경우, core마다 local_timer가 있어 percpu 변수인 evtdev를 가리킨다.
  **/
 struct tick_device {
 	struct clock_event_device *evtdev;

@@ -96,6 +96,9 @@
 #error PREEMPT_ACTIVE is too low!
 #endif
 
+/** 20131123    
+ * preempt_count에서 HARDIRQ_MASK를 씌워 hardirq_count를 리턴한다.
+ **/
 #define hardirq_count()	(preempt_count() & HARDIRQ_MASK)
 /** 20131123    
  * preempt_count에서 SOFTIRQ_MASK를 씌워 softirq_count를 리턴한다.
@@ -113,6 +116,9 @@
  * in_softirq - Are we currently processing softirq or have bh disabled?
  * in_serving_softirq - Are we currently processing softirq?
  */
+/** 20160117    
+ * hardware irq / softirq 중이라면 참을 리턴한다.
+ **/
 #define in_irq()		(hardirq_count())
 #define in_softirq()		(softirq_count())
 /** 20131005    

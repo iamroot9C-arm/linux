@@ -105,6 +105,9 @@ static struct class_interface alarmtimer_rtc_interface = {
 	.add_dev = &alarmtimer_rtc_add_device,
 };
 
+/** 20160116    
+ * alarmtimer rtc class의 interface 를 설정한다.
+ **/
 static int alarmtimer_rtc_interface_setup(void)
 {
 	alarmtimer_rtc_interface.class = rtc_class;
@@ -774,6 +777,9 @@ static struct platform_driver alarmtimer_driver = {
  * This function initializes the alarm bases and registers
  * the posix clock ids.
  */
+/** 20160116    
+ * alarm timer 초기화
+ **/
 static int __init alarmtimer_init(void)
 {
 	struct platform_device *pdev;
@@ -791,6 +797,9 @@ static int __init alarmtimer_init(void)
 
 	alarmtimer_rtc_timer_init();
 
+	/** 20160116    
+	 * ALARM에 대한 clockid에 대한 k_clock을 등록한다.
+	 **/
 	posix_timers_register_clock(CLOCK_REALTIME_ALARM, &alarm_clock);
 	posix_timers_register_clock(CLOCK_BOOTTIME_ALARM, &alarm_clock);
 

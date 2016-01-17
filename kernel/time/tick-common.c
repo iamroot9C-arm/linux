@@ -47,6 +47,9 @@ static DEFINE_RAW_SPINLOCK(tick_device_lock);
 /*
  * Debugging: see timer_list.c
  */
+/** 20160116    
+ * 특정 cpu에 대한 tick device에 접근한다.
+ **/
 struct tick_device *tick_get_device(int cpu)
 {
 	return &per_cpu(tick_cpu_device, cpu);
@@ -452,6 +455,9 @@ static void tick_shutdown(unsigned int *cpup)
 	raw_spin_unlock_irqrestore(&tick_device_lock, flags);
 }
 
+/** 20160116    
+ * 현재 cpu의 tick_cpu_device를 읽어와 clockevents가 발생하지 않도록 한다.
+ **/
 static void tick_suspend(void)
 {
 	struct tick_device *td = &__get_cpu_var(tick_cpu_device);
@@ -552,7 +558,8 @@ static struct notifier_block tick_notifier = {
 /** 20140825    
  * clockevents framework에 이벤트 발생시 통보받을 tick notifier 등록.
  *
- * clockevents_notify에서 호출되며, hrtimer_cpu_notify에서 호출된다.
+ * clockevents_notify 할 때 등록된 chain이 호출되며,
+ * hrtimer_cpu_notify에서 호출된다.
  **/
 void __init tick_init(void)
 {

@@ -118,6 +118,7 @@ void clockevents_set_mode(struct clock_event_device *dev,
  * clock_event_device의 mode를 SHUTDOWN으로 지정하고, next_event를 MAX로 초기화.
  *
  * 현재 동작 중인 dev를 정지시킬 때, 새로운 dev를 등록시키기 전에 사용할 수 있다.
+ * suspend시에 CLOCK_EVT_NOTIFY_SUSPEND에 대한 동작으로 호출되기도 함.
  **/
 void clockevents_shutdown(struct clock_event_device *dev)
 {
@@ -340,12 +341,18 @@ static void clockevents_notify_released(void)
  */
 /** 20150613    
  * 새로운 clock event device를 등록한다.
+ *
+ * 1. time_init -> v2m_timer_init -> sp804_clockevent 1번 호출.
+ * 2. percpu_timer_setup -> twd_timer_setup "local_timer"로 4번 호출.
  **/
 void clockevents_register_device(struct clock_event_device *dev)
 {
 	unsigned long flags;
 
 	BUG_ON(dev->mode != CLOCK_EVT_MODE_UNUSED);
+	/** 20160116    
+	 * percpu_timer_setup에서 호출되었을 경우는 cpumask가 지정되어 있다.
+	 **/
 	if (!dev->cpumask) {
 		WARN_ON(num_possible_cpus() > 1);
 		dev->cpumask = cpumask_of(smp_processor_id());
@@ -490,6 +497,9 @@ void clockevents_exchange_device(struct clock_event_device *old,
 /**
  * clockevents_notify - notification about relevant events
  */
+/** 20160116    
+ * clockevents 발생을 통보한다.
+ **/
 void clockevents_notify(unsigned long reason, void *arg)
 {
 	struct clock_event_device *dev, *tmp;

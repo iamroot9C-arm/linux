@@ -460,6 +460,9 @@ struct class_attribute_string {
 extern ssize_t show_class_attr_string(struct class *class, struct class_attribute *attr,
                         char *buf);
 
+/** 20160116    
+ * class의 interface 구조체.
+ **/
 struct class_interface {
 	struct list_head	node;
 	struct class		*class;

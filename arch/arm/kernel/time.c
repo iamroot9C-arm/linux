@@ -140,6 +140,9 @@ void read_boot_clock(struct timespec *ts)
 	__read_boot_clock(ts);
 }
 
+/** 20160116    
+ * 호출 안 되는 함수...
+ **/
 int __init register_persistent_clock(clock_access_fn read_boot,
 				     clock_access_fn read_persistent)
 {

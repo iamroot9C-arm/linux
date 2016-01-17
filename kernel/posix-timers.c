@@ -563,6 +563,10 @@ static int common_timer_create(struct k_itimer *new_timer)
 
 /* Create a POSIX.1b interval timer. */
 
+/** 20160116    
+ * timer_create 시스템콜.
+ * 타이머(초시계 개념)를 생성하고, 동작은 시키지 않은 상태
+ **/
 SYSCALL_DEFINE3(timer_create, const clockid_t, which_clock,
 		struct sigevent __user *, timer_event_spec,
 		timer_t __user *, created_timer_id)
@@ -1019,6 +1023,9 @@ SYSCALL_DEFINE2(clock_settime, const clockid_t, which_clock,
 	return kc->clock_set(which_clock, &new_tp);
 }
 
+/** 20160116    
+ * clock_gettime 시스템콜
+ **/
 SYSCALL_DEFINE2(clock_gettime, const clockid_t, which_clock,
 		struct timespec __user *,tp)
 {

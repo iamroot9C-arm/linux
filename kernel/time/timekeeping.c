@@ -881,6 +881,13 @@ static void timekeeping_resume(void)
 	hrtimers_resume();
 }
 
+/** 20160116    
+ * timekeeping 동작을 suspend 시킴.
+ *
+ * syscore단에서 다른 device에 대해 suspend 시킨 뒤 호출되어
+ *   - 틀어진 값을 보정하고,
+ *   - clockevent와 clocksource를 suspend 시킨다.
+ **/
 static int timekeeping_suspend(void)
 {
 	unsigned long flags;
@@ -909,11 +916,17 @@ static int timekeeping_suspend(void)
 		old_delta = delta;
 	} else {
 		/* Otherwise try to adjust old_system to compensate */
+		/** 20160116    
+		 * persistent clock에서 읽어온 값에 delta_delta를 적용시킨다.
+		 **/
 		timekeeping_suspend_time =
 			timespec_add(timekeeping_suspend_time, delta_delta);
 	}
 	write_sequnlock_irqrestore(&timekeeper.lock, flags);
 
+	/** 20160116    
+	 * clock event의 suspend를 notify chain에 통보한다.
+	 **/
 	clockevents_notify(CLOCK_EVT_NOTIFY_SUSPEND, NULL);
 	clocksource_suspend();
 
@@ -921,6 +934,11 @@ static int timekeeping_suspend(void)
 }
 
 /* sysfs resume/suspend bits for timekeeping */
+/** 20160116    
+ * timekeeping syscore ops.
+ *
+ * 시간에 관한 subsystem이기 때문에 syscore로 등록되어 동작한다.
+ **/
 static struct syscore_ops timekeeping_syscore_ops = {
 	.resume		= timekeeping_resume,
 	.suspend	= timekeeping_suspend,

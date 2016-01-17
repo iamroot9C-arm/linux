@@ -366,6 +366,7 @@ asmlinkage void __cpuinit secondary_start_kernel(void)
 	 * Setup the percpu timer for this CPU.
 	 */
 	/** 20150808    
+	 * booting cpu를 제외한 smp의 각 cpu마다 수행되어
 	 * 이 cpu를 위한 percpu timer를 설정한다.
 	 **/
 	percpu_timer_setup();
@@ -632,7 +633,7 @@ int local_timer_register(struct local_timer_ops *ops)
 #endif
 
 /** 20150606    
- * percpu clock_event를 설정하고,
+ * 각 프로세서에서 percpu_clockevent를 설정하고,
  * local timer로 설정하여 실패하면 broadcast timer로 등록한다.
  **/
 static void __cpuinit percpu_timer_setup(void)

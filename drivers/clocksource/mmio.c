@@ -10,6 +10,9 @@
 #include <linux/init.h>
 #include <linux/slab.h>
 
+/** 20160116    
+ * memory mapped io인 clocksource 구조체.
+ **/
 struct clocksource_mmio {
 	void __iomem *reg;
 	struct clocksource clksrc;
