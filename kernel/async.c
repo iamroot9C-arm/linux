@@ -48,6 +48,14 @@ asynchronous and synchronous parts of the kernel.
 
 */
 
+/** 20160123    
+ * asynchronous 함수 호출의 핵심은 "sequence cookie" (단조 증가 숫자)이다.
+ *
+ * asynchronous 프로브 함수들을 스케쥴 시킨 subsystem/driver 초기화 코드는,
+ * asynchronous 호출을 하는 다른 드라이버나 subsystem과 global resources을 공유하므로
+ * init 함수로부터 리턴하기 전에 async_synchronize_full() 함수로 전체 동기화를 수행할 필요가 있다.
+ **/
+
 #include <linux/async.h>
 #include <linux/atomic.h>
 #include <linux/ktime.h>
@@ -57,6 +65,9 @@ asynchronous and synchronous parts of the kernel.
 #include <linux/slab.h>
 #include <linux/workqueue.h>
 
+/** 20160123    
+ * 다음 cookie로 발급할 숫자
+ **/
 static async_cookie_t next_cookie = 1;
 
 #define MAX_WORK	32768
@@ -240,6 +251,10 @@ EXPORT_SYMBOL_GPL(async_schedule_domain);
  *
  * This function waits until all asynchronous function calls have been done.
  */
+/** 20160123    
+ * async_domains에 등록된 async_domain이 다 처리될 때까지 기다린다.
+ * 자세한 분석은 생략???
+ **/
 void async_synchronize_full(void)
 {
 	mutex_lock(&async_register_mutex);

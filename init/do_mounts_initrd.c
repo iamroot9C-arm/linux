@@ -117,6 +117,11 @@ static void __init handle_initrd(void)
 	}
 }
 
+/** 20160123    
+ * initrd가 mount된 상태에서
+ *	- "/dev/ram"을 생성한다.
+ *	- "/initrd.image"를 로딩한다.
+ **/
 int __init initrd_load(void)
 {
 	if (mount_initrd) {
@@ -127,6 +132,10 @@ int __init initrd_load(void)
 		 * in that case the ram disk is just set up here, and gets
 		 * mounted in the normal path.
 		 */
+		/** 20160123    
+		 * "/initrd.image"가 존재한다면 /dev/ram0에 풀고, 
+		 * ROOT_DEV가 Root_RAM0가 아닐 경우 파일을 제거하고 initrd 핸들을 진행한다.
+		 **/
 		if (rd_load_image("/initrd.image") && ROOT_DEV != Root_RAM0) {
 			sys_unlink("/initrd.image");
 			handle_initrd();

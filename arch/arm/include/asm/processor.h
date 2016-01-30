@@ -84,6 +84,10 @@ unsigned long get_wchan(struct task_struct *p);
 #else
 /** 20130706    
  *__LINUX_ARM_ARCH__가 7이므로 barrier()가 수행
+ *
+ * CPU는 새로운 명령을 내리고 있지 않지만, 메모리에 대한 접근을 보장한다.
+ * 보통 loop 블럭의 끝에서 memory reordering을 방지해
+ * 반복적으로 접근하는 메모리의 값을 새로 읽어오도록 보장한다.
  **/
 #define cpu_relax()			barrier()
 #endif

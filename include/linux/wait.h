@@ -258,6 +258,9 @@ wait_queue_head_t *bit_waitqueue(void *, int);
 #define wake_up_interruptible_sync_poll(x, m)				\
 	__wake_up_sync_key((x), TASK_INTERRUPTIBLE, 1, (void *) (m))
 
+/** 20160123    
+ * condition을 만족할 때까지 wq에서 schedule out 되며 기다린다.
+ **/
 #define __wait_event(wq, condition) 					\
 do {									\
 	DEFINE_WAIT(__wait);						\
@@ -283,6 +286,9 @@ do {									\
  * wake_up() has to be called after changing any variable that could
  * change the result of the wait condition.
  */
+/** 20160123    
+ * 이미 condition을 만족하지 않다면 __wait_event로 schedule out 되어 기다린다.
+ **/
 #define wait_event(wq, condition) 					\
 do {									\
 	if (condition)	 						\

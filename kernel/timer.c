@@ -94,11 +94,13 @@ struct tvec_root {
 };
 
 /** 20141025    
- * timer_jiffies : timer가 알고 있는 jiffies 값?
+ * tvec_base
+ *
+ * timer_jiffies : timer가 알고 있는(경험한, 처리한) jiffies 값?
  *		아직 체크되어야 할 dynamic timer들의 만료 시간 중 가장 빨리 만료되는 값
  *		init_timers_cpu는 현재 jiffies가 저장된다.
  *		이후 __run_timers()에서 증가된다.
- * next_timer
+ * next_timer    : cpu가 다음 expire될 시간이 저장된다.
  * running_timer : 현재 실행 중인 timer를 가리킨다.
  **/
 struct tvec_base {
@@ -130,6 +132,10 @@ static inline unsigned int tbase_get_deferrable(struct tvec_base *base)
 	return ((unsigned int)(unsigned long)base & TBASE_DEFERRABLE_FLAG);
 }
 
+/** 20160123    
+ * tvec_base에 defferable flag 비트를 두고 있기 때문에
+ * 실제 tvec_base pointer만 얻어오는 함수.
+ **/
 static inline struct tvec_base *tbase_get_base(struct tvec_base *base)
 {
 	return ((struct tvec_base *)((unsigned long)base & ~TBASE_DEFERRABLE_FLAG));
@@ -434,13 +440,25 @@ __internal_add_timer(struct tvec_base *base, struct timer_list *timer)
 	list_add_tail(&timer->entry, vec);
 }
 
+/** 20160123    
+ * timer를 tvec_base 내의 tvec에 등록한다.
+ **/
 static void internal_add_timer(struct tvec_base *base, struct timer_list *timer)
 {
+	/** 20160123    
+	 * timer의 expires를 기준으로 index를 구하고 base의 tvec index에 등록한다.
+	 **/
 	__internal_add_timer(base, timer);
 	/*
 	 * Update base->active_timers and base->next_timer
 	 */
+	/** 20160123    
+	 * 타이머가 지연가능하지 않다면
+	 **/
 	if (!tbase_get_deferrable(timer->base)) {
+		/** 20160123    
+		 * 만료시간이 지난 경우 다음 타이머 시간을 expires로 지정한다.
+		 **/
 		if (time_before(timer->expires, base->next_timer))
 			base->next_timer = timer->expires;
 		base->active_timers++;
@@ -667,6 +685,9 @@ static inline void debug_init(struct timer_list *timer)
 	trace_timer_init(timer);
 }
 
+/** 20160123    
+ * NULL 함수
+ **/
 static inline void
 debug_activate(struct timer_list *timer, unsigned long expires)
 {
@@ -692,6 +713,8 @@ static inline void debug_assert_init(struct timer_list *timer)
 
 /** 20140628    
  * timer를 name과 key로 초기화 한다.
+ *
+ * timer가 등록되는 tvec_base는 percpu tvec_bases 중 현재 cpu에 해당하는 멤버.
  **/
 static void __init_timer(struct timer_list *timer,
 			 const char *name,
@@ -757,6 +780,8 @@ EXPORT_SYMBOL(init_timer_deferrable_key);
 
 /** 20141101    
  * timer를 list에서 제거한다.
+ *
+ * 제거시 pending 상태까지 초기화 할지 여부를 옵션으로 받아 처리한다.
  **/
 static inline void detach_timer(struct timer_list *timer, bool clear_pending)
 {
@@ -793,13 +818,27 @@ detach_expired_timer(struct timer_list *timer, struct tvec_base *base)
 		timer->base->active_timers--;
 }
 
+/** 20160123    
+ * 타이머가 펜딩되어 있다면 (등록되어 있다면) detach 시킨다.
+ **/
 static int detach_if_pending(struct timer_list *timer, struct tvec_base *base,
 			     bool clear_pending)
 {
+	/** 20160123    
+	 * timer가 pending되지 않았다면 detach 없이 리턴.
+	 **/
 	if (!timer_pending(timer))
 		return 0;
 
+	/** 20160123    
+	 * timer를 detach 시킨다.
+	 **/
 	detach_timer(timer, clear_pending);
+	/** 20160123    
+	 * detach 시킨 타이머가 deferrable 하지 않다면,
+	 * 해당 타이머가 다음 만료될 타이머인지 검사하고 그렇다면 
+	 * 지나간 timer_jiffies로 next_timer를 설정해 다음에 expire를 수행토록 한다.
+	 **/
 	if (!tbase_get_deferrable(timer->base)) {
 		timer->base->active_timers--;
 		if (timer->expires == base->next_timer)
@@ -821,7 +860,13 @@ static int detach_if_pending(struct timer_list *timer, struct tvec_base *base,
  * locked.
  */
 /** 20140628    
- * 추후 분석???
+ * timer base (tvec_base)에 lock을 걸어 해당 tvec_base에 속한 timer들과
+ * tvec_base 자체에 대한 lock을 건다.
+ *
+ * 따라서 __run_timers와 migrate_timers 함수에서 모든 timer들을 수정할 수 있다.
+ *
+ * timer의 base가 lock 되었을 때, timer가 리스트에서 제거되었다면,
+ * (이를 해결하기 위해?) timer->base를 NULL로 설정하고 lock을 드롭시킬 수 있다.
  **/
 static struct tvec_base *lock_timer_base(struct timer_list *timer,
 					unsigned long *flags)
@@ -830,9 +875,16 @@ static struct tvec_base *lock_timer_base(struct timer_list *timer,
 	struct tvec_base *base;
 
 	for (;;) {
+		/** 20160123    
+		 * 현재의 timer base를 가지고 온다.
+		 **/
 		struct tvec_base *prelock_base = timer->base;
 		base = tbase_get_base(prelock_base);
 		if (likely(base != NULL)) {
+			/** 20160123    
+			 * spinlock을 걸고, base를 다시 읽어 동일하다면
+			 * migration은 발생하지 않았으므로 리턴한다.
+			 **/
 			spin_lock_irqsave(&base->lock, *flags);
 			if (likely(prelock_base == timer->base))
 				return base;
@@ -844,7 +896,11 @@ static struct tvec_base *lock_timer_base(struct timer_list *timer,
 }
 
 /** 20140628    
- * 추후 분석???
+ * timer를 tvec_base에 등록한다.
+ *
+ * timer_base에 lock을 걸고, 
+ * 타이머가 이미 pending된 경우 detach 시키고, 처음 등록하는 timer와 마찬가지로
+ * expires를 설정한다.
  **/
 static inline int
 __mod_timer(struct timer_list *timer, unsigned long expires,
@@ -854,14 +910,23 @@ __mod_timer(struct timer_list *timer, unsigned long expires,
 	unsigned long flags;
 	int ret = 0 , cpu;
 
+	/** 20160123    
+	 * NULL함수
+	 **/
 	timer_stats_timer_set_start_info(timer);
 	/** 20140628    
 	 * timer에는 function이 지정되어야 한다.
 	 **/
 	BUG_ON(!timer->function);
 
+	/** 20160123    
+	 * timer base에 락을 건다.
+	 **/
 	base = lock_timer_base(timer, &flags);
 
+	/** 20160123    
+	 * 타이머가 펜딩되어 있다면 (이미 등록된 상태라면) detach 시킨다.
+	 **/
 	ret = detach_if_pending(timer, base, false);
 	if (!ret && pending_only)
 		goto out_unlock;
@@ -869,7 +934,7 @@ __mod_timer(struct timer_list *timer, unsigned long expires,
 	debug_activate(timer, expires);
 
 	/** 20141011
-	 * 기본적으로 현재 CPU에서 timer가 수행된다.
+	 * 현재 cpu 번호를 가져온다.
 	 **/
 	cpu = smp_processor_id();
 
@@ -881,8 +946,14 @@ __mod_timer(struct timer_list *timer, unsigned long expires,
 	if (!pinned && get_sysctl_timer_migration() && idle_cpu(cpu))
 		cpu = get_nohz_timer_target();
 #endif
+	/** 20160123    
+	 * 현재 cpu의 tvec_base를 받아온다.
+	 **/
 	new_base = per_cpu(tvec_bases, cpu);
 
+	/** 20160123    
+	 * lock을 건 timer base와 현재의 timer base가 다를 때
+	 **/
 	if (base != new_base) {
 		/*
 		 * We are trying to schedule the timer on the local CPU.
@@ -891,6 +962,10 @@ __mod_timer(struct timer_list *timer, unsigned long expires,
 		 * handler yet has not finished. This also guarantees that
 		 * the timer is serialized wrt itself.
 		 */
+		/** 20160123    
+		 * lock을 건 base의 동작 중인 타이머와 다른 경우
+		 * timer의 현재 base를 제거하고, 새 base를 지정한다.
+		 **/
 		if (likely(base->running_timer != timer)) {
 			/* See the comment in lock_timer_base() */
 			timer_set_base(timer, NULL);
@@ -901,6 +976,9 @@ __mod_timer(struct timer_list *timer, unsigned long expires,
 		}
 	}
 
+	/** 20160123    
+	 * 타이머의 작동시간을 설정하고 base에 등록한다.
+	 **/
 	timer->expires = expires;
 	internal_add_timer(base, timer);
 
@@ -1663,9 +1741,10 @@ void update_process_times(int user_tick)
 /** 20140920    
  * TIMER_SOFTIRQ가 raise 되었을 때 수행되는 action.
  *
- * update_process_times
- *     run_local_timers
- *         raise_softirq(TIMER_SOFTIRQ);
+ * tick_periodic나 NO_HZ인 경우
+ *		update_process_times
+ *			run_local_timers
+ *				raise_softirq(TIMER_SOFTIRQ);
  **/
 static void run_timer_softirq(struct softirq_action *h)
 {
@@ -1682,6 +1761,8 @@ static void run_timer_softirq(struct softirq_action *h)
 	/** 20140920    
 	 * 현재 jiffies가 base의 timer_jiffies 이상인 경우
 	 * __run_timers로 timer를 제거하고 handler 함수를 실행시킨다.
+	 *
+	 * timer_jiffies는 현재 jiffies까지 갱신된다.
 	 **/
 	if (time_after_eq(jiffies, base->timer_jiffies))
 		__run_timers(base);
@@ -1781,7 +1862,7 @@ SYSCALL_DEFINE0(getegid)
 #endif
 
 /** 20140628    
- * process(__data)를 timeout시켜 깨우는 함수.
+ * 타이머가 타임아웃 되었을 때 process(__data)를 깨우는 함수.
  **/
 static void process_timeout(unsigned long __data)
 {
@@ -1856,6 +1937,9 @@ signed long __sched schedule_timeout(signed long timeout)
 		}
 	}
 
+	/** 20160123    
+	 * expire시점을 현재 jiffies에서 timeout 만큼 지난 시점으로 삼는다.
+	 **/
 	expire = timeout + jiffies;
 
 	/** 20140628    
@@ -1866,7 +1950,7 @@ signed long __sched schedule_timeout(signed long timeout)
 	__mod_timer(&timer, expire, false, TIMER_NOT_PINNED);
 	schedule();
 	/** 20140628    
-	 * 돌아와 timer를 제거한다.
+	 * 타임아웃으로 깨어난 뒤 돌아와 timer를 제거한다.
 	 **/
 	del_singleshot_timer_sync(&timer);
 

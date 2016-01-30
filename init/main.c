@@ -1284,9 +1284,16 @@ static int __init kernel_init(void * unused)
 	 **/
 	sched_init_smp();
 
+	/** 20160123    
+	 * subsystem을 초기화 한다.
+	 **/
 	do_basic_setup();
 
 	/* Open the /dev/console on the rootfs, this should never fail */
+	/** 20160123    
+	 * "/dev/console"을 연다.
+	 * 처음 열었기 때문에 0을 가리킬 것이고, 1,2번을 복사해 생성한다.
+	 **/
 	if (sys_open((const char __user *) "/dev/console", O_RDWR, 0) < 0)
 		printk(KERN_WARNING "Warning: unable to open an initial console.\n");
 

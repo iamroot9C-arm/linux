@@ -2361,6 +2361,10 @@ extern struct kmem_cache *names_cachep;
 #define __getname()		__getname_gfp(GFP_KERNEL)
 #define __putname(name)		kmem_cache_free(names_cachep, (void *)(name))
 #ifndef CONFIG_AUDITSYSCALL
+/** 20160123    
+ * AUDITSYSCALL을 사용하지 않음.
+ * name으로 사용했던 메모리를 해제한다.
+ **/
 #define putname(name)   __putname(name)
 #else
 extern void putname(const char *name);

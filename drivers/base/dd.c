@@ -428,9 +428,17 @@ int driver_probe_done(void)
  * wait_for_device_probe
  * Wait for device probing to be completed.
  */
+/** 20160123    
+ * device probing이 완료될 때까지 기다린다.
+ **/
 void wait_for_device_probe(void)
 {
 	/* wait for the known devices to complete their probing */
+	/** 20160123    
+	 * probe_count가 0이 되는 것을 probe_waitqueue 에서 기다린다.
+	 *
+	 * 실제 probe를 시작할 때 증가하는 count. 시작된 probe가 완료되기를 기다린다.
+	 **/
 	wait_event(probe_waitqueue, atomic_read(&probe_count) == 0);
 	async_synchronize_full();
 }

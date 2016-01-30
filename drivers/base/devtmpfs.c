@@ -345,6 +345,11 @@ static int handle_remove(const char *nodename, struct device *dev)
  * If configured, or requested by the commandline, devtmpfs will be
  * auto-mounted after the kernel mounted the root filesystem.
  */
+/** 20160123    
+ * devtpfs를 mount dir에 mount 한다.
+ *
+ * 자세한 분석은 생략???
+ **/
 int devtmpfs_mount(const char *mntdir)
 {
 	int err;
@@ -355,6 +360,9 @@ int devtmpfs_mount(const char *mntdir)
 	if (!thread)
 		return 0;
 
+	/** 20160123    
+	 * "/devtmpfs"를 mntdir에 mount 한다.
+	 **/
 	err = sys_mount("devtmpfs", (char *)mntdir, "devtmpfs", MS_SILENT, NULL);
 	if (err)
 		printk(KERN_INFO "devtmpfs: error mounting %i\n", err);

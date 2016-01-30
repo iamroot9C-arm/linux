@@ -13,6 +13,9 @@ void  mount_block_root(char *name, int flags);
 void  mount_root(void);
 extern int root_mountflags;
 
+/** 20160123    
+ * 장치를 block device로 생성한다.
+ **/
 static inline int create_dev(char *name, dev_t dev)
 {
 	sys_unlink(name);
@@ -71,6 +74,9 @@ void md_run_setup(void);
 
 #else
 
+/** 20160123    
+ * BLK_DEV_MD 선언하지 않았음.
+ **/
 static inline void md_run_setup(void) {}
 
 #endif

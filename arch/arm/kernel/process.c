@@ -181,6 +181,10 @@ EXPORT_SYMBOL(pm_idle);
  * things like cpuidle get called in the same way.  The only difference
  * is that we always respect 'hlt_counter' to prevent low power idle.
  */
+/** 20160123    
+ *
+ * CONFIG_NO_HZ로 설정된 경우, cpu_idle 상태에서 tick을 띄우지 않는다.
+ **/
 void cpu_idle(void)
 {
 	local_fiq_enable();

@@ -37,6 +37,9 @@ int __initdata rd_doload;	/* 1 = load RAM disk, 0 = don't load */
 
 int root_mountflags = MS_RDONLY | MS_SILENT;
 static char * __initdata root_device_name;
+/** 20160123    
+ * root=로 지정한 device path 저장
+ **/
 static char __initdata saved_root_name[64];
 static int root_wait;
 
@@ -183,6 +186,9 @@ done:
  *	bangs.
  */
 
+/** 20160123    
+ * name을 파싱해 dev_t를 리턴한다.
+ **/
 dev_t name_to_dev_t(char *name)
 {
 	char s[32];
@@ -263,6 +269,9 @@ done:
 	return res;
 }
 
+/** 20160123    
+ * boot parameter로 지정한 root device 설정값을 복사한다.
+ **/
 static int __init root_dev_setup(char *line)
 {
 	strlcpy(saved_root_name, line, sizeof(saved_root_name));
@@ -295,6 +304,9 @@ static int __init fs_names_setup(char *str)
 	return 1;
 }
 
+/** 20160123    
+ * root_delay 초기값은 0.
+ **/
 static unsigned int __initdata root_delay;
 static int __init root_delay_setup(char *str)
 {
@@ -333,6 +345,9 @@ static void __init get_fs_names(char *page)
 	*s = '\0';
 }
 
+/** 20160123    
+ * "/root"를 mount 한다.
+ **/
 static int __init do_mount_root(char *name, char *fs, int flags, void *data)
 {
 	struct super_block *s;
@@ -351,6 +366,9 @@ static int __init do_mount_root(char *name, char *fs, int flags, void *data)
 	return 0;
 }
 
+/** 20160123    
+ * block root를 mount한다.
+ **/
 void __init mount_block_root(char *name, int flags)
 {
 	char *fs_names = __getname_gfp(GFP_KERNEL
@@ -479,6 +497,9 @@ void __init change_floppy(char *fmt, ...)
 }
 #endif
 
+/** 20160123    
+ * root를 mount 한다.
+ **/
 void __init mount_root(void)
 {
 #ifdef CONFIG_ROOT_NFS
@@ -503,6 +524,9 @@ void __init mount_root(void)
 	}
 #endif
 #ifdef CONFIG_BLOCK
+	/** 20160123    
+	 * "/dev/root" 생성하고, "/dev/root"를 /root에 mount 한다.
+	 **/
 	create_dev("/dev/root", ROOT_DEV);
 	mount_block_root("/dev/root", root_mountflags);
 #endif
@@ -511,10 +535,21 @@ void __init mount_root(void)
 /*
  * Prepare the namespace - decide what/where to mount, load ramdisks, etc.
  */
+/** 20160123    
+ * namespace를 준비한다.
+ *
+ * device가 probing되기를 기다린다.
+ * saved_root_name이 mtd, ubi인 경우 mount 시도.
+ * 그렇지 않은 경우 root_device_name을 mount 시도.
+ * initrd_load.
+ **/
 void __init prepare_namespace(void)
 {
 	int is_floppy;
 
+	/** 20160123    
+	 * root_delay가 주어진 경우 그만큼 기다린다. nfs 등에서 사용. 
+	 **/
 	if (root_delay) {
 		printk(KERN_INFO "Waiting %dsec before mounting root device...\n",
 		       root_delay);
@@ -528,8 +563,13 @@ void __init prepare_namespace(void)
 	 * For example, it is not atypical to wait 5 seconds here
 	 * for the touchpad of a laptop to initialize.
 	 */
+	/** 20160123    
+	 * device probing을 기다린다.
+	 **/
 	wait_for_device_probe();
 
+	/** 20160123    
+	 **/
 	md_run_setup();
 
 	if (saved_root_name[0]) {
@@ -539,15 +579,27 @@ void __init prepare_namespace(void)
 			mount_block_root(root_device_name, root_mountflags);
 			goto out;
 		}
+		/** 20160123    
+		 * device 이름을 파싱해 dev_t를 받아온다.
+		 **/
 		ROOT_DEV = name_to_dev_t(root_device_name);
+		/** 20160123    
+		 * "/dev/"가 붙어 있다면 뒤의 장치명만 root_device_name에 저장.
+		 **/
 		if (strncmp(root_device_name, "/dev/", 5) == 0)
 			root_device_name += 5;
 	}
 
+	/** 20160123    
+	 * initrd load가 성공한 경우 계속 진행.
+	 **/
 	if (initrd_load())
 		goto out;
 
 	/* wait for any asynchronous scanning to complete */
+	/** 20160123    
+	 * ROOT_DEV가 0이고 root_wait일 경우 기다린다.
+	 **/
 	if ((ROOT_DEV == 0) && root_wait) {
 		printk(KERN_INFO "Waiting for root device %s...\n",
 			saved_root_name);
@@ -562,8 +614,15 @@ void __init prepare_namespace(void)
 	if (is_floppy && rd_doload && rd_load_disk(0))
 		ROOT_DEV = Root_RAM0;
 
+	/** 20160123    
+	 * "/dev/root"를 /root에 mount 한다.
+	 **/
 	mount_root();
 out:
+	/** 20160123    
+	 * devtmpfs를 /dev/ 아래 mount 한다.
+	 * .을 "/" 아래 mount하고, root로 변경한다.
+	 **/
 	devtmpfs_mount("dev");
 	sys_mount(".", "/", NULL, MS_MOVE, NULL);
 	sys_chroot(".");
