@@ -86,6 +86,9 @@ int kernel_execve(const char *filename,
 	struct pt_regs regs;
 	int ret;
 
+	/** 20160130    
+	 * 레지스터 
+	 **/
 	memset(&regs, 0, sizeof(struct pt_regs));
 	ret = do_execve(filename,
 			(const char __user *const __user *)argv,

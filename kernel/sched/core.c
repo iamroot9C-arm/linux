@@ -1440,6 +1440,11 @@ static int migration_cpu_stop(void *data);
  * smp_call_function() if an IPI is sent by the same process we are
  * waiting to become inactive.
  */
+/** 20160130    
+ * thread가 unschedule (runnable도 아니고, running도 아닐 때) 될 때까지 기다린다.
+ *
+ * mache_state가 주어진 경우, task의 상태를 검사만 하고 변경하는 것은 기대하지 않는다. 만약 변경된다면, task가 깨어난 경우이며, 그 때는 0을 리턴한다. task가 CPU에서 벗어나 task를 기다리는데 성공했을 경우, positive number를 리턴한다. 잠시 뒤 두 번째 호출에서 동일한 숫자를 리턴했다면 함수 호출자는 task가 전체 시간동안 언스케쥴 되어 있었다고 확신할 수 있다.
+ **/
 unsigned long wait_task_inactive(struct task_struct *p, long match_state)
 {
 	unsigned long flags;
@@ -1454,6 +1459,9 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
 		 * the runqueue lock when things look like they will
 		 * work out!
 		 */
+		/** 20160130    
+		 * task의 rq 포인터를 받아온다.
+		 **/
 		rq = task_rq(p);
 
 		/*
@@ -1467,6 +1475,10 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
 		 * return false if the runqueue has changed and p
 		 * is actually now running somewhere else!
 		 */
+		/** 20160130    
+		 * task가 현재 동작 중인 동안 대기하는데,
+		 * match_state가 주어진 경우 task의 현재 상태와 다르다면 0으로 리턴한다.
+		 **/
 		while (task_running(rq, p)) {
 			if (match_state && unlikely(p->state != match_state))
 				return 0;
@@ -1478,10 +1490,21 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
 		 * lock now, to be *sure*. If we're wrong, we'll
 		 * just go back and repeat.
 		 */
+		/** 20160130    
+		 * task와 rq에 lock을 잡고 현재 동작 상태와 runqueue에 들어갔는지 여부를
+		 * 받아온다.
+		 **/
 		rq = task_rq_lock(p, &flags);
 		trace_sched_wait_task(p);
 		running = task_running(rq, p);
 		on_rq = p->on_rq;
+		/** 20160130    
+		 * match_state가 주어지지 않았거나 task의 상태가 match_state와 다르면
+		 * context switch 발생횟수를 저장한다.
+		 *
+		 * 처음 kthread_create_xxx로 생성하면 kthread가 TASK_UNINTERRUPTIBLE이고,
+		 * if문이 참이 되어 ncsw가 이 아닌 값을 갖는다.
+		 **/
 		ncsw = 0;
 		if (!match_state || p->state == match_state)
 			ncsw = p->nvcsw | LONG_MIN; /* sets MSB */
@@ -1490,6 +1513,9 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
 		/*
 		 * If it changed from the expected state, bail out now.
 		 */
+		/** 20160130    
+		 * 위에서 조사한 context switch 횟수가 0이었다면 기대한 상태에서 성공적으로 기다렸음을 리턴한다.
+		 **/
 		if (unlikely(!ncsw))
 			break;
 
@@ -1499,6 +1525,9 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
 		 *
 		 * Oops. Go back and try again..
 		 */
+		/** 20160130    
+		 * task가 현재 동작 중(on_cpu)이라면 다시 처음으로 돌아가 기다린다.
+		 **/
 		if (unlikely(running)) {
 			cpu_relax();
 			continue;
@@ -1513,6 +1542,12 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
 		 * running right now), it's preempted, and we should
 		 * yield - it could be a while.
 		 */
+		/** 20160130    
+		 * running이 아니지만(on_cpu=0) runqueue에 존재한다면 
+		 * HZ만큼 기다린 뒤 처음으로 돌아간다.
+		 *
+		 * runnable (on_rq) 하지만 현재 동작 중이지는 않을 경우, 즉 선점된 경우에 해당하며 양보를 해야 한다.
+		 **/
 		if (unlikely(on_rq)) {
 			ktime_t to = ktime_set(0, NSEC_PER_SEC/HZ);
 
@@ -1526,6 +1561,10 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
 		 * runnable, which means that it will never become
 		 * running in the future either. We're all done!
 		 */
+		/** 20160130    
+		 * running (on_cpu)도 아니고, runnable (on_rq)도 아닐 경우,
+		 * 즉 미래도 running이 되지 않을 것이므로 성공적으로 리턴가능하다.
+		 **/
 		break;
 	}
 
@@ -2457,6 +2496,9 @@ prepare_task_switch(struct rq *rq, struct task_struct *prev,
 	sched_info_switch(prev, next);
 	perf_event_task_sched_out(prev, next);
 	fire_sched_out_preempt_notifiers(prev, next);
+	/** 20160130    
+	 * switch 할 next task에 대한 준비단계로 lock을 건다.
+	 **/
 	prepare_lock_switch(rq, next);
 	prepare_arch_switch(next);
 }

@@ -417,7 +417,7 @@ static inline void list_splice_tail(struct list_head *list,
  * The list at @list is reinitialised
  */
 /** 20140920    
- * head 다음에 list를 추가하고 empty list로 초기화 한다.
+ * head 다음에 list를 추가하고, 이전의 list는 empty list로 초기화 한다.
  **/
 static inline void list_splice_init(struct list_head *list,
 				    struct list_head *head)

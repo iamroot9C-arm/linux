@@ -103,6 +103,9 @@
  **/
 #define __printf(a, b)			__attribute__((format(printf, a, b)))
 #define __scanf(a, b)			__attribute__((format(scanf, a, b)))
+/** 20160130    
+ * attribute를 noinline으로 지정해 컴파일러 최적화를 방지한다.
+ **/
 #define  noinline			__attribute__((noinline))
 #define __attribute_const__		__attribute__((__const__))
 /** 20140301    

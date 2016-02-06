@@ -4157,6 +4157,8 @@ EXPORT_SYMBOL(get_zeroed_page);
 /** 20130831    
  * page 디스크립터를 받아 reference count를 감소시키고,
  * 0이 되면 order만큼 page들을 free 하는 함수
+ *
+ * order 0은 hot/cold page로 등록하고, 그 외에는 buddy로 이관시킨다.
  **/
 void __free_pages(struct page *page, unsigned int order)
 {

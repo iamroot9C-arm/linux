@@ -88,6 +88,9 @@ extern void mca_init(void);
 extern void sbus_init(void);
 extern void prio_tree_init(void);
 extern void radix_tree_init(void);
+/** 20160130    
+ * DEBUG_RODATA 가 정의되지 않았음.
+ **/
 #ifndef CONFIG_DEBUG_RODATA
 static inline void mark_rodata_ro(void) { }
 #endif
@@ -107,6 +110,9 @@ bool early_boot_irqs_disabled __read_mostly;
 
 /** 20130629    
  * system_state : 전역 변수이므로 초기값 0 (SYSTEM_BOOTING)
+ *
+ * 20160130
+ * init_post에서 SYSTEM_RUNNING으로 변경
  **/
 enum system_states system_state __read_mostly;
 EXPORT_SYMBOL(system_state);
@@ -130,6 +136,9 @@ char *saved_command_line;
 static char *static_command_line;
 
 static char *execute_command;
+/** 20160130    
+ * rdinit_setup 등에서 ramdisk 로 실행할 프로그램을 지정하여 갱신된다.
+ **/
 static char *ramdisk_execute_command;
 
 /*
@@ -1185,18 +1194,42 @@ static void run_init_process(const char *init_filename)
 /* This is a non __init function. Force it to be noinline otherwise gcc
  * makes it inline to init() and it becomes part of init.text section
  */
+/** 20160130    
+ *
+ * kernel_init에서 __init으로 init.text 섹션으로 코드가 들어간다.
+ * init_post의 free_initmem에서 init.text 섹션을 정리하는데, 실행되는 코드가
+ * inline화 되는 것을 방지하고자 noinline 키워드를 사용하였다.
+ **/
 static noinline int init_post(void)
 {
 	/* need to finish all async __init code before freeing the memory */
+	/** 20160130    
+	 * async_domains에 등록된 async 함수 호출이 완료될 때까지 기다린다.
+	 **/
 	async_synchronize_full();
+	/** 20160130    
+	 * __init 섹션 메모리를 해제한다.
+	 **/
 	free_initmem();
 	mark_rodata_ro();
+	/** 20160130    
+	 * system_state를 SYSNTE_RUNNING으로 변경한다.
+	 **/
 	system_state = SYSTEM_RUNNING;
 	numa_default_policy();
 
+	/** 20160130    
+	 * 현재 task(kthread_init)의 signal flag에 기록해 unkillable로 만든다.
+	 **/
 	current->signal->flags |= SIGNAL_UNKILLABLE;
+	/** 20160130    
+	 * 지연되었던 fput 기능을 flush시킨다.
+	 **/
 	flush_delayed_fput();
 
+	/** 20160130    
+	 * ramdisk_execute_command가 지정된 경우, 이곳에서 execute 시킨다.
+	 **/
 	if (ramdisk_execute_command) {
 		run_init_process(ramdisk_execute_command);
 		printk(KERN_WARNING "Failed to execute %s\n",
@@ -1226,6 +1259,9 @@ static noinline int init_post(void)
 /** 20160116    
  *
  * rest_init()에서 생성한 task지만, kthreadd_done 까지 대기 후 동작한다.
+ *
+ * kernel_init은 pid 1번으로 실행되며, 초기화를 마치고 init_post에서
+ * kernel_execve로 init 프로그램으로 문맥이 교체된다.
  **/
 static int __init kernel_init(void * unused)
 {

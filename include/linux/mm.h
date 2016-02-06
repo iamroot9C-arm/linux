@@ -457,7 +457,10 @@ static inline struct page *virt_to_head_page(const void *x)
  * the first time (boot or memory hotplug)
  */
 /** 20130504
- * struct page의 _count(atomic_t.counter)를 1로 설정
+ * struct page의 _count(atomic_t.counter)를 1로 설정.
+ *
+ * get_page, put_page에서는 _count를 증가, 감소만 시키므로
+ * 처음 페이지 할당자(버디 등)에게 메모리를 이관시킬 때, 초기화를 해야 한다.
  *
  * 20130511 
  * 커널내에서만 사용하는 lock 방식 (reference가 존재하므로 이용이 제약된다.). 

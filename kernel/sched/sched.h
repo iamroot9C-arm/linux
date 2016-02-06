@@ -774,6 +774,9 @@ static inline int task_current(struct rq *rq, struct task_struct *p)
 	return rq->curr == p;
 }
 
+/** 20160130    
+ * task가 on_cpu, 즉 동작 중인지 판단한다. 
+ **/
 static inline int task_running(struct rq *rq, struct task_struct *p)
 {
 #ifdef CONFIG_SMP
@@ -794,6 +797,12 @@ static inline int task_running(struct rq *rq, struct task_struct *p)
 # define finish_arch_post_lock_switch()	do { } while (0)
 #endif
 
+/** 20160130    
+ * __ARCH_WANT_UNLOCKED_CTXSW는 정의되지 않음.
+ * SMP인 경우 next task의 on_cpu를 1로 설정한다.
+ *
+ * finish_lock_switch와 대응되는 부분.
+ **/
 #ifndef __ARCH_WANT_UNLOCKED_CTXSW
 static inline void prepare_lock_switch(struct rq *rq, struct task_struct *next)
 {
@@ -815,6 +824,10 @@ static inline void finish_lock_switch(struct rq *rq, struct task_struct *prev)
 	 * We must ensure this doesn't happen until the switch is completely
 	 * finished.
 	 */
+	/** 20160130    
+	 * switch 되어 교체될 task의 on_cpu를 0으로 만든다.
+	 * prepare_lock_switch와 대응되는 부분.
+	 **/
 	smp_wmb();
 	prev->on_cpu = 0;
 #endif

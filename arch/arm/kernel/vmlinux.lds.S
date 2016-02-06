@@ -84,6 +84,9 @@ SECTIONS
 #ifdef CONFIG_XIP_KERNEL
 	. = XIP_VIRT_ADDR(CONFIG_XIP_PHYS_ADDR);
 #else
+	/** 20160130    
+	 * virtual address (PAGE_OFFSET + TEXT_OFFSET)를 기준으로 symbol 주소가 지정.
+	 **/
 	. = PAGE_OFFSET + TEXT_OFFSET;
 #endif
 	.head.text : {

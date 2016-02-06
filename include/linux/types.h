@@ -280,8 +280,12 @@ struct ustat {
  * @func: actual update function to call after the grace period.
  */
 /** 20140726    
+ * callback_head는 RCU와 task_work에서 사용하기 위한 콜백 구조체로, 
+ * 다음 entry를 가리키는 포인터와 실행할 함수 포인터만을 갖고 있다.
+ *
+ * init_task_work()으로 실행할 함수를 정의할 수 있다.
+ *
  * rcu_head는 callback_head로 정의.
- * 단일 리스트 연결을 위한 next와 func포인터를 갖고 있다.
  **/
 struct callback_head {
 	struct callback_head *next;

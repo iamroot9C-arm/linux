@@ -197,7 +197,8 @@ static void create_kthread(struct kthread_create_info *create)
  * Returns a task_struct or ERR_PTR(-ENOMEM).
  */
 /** 20150801    
- * kthreadd에게 새로운 thread로 수행할 threadfn을 요청.
+ * kthreadd에게 요청할 정보를 create에 채우고 리스트에 등록시켜
+ * kthreadd가 준비된 이후 argument를 받아 새로운 kthread를 생성시킨다.
  *
  * threadfn : 새로운 kthread가 수행할 함수
  * data     : threadfn에 전달할 매개변수
@@ -282,17 +283,27 @@ EXPORT_SYMBOL(kthread_create_on_node);
  */
 /** 20140927    
  * task를 특정 cpu에서 실행하도록 설정한다.
- * kthread를 생성한 뒤에 run 상태가 아닐 때 설정한다.
+ * kthread를 생성한 뒤에 아직 run 상태가 아닐 때 설정한다.
+ * 
+ * task가 inactive가 될때까지 기다리는데 schedule()이 한 번도 호출되지 않았다면
+ * bind 하지 않고 리턴한다.
  **/
 void kthread_bind(struct task_struct *p, unsigned int cpu)
 {
 	/* Must have done schedule() in kthread() before we set_task_cpu */
+	/** 20160130    
+	 * bind 시킬 task가 inactive, 즉 동작 중이지 않을 때까지 기다린다.
+	 * 생성된 이후 kthread()에서 schedule()이 한 번 호출 되어야 한다.
+	 **/
 	if (!wait_task_inactive(p, TASK_UNINTERRUPTIBLE)) {
 		WARN_ON(1);
 		return;
 	}
 
 	/* It's safe because the task is inactive. */
+	/** 20160130    
+	 * bind될 cpu로 mask를 생성해 task의 allowed로 지정하고 flags를 bound로 설정.
+	 **/
 	do_set_cpus_allowed(p, cpumask_of(cpu));
 	p->flags |= PF_THREAD_BOUND;
 }

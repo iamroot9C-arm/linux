@@ -6,6 +6,9 @@
 
 typedef void (*task_work_func_t)(struct callback_head *);
 
+/** 20160130    
+ * callback_head의 func을 지정한다.
+ **/
 static inline void
 init_task_work(struct callback_head *twork, task_work_func_t func)
 {

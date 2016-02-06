@@ -1090,6 +1090,9 @@ void __init mem_init(void)
 	}
 }
 
+/** 20160130    
+ * __init 섹션(__init_start ~ __init_end 사이)의 메모리를 해제한다.
+ **/
 void free_initmem(void)
 {
 #ifdef CONFIG_HAVE_TCM
@@ -1101,6 +1104,10 @@ void free_initmem(void)
 				    "TCM link");
 #endif
 
+	/** 20160130    
+	 * __init_begin ~ __init_end 사이 메모리를 exception을 발생시킬 명령으로 쓴다.
+	 * 사용 중이던 메모리를 페이지 할당자(버디)로 이관한다.
+	 **/
 	poison_init_mem(__init_begin, __init_end - __init_begin);
 	if (!machine_is_integrator() && !machine_is_cintegrator())
 		totalram_pages += free_area(__phys_to_pfn(__pa(__init_begin)),
@@ -1121,6 +1128,8 @@ void free_initrd_mem(unsigned long start, unsigned long end)
 	 * keep_initrd가 설정되지 않았다면
 	 * 초기화 없이 직접 접근시 exception을 발생시키도록 내용을 오염시키고,
 	 * 사용한 메모리를 해제해 lru나 buddy로 이관시킨다.
+	 *
+	 * "Freeing initrd memory: 1340K"
 	 **/
 	if (!keep_initrd) {
 		poison_init_mem((void *)start, PAGE_ALIGN(end) - start);

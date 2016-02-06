@@ -268,6 +268,10 @@ static void drop_file_write_access(struct file *file)
 
 /* the real guts of fput() - releasing the last reference to file
  */
+/** 20160130    
+ *
+ * file->f_op->release
+ **/
 static void __fput(struct file *file)
 {
 	struct dentry *dentry = file->f_path.dentry;
@@ -309,14 +313,29 @@ static void __fput(struct file *file)
 	mntput(mnt);
 }
 
+/** 20160130    
+ * 전역변수 delayed_fput_list와 spinlock을 정의.
+ **/
 static DEFINE_SPINLOCK(delayed_fput_lock);
 static LIST_HEAD(delayed_fput_list);
+/** 20160130    
+ * fput에서 지연되어 리스트에 달려 있던 작업을 수행한다.
+ *
+ * delayed_fput_work으로 등록되어 실행되는 함수.
+ **/
 static void delayed_fput(struct work_struct *unused)
 {
+	/** 20160130    
+	 * 지역변수 head를 선언하고, delayed_fput_list의 내용을 이관시킨다.
+	 **/
 	LIST_HEAD(head);
 	spin_lock_irq(&delayed_fput_lock);
 	list_splice_init(&delayed_fput_list, &head);
 	spin_unlock_irq(&delayed_fput_lock);
+	/** 20160130    
+	 * 가져온 리스트가 비어있지 않다면 맨 앞의 entry부터 제거하고 __fput을
+	 * 수행시킨다.
+	 **/
 	while (!list_empty(&head)) {
 		struct file *f = list_first_entry(&head, struct file, f_u.fu_list);
 		list_del_init(&f->f_u.fu_list);
@@ -339,18 +358,32 @@ static void ____fput(struct callback_head *work)
  * held and never call that from a thread that might need to do
  * some work on any kind of umount.
  */
+/** 20160130    
+ * delayed_fput을 직접 호출해 지연되어 있던 fput 기능을 flush 시킨다.
+ **/
 void flush_delayed_fput(void)
 {
 	delayed_fput(NULL);
 }
 
+/** 20160130    
+ * delayed_fput를 수행할 delayed_fput_work 정의.
+ **/
 static DECLARE_WORK(delayed_fput_work, delayed_fput);
 
+/** 20160130    
+ *
+ * fput
+ **/
 void fput(struct file *file)
 {
 	if (atomic_long_dec_and_test(&file->f_count)) {
 		struct task_struct *task = current;
 		file_sb_list_del(file);
+		/** 20160130    
+		 * interrupt context이거나 kernel thread에서 호출되었다면
+		 * delayed_fput_list에 등록시키고 work으로 걸어 실행시킨다.
+		 **/
 		if (unlikely(in_interrupt() || task->flags & PF_KTHREAD)) {
 			unsigned long flags;
 			spin_lock_irqsave(&delayed_fput_lock, flags);
@@ -359,6 +392,9 @@ void fput(struct file *file)
 			spin_unlock_irqrestore(&delayed_fput_lock, flags);
 			return;
 		}
+		/** 20160130    
+		 * file 구조체의 rcuhead에 ____fput을 지정한다.
+		 **/
 		init_task_work(&file->f_u.fu_rcuhead, ____fput);
 		task_work_add(task, &file->f_u.fu_rcuhead, true);
 	}

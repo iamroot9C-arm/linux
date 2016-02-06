@@ -118,6 +118,9 @@ struct execute_work {
 #define __WORK_INIT_LOCKDEP_MAP(n, k)
 #endif
 
+/** 20160130    
+ * work_struct의 멤버를 넘어온 argument로 초기화 한다.
+ **/
 #define __WORK_INITIALIZER(n, f) {				\
 	.data = WORK_DATA_STATIC_INIT(),			\
 	.entry	= { &(n).entry, &(n).entry },			\
@@ -135,6 +138,9 @@ struct execute_work {
 	.timer = TIMER_DEFERRED_INITIALIZER(NULL, 0, 0),	\
 	}
 
+/** 20160130    
+ * f라는 함수를 수행할 n이라는 이름의 work를 선언.
+ **/
 #define DECLARE_WORK(n, f)					\
 	struct work_struct n = __WORK_INITIALIZER(n, f)
 

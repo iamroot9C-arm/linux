@@ -426,6 +426,9 @@ extern int root_mountflags;
 extern bool early_boot_irqs_disabled;
 
 /* Values used for system_state */
+/** 20160130    
+ * system_states
+ **/
 extern enum system_states {
 	SYSTEM_BOOTING,
 	SYSTEM_RUNNING,
