@@ -1058,8 +1058,14 @@ char *get_task_comm(char *buf, struct task_struct *tsk)
 }
 EXPORT_SYMBOL_GPL(get_task_comm);
 
+/** 20160206    
+ * task의 comm(excutable name)을 지정한다.
+ **/
 void set_task_comm(struct task_struct *tsk, char *buf)
 {
+	/** 20160206    
+	 * task의 comm을 변경하므로 task lock을 잡는다.
+	 **/
 	task_lock(tsk);
 
 	trace_task_rename(tsk, buf);
@@ -1136,6 +1142,10 @@ void would_dump(struct linux_binprm *bprm, struct file *file)
 }
 EXPORT_SYMBOL(would_dump);
 
+/** 20160206    
+ *
+ * task의 이름을 bprm의 tcomm으로 삼는다 (path는 포함되지 않음)
+ **/
 void setup_new_exec(struct linux_binprm * bprm)
 {
 	arch_pick_mmap_layout(current->mm);
@@ -1383,6 +1393,11 @@ EXPORT_SYMBOL(remove_arg_zero);
 /*
  * cycle the list of binary formats handler, until one recognizes the image
  */
+/** 20160206    
+ *
+ * binary format 핸들러의 fmt->load_binary을 수행(regs 전달)
+ *   elf를 기준으로 보면 load_elf_binary가 수행된다.
+ **/
 int search_binary_handler(struct linux_binprm *bprm,struct pt_regs *regs)
 {
 	unsigned int depth = bprm->recursion_depth;
@@ -1471,6 +1486,10 @@ EXPORT_SYMBOL(search_binary_handler);
 /*
  * sys_execve() executes a new program.
  */
+/** 20160206    
+ *
+ * search_binary_handler에서 binfmt 핸들러의 수행까지 진행된다.
+ **/
 static int do_execve_common(const char *filename,
 				struct user_arg_ptr argv,
 				struct user_arg_ptr envp,
@@ -1598,6 +1617,11 @@ out_ret:
 	return retval;
 }
 
+/** 20160206    
+ *
+ * filename을 실행시킨다.
+ * 문맥교환시 사용될 regs들을 업데이트 시킨다.
+ **/
 int do_execve(const char *filename,
 	const char __user *const __user *__argv,
 	const char __user *const __user *__envp,

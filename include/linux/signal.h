@@ -16,6 +16,7 @@ extern int print_fatal_signals;
  */
 
 /** 20150502    
+ * sigqueue에 큐잉되는 각각의 시그널 정보를 나타내는 자료구조.
  **/
 struct sigqueue {
 	struct list_head list;
@@ -27,6 +28,10 @@ struct sigqueue {
 /* flags values. */
 #define SIGQUEUE_PREALLOC	1
 
+/** 20160206    
+ * pending된 시그널들을 표현하는 비트맵,
+ * 그리고 각 펜딩된 시그널을 큐잉시키는 리스트(struct sigqueue)로 구성된다.
+ **/
 struct sigpending {
 	struct list_head list;
 	sigset_t signal;

@@ -1528,6 +1528,9 @@ struct task_struct {
 
 	sigset_t blocked, real_blocked;
 	sigset_t saved_sigmask;	/* restored if set_restore_sigmask() was used */
+	/** 20160206    
+	 * 이 task에 pending된 시그널들을 저장.
+	 **/
 	struct sigpending pending;
 
 	unsigned long sas_ss_sp;
@@ -2762,6 +2765,9 @@ static inline void set_tsk_thread_flag(struct task_struct *tsk, int flag)
 	set_ti_thread_flag(task_thread_info(tsk), flag);
 }
 
+/** 20160206    
+ * task의 thread_info에서 해당 flag를 제거.
+ **/
 static inline void clear_tsk_thread_flag(struct task_struct *tsk, int flag)
 {
 	clear_ti_thread_flag(task_thread_info(tsk), flag);

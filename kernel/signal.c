@@ -389,6 +389,9 @@ __sigqueue_alloc(int sig, struct task_struct *t, gfp_t flags, int override_rlimi
 	return q;
 }
 
+/** 20160206    
+ * sigqueue를 free시킨다.
+ **/
 static void __sigqueue_free(struct sigqueue *q)
 {
 	if (q->flags & SIGQUEUE_PREALLOC)
@@ -402,6 +405,10 @@ void flush_sigqueue(struct sigpending *queue)
 {
 	struct sigqueue *q;
 
+	/** 20160206    
+	 * sigpending의 signal을 초기화.
+	 * 큐잉된 sigqueue를 리스트에서 제거
+	 **/
 	sigemptyset(&queue->signal);
 	while (!list_empty(&queue->list)) {
 		q = list_entry(queue->list.next, struct sigqueue , list);
@@ -413,8 +420,15 @@ void flush_sigqueue(struct sigpending *queue)
 /*
  * Flush all pending signals for a task.
  */
+/** 20160206    
+ * task에 pending되는 signal 정보를 flush 시킨다.
+ **/
 void __flush_signals(struct task_struct *t)
 {
+	/** 20160206    
+	 * thread_info의 flag 중 TIF_SIGPENDING를 제거한다.
+	 * private와 shared인 sigqueue를 비워준다.
+	 **/
 	clear_tsk_thread_flag(t, TIF_SIGPENDING);
 	flush_sigqueue(&t->pending);
 	flush_sigqueue(&t->signal->shared_pending);
@@ -467,9 +481,14 @@ void ignore_signals(struct task_struct *t)
 {
 	int i;
 
+	/** 20160206    
+	 * task의 signal handler을 모두 SIG_IGN로 채운다.
+	 **/
 	for (i = 0; i < _NSIG; ++i)
 		t->sighand->action[i].sa.sa_handler = SIG_IGN;
 
+	/** 20160206    
+	 **/
 	flush_signals(t);
 }
 

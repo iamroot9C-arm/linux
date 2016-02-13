@@ -554,6 +554,10 @@ static unsigned long randomize_stack_top(unsigned long stack_top)
 #endif
 }
 
+/** 20160206    
+ *
+ * elf binary를 읽어 usermode에서 thread로 시작시킨다.
+ **/
 static int load_elf_binary(struct linux_binprm *bprm, struct pt_regs *regs)
 {
 	struct file *interpreter = NULL; /* to shut gcc up */
@@ -721,6 +725,10 @@ static int load_elf_binary(struct linux_binprm *bprm, struct pt_regs *regs)
 	if (!(current->personality & ADDR_NO_RANDOMIZE) && randomize_va_space)
 		current->flags |= PF_RANDOMIZE;
 
+	/** 20160206    
+	 *
+	 * brpm의 comm 지정
+	 **/
 	setup_new_exec(bprm);
 
 	/* Do this so that we can load the interpreter, if need be.  We will
@@ -977,6 +985,9 @@ static int load_elf_binary(struct linux_binprm *bprm, struct pt_regs *regs)
 	ELF_PLAT_INIT(regs, reloc_func_desc);
 #endif
 
+	/** 20160206    
+	 * 업데이트할 regs, regs의 pc로 수행할 elf_entry, regs의 stack.
+	 **/
 	start_thread(regs, elf_entry, bprm->p);
 	retval = 0;
 out:

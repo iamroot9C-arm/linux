@@ -161,6 +161,9 @@ static int __init set_reset_devices(char *str)
 
 __setup("reset_devices", set_reset_devices);
 
+/** 20160206    
+ * init용 argv, envp는 전역 변수로 설정.
+ **/
 static const char * argv_init[MAX_INIT_ARGS+2] = { "init", NULL, };
 const char * envp_init[MAX_INIT_ENVS+2] = { "HOME=/", "TERM=linux", NULL, };
 static const char *panic_later, *panic_param;
@@ -401,6 +404,10 @@ static noinline void __init_refok rest_init(void)
 	 * the init task will end up wanting to create kthreads, which, if
 	 * we schedule it before we create kthreadd, will OOPS.
 	 */
+	/** 20160206    
+	 * kernel_init을 커널 스레드로 실행시킨다. pid 1.
+	 * init을 마치고 userspace의 init 프로그램을 실행시킨다.
+	 **/
 	kernel_thread(kernel_init, NULL, CLONE_FS | CLONE_SIGHAND);
 	numa_default_policy();
 	pid = kernel_thread(kthreadd, NULL, CLONE_FS | CLONE_FILES);
@@ -1185,6 +1192,12 @@ static void __init do_pre_smp_initcalls(void)
 		do_one_initcall(*fn);
 }
 
+/** 20160206    
+ * init 프로그램을 실행시킨다.
+ * 성공적으로 실행되면 kernel_init task가 init 프로그램으로 변경된다.
+ *
+ * init을 위한 argv와 envp는 전역변수로 준비해 두었다. 
+ **/
 static void run_init_process(const char *init_filename)
 {
 	argv_init[0] = init_filename;
@@ -1195,6 +1208,8 @@ static void run_init_process(const char *init_filename)
  * makes it inline to init() and it becomes part of init.text section
  */
 /** 20160130    
+ * init의 완료과정으로, init에서 사용했던 메모리를 해제하고, 
+ * userspace의 init 프로그램을 실행한다.
  *
  * kernel_init에서 __init으로 init.text 섹션으로 코드가 들어간다.
  * init_post의 free_initmem에서 init.text 섹션을 정리하는데, 실행되는 코드가
@@ -1242,6 +1257,11 @@ static noinline int init_post(void)
 	 * The Bourne shell can be used instead of init if we are
 	 * trying to recover a really broken machine.
 	 */
+	/** 20160206    
+	 * execute_command가 지정된 경우 실행시키고,
+	 * 실패시 몇 가지 다른 프로그램 실행을 시도한다.
+	 * 결국 실패할 경우 panic. 
+	 **/
 	if (execute_command) {
 		run_init_process(execute_command);
 		printk(KERN_WARNING "Failed to execute %s.  Attempting "
@@ -1257,8 +1277,13 @@ static noinline int init_post(void)
 }
 
 /** 20160116    
- *
  * rest_init()에서 생성한 task지만, kthreadd_done 까지 대기 후 동작한다.
+ *
+ * - smp 실행을 위한 준비 작업을 수행
+ * - smp_init()으로 나머지 core들을 깨운다.
+ * - subsystem을 초기화 한다.
+ * - 콘솔을 연다.
+ * - init_post() 과정으로 userspace의 init을 실행시킨다.
  *
  * kernel_init은 pid 1번으로 실행되며, 초기화를 마치고 init_post에서
  * kernel_execve로 init 프로그램으로 문맥이 교체된다.
@@ -1361,6 +1386,10 @@ static int __init kernel_init(void * unused)
 	 * initmem segments and start the user-mode stuff..
 	 */
 
+	/** 20160206    
+	 * 부팅을 위한 준비 과정이 끝나고, initmem 영역을 정리하고 user-mode의
+	 * init 프로그램을 시작한다.
+	 **/
 	init_post();
 	return 0;
 }

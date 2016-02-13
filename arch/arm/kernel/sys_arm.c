@@ -79,6 +79,12 @@ out:
 	return error;
 }
 
+/** 20160206    
+ * kernel에서 파일을 실행시킬 때 사용하는 함수.
+ *
+ * do_exeve를 사용하여 파일을 실행시킬 문맥을 생성하고
+ * userspace로 돌아가 실행한다.
+ **/
 int kernel_execve(const char *filename,
 		  const char *const argv[],
 		  const char *const envp[])
@@ -87,7 +93,7 @@ int kernel_execve(const char *filename,
 	int ret;
 
 	/** 20160130    
-	 * 레지스터 
+	 * 문맥교환시 지정된 파일을 실행한다.
 	 **/
 	memset(&regs, 0, sizeof(struct pt_regs));
 	ret = do_execve(filename,
@@ -105,6 +111,9 @@ int kernel_execve(const char *filename,
 	 * We were successful.  We won't be returning to our caller, but
 	 * instead to user space by manipulating the kernel stack.
 	 */
+	/** 20160206    
+	 * caller에게 돌아가지 않고, kernel stack을 조작해 user space로 돌아간다.
+	 **/
 	asm(	"add	r0, %0, %1\n\t"
 		"mov	r1, %2\n\t"
 		"mov	r2, %3\n\t"

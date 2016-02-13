@@ -1107,6 +1107,9 @@ void free_initmem(void)
 	/** 20160130    
 	 * __init_begin ~ __init_end 사이 메모리를 exception을 발생시킬 명령으로 쓴다.
 	 * 사용 중이던 메모리를 페이지 할당자(버디)로 이관한다.
+	 *
+	 * qemu 출력 결과)
+	 * Freeing init memory: 280K
 	 **/
 	poison_init_mem(__init_begin, __init_end - __init_begin);
 	if (!machine_is_integrator() && !machine_is_cintegrator())

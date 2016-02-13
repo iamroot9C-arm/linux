@@ -20,6 +20,11 @@
 @ the addition of 8 bytes for storing syscall args 5 and 6.
 @ This _must_ remain a multiple of 8 for EABI.
 @
+/** 20160206    
+ * stack format = struct pt_regs + (args 5, args 6 )
+
+ * EABI 프로토콜에 의해 8의 배수를 유지시켜야 한다.
+ **/
 #define S_OFF		8
 
 /* 

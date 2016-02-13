@@ -67,7 +67,10 @@ extern long do_no_restart_syscall(struct restart_block *parm);
  */
 
 /** 20130713    
- * ti->flags에 flag에 해당하는 bit를 켜주는 함수
+ * set_ti_thread_flag   : ti->flags 중 해당 bit를 set.
+ * clear_ti_thread_flag : ti->flags 중 해당 bit를 clear.
+ * test_and_set_ti_thread_flag : ti->flags 중 해당 bit의 값을 리턴하고 set.
+ * test_and_clear_ti_thread_flag : ti->flags 중 해당 bit의 값을 리턴하고 clear.
  **/
 static inline void set_ti_thread_flag(struct thread_info *ti, int flag)
 {

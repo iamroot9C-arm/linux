@@ -19,6 +19,9 @@ struct siginfo;
 
 typedef unsigned long old_sigset_t;		/* at least 32 bits */
 
+/** 20160206    
+ * 비트맵으로 구현되는 시그널셋.
+ **/
 typedef struct {
 	unsigned long sig[_NSIG_WORDS];
 } sigset_t;

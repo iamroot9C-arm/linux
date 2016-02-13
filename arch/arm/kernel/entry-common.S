@@ -63,6 +63,9 @@ work_pending:
 /*
  * "slow" syscall return path.  "why" tells us if this was a real syscall.
  */
+/** 20160206    
+ * 추후 분석???
+ **/
 ENTRY(ret_to_user)
 ret_slow_syscall:
 	disable_irq				@ disable interrupts

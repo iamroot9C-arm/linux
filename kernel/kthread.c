@@ -26,7 +26,7 @@ static LIST_HEAD(kthread_create_list);
 struct task_struct *kthreadd_task;
 
 /** 20150801    
- * kthreadd와 kthread_create 사이에 주고받는 구조체.
+ * kthreadd가 kthread 생성에 필요한 데이터를 관리하는 구조체.
  *
  * kthreadd로 전달해 주는 부분과 kthreadd로부터 결과를 리턴받는 부분으로 구성.
  **/
@@ -378,6 +378,9 @@ int kthreadd(void *unused)
 	struct task_struct *tsk = current;
 
 	/* Setup a clean context for our children to inherit. */
+	/** 20160206    
+	 * task의 이름을 kthreadd로 한다.
+	 **/
 	set_task_comm(tsk, "kthreadd");
 	ignore_signals(tsk);
 	set_cpus_allowed_ptr(tsk, cpu_all_mask);

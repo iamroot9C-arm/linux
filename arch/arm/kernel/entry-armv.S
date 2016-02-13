@@ -171,7 +171,7 @@ ENDPROC(__und_invalid)
  UNWIND(.fnstart		)
  UNWIND(.save {r0 - pc}		)
 	/** 20150919    
-	 * pt_reg를 저장하기 위한 공간을 확보한다.
+	 * pt_regs를 저장하기 위한 공간을 확보한다.
 	 **/
 	sub	sp, sp, #(S_FRAME_SIZE + \stack_hole - 4)
 #ifdef CONFIG_THUMB2_KERNEL
@@ -209,7 +209,7 @@ ENDPROC(__und_invalid)
  SPFIX(	addeq	r2, r2, #4	)
 	/** 20150919    
 	 * exception mode의 stack에서 exception 발생 전 mode의 r0 레지스터값을 가져와
-	 * sp의 pt_reg[0] 에 저장한다.
+	 * sp의 pt_regs[0] 에 저장한다.
 	 **/
 	str	r3, [sp, #-4]!		@ save the "real" r0 copied
 					@ from the exception stack

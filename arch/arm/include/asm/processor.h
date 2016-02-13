@@ -52,6 +52,11 @@ struct thread_struct {
 #define nommu_start_thread(regs) regs->ARM_r10 = current->mm->start_data
 #endif
 
+/** 20160206    
+ * 문맥교환시에 사용될 regs 를 pc와 sp를 사용하여 업데이트 한다.
+ *
+ * 주로 binfmt에서 user mode에서 binary를 실행시키기 위한 작업을 한다.
+ **/
 #define start_thread(regs,pc,sp)					\
 ({									\
 	unsigned long *stack = (unsigned long *)sp;			\
