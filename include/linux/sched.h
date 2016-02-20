@@ -270,6 +270,8 @@ extern char ___assert_task_state[1 - 2*!!(
 /** 20131102    
  * 현재 task의 state에 state_value를 넣어준다.
  *   __set_current_state는 memory barrier를 호출하지 않는 버전.
+ *   set_current_state는 schedule 함수에서 current->state를 변경하므로
+ *   memory barrier를 호출하는 버전이다.
  **/
 #define __set_current_state(state_value)			\
 	do { current->state = (state_value); } while (0)

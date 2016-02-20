@@ -56,6 +56,9 @@ extern int __put_user_bad(void);
 /*
  * Note that this is actually 0x1,0000,0000
  */
+/** 20160213    
+ * kernel이 접근가능한 address limit
+ **/
 #define KERNEL_DS	0x00000000
 #define get_ds()	(KERNEL_DS)
 
@@ -64,6 +67,10 @@ extern int __put_user_bad(void);
 #define USER_DS		TASK_SIZE
 #define get_fs()	(current_thread_info()->addr_limit)
 
+/** 20160213    
+ * thread의 address limit을 fs로 설정.
+ * 도메인을 사용하는 경우 도메인 변경.
+ **/
 static inline void set_fs(mm_segment_t fs)
 {
 	current_thread_info()->addr_limit = fs;

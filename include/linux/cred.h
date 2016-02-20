@@ -216,6 +216,8 @@ extern void validate_creds_for_do_exit(struct task_struct *);
 static inline void validate_creds(const struct cred *cred)
 {
 }
+/** 20160213    
+ **/
 static inline void validate_creds_for_do_exit(struct task_struct *tsk)
 {
 }

@@ -15,6 +15,9 @@ extern bool pm_nosig_freezing;		/* PM nosig freezing in effect */
 /*
  * Check if a process has been frozen
  */
+/** 20160213    
+ * task의 frozen 상태를 검사한다.
+ **/
 static inline bool frozen(struct task_struct *p)
 {
 	return p->flags & PF_FROZEN;
@@ -25,6 +28,12 @@ extern bool freezing_slow_path(struct task_struct *p);
 /*
  * Check if there is a request to freeze a process
  */
+/** 20160213    
+ * 주어진 task가 freezing 가능한지 검사한다.
+ *
+ * system_freezing_cnt가 0일 경우 바로 리턴.
+ * 0이 아닐 경우 task에 대한 검사.
+ **/
 static inline bool freezing(struct task_struct *p)
 {
 	if (likely(!atomic_read(&system_freezing_cnt)))
@@ -41,9 +50,15 @@ extern int freeze_kernel_threads(void);
 extern void thaw_processes(void);
 extern void thaw_kernel_threads(void);
 
+/** 20160213    
+ * 현재 task가 freezing 가능한지 검사해 가능하다면 freeze 시킨다.
+ **/
 static inline bool try_to_freeze(void)
 {
 	might_sleep();
+	/** 20160213    
+	 * 현재 task가 freezing 가능한지 검사한다.
+	 **/
 	if (likely(!freezing(current)))
 		return false;
 	return __refrigerator(false);

@@ -961,6 +961,9 @@ static inline void blk_schedule_flush_plug(struct task_struct *tsk)
 		blk_flush_plug_list(plug, true);
 }
 
+/** 20160213    
+ * task의 plug에 대기 중엔 request들이 있거나 실행되어야 할 cb_list가 있는지 리턴
+ **/
 static inline bool blk_needs_flush_plug(struct task_struct *tsk)
 {
 	struct blk_plug *plug = tsk->plug;

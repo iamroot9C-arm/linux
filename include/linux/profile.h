@@ -131,6 +131,8 @@ static inline int profile_event_unregister(enum profile_type t, struct notifier_
 	return -ENOSYS;
 }
 
+/** 20160213    
+ **/
 #define profile_task_exit(a) do { } while (0)
 /** 20150530    
  **/

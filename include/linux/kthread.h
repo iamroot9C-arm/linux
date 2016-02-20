@@ -12,7 +12,7 @@ struct task_struct *kthread_create_on_node(int (*threadfn)(void *data),
 
 /** 20160130    
  * kthreadd를 통해 kthread를 생성하는 함수.
- * wake up이 필요하다.
+ * wake up 명령을 받은 뒤 동작한다.
  **/
 #define kthread_create(threadfn, data, namefmt, arg...) \
 	kthread_create_on_node(threadfn, data, -1, namefmt, ##arg)

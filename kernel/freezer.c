@@ -20,6 +20,12 @@ bool pm_freezing;
 bool pm_nosig_freezing;
 
 /* protects freezing and frozen transitions */
+/** 20160213    
+ * freezer lock.
+ *
+ * PF_FROZEN에 대한 조작을 lock으로 보호한다.
+ * 
+ **/
 static DEFINE_SPINLOCK(freezer_lock);
 
 /**
@@ -31,8 +37,14 @@ static DEFINE_SPINLOCK(freezer_lock);
  * called under any context.  The freezers are responsible for ensuring the
  * target tasks see the updated state.
  */
+/** 20160213    
+ * task가 freezing 가능한지 검사한다.
+ **/
 bool freezing_slow_path(struct task_struct *p)
 {
+	/** 20160213    
+	 * task의 flags에 NOFREEZE일 경우 false.
+	 **/
 	if (p->flags & PF_NOFREEZE)
 		return false;
 
@@ -47,15 +59,31 @@ bool freezing_slow_path(struct task_struct *p)
 EXPORT_SYMBOL(freezing_slow_path);
 
 /* Refrigerator is place where frozen processes are stored :-). */
+/** 20160213    
+ * task가 실제로 freeze 되는 곳.
+ *
+ * 매개변수로 user task와 연결된 kernel thread의 stop 상태를 검사여부를 받는다.
+ **/
 bool __refrigerator(bool check_kthr_stop)
 {
 	/* Hmm, should we be allowed to suspend when there are realtime
 	   processes around? */
 	bool was_frozen = false;
+	/** 20160213    
+	 * 현재 상태를 저장하고, freeze 상태에서 벗어났을 때 복구한다.
+	 **/
 	long save = current->state;
 
 	pr_debug("%s entered refrigerator\n", current->comm);
 
+	/** 20160213    
+	 * - task 상태를 UNINTERRUPTIBLE로 변경.
+	 * - FROZEN 상태로 표시
+	 * - freezing으로 진행 필요가 없다면 flags를 바꾸고 루프문 break;
+	 *   깨어난 뒤 탈출 경로가 된다.
+	 * - frozen이 발생했음을 기록.
+	 * - schedule.
+	 **/
 	for (;;) {
 		set_current_state(TASK_UNINTERRUPTIBLE);
 

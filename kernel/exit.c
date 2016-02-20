@@ -902,6 +902,13 @@ static void check_stack_usage(void)
 static inline void check_stack_usage(void) {}
 #endif
 
+/** 20160213    
+ * 추후 분석???
+ * 
+ * 정리 과정을 거친 후, task_state를 TASK_DEAD로 설정한다.
+ * schedule 함수를 호출해 컨텍스트 스위칭이 발생하면, 
+ * finish_task_switch()의 put_task_struct에서 task 구조체 정리작업을 수행한다.
+ **/
 void do_exit(long code)
 {
 	struct task_struct *tsk = current;
@@ -909,8 +916,14 @@ void do_exit(long code)
 
 	profile_task_exit(tsk);
 
+	/** 20160213    
+	 * 처리되지 않은 blk_plug가 존재한다면 warn.
+	 **/
 	WARN_ON(blk_needs_flush_plug(tsk));
 
+	/** 20160213    
+	 * 인터럽트 컨텍스트나 idle task에서 do_exit가 호출되어서는 안 된다.
+	 **/
 	if (unlikely(in_interrupt()))
 		panic("Aiee, killing interrupt handler!");
 	if (unlikely(!tsk->pid))
@@ -923,6 +936,9 @@ void do_exit(long code)
 	 * mm_release()->clear_child_tid() from writing to a user-controlled
 	 * kernel address.
 	 */
+	/** 20160213    
+	 * fs를 USER_DS로 지정. KERNEL_DS가 아니어서 발생하는 문제는 없나???
+	 **/
 	set_fs(USER_DS);
 
 	ptrace_event(PTRACE_EVENT_EXIT, code);

@@ -421,7 +421,7 @@ void flush_sigqueue(struct sigpending *queue)
  * Flush all pending signals for a task.
  */
 /** 20160206    
- * task에 pending되는 signal 정보를 flush 시킨다.
+ * task에 pending된 signal 정보를 flush 시킨다.
  **/
 void __flush_signals(struct task_struct *t)
 {
@@ -477,6 +477,11 @@ void flush_itimer_signals(void)
 	spin_unlock_irqrestore(&tsk->sighand->siglock, flags);
 }
 
+/** 20160213    
+ * task가 시그널을 처리하지 않도록 만든다.
+ * - 시그널 핸들러를 모두 SIG_IGN로 만든다.
+ * - 펜딩 정보를 모두 제거한다.
+ **/
 void ignore_signals(struct task_struct *t)
 {
 	int i;
@@ -488,6 +493,7 @@ void ignore_signals(struct task_struct *t)
 		t->sighand->action[i].sa.sa_handler = SIG_IGN;
 
 	/** 20160206    
+	 * task에 펜딩된 시그널 정보를 플러시 시킨다.
 	 **/
 	flush_signals(t);
 }

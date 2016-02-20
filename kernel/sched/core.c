@@ -4403,6 +4403,8 @@ static void __wake_up_common(wait_queue_head_t *q, unsigned int mode,
  */
 /** 20131116    
  * wait queue에서 sleep 상태로 대기중인 task를 깨운다.
+ *
+ * mode 상태인 task만 깨우겠다.
  **/
 void __wake_up(wait_queue_head_t *q, unsigned int mode,
 			int nr_exclusive, void *key)
@@ -5973,6 +5975,11 @@ void show_state_filter(unsigned long state_filter)
 		debug_show_all_locks();
 }
 
+/** 20160213    
+ * 전달된 idle용 task의 sched_class를 idle_sched_class로 변경시킨다.
+ * 스케쥴러에 의해 idle_sched_class는 다른 sched_class 중 실행시킬 task가 없을 때
+ * 실행된다.
+ **/
 void __cpuinit init_idle_bootup_task(struct task_struct *idle)
 {
 	idle->sched_class = &idle_sched_class;

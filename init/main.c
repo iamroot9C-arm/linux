@@ -410,10 +410,20 @@ static noinline void __init_refok rest_init(void)
 	 **/
 	kernel_thread(kernel_init, NULL, CLONE_FS | CLONE_SIGHAND);
 	numa_default_policy();
+	/** 20160213    
+	 * kthreadd을 커널 스레드로 실행시킨다. pid 2.
+	 **/
 	pid = kernel_thread(kthreadd, NULL, CLONE_FS | CLONE_FILES);
 	rcu_read_lock();
+	/** 20160213    
+	 * kernel_thread가 pid를 리턴하므로,
+	 * init_pid_ns에서 pid인 kthreadd_task를 찾아 저장해둔다.
+	 **/
 	kthreadd_task = find_task_by_pid_ns(pid, &init_pid_ns);
 	rcu_read_unlock();
+	/** 20160213    
+	 * 먼저 생성된 kthread_init가 kthreadd의 동작을 대기 중이므로 대기를 종료.
+	 **/
 	complete(&kthreadd_done);
 
 	/*
