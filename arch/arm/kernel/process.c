@@ -163,6 +163,12 @@ EXPORT_SYMBOL_GPL(arm_pm_restart);
 
 void (*arm_pm_idle)(void);
 
+/** 20160220    
+ * arm_pm_idle을 arch에서 별도로 지정한 경우 호출.
+ * 그렇지 않은 경우 일반 cpu_do_idle 호출.
+ *
+ * 인터럽트를 활성화 해 리턴한다.
+ **/
 static void default_idle(void)
 {
 	if (arm_pm_idle)
@@ -172,6 +178,11 @@ static void default_idle(void)
 	local_irq_enable();
 }
 
+/** 20160220    
+ * default_idle.
+ *
+ * 보통 wfi.
+ **/
 void (*pm_idle)(void) = default_idle;
 EXPORT_SYMBOL(pm_idle);
 
@@ -187,9 +198,15 @@ EXPORT_SYMBOL(pm_idle);
  **/
 void cpu_idle(void)
 {
+	/** 20160220    
+	 * fiq enable. 왜 여기서 fiq를 enable???
+	 **/
 	local_fiq_enable();
 
 	/* endless idle loop with no priority at all */
+	/** 20160220    
+	 * 무한 루프.
+	 **/
 	while (1) {
 		/** 20141018    
 		 **/
@@ -199,6 +216,9 @@ void cpu_idle(void)
 		 **/
 		rcu_idle_enter();
 		leds_event(led_idle_start);
+		/** 20160220    
+		 * resched 될 필요가 없을 경우 무한루프를 돌며 반복한다.
+		 **/
 		while (!need_resched()) {
 #ifdef CONFIG_HOTPLUG_CPU
 			/** 20141004    
@@ -212,15 +232,33 @@ void cpu_idle(void)
 			 * We need to disable interrupts here
 			 * to ensure we don't miss a wakeup call.
 			 */
+			/** 20160220    
+			 * wakeup call을 놓치지 않기 위해서 interrupt disable을 하는 이유는???
+			 *
+			 * 인터럽트를 펜딩시켜 놓고 나중에 interrupt 활성화 시켜서 처리하기
+			 * 위함인듯.
+			 **/
 			local_irq_disable();
 #ifdef CONFIG_PL310_ERRATA_769419
 			wmb();
 #endif
+			/** 20160220    
+			 * halt disalbed 상태인 경우 hlt_counter가 0이 아닌 값이고,
+			 * 이 상태에서 while 문을 need_resched 일 때까지 반복수행하므로
+			 * cpu_relax를 둔다.
+			 **/
 			if (hlt_counter) {
 				local_irq_enable();
 				cpu_relax();
+			/** 20160220    
+			 * 스케쥴링 할 필요가 없을 경우 pm_idle로 진행.
+			 **/
 			} else if (!need_resched()) {
 				stop_critical_timings();
+				/** 20160220    
+				 * cpuidle 선언되지 않을 경우 에러가 리턴되어 pm_idle을 실행.
+				 * pm_idle은 irq가 활성화 된 상태로 리턴되어야 한다.
+				 **/
 				if (cpuidle_idle_call())
 					pm_idle();
 				start_critical_timings();

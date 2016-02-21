@@ -198,7 +198,14 @@ extern int vfp_restore_user_hwstate(struct user_vfp __user *,
  *  TIF_NOTIFY_RESUME	- user mode 진입 전 콜백함수 호출이 필요하다.
  *  TIF_USEDFPU			- FPU was used by this task this quantum (SMP)
  *  TIF_POLLING_NRFLAG	- poll_idle()이 폴링으로 TIF_NEED_RESCHED를 검사한다.
-
+ *
+ *  TIF_NEED_RESCHED 설정되는 경우 (resched_task())
+ *		- scheduler_tick()에서 프로세스가 타임슬라이스를 모두 소비한 경우
+ *			: sched_class->task_tick()
+ *		- try_to_wake_up()에서 현재 프로세스보다 높은 우선 순위를 가진 프로세스가
+ *		  깨어난 경우
+ *		    : check_preempt_curr()
+ *
  **/
 #define TIF_SIGPENDING		0
 #define TIF_NEED_RESCHED	1
@@ -227,6 +234,9 @@ extern int vfp_restore_user_hwstate(struct user_vfp __user *,
 /*
  * Change these and you break ASM code in entry-common.S
  */
+/** 20160220    
+ * thread_info 중 work 관련 mask.
+ **/
 #define _TIF_WORK_MASK		(_TIF_NEED_RESCHED | _TIF_SIGPENDING | _TIF_NOTIFY_RESUME)
 
 #endif /* __KERNEL__ */

@@ -457,6 +457,10 @@ struct rq {
 
 	unsigned long cpu_power;
 
+	/** 20160220    
+	 *
+	 * scheduler_tick()에서 설정
+	 **/
 	unsigned char idle_balance;
 	/* For active balancing */
 	int post_schedule;

@@ -2867,7 +2867,7 @@ static inline int signal_pending_state(long state, struct task_struct *p)
 }
 
 /** 20130706    
- * 현재 task의 thread_info flags 중 NEED_RESCHED를 보고
+ * 현재 task의 thread_info flags 중 TIF_NEED_RESCHED를 보고
  * scheduling이 필요한지 판단하는 함수.
  **/
 static inline int need_resched(void)

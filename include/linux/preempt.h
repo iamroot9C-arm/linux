@@ -71,7 +71,7 @@ do { \
 } while (0)
 
 /** 20130713    
- * resched 검사/호출이 없이 preempt count만 감소시켜 선점 가능 상태로 만드는 매크로.
+ * preempt_count를 감소시키되, resched 검사/호출은 하지 않는 매크로.
  * 
  * barrier를 preempt_count 변경 전에 둠.
  *   -> 현재 작업 내용이 메모리에 반영된 뒤에 preemption이 가능해야 하므로.

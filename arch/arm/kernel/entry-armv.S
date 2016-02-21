@@ -875,7 +875,7 @@ ENDPROC(ret_from_exception)
  *   next_ti = r2.cpu_context;
  *   atomic_notifier_call_chain(thread_notify_head, THREAD_NOTIFY_SWITCH, r2);
  *   r0 = tmp;
- *   *text_ti => { r4 ~ sl, fp, sp, pc };
+ *   *next_ti => { r4 ~ sl, fp, sp, pc };
  * 
  * [APCS registers]
  * r0	a1	    argument 1/scratch register/result

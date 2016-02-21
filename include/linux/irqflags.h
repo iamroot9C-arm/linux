@@ -52,6 +52,8 @@
  extern void stop_critical_timings(void);
  extern void start_critical_timings(void);
 #else
+ /** 20160220    
+  **/
 # define stop_critical_timings() do { } while (0)
 # define start_critical_timings() do { } while (0)
 #endif

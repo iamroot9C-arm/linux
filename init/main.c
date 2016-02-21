@@ -430,6 +430,11 @@ static noinline void __init_refok rest_init(void)
 	 * The boot idle thread must execute schedule()
 	 * at least once to get things moving:
 	 */
+	/** 20160220    
+	 * current task를 idle_sched_class로 변경한다.
+	 * 선점가능 상태로 scheduler를 한 번 돌리고, 돌아오면 다시 선점 불가로
+	 * cpu_idle에 진입한다.
+	 **/
 	init_idle_bootup_task(current);
 	schedule_preempt_disabled();
 	/* Call into cpu_idle with preempt disabled */

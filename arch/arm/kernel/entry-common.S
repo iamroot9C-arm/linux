@@ -48,6 +48,10 @@ ret_fast_syscall:
 /*
  * Ok, we need to do extra processing, enter the slow path.
  */
+/** 20160220    
+ * user mode로 전환하기 전에 kernel에서 추가로 수행해야 할 work이 펜딩되었다면
+ * 그것들을 처리하고 온다.
+ **/
 fast_work_pending:
 	str	r0, [sp, #S_R0+S_OFF]!		@ returned r0
 work_pending:
@@ -65,6 +69,8 @@ work_pending:
  */
 /** 20160206    
  * 추후 분석???
+ *
+ * user mode로 진입하기 전 TIF에 work 관련 플래그가 검출되면 work_pending 수행
  **/
 ENTRY(ret_to_user)
 ret_slow_syscall:

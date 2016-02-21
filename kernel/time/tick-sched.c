@@ -539,6 +539,13 @@ static void __tick_nohz_idle_enter(struct tick_sched *ts)
  *  to sleep.
  * - rcu_idle_exit() before the first use of RCU after the CPU is woken up.
  */
+/** 20160220    
+ * 자세한 내용은 추후분석???
+ * 
+ * tick_nohz_idle_enter() ~ tick_nohz_idle_exit() 사이에 idle tick이 발생하는
+ * 것을 막아 low power mode에서 불필요하게 깨어나지 않도록 한다.
+ * [참고] StatusOfLinuxDynaticks.pdf
+ **/
 void tick_nohz_idle_enter(void)
 {
 	struct tick_sched *ts;

@@ -71,6 +71,10 @@ ENDPROC(cpu_v7_reset)
  *
  *	IRQs are already disabled.
  */
+/** 20160220    
+ * arm에서 wait for interrupt로 대기.
+ * 깨어난 뒤 리턴.
+ **/
 ENTRY(cpu_v7_do_idle)
 	dsb					@ WFI may enter a low-power mode
 	wfi

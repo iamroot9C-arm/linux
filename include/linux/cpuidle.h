@@ -89,6 +89,9 @@ struct cpuidle_state_kobj {
 	struct kobject kobj;
 };
 
+/** 20160220    
+ * cpuidle device.
+ **/
 struct cpuidle_device {
 	unsigned int		registered:1;
 	unsigned int		enabled:1;
@@ -164,6 +167,9 @@ extern int cpuidle_wrap_enter(struct cpuidle_device *dev,
 extern int cpuidle_play_dead(void);
 
 #else
+/** 20160220    
+ * CONFIG_CPU_IDLE 선언하지 않았음.
+ **/
 static inline void disable_cpuidle(void) { }
 static inline int cpuidle_idle_call(void) { return -ENODEV; }
 static inline int cpuidle_register_driver(struct cpuidle_driver *drv)

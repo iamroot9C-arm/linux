@@ -3867,6 +3867,9 @@ void scheduler_tick(void)
 	perf_event_task_tick();
 
 #ifdef CONFIG_SMP
+	/** 20160220    
+	 * 현재 cpu가 idle 상태인지 여부를 저장한다.
+	 **/
 	rq->idle_balance = idle_cpu(cpu);
 	trigger_load_balance(rq, cpu);
 #endif
@@ -4140,22 +4143,13 @@ EXPORT_SYMBOL(schedule);
  * Returns with preemption disabled. Note: preempt_count must be 1
  */
 /** 20130713    
- * 처음 스케쥴러가 동작.
- *
- * 선점 불가 상태에서 호출되어
- *   선점 가능 상태로 변경 후 schedule 함수를 호출하고, 깨어났을 때 다시 선점 불가로 리턴
+ * 선점 불가 상태에서 호출되어 선점 가능 상태로 변경 후 schedule 함수를 호출하고,
+ * 깨어났을 때 다시 선점 불가로 리턴
  **/
 void __sched schedule_preempt_disabled(void)
 {
-	/** 20130713    
-	 * preemption disable 상태에서 preemption count를 감소시켜 enable하도록 설정.
-	 *   schedule() 함수를 호출하기 전에 선점 가능하도록.
-	 **/
 	sched_preempt_enable_no_resched();
 	schedule();
-	/** 20130713    
-	 * 다시 선점 불가로 설정.
-	 **/
 	preempt_disable();
 }
 

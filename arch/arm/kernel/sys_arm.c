@@ -113,6 +113,10 @@ int kernel_execve(const char *filename,
 	 */
 	/** 20160206    
 	 * caller에게 돌아가지 않고, kernel stack을 조작해 user space로 돌아간다.
+	 *
+	 * entry-header.S 참고.
+	 * r8 : ret_to_user를 호출한 이유. syscall에 의해 호출되는 것은 아닐 경우.
+	 * r9 : tsk
 	 **/
 	asm(	"add	r0, %0, %1\n\t"
 		"mov	r1, %2\n\t"

@@ -55,6 +55,10 @@ static inline void arch_local_irq_disable(void)
 		: "memory", "cc");
 }
 
+/** 20160220    
+ * local_fiq_enable : 로컬 cpu가 fiq 수신 가능상태가 된다.
+ * local_fiq_disable : 로컬 cpu가 fiq 수신 불가능상태가 된다.
+ **/
 #define local_fiq_enable()  __asm__("cpsie f	@ __stf" : : : "memory", "cc")
 #define local_fiq_disable() __asm__("cpsid f	@ __clf" : : : "memory", "cc")
 #else

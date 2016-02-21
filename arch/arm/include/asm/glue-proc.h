@@ -235,6 +235,7 @@
  * CPU_NAME (cpu_v7)과 동작명을 더해 아래와 같이 됨.
  * #define cpu_proc_init cpu_v7_proc_init
  * #define cpu_do_switch_mm cpu_v7_switch_mm
+ * #define cpu_do_idle cpu_v7_do_idle
  * */
 #define cpu_proc_init			__glue(CPU_NAME,_proc_init)
 #define cpu_proc_fin			__glue(CPU_NAME,_proc_fin)
