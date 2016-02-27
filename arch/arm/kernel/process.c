@@ -193,6 +193,11 @@ EXPORT_SYMBOL(pm_idle);
  * is that we always respect 'hlt_counter' to prevent low power idle.
  */
 /** 20160123    
+ * cpu_idle.
+ *
+ * 부팅을 모두 완료한 뒤에 idle 함수로 진입한다. 이후 실행할 task가 있으면
+ * 스케쥴러에 의해 우선적으로 실행되고, 다른 실행 taks가 없을 때 cpu_idle이
+ * 다시 수행된다.
  *
  * CONFIG_NO_HZ로 설정된 경우, cpu_idle 상태에서 tick을 띄우지 않는다.
  **/
@@ -206,6 +211,9 @@ void cpu_idle(void)
 	/* endless idle loop with no priority at all */
 	/** 20160220    
 	 * 무한 루프.
+	 *
+	 * 다른 수행할 task가 있을 때 그것들을 수행하고, 더 이상 수행할 task가 없다면
+	 * schedule_preempt_disabled부터 수행이 재개되고 다시 무한루프를 수행한다.
 	 **/
 	while (1) {
 		/** 20141018    
@@ -270,9 +278,16 @@ void cpu_idle(void)
 			} else
 				local_irq_enable();
 		}
+		/** 20160227    
+		 * need_resched 여서 idle 루프를 벗어나기 위한 함수들을 호출.
+		 **/
 		leds_event(led_idle_end);
 		rcu_idle_exit();
 		tick_nohz_idle_exit();
+		/** 20160227    
+		 * preempt_disable 상태에서 명시적으로 schedule 함수를 호출해
+		 * 대기 중인 다른 task를 동작시킨다.
+		 **/
 		schedule_preempt_disabled();
 	}
 }

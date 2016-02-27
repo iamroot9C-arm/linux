@@ -1322,12 +1322,19 @@ enum perf_event_task_context {
 	perf_nr_task_contexts,
 };
 
+/** 20160227    
+ * 리눅스 task 자료구조.
+ * kmem_cache 를 생성해 두고 할당받아 사용한다.
+ **/
 struct task_struct {
 	volatile long state;	/* -1 unrunnable, 0 runnable, >0 stopped */
+	/** 20160227    
+	 * stack은 thread_info를 저장한다.
+	 **/
 	void *stack;
 	/** 20150530    
 	 * task_struct의 usage count.
-	 * get_task_struct, pu_task_struct에 의해 증감된다.
+	 * get_task_struct, put_task_struct에 의해 증감된다.
 	 **/
 	atomic_t usage;
 	unsigned int flags;	/* per process flags, defined below */
@@ -1403,6 +1410,9 @@ struct task_struct {
 	struct plist_node pushable_tasks;
 #endif
 
+	/** 20160227    
+	 *
+	 **/
 	struct mm_struct *mm, *active_mm;
 #ifdef CONFIG_COMPAT_BRK
 	unsigned brk_randomized:1;
@@ -2719,7 +2729,7 @@ static inline void threadgroup_unlock(struct task_struct *tsk) {}
 /** 20150117    
  * task의 .stack, 즉 thread_info를 설정한다.
  *
- * org의 thread_info를 복사하고, task_struct을 가리키는 부분만 p를 가리킨다.
+ * org task의 thread_info를 복사하고, task_struct을 가리키는 부분만 p를 가리킨다.
  **/
 static inline void setup_thread_stack(struct task_struct *p, struct task_struct *org)
 {
@@ -2727,6 +2737,9 @@ static inline void setup_thread_stack(struct task_struct *p, struct task_struct 
 	task_thread_info(p)->task = p;
 }
 
+/** 20160227    
+ * stack의 끝은 thread_info가 overlay 된 크기만큼을 제외한 나머지 크기.
+ **/
 static inline unsigned long *end_of_stack(struct task_struct *p)
 {
 	return (unsigned long *)(task_thread_info(p) + 1);
@@ -2802,6 +2815,9 @@ static inline void set_tsk_need_resched(struct task_struct *tsk)
 	set_tsk_thread_flag(tsk,TIF_NEED_RESCHED);
 }
 
+/** 20160227    
+ * thread_info의 flag에서 NEED_RESCHED를 제거한다.
+ **/
 static inline void clear_tsk_need_resched(struct task_struct *tsk)
 {
 	clear_tsk_thread_flag(tsk,TIF_NEED_RESCHED);

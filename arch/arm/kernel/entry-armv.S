@@ -866,11 +866,12 @@ ENDPROC(ret_from_exception)
  * 두 task 사이의 문맥 전환 함수. register를 교환한다.
  *
  *   r0 : 이전 task_struct, r1 : 이전 thread_info, r2 : 다음 thread_info
+ *   교환 대상인 두 task는 같지 않아야 한다.
  *
  *   struct cpu_context_save * prev_ti, * next_ti;
  *   prev_ti = r1.cpu_context;
  *   *prev_ti <= {r4 ~ sl, fp, sp, lr(pc)};
- *   set_tls(r3, r4, r5);
+ *   set_tls(r3, r4, r5);	// r3는 next의 TP_VALUE. 나머지는 임시저장공간.
  *   tmp = r0;
  *   next_ti = r2.cpu_context;
  *   atomic_notifier_call_chain(thread_notify_head, THREAD_NOTIFY_SWITCH, r2);

@@ -391,6 +391,13 @@ static void __init setup_command_line(char *command_line)
  **/
 static __initdata DECLARE_COMPLETION(kthreadd_done);
 
+/** 20160227    
+ * 부팅을 마치고 idle 상태로 진입한다.
+ *
+ * - kernel_init과 kthradd kthread를 생성.
+ * - idle sched class로 변경하고 스케쥴러를 한 번 실행
+ * - cpu_idle 상태로 진입.
+ **/
 static noinline void __init_refok rest_init(void)
 {
 	int pid;
@@ -416,8 +423,8 @@ static noinline void __init_refok rest_init(void)
 	pid = kernel_thread(kthreadd, NULL, CLONE_FS | CLONE_FILES);
 	rcu_read_lock();
 	/** 20160213    
-	 * kernel_thread가 pid를 리턴하므로,
-	 * init_pid_ns에서 pid인 kthreadd_task를 찾아 저장해둔다.
+	 * kernel_thread가 생성된 pid를 리턴하므로,
+	 * init_pid_ns에서 pid를 찾아 task_struct 형태로 kthreadd_task에 저장한다.
 	 **/
 	kthreadd_task = find_task_by_pid_ns(pid, &init_pid_ns);
 	rcu_read_unlock();
@@ -438,6 +445,11 @@ static noinline void __init_refok rest_init(void)
 	init_idle_bootup_task(current);
 	schedule_preempt_disabled();
 	/* Call into cpu_idle with preempt disabled */
+	/** 20160227    
+	 * 선점 불가 상태로 cpu_idle 호출.
+	 *
+	 * 이로써 부팅을 담당했던 0번 task는 런타임시 idle task로써 동작하게 된다.
+	 **/
 	cpu_idle();
 }
 

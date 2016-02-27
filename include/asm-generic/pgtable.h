@@ -396,6 +396,9 @@ static inline void ptep_modify_prot_commit(struct mm_struct *mm,
  * in architecture-specific code, and so doesn't need a generic
  * definition.
  */
+/** 20160227    
+ * 정의되지 않음.
+ **/
 #ifndef __HAVE_ARCH_START_CONTEXT_SWITCH
 #define arch_start_context_switch(prev)	do {} while (0)
 #endif

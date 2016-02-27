@@ -20,7 +20,8 @@
 static DEFINE_PER_CPU(struct task_struct *, idle_threads);
 
 /** 20150118    
- * cpu에 대한 idle thread를 percpu변수에서 가져와 설정하고, 해당 task를 리턴한다.
+ * idle_init에서 지정한 percpu변수 idle_threads에서 해당 task를 받아와
+ * idle task로 설정하고 리턴한다.
  **/
 struct task_struct * __cpuinit idle_thread_get(unsigned int cpu)
 {

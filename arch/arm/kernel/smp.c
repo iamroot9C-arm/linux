@@ -381,7 +381,7 @@ asmlinkage void __cpuinit secondary_start_kernel(void)
 	 * OK, it's off to the idle thread for us
 	 */
 	/** 20150808    
-	 * idle 상태로 진입해 스케쥴링을 시작한다.
+	 * preempt_disable 상태로 idle 상태로 진입해 스케쥴링을 시작한다.
 	 **/
 	cpu_idle();
 }

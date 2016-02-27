@@ -18,10 +18,18 @@
 /** 20150118    
  * thread_info 관련 define.
  *
- *   order 1 << (1)
+ *   order 1 << (1) = 2.
  *   size  8KB
  *   SP의 시작은 thread_info와 union이므로 THREAD_SIZE만큼 더한다.
+ *
  *     ( -8은 왜 ??? )
+ *     (추측) AAPCS를 보면 첫번째 제약으로 다음과 같은 조건이 있다.
+ *     Stack-limit < SP <= stack-base
+ *     stack-base가 task->stack이 가리키는 주소라면,
+ *     sp는 +8KB 보다 작은 값 안에 위치해야 하고 standard로 사용하기 위해
+ *     8byte 단위로 정렬되어야 하므로 8을 빼준 것이다.
+ *     stack이 full descending으로 동작하여 감소하는 방향으로 자라므로
+ *     THREAD_START_SP가 곧 시작 위치이다.
  **/
 #define THREAD_SIZE_ORDER	1
 #define THREAD_SIZE		8192

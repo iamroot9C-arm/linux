@@ -24,6 +24,8 @@
 static DEFINE_SPINLOCK(kthread_create_lock);
 /** 20150801    
  * kthread_create 할 구조체를 list로 관리
+ *
+ * kthreadd_task는 rest_init에서 생성해 저장.
  **/
 static LIST_HEAD(kthread_create_list);
 struct task_struct *kthreadd_task;
@@ -178,6 +180,9 @@ static int kthread(void *_create)
 }
 
 /* called from do_fork() to get node information for about to be created task */
+/** 20160227    
+ * 새 task에 저장할 node 정보를 리턴한다. 전달받은 tsk는 orig task.
+ **/
 int tsk_fork_get_node(struct task_struct *tsk)
 {
 #ifdef CONFIG_NUMA

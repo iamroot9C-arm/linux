@@ -2467,6 +2467,9 @@ static void fire_sched_in_preempt_notifiers(struct task_struct *curr)
 {
 }
 
+/** 20160227    
+ * CONFIG_PREEMPT_NOTIFIERS 정의하지 않았음.
+ **/
 static void
 fire_sched_out_preempt_notifiers(struct task_struct *curr,
 				 struct task_struct *next)
@@ -2488,11 +2491,19 @@ fire_sched_out_preempt_notifiers(struct task_struct *curr,
  * prepare_task_switch sets up locking and calls architecture specific
  * hooks.
  */
+/** 20160227    
+ * task switch 전 perf나 trace, sched_info 등의 처리를 한다.
+ *
+ * config에 따라 lock_switch를 위해 next task를 on_cpu로 처리한다.
+ **/
 static inline void
 prepare_task_switch(struct rq *rq, struct task_struct *prev,
 		    struct task_struct *next)
 {
 	trace_sched_switch(prev, next);
+	/** 20160227    
+	 * CONFIG_SCHEDSTATS나 CONFIG_TASK_DELAY_ACCT를 정의한 경우 sched_info 처리.
+	 **/
 	sched_info_switch(prev, next);
 	perf_event_task_sched_out(prev, next);
 	fire_sched_out_preempt_notifiers(prev, next);
@@ -2633,6 +2644,9 @@ context_switch(struct rq *rq, struct task_struct *prev,
 {
 	struct mm_struct *mm, *oldmm;
 
+	/** 20160227    
+	 * task switch 전 사전작업 호출.
+	 **/
 	prepare_task_switch(rq, prev, next);
 
 	mm = next->mm;
@@ -2644,6 +2658,9 @@ context_switch(struct rq *rq, struct task_struct *prev,
 	 */
 	arch_start_context_switch(prev);
 
+	/** 20160227    
+	 * next의 mm이 NULL이라면
+	 **/
 	if (!mm) {
 		next->active_mm = oldmm;
 		atomic_inc(&oldmm->mm_count);
@@ -4145,6 +4162,9 @@ EXPORT_SYMBOL(schedule);
 /** 20130713    
  * 선점 불가 상태에서 호출되어 선점 가능 상태로 변경 후 schedule 함수를 호출하고,
  * 깨어났을 때 다시 선점 불가로 리턴
+ *
+ * cpu_idle이거나 ksoftirqd처럼 softriq가 펜딩되지 않은 경우 수행할 일이 없을 때,
+ * 또는 rest_init에서 부팅시 한 번은 schedule 함수를 돌려야 할 경우.
  **/
 void __sched schedule_preempt_disabled(void)
 {
@@ -5041,6 +5061,9 @@ int idle_cpu(int cpu)
  * idle_task - return the idle task for a given cpu.
  * @cpu: the processor in question.
  */
+/** 20160227    
+ * 해당 cpu에 idle task로 지정된 task를 리턴한다.
+ **/
 struct task_struct *idle_task(int cpu)
 {
 	return cpu_rq(cpu)->idle;

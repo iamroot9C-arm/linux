@@ -477,6 +477,11 @@ static bool can_stop_idle_tick(int cpu, struct tick_sched *ts)
 	 * this here the jiffies might be stale and do_timer() never
 	 * invoked.
 	 */
+	/** 20160227    
+	 * cpu가 offline이고, do_timer를 수행(jiffies 업데이트)하는 cpu라면
+	 * tick_do_timer_cpu를 비워둔다.
+	 * 나중에 nohz handler를 실행하는 cpu가 자신의 cpu번호를 채운다.
+	 **/
 	if (unlikely(!cpu_online(cpu))) {
 		if (cpu == tick_do_timer_cpu)
 			tick_do_timer_cpu = TICK_DO_TIMER_NONE;
@@ -541,6 +546,9 @@ static void __tick_nohz_idle_enter(struct tick_sched *ts)
  */
 /** 20160220    
  * 자세한 내용은 추후분석???
+ * 
+ * NOHZ로 config 변경 후 빌드해 ddd로 분석.
+ * boot cpu인 경우 nohz로 idle_tick을 날릴지 않는지 확인해야 한다.
  * 
  * tick_nohz_idle_enter() ~ tick_nohz_idle_exit() 사이에 idle tick이 발생하는
  * 것을 막아 low power mode에서 불필요하게 깨어나지 않도록 한다.
@@ -674,6 +682,9 @@ static void tick_nohz_account_idle_ticks(struct tick_sched *ts)
  * This also exit the RCU extended quiescent state. The CPU
  * can use RCU again after this function is called.
  */
+/** 20160227    
+ * tick_nohz_idle_enter와 함께 추후분석???
+ **/
 void tick_nohz_idle_exit(void)
 {
 	int cpu = smp_processor_id();
@@ -731,6 +742,12 @@ static void tick_nohz_handler(struct clock_event_device *dev)
 	 * this duty, then the jiffies update is still serialized by
 	 * xtime_lock.
 	 */
+	/** 20160227    
+	 * can_stop_idle_tick 에서 do_timer를 수행하던 cpu가 offline이 되었다면
+	 * nohz_handler 함수가 자신의 cpu 번호를 넣는다.
+	 * 두 cpu 이상에서 동시에 이 부분이 실행된다고 해도, jiffies update는
+	 * xtime_lock에 의해 serialize 되므로 여기서 lock을 사용하지 않았다.
+	 **/
 	if (unlikely(tick_do_timer_cpu == TICK_DO_TIMER_NONE))
 		tick_do_timer_cpu = cpu;
 

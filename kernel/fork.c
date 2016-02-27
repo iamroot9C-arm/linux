@@ -127,6 +127,9 @@ void __weak arch_release_task_struct(struct task_struct *tsk)
  **/
 static struct kmem_cache *task_struct_cachep;
 
+/** 20160227    
+ * task_struct_cachep kmem_cache로부터 object를 생성한다. 생성한다.
+ **/
 static inline struct task_struct *alloc_task_struct_node(int node)
 {
 	return kmem_cache_alloc_node(task_struct_cachep, GFP_KERNEL, node);
@@ -367,14 +370,26 @@ int __attribute__((weak)) arch_dup_task_struct(struct task_struct *dst,
 	return 0;
 }
 
+/** 20160227    
+ * orig task를 복사해 task_struct를 리턴한다.
+ *
+ * task_struct과 thread_info용 메모리를 할당받고, task_struct의 내용은 복사하고
+ * thread_info는 독자적으로 유지한다.
+ **/
 static struct task_struct *dup_task_struct(struct task_struct *orig)
 {
 	struct task_struct *tsk;
 	struct thread_info *ti;
 	unsigned long *stackend;
+	/** 20160227    
+	 * task에서 사용할 node 정보를 받아온다.
+	 **/
 	int node = tsk_fork_get_node(orig);
 	int err;
 
+	/** 20160227    
+	 * task_struct object를 받아온다.
+	 **/
 	tsk = alloc_task_struct_node(node);
 	if (!tsk)
 		return NULL;
@@ -387,7 +402,7 @@ static struct task_struct *dup_task_struct(struct task_struct *orig)
 		goto free_tsk;
 
 	/** 20150117    
-	 * orig의 strcut task_struct를 복사한다.
+	 * orig의 struct task_struct를 복사한다.
 	 **/
 	err = arch_dup_task_struct(tsk, orig);
 	if (err)
@@ -399,11 +414,18 @@ static struct task_struct *dup_task_struct(struct task_struct *orig)
 	tsk->stack = ti;
 
 	/** 20150117    
-	 * struct thread_info를 복사한다.
+	 * orig task의 struct thread_info를 복사하되 task는 새 task를 가리킨다.
 	 **/
 	setup_thread_stack(tsk, orig);
 	clear_user_return_notifier(tsk);
+	/** 20160227    
+	 * flag에서 need_resched flag는 제거한다.
+	 **/
 	clear_tsk_need_resched(tsk);
+	/** 20160227    
+	 * stack은 thread_info 구조체를 침범하지 않을 때까지 자란다.
+	 * stack의 끝에 MAGIC키를 저장해 overflow detection 용으로 사용된다.
+	 **/
 	stackend = end_of_stack(tsk);
 	*stackend = STACK_END_MAGIC;	/* for overflow detection */
 
@@ -415,12 +437,22 @@ static struct task_struct *dup_task_struct(struct task_struct *orig)
 	 * One for us, one for whoever does the "release_task()" (usually
 	 * parent)
 	 */
+	/** 20160227    
+	 * usage를 2로 초기화 한다.
+	 * 이 task를 위해 하나, parent를 위해 하나(release_task()를 호출하는).
+	 **/
 	atomic_set(&tsk->usage, 2);
 #ifdef CONFIG_BLK_DEV_IO_TRACE
 	tsk->btrace_seq = 0;
 #endif
+	/** 20160227    
+	 * NULL로 초기화.
+	 **/
 	tsk->splice_pipe = NULL;
 
+	/** 20160227    
+	 * kernel_stack 사용량을 1증가시킨다.
+	 **/
 	account_kernel_stack(ti, 1);
 
 	return tsk;
@@ -1281,6 +1313,9 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 		goto fork_out;
 
 	retval = -ENOMEM;
+	/** 20160227    
+	 * 현재 task_struct를 복사한 새 task_struct을 리턴한다.
+	 **/
 	p = dup_task_struct(current);
 	if (!p)
 		goto fork_out;
@@ -1439,6 +1474,11 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	if (retval)
 		goto bad_fork_cleanup_io;
 
+	/** 20160227    
+	 * pid가 init_struct_pid라면 (fork_idle인 경우) init의 pid를 그대로 복사할
+	 * 것이므로 alloc_pid를 하지 않는다.
+	 * 그렇지 않은 경우에는 해당 pid_ns로부터 pid를 하나 받아온다.
+	 **/
 	if (pid != &init_struct_pid) {
 		retval = -ENOMEM;
 		pid = alloc_pid(p->nsproxy->pid_ns);

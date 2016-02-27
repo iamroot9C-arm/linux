@@ -791,6 +791,9 @@ static inline int task_running(struct rq *rq, struct task_struct *p)
 }
 
 
+/** 20160227    
+ * prepare_arch_switch 정의하지 않음.
+ **/
 #ifndef prepare_arch_switch
 # define prepare_arch_switch(next)	do { } while (0)
 #endif

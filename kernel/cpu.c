@@ -394,6 +394,10 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen)
 	 *
 	 * Wait for the stop thread to go away.
 	 */
+	/** 20160227    
+	 * stop_machine 과정을 완료하고, migration이 완료되면 해당 cpu는 idle이 되고
+	 * 그 뒤에 cpu_die 작업을 진행한다.
+	 **/
 	while (!idle_cpu(cpu))
 		cpu_relax();
 
