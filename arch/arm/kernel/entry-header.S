@@ -35,6 +35,10 @@
 #error "Please fix"
 #endif
 
+/** 20160305    
+ * CONFIG_FRAME_POINTER 정의시 fp 위치에 0을 넣어준다.
+ * 분석 config에는 CONFIG_FRAME_POINTER를 선언하지 않았음.
+ **/
 	.macro	zero_fp
 #ifdef CONFIG_FRAME_POINTER
 	mov	fp, #0
@@ -105,22 +109,59 @@
 #endif
 	.endm
 
+	/** 20160305    
+	 * user mode context를 복원하고 user mode로 돌아간다.
+	 *
+	 * fast ret인지 구분하는 정보와 stack 보정값 offset을 argument로 받는다.
+	 **/
 	.macro	restore_user_regs, fast = 0, offset = 0
+	/** 20160305    
+	 * pt_regs에서 user context를 꺼내온다.
+	 * offset은 r4, r5 등 저장 여부에 따라 호출시 주어진다.
+	 *
+	 * r1 = calling cpsr; (user mode cpsr)
+	 * lr = pc, sp = sp + S_PC;
+	 * spsr_svc = r1;
+	 **/
 	ldr	r1, [sp, #\offset + S_PSR]	@ get calling cpsr
 	ldr	lr, [sp, #\offset + S_PC]!	@ get pc
 	msr	spsr_cxsf, r1			@ save in spsr_svc
 #if defined(CONFIG_CPU_V6)
 	strex	r1, r2, [sp]			@ clear the exclusive monitor
 #elif defined(CONFIG_CPU_32v6K)
+	/** 20160305    
+	 * exclusive monitor clear.
+	 * 문맥전환 전에 exclusive monitor를 클리어한다.
+	 **/
 	clrex					@ clear the exclusive monitor
 #endif
+	/** 20160305    
+	 * LDM{IA|IB|DA|DB} Rn, <reglist-PC>^
+	 *   [Rn]에서 사용자 모드 레지스터 목록 로드. 권한 모드 전용.
+	 *
+	 * sp의 현재 위치: ARM_pc
+	 * stack에서 꺼내 user mode register에 저장.
+	 * fast인 경우 r1 ~ lr까지, 
+	 * fast가 아닌 경우 r0 ~ lr까지.
+	 **/
 	.if	\fast
 	ldmdb	sp, {r1 - lr}^			@ get calling r1 - lr
 	.else
 	ldmdb	sp, {r0 - lr}^			@ get calling r0 - lr
 	.endif
+	/** 20160305    
+	 * 주석에 의하면 ldm {}^ 명령을 사용한 경우,
+	 * ARMv5T 이전 architecture를 위해 nop이 필요하다.
+	 **/
 	mov	r0, r0				@ ARMv5T and earlier require a nop
 						@ after ldm {}^
+	/** 20160305    
+	 * sp의 현재 위치: ARM_pc.
+	 * sp를 증가시켜 ARM_cpsr, ARM_ORIG_r0 위의 시작 위치로 변경시킨다.
+	 *
+	 * lr을 pc에 저장하며 spsr_svc가 cpsr로 들어간다.
+	 * mode 비트가 변경되므로 USER MODE가 호출된다.
+	 **/
 	add	sp, sp, #S_FRAME_SIZE - S_PC
 	movs	pc, lr				@ return & move spsr_svc into cpsr
 	.endm
@@ -197,6 +238,13 @@
  *
  * We must set at least "tsk" and "why" when calling ret_with_reschedule.
  */
+/** 20160305    
+ *  syscall number          r7
+ *  syscall table pointer   r8
+ *  linux syscall에 의한 경우이면 syscall table pointer로 설정되었으므로 != 0
+ *    0이면 syscall이 아닌 이유. if or if not을 나타내기 위해 같은 r8로 설정.
+ *  current thread_info     r9
+ **/
 scno	.req	r7		@ syscall number
 tbl	.req	r8		@ syscall table pointer
 why	.req	r8		@ Linux syscall (!= 0)

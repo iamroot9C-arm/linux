@@ -9,6 +9,14 @@
  *
  *  This file is included thrice in entry-common.S
  */
+ /** 20160305    
+  * 시스템콜 table.
+  *
+  * entry-common.S에서 3번 include 된다.
+  * syscall count시 한 번, sys_call_table, sys_oabi_call_table 선언시 각각 포함.
+  *
+  * NR_syscalls 호출후 define에서 CALL을 .long으로 변경해 심볼 주소.
+  **/
 /* 0 */		CALL(sys_restart_syscall)
 		CALL(sys_exit)
 		CALL(sys_fork_wrapper)
@@ -387,6 +395,10 @@
 /* 375 */	CALL(sys_setns)
 		CALL(sys_process_vm_readv)
 		CALL(sys_process_vm_writev)
+		/** 20160305    
+		 * syscalls_counted 선언하지 않았을 경우 3의 배수로 roundup 시키고,
+		 * padding된 수만큼 sys_ni_syscall로 채운다.
+		 **/
 #ifndef syscalls_counted
 .equ syscalls_padding, ((NR_syscalls + 3) & ~3) - NR_syscalls
 #define syscalls_counted

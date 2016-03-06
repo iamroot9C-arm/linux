@@ -12,6 +12,9 @@
 #include <asm/ftrace.h>
 #include <asm/unwind.h>
 
+/** 20160305    
+ * CONFIG_NEED_RET_TO_USER가 선언되지 않아 아무 동작도 수행하지 않는다.
+ **/
 #ifdef CONFIG_NEED_RET_TO_USER
 #include <mach/entry-macro.S>
 #else
@@ -31,6 +34,11 @@
 ret_fast_syscall:
  UNWIND(.fnstart	)
  UNWIND(.cantunwind	)
+	/** 20160305    
+	 * interrupt를 막는다.
+	 * TI_FLAGS를 가져와 _TIF_WORK_MASK가 존재하는지 검사해 존재하면(tst, XXXne)
+	 * fast ret을 못하고 fast_work_pending으로 이동해 해당 작업을 수행한다.
+	 **/
 	disable_irq				@ disable interrupts
 	ldr	r1, [tsk, #TI_FLAGS]
 	tst	r1, #_TIF_WORK_MASK
@@ -40,8 +48,16 @@ ret_fast_syscall:
 #endif
 
 	/* perform architecture specific actions before user return */
+	/** 20160305    
+	 * ret_to_user 전 arch에서 별도로 지정한 코드를 호출한다.
+	 **/
 	arch_ret_to_user r1, lr
 
+	/** 20160305    
+	 * ret_fast_syscall인 경우,
+	 * fast는 1, syscall parameter가 저장된 r4,r5를 위한 offset을 보정값으로 전달.
+	 * 결국 sp로부터 pt_regs를 얻어오기 위한 설정.
+	 **/
 	restore_user_regs fast = 1, offset = S_OFF
  UNWIND(.fnend		)
 
@@ -100,6 +116,10 @@ ENTRY(ret_from_fork)
 	b	ret_slow_syscall
 ENDPROC(ret_from_fork)
 
+	/** 20160305    
+	 * calls.S를 counting 해서 전체 개수+1를 NR_syscalls에 설정.
+	 * 설정 후 CALL macro를 .long으로 변경해 심볼 주소를 저장한다.
+	 **/
 	.equ NR_syscalls,0
 #define CALL(x) .equ NR_syscalls,NR_syscalls+1
 #include "calls.S"
@@ -334,10 +354,36 @@ ENDPROC(ftrace_stub)
  *-----------------------------------------------------------------------------
  */
 
+	/** 20160305    
+	 * 2 ** 5 (cache line 단위) align.
+	 **/
 	.align	5
 ENTRY(vector_swi)
+	/** 20160305    
+	 * struct pt_regs를 스택에 선언.
+	 * sp을 stack frame (18 * 4)만큼 빼서 공간 확보.
+	 **/
 	sub	sp, sp, #S_FRAME_SIZE
+	/** 20160305    
+	 * r0 ~ r12 레지스터를 stack에 쌓는다.
+	 * 현재 커널의 context를 저장.
+	 *
+	 * 단 sp!가 없어 sp의 위치는 연산 후 업데이트 되지 않아 S_FRAME의 시작 주소.
+	 **/
 	stmia	sp, {r0 - r12}			@ Calling r0 - r12
+	/** 20160305    
+	 * svc mode는 user mode와 R0~R12는 공유하고, sp, lr, SPSR_svc를 보유한다.
+	 *
+	 * r8 = sp + #60;
+	 *
+	 * STM{IA|IB|DA|DB} Rn{!}, <reglist>^
+	 *      [Rn]에 사용자 모드 레지스터 목록 저장. 권한 모드 전용
+	 * ARM_sp, ARM_lr에 user mode의 sp와 lr을 저장한다.
+	 *
+	 * ARM_pc에 lr (calling pc)을 저장한다.
+	 * ARM_cpsr에 spsr(user 모드의 cpsr이 뱅크) 저장한다.
+	 * ARM_ORIG_r0에 r0를 저장한다.
+	 **/
  ARM(	add	r8, sp, #S_PC		)
  ARM(	stmdb	r8, {sp, lr}^		)	@ Calling sp, lr
  THUMB(	mov	r8, sp			)
@@ -352,6 +398,11 @@ ENTRY(vector_swi)
 	 * Get the system call number.
 	 */
 
+/** 20160305
+ * 현재 config는 아래와 같이 설정.
+ * CONFIG_AEABI
+ * CONFIG_OABI_COMPAT
+ **/
 #if defined(CONFIG_OABI_COMPAT)
 
 	/*
@@ -363,6 +414,12 @@ ENTRY(vector_swi)
 	movne	r10, #0				@ no thumb OABI emulation
 	ldreq	r10, [lr, #-4]			@ get SWI instruction
 #else
+	/** 20160305    
+	 * SWI는 return address가 lr (SWI 다음 명령). entry-armv.S 정리 참고.
+	 *
+	 * swi 명령을 디코딩해서 argument로 지정된 system call number를 추출하기 위한
+	 * 사전작업.
+	 **/
 	ldr	r10, [lr, #-4]			@ get SWI instruction
 #endif
 #ifdef CONFIG_CPU_ENDIAN_BE8
@@ -385,14 +442,28 @@ ENTRY(vector_swi)
 	ldr	scno, [lr, #-4]			@ get SWI instruction
 #endif
 
+	/** 20160305    
+	 * ALIGNMENT_TRAP 설정시 __cr_alignment에 저장해둔 설정값을 SCR에 저장.
+	 **/
 #ifdef CONFIG_ALIGNMENT_TRAP
 	ldr	ip, __cr_alignment
 	ldr	ip, [ip]
 	mcr	p15, 0, ip, c1, c0		@ update control register
 #endif
+	/** 20160305    
+	 * exception mode 진입시 ARM core에 의해 disable된 interrupt를
+	 * 여기서 풀어준다.
+	 **/
 	enable_irq
 
+	/** 20160305    
+	 * 현재 task의 struct thread_info를 tsk 변수로 받아온다.
+	 **/
 	get_thread_info tsk
+	/** 20160305    
+	 * tbl = &sys_call_table;
+	 * (calls.S)
+	 **/
 	adr	tbl, sys_call_table		@ load syscall table pointer
 
 #if defined(CONFIG_OABI_COMPAT)
@@ -402,6 +473,16 @@ ENTRY(vector_swi)
 	 * If this is an old ABI call, get the syscall number into scno and
 	 * get the old ABI syscall table address.
 	 */
+	 /** 20160305    
+	  * swi 명령의 argument를 추출한다.
+	  * OABI의 BASE를 제외한 순수 system call number만 받아온다.
+	  *
+	  * r10 = r10 & ~(#0xff000000);   @ update flag register
+	  * if (ZERO not set) {
+	  *     scno = r10 ^ #__NR_OABI_SYSCALL_BASE;
+	  *     tbl = &sys_oabi_call_table;
+	  * }
+	  **/
 	bics	r10, r10, #0xff000000
 	eorne	scno, r10, #__NR_OABI_SYSCALL_BASE
 	ldrne	tbl, =sys_oabi_call_table
@@ -411,9 +492,28 @@ ENTRY(vector_swi)
 #endif
 
 local_restart:
+	/** 20160305    
+	 * r10 = tsk->TI_FLAGS;
+	 **/
 	ldr	r10, [tsk, #TI_FLAGS]		@ check for syscall tracing
+	/** 20160305    
+	 * r4, r5를 stack에 저장.
+	 *
+	 *  +------------------------+ high address
+	 *  |                        |
+	 *  |        pt_regs         |
+	 *  |                        |
+	 *  +------------------------+
+	 *  |         r4 / r5        |
+	 *  +------------------------+ <- sp
+	 *  |                        |
+	 *  +------------------------+ low address
+	 **/
 	stmdb	sp!, {r4, r5}			@ push fifth and sixth args
 
+	/** 20160305    
+	 * CONFIG_SECCOMP 선언하지 안함.
+	 **/
 #ifdef CONFIG_SECCOMP
 	tst	r10, #_TIF_SECCOMP
 	beq	1f
@@ -424,13 +524,31 @@ local_restart:
 1:
 #endif
 
+	/** 20160305    
+	 * task가 syscall trace/audit 중인지 검사해 branch.
+	 **/
 	tst	r10, #_TIF_SYSCALL_WORK		@ are we tracing syscalls?
 	bne	__sys_trace
 
+	/** 20160305    
+	 * lr = ret_fast_syscall;
+	 * if (scno < #NR_syscalls)
+	 *     pc = tbl + (scno * 4);
+	 *
+	 * 실제 system call 번호 : arch/arm/include/asm/unistd.h
+	 **/
 	cmp	scno, #NR_syscalls		@ check upper syscall limit
 	adr	lr, BSYM(ret_fast_syscall)	@ return address
 	ldrcc	pc, [tbl, scno, lsl #2]		@ call sys_* routine
 
+	/** 20160305    
+	 * r1 = sp + #S_OFF;	@ struct pt_regs
+	 * why = #0;
+	 *
+	 * if (scno >= #(__ARM_NR_BASE - __NR_SYSCALL_BASE))
+	 *     goto arm_syscall;
+	 * goto sys_ni_syscall;
+	 **/
 	add	r1, sp, #S_OFF
 2:	mov	why, #0				@ no longer a real syscall
 	cmp	scno, #(__ARM_NR_BASE - __NR_SYSCALL_BASE)
@@ -483,6 +601,11 @@ __cr_alignment:
 #define OBSOLETE(syscall) syscall
 #endif
 
+	/** 20160305    
+	 * syscall table.
+	 *
+	 * NR_syscalls 호출후 define에서 CALL을 .long으로 변경해 심볼 주소.
+	 **/
 	.type	sys_call_table, #object
 ENTRY(sys_call_table)
 #include "calls.S"

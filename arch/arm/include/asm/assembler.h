@@ -89,6 +89,12 @@
 	cpsid	i
 	.endm
 
+/** 20160305    
+ * interrupt disable.
+ * cpsid 에 따라올 수 있는 iflags는 i, a, f임.
+ * DDI0406C C4.1.2 참고.
+ **/
+
 	.macro	enable_irq_notrace
 	cpsie	i
 	.endm
@@ -137,6 +143,9 @@
 	asm_trace_hardirqs_off
 	.endm
 
+	/** 20160305    
+	 * irq를 켜는 macro.
+	 **/
 	.macro enable_irq
 	asm_trace_hardirqs_on
 	enable_irq_notrace

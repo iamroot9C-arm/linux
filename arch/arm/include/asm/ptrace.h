@@ -110,6 +110,10 @@ struct pt_regs {
 };
 #endif /* __KERNEL__ */
 
+/** 20160305    
+ * stack frame size
+ * r0~r15(pc) cpsr, orig_r0 (4 * 18)
+ **/
 #define ARM_cpsr	uregs[16]
 #define ARM_pc		uregs[15]
 #define ARM_lr		uregs[14]
