@@ -76,11 +76,18 @@ rt_mutex_top_waiter(struct rt_mutex *lock)
 	return w;
 }
 
+/** 20160312    
+ * task가 현재 priority list에 연결되어 있는 경우.
+ **/
 static inline int task_has_pi_waiters(struct task_struct *p)
 {
 	return !plist_head_empty(&p->pi_waiters);
 }
 
+/** 20160312    
+ * task가 rt_mutex_waiter의 pi_list_entry에 연결되어 있는 상태에서,
+ * 가장 우선순위가 높은 첫번째 node가 속한 rt_mutex_waiter를 반환.
+ **/
 static inline struct rt_mutex_waiter *
 task_top_pi_waiter(struct task_struct *p)
 {

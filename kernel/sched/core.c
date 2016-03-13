@@ -326,7 +326,7 @@ int sysctl_sched_rt_runtime = 950000;
  * __task_rq_lock - lock the rq @p resides on.
  */
 /** 20130713    
- * task가 실행 중인 cpu의 runqueue에 lock을 거는 함수
+ * task가 실행 중인 cpu의 runqueue에 lock을 걸고 rq를 리턴.
  **/
 static inline struct rq *__task_rq_lock(struct task_struct *p)
 	__acquires(rq->lock)
@@ -4844,6 +4844,11 @@ EXPORT_SYMBOL(sleep_on_timeout);
  *
  * Used by the rt_mutex code to implement priority inheritance logic.
  */
+/** 20160312    
+ * 
+ * taks의 'effective' priority를 변경한다.
+ * __setscheduler처럼 normal_prio를 변경하는 것이 아니다.
+ **/
 void rt_mutex_setprio(struct task_struct *p, int prio)
 {
 	int oldprio, on_rq, running;
@@ -4852,6 +4857,9 @@ void rt_mutex_setprio(struct task_struct *p, int prio)
 
 	BUG_ON(prio < 0 || prio > MAX_PRIO);
 
+	/** 20160312    
+	 * task가 걸려 있는 rq에 lock을 잡고 rq를 받아온다.
+	 **/
 	rq = __task_rq_lock(p);
 
 	/*
@@ -4866,6 +4874,9 @@ void rt_mutex_setprio(struct task_struct *p, int prio)
 	 * protected section without being interrupted. So there is no
 	 * real need to boost.
 	 */
+	/** 20160312    
+	 * task가 rq의 idle인 경우 의미 없으므로 리턴.
+	 **/
 	if (unlikely(p == rq->idle)) {
 		WARN_ON(p != rq->curr);
 		WARN_ON(p->pi_blocked_on);
@@ -4873,9 +4884,18 @@ void rt_mutex_setprio(struct task_struct *p, int prio)
 	}
 
 	trace_sched_pi_setprio(p, prio);
+	/** 20160312    
+	 * 현재 prio와 sched_class를 백업.
+	 **/
 	oldprio = p->prio;
 	prev_class = p->sched_class;
+	/** 20160312    
+	 * task의 on_rq 상태를 받아옴.
+	 **/
 	on_rq = p->on_rq;
+	/** 20160312    
+	 * priority를 지정할 task p가 rq 중 현재 실행 중인 task인
+	 **/
 	running = task_current(rq, p);
 	if (on_rq)
 		dequeue_task(rq, p, 0);

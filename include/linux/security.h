@@ -2244,6 +2244,8 @@ static inline int security_file_open(struct file *file,
 	return 0;
 }
 
+/** 20160312    
+ **/
 static inline int security_task_create(unsigned long clone_flags)
 {
 	return 0;

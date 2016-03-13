@@ -67,6 +67,18 @@ ret_fast_syscall:
 /** 20160220    
  * user mode로 전환하기 전에 kernel에서 추가로 수행해야 할 work이 펜딩되었다면
  * 그것들을 처리하고 온다.
+ *
+ * 
+ *
+ *  +------------------------+ high address
+ *  |                        |
+ *  |        pt_regs         |
+ *  |                        |
+ *  +------------------------+
+ *  |         r4 / r5        |
+ *  +------------------------+ <- sp    S_OFF를 더하는 이유.
+ *  |                        |
+ *  +------------------------+ low address
  **/
 fast_work_pending:
 	str	r0, [sp, #S_R0+S_OFF]!		@ returned r0
@@ -84,9 +96,11 @@ work_pending:
  * "slow" syscall return path.  "why" tells us if this was a real syscall.
  */
 /** 20160206    
- * 추후 분석???
+ * 20160312
+ * user mode로 돌아가기 전에 인터럽트를 막고 pending 처리를 진행한다.
+ * user mode로 진입하기 전 TIF에 work 관련 플래그가 검출되면 work_pending 수행.
  *
- * user mode로 진입하기 전 TIF에 work 관련 플래그가 검출되면 work_pending 수행
+ * restore_user_regs를 fast 0, offset 0으로 호출해 user mode로 돌아간다.
  **/
 ENTRY(ret_to_user)
 ret_slow_syscall:
@@ -531,6 +545,9 @@ local_restart:
 	bne	__sys_trace
 
 	/** 20160305    
+	 * 시스템 콜 table의 핸들러 코드를 호출한 뒤 복귀할 주소로
+	 * ret_fast_syscall을 지정한다.
+	 *
 	 * lr = ret_fast_syscall;
 	 * if (scno < #NR_syscalls)
 	 *     pc = tbl + (scno * 4);

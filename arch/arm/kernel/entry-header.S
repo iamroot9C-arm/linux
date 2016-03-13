@@ -113,6 +113,9 @@
 	 * user mode context를 복원하고 user mode로 돌아간다.
 	 *
 	 * fast ret인지 구분하는 정보와 stack 보정값 offset을 argument로 받는다.
+	 *
+	 * kernel_execve에서 ret_to_user인 경우는 호출시 fast가 0.
+	 * syscall에서 돌아가는 경우는 fast가 1.
 	 **/
 	.macro	restore_user_regs, fast = 0, offset = 0
 	/** 20160305    

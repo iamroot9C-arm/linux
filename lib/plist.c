@@ -63,6 +63,9 @@ static void plist_check_head(struct plist_head *head)
 }
 
 #else
+/** 20160312    
+ * plist debug 정의하지 않은 경우.
+ **/
 # define plist_check_head(h)	do { } while (0)
 #endif
 
@@ -72,6 +75,11 @@ static void plist_check_head(struct plist_head *head)
  * @node:	&struct plist_node pointer
  * @head:	&struct plist_head pointer
  */
+/** 20160312    
+ * priority node를 새로운 list에 추가.
+ *
+ * 우선순위대로 정렬되며, 같은 우선순위로 추가된 node의 prio_list 연결은 생략된다.
+ **/
 void plist_add(struct plist_node *node, struct plist_head *head)
 {
 	struct plist_node *first, *iter, *prev = NULL;
@@ -84,22 +92,49 @@ void plist_add(struct plist_node *node, struct plist_head *head)
 	if (plist_head_empty(head))
 		goto ins_node;
 
+	/** 20160312    
+	 * head가 가리키는 priority list의 첫번째 노드.
+	 **/
 	first = iter = plist_first(head);
 
+	/** 20160312    
+	 * priority list를 순회하며 우선순위가 높은 순으로 정렬시킨다.
+	 **/
 	do {
+		/** 20160312    
+		 * 추가할 노드의 우선순위가 현재 iter의 우선순위보다 높다면
+		 * (산술비교에서는 더 작은 값)
+		 * iter보다 앞에 달아주기 위해 break.
+		 **/
 		if (node->prio < iter->prio) {
 			node_next = &iter->node_list;
 			break;
 		}
 
+		/** 20160312    
+		 * 다음 비교를 위해
+		 * 현재 비교한 iter가 prev가 된다.
+		 * 현재 비교한 iter의 prio_list의 next를 iter로 잡는다.
+		 **/
 		prev = iter;
 		iter = list_entry(iter->prio_list.next,
 				struct plist_node, prio_list);
 	} while (iter != first);
 
+	/** 20160312    
+	 * !prev인 경우는 새로운 node의 우선순위가 가장 높을 때
+	 * prev->prio == node->prio인 경우, 즉 1 - 3 - 5 에서 3이 들어온 경우
+	 * 3은 prio_list에는 추가하지 않는다.
+	 **/
 	if (!prev || prev->prio != node->prio)
 		list_add_tail(&node->prio_list, &iter->prio_list);
 ins_node:
+	/** 20160312    
+	 * 1) 새로운 노드의 우선순위가 가장 낮은 경우, node_next는 head이므로
+	 *    node_list의 끝에 추가
+	 * 2) 새로운 노드의 우선순위가 높아 반복 중 추가된다면, node_next는
+	 *    새로운 노드보다 우선순위가 낮고, 그 앞에 추가된다.
+	 **/
 	list_add_tail(&node->node_list, node_next);
 
 	plist_check_head(head);

@@ -79,12 +79,19 @@
 #include <linux/list.h>
 
 /** 20140426    
+ * priority list는 우선순위가 높은 순서(숫자는 낮은 값)로 정렬된 리스트.
+ * prio_list는 우선 순위가 같은 경우 생략되고,
+ * node_list는 우선 순위대로 정렬되어 항상 연결된다.
+ *
  * priority list head.
  **/
 struct plist_head {
 	struct list_head node_list;
 };
 
+/** 20160312    
+ * priority list node.
+ **/
 struct plist_node {
 	int			prio;
 	struct list_head	prio_list;
@@ -186,6 +193,11 @@ extern void plist_del(struct plist_node *node, struct plist_head *head);
  * plist_head_empty - return !0 if a plist_head is empty
  * @head:	&struct plist_head pointer
  */
+/** 20160312    
+ * plist_head가 node_list에 연결되지 않은 경우.
+ *
+ * prio_list는 우선순위가 같을 경우 추가되지 않기 때문에 node_list로 비교.
+ **/
 static inline int plist_head_empty(const struct plist_head *head)
 {
 	return list_empty(&head->node_list);
@@ -215,6 +227,10 @@ static inline int plist_node_empty(const struct plist_node *node)
 	container_of(plist_first(head), type, member); \
 })
 #else
+/** 20160312    
+ * plist_head (리스트에 연결하기 위한 entry point)가 가리키는 첫번째 멤버의
+ * type 구조체 포인터를 리턴.
+ **/
 # define plist_first_entry(head, type, member)	\
 	container_of(plist_first(head), type, member)
 #endif
@@ -242,6 +258,10 @@ static inline int plist_node_empty(const struct plist_node *node)
  *
  * Assumes the plist is _not_ empty.
  */
+/** 20160312    
+ * priority list가 우선순위로 정렬되어 있으므로 head가 가리키는
+ * 첫번째 plist_node를 반환한다.
+ **/
 static inline struct plist_node *plist_first(const struct plist_head *head)
 {
 	return list_entry(head->node_list.next,

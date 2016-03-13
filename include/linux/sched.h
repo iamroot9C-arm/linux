@@ -1578,6 +1578,9 @@ struct task_struct {
 	 **/
 #ifdef CONFIG_RT_MUTEXES
 	/* PI waiters blocked on a rt_mutex held by this task */
+	/** 20160312    
+	 * rt_mutex가 잡혀 있는 경우, pi 대기 리스트에 추가하기 위한 entry.
+	 **/
 	struct plist_head pi_waiters;
 	/* Deadlock detection and priority inheritance handling */
 	struct rt_mutex_waiter *pi_blocked_on;
@@ -2278,6 +2281,9 @@ extern unsigned int sysctl_sched_cfs_bandwidth_slice;
 #endif
 
 #ifdef CONFIG_RT_MUTEXES
+/** 20160312    
+ * CONIFG_RT_MUTEXES 선언된 경우
+ **/
 extern int rt_mutex_getprio(struct task_struct *p);
 extern void rt_mutex_setprio(struct task_struct *p, int prio);
 extern void rt_mutex_adjust_pi(struct task_struct *p);

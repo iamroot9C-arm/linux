@@ -161,6 +161,8 @@ void __weak arch_release_thread_info(struct thread_info *ti)
 /** 20150117    
  * thread_info 용으로 사용할 메모리를 할당해 리턴한다.
  *
+ * thread_info는 stack에 overlay 되어 있으므로 stack으로 사용할 크기만큼 할당.
+ *
  * # define THREADINFO_GFP		(GFP_KERNEL | __GFP_NOTRACK)
  **/
 static struct thread_info *alloc_thread_info_node(struct task_struct *tsk,
@@ -1268,6 +1270,11 @@ static void posix_cpu_timers_init(struct task_struct *tsk)
  * parts of the process environment (as per the clone
  * flags). The actual kick-off is left to the caller.
  */
+/** 20160312    
+ *
+ * 이전 process를 복사해 새로운 process를 만든다.
+ * 새로운 process의 시작은 caller에서 담당한다.
+ **/
 static struct task_struct *copy_process(unsigned long clone_flags,
 					unsigned long stack_start,
 					struct pt_regs *regs,
@@ -1280,6 +1287,10 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	struct task_struct *p;
 	int cgroup_callbacks_done = 0;
 
+	/** 20160312    
+	 * clone_flags에 대한 validate.
+	 * NEWNS면서 FS SHARE면 error.
+	 **/
 	if ((clone_flags & (CLONE_NEWNS|CLONE_FS)) == (CLONE_NEWNS|CLONE_FS))
 		return ERR_PTR(-EINVAL);
 
@@ -1748,6 +1759,11 @@ long do_fork(unsigned long clone_flags,
 	 * Do some preliminary argument and permissions checking before we
 	 * actually start allocating stuff
 	 */
+	/** 20160312    
+	 * clone_flags에 CLONE_NEWUSER 속성이 있다면 처리
+	 *
+	 * 현재 커널에서 사용 중인 곳은 없음.
+	 **/
 	if (clone_flags & CLONE_NEWUSER) {
 		if (clone_flags & CLONE_THREAD)
 			return -EINVAL;
@@ -1765,6 +1781,9 @@ long do_fork(unsigned long clone_flags,
 	 * requested, no event is reported; otherwise, report if the event
 	 * for the type of forking is enabled.
 	 */
+	/** 20160312    
+	 * ptrace 이벤트 관련 코드. 생략.
+	 **/
 	if (likely(user_mode(regs)) && !(clone_flags & CLONE_UNTRACED)) {
 		if (clone_flags & CLONE_VFORK)
 			trace = PTRACE_EVENT_VFORK;
@@ -1777,6 +1796,8 @@ long do_fork(unsigned long clone_flags,
 			trace = 0;
 	}
 
+	/** 20160312    
+	 **/
 	p = copy_process(clone_flags, stack_start, regs, stack_size,
 			 child_tidptr, NULL, trace);
 	/*

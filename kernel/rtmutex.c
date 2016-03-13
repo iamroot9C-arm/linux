@@ -96,11 +96,21 @@ static inline void mark_rt_mutex_waiters(struct rt_mutex *lock)
  * Return task->normal_prio when the waiter list is empty or when
  * the waiter is not allowed to do priority boosting
  */
+/** 20160312    
+ * task의 rt_mutex priority를 반환한다.
+ **/
 int rt_mutex_getprio(struct task_struct *task)
 {
+	/** 20160312    
+	 * task가 waiter 리스트에 연결되지 않은 경우
+	 **/
 	if (likely(!task_has_pi_waiters(task)))
 		return task->normal_prio;
 
+	/** 20160312    
+	 * task가 waiter 리스트에 연결된 경우, pi_list_entry 중 가장 큰 값과
+	 * task의 normal_prio 중 작은 값을 리턴.
+	 **/
 	return min(task_top_pi_waiter(task)->pi_list_entry.prio,
 		   task->normal_prio);
 }
@@ -112,8 +122,14 @@ int rt_mutex_getprio(struct task_struct *task)
  */
 static void __rt_mutex_adjust_prio(struct task_struct *task)
 {
+	/** 20160312    
+	 * task의 rt_mutex priority를 반환한다.
+	 **/
 	int prio = rt_mutex_getprio(task);
 
+	/** 20160312    
+	 * task의 현재 priority와 다르다면 rt_mutex priority로 priority를 설정한다.
+	 **/
 	if (task->prio != prio)
 		rt_mutex_setprio(task, prio);
 }
@@ -408,6 +424,9 @@ static int task_blocks_on_rt_mutex(struct rt_mutex *lock,
 	/* Get the top priority waiter on the lock */
 	if (rt_mutex_has_waiters(lock))
 		top_waiter = rt_mutex_top_waiter(lock);
+	/** 20160312    
+	 * waiter를 wait_list에 우선순위에 따라 정렬되도록 추가한다.
+	 **/
 	plist_add(&waiter->list_entry, &lock->wait_list);
 
 	task->pi_blocked_on = waiter;
@@ -633,9 +652,15 @@ rt_mutex_slowlock(struct rt_mutex *lock, int state,
 		return 0;
 	}
 
+	/** 20160312    
+	 * 현재 task의 state를 변경한다.
+	 **/
 	set_current_state(state);
 
 	/* Setup the timer, when timeout != NULL */
+	/** 20160312    
+	 * timeout이 지정된 경우 hrtimer를 expire시간으로 등록한다.
+	 **/
 	if (unlikely(timeout)) {
 		hrtimer_start_expires(&timeout->timer, HRTIMER_MODE_ABS);
 		if (!hrtimer_active(&timeout->timer))

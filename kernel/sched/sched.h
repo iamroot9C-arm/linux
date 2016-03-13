@@ -773,6 +773,9 @@ static inline u64 global_rt_runtime(void)
 
 
 
+/** 20160312    
+ * rq의 current가 p인 경우 참을 리턴.
+ **/
 static inline int task_current(struct rq *rq, struct task_struct *p)
 {
 	return rq->curr == p;
