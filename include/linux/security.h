@@ -2264,6 +2264,8 @@ static inline int security_cred_alloc_blank(struct cred *cred, gfp_t gfp)
 static inline void security_cred_free(struct cred *cred)
 { }
 
+/** 20160319    
+ **/
 static inline int security_prepare_creds(struct cred *new,
 					 const struct cred *old,
 					 gfp_t gfp)

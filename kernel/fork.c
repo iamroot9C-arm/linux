@@ -1217,6 +1217,11 @@ static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
 	return 0;
 }
 
+/** 20160319    
+ * copy로 생성되는 tasks의 flag를 조절한다.
+ * 
+ * super-user priv, workqueue worker를 제거하고, exec에 의한 fork가 아님을 표시.
+ **/
 static void copy_flags(unsigned long clone_flags, struct task_struct *p)
 {
 	unsigned long new_flags = p->flags;
@@ -1233,6 +1238,9 @@ SYSCALL_DEFINE1(set_tid_address, int __user *, tidptr)
 	return task_pid_vnr(current);
 }
 
+/** 20160319    
+ * task p에 대해 rt_mutex 관련 멤버를 초기화 한다.
+ **/
 static void rt_mutex_init_task(struct task_struct *p)
 {
 	raw_spin_lock_init(&p->pi_lock);
@@ -1252,6 +1260,9 @@ void mm_init_owner(struct mm_struct *mm, struct task_struct *p)
 /*
  * Initialize POSIX timer handling for a single task.
  */
+/** 20160319    
+ * POSIX timer 관련 초기화.
+ **/
 static void posix_cpu_timers_init(struct task_struct *tsk)
 {
 	tsk->cputime_expires.prof_exp = 0;
@@ -1334,6 +1345,9 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	ftrace_graph_init_task(p);
 	get_seccomp_filter(p);
 
+	/** 20160319    
+	 * rt_mutex를 위한 멤버를 초기화 한다.
+	 **/
 	rt_mutex_init_task(p);
 
 #ifdef CONFIG_PROVE_LOCKING
@@ -1349,6 +1363,9 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	}
 	current->flags &= ~PF_NPROC_EXCEEDED;
 
+	/** 20160319    
+	 * parent task의 cred를 속성을 복사한다.
+	 **/
 	retval = copy_creds(p, clone_flags);
 	if (retval < 0)
 		goto bad_fork_free;
@@ -1358,10 +1375,20 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	 * triggers too late. This doesn't hurt, the check is only there
 	 * to stop root fork bombs.
 	 */
+	/** 20160319    
+	 * copy_process()가 여러 core에서 호출되어 max_threads를 초과 했다면
+	 * cleanup 하고 EAGAIN을 리턴시킨다.
+	 * 
+	 * 여기서 체크하는 것은 늦다고 볼 수 있지만 문제될 것은 없기 때문에
+	 * root fork bombs에 대한 방비책으로 호출한 것이다.
+	 **/
 	retval = -EAGAIN;
 	if (nr_threads >= max_threads)
 		goto bad_fork_cleanup_count;
 
+	/** 20160319    
+	 * thread의 execution domain의 module 레퍼런스 획득에 실패하면 cleanup.
+	 **/
 	if (!try_module_get(task_thread_info(p)->exec_domain->module))
 		goto bad_fork_cleanup_count;
 
@@ -1370,8 +1397,14 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	copy_flags(clone_flags, p);
 	INIT_LIST_HEAD(&p->children);
 	INIT_LIST_HEAD(&p->sibling);
+	/** 20160319    
+	 * rcu 관련 멤버 초기화.
+	 **/
 	rcu_copy_process(p);
 	p->vfork_done = NULL;
+	/** 20160319    
+	 * alloc_lock을 초기화.
+	 **/
 	spin_lock_init(&p->alloc_lock);
 
 	init_sigpending(&p->pending);
@@ -1385,11 +1418,20 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	memset(&p->rss_stat, 0, sizeof(p->rss_stat));
 #endif
 
+	/** 20160319    
+	 * parent의 timer_slack_ns를 새 프로세스의 default_timer_slack_ns로 저장.
+	 **/
 	p->default_timer_slack_ns = current->timer_slack_ns;
 
+	/** 20160319    
+	 * accounting 관련 초기화
+	 **/
 	task_io_accounting_init(&p->ioac);
 	acct_clear_integrals(p);
 
+	/** 20160319    
+	 * posix cpu timer 초기화
+	 **/
 	posix_cpu_timers_init(p);
 
 	do_posix_clock_monotonic_gettime(&p->start_time);

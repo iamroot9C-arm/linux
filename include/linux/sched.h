@@ -759,6 +759,11 @@ static inline int signal_group_exit(const struct signal_struct *sig)
 /*
  * Some day this will be a full-fledged user tracking system..
  */
+/** 20160319    
+ * user tracking system.
+ * 
+ * struct task_struct -> struct cred -> struct user_struct
+ **/
 struct user_struct {
 	atomic_t __count;	/* reference count */
 	atomic_t processes;	/* How many processes does this user have? */
@@ -1564,6 +1569,10 @@ struct task_struct {
    	u32 self_exec_id;
 /* Protection of (de-)allocation: mm, files, fs, tty, keyrings, mems_allowed,
  * mempolicy */
+	/** 20160319    
+	 * 몇몇 멤버에 대한 
+	 * task_lock(), task_unlock()으로 lock/unlock을 시킨다.
+	 **/
 	spinlock_t alloc_lock;
 
 	/* Protection of the PI data structures: */
@@ -2062,6 +2071,9 @@ extern void task_clear_jobctl_pending(struct task_struct *task,
  **/
 #define RCU_READ_UNLOCK_NEED_QS (1 << 1) /* RCU core needs CPU response. */
 
+/** 20160319    
+ * copy_process에서 호출시 PREEMPT_RCU인 경우 rcu 관련 멤버를 초기화 한다.
+ **/
 static inline void rcu_copy_process(struct task_struct *p)
 {
 	p->rcu_read_lock_nesting = 0;
@@ -2380,6 +2392,9 @@ extern void __set_special_pids(struct pid *pid);
 
 /* per-UID process charging. */
 extern struct user_struct * alloc_uid(kuid_t);
+/** 20160319    
+ * user_struct의 reference count를 증가시키고 리턴한다.
+ **/
 static inline struct user_struct *get_uid(struct user_struct *u)
 {
 	atomic_inc(&u->__count);
@@ -2629,14 +2644,14 @@ static inline int thread_group_empty(struct task_struct *p)
  * neither inside nor outside.
  */
 /** 20131207
- * task(p)에 자원에 대한 spin_lock
+ * task(p)의 몇몇 자원(fs, files, mm, group_info, comm, keyring)에 대한 spin_lock
  ***/
 static inline void task_lock(struct task_struct *p)
 {
 	spin_lock(&p->alloc_lock);
 }
 /** 20131207
- * task(p)에 자원에 대한 spin_unlock
+ * task(p)의 몇몇 자원에 대한 spin_unlock
  ***/
 static inline void task_unlock(struct task_struct *p)
 {

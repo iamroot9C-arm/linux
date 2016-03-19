@@ -20,6 +20,11 @@
 #include <linux/types.h>
 #include <linux/fs_struct.h>
 
+/** 20160319    
+ * 다른 ABI를 다루기 위한 시스템 콜.
+ * personality를 execution domain으로 관리한다.
+ **/
+
 
 static void default_handler(int, struct pt_regs *);
 
@@ -34,6 +39,9 @@ static unsigned long ident_map[32] = {
 	24,	25,	26,	27,	28,	29,	30,	31
 };
 
+/** 20160319    
+ * default execution domain은 linux.
+ **/
 struct exec_domain default_exec_domain = {
 	.name		= "Linux",		/* name */
 	.handler	= default_handler,	/* lcall7 causes a seg fault. */

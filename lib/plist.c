@@ -76,9 +76,11 @@ static void plist_check_head(struct plist_head *head)
  * @head:	&struct plist_head pointer
  */
 /** 20160312    
- * priority node를 새로운 list에 추가.
+ * priority node를 새로운 plist에 추가.
  *
  * 우선순위대로 정렬되며, 같은 우선순위로 추가된 node의 prio_list 연결은 생략된다.
+ *
+ * include/linux/plist.h 참고
  **/
 void plist_add(struct plist_node *node, struct plist_head *head)
 {
@@ -105,6 +107,8 @@ void plist_add(struct plist_node *node, struct plist_head *head)
 		 * 추가할 노드의 우선순위가 현재 iter의 우선순위보다 높다면
 		 * (산술비교에서는 더 작은 값)
 		 * iter보다 앞에 달아주기 위해 break.
+		 *
+		 * 즉 같은 우선순위의 노드는 FIFO으로 배치된다.
 		 **/
 		if (node->prio < iter->prio) {
 			node_next = &iter->node_list;
@@ -115,6 +119,8 @@ void plist_add(struct plist_node *node, struct plist_head *head)
 		 * 다음 비교를 위해
 		 * 현재 비교한 iter가 prev가 된다.
 		 * 현재 비교한 iter의 prio_list의 next를 iter로 잡는다.
+		 *
+		 * 노드간의 이동은 prio_list를 넘어간다.
 		 **/
 		prev = iter;
 		iter = list_entry(iter->prio_list.next,
@@ -130,6 +136,8 @@ void plist_add(struct plist_node *node, struct plist_head *head)
 		list_add_tail(&node->prio_list, &iter->prio_list);
 ins_node:
 	/** 20160312    
+	 * 어떤 조건으로 탐색을 마쳤든 node_list에는 항상 추가.
+	 *
 	 * 1) 새로운 노드의 우선순위가 가장 낮은 경우, node_next는 head이므로
 	 *    node_list의 끝에 추가
 	 * 2) 새로운 노드의 우선순위가 높아 반복 중 추가된다면, node_next는
@@ -150,20 +158,39 @@ void plist_del(struct plist_node *node, struct plist_head *head)
 {
 	plist_check_head(head);
 
+	/** 20160319    
+	 * prio_list에 연결되어 있는 경우 처리.
+	 * 비어 있으면 연결되어 있지 않으므로 skip.
+	 **/
 	if (!list_empty(&node->prio_list)) {
+		/** 20160319    
+		 * prio_list의 가장 끝에 연결된 경우 prio_list를 변경할 필요가 없으므로
+		 * if 블럭을 skip하고 바로 제거한다.
+		 **/
 		if (node->node_list.next != &head->node_list) {
 			struct plist_node *next;
 
+			/** 20160319    
+			 * next를 node_list의 next로 받아온다.
+			 **/
 			next = list_entry(node->node_list.next,
 					struct plist_node, node_list);
 
 			/* add the next plist_node into prio_list */
+			/** 20160319    
+			 * 다음 node의 prio_list가 비어있다는 것은 제거할 노드의
+			 * 우선순위와 같기 때문이다.
+			 * 따라서 next를 prio_list에서 제거할 노드대신 prio_list에 추가해준다.
+			 **/
 			if (list_empty(&next->prio_list))
 				list_add(&next->prio_list, &node->prio_list);
 		}
 		list_del_init(&node->prio_list);
 	}
 
+	/** 20160319    
+	 * node_list는 항상 연결되어 있으므로 제거.
+	 **/
 	list_del_init(&node->node_list);
 
 	plist_check_head(head);

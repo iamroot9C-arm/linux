@@ -46,6 +46,9 @@ struct group_info {
  * If the caller is accessing a task's credentials, they must hold the RCU read
  * lock when reading.
  */
+/** 20160319    
+ * group_info의 reference count를 증가시키고 받아온다.
+ **/
 static inline struct group_info *get_group_info(struct group_info *gi)
 {
 	atomic_inc(&gi->usage);
@@ -117,6 +120,9 @@ struct thread_group_cred {
 /** 20160109    
  * task의 security 관련 정보들을 설명하는 구조체.
  *
+ * credentials에 대한 설명.
+ * https://www.kernel.org/doc/Documentation/security/credentials.txt
+ *
  * 이 구조체는 크게 두 카테고리로 분류된다.
  * object context : 객관적
  * subjective context : 주관적
@@ -127,6 +133,8 @@ struct thread_group_cred {
  * cred : subjective context
  *
  * struct task_struct -> struct cred -> struct user_struct
+ *
+ * usage : reference count
  **/
 struct cred {
 	atomic_t	usage;
@@ -233,6 +241,9 @@ static inline void validate_process_creds(void)
  * Get a reference on the specified set of new credentials.  The caller must
  * release the reference.
  */
+/** 20160319    
+ * cred의 reference count를 증가시켜 리턴한다.
+ **/
 static inline struct cred *get_new_cred(struct cred *cred)
 {
 	atomic_inc(&cred->usage);
@@ -252,6 +263,13 @@ static inline struct cred *get_new_cred(struct cred *cred)
  * accidental alteration of a set of credentials that should be considered
  * immutable.
  */
+/** 20160319    
+ * credentails의 reference를 받아온다.
+ *
+ * immutable로 가정되는 credential의 속성이 실수에 의해 변경되는 것을 
+ * 컴파일 타임에 잡기 위해 const로 선언되는데, 변경되는 속성을 변경하기 위해
+ * nonconst를 호출해 변경한다. 
+ **/
 static inline const struct cred *get_cred(const struct cred *cred)
 {
 	struct cred *nonconst_cred = (struct cred *) cred;

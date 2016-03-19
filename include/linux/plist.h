@@ -19,9 +19,21 @@
  * This is a priority-sorted list of nodes; each node has a
  * priority from INT_MIN (highest) to INT_MAX (lowest).
  *
+ * 20160319    
+ * 우선순위로 정렬된 노드들의 리스트. 각 노드는 작은 integer값이 높은 우선순위다.
+ * 대표적인 예로 rtmutex에서 사용한다.
+ *
  * Addition is O(K), removal is O(1), change of priority of a node is
  * O(K) and K is the number of RT priority levels used in the system.
  * (1 <= K <= 99)
+ * 
+ * 추가는 추가할 위치를 찾기 위해 prio_list를 순회하므로 O(K),
+ * 제거는 제거할 노드가 주어지므로 O(1)이다.
+ *
+ *
+ * 아래 노드를 보면 두 개의 list_head를 가지고 있다.
+ * prio_list는 다른 priority를 가진 node까지 연결하기 위한 리스트이고,
+ * node_list는 모든 노드에 대해 연결되는 리스트이다.
  *
  * This list is really a list of lists:
  *
@@ -47,15 +59,25 @@
  * the insertion of new nodes. There are no nodes with duplicate
  * priorites on the list.
  *
+ * 20160319    
+ * prio_list 리스트 상의 노드들은 우선순위가 높은 순서(작은 integer값)로
+ * 연결되어 있어 새로운 노드의 추가가 간편하다. 다른 우선순위를 갖는 중복된
+ * 노드는 prio 리스트에 존재하지 않는다.
+ *
  * The nodes on the node_list are ordered by priority and can contain
  * entries which have the same priority. Those entries are ordered
  * FIFO
+ *
+ * node_list는 priority 순으로 정렬되어 있고 동일한 우선순위를 가질 수 있다.
+ * 같은 우선순위 내에서 이 노드들은 FIFO 으로 위치한다.
  *
  * Addition means: look for the prio_list node in the prio_list
  * for the priority of the node and insert it before the node_list
  * entry of the next prio_list node. If it is the first node of
  * that priority, add it to the prio_list in the right position and
  * insert it into the serialized node_list list
+ *
+ * 추가시에는 다음 priority를 갖는 노드 앞에 추가시키면 된다.
  *
  * Removal means remove it from the node_list and remove it from
  * the prio_list if the node_list list_head is non empty. In case
@@ -65,6 +87,10 @@
  * replace the removed entry on the prio_list. If the entry which
  * is removed is the only entry of this priority then a simple
  * remove from both list is sufficient.
+ *
+ * 제거시에는 prio_list와 node_list를 같이 제거한다.
+ * 제거할 노드와 같은 우선순위를 가지는 노드가 있을 경우
+ * prio_list에 대신 연결한다.
  *
  * INT_MIN is the highest priority, 0 is the medium highest, INT_MAX
  * is lowest priority.
@@ -84,6 +110,7 @@
  * node_list는 우선 순위대로 정렬되어 항상 연결된다.
  *
  * priority list head.
+ * head는 pl가 없다.
  **/
 struct plist_head {
 	struct list_head node_list;
@@ -125,12 +152,12 @@ struct plist_node {
  */
 /** 20140426    
  * 동적으로 선언된 struct plist_head에 대한 초기화 함수
+ *
+ * node_list만 존재하므로 node_list만 초기화.
  **/
 static inline void
 plist_head_init(struct plist_head *head)
 {
-	/** 20140426    
-	 **/
 	INIT_LIST_HEAD(&head->node_list);
 }
 
@@ -261,6 +288,8 @@ static inline int plist_node_empty(const struct plist_node *node)
 /** 20160312    
  * priority list가 우선순위로 정렬되어 있으므로 head가 가리키는
  * 첫번째 plist_node를 반환한다.
+ *
+ * plist.h의 ascii art 참고.
  **/
 static inline struct plist_node *plist_first(const struct plist_head *head)
 {
