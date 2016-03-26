@@ -187,6 +187,12 @@ print_cfs_rq(struct seq_file *m, int cpu, struct cfs_rq *cfs_rq)
  * modifying one set can't modify the other one by
  * mistake.
  */
+/** 20160326    
+ * linux의 task state diagram에서는
+ * TASK_RUNNING (ready) / TASK_RUNNING (running)으로 구분된다.
+ *
+ * fork나 create process에 의해 새로 생성되면 TASK_RUNNING으로 시작한다.
+ **/
 #define TASK_RUNNING		0
 /** 20131214    
  * TASK_INTERRUPTIBLE로 suspend(sleeping) 상태인  TASK가 깨어나는 경우의 수
@@ -1357,6 +1363,14 @@ struct task_struct {
 #endif
 	int on_rq;
 
+	/** 20160326    
+	 * prio : “dynamic priority"
+	 *	      scheduler가 일정시간동안 우선순위를 높여, 높은 priority의 task를
+	 *	      선점할 수 있도록 할 때 변경된다.
+	 *        대표적인 예가 rt-mutex 에서 PI boosting시켜 deadlock을 회피할 때.
+	 * static_prio : user나 system에 의해 정적으로 주어진 값. user는 nice로 변경.
+	 * normal_prio : 
+	 **/
 	int prio, static_prio, normal_prio;
 	unsigned int rt_priority;
 	const struct sched_class *sched_class;
@@ -1384,6 +1398,11 @@ struct task_struct {
 	unsigned int btrace_seq;
 #endif
 
+	/** 20160326    
+	 * sched_setscheduler()에 의해 변경.
+	 *
+	 * SCHED_NORMAL, SCHED_FIFO, SCHED_RR, SCHED_BATCH, SCHED_IDLE
+	 **/
 	unsigned int policy;
 	int nr_cpus_allowed;
 	cpumask_t cpus_allowed;
@@ -1658,6 +1677,9 @@ struct task_struct {
 	 **/
 	nodemask_t mems_allowed;	/* Protected by alloc_lock */
 	seqcount_t mems_allowed_seq;	/* Seqence no to catch updates */
+	/** 20160326    
+	 * cpuset을 사용하는 경우 cpuset의 mem과 slab을 rotor에 의해 분산.
+	 **/
 	int cpuset_mem_spread_rotor;
 	int cpuset_slab_spread_rotor;
 #endif
@@ -2729,6 +2751,9 @@ static inline void threadgroup_unlock(struct task_struct *tsk)
 	mutex_unlock(&tsk->signal->cred_guard_mutex);
 }
 #else
+/** 20160326    
+ * CGROUPS 분석 생략.
+ **/
 static inline void threadgroup_change_begin(struct task_struct *tsk) {}
 static inline void threadgroup_change_end(struct task_struct *tsk) {}
 static inline void threadgroup_lock(struct task_struct *tsk) {}

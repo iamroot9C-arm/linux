@@ -260,7 +260,6 @@ static inline int ntp_synced(void)
 /** 20141213
  * NTP에 사용되는 변수들을 갱신한다.
  **/
-
 static void ntp_update_frequency(void)
 {
 	u64 second_length;
@@ -355,7 +354,6 @@ static void ntp_update_offset(long offset)
 /** 20141213
  * NTP state 관련 변수를 초기화 한다.
  **/
-
 void ntp_clear(void)
 {
 	unsigned long flags;

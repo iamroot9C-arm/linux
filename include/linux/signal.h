@@ -238,6 +238,9 @@ static inline void siginitsetinv(sigset_t *set, unsigned long mask)
 
 #endif /* __HAVE_ARCH_SIG_SETOPS */
 
+/** 20160326    
+ * sigpending 구조체 초기화
+ **/
 static inline void init_sigpending(struct sigpending *sig)
 {
 	sigemptyset(&sig->signal);

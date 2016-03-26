@@ -1407,6 +1407,9 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	 **/
 	spin_lock_init(&p->alloc_lock);
 
+	/** 20160326    
+	 * 생성한 task의 sigpending 구조체 초기화
+	 **/
 	init_sigpending(&p->pending);
 
 	p->utime = p->stime = p->gtime = 0;
@@ -1434,11 +1437,24 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	 **/
 	posix_cpu_timers_init(p);
 
+	/** 20160326    
+	 * 생성한 task의 start_time과 real_start_time을 저장
+	 **/
 	do_posix_clock_monotonic_gettime(&p->start_time);
 	p->real_start_time = p->start_time;
+	/** 20160326    
+	 * real_start_time은 boot based time으로 다시 저장.
+	 **/
 	monotonic_to_bootbased(&p->real_start_time);
+	/** 20160326    
+	 * io_context와 audit_context는 초기화.
+	 **/
 	p->io_context = NULL;
 	p->audit_context = NULL;
+	/** 20160326    
+	 * thread 생성시 threadgroup_change 구간을 시작한다.
+	 * CGROUPS가 정의되지 않은 경우 의미 없음.
+	 **/
 	if (clone_flags & CLONE_THREAD)
 		threadgroup_change_begin(current);
 	cgroup_fork(p);
@@ -1452,10 +1468,19 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	mpol_fix_fork_child_flag(p);
 #endif
 #ifdef CONFIG_CPUSETS
+	/** 20160326    
+	 * cpuset을 사용하는 경우 cpuset의 mem과 slab을 rotor에 의해 분산.
+	 **/
 	p->cpuset_mem_spread_rotor = NUMA_NO_NODE;
 	p->cpuset_slab_spread_rotor = NUMA_NO_NODE;
+	/** 20160326    
+	 * sequence count 초기화.
+	 **/
 	seqcount_init(&p->mems_allowed_seq);
 #endif
+	/** 20160326    
+	 * TRACE 관련 분석 생략
+	 **/
 #ifdef CONFIG_TRACE_IRQFLAGS
 	p->irq_events = 0;
 #ifdef __ARCH_WANT_INTERRUPTS_ON_CTXSW
@@ -1475,15 +1500,24 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	p->hardirq_context = 0;
 	p->softirq_context = 0;
 #endif
+	/** 20160326    
+	 * LOCKDEP 분석 생략
+	 **/
 #ifdef CONFIG_LOCKDEP
 	p->lockdep_depth = 0; /* no locks held yet */
 	p->curr_chain_key = 0;
 	p->lockdep_recursion = 0;
 #endif
 
+	/** 20160326    
+	 * DEBUG MUTEX 분석 생략
+	 **/
 #ifdef CONFIG_DEBUG_MUTEXES
 	p->blocked_on = NULL; /* not blocked yet */
 #endif
+	/** 20160326    
+	 * MEMCG 분석 생략
+	 **/
 #ifdef CONFIG_MEMCG
 	p->memcg_batch.do_batch = 0;
 	p->memcg_batch.memcg = NULL;

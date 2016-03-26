@@ -94,7 +94,8 @@ struct tvec_root {
 };
 
 /** 20141025    
- * tvec_base
+ * tvec_base : time vector base. percpu로 존재
+ *   ex) usleep(100);
  *
  * timer_jiffies : timer가 알고 있는(경험한, 처리한) jiffies 값?
  *		아직 체크되어야 할 dynamic timer들의 만료 시간 중 가장 빨리 만료되는 값

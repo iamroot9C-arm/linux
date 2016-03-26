@@ -22,10 +22,19 @@
 #include <linux/stop_machine.h>
 
 /* Structure holding internal timekeeping values. */
+/** 20160326    
+ * kernel 내 시간정보를 담당
+ *
+ * timekeeper의 clocksource는 tk_setup_internals로 설정한다.
+ * 호출하는 곳은 현재 timekeeping_init과 change_clocksource.
+ **/
 struct timekeeper {
 	/* Current clocksource used for timekeeping. */
 	struct clocksource	*clock;
 	/* NTP adjusted clock multiplier */
+	/** 20160326    
+	 * mult와 shift는 cycle로부터 시간값을 계산할 때 사용한다.
+	 **/
 	u32			mult;
 	/* The shift value of the current clocksource. */
 	u32			shift;
@@ -67,6 +76,11 @@ struct timekeeper {
 	 * - wall_to_monotonic is no longer the boot time, getboottime must be
 	 * used instead.
 	 */
+	/** 20160326    
+	 * monotonic time = normalized(xtime + wall_to_monotonic)
+	 * wall_to_monotonic은 suspend ~ resume이 반영되지 않는다.
+	 * 이를 반영한 시간으로 total_sleep_time이 사용된다.
+	 **/
 	struct timespec		wall_to_monotonic;
 	/* time spent in suspend */
 	struct timespec		total_sleep_time;
@@ -80,6 +94,9 @@ struct timekeeper {
 	seqlock_t		lock;
 };
 
+/** 20160326    
+ * timerkeeper는 커널 전역에 하나만 존재.
+ **/
 static struct timekeeper timekeeper;
 
 /*
@@ -117,8 +134,8 @@ static struct timespec tk_xtime(struct timekeeper *tk)
 }
 
 /** 20141213
- * timekeeper의 xtime을 초기화
- * **/
+ * timekeeper의 xtime을 설정
+ **/
 static void tk_set_xtime(struct timekeeper *tk, const struct timespec *ts)
 {
 	tk->xtime_sec = ts->tv_sec;
@@ -142,7 +159,9 @@ static void tk_xtime_add(struct timekeeper *tk, const struct timespec *ts)
  * Unless you're the timekeeping code, you should not be using this!
  */
 /** 20141213	
- * clocksource clock을 사용해서 timekeeper변수를 세팅
+ * clocksource clock을 사용해서 timekeeper변수를 세팅.
+ *
+ * timekeeper의 clocksource는 이 함수를 통해서 변경된다.
  **/
 static void tk_setup_internals(struct timekeeper *tk, struct clocksource *clock)
 {
@@ -202,6 +221,9 @@ static void tk_setup_internals(struct timekeeper *tk, struct clocksource *clock)
 }
 
 /* Timekeeper helper functions. */
+/** 20160326    
+ * timekeeper clocksource의 cycle값을 읽어와 ns으로 변환해 리턴한다.
+ **/
 static inline s64 timekeeping_get_ns(struct timekeeper *tk)
 {
 	cycle_t cycle_now, cycle_delta;
@@ -209,12 +231,21 @@ static inline s64 timekeeping_get_ns(struct timekeeper *tk)
 	s64 nsec;
 
 	/* read clocksource: */
+	/** 20160326    
+	 * timekeeper의 clocksource 값을 읽어온다.
+	 **/
 	clock = tk->clock;
 	cycle_now = clock->read(clock);
 
 	/* calculate the delta since the last update_wall_time: */
+	/** 20160326    
+	 * cycle counter 이후 변화된 값을 가져온다.
+	 **/
 	cycle_delta = (cycle_now - clock->cycle_last) & clock->mask;
 
+	/** 20160326    
+	 * cycle을 ns로 변환.
+	 **/
 	nsec = cycle_delta * tk->mult + tk->xtime_nsec;
 	nsec >>= tk->shift;
 
@@ -391,6 +422,11 @@ EXPORT_SYMBOL_GPL(ktime_get);
  * clock and the wall_to_monotonic offset and stores the result
  * in normalized timespec format in the variable pointed to by @ts.
  */
+/** 20160326    
+ * monotonic clock을 timespec format으로 얻어온다.
+ *
+ * realtime clock인 xtime과 wall_to_monotonic 값을 더해 monotonic clock을 얻는다.
+ **/
 void ktime_get_ts(struct timespec *ts)
 {
 	struct timespec tomono;
@@ -398,6 +434,12 @@ void ktime_get_ts(struct timespec *ts)
 
 	WARN_ON(timekeeping_suspended);
 
+	/** 20160326    
+	 * read side sequence lock을 사용해 timekeeper 데이터를 동기화.
+	 * seq가 변경되었으면 값을 다시 읽어온다.
+	 *
+	 * timekeeper의 xtime과 wall_to_monotonic을 읽어온다.
+	 **/
 	do {
 		seq = read_seqbegin(&timekeeper.lock);
 		ts->tv_sec = timekeeper.xtime_sec;
@@ -406,6 +448,9 @@ void ktime_get_ts(struct timespec *ts)
 
 	} while (read_seqretry(&timekeeper.lock, seq));
 
+	/** 20160326    
+	 * timespec 포맷으로 시간값을 채운다.
+	 **/
 	set_normalized_timespec(ts, ts->tv_sec + tomono.tv_sec,
 				ts->tv_nsec + tomono.tv_nsec);
 }
@@ -588,8 +633,8 @@ static int change_clocksource(void *data)
  */
 /** 20151212    
  * 보다 좋은(rating이 높은) 새로운 clock이 등록된 뒤에 호출되어
- * 새로운 clocksource를 동작시키기 위한 동작을 수행한다.
- * 높은 우선순위에서 바로 clocksource를 변경한다.
+ * 새로운 clocksource를 timekeeper의 클럭소스로 등록시킨다.
+ * 스케쥴링의 최우선 순위로 clocksource를 변경함수를 실행한다.
  **/
 void timekeeping_notify(struct clocksource *clock)
 {
@@ -717,7 +762,6 @@ void __attribute__((weak)) read_boot_clock(struct timespec *ts)
  *
  * clocksource default clock을 가져와 공통 timekeeping 변수를 초기화 한다.
  **/
-
 void __init timekeeping_init(void)
 {
 	struct clocksource *clock;
@@ -725,7 +769,7 @@ void __init timekeeping_init(void)
 	struct timespec now, boot;
 
 	/** 20141213
-	 * timespec구조체 now,boot를 읽어온다.
+	 * timespec구조체 now, boot를 읽어온다.
 	 * **/
 	read_persistent_clock(&now);
 	read_boot_clock(&boot);
@@ -1231,8 +1275,16 @@ static cycle_t logarithmic_accumulation(struct timekeeper *tk, cycle_t offset,
  *
  */
 /** 20151212    
+ * clocksource를 사용하여 wall time을 증가시킨다.
  *
  * do_timer에 의해 timer interrupt 핸들러에 의해 호출.
+ * update_wall_time
+ *   timekeeping_adjust
+ *   logarithmic_accumulation
+ *     while (offset >= timekeeper.cycle_interval)
+ *       accumulate_nsecs_to_secs : xtime_sec을 update.
+ *
+ *   accumulate_nsecs_to_secs
  *   timekeeping_update
  **/
 static void update_wall_time(void)
@@ -1393,6 +1445,9 @@ EXPORT_SYMBOL_GPL(ktime_get_boottime);
  * monotonic_to_bootbased - Convert the monotonic time to boot based.
  * @ts:		pointer to the timespec to be converted
  */
+/** 20160326    
+ * monotonic으로 넘어온 ts에 sleep time을 더해 bootbased 시간을 얻어온다.
+ **/
 void monotonic_to_bootbased(struct timespec *ts)
 {
 	*ts = timespec_add(*ts, timekeeper.total_sleep_time);

@@ -348,7 +348,9 @@ EXPORT_SYMBOL(mktime);
  */
 /** 20141213
  * timespec을 sec과 nsec으로 설정.
+ *
  * timespec자료구조에 맞게 normalize하여 sec과 nsec을 설정한다.
+ * (리턴되는 sec과 nsec은 양수. 0 <= nsec < 1sec)
  **/
 void set_normalized_timespec(struct timespec *ts, time_t sec, s64 nsec)
 {

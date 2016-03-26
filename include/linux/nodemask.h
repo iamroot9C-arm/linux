@@ -490,6 +490,9 @@ static inline int num_node_state(enum node_states state)
 #if defined(CONFIG_NUMA) && (MAX_NUMNODES > 1)
 extern int node_random(const nodemask_t *maskp);
 #else
+/** 20160326    
+ * NUMA가 아닐 경우 node는 항상 0.
+ **/
 static inline int node_random(const nodemask_t *mask)
 {
 	return 0;

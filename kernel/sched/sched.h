@@ -43,6 +43,9 @@ extern __read_mostly int scheduler_running;
  */
 #define RUNTIME_INF	((u64)~0ULL)
 
+/** 20160326    
+ * policy가 RT policy인지 여부 리턴.
+ **/
 static inline int rt_policy(int policy)
 {
 	if (policy == SCHED_FIFO || policy == SCHED_RR)
@@ -50,6 +53,9 @@ static inline int rt_policy(int policy)
 	return 0;
 }
 
+/** 20160326    
+ * task의 현재 policy가 RT policy인지 여부를 리턴.
+ **/
 static inline int task_has_rt_policy(struct task_struct *p)
 {
 	return rt_policy(p->policy);

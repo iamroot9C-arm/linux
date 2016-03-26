@@ -11,6 +11,11 @@
 
 #ifndef _STRUCT_TIMESPEC
 #define _STRUCT_TIMESPEC
+/** 20160326    
+ * timespec 구조체. ktime에서 사용.
+ *
+ * 초와 나노초 형태로 저장
+ **/
 struct timespec {
 	__kernel_time_t	tv_sec;			/* seconds */
 	long		tv_nsec;		/* nanoseconds */
@@ -157,6 +162,9 @@ extern void do_gettimeofday(struct timeval *tv);
 extern int do_settimeofday(const struct timespec *tv);
 extern int do_sys_settimeofday(const struct timespec *tv,
 			       const struct timezone *tz);
+/** 20160326    
+ * monotonic clock을 얻어와 ts에 저장.
+ **/
 #define do_posix_clock_monotonic_gettime(ts) ktime_get_ts(ts)
 extern long do_utimes(int dfd, const char __user *filename, struct timespec *times, int flags);
 struct itimerval;

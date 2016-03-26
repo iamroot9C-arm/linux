@@ -1239,6 +1239,9 @@ void sched_set_stop_task(int cpu, struct task_struct *stop)
 /*
  * __normal_prio - return the priority that is based on the static prio
  */
+/** 20160326    
+ * __normal_prio로 static_prio를 리턴한다.
+ **/
 static inline int __normal_prio(struct task_struct *p)
 {
 	return p->static_prio;
@@ -1255,9 +1258,16 @@ static inline int normal_prio(struct task_struct *p)
 {
 	int prio;
 
+	/** 20160326    
+	 * task가 현재 RT policy인 경우 
+	 * 여기부터...
+	 **/
 	if (task_has_rt_policy(p))
 		prio = MAX_RT_PRIO-1 - p->rt_priority;
 	else
+		/** 20160326    
+		 * __normal_prio는 static_prio.
+		 **/
 		prio = __normal_prio(p);
 	return prio;
 }
@@ -2314,17 +2324,27 @@ void sched_fork(struct task_struct *p)
 	unsigned long flags;
 	int cpu = get_cpu();
 
+	/** 20160326    
+	 * task p의 schedule 관련 초기화 수행 (주로 변수 초기화)
+	 **/
 	__sched_fork(p);
 	/*
 	 * We mark the process as running here. This guarantees that
 	 * nobody will actually run it, and a signal or other external
 	 * event cannot wake it up and insert it on the runqueue either.
 	 */
+	/** 20160326    
+	 * process는 생성과 동시에 TASK_RUNNING.
+	 **/
 	p->state = TASK_RUNNING;
 
 	/*
 	 * Make sure we do not leak PI boosting priority to the child.
 	 */
+	/** 20160326    
+	 * prio는 current task의 prio가 PI boosting에 의해 변경된 상태일 수 있으므로
+	 * normal_prio로 대입한다.
+	 **/
 	p->prio = current->normal_prio;
 
 	/*
@@ -2338,6 +2358,8 @@ void sched_fork(struct task_struct *p)
 		} else if (PRIO_TO_NICE(p->static_prio) < 0)
 			p->static_prio = NICE_TO_PRIO(0);
 
+		/** 20160326    
+		 **/
 		p->prio = p->normal_prio = __normal_prio(p);
 		set_load_weight(p);
 
