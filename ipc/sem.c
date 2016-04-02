@@ -1177,7 +1177,13 @@ static inline int get_undo_list(struct sem_undo_list **undo_listp)
 {
 	struct sem_undo_list *undo_list;
 
+	/** 20160402    
+	 * 현재 task의 undo_list를 가져온다.
+	 **/
 	undo_list = current->sysvsem.undo_list;
+	/** 20160402    
+	 * undo_list가 없었다면 생성해 초기화 해 부모에 붙여준다.
+	 **/
 	if (!undo_list) {
 		undo_list = kzalloc(sizeof(*undo_list), GFP_KERNEL);
 		if (undo_list == NULL)
@@ -1555,11 +1561,18 @@ SYSCALL_DEFINE3(semop, int, semid, struct sembuf __user *, tsops,
  * parent and child tasks.
  */
 
+/** 20160402    
+ *
+ * clone_flags에 CLONE_SYSVSEM 플래그가 있다면 SEM_UNDO 상태를 공유한다.
+ **/
 int copy_semundo(unsigned long clone_flags, struct task_struct *tsk)
 {
 	struct sem_undo_list *undo_list;
 	int error;
 
+	/** 20160402    
+	 * CLONE_SYSVSEM 플래그가 주어져 있다면
+	 **/
 	if (clone_flags & CLONE_SYSVSEM) {
 		error = get_undo_list(&undo_list);
 		if (error)

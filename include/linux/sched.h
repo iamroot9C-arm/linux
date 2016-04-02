@@ -1354,13 +1354,22 @@ struct task_struct {
 #ifdef CONFIG_SMP
 	struct llist_node wake_entry;
 	/** 20130706    
-	 * task가 cpu에서 수행 중인지 나타내는 속성.
+	 * SMP에서 task가 cpu에서 수행 중인지 나타내는 속성.
 	 * try_to_wake_up에서 검사하는데 어떤 용도인지???
 	 * 0일 때는 task가 다른 cpu로 migrate 될 수 있다는 의미.
 	 * 1은 반대의 의미로 lock처럼 사용된다.
+	 *
+	 * context_switch시 prepare_lock_switch에서 next task를 1로 설정.
+	 *
+	 * SMP가 아닌 경우 rq->curr == p로 current인지 판단.
 	 **/
 	int on_cpu;
 #endif
+	/** 20160402    
+	 * 처음 task를 fork해 0으로 초기화 하고, 초기화를 마친 후 
+	 * wake_up_new_task 시에 1로 설정.
+	 * context_swtich 시에 이전 task는 0, 다음 task는 1로 설정.
+	 **/
 	int on_rq;
 
 	/** 20160326    
@@ -1369,9 +1378,17 @@ struct task_struct {
 	 *	      선점할 수 있도록 할 때 변경된다.
 	 *        대표적인 예가 rt-mutex 에서 PI boosting시켜 deadlock을 회피할 때.
 	 * static_prio : user나 system에 의해 정적으로 주어진 값. user는 nice로 변경.
-	 * normal_prio : 
+	 *        RT가 아닌 normal task로 동작시 사용되는 값. 100~139
+	 * normal_prio : RT policy인 경우 MAX_RT_PRIO-1 - p->rt_priority를 저장.
+	 *               normal인 경우 boosting되지 않은 상태의 priority.
+	 *               boosting되지 않은 상태의 priority.
+	 *
+	 * 숫자가 낮을수록 높은 priority.
 	 **/
 	int prio, static_prio, normal_prio;
+	/** 20160402    
+	 * 숫자가 높을수록 높은 priority.
+	 **/
 	unsigned int rt_priority;
 	const struct sched_class *sched_class;
 	struct sched_entity se;
@@ -1544,6 +1561,9 @@ struct task_struct {
 	int link_count, total_link_count;
 #ifdef CONFIG_SYSVIPC
 /* ipc stuff */
+	/** 20160402    
+	 * SYSTEM V IPC인 semaphore를 지원하기 위한 멤버.
+	 **/
 	struct sysv_sem sysvsem;
 #endif
 #ifdef CONFIG_DETECT_HUNG_TASK

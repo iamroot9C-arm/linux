@@ -933,7 +933,7 @@ static void dequeue_task(struct rq *rq, struct task_struct *p, int flags)
 }
 
 /** 20130720    
- *
+ * task를 동작시킨다. (새로 생성한 task를 동작시키는 경우 등)
  **/
 void activate_task(struct rq *rq, struct task_struct *p, int flags)
 {
@@ -945,7 +945,8 @@ void activate_task(struct rq *rq, struct task_struct *p, int flags)
 		rq->nr_uninterruptible--;
 
 	/** 20130720    
-	 * 분석하지 않음. ???
+	 * rq의 clock을 갱신하고 task를 enqueue한다.
+	 * sched_class에 따라 제공하는 enqueue_task 콜백을 호출한다.
 	 **/
 	enqueue_task(rq, p, flags);
 }
@@ -1254,13 +1255,41 @@ static inline int __normal_prio(struct task_struct *p)
  * setprio syscalls, and whenever the interactivity
  * estimator recalculates.
  */
+/** 20160402    
+ * task의 예상된 normal priority를 리턴한다.
+ *
+ * task의 prio는 RT-inheritance에 의해 값이 변경되므로 변경되지 않는 static_prio를
+ * 리턴한다.
+ **/
 static inline int normal_prio(struct task_struct *p)
 {
 	int prio;
 
 	/** 20160326    
-	 * task가 현재 RT policy인 경우 
-	 * 여기부터...
+	 *		task_struct.prio:
+	 *			0-99 -> Realtime
+	 *			100-140 -> Normal priority
+	 *
+	 *		ps/stat "prio" field:
+	 *			task_struct.prio - MAX_RT_PRIO (100)
+	 *			(-100)-(-1) -> Realtime
+	 *			0-40 -> Normal Priority
+	 *
+	 *		stat "rt_priority" field:
+	 *			0 -> normal
+	 *			1-99 -> realtime
+	 *
+	 *		stat "policy" field:
+	 *			0 -> SCHED_OTHER (normal)
+	 *			1 -> SCHED_FIFO
+	 *			2 -> SCHED_RR (realtime)
+	 *
+	 *
+	 * task가 현재 RT policy인 경우 (RT-boosting 중에도 policy는 변경 안 된다)
+	 *     rt_priority를 prio로 환산 (rt_priority는 높을수록 우선순위가 높다)
+	 *
+	 * task가 현재 RT policy가 아닌 경우
+	 *     static_prio를 받아온다.
 	 **/
 	if (task_has_rt_policy(p))
 		prio = MAX_RT_PRIO-1 - p->rt_priority;
@@ -1279,14 +1308,29 @@ static inline int normal_prio(struct task_struct *p)
  * interactivity modifiers. Will be RT if the task got
  * RT-boosted. If not then it returns p->normal_prio.
  */
+/** 20160402    
+ * task의 현재 priority를 재계산한다.
+ *
+ * task의 normal_prio를 갱신하고,
+ * 현재 task의 prio가 RT prio가 아닌 경우 normal_prio를 리턴.
+ * RT prio인 경우 그 값을 그대로 리턴.
+ **/
 static int effective_prio(struct task_struct *p)
 {
+	/** 20160402    
+	 * task의 normal_prio를 계산해 normal_prio에 저장한다.
+	 **/
 	p->normal_prio = normal_prio(p);
 	/*
 	 * If we are RT tasks or we were boosted to RT priority,
 	 * keep the priority unchanged. Otherwise, update priority
 	 * to the normal priority:
 	 */
+	/** 20160402    
+	 * 현재 prio를 기준으로
+	 * RT task이거나 RT priority boosting된 경우 현재 prio을 그대로 리턴.
+	 * 그렇지 않은 경우 재계산한 normal_prio를 리턴.
+	 **/
 	if (!rt_prio(p->prio))
 		return p->normal_prio;
 	return p->prio;
@@ -2319,9 +2363,15 @@ static void __sched_fork(struct task_struct *p)
 /*
  * fork()/clone()-time setup:
  */
+/** 20160402    
+ * fork시 sched 관련 초기화를 수행한다.
+ **/
 void sched_fork(struct task_struct *p)
 {
 	unsigned long flags;
+	/** 20160402    
+	 * 선점불가로 만들고 현재 cpu의 번호를 가져온다.
+	 **/
 	int cpu = get_cpu();
 
 	/** 20160326    
@@ -2350,7 +2400,14 @@ void sched_fork(struct task_struct *p)
 	/*
 	 * Revert to default priority/policy on fork if requested.
 	 */
+	/** 20160402    
+	 * task의 sched_reset_on_fork 요청이 설정되어 있다면
+	 * (sched_fork는 copy_process 중인데 이 필드가 설정될 가능성이 있는지???)
+	 **/
 	if (unlikely(p->sched_reset_on_fork)) {
+		/** 20160402    
+		 * task가 rt policy인 경우 policy와 관련 prio를 같이 변경.
+		 **/
 		if (task_has_rt_policy(p)) {
 			p->policy = SCHED_NORMAL;
 			p->static_prio = NICE_TO_PRIO(0);
@@ -2359,6 +2416,8 @@ void sched_fork(struct task_struct *p)
 			p->static_prio = NICE_TO_PRIO(0);
 
 		/** 20160326    
+		 * prio, normal_prio를 초기값으로 설정하고,
+		 * load weight를 계산한다.
 		 **/
 		p->prio = p->normal_prio = __normal_prio(p);
 		set_load_weight(p);
@@ -2367,12 +2426,22 @@ void sched_fork(struct task_struct *p)
 		 * We don't need the reset flag anymore after the fork. It has
 		 * fulfilled its duty:
 		 */
+		/** 20160402    
+		 * flag reset.
+		 **/
 		p->sched_reset_on_fork = 0;
 	}
 
+	/** 20160402    
+	 * task의 dynamic priority가 RT가 아닐 경우, fair_sched_class로 지정.
+	 * rt_prio는 부모 task의 값을 그대로 사용.
+	 **/
 	if (!rt_prio(p->prio))
 		p->sched_class = &fair_sched_class;
 
+	/** 20160402    
+	 * sched_class의 해당 task_fork가 정의되어 있다면 호출.
+	 **/
 	if (p->sched_class->task_fork)
 		p->sched_class->task_fork(p);
 
@@ -2383,6 +2452,10 @@ void sched_fork(struct task_struct *p)
 	 *
 	 * Silence PROVE_RCU.
 	 */
+	/** 20160402    
+	 * pi_lock을 잡은 상태에서 task의 cpu를 현재 cpu로 지정한다.
+	 * 실제 thread_info의 cpu에 저장한다.
+	 **/
 	raw_spin_lock_irqsave(&p->pi_lock, flags);
 	set_task_cpu(p, cpu);
 	raw_spin_unlock_irqrestore(&p->pi_lock, flags);
@@ -2392,16 +2465,25 @@ void sched_fork(struct task_struct *p)
 		memset(&p->sched_info, 0, sizeof(p->sched_info));
 #endif
 #if defined(CONFIG_SMP)
+	/** 20160402    
+	 * on_cpu를 초기화.
+	 **/
 	p->on_cpu = 0;
 #endif
 #ifdef CONFIG_PREEMPT_COUNT
 	/* Want to start with kernel preemption disabled. */
+	/** 20160402    
+	 * 커널 선점을 사용하도록 컴파일 된 경우 1로 초기화.
+	 **/
 	task_thread_info(p)->preempt_count = 1;
 #endif
 #ifdef CONFIG_SMP
 	plist_node_init(&p->pushable_tasks, MAX_PRIO);
 #endif
 
+	/** 20160402    
+	 * 선점불가를 푼다.
+	 **/
 	put_cpu();
 }
 
@@ -4130,6 +4212,9 @@ need_resched:
 
 	if (likely(prev != next)) {
 		rq->nr_switches++;
+		/** 20160402    
+		 * runqueue의 curr를 switching할 task로 지정한다.
+		 **/
 		rq->curr = next;
 		++*switch_count;
 
@@ -4868,7 +4953,7 @@ EXPORT_SYMBOL(sleep_on_timeout);
  */
 /** 20160312    
  * 
- * taks의 'effective' priority를 변경한다.
+ * taks의 'effective' priority를 변경한다 (prio를 변경).
  * __setscheduler처럼 normal_prio를 변경하는 것이 아니다.
  **/
 void rt_mutex_setprio(struct task_struct *p, int prio)
@@ -4916,7 +5001,10 @@ void rt_mutex_setprio(struct task_struct *p, int prio)
 	 **/
 	on_rq = p->on_rq;
 	/** 20160312    
-	 * priority를 지정할 task p가 rq 중 현재 실행 중인 task인
+	 * priority를 지정할 task가 rq의 curr인지 검사한다.
+	 * 
+	 * on_rq는 task가 runqueue의 리스트에 등록된 상태.
+	 * running은 runqueue의 리스트에 등록된 task 중 
 	 **/
 	running = task_current(rq, p);
 	if (on_rq)
@@ -4942,7 +5030,7 @@ out_unlock:
 }
 #endif
 /** 20150704    
- * 추후 분석???
+ * task의 nice를 적용해 priority를 조정한다.
  **/
 void set_user_nice(struct task_struct *p, long nice)
 {
@@ -4950,6 +5038,10 @@ void set_user_nice(struct task_struct *p, long nice)
 	unsigned long flags;
 	struct rq *rq;
 
+	/** 20160402    
+	 * 이미 task가 설정하고자 하는 nice값이거나,
+	 * 설정할 nice값의 범위가 잘못된 경우는 리턴.
+	 **/
 	if (TASK_NICE(p) == nice || nice < -20 || nice > 19)
 		return;
 	/*
@@ -4963,26 +5055,53 @@ void set_user_nice(struct task_struct *p, long nice)
 	 * it wont have any effect on scheduling until the task is
 	 * SCHED_FIFO/SCHED_RR:
 	 */
+	/** 20160402    
+	 * task가 RT policy인 경우에 sched_setscheduler()를 사용해야 rt prio가 변경.
+	 * 하지만 nice 값 변경요청도 static_prio를 변경함으로써 지원한다.
+	 **/
 	if (task_has_rt_policy(p)) {
 		p->static_prio = NICE_TO_PRIO(nice);
 		goto out_unlock;
 	}
+	/** 20160402    
+	 * nice를 변경하는 task가 현재 runqueue에 있다면 priority 변경을 위해 dequeue.
+	 **/
 	on_rq = p->on_rq;
 	if (on_rq)
 		dequeue_task(rq, p, 0);
 
+	/** 20160402    
+	 * 여기에서는 static_prio만 설정.
+	 * p->prio를 여기서 바꾸지 않은 경우의 예: RT-boosted.
+	 **/
 	p->static_prio = NICE_TO_PRIO(nice);
+	/** 20160402    
+	 * load balancing을 위한 load weight 설정.
+	 **/
 	set_load_weight(p);
 	old_prio = p->prio;
+	/** 20160402    
+	 * task의 priority를 재계산한다.
+	 **/
 	p->prio = effective_prio(p);
+	/** 20160402    
+	 * RT나 RT-boosted가 아닌 normal task의 priority가 변경된 경우 delta값.
+	 **/
 	delta = p->prio - old_prio;
 
+	/** 20160402    
+	 * task가 rq에 있었다면 다시 enqueue 시킨다.
+	 **/
 	if (on_rq) {
 		enqueue_task(rq, p, 0);
 		/*
 		 * If the task increased its priority or is running and
 		 * lowered its priority, then reschedule its CPU:
 		 */
+		/** 20160402    
+		 * prio가 높아졌거나, 낮아진 경우지만 현재 cpu에서 수행 중인 task인 경우
+		 * 
+		 **/
 		if (delta < 0 || (delta > 0 && task_running(rq, p)))
 			resched_task(rq->curr);
 	}

@@ -1524,11 +1524,20 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 #endif
 
 	/* Perform scheduler related setup. Assign this task to a CPU. */
+	/** 20160402    
+	 * scheduler 관련 설정을 수행한다.
+	 **/
 	sched_fork(p);
 
+	/** 20160402    
+	 * PERF 관련 분석 생략
+	 **/
 	retval = perf_event_init_task(p);
 	if (retval)
 		goto bad_fork_cleanup_policy;
+	/** 20160402    
+	 * AUDITSYSCALL 관련 분석 생략
+	 **/
 	retval = audit_alloc(p);
 	if (retval)
 		goto bad_fork_cleanup_policy;

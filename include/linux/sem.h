@@ -98,6 +98,9 @@ struct sem_array {
 
 #ifdef CONFIG_SYSVIPC
 
+/** 20160402    
+ * SEM_UNDO 기능을 위한 list.
+ **/
 struct sysv_sem {
 	struct sem_undo_list *undo_list;
 };

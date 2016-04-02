@@ -13,6 +13,14 @@ extern __read_mostly int scheduler_running;
  * to static priority [ MAX_RT_PRIO..MAX_PRIO-1 ],
  * and back.
  */
+/** 20160402    
+ * user-nice : -20 ~ 19 (DEFAULT_PRIO)
+ * static priority : 100 ~ 139
+ *
+ * NICE_TO_PRIO : nice -> static
+ * PRIO_TO_NICE : static -> nice
+ * TASK_NICE    : task's static -> nice
+ **/
 #define NICE_TO_PRIO(nice)	(MAX_RT_PRIO + (nice) + 20)
 #define PRIO_TO_NICE(prio)	((prio) - MAX_RT_PRIO - 20)
 #define TASK_NICE(p)		PRIO_TO_NICE((p)->static_prio)
@@ -788,7 +796,10 @@ static inline int task_current(struct rq *rq, struct task_struct *p)
 }
 
 /** 20160130    
- * task가 on_cpu, 즉 동작 중인지 판단한다. 
+ * task가 running인지 체크한다.
+ *
+ * SMP인 경우에는 rq와 상관없이 on_cpu를 보고 판단.
+ * SMP가 아닌 경우 rq->curr를 보고 판단.
  **/
 static inline int task_running(struct rq *rq, struct task_struct *p)
 {
