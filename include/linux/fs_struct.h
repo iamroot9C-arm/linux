@@ -10,8 +10,9 @@
  *
  * root, pwd 지정시 set_fs_{root,pwd}가 사용된다.
  *
- * fs 전체 동작은 spinlock으로 보호된다.
+ * fs_struct 전체 동작은 spinlock으로 보호된다.
  * struct path인 root와 pwd는 sequence lock으로 보호된다.
+ *   set_fs_root로 root 변경.
  **/
 struct fs_struct {
 	int users;

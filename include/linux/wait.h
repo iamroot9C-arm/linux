@@ -232,6 +232,9 @@ int out_of_line_wait_on_bit(void *, int, int (*)(void *), unsigned);
 int out_of_line_wait_on_bit_lock(void *, int, int (*)(void *), unsigned);
 wait_queue_head_t *bit_waitqueue(void *, int);
 
+/** 20160409    
+ * waitqueue에서 NORMAL 상태의 task 하나를 깨운다.
+ **/
 #define wake_up(x)			__wake_up(x, TASK_NORMAL, 1, NULL)
 #define wake_up_nr(x, nr)		__wake_up(x, TASK_NORMAL, nr, NULL)
 #define wake_up_all(x)			__wake_up(x, TASK_NORMAL, 0, NULL)

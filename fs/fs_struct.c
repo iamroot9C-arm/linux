@@ -135,8 +135,17 @@ void exit_fs(struct task_struct *tsk)
 	}
 }
 
+/** 20160409    
+ * 자식 프로세스의 fs_struct을 할당받고 부모의 fs_struct을 복사한다.
+ **/
 struct fs_struct *copy_fs_struct(struct fs_struct *old)
 {
+	/** 20160409    
+	 * fs_struct을 kmem_cache로부터 할당 받는다.
+	 *
+	 * old를 복사한다.
+	 * struct path를 복사하고, path_get에서 레퍼런스 카운트를 증가시킨다.
+	 **/
 	struct fs_struct *fs = kmem_cache_alloc(fs_cachep, GFP_KERNEL);
 	/* We don't need to lock fs - think why ;-) */
 	if (fs) {
@@ -146,6 +155,9 @@ struct fs_struct *copy_fs_struct(struct fs_struct *old)
 		seqcount_init(&fs->seq);
 		fs->umask = old->umask;
 
+		/** 20160409    
+		 * 부모의 fs_struct은 spinlock으로 보호되므로 lock을 잡고 참조한다.
+		 **/
 		spin_lock(&old->lock);
 		fs->root = old->root;
 		path_get(&fs->root);

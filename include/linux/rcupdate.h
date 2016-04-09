@@ -627,6 +627,14 @@ static inline void rcu_preempt_sleep_check(void)
  * which pointers are protected by RCU and checks that the pointer is
  * annotated as __rcu.
  */
+/** 20160409    
+ * __rcu_dereference_check를 래핑해 구현한 매크로.
+ * rcu 포인터 변수에 대한 역참조를 할 때 condition을 함께 검사한다.
+ *
+ * 두번째 조건은 condition이며, 검사 결과 참이어야 정상적인 접근이다.
+ * rcu_read_lock() / rcu_read_unlock() 사이의 참조인지 검사를 기본으로 포함한다.
+ * 마지막 argument는 sparse (정적분석도구)에서 address space를 검사할 때 사용한다.
+ **/
 #define rcu_dereference_check(p, c) \
 	__rcu_dereference_check((p), rcu_read_lock_held() || (c), __rcu)
 

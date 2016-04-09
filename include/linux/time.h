@@ -289,6 +289,13 @@ struct itimerspec {
 	struct timespec it_value;	/* timer expiration */
 };
 
+/** 20160409    
+ * interval timer. 주기적으로 시그널을 발생시키는 timer.
+ * timeval이므로 us까지의 값을 저장한다.
+ *
+ * it_interval : itimer의 interval
+ * it_value : 현재 itimer의 값.
+ **/
 struct itimerval {
 	struct timeval it_interval;	/* timer interval */
 	struct timeval it_value;	/* current value */

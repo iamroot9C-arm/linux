@@ -255,6 +255,7 @@ static inline void list_splice_init_rcu(struct list_head *list,
 /** 20130413
  * __rcu, __force 는 Not defined
  * 
+ * rcu pointer가 가리키는 member를 포함하는 구조체 인스턴스를 리턴한다.
  */
 #define list_entry_rcu(ptr, type, member) \
 	({typeof (*ptr) __rcu *__ptr = (typeof (*ptr) __rcu __force *)ptr; \

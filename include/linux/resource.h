@@ -39,6 +39,9 @@ struct	rusage {
 	long	ru_nivcsw;		/* involuntary " */
 };
 
+/** 20160409    
+ * resource limit.
+ **/
 struct rlimit {
 	unsigned long	rlim_cur;
 	unsigned long	rlim_max;

@@ -1138,6 +1138,9 @@ struct file_handle {
 	unsigned char f_handle[0];
 };
 
+/** 20160409    
+ * file 참조 카운트를 증가.
+ **/
 #define get_file(x)	atomic_long_inc(&(x)->f_count)
 #define fput_atomic(x)	atomic_long_add_unless(&(x)->f_count, -1, 1)
 #define file_count(x)	atomic_long_read(&(x)->f_count)

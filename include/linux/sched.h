@@ -505,6 +505,15 @@ extern int get_dumpable(struct mm_struct *mm);
 
 #define MMF_INIT_MASK		(MMF_DUMPABLE_MASK | MMF_DUMP_FILTER_MASK)
 
+/** 20160409    
+ * process의 sighand 관련 정보를 표현한 구조체.
+ *
+ * [참고] http://iakovlev.org/index.html?p=1035
+ *
+ * count : reference count. CLONE_SIGHAND인 경우 부모-자식간에 핸들러를 공유한다.
+ * siglock : sighand 보호를 위한 spinlock.
+ * signalfd_wqh : signalfd (시그널 파일)을 통해 시그널을 대기하기 위한 waitqueue.
+ **/
 struct sighand_struct {
 	atomic_t		count;
 	struct k_sigaction	action[_NSIG];
@@ -590,14 +599,26 @@ struct autogroup;
  * sighand_struct is always a proper superset of
  * the locking of signal_struct.
  */
+/** 20160409    
+ * task마다 존재하는, signal을 관리하기 위한 구조체.
+ *
+ * thread는 시그널을 공유. task는 부모-자식 간이라도 독자적인 시그널을 사용.
+ **/
 struct signal_struct {
 	atomic_t		sigcnt;
 	atomic_t		live;
+	/** 20160409    
+	 * 이 시그널 구조체를 공유하는 thread의 수.
+	 **/
 	int			nr_threads;
 
 	wait_queue_head_t	wait_chldexit;	/* for wait4() */
 
 	/* current thread group signal load-balancing target: */
+	/** 20160409    
+	 * thread는 signal을 공유하므로 특정 thread에서 작업을 처리한다.
+	 * complete_signal 등에서 다음 thread를 지정함으로써 로드 밸런싱 처리한다.
+	 **/
 	struct task_struct	*curr_target;
 
 	/* shared signal handling: */
@@ -725,6 +746,9 @@ struct signal_struct {
 	struct rw_semaphore group_rwsem;
 #endif
 
+	/** 20160409    
+	 * copy_signal()에서 부모 프로세스의 값을 복사해 설정한다.
+	 **/
 	int oom_adj;		/* OOM kill score adjustment (bit shift) */
 	int oom_score_adj;	/* OOM kill score adjustment */
 	int oom_score_adj_min;	/* OOM kill score adjustment minimum value.
@@ -1563,6 +1587,9 @@ struct task_struct {
 /* ipc stuff */
 	/** 20160402    
 	 * SYSTEM V IPC인 semaphore를 지원하기 위한 멤버.
+	 *
+	 * undo_list 하나가 존재하는데, 프로세스가 종료시 세마포어를
+	 * 원래대로 되돌려 놓기 위해 사용된다.
 	 **/
 	struct sysv_sem sysvsem;
 #endif
@@ -1575,10 +1602,19 @@ struct task_struct {
 /* filesystem information */
 	struct fs_struct *fs;
 /* open file information */
+	/** 20160409    
+	 * task에서 오픈한 파일 정보 테이블.
+	 **/
 	struct files_struct *files;
 /* namespaces */
 	struct nsproxy *nsproxy;
 /* signal handlers */
+	/** 20160409    
+	 * sighand : task의 signal handle 관련 자료구조.
+	 *
+	 * http://www.ahlinux.com/start/kernel/20484.html
+	 * http://iakovlev.org/index.html?p=1035
+	 **/
 	struct signal_struct *signal;
 	struct sighand_struct *sighand;
 
@@ -2323,6 +2359,7 @@ extern int proc_sched_autogroup_set_nice(struct task_struct *p, int nice);
 #endif
 #else
 /** 20150530    
+ * CONFIG_SCHED_AUTOGROUP 설정하지 않아 분석 생략 
  **/
 static inline void sched_autogroup_create_attach(struct task_struct *p) { }
 static inline void sched_autogroup_detach(struct task_struct *p) { }
@@ -2661,6 +2698,9 @@ int same_thread_group(struct task_struct *p1, struct task_struct *p2)
 	return p1->tgid == p2->tgid;
 }
 
+/** 20160409    
+ * task와 같은 스레드 그룹의 다음 task를 리턴한다.
+ **/
 static inline struct task_struct *next_thread(const struct task_struct *p)
 {
 	return list_entry_rcu(p->thread_group.next,
@@ -3014,6 +3054,9 @@ static inline int spin_needbreak(spinlock_t *lock)
 void thread_group_cputime(struct task_struct *tsk, struct task_cputime *times);
 void thread_group_cputimer(struct task_struct *tsk, struct task_cputime *times);
 
+/** 20160409    
+ * thread group의 cputimer (itimer counter)를 위한 spinlock을 초기화 한다.
+ **/
 static inline void thread_group_cputime_init(struct signal_struct *sig)
 {
 	raw_spin_lock_init(&sig->cputimer.lock);

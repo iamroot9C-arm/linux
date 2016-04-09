@@ -1046,6 +1046,10 @@ fail_nomem:
 	return retval;
 }
 
+/** 20160409    
+ * CLONE_FS가 주어진 경우, 부모 프로세스의 fs_struct을 공유한다. users만 증가.
+ * 주어지지 않은 경우, 새로 메모리를 할당 받아 부모의 현재 fs_struct을 복사한다.
+ **/
 static int copy_fs(unsigned long clone_flags, struct task_struct *tsk)
 {
 	struct fs_struct *fs = current->fs;
@@ -1066,6 +1070,19 @@ static int copy_fs(unsigned long clone_flags, struct task_struct *tsk)
 	return 0;
 }
 
+/** 20160409    
+ * clone_flags에 따라 부모 프로세스의 파일 디스크립터 테이블을 복사한다.
+ *
+ * CLONE_FILES 설정시: 부모와 자식 프로세스는 동일한 파일 기술자 테이블 공유.
+ * 파일 기술자들은 항상 부모 자식 프로세스  내의  동일한  파일들을 참조한다.
+ * 부모  혹은  자식  프로세스에 의해 만들어진 모든 파일 기술자는
+ * 다른 프로세스에서도 역시 타당하다. 이와 유사하게, 만일 프로세스들중 하나가
+ * 파일 기술자를 닫거나, 플래그를 변경하면, 기타 프로세스가 역시 영향을 받는다.
+ *
+ * CLONE_FILES 비설정시: 자식 프로세스는 __clone시 부모프로세스에서
+ * 열린 파일기술자들의 복사본을 상속받는다. 부모 혹은 자식 프로세스들 중 하나에
+ * 의해 나중에 수행될 파일 기술자들에 대한 연산은 다른 것에 영향을 주지 않는다.
+ **/
 static int copy_files(unsigned long clone_flags, struct task_struct *tsk)
 {
 	struct files_struct *oldf, *newf;
@@ -1078,15 +1095,24 @@ static int copy_files(unsigned long clone_flags, struct task_struct *tsk)
 	if (!oldf)
 		goto out;
 
+	/** 20160409    
+	 * CLONE_FILES 설정시 부모와 파일기술자를 공유하므로 참조카운트만 증가.
+	 **/
 	if (clone_flags & CLONE_FILES) {
 		atomic_inc(&oldf->count);
 		goto out;
 	}
 
+	/** 20160409    
+	 * CLONE_FILES 미설정시 현재 부모의 파일 기술자 테이블을 복사.
+	 **/
 	newf = dup_fd(oldf, &error);
 	if (!newf)
 		goto out;
 
+	/** 20160409    
+	 * 자식 task에 새로 생성한 파일 기술자 테이블을 지정한다.
+	 **/
 	tsk->files = newf;
 	error = 0;
 out:
@@ -1119,19 +1145,40 @@ static int copy_io(unsigned long clone_flags, struct task_struct *tsk)
 	return 0;
 }
 
+/** 20160409    
+ * 부모 프로세스의 sighand를 복사한다.
+ * 
+ * CLONE_SIGHAND 플래그가 주어진 경우 부모-자식 프로세스간의 sighand를 공유하므로
+ * 레퍼런스 카운트만 증가시켜 리턴.
+ * 그렇지 않은 경우 별도로 구조체를 할당받고 현재까지의 sighand를 복사해 리턴.
+ **/
 static int copy_sighand(unsigned long clone_flags, struct task_struct *tsk)
 {
 	struct sighand_struct *sig;
 
+	/** 20160409    
+	 * CLONE_SIGHAND라면 부모와 자식 프로세스간에 시그널 핸들러를 공유하므로
+	 * 레퍼런스 카운트만 증가시키고 리턴.
+	 **/
 	if (clone_flags & CLONE_SIGHAND) {
 		atomic_inc(&current->sighand->count);
 		return 0;
 	}
+	/** 20160409    
+	 * 별도의 sighand 관리를 위해 kmem_cache로부터 object를 할당 받아 task에 등록.
+	 **/
 	sig = kmem_cache_alloc(sighand_cachep, GFP_KERNEL);
 	rcu_assign_pointer(tsk->sighand, sig);
 	if (!sig)
 		return -ENOMEM;
+	/** 20160409    
+	 * reference count는 1로 초기화
+	 **/
 	atomic_set(&sig->count, 1);
+	/** 20160409    
+	 * 현재의 부모의 sighand 구조체를 복사한다.
+	 * 포인터 타입으로 별도 할당이 필요한 데이터가 없으므로 memcpy만 수행.
+	 **/
 	memcpy(sig->action, current->sighand->action, sizeof(sig->action));
 	return 0;
 }
@@ -1148,37 +1195,65 @@ void __cleanup_sighand(struct sighand_struct *sighand)
 /*
  * Initialize POSIX timer handling for a thread group.
  */
+/** 20160409    
+ * thread group에 대한 POSIX timer handling 초기화.
+ **/
 static void posix_cpu_timers_init_group(struct signal_struct *sig)
 {
 	unsigned long cpu_limit;
 
 	/* Thread group counters. */
+	/** 20160409    
+	 * thread group cputimer 초기화 (thread_group_cputimer의 spinlock만 초기화)
+	 **/
 	thread_group_cputime_init(sig);
 
+	/** 20160409    
+	 * signal_struct의 resource limit 중 cpu time 값을 얻어온다.
+	 **/
 	cpu_limit = ACCESS_ONCE(sig->rlim[RLIMIT_CPU].rlim_cur);
+	/** 20160409    
+	 * INFINITY가 아니라면 cpu_limit으로 cputime_expires 중 prof_exp(stime)을 설정
+	 **/
 	if (cpu_limit != RLIM_INFINITY) {
 		sig->cputime_expires.prof_exp = secs_to_cputime(cpu_limit);
 		sig->cputimer.running = 1;
 	}
 
 	/* The timer lists. */
+	/** 20160409    
+	 * cpu_timers 리스트 초기화.
+	 **/
 	INIT_LIST_HEAD(&sig->cpu_timers[0]);
 	INIT_LIST_HEAD(&sig->cpu_timers[1]);
 	INIT_LIST_HEAD(&sig->cpu_timers[2]);
 }
 
+/** 20160409    
+ * 시그널을 부모/자식 간에 공유하지 않으므로 별도로 메모리를 할당 받아 초기화.
+ **/
 static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
 {
 	struct signal_struct *sig;
 
+	/** 20160409    
+	 * THREAD인 경우 signal_struct을 공유하므로 리턴.
+	 * process는 CLONE 플래그 없이 독자적인 시그널을 사용한다.
+	 **/
 	if (clone_flags & CLONE_THREAD)
 		return 0;
 
+	/** 20160409    
+	 * signal_struct kmem_cache로부터 오브젝트를 할당 받아 task에 저장한다.
+	 **/
 	sig = kmem_cache_zalloc(signal_cachep, GFP_KERNEL);
 	tsk->signal = sig;
 	if (!sig)
 		return -ENOMEM;
 
+	/** 20160409    
+	 * 초기화.
+	 **/
 	sig->nr_threads = 1;
 	atomic_set(&sig->live, 1);
 	atomic_set(&sig->sigcnt, 1);
@@ -1189,9 +1264,16 @@ static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
 	init_sigpending(&sig->shared_pending);
 	INIT_LIST_HEAD(&sig->posix_timers);
 
+	/** 20160409    
+	 * hrtimer를 초기화. monotonic
+	 **/
 	hrtimer_init(&sig->real_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
 	sig->real_timer.function = it_real_fn;
 
+	/** 20160409    
+	 * 현재 task의 threadgroup leader에게 lock을 걸고,
+	 * signal의 rlim 값을 복사한다.
+	 **/
 	task_lock(current->group_leader);
 	memcpy(sig->rlim, current->signal->rlim, sizeof sig->rlim);
 	task_unlock(current->group_leader);
@@ -1205,6 +1287,9 @@ static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
 	init_rwsem(&sig->group_rwsem);
 #endif
 
+	/** 20160409    
+	 * 부모 process의 oom 관련 정보를 복사한다.
+	 **/
 	sig->oom_adj = current->signal->oom_adj;
 	sig->oom_score_adj = current->signal->oom_score_adj;
 	sig->oom_score_adj_min = current->signal->oom_score_adj_min;
@@ -1542,18 +1627,33 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	if (retval)
 		goto bad_fork_cleanup_policy;
 	/* copy all the process information */
+	/** 20160409    
+	 * clone_flags에 따라 세마포어 undo_list 공유 여부를 결정한다.
+	 **/
 	retval = copy_semundo(clone_flags, p);
 	if (retval)
 		goto bad_fork_cleanup_audit;
+	/** 20160409    
+	 * CLONE_FILES에 따라 파일 디스크립터 테이블을 복사한다.
+	 **/
 	retval = copy_files(clone_flags, p);
 	if (retval)
 		goto bad_fork_cleanup_semundo;
+	/** 20160409    
+	 * CLONE_FS 플래그에 따라 task의 파일시스템 정보를 복사한다.
+	 **/
 	retval = copy_fs(clone_flags, p);
 	if (retval)
 		goto bad_fork_cleanup_files;
+	/** 20160409    
+	 * CLONE_SIGHAND 플래그에 따라 task의 sighand 정보를 복사한다.
+	 **/
 	retval = copy_sighand(clone_flags, p);
 	if (retval)
 		goto bad_fork_cleanup_fs;
+	/** 20160409    
+	 * task의 signal 정보를 설정한다. 공유데이터는 rlimit과 oom 설정 등 일부이다.
+	 **/
 	retval = copy_signal(clone_flags, p);
 	if (retval)
 		goto bad_fork_cleanup_sighand;
@@ -1934,7 +2034,7 @@ static void sighand_ctor(void *data)
 }
 
 /** 20150207    
- * proc 관련 kmem_cache들을 생성한다.
+ * process 관련 kmem_cache들을 생성한다.
  **/
 void __init proc_caches_init(void)
 {

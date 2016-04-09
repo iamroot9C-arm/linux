@@ -370,6 +370,10 @@ do {									\
 /** 20131026    
  * irq disable 시킨 뒤, spinlock을 거는 함수.
  * irq 상태는 저장하지 않는다.
+ *
+ * 이 함수를 사용하려면
+ * 1) 재진입이 불가능하다. (irq state를 저장할 필요가 없다)
+ * 2) 인터럽트 컨텍스트에서 해당 자원에 대한 접근을 하지 않는다.
  **/
 static inline void spin_lock_irq(spinlock_t *lock)
 {
