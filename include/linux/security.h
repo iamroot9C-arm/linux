@@ -1906,6 +1906,8 @@ static inline int security_settime(const struct timespec *ts,
 	return cap_settime(ts, tz);
 }
 
+/** 20160416    
+ **/
 static inline int security_vm_enough_memory_mm(struct mm_struct *mm, long pages)
 {
 	return cap_vm_enough_memory(mm, pages);

@@ -68,13 +68,22 @@ static void flush_icache_alias(unsigned long pfn, unsigned long vaddr, unsigned 
 	flush_icache_range(to, to + len);
 }
 
+/** 20160416    
+ * cache type에 따라 cache를 flush 한다.
+ **/
 void flush_cache_mm(struct mm_struct *mm)
 {
+	/** 20160416    
+	 * cache가 vivt라면 vivt cache flush.
+	 **/
 	if (cache_is_vivt()) {
 		vivt_flush_cache_mm(mm);
 		return;
 	}
 
+	/** 20160416    
+	 * cache가 vipt_aliasing 인 경우 cache flush.
+	 **/
 	if (cache_is_vipt_aliasing()) {
 		asm(	"mcr	p15, 0, %0, c7, c14, 0\n"
 		"	mcr	p15, 0, %0, c7, c10, 4"

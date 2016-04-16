@@ -503,6 +503,9 @@ extern int get_dumpable(struct mm_struct *mm);
 #define MMF_VM_HUGEPAGE		17	/* set when VM_HUGEPAGE is set on vma */
 #define MMF_EXE_FILE_CHANGED	18	/* see prctl_set_mm_exe_file() */
 
+/** 20160416    
+ * mm flags의 초기값으로 설정될 수 있는 flag들 마스크.
+ **/
 #define MMF_INIT_MASK		(MMF_DUMPABLE_MASK | MMF_DUMP_FILTER_MASK)
 
 /** 20160409    
@@ -1476,7 +1479,8 @@ struct task_struct {
 #endif
 
 	/** 20160227    
-	 *
+	 * kernel thread의 경우 mm은 NULL
+	 * user process의 경우 context switch시 mm을 active_mm으로 설정하여 동일.
 	 **/
 	struct mm_struct *mm, *active_mm;
 #ifdef CONFIG_COMPAT_BRK
@@ -1556,10 +1560,24 @@ struct task_struct {
 #ifndef CONFIG_VIRT_CPU_ACCOUNTING
 	cputime_t prev_utime, prev_stime;
 #endif
+	/** 20160416    
+	 * number of voluntary context switches
+	 *   IO를 발생시키거나 동기화가 필요한 시스템 콜을 수행한 경우
+	 *   cat /proc/<PID>/sched | grep nr_voluntary_switches
+	 * number of involuntary context switches
+	 *   커널에 의해 비자발적으로 실행이 정지된 경우
+	 *   cat /proc/<PID>/sched | grep nr_involuntary_switches
+	 **/
 	unsigned long nvcsw, nivcsw; /* context switch counts */
 	struct timespec start_time; 		/* monotonic time */
 	struct timespec real_start_time;	/* boot based time */
 /* mm fault and swap info: this can arguably be seen as either mm-specific or thread-specific */
+	/** 20160416    
+	 * task의 major / minor fault count.
+	 *
+	 * major fault : disk의 io 활동이 필요한 fault. swap out 된 영역에 접근.
+	 * minor fault : disk의 io 활동이 필요하지 않은 fault. 단순 메모리 할당 접근.
+	 **/
 	unsigned long min_flt, maj_flt;
 
 	struct task_cputime cputime_expires;
@@ -3181,6 +3199,9 @@ static inline void mm_update_next_owner(struct mm_struct *mm)
 {
 }
 
+/** 20160416    
+ * CONFIG_MM_OWNER 정의되지 않았음.
+ **/
 static inline void mm_init_owner(struct mm_struct *mm, struct task_struct *p)
 {
 }

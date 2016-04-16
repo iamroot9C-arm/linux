@@ -108,6 +108,9 @@ pte_alloc_one_kernel(struct mm_struct *mm, unsigned long addr)
 	return pte;
 }
 
+/** 20160416    
+ * pte용 page를 할당받아 초기화하고 리턴한다.
+ **/
 static inline pgtable_t
 pte_alloc_one(struct mm_struct *mm, unsigned long addr)
 {
@@ -116,14 +119,25 @@ pte_alloc_one(struct mm_struct *mm, unsigned long addr)
 #ifdef CONFIG_HIGHPTE
 	pte = alloc_pages(PGALLOC_GFP | __GFP_HIGHMEM, 0);
 #else
+	/** 20160416    
+	 * pte용 page를 할당 받는다.
+	 **/
 	pte = alloc_pages(PGALLOC_GFP, 0);
 #endif
+	/** 20160416    
+	 * 할당이 성공했으면 
+	 *   highmem zone이 아닌 영역을 받아온 경우 pte에 해당하는 dcache를 flush.
+	 *   page table용 page를 초기화.
+	 **/
 	if (pte) {
 		if (!PageHighMem(pte))
 			clean_pte_table(page_address(pte));
 		pgtable_page_ctor(pte);
 	}
 
+	/** 20160416    
+	 * 할당 받은 페이지 리턴.
+	 **/
 	return pte;
 }
 
@@ -193,6 +207,9 @@ pmd_populate_kernel(struct mm_struct *mm, pmd_t *pmdp, pte_t *ptep)
 	__pmd_populate(pmdp, __pa(ptep), _PAGE_KERNEL_TABLE);
 }
 
+/** 20160416    
+ * pmd entry에 pte주소와 속성을 포함한 값을 채운다.
+ **/
 static inline void
 pmd_populate(struct mm_struct *mm, pmd_t *pmdp, pgtable_t ptep)
 {

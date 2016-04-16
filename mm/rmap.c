@@ -122,6 +122,9 @@ static inline void anon_vma_free(struct anon_vma *anon_vma)
 	kmem_cache_free(anon_vma_cachep, anon_vma);
 }
 
+/** 20160416    
+ * anon_vma_chain 인스턴스를 kmem_cache로부터 받아온다.
+ **/
 static inline struct anon_vma_chain *anon_vma_chain_alloc(gfp_t gfp)
 {
 	return kmem_cache_alloc(anon_vma_chain_cachep, gfp);
@@ -132,18 +135,37 @@ static void anon_vma_chain_free(struct anon_vma_chain *anon_vma_chain)
 	kmem_cache_free(anon_vma_chain_cachep, anon_vma_chain);
 }
 
+/** 20160416    
+ *
+ * 매개변수 avc는 dst가 사용하기 위해 할당 받은 avc.
+ * vma는 dst vma.
+ * anon_vma는 src의 avc가 가리키던 anon_vma.
+ **/
 static void anon_vma_chain_link(struct vm_area_struct *vma,
 				struct anon_vma_chain *avc,
 				struct anon_vma *anon_vma)
 {
+	/** 20160416    
+	 * (dst용으로 할당받은)avc의 vma를 dst의 vma로 지정.
+	 **/
 	avc->vma = vma;
+	/** 20160416    
+	 * (dst용으로 할당받은)avc의 anon_vma를 src의 anon_vma로 지정.
+	 * 즉, src와 같은 anon_vma를 자신의 avc로 가리키게 된다.
+	 **/
 	avc->anon_vma = anon_vma;
+	/** 20160416    
+	 * 자신의 vma가 anon_vma_chain을 통해 (dst용으로 할당받은)avc를 가리키게 된다.
+	 **/
 	list_add(&avc->same_vma, &vma->anon_vma_chain);
 
 	/*
 	 * It's critical to add new vmas to the tail of the anon_vma,
 	 * see comment in huge_memory.c:__split_huge_page().
 	 */
+	/** 20160416    
+	 * anon_vma 리스트의 끝에 avc의 same_anon_vma 리스트 노드를 연결한다.
+	 **/
 	list_add_tail(&avc->same_anon_vma, &anon_vma->head);
 }
 
@@ -257,9 +279,15 @@ int anon_vma_clone(struct vm_area_struct *dst, struct vm_area_struct *src)
 	struct anon_vma_chain *avc, *pavc;
 	struct anon_vma *root = NULL;
 
+	/** 20160416    
+	 * src의 avc부터 same_vma 리스트를 순회한다.
+	 **/
 	list_for_each_entry_reverse(pavc, &src->anon_vma_chain, same_vma) {
 		struct anon_vma *anon_vma;
 
+		/** 20160416    
+		 * src가 사용할 avc를 하나 할당 받는다.
+		 **/
 		avc = anon_vma_chain_alloc(GFP_NOWAIT | __GFP_NOWARN);
 		if (unlikely(!avc)) {
 			unlock_anon_vma_root(root);
@@ -268,6 +296,9 @@ int anon_vma_clone(struct vm_area_struct *dst, struct vm_area_struct *src)
 			if (!avc)
 				goto enomem_failure;
 		}
+		/** 20160416    
+		 * src의 same_vma 리스트의 현재 avc로부터 가리키는 anon_vma를 받아온다.
+		 **/
 		anon_vma = pavc->anon_vma;
 		root = lock_anon_vma_root(root, anon_vma);
 		anon_vma_chain_link(dst, avc, anon_vma);
@@ -347,9 +378,15 @@ int anon_vma_fork(struct vm_area_struct *vma, struct vm_area_struct *pvma)
 		return -ENOMEM;
 
 	/* Then add our own anon_vma. */
+	/** 20160416    
+	 * fork되는 task를 위한 anon_vma를 할당 받는다.
+	 **/
 	anon_vma = anon_vma_alloc();
 	if (!anon_vma)
 		goto out_error;
+	/** 20160416    
+	 * avc를 할당.
+	 **/
 	avc = anon_vma_chain_alloc(GFP_KERNEL);
 	if (!avc)
 		goto out_error_free_anon_vma;

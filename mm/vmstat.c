@@ -416,11 +416,19 @@ void inc_zone_state(struct zone *zone, enum zone_stat_item item)
 	local_irq_restore(flags);
 }
 
+/** 20160416    
+ * page가 속한 zone의 state에 item을 반영.
+ *
+ * local_irq_save만 해주는 이유는???
+ **/
 void inc_zone_page_state(struct page *page, enum zone_stat_item item)
 {
 	unsigned long flags;
 	struct zone *zone;
 
+	/** 20160416    
+	 * page가 속한 zone을 얻어와 irq를 막은 상태에서 state에 item을 업데이트.
+	 **/
 	zone = page_zone(page);
 	local_irq_save(flags);
 	__inc_zone_state(zone, item);

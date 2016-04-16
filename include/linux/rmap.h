@@ -63,6 +63,11 @@ struct anon_vma {
  * The "same_anon_vma" list contains the anon_vma_chains
  * which link all the VMAs associated with this anon_vma.
  */
+/** 20160416    
+ *
+ * 이 구조체는 어떤 VMA에 연관된 anon_vma들 또는 반대로
+ * 어떤 anon_vma에 연관된 VMA들을 찾을 수 있게 해준다.
+ **/
 struct anon_vma_chain {
 	struct vm_area_struct *vma;
 	struct anon_vma *anon_vma;

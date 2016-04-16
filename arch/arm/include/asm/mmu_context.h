@@ -93,6 +93,9 @@ static inline void check_and_switch_context(struct mm_struct *mm,
 		switch_new_context(mm);
 }
 
+/** 20160416    
+ * 새 context를 초기화 한다.
+ **/
 #define init_new_context(tsk,mm)	(__init_new_context(tsk,mm),0)
 
 #define finish_arch_post_lock_switch \

@@ -87,6 +87,7 @@ pgd_t *pgd_alloc(struct mm_struct *mm)
 
 	/** 20150620    
 	 * high vector가 아닌 경우 vector table에 대한 pte entry를 설정한다.
+	 * low vector인 경우 추후분석???
 	 **/
 	if (!vectors_high()) {
 		/*
@@ -102,6 +103,8 @@ pgd_t *pgd_alloc(struct mm_struct *mm)
 		if (!new_pmd)
 			goto no_pmd;
 
+		/** 20160416    
+		 **/
 		new_pte = pte_alloc_map(mm, NULL, new_pmd, 0);
 		if (!new_pte)
 			goto no_pte;

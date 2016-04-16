@@ -298,9 +298,20 @@ struct vm_region {
  */
 /** 20140531    
  * task의 VM영역 하나에 대한 자료구조.
+ *
+ * task의 VM-area당 하나의 구조체로 영역에 대한 디스크립션.
+ * (속성이 다르거나 영역이 분리되어 있을 때마다 생기는 각 영역들)
+ *
+ * cat /proc/<PID>/maps 로 각 vm_area_struct 정보 확인 가능.
  **/
 struct vm_area_struct {
+	/** 20160416    
+	 * 이 vma가 속한 mm_struct 연결.
+	 **/
 	struct mm_struct * vm_mm;	/* The address space we belong to. */
+	/** 20160416    
+	 * vm영역의 시작/끝 주소.
+	 **/
 	unsigned long vm_start;		/* Our start address within vm_mm. */
 	unsigned long vm_end;		/* The first byte after our end address
 					   within vm_mm. */
@@ -311,6 +322,9 @@ struct vm_area_struct {
 	pgprot_t vm_page_prot;		/* Access permissions of this VMA. */
 	unsigned long vm_flags;		/* Flags, see mm.h. */
 
+	/** 20160416    
+	 * mm_struct의 RB Tree에 연결되는 노드.
+	 **/
 	struct rb_node vm_rb;
 
 	/*
@@ -398,8 +412,17 @@ struct mm_rss_stat {
 	atomic_long_t count[NR_MM_COUNTERS];
 };
 
+/** 20160416    
+ * task의 memory management를 위한 구조체.
+ **/
 struct mm_struct {
+	/** 20160416    
+	 * struct vm_area_struct들을 리스트로 관리하기 위한 포인터.
+	 **/
 	struct vm_area_struct * mmap;		/* list of VMAs */
+	/** 20160416    
+	 * struct vm_area_struct 들을 RB Tree로 관리하기 위한 root.
+	 **/
 	struct rb_root mm_rb;
 	struct vm_area_struct * mmap_cache;	/* last find_vma result */
 #ifdef CONFIG_MMU
@@ -413,13 +436,24 @@ struct mm_struct {
 	unsigned long cached_hole_size; 	/* if non-zero, the largest hole below free_area_cache */
 	unsigned long free_area_cache;		/* first hole of size cached_hole_size or larger */
 	pgd_t * pgd;
+	/** 20160416    
+	 * how many "real address space users" there are
+	 *
+	 * thread의 경우 task의 수만큼 증가.
+	 **/
 	atomic_t mm_users;			/* How many users with user space? */
 	/** 20150801    
 	 * 이 mm_struct가 참조되는 count.
+	 *
+	 * the number of "lazy" users (ie anonymous users) plus one
+	 * if there are any real users.
 	 **/
 	atomic_t mm_count;			/* How many references to "struct mm_struct" (users count as 1) */
 	int map_count;				/* number of VMAs */
 
+	/** 20160416    
+	 * page table과 counter를 보호하기 위한 spinlock.
+	 **/
 	spinlock_t page_table_lock;		/* Protects page tables and some counters */
 	struct rw_semaphore mmap_sem;
 
@@ -505,6 +539,9 @@ struct mm_struct {
 	struct uprobes_state uprobes_state;
 };
 
+/** 20160416    
+ * mm의 cpumask 관련 초기화.
+ **/
 static inline void mm_init_cpumask(struct mm_struct *mm)
 {
 #ifdef CONFIG_CPUMASK_OFFSTACK

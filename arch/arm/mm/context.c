@@ -87,6 +87,9 @@ arch_initcall(contextidr_notifier_init);
  * We fork()ed a process, and we need a new context for the child
  * to run in.
  */
+/** 20160416    
+ * 새 context를 생성하기 위해 context.id를 초기화.
+ **/
 void __init_new_context(struct task_struct *tsk, struct mm_struct *mm)
 {
 	mm->context.id = 0;

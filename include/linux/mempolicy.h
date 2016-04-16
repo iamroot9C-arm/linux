@@ -280,6 +280,8 @@ static inline void mpol_get(struct mempolicy *pol)
 {
 }
 
+/** 20160416    
+ **/
 static inline struct mempolicy *mpol_dup(struct mempolicy *old)
 {
 	return NULL;
@@ -309,6 +311,8 @@ mpol_shared_policy_lookup(struct shared_policy *sp, unsigned long idx)
 	return NULL;
 }
 
+/** 20160416    
+ **/
 #define vma_policy(vma) NULL
 #define vma_set_policy(vma, pol) do {} while(0)
 

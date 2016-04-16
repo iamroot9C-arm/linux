@@ -2753,7 +2753,13 @@ context_switch(struct rq *rq, struct task_struct *prev,
 	 **/
 	prepare_task_switch(rq, prev, next);
 
+	/** 20160416    
+	 * context switch할 task의 mm을 받아온다.
+	 **/
 	mm = next->mm;
+	/** 20160416    
+	 * 이전 task의 active_mm을 받아온다.
+	 **/
 	oldmm = prev->active_mm;
 	/*
 	 * For paravirt, this is coupled with an exit in switch_to to
@@ -2763,7 +2769,12 @@ context_switch(struct rq *rq, struct task_struct *prev,
 	arch_start_context_switch(prev);
 
 	/** 20160227    
-	 * next의 mm이 NULL이라면
+	 * next의 mm이 NULL이라면 kernel task다.
+	 * 이 경우
+	 * active_mm을 이전 task의 active_mm을 사용한다.
+	 * 이전 task의 active_mm의 참조 카운트를 증가시키고, tlb를 flush 한다.
+	 *
+	 * user process라면 oldmm을 mm으로 교체한다.
 	 **/
 	if (!mm) {
 		next->active_mm = oldmm;
@@ -2772,6 +2783,11 @@ context_switch(struct rq *rq, struct task_struct *prev,
 	} else
 		switch_mm(oldmm, mm, next);
 
+	/** 20160416    
+	 * 이전 task의 mm이 NULL이라면, 즉 kernel thread라면
+	 * active_mm을 NULL.
+	 * runqueue의 prev_mm을 oldmm으로 설정.
+	 **/
 	if (!prev->mm) {
 		prev->active_mm = NULL;
 		rq->prev_mm = oldmm;
@@ -4173,7 +4189,14 @@ need_resched:
 
 	raw_spin_lock_irq(&rq->lock);
 
+	/** 20160416    
+	 * context switching을 count할 기본값은 involuntary context switch.
+	 **/
 	switch_count = &prev->nivcsw;
+	/** 20160416    
+	 * preempt_schedule() 등이 호출되었을 때 preempt_count에 PREEMPT_ACTIVE 설정.
+	 * 이 때는 involuntary이므로 if 조건이 false.
+	 **/
 	if (prev->state && !(preempt_count() & PREEMPT_ACTIVE)) {
 		if (unlikely(signal_pending_state(prev->state, prev))) {
 			prev->state = TASK_RUNNING;

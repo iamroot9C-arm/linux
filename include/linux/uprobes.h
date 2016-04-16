@@ -158,6 +158,8 @@ static inline void uprobe_copy_process(struct task_struct *t)
 static inline void uprobe_clear_state(struct mm_struct *mm)
 {
 }
+/** 20160416    
+ **/
 static inline void uprobe_reset_state(struct mm_struct *mm)
 {
 }

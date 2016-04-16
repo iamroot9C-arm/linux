@@ -475,7 +475,13 @@ static int dup_mmap(struct mm_struct *mm, struct mm_struct *oldmm)
 	unsigned long charge;
 	struct mempolicy *pol;
 
+	/** 20160416    
+	 * mmap write semaphore를 잡는다.
+	 **/
 	down_write(&oldmm->mmap_sem);
+	/** 20160416    
+	 * 복사전 oldmm의 cache flush.
+	 **/
 	flush_cache_dup_mm(oldmm);
 	/*
 	 * Not linked in yet - no deadlock potential:
@@ -501,32 +507,56 @@ static int dup_mmap(struct mm_struct *mm, struct mm_struct *oldmm)
 		goto out;
 
 	prev = NULL;
+	/** 20160416    
+	 * oldmm (parent)의 mmap을 하나씩 순회.
+	 **/
 	for (mpnt = oldmm->mmap; mpnt; mpnt = mpnt->vm_next) {
 		struct file *file;
 
+		/** 20160416    
+		 * vm_area_struct의 vm속성에 VM_DONTCOPY가 있다면 해당 vma는 건너뜀.
+		 **/
 		if (mpnt->vm_flags & VM_DONTCOPY) {
 			vm_stat_account(mm, mpnt->vm_flags, mpnt->vm_file,
 							-vma_pages(mpnt));
 			continue;
 		}
 		charge = 0;
+		/** 20160416    
+		 * VM_ACCOUNT 플래그가 주어진 경우 
+		 **/
 		if (mpnt->vm_flags & VM_ACCOUNT) {
+			/** 20160416    
+			 * mpnt 영역에 해당하는 페이지 수를 얻어온다.
+			 **/
 			unsigned long len = vma_pages(mpnt);
 
 			if (security_vm_enough_memory_mm(oldmm, len)) /* sic */
 				goto fail_nomem;
 			charge = len;
 		}
+		/** 20160416    
+		 * vm_area_struct 객체 할당.
+		 **/
 		tmp = kmem_cache_alloc(vm_area_cachep, GFP_KERNEL);
 		if (!tmp)
 			goto fail_nomem;
+		/** 20160416    
+		 * oldmm의 현재 vm_area_struct를 복사.
+		 **/
 		*tmp = *mpnt;
 		INIT_LIST_HEAD(&tmp->anon_vma_chain);
+		/** 20160416    
+		 * memory policy는 NUMA가 아닌 경우 NULL.
+		 **/
 		pol = mpol_dup(vma_policy(mpnt));
 		retval = PTR_ERR(pol);
 		if (IS_ERR(pol))
 			goto fail_nomem_policy;
 		vma_set_policy(tmp, pol);
+		/** 20160416    
+		 * vm_area_struct이 속한 mm을 초기화.
+		 **/
 		tmp->vm_mm = mm;
 		if (anon_vma_fork(tmp, mpnt))
 			goto fail_nomem_anon_vma_fork;
@@ -600,6 +630,9 @@ fail_nomem:
 	goto out;
 }
 
+/** 20160416    
+ * pgd를 할당 받고, kernel 영역에 대한 정보를 복사한다.
+ **/
 static inline int mm_alloc_pgd(struct mm_struct *mm)
 {
 	mm->pgd = pgd_alloc(mm);
@@ -620,6 +653,9 @@ static inline void mm_free_pgd(struct mm_struct *mm)
 
 __cacheline_aligned_in_smp DEFINE_SPINLOCK(mmlist_lock);
 
+/** 20160416    
+ * mm_cachep kmem_cache에서 오브젝트를 하나 할당 받는다.
+ **/
 #define allocate_mm()	(kmem_cache_alloc(mm_cachep, GFP_KERNEL))
 #define free_mm(mm)	(kmem_cache_free(mm_cachep, (mm)))
 
@@ -645,12 +681,28 @@ static void mm_init_aio(struct mm_struct *mm)
 #endif
 }
 
+/** 20160416    
+ * fork시 mm_struct를 초기화.
+ *
+ * user task의 mm_struct의 초기화시 pgd를 할당 받고, kernel 영역에 대한 entry는
+ * 복사한다.
+ **/
 static struct mm_struct *mm_init(struct mm_struct *mm, struct task_struct *p)
 {
+	/** 20160416    
+	 * mm_user와 mm_count는 1로 초기화.
+	 **/
 	atomic_set(&mm->mm_users, 1);
 	atomic_set(&mm->mm_count, 1);
+	/** 20160416    
+	 * memory map rw semaphore 초기화.
+	 * mmlist 초기화.
+	 **/
 	init_rwsem(&mm->mmap_sem);
 	INIT_LIST_HEAD(&mm->mmlist);
+	/** 20160416    
+	 * current의 mm이 존재하면 현재 설정된 flag 중 INIT_MASK에 해당하는 것만 복사
+	 **/
 	mm->flags = (current->mm) ?
 		(current->mm->flags & MMF_INIT_MASK) : default_dump_filter;
 	mm->core_state = NULL;
@@ -662,12 +714,18 @@ static struct mm_struct *mm_init(struct mm_struct *mm, struct task_struct *p)
 	mm_init_aio(mm);
 	mm_init_owner(mm, p);
 
+	/** 20160416    
+	 * mm의 pgd 할당이 성공했다면 def_flags와 notifier 등을 초기화 하고 리턴.
+	 **/
 	if (likely(!mm_alloc_pgd(mm))) {
 		mm->def_flags = 0;
 		mmu_notifier_mm_init(mm);
 		return mm;
 	}
 
+	/** 20160416    
+	 * 실패한 경우 할당 받은 mm를 반환하고 리턴.
+	 **/
 	free_mm(mm);
 	return NULL;
 }
@@ -777,12 +835,19 @@ void set_mm_exe_file(struct mm_struct *mm, struct file *new_exe_file)
 	mm->num_exe_file_vmas = 0;
 }
 
+/** 20160416    
+ * mm의 exe_file의 참조카운트를 증가시키고 읽어온다.
+ **/
 struct file *get_mm_exe_file(struct mm_struct *mm)
 {
 	struct file *exe_file;
 
 	/* We need mmap_sem to protect against races with removal of
 	 * VM_EXECUTABLE vmas */
+	/** 20160416    
+	 * read semaphore를 잡고 mm의 exe_file을 읽어
+	 * reference count를 증가시키고 리턴.
+	 **/
 	down_read(&mm->mmap_sem);
 	exe_file = mm->exe_file;
 	if (exe_file)
@@ -791,6 +856,9 @@ struct file *get_mm_exe_file(struct mm_struct *mm)
 	return exe_file;
 }
 
+/** 20160416    
+ * oldmm의 exe_file 정보를 newmm으로 복사한다.
+ **/
 static void dup_mm_exe_file(struct mm_struct *oldmm, struct mm_struct *newmm)
 {
 	/* It's safe to write the exe_file pointer without exe_file_lock because
@@ -953,10 +1021,16 @@ struct mm_struct *dup_mm(struct task_struct *tsk)
 	if (!oldmm)
 		return NULL;
 
+	/** 20160416    
+	 * struct  mm_struct를 할당 받는다.
+	 **/
 	mm = allocate_mm();
 	if (!mm)
 		goto fail_nomem;
 
+	/** 20160416    
+	 * 현재 task의 mm을 할당받은 mm에 복사한다.
+	 **/
 	memcpy(mm, oldmm, sizeof(*mm));
 	mm_init_cpumask(mm);
 
@@ -965,12 +1039,22 @@ struct mm_struct *dup_mm(struct task_struct *tsk)
 #endif
 	uprobe_reset_state(mm);
 
+	/** 20160416    
+	 * mm의 독자적인 부분을 초기화.
+	 * pgd 할당 포함.
+	 **/
 	if (!mm_init(mm, tsk))
 		goto fail_nomem;
 
+	/** 20160416    
+	 * 새 context를 초기화.
+	 **/
 	if (init_new_context(tsk, mm))
 		goto fail_nocontext;
 
+	/** 20160416    
+	 * oldmm의 exe_file 정보를 복사한다.
+	 **/
 	dup_mm_exe_file(oldmm, mm);
 
 	err = dup_mmap(mm, oldmm);
@@ -1008,9 +1092,18 @@ static int copy_mm(unsigned long clone_flags, struct task_struct *tsk)
 	struct mm_struct *mm, *oldmm;
 	int retval;
 
+	/** 20160416    
+	 * fault count를 0으로 초기화.
+	 **/
 	tsk->min_flt = tsk->maj_flt = 0;
+	/** 20160416    
+	 * voluntary/involuntary context switching count를 초기화
+	 **/
 	tsk->nvcsw = tsk->nivcsw = 0;
 #ifdef CONFIG_DETECT_HUNG_TASK
+	/** 20160416    
+	 * CONFIG_DETECT_HUNG_TASK 설정되어 있을 경우 last switch count를 가진다.
+	 **/
 	tsk->last_switch_count = tsk->nvcsw + tsk->nivcsw;
 #endif
 
@@ -1022,10 +1115,17 @@ static int copy_mm(unsigned long clone_flags, struct task_struct *tsk)
 	 *
 	 * We need to steal a active VM for that..
 	 */
+	/** 20160416    
+	 * 부모 프로세스의 mm이 NULL, 즉 kernel thread라면 바로 리턴.
+	 **/
 	oldmm = current->mm;
 	if (!oldmm)
 		return 0;
 
+	/** 20160416    
+	 * CLONE_VM 플래그가 주어졌다면 mm을 새로 만들지 않고
+	 * user counter만 증가시키고 부모 task의 mm을 공유.
+	 **/
 	if (clone_flags & CLONE_VM) {
 		atomic_inc(&oldmm->mm_users);
 		mm = oldmm;

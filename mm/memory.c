@@ -586,9 +586,15 @@ void free_pgtables(struct mmu_gather *tlb, struct vm_area_struct *vma,
 	}
 }
 
+/** 20160416    
+ * pte를 할당받고, pte에 해당하는 pmd의 entry를 채운다.
+ **/
 int __pte_alloc(struct mm_struct *mm, struct vm_area_struct *vma,
 		pmd_t *pmd, unsigned long address)
 {
+	/** 20160416    
+	 * pte용 page를 할당 받아 초기화.
+	 **/
 	pgtable_t new = pte_alloc_one(mm, address);
 	int wait_split_huge_page;
 	if (!new)
@@ -609,10 +615,23 @@ int __pte_alloc(struct mm_struct *mm, struct vm_area_struct *vma,
 	 */
 	smp_wmb(); /* Could be smp_wmb__xxx(before|after)_spin_lock */
 
+	/** 20160416    
+	 * page_table을 접근할 때 spinlock을 사용해 보호한다.
+	 **/
 	spin_lock(&mm->page_table_lock);
 	wait_split_huge_page = 0;
+	/** 20160416    
+	 * 할당된 pte가 속한 pmd가 할당(populate)되지 않아 NULL인 경우.
+	 **/
 	if (likely(pmd_none(*pmd))) {	/* Has another populated it ? */
+		/** 20160416    
+		 * nr_ptes 증가.
+		 **/
 		mm->nr_ptes++;
+		/** 20160416    
+		 * 해당 pmd에 새 pte 주소와 flag를 포함한 값을 채운다.
+		 * populate된 후 new는 NULL로 초기화.
+		 **/
 		pmd_populate(mm, pmd, new);
 		new = NULL;
 	} else if (unlikely(pmd_trans_splitting(*pmd)))

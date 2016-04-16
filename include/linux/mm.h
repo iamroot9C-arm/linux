@@ -1458,9 +1458,18 @@ static inline pmd_t *pmd_alloc(struct mm_struct *mm, pud_t *pud, unsigned long a
 #define pte_lockptr(mm, pmd)	({(void)(pmd); &(mm)->page_table_lock;})
 #endif /* USE_SPLIT_PTLOCKS */
 
+/** 20160416    
+ * pagetable용 page 생성자.
+ **/
 static inline void pgtable_page_ctor(struct page *page)
 {
+	/** 20160416    
+	 * pte_lock 초기화.
+	 **/
 	pte_lock_init(page);
+	/** 20160416    
+	 * PAGETABLE용 page의 수를 증가.
+	 **/
 	inc_zone_page_state(page, NR_PAGETABLE);
 }
 
@@ -1487,6 +1496,10 @@ static inline void pgtable_page_dtor(struct page *page)
 	pte_unmap(pte);					\
 } while (0)
 
+/** 20160416    
+ * pte를 할당받고 해당 pmd의 entry를 채우고,
+ * 할당이 성공한 경우 pmd entry의 주소를 리턴한다.
+ **/
 #define pte_alloc_map(mm, vma, pmd, address)				\
 	((unlikely(pmd_none(*(pmd))) && __pte_alloc(mm, vma,	\
 							pmd, address))?	\
@@ -1730,6 +1743,9 @@ static inline struct vm_area_struct * find_vma_intersection(struct mm_struct * m
 	return vma;
 }
 
+/** 20160416    
+ * vma 영역에 해당하는 page의 수.
+ **/
 static inline unsigned long vma_pages(struct vm_area_struct *vma)
 {
 	return (vma->vm_end - vma->vm_start) >> PAGE_SHIFT;

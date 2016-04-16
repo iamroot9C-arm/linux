@@ -47,6 +47,9 @@ static inline int khugepaged_enter(struct vm_area_struct *vma)
 	return 0;
 }
 #else /* CONFIG_TRANSPARENT_HUGEPAGE */
+/** 20160416    
+ * CONFIG_TRANSPARENT_HUGEPAGE 선언 안 함.
+ **/
 static inline int khugepaged_fork(struct mm_struct *mm, struct mm_struct *oldmm)
 {
 	return 0;

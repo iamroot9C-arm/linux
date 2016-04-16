@@ -22,6 +22,8 @@
  * IS_ERR_VALUE에 넘겨준 x 역시 unsigned로 type casting.
  * 음수는 0에 가까운 값일수록 절대값이 큰 값을 가진다는 원리를 이용해 error를 판별
  * 포인터의 경우 MAX_ERRNO보다 작은 값이므로 error 값이 아님.
+ * 
+ * x가 0인 경우 false.
  **/
 #define IS_ERR_VALUE(x) unlikely((x) >= (unsigned long)-MAX_ERRNO)
 
@@ -33,6 +35,9 @@ static inline void * __must_check ERR_PTR(long error)
 	return (void *) error;
 }
 
+/** 20160416    
+ * ptr 값을 반환.
+ **/
 static inline long __must_check PTR_ERR(const void *ptr)
 {
 	return (long) ptr;
