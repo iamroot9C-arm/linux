@@ -24,6 +24,13 @@
  * the anon_vma object itself: we're guaranteed no page can be
  * pointing to this anon_vma once its vma list is empty.
  */
+/** 20160423    
+ * 
+ * list_head는 avc 리스트를 가리키는 head.
+ *
+ * struct page의 struct address_space *mapping에 이 구조체 포인터와
+ * PAGE_MAPPING_ANON 비트로 구성된 값이 저장된다.
+ **/
 struct anon_vma {
 	struct anon_vma *root;	/* Root of this anon_vma tree */
 	struct mutex mutex;	/* Serialize access to vma list */
@@ -76,6 +83,9 @@ struct anon_vma_chain {
 };
 
 #ifdef CONFIG_MMU
+/** 20160423    
+ * anon_vma를 받아온다. 레퍼런스 카운트 증가.
+ **/
 static inline void get_anon_vma(struct anon_vma *anon_vma)
 {
 	atomic_inc(&anon_vma->refcount);

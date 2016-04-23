@@ -508,7 +508,7 @@ static int dup_mmap(struct mm_struct *mm, struct mm_struct *oldmm)
 
 	prev = NULL;
 	/** 20160416    
-	 * oldmm (parent)의 mmap을 하나씩 순회.
+	 * oldmm (parent)의 mmap (vm_area_struct)을 하나씩 순회.
 	 **/
 	for (mpnt = oldmm->mmap; mpnt; mpnt = mpnt->vm_next) {
 		struct file *file;
@@ -1123,7 +1123,7 @@ static int copy_mm(unsigned long clone_flags, struct task_struct *tsk)
 		return 0;
 
 	/** 20160416    
-	 * CLONE_VM 플래그가 주어졌다면 mm을 새로 만들지 않고
+	 * CLONE_VM 플래그(vm shared)가 주어졌다면 mm을 새로 만들지 않고
 	 * user counter만 증가시키고 부모 task의 mm을 공유.
 	 **/
 	if (clone_flags & CLONE_VM) {

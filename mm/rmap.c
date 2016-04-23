@@ -136,6 +136,11 @@ static void anon_vma_chain_free(struct anon_vma_chain *anon_vma_chain)
 }
 
 /** 20160416    
+ * fork된 child를 위해 할당받은 vma를 avc와 연결하고,
+ * parent의 anon_vma와 연결한다.
+ *
+ * [참고] https://lwn.net/Articles/383162/
+ * [참고] http://www.2cto.com/os/201411/349997.html
  *
  * 매개변수 avc는 dst가 사용하기 위해 할당 받은 avc.
  * vma는 dst vma.
@@ -155,7 +160,7 @@ static void anon_vma_chain_link(struct vm_area_struct *vma,
 	 **/
 	avc->anon_vma = anon_vma;
 	/** 20160416    
-	 * 자신의 vma가 anon_vma_chain을 통해 (dst용으로 할당받은)avc를 가리키게 된다.
+	 * child vma의 anon_vma_chain 리스트에 (dst용으로 할당받은)avc를 등록한다.
 	 **/
 	list_add(&avc->same_vma, &vma->anon_vma_chain);
 
@@ -164,7 +169,7 @@ static void anon_vma_chain_link(struct vm_area_struct *vma,
 	 * see comment in huge_memory.c:__split_huge_page().
 	 */
 	/** 20160416    
-	 * anon_vma 리스트의 끝에 avc의 same_anon_vma 리스트 노드를 연결한다.
+	 * 기존 anon_vma 리스트의 끝에 avc의 same_anon_vma 리스트 노드를 연결한다.
 	 **/
 	list_add_tail(&avc->same_anon_vma, &anon_vma->head);
 }
@@ -274,6 +279,17 @@ static inline void unlock_anon_vma_root(struct anon_vma *root)
  * Attach the anon_vmas from src to dst.
  * Returns 0 on success, -ENOMEM on failure.
  */
+/** 20160423    
+ * src의 VMA에서 same_vma를 따라가며 각 avc마다
+ * 연결하기 위한 dst avc를 할당받고 연결 한다.
+ *
+ * 1. vma는 fork된 경우일지라도 VM을 share하지 않는 경우 독자적인 vma를
+ *    인스턴스를 갖는다. COW기법을 사용하므로 
+ *
+ *
+ * [참고] http://www.2cto.com/os/201411/349997.html
+ * [참고] https://lwn.net/Articles/383162/
+ **/
 int anon_vma_clone(struct vm_area_struct *dst, struct vm_area_struct *src)
 {
 	struct anon_vma_chain *avc, *pavc;
@@ -286,7 +302,7 @@ int anon_vma_clone(struct vm_area_struct *dst, struct vm_area_struct *src)
 		struct anon_vma *anon_vma;
 
 		/** 20160416    
-		 * src가 사용할 avc를 하나 할당 받는다.
+		 * avc를 하나 할당 받는다.
 		 **/
 		avc = anon_vma_chain_alloc(GFP_NOWAIT | __GFP_NOWARN);
 		if (unlikely(!avc)) {
@@ -297,10 +313,13 @@ int anon_vma_clone(struct vm_area_struct *dst, struct vm_area_struct *src)
 				goto enomem_failure;
 		}
 		/** 20160416    
-		 * src의 same_vma 리스트의 현재 avc로부터 가리키는 anon_vma를 받아온다.
+		 * src의 same_vma 리스트의 현재 avc가 가리키는 anon_vma를 받아온다.
 		 **/
 		anon_vma = pavc->anon_vma;
 		root = lock_anon_vma_root(root, anon_vma);
+		/** 20160423    
+		 * src vma와 src avc, src avc와 dst anon_vma를 연결한다.
+		 **/
 		anon_vma_chain_link(dst, avc, anon_vma);
 	}
 	unlock_anon_vma_root(root);
@@ -374,18 +393,25 @@ int anon_vma_fork(struct vm_area_struct *vma, struct vm_area_struct *pvma)
 	 * First, attach the new VMA to the parent VMA's anon_vmas,
 	 * so rmap can find non-COWed pages in child processes.
 	 */
+	/** 20160423    
+	 * 할당 받은 child의 vma를 parent VMA's의 anon_vma들에 각각 연결한다.
+	 *
+	 * parent - forked child (1) - forked child (2) - forked child (3)인 경우
+	 * forked child (3)은 각 avc마다 다른 AV를 지정하므로 anon_vma'들'을
+	 * 연결하는 것이다.
+	 **/
 	if (anon_vma_clone(vma, pvma))
 		return -ENOMEM;
 
 	/* Then add our own anon_vma. */
 	/** 20160416    
-	 * fork되는 task를 위한 anon_vma를 할당 받는다.
+	 * fork된 task를 위한 anon_vma를 할당 받는다.
 	 **/
 	anon_vma = anon_vma_alloc();
 	if (!anon_vma)
 		goto out_error;
 	/** 20160416    
-	 * avc를 할당.
+	 * fork되는 task를 위한 avc를 할당.
 	 **/
 	avc = anon_vma_chain_alloc(GFP_KERNEL);
 	if (!avc)
@@ -395,16 +421,28 @@ int anon_vma_fork(struct vm_area_struct *vma, struct vm_area_struct *pvma)
 	 * The root anon_vma's spinlock is the lock actually used when we
 	 * lock any of the anon_vmas in this anon_vma tree.
 	 */
+	/** 20160423    
+	 * fork된 task를 위해 할당한 AV의 root를 parent의 AV의 root로 한다.
+	 **/
 	anon_vma->root = pvma->anon_vma->root;
 	/*
 	 * With refcounts, an anon_vma can stay around longer than the
 	 * process it belongs to. The root anon_vma needs to be pinned until
 	 * this anon_vma is freed, because the lock lives in the root.
 	 */
+	/** 20160423    
+	 * anon_vma root의 레퍼런스 카운트를 증가시킨다.
+	 **/
 	get_anon_vma(anon_vma->root);
 	/* Mark this anon_vma as the one where our new (COWed) pages go. */
+	/** 20160423    
+	 * child의 vma가 child를 위해 생성한 anon_vma를 가리킨다.
+	 **/
 	vma->anon_vma = anon_vma;
 	anon_vma_lock(anon_vma);
+	/** 20160423    
+	 * child의 vma와 child의 avc, child의 avc와 child의 anon_vma를 연결한다.
+	 **/
 	anon_vma_chain_link(vma, avc, anon_vma);
 	anon_vma_unlock(anon_vma);
 
