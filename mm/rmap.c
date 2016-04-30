@@ -137,7 +137,7 @@ static void anon_vma_chain_free(struct anon_vma_chain *anon_vma_chain)
 
 /** 20160416    
  * fork된 child를 위해 할당받은 vma를 avc와 연결하고,
- * parent의 anon_vma와 연결한다.
+ * avc를 anon_vma와 연결한다.
  *
  * [참고] https://lwn.net/Articles/383162/
  * [참고] http://www.2cto.com/os/201411/349997.html
@@ -380,6 +380,11 @@ void anon_vma_moveto_tail(struct vm_area_struct *dst)
  * the corresponding VMA in the parent process is attached to.
  * Returns 0 on success, non-zero on failure.
  */
+/** 20160430    
+ * 자식 프로세스를 위해 생성한  vma를 자신의 anon_vma에 연결한다.
+ * 뿐만 아니라 vma를 부모 프로세스에 있는, 대응하는 vma가 붙어 있는
+ * anon_vma들에도 붙인다.
+ **/
 int anon_vma_fork(struct vm_area_struct *vma, struct vm_area_struct *pvma)
 {
 	struct anon_vma_chain *avc;
@@ -395,6 +400,7 @@ int anon_vma_fork(struct vm_area_struct *vma, struct vm_area_struct *pvma)
 	 */
 	/** 20160423    
 	 * 할당 받은 child의 vma를 parent VMA's의 anon_vma들에 각각 연결한다.
+	 * child용 avc 할당과 av 연결은 아래에서 이뤄진다.
 	 *
 	 * parent - forked child (1) - forked child (2) - forked child (3)인 경우
 	 * forked child (3)은 각 avc마다 다른 AV를 지정하므로 anon_vma'들'을

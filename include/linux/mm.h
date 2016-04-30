@@ -76,6 +76,9 @@ extern unsigned int kobjsize(const void *objp);
 #define VM_READ		0x00000001	/* currently active flags */
 #define VM_WRITE	0x00000002
 #define VM_EXEC		0x00000004
+/** 20160430
+ * memory 공유.
+ **/
 #define VM_SHARED	0x00000008
 
 /* mprotect() hardcodes VM_MAYREAD >> 4 == VM_READ, and so for r/w/x bits. */
@@ -1479,6 +1482,10 @@ static inline void pgtable_page_dtor(struct page *page)
 	dec_zone_page_state(page, NR_PAGETABLE);
 }
 
+/** 20160430    
+ * pmd에 해당하는 pte가 속한 struct page의 ptl에 lock을 걸고, ptlp에 주소를 저장.
+ * pmd에서 address에 해당하는 pte entry 주소를 리턴한다.
+ **/
 #define pte_offset_map_lock(mm, pmd, address, ptlp)	\
 ({							\
 	spinlock_t *__ptl = pte_lockptr(mm, pmd);	\
@@ -1505,6 +1512,11 @@ static inline void pgtable_page_dtor(struct page *page)
 							pmd, address))?	\
 	 NULL: pte_offset_map(pmd, address))
 
+/** 20160430    
+ * pmd가 none이면 pte table을 할당 받고 주소를 pmd entry에 채운다.
+ * 할당이 성공하면 address에 해당하는 pte에 lock을 걸고 포인터를 ptlp에 채운다.
+ * 해당 pte  리턴한다.
+ **/
 #define pte_alloc_map_lock(mm, pmd, address, ptlp)	\
 	((unlikely(pmd_none(*(pmd))) && __pte_alloc(mm, NULL,	\
 							pmd, address))?	\

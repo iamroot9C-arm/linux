@@ -692,13 +692,35 @@ int pagecache_write_end(struct file *, struct address_space *mapping,
 				struct page *page, void *fsdata);
 
 struct backing_dev_info;
+/** 20160430    
+ *
+ * 페이지가 페이지 캐시로 사용되었을 때, 페이지들을 관리하기 위한 구조체이다.
+ * 대표적으로 find_get_page() 함수는 address_space에 포함된 page를
+ * 찾아올 때 사용한다.
+ *
+ * http://hooneyo.tistory.com/entry/페이지-캐시 (번역)
+ * 페이지는 비연속적인 다수의 물리적 블록으로 구성될 수 있다.
+ * 이러한 페이지에서 찾는 데이터가 포함 돼 있는가를 검사하는 것은 어려운데,
+ * 그것은 페이지를 구성하는 블록의 비연속성 때문이다.
+ * 즉, 비 연속성으로 인하여 디바이스 이름과 블록 번호만을 가지고는 어떤 데이터의
+ * 페이지 캐시에서의 위치를 더욱이 알아낼 수가 없다.
+ *
+ * 범용성을 유지하기 위해, 리눅스의 페이지 캐시는 캐시 안의 페이지를 구별하기
+ * 위해 address_space구조체를 사용한다.
+ **/
 struct address_space {
 	struct inode		*host;		/* owner: inode, block_device */
 	struct radix_tree_root	page_tree;	/* radix tree of all pages */
+	/** 20160430    
+	 * radix tree에 대한 lock.
+	 **/
 	spinlock_t		tree_lock;	/* and lock protecting it */
 	unsigned int		i_mmap_writable;/* count VM_SHARED mappings */
 	struct prio_tree_root	i_mmap;		/* tree of private and shared mappings */
 	struct list_head	i_mmap_nonlinear;/*list VM_NONLINEAR mappings */
+	/** 20160430    
+	 * tree, count, list를 보호하기 위한 mutex.
+	 **/
 	struct mutex		i_mmap_mutex;	/* protect tree, count, list */
 	/* Protected by tree_lock together with the radix tree */
 	unsigned long		nrpages;	/* number of total pages */

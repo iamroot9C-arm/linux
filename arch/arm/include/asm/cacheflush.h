@@ -345,6 +345,9 @@ static inline void flush_kernel_dcache_page(struct page *page)
 {
 }
 
+/** 20160430    
+ *
+ **/
 #define flush_dcache_mmap_lock(mapping) \
 	spin_lock_irq(&(mapping)->tree_lock)
 #define flush_dcache_mmap_unlock(mapping) \

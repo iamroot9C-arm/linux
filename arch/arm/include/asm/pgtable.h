@@ -233,7 +233,8 @@ static inline pte_t *pmd_page_vaddr(pmd_t pmd)
 }
 
 /** 20140531    
- * pmd entry값이 가리키는 페이지 프레임에 대한 descriptor (struct page)의 주소를 리턴
+ * pmd entry값이 가리키는(pte table 주소) 페이지 프레임에 대한
+ * descriptor (struct page)의 주소를 리턴
  *
  * pmd_val(pmd) & PHYS_MASK	: pmd 의 값을 physical 주소로 mask.
  * __phys_to_pfn(x)			: pmd 의 값에 해당하는 page frame number (속성값은 사라짐)
@@ -307,7 +308,7 @@ extern void __sync_icache_dcache(pte_t pteval);
 #endif
 
 /** 20131109
- * addr가 커널영역이면 pte만 채우고, 
+ * addr가 커널영역이면 ptep에 pte만 채우고, 
  * 유저영역이면 pte에 해당되는 영역을 flush하고 
  * flag에 PTE_EXT_NG를 세팅한다.
  **/

@@ -200,6 +200,9 @@ static inline void do_raw_spin_unlock(raw_spinlock_t *lock) __releases(lock)
 		 _raw_spin_lock_nest_lock(lock, &(nest_lock)->dep_map);	\
 	 } while (0)
 #else
+/** 20160430    
+ * CONFIG_DEBUG_LOCK_ALLOC이 설정되지 않아 단순 _raw_spin_lock() 호출.
+ **/
 # define raw_spin_lock_nested(lock, subclass)		_raw_spin_lock(lock)
 # define raw_spin_lock_nest_lock(lock, nest_lock)	_raw_spin_lock(lock)
 #endif
@@ -357,6 +360,9 @@ static inline int spin_trylock(spinlock_t *lock)
 	return raw_spin_trylock(&lock->rlock);
 }
 
+/** 20160430    
+ * CONFIG_DEBUG_LOCK_ALLOC 설정하지 않아 _raw_spin_lock.
+ **/
 #define spin_lock_nested(lock, subclass)			\
 do {								\
 	raw_spin_lock_nested(spinlock_check(lock), subclass);	\

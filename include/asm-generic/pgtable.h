@@ -380,6 +380,9 @@ static inline void ptep_modify_prot_commit(struct mm_struct *mm,
  * it must synchronize the delayed page table writes properly on other CPUs.
  */
 #ifndef __HAVE_ARCH_ENTER_LAZY_MMU_MODE
+/** 20160430    
+ * ???
+ **/
 #define arch_enter_lazy_mmu_mode()	do {} while (0)
 #define arch_leave_lazy_mmu_mode()	do {} while (0)
 #define arch_flush_lazy_mmu_mode()	do {} while (0)

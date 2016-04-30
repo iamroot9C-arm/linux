@@ -3025,7 +3025,7 @@ static inline int need_resched(void)
 extern int _cond_resched(void);
 /** 20131207
  * __might_sleep 비어있음.
- * _cond_resched를 실행
+ * _cond_resched를 실행 (실제 schedule()까지 수행)
  ***/
 #define cond_resched() ({			\
 	__might_sleep(__FILE__, __LINE__, 0);	\

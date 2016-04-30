@@ -685,6 +685,9 @@ int __pte_alloc_kernel(pmd_t *pmd, unsigned long address)
 	return 0;
 }
 
+/** 20160430    
+ * rss vector를 초기화 (file/anon/swap별로 관리)
+ **/
 static inline void init_rss_vec(int *rss)
 {
 	memset(rss, 0, sizeof(int) * NR_MM_COUNTERS);
@@ -765,6 +768,9 @@ static void print_bad_pte(struct vm_area_struct *vma, unsigned long addr,
 	add_taint(TAINT_BAD_PAGE);
 }
 
+/** 20160430    
+ * flags가 shared가 아니면서 write 가능할 경우 cow mapping.
+ **/
 static inline int is_cow_mapping(vm_flags_t flags)
 {
 	return (flags & (VM_SHARED | VM_MAYWRITE)) == VM_MAYWRITE;
@@ -939,6 +945,9 @@ copy_one_pte(struct mm_struct *dst_mm, struct mm_struct *src_mm,
 	 * If it's a COW mapping, write protect it both
 	 * in the parent and the child
 	 */
+	/** 20160430    
+	 * copy-on-write mapping인 경우
+	 **/
 	if (is_cow_mapping(vm_flags)) {
 		ptep_set_wrprotect(src_mm, addr, src_pte);
 		pte = pte_wrprotect(pte);
@@ -979,12 +988,25 @@ int copy_pte_range(struct mm_struct *dst_mm, struct mm_struct *src_mm,
 	swp_entry_t entry = (swp_entry_t){0};
 
 again:
+	/** 20160430    
+	 * rss vector 초기화.
+	 **/
 	init_rss_vec(rss);
 
+	/** 20160430    
+	 * addr에 해당하는 pte를 할당 받고, pte의 주소를 리턴.
+	 **/
 	dst_pte = pte_alloc_map_lock(dst_mm, dst_pmd, addr, &dst_ptl);
 	if (!dst_pte)
 		return -ENOMEM;
+	/** 20160430    
+	 * pmd에서 addr에 해당하는 pte entry의 주소를 가져와 src_pte에 저장.
+	 **/
 	src_pte = pte_offset_map(src_pmd, addr);
+	/** 20160430    
+	 * src pte에 해당하는 spinlock의 위치를 받아온다.
+	 * ptl은 pte에 해당하는 struct page에 위치한다.
+	 **/
 	src_ptl = pte_lockptr(src_mm, src_pmd);
 	spin_lock_nested(src_ptl, SINGLE_DEPTH_NESTING);
 	orig_src_pte = src_pte;
@@ -996,12 +1018,20 @@ again:
 		 * We are holding two locks at this point - either of them
 		 * could generate latencies in another task on another CPU.
 		 */
+		/** 20160430    
+		 * dst와 src ptr 모두에 대한 lock을 잡고 있기 때문에
+		 * progress가 어느 정도 수행되었다면 복사를 멈추고 나간다.
+		 * 아래에서 end까지 진행되지 않았다면 again.
+		 **/
 		if (progress >= 32) {
 			progress = 0;
 			if (need_resched() ||
 			    spin_needbreak(src_ptl) || spin_needbreak(dst_ptl))
 				break;
 		}
+		/** 20160430    
+		 * src entry가 비어 있으면 progress만 증가시키고 continue.
+		 **/
 		if (pte_none(*src_pte)) {
 			progress++;
 			continue;

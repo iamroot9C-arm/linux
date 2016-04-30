@@ -362,6 +362,9 @@ struct vm_area_struct {
 	/* Information about our backing store: */
 	unsigned long vm_pgoff;		/* Offset (within vm_file) in PAGE_SIZE
 					   units, *not* PAGE_CACHE_SIZE */
+	/** 20160430    
+	 * map 시킨 file 구조체
+	 **/
 	struct file * vm_file;		/* File we map to (can be NULL). */
 	void * vm_private_data;		/* was vm_pte (shared mem) */
 
@@ -385,7 +388,7 @@ struct core_state {
 };
 
 /** 20140531    
- * file/anon/swap 별로 counting.
+ * Task의 RSS를 file/anon/swap 별로 counting.
  **/
 enum {
 	MM_FILEPAGES,
@@ -403,7 +406,9 @@ enum {
 /** 20140531    
  * task의 rss를 page 종류별로 counting.
  *
- * RSS stands for "Resident Set Size." It explains how many of the allocated blocks owned by the task currently reside in RAM
+ * RSS stands for "Resident Set Size."
+ * It explains how many of the allocated blocks owned by the task currently reside in RAM
+ * 프로세스와 관련된 물리적 페이지(physical pages) 수. 
  **/
 struct task_rss_stat {
 	int events;	/* for synchronization threshold */
