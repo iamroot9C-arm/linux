@@ -352,6 +352,9 @@ static inline void mmu_notifier_invalidate_page(struct mm_struct *mm,
 {
 }
 
+/** 20160514    
+ * CONFIG_MMU_NOTIFIER 정의되지 않음.
+ **/
 static inline void mmu_notifier_invalidate_range_start(struct mm_struct *mm,
 				  unsigned long start, unsigned long end)
 {

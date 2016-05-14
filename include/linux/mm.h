@@ -94,6 +94,11 @@ extern unsigned int kobjsize(const void *objp);
 #define VM_GROWSUP	0x00000000
 #define VM_NOHUGEPAGE	0x00000200	/* MADV_NOHUGEPAGE marked this vma */
 #endif
+/** 20160514    
+ * page-ranges를 struct page를 사용하지 않고 pfn만으로 관리하는 경우. 언제???
+ *
+ * 이 플래그를 설정하는 함수는 remap_pfn_range, vm_insert_pfn
+ **/
 #define VM_PFNMAP	0x00000400	/* Page-ranges managed without "struct page", just pure PFN */
 #define VM_DENYWRITE	0x00000800	/* ETXTBSY on write attempts.. */
 
@@ -177,6 +182,9 @@ static inline int is_linear_pfn_mapping(struct vm_area_struct *vma)
 	return !!(vma->vm_flags & VM_PFN_AT_MMAP);
 }
 
+/** 20160514    
+ * special mapping인 경우인지 검사 (반대의 경우는 normal mapping)
+ **/
 static inline int is_pfn_mapping(struct vm_area_struct *vma)
 {
 	return !!(vma->vm_flags & VM_PFNMAP);

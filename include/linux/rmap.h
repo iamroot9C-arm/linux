@@ -30,6 +30,12 @@
  *
  * struct page의 struct address_space *mapping에 이 구조체 포인터와
  * PAGE_MAPPING_ANON 비트로 구성된 값이 저장된다.
+ *
+ *
+ * anon_vma는 anon_vma_alloc으로 생성한다.
+ * 호출 위치는 anon_vma_fork와 anon_vma_prepare이다.
+ * anon_vma_fork는 dup_mmap에서 parent의 vma를 복사하는 과정이며,
+ * anon_vma_prepare는 do_anonymous_page처럼 새로 anon page를 할당하는 과정이다.
  **/
 struct anon_vma {
 	struct anon_vma *root;	/* Root of this anon_vma tree */

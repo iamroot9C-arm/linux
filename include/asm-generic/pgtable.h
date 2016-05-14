@@ -273,6 +273,9 @@ void pgd_clear_bad(pgd_t *);
 void pud_clear_bad(pud_t *);
 void pmd_clear_bad(pmd_t *);
 
+/** 20160514    
+ * pgd entry가 pgd_none이거나 bad여서 clear를 했는지 여부를 리턴.
+ **/
 static inline int pgd_none_or_clear_bad(pgd_t *pgd)
 {
 	if (pgd_none(*pgd))
@@ -427,6 +430,10 @@ static inline int track_pfn_vma_new(struct vm_area_struct *vma, pgprot_t *prot,
  * track_pfn_vma_copy is called when vma that is covering the pfnmap gets
  * copied through copy_page_range().
  */
+/** 20160514    
+ * arm은 pfn mapping 한 메모리에 대한 추적 기능을 제공하지 않는다.
+ * 추후 track_pfn_copy로 이름 변경.
+ **/
 static inline int track_pfn_vma_copy(struct vm_area_struct *vma)
 {
 	return 0;

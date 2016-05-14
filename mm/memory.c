@@ -769,7 +769,7 @@ static void print_bad_pte(struct vm_area_struct *vma, unsigned long addr,
 }
 
 /** 20160430    
- * flags가 shared가 아니면서 write 가능할 경우 cow mapping.
+ * flags가 shared가 아니면서 write 가능(MAYWRITE)할 경우 cow mapping.
  **/
 static inline int is_cow_mapping(vm_flags_t flags)
 {
@@ -1115,6 +1115,9 @@ static inline int copy_pud_range(struct mm_struct *dst_mm, struct mm_struct *src
 	return 0;
 }
 
+/** 20160514    
+ * parent의 vma 에 해당하는 page table 영역을 child에 복사한다.
+ **/
 int copy_page_range(struct mm_struct *dst_mm, struct mm_struct *src_mm,
 		struct vm_area_struct *vma)
 {
@@ -1130,14 +1133,33 @@ int copy_page_range(struct mm_struct *dst_mm, struct mm_struct *src_mm,
 	 * readonly mappings. The tradeoff is that copy_page_range is more
 	 * efficient than faulting.
 	 */
+	/** 20160514    
+	 * pte entry가 없으면 page fault가 발생한다.
+	 * page fault로 pte들이 채워질 수 있는 상황이면 굳이 pte를 복사하지 않는데,
+	 * 큰 공유 메모리 매핑이나 private지만 readonly 매핑인 경우 fork를 더
+	 * 가볍게 해준다.
+	 * anon_vma인 경우 page fault로 처리할 수 없으니 항상 pte를 복사.
+	 * anon_vma이 아닌 경우 page fault로 처리가능.
+	 *
+	 * 아래 vm_flags에 해당하는 경우라면 pte를 항상 복사해줘야 하는 경우인데,
+	 * 각각의 의미는???
+	 **/
 	if (!(vma->vm_flags & (VM_HUGETLB|VM_NONLINEAR|VM_PFNMAP|VM_INSERTPAGE))) {
 		if (!vma->anon_vma)
 			return 0;
 	}
 
+	/** 20160514    
+	 * HUGETLB PAGE인 경우 처리. vexpress일 경우 해당 없음.
+	 **/
 	if (is_vm_hugetlb_page(vma))
 		return copy_hugetlb_page_range(dst_mm, src_mm, vma);
 
+	/** 20160514    
+	 * vma가 special mapping인 경우(VM_PFNMAP)
+	 *
+	 * pfn mapping된 메모리에 대해 COW 되었음을 기록하기 위한 작업인듯???
+	 **/
 	if (unlikely(is_pfn_mapping(vma))) {
 		/*
 		 * We do not free on error cases below as remove_vma
@@ -1154,16 +1176,40 @@ int copy_page_range(struct mm_struct *dst_mm, struct mm_struct *src_mm,
 	 * parent mm. And a permission downgrade will only happen if
 	 * is_cow_mapping() returns true.
 	 */
+	/** 20160514    
+	 * parent mm의 ptes 상에서 permission downgrade가 발생할 수 있는 경우에 한해
+	 * secondary MMU mapping들에 대해서 invalidate를 해줘야 한다.
+	 * (secondary MMU mappings의 의미??? vexpress config는 해당 안 함.)
+	 * permission downgrade는 is_cow_mapping()가 참일 경우에만 발생할 수 있다.
+	 *
+	 * mmu_notifier_invalidate_range_start()
+	 *   copy pgd entry
+	 * mmu_notifier_invalidate_range_end()
+	 **/
 	if (is_cow_mapping(vma->vm_flags))
 		mmu_notifier_invalidate_range_start(src_mm, addr, end);
 
 	ret = 0;
 	dst_pgd = pgd_offset(dst_mm, addr);
 	src_pgd = pgd_offset(src_mm, addr);
+	/** 20160514    
+	 * addr ~ end 사이 영역을 pgd entry 단위로 반복해 복사한다.
+	 **/
 	do {
+		/** 20160514    
+		 * addr를 다음 pgd entry 하나 단위로 올림.
+		 * 마지막 pgd인 경우 end가 다음 boundary보다  next는 end가 됨.
+		 **/
 		next = pgd_addr_end(addr, end);
+		/** 20160514    
+		 * src의 pgd를 복사할 필요가 없는 경우 skip하고 continue.
+		 **/
 		if (pgd_none_or_clear_bad(src_pgd))
 			continue;
+		/** 20160514    
+		 * PUD -> PMD -> PTE로 타고 들어가며 해당 영역에 대해 복사한다.
+		 * ARM은 kernel에서 지원하는 level 중 pgd/pud와 pte만 사용한다.
+		 **/
 		if (unlikely(copy_pud_range(dst_mm, src_mm, dst_pgd, src_pgd,
 					    vma, addr, next))) {
 			ret = -ENOMEM;
@@ -1171,6 +1217,8 @@ int copy_page_range(struct mm_struct *dst_mm, struct mm_struct *src_mm,
 		}
 	} while (dst_pgd++, src_pgd++, addr = next, addr != end);
 
+	/** 20160514    
+	 **/
 	if (is_cow_mapping(vma->vm_flags))
 		mmu_notifier_invalidate_range_end(src_mm,
 						  vma->vm_start, end);
@@ -2375,6 +2423,11 @@ static inline int remap_pud_range(struct mm_struct *mm, pgd_t *pgd,
  *
  *  Note: this is only safe if the mm semaphore is held when called.
  */
+/** 20160514    
+ *
+ * kernel로 mapping 되었던 메모리 영역(vma)를 userspace로 매핑.
+ * VM_PFNMAP 옵션을 넣어주는 부분의 하나.
+ **/
 int remap_pfn_range(struct vm_area_struct *vma, unsigned long addr,
 		    unsigned long pfn, unsigned long size, pgprot_t prot)
 {

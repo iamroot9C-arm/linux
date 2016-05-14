@@ -391,6 +391,9 @@ int anon_vma_fork(struct vm_area_struct *vma, struct vm_area_struct *pvma)
 	struct anon_vma *anon_vma;
 
 	/* Don't bother if the parent process has no anon_vma here. */
+	/** 20160514    
+	 * 복사할 parent의 vma가 anon_vma를 갖지 않으면 복사할 것이 없으므로 리턴.
+	 **/
 	if (!pvma->anon_vma)
 		return 0;
 
