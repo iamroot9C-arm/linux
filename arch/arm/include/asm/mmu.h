@@ -14,6 +14,10 @@ typedef struct {
 	unsigned int kvm_seq;
 } mm_context_t;
 
+/** 20160528    
+ * CPU가 ASID를 가진다면
+ * context.id의 8bit를 ASID로 취한다.
+ **/
 #ifdef CONFIG_CPU_HAS_ASID
 #define ASID(mm)	((mm)->context.id & 255)
 

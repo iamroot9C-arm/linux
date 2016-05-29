@@ -29,6 +29,8 @@ static inline void ipi_flush_tlb_all(void *ignored)
 	local_flush_tlb_all();
 }
 
+/** 20160528    
+ **/
 static inline void ipi_flush_tlb_mm(void *arg)
 {
 	struct mm_struct *mm = (struct mm_struct *)arg;
@@ -78,8 +80,16 @@ void flush_tlb_all(void)
 		local_flush_tlb_all();
 }
 
+/** 20160528    
+ * mm 영역에 대한 tlb를 flush 시킨다.
+ **/
 void flush_tlb_mm(struct mm_struct *mm)
 {
+	/** 20160528    
+	 * tlb operation을 다른 core에도 알려야 하는 경우인지 판단하여
+	 * 그렇다면 mm_cpumask에 해당하는 core들이 ipi_flush_tlb_mm를 호출하게 한다.
+	 * 그렇지 않다면 현재 core의 tlb만 flush시킨다.
+	 **/
 	if (tlb_ops_need_broadcast())
 		on_each_cpu_mask(mm_cpumask(mm), ipi_flush_tlb_mm, mm, 1);
 	else

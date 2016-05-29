@@ -88,6 +88,7 @@ arch_initcall(contextidr_notifier_init);
  * to run in.
  */
 /** 20160416    
+ * process를 fork한 뒤, child를 위해 새로운 context가 필요하다.
  * 새 context를 생성하기 위해 context.id를 초기화.
  **/
 void __init_new_context(struct task_struct *tsk, struct mm_struct *mm)
@@ -175,6 +176,10 @@ void __new_context(struct mm_struct *mm)
 	 * Check the ASID again, in case the change was broadcast from
 	 * another CPU before we acquired the lock.
 	 */
+	/** 20160528    
+	 * 위의 spinlock을 얻기 전에 다른 CPU에서 asid change가 broadcast되었는지
+	 * 체크한다.
+	 **/
 	if (unlikely(((mm->context.id ^ cpu_last_asid) >> ASID_BITS) == 0)) {
 		cpumask_set_cpu(smp_processor_id(), mm_cpumask(mm));
 		raw_spin_unlock(&cpu_asid_lock);

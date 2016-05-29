@@ -398,6 +398,9 @@ static inline void local_flush_tlb_all(void)
 static inline void local_flush_tlb_mm(struct mm_struct *mm)
 {
 	const int zero = 0;
+	/** 20160528    
+	 * mm의 context.id 중 ASID 필드를 받아온다.
+	 **/
 	const int asid = ASID(mm);
 	const unsigned int __tlb_flag = __cpu_tlb_flags;
 

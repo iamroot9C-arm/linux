@@ -1617,6 +1617,10 @@ struct vm_area_struct *find_vma(struct mm_struct *mm, unsigned long addr)
 
 	/* Check the cache first. */
 	/* (Cache hit rate is typically around 35%.) */
+	/** 20160528    
+	 * 먼저 mmap_cache를 보고, cache로 들고 있는 vma에 속할 경우 바로 리턴.
+	 * 그렇지 않은 경우 rb tree search.
+	 **/
 	vma = mm->mmap_cache;
 	if (!(vma && vma->vm_end > addr && vma->vm_start <= addr)) {
 		struct rb_node *rb_node;
@@ -1630,6 +1634,9 @@ struct vm_area_struct *find_vma(struct mm_struct *mm, unsigned long addr)
 			vma_tmp = rb_entry(rb_node,
 					   struct vm_area_struct, vm_rb);
 
+			/** 20160528    
+			 * 주소 순으로 정렬된 rb tree에서 탐색.
+			 **/
 			if (vma_tmp->vm_end > addr) {
 				vma = vma_tmp;
 				if (vma_tmp->vm_start <= addr)
@@ -1638,6 +1645,9 @@ struct vm_area_struct *find_vma(struct mm_struct *mm, unsigned long addr)
 			} else
 				rb_node = rb_node->rb_right;
 		}
+		/** 20160528    
+		 * rb tree에서 찾은 경우 mmap_cache 업데이트.
+		 **/
 		if (vma)
 			mm->mmap_cache = vma;
 	}

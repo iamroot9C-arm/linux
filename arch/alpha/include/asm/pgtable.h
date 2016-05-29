@@ -285,6 +285,10 @@ extern inline pte_t pte_mkspecial(pte_t pte)	{ return pte; }
 #define pgd_offset_k(address) pgd_offset(&init_mm, (address))
 
 /* to find an entry in a page-table-directory. */
+/** 20160528    
+ * pgd_index : page table directory의 특정 index.
+ * pgd_offset: page table directory index의 entry 주소.
+ **/
 #define pgd_index(address)	(((address) >> PGDIR_SHIFT) & (PTRS_PER_PGD-1))
 #define pgd_offset(mm, address)	((mm)->pgd+pgd_index(address))
 

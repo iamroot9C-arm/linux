@@ -130,6 +130,9 @@ static inline void
 uprobe_unregister(struct inode *inode, loff_t offset, struct uprobe_consumer *uc)
 {
 }
+/** 20160528    
+ * CONFIG_UPROBES 정의하지 않음.
+ **/
 static inline int uprobe_mmap(struct vm_area_struct *vma)
 {
 	return 0;

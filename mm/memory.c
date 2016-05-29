@@ -1116,7 +1116,15 @@ static inline int copy_pud_range(struct mm_struct *dst_mm, struct mm_struct *src
 }
 
 /** 20160514    
- * parent의 vma 에 해당하는 page table 영역을 child에 복사한다.
+ * parent의 vma 의 vm_start ~ vm_end에 해당하는 page table 영역을
+ * child에 구성한다.
+ *
+ * vm_area_struct을 가리키는 멤버
+ *   mm->mmap  (list   )
+ *   mm->mm_rb (rb tree)
+ * 
+ * page table을 가리키는 멤버
+ *   mm->pgd
  **/
 int copy_page_range(struct mm_struct *dst_mm, struct mm_struct *src_mm,
 		struct vm_area_struct *vma)
@@ -1190,6 +1198,9 @@ int copy_page_range(struct mm_struct *dst_mm, struct mm_struct *src_mm,
 		mmu_notifier_invalidate_range_start(src_mm, addr, end);
 
 	ret = 0;
+	/** 20160528    
+	 * vm_area_struct의 vm_start 주소에 해당하는 pgd offset.
+	 **/
 	dst_pgd = pgd_offset(dst_mm, addr);
 	src_pgd = pgd_offset(src_mm, addr);
 	/** 20160514    

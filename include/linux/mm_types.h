@@ -432,6 +432,9 @@ struct mm_struct {
 	 * struct vm_area_struct 들을 RB Tree로 관리하기 위한 root.
 	 **/
 	struct rb_root mm_rb;
+	/** 20160528    
+	 * find_vma로 찾은 마지막 vm_area_struct.
+	 **/
 	struct vm_area_struct * mmap_cache;	/* last find_vma result */
 #ifdef CONFIG_MMU
 	unsigned long (*get_unmapped_area) (struct file *filp,
@@ -457,6 +460,9 @@ struct mm_struct {
 	 * if there are any real users.
 	 **/
 	atomic_t mm_count;			/* How many references to "struct mm_struct" (users count as 1) */
+	/** 20160528    
+	 * 이 mm_struct에 속한 vm_area_sturct의 수.
+	 **/
 	int map_count;				/* number of VMAs */
 
 	/** 20160416    

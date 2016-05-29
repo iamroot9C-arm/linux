@@ -508,7 +508,8 @@ static int dup_mmap(struct mm_struct *mm, struct mm_struct *oldmm)
 
 	prev = NULL;
 	/** 20160416    
-	 * oldmm (parent)의 mmap (vm_area_struct)을 하나씩 순회.
+	 * oldmm (parent)의 mmap (vm_area_struct)을 하나씩 순회하며
+	 * new mm (child)에 복사. 해당 영역에 대한 page table entry도 구성.
 	 **/
 	for (mpnt = oldmm->mmap; mpnt; mpnt = mpnt->vm_next) {
 		struct file *file;
@@ -614,18 +615,37 @@ static int dup_mmap(struct mm_struct *mm, struct mm_struct *oldmm)
 		/*
 		 * Link in the new vma and copy the page table entries.
 		 */
+		/** 20160528    
+		 * parent의 mm_struct의 mmap을 하나씩 복사해
+		 * child의 mm_struct에 구성한다.
+		 **/
 		*pprev = tmp;
 		pprev = &tmp->vm_next;
 		tmp->vm_prev = prev;
 		prev = tmp;
 
+		/** 20160528    
+		 * 동일한 vm_area_struct을 rb tree로 관리하기 위해 mm_rb에 추가.
+		 **/
 		__vma_link_rb(mm, tmp, rb_link, rb_parent);
 		rb_link = &tmp->vm_rb.rb_right;
 		rb_parent = &tmp->vm_rb;
 
+		/** 20160528    
+		 * VMA count 증가
+		 **/
 		mm->map_count++;
+		/** 20160528    
+		 * mpnt에 해당하는 영역을 mm->pgd에 복사하여 구성.
+		 **/
 		retval = copy_page_range(mm, oldmm, mpnt);
 
+		/** 20160528    
+		 * vm_ops 중 open이 구현된 경우 호출한다.
+		 *
+		 * 예를 들어 shared memory처럼 메모리 공간에 대한 독자적인 사용 방식이
+		 * 정해진 경우, 해당 공간을 사용하기 위한 초기화 등의 연산이 필요하다.
+		 **/
 		if (tmp->vm_ops && tmp->vm_ops->open)
 			tmp->vm_ops->open(tmp);
 
@@ -636,9 +656,15 @@ static int dup_mmap(struct mm_struct *mm, struct mm_struct *oldmm)
 			goto out;
 	}
 	/* a new mm has just been created */
+	/** 20160528    
+	 * architecture level의 dup_mmap 함수가 정의되어 있다면 호출.
+	 **/
 	arch_dup_mmap(oldmm, mm);
 	retval = 0;
 out:
+	/** 20160528    
+	 * mm_struct의 write semaphore를 놓는다.
+	 **/
 	up_write(&mm->mmap_sem);
 	flush_tlb_mm(oldmm);
 	up_write(&oldmm->mmap_sem);
@@ -1070,7 +1096,7 @@ struct mm_struct *dup_mm(struct task_struct *tsk)
 		goto fail_nomem;
 
 	/** 20160416    
-	 * 새 context를 초기화.
+	 * 새 context 초기화.
 	 **/
 	if (init_new_context(tsk, mm))
 		goto fail_nocontext;
