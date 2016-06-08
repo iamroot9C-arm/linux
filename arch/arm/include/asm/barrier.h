@@ -45,7 +45,7 @@
 #endif
 
 #if __LINUX_ARM_ARCH__ >= 7
-/** 20140920    
+/** 20140920
  * 아키텍처에서 지원하는 명령을 사용한 barrier oepration.
  *
  * 현재 버전(v3.17)에서는 더 세밀한 옵션을 사용한다.
@@ -84,7 +84,7 @@
 
 #ifdef CONFIG_ARCH_HAS_BARRIERS
 #include <mach/barriers.h>
-/** 20140920    
+/** 20140920
  * dsb()로 L1 cache를 포함한 core(Inner shareability)까지의 sync.
  * outer_sync()로 L2 cache까지의 sync. 수행
  *
@@ -112,7 +112,7 @@
 #define smp_rmb()	barrier()
 #define smp_wmb()	barrier()
 #else
-/** 20130706    
+/** 20130706
  * SMP일 때는 dmb() 호출.
  **/
 #define smp_mb()	dmb()
@@ -120,12 +120,12 @@
 #define smp_wmb()	dmb()
 #endif
 
-/** 20150404    
+/** 20150404
  **/
 #define read_barrier_depends()		do { } while(0)
 #define smp_read_barrier_depends()	do { } while(0)
 
-/** 20160213    
+/** 20160213
  **/
 #define set_mb(var, value)	do { var = value; smp_mb(); } while (0)
 

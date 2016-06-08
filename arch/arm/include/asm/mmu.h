@@ -3,6 +3,9 @@
 
 #ifdef CONFIG_MMU
 
+/** 20160604
+ * mm_struct 중 context에 해당하는 정보를 담은 구조체.
+ **/
 typedef struct {
 	/** 20150801    
 	 * CONFIG_CPU_HAS_ASID가 정의되어 있다.

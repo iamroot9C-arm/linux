@@ -825,6 +825,12 @@ EXPORT_SYMBOL(smp_call_function_many);
  * You must not call this function with disabled interrupts or from a
  * hardware interrupt handler or from a bottom half handler.
  */
+/** 20160604
+ * SMP에 속하는 다른 core들에게(cpu_online_mask) IPI를 전송해
+ * func(info)를 수행하도록 한다. wait은 리턴받을 때까지 대기할지 여부를 결정.
+ *
+ * bottom half에서는 호출하면 안 된다.
+ **/
 int smp_call_function(smp_call_func_t func, void *info, int wait)
 {
 	preempt_disable();

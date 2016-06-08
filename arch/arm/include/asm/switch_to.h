@@ -8,7 +8,7 @@
  * `prev' will never be the same as `next'.  schedule() itself
  * contains the memory barrier to tell GCC not to cache `current'.
  */
-/** 20150118    
+/** 20150118
  * task 전환과정의 arm specific implementation.
  *
  * 첫번째 argument : 이전 task의 struct task_struct *.
@@ -19,10 +19,11 @@
  **/
 extern struct task_struct *__switch_to(struct task_struct *, struct thread_info *, struct thread_info *);
 
-/** 20150118    
+/** 20150118
  * 공통 함수 switch_to를 arm specific implementation으로 정의.
+ * 매개변수로 전달된 task_struct을 통해 thread_info(문맥 정보)을 얻어 전환한다.
  *
- * 이전 수행하던 task에서 다음 수행할 task로 문맥을 전환하고,
+ * 이전 수행하던 task에서 다음 수행할 task로 문맥(register, stack)을 전환하고,
  * 마지막 수행하던 task를 리턴한다.
  **/
 #define switch_to(prev,next,last)					\

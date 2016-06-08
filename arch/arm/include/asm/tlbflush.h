@@ -175,7 +175,7 @@
 # ifdef CONFIG_SMP_ON_UP
 /** 20130216
  * v7wbi_always_flags	:	TLB_WB | TLB_DCLEAN | TLB_BARRIER
- * v7wbi_possible_flags	:	TLB_WB | TLB_DCLEAN | TLB_BARRIER | 
+ * v7wbi_possible_flags	:	TLB_WB | TLB_DCLEAN | TLB_BARRIER |
  * 							TLB_V7_UIS_FULL | TLB_V7_UIS_PAGE | TLB_V7_UIS_ASID |
  * 							TLB_V6_U_FULL | TLB_V6_U_PAGE | TLB_V6_U_ASID
  **/
@@ -206,7 +206,7 @@
 
 #include <linux/sched.h>
 
-/** 20131102    
+/** 20131102
  * armv7의 경우 proc-v7.S
  **/
 struct cpu_tlb_fns {
@@ -218,12 +218,12 @@ struct cpu_tlb_fns {
 /*
  * Select the calling method
  */
-/** 20131102    
+/** 20131102
  * CONFIG_SMP_ON_UP에 따라 MULTI_TLB가 선언되어 있음
  **/
 #ifdef MULTI_TLB
 
-/** 20131102    
+/** 20131102
  * __v7_ca9mp_proc_info
  *   v7wbi_flush_user_tlb_range
  *   v7wbi_flush_kern_tlb_range
@@ -322,17 +322,17 @@ extern struct cpu_tlb_fns cpu_tlb;
 				 v6wbi_always_flags & \
 				 v7wbi_always_flags)
 
-/** 20130330    
+/** 20130330
  * 매개변수로 주어진 flag가 always_tlb_flags 또는 possible_tlb_flags에 포함되는지 검사
  **/
 #define tlb_flag(f)	((always_tlb_flags & (f)) || (__tlb_flag & possible_tlb_flags & (f)))
 
-/** 20130223    
+/** 20130223
  * always_tlb_flags : 꼭 필요한 동작들
  *   해당 architecture 의 wbi_always_flags의 값을 가져옴
  * possible_tlb_flags : 선택적으로 실행할 수 있는 동작들
  *   해당 architecture의 wbi_possible_flags의 값을 가져옴
- *  
+ *
  *  f가 (c.g. TLB_DCLEAN)
  *  always_tlb_flags에 해당하면 flags 리스트를 전달 받아 always_tlb_flags에 해당하면 바로 수행,
  *  possible_tlb_flags에 해당하면 __tlb_flag (v7wbi_tlb_flags_smp)와 비교해 지원된다면 수행
@@ -360,7 +360,7 @@ extern struct cpu_tlb_fns cpu_tlb;
 #define tlb_op(f, regs, arg)	__tlb_op(f, "p15, 0, %0, " regs, arg)
 #define tlb_l2_op(f, regs, arg)	__tlb_op(f, "p15, 1, %0, " regs, arg)
 
-/** 20130330    
+/** 20130330
  * 모든 tlb를 flush하고 barrier를 동작시키는 함수
  **/
 static inline void local_flush_tlb_all(void)
@@ -368,7 +368,7 @@ static inline void local_flush_tlb_all(void)
 	const int zero = 0;
 	const unsigned int __tlb_flag = __cpu_tlb_flags;
 
-	/** 20130330    
+	/** 20130330
 	 * WB를 사용할 경우 data 동기화 barrier를 세움
 	 **/
 	if (tlb_flag(TLB_WB))
@@ -378,14 +378,14 @@ static inline void local_flush_tlb_all(void)
 	tlb_op(TLB_V4_U_FULL | TLB_V6_U_FULL, "c8, c7, 0", zero);
 	tlb_op(TLB_V4_D_FULL | TLB_V6_D_FULL, "c8, c6, 0", zero);
 	tlb_op(TLB_V4_I_FULL | TLB_V6_I_FULL, "c8, c5, 0", zero);
-	/** 20130330    
+	/** 20130330
 	 * mcr p15, 0, %0(zero), c8, c3, 0
 	 * from DDI0406C
 	 * B4.1.138 TLBIALLIS, TLB Invalidate All, Inner Shareable, VMSA only
 	 **/
 	tlb_op(TLB_V7_UIS_FULL, "c8, c3, 0", zero);
 
-	/** 20130330    
+	/** 20130330
 	 * flush를 한 뒤,
 	 * TLB_BARRIER를 지원할 경우 data와 instruction barrier를 세움
 	 **/
@@ -398,7 +398,7 @@ static inline void local_flush_tlb_all(void)
 static inline void local_flush_tlb_mm(struct mm_struct *mm)
 {
 	const int zero = 0;
-	/** 20160528    
+	/** 20160528
 	 * mm의 context.id 중 ASID 필드를 받아온다.
 	 **/
 	const int asid = ASID(mm);
@@ -467,7 +467,7 @@ local_flush_tlb_page(struct vm_area_struct *vma, unsigned long uaddr)
 static inline void local_flush_tlb_kernel_page(unsigned long kaddr)
 {
 	const int zero = 0;
-	/** 20130518    
+	/** 20130518
 	 * arch/arm/mm/tlb-v7.S 하단 매크로로 선언
 	 **/
 	const unsigned int __tlb_flag = __cpu_tlb_flags;
@@ -477,7 +477,7 @@ static inline void local_flush_tlb_kernel_page(unsigned long kaddr)
 	if (tlb_flag(TLB_WB))
 		dsb();
 
-	/** 20130518    
+	/** 20130518
 	 * 아래 tlb operation의 수행을 시도한다.
 	 * vexpress에서 가장 아래 TLB_V7_UIS_PAGE를 수행한다.
 	 *
@@ -496,7 +496,7 @@ static inline void local_flush_tlb_kernel_page(unsigned long kaddr)
 	tlb_op(TLB_V6_I_PAGE, "c8, c5, 1", kaddr);
 	tlb_op(TLB_V7_UIS_PAGE, "c8, c3, 1", kaddr);
 
-	/** 20130518    
+	/** 20130518
 	 * 현재 사용하는 architecture의 flag 중 TLB_BARRIER가 있을 경우 수행
 	 * vexpress의 경우 포함되어 있음.
 	 **/
@@ -523,7 +523,7 @@ static inline void flush_pmd_entry(void *pmd)
 {
 	const unsigned int __tlb_flag = __cpu_tlb_flags;
 
-	/** 20130223    
+	/** 20130223
 	 * TLB_DCLEAN 을 해당 architecture에서 지원한다면 flush 수행
 	 * v7에서는 always flags에 해당
 	 **/
@@ -552,17 +552,17 @@ static inline void clean_pmd_entry(void *pmd)
 	 * 	==> mcr p15, 0, pmd, c7, c10, 1 @ flush_pmd
 	 *
 	 * 	ARM. B4.1.46 DCCMVAC, Data Cache Clean by MVA to PoC, VMSA
-	 * 		DCCMVAC WO Clean data or unified cache line by MVA to PoC. 
-	 * 		MVA : modified virtual address 
-	 * 		PoC : point of coherency 
+	 * 		DCCMVAC WO Clean data or unified cache line by MVA to PoC.
+	 * 		MVA : modified virtual address
+	 * 		PoC : point of coherency
 	 *		주소에 해당하는 데이터 캐시 클린.
 	 **/
 	tlb_op(TLB_DCLEAN, "c7, c10, 1	@ flush_pmd", pmd);
-	/** 20130216 
+	/** 20130216
 	 * #define tlb_l2_op(f, regs, arg)	__tlb_op(f, "p15, 1, %0, " regs, arg)
 	 * ==> __tlb_op(TLB_L2CLEAN_FR, "p15, 1, %0, c15, c9, 1 @L2 flush_pmd", pmd)
 	 * 	always_tlb_flags : v7wbi_always_flags : TLB_WB | TLB_DCLEAN | TLB_BARRIER
-	 * 	possible_tlb_flags : v7wbi_possible_flags	:	TLB_WB | TLB_DCLEAN | TLB_BARRIER | 
+	 * 	possible_tlb_flags : v7wbi_possible_flags	:	TLB_WB | TLB_DCLEAN | TLB_BARRIER |
  	 * 														TLB_V7_UIS_FULL | TLB_V7_UIS_PAGE | TLB_V7_UIS_ASID |
      * 														TLB_V6_U_FULL | TLB_V6_U_PAGE | TLB_V6_U_ASID
 	 *
@@ -580,7 +580,7 @@ static inline void clean_pmd_entry(void *pmd)
  * Convert calls to our calling convention.
  */
 #define local_flush_tlb_range(vma,start,end)	__cpu_flush_user_tlb_range(start,end,vma)
-/** 20131102    
+/** 20131102
  **/
 #define local_flush_tlb_kernel_range(s,e)	__cpu_flush_kern_tlb_range(s,e)
 

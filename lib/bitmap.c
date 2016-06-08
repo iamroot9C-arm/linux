@@ -40,13 +40,22 @@
  * for the best explanations of this ordering.
  */
 
+/** 20160604
+ * 비트맵에서 bits만큼이 비어있는지 검사한다.
+ **/
 int __bitmap_empty(const unsigned long *bitmap, int bits)
 {
 	int k, lim = bits/BITS_PER_LONG;
+	/** 20160604
+	 * long의 단위로 비교해 1인 비트가 있으면 0을 리턴.
+	 **/
 	for (k = 0; k < lim; ++k)
 		if (bitmap[k])
 			return 0;
 
+	/** 20160604
+	 * bits의 long 단위 나머지만큼 비교해 1인 비트가 있으면 0을 리턴
+	 **/
 	if (bits % BITS_PER_LONG)
 		if (bitmap[k] & BITMAP_LAST_WORD_MASK(bits))
 			return 0;

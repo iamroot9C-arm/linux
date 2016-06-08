@@ -63,9 +63,15 @@ typedef struct raw_spinlock {
 	SPIN_DEBUG_INIT(lockname)		\
 	SPIN_DEP_MAP_INIT(lockname) }
 
+/** 20160604
+ * RAW SPINLOCK의 UNLCOKED 상태의 초기값
+ **/
 #define __RAW_SPIN_LOCK_UNLOCKED(lockname)	\
 	(raw_spinlock_t) __RAW_SPIN_LOCK_INITIALIZER(lockname)
 
+/** 20160604
+ * RAW SPINLOCK을 정의하고 UNLOCK 상태로 초기화
+ **/
 #define DEFINE_RAW_SPINLOCK(x)	raw_spinlock_t x = __RAW_SPIN_LOCK_UNLOCKED(x)
 
 typedef struct spinlock {

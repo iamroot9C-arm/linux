@@ -22,6 +22,9 @@
 
 void __check_kvm_seq(struct mm_struct *mm);
 
+/** 20160604
+ * Cortex-A 시리즈는 ASID를 설정할 수 있는 CONTEXTIDR 레지스터를 제공한다.
+ **/
 #ifdef CONFIG_CPU_HAS_ASID
 
 /*
@@ -41,6 +44,17 @@ void __check_kvm_seq(struct mm_struct *mm);
 #define ASID_BITS		8
 #define ASID_MASK		((~0) << ASID_BITS)
 #define ASID_FIRST_VERSION	(1 << ASID_BITS)
+/** 20160604
+ * ARMv7은 hw에서 ASID로 8비트를 제공한다.
+ * 상위 비트는 generation으로 사용하여 context switch시 다른 generation일 경우
+ * 새로운 ASID를 발급 받는다.
+ *
+ * 새 프로세스에게 마지막으로 사용된 ASID를 하나씩 증가시켜 배정하며,
+ * 마지막 값에 도달하면 TLB를 flush하고 이전 generation의 번호는 invalid 시킨다.
+ *
+ * percpu를 포함해 ASID 관리방식이 이후 커널 버전에서 많이 변경되었다.
+ * 새로운 커널 버전을 참고.
+ **/
 
 extern unsigned int cpu_last_asid;
 
@@ -48,17 +62,32 @@ void __init_new_context(struct task_struct *tsk, struct mm_struct *mm);
 void __new_context(struct mm_struct *mm);
 void cpu_set_reserved_ttbr0(void);
 
+/**
+ * mm에 새로운 context를 설정하고, 레지스터에 그 정보를 설정한다.
+ **/
 static inline void switch_new_context(struct mm_struct *mm)
 {
 	unsigned long flags;
 
+	/** 20160604
+	 * mm에 새로운 context를 생성한다.
+	 **/
 	__new_context(mm);
 
+	/** 20160604
+	 * interrupt를 막은 상태에서 (IPI로 reset_context가 실행되지 않도록)
+	 * mm의 context 정보를 레지스터에 설정한다.
+	 **/
 	local_irq_save(flags);
 	cpu_switch_mm(mm->pgd, mm);
 	local_irq_restore(flags);
 }
 
+/** 20160604
+ * context의 generation이 바뀌었는지 살펴보고,
+ * 동일하다면 현재 mm의 context 정보로 레지스터를 설정하고,
+ * 그렇지 않다면 새로 context를 생성해 레지스터를 설정한다.
+ **/
 static inline void check_and_switch_context(struct mm_struct *mm,
 					    struct task_struct *tsk)
 {
@@ -69,8 +98,17 @@ static inline void check_and_switch_context(struct mm_struct *mm,
 	 * Required during context switch to avoid speculative page table
 	 * walking with the wrong TTBR.
 	 */
+	/**
+	 * context switch시 잘못된 TTBR을 통해 page table walking을 하지 않도록
+	 * ttbr1의 값을 ttbr0로 사용한다.
+	 **/
 	cpu_set_reserved_ttbr0();
 
+	/** 20160604
+	 * mm의 context.id와 cpu_last_asid의 generation을 비교해 같다면
+	 * mm의 context를 그대로 사용하면 된다.
+	 * mm의 pgd로 TTB를 변경하고 CONTEXTIDR 역시 새로 지정한다.
+	 **/
 	if (!((mm->context.id ^ cpu_last_asid) >> ASID_BITS))
 		/*
 		 * The ASID is from the current generation, just switch to the
@@ -78,6 +116,12 @@ static inline void check_and_switch_context(struct mm_struct *mm,
 		 * context_switch() and interrupts are already disabled.
 		 */
 		cpu_switch_mm(mm->pgd, mm);
+	/** 20160604
+	 * generation이 다르다면 새로운 context로 실행해야 한다.
+	 *
+	 * interrupt disabled면 __new_context에서 IPI를 발송하지 못하므로
+	 * thread info에 deferred 되었음을 표시만 한다.
+	 **/
 	else if (irqs_disabled())
 		/*
 		 * Defer the new ASID allocation until after the context
@@ -85,6 +129,9 @@ static inline void check_and_switch_context(struct mm_struct *mm,
 		 * called with interrupts disabled (it sends IPIs).
 		 */
 		set_ti_thread_flag(task_thread_info(tsk), TIF_SWITCH_MM);
+	/** 20160604
+	 * generation이 달라 새로운 context를 생성해 전환시킨다.
+	 **/
 	else
 		/*
 		 * That is a direct call to switch_mm() or activate_mm() with
@@ -93,7 +140,7 @@ static inline void check_and_switch_context(struct mm_struct *mm,
 		switch_new_context(mm);
 }
 
-/** 20160416    
+/** 20160416
  * 새 context를 초기화 한다.
  **/
 #define init_new_context(tsk,mm)	(__init_new_context(tsk,mm),0)
@@ -156,7 +203,7 @@ static inline void finish_arch_post_lock_switch(void)
  *
  * tsk->mm will be NULL
  */
-/** 20140426    
+/** 20140426
  * NULL 함수
  **/
 static inline void
@@ -170,21 +217,40 @@ enter_lazy_tlb(struct mm_struct *mm, struct task_struct *tsk)
  * calling the CPU specific function when the mm hasn't
  * actually changed.
  */
+/** 20160604
+ * mm 설정을 prev에서 next로 교체한다.
+ **/
 static inline void
 switch_mm(struct mm_struct *prev, struct mm_struct *next,
 	  struct task_struct *tsk)
 {
 #ifdef CONFIG_MMU
+	/** 20160604
+	 * 이 코드를 실행하는 cpu 번호를 얻어온다.
+	 **/
 	unsigned int cpu = smp_processor_id();
 
 #ifdef CONFIG_SMP
 	/* check for possible thread migration */
+	/** 20160604
+	 * next mm의 cpumask에 설정되어 있고, 현재 cpu는 거기에 속해 있지 않다면
+	 * 다른 core들까지 icache를 모두 flush시킨다.
+	 **/
 	if (!cpumask_empty(mm_cpumask(next)) &&
 	    !cpumask_test_cpu(cpu, mm_cpumask(next)))
 		__flush_icache_all();
 #endif
+	/** 20160604
+	 * next의 cpumask에 현재 cpu가 설정되지 않았다면 cpumask로 새로 설정하고
+	 * if문을 실행.
+	 * 또는 이전에 설정되었을 경우라도 prev와 next가 같지 않을 경우
+	 *   새로운 context로 변경한다.
+	 **/
 	if (!cpumask_test_and_set_cpu(cpu, mm_cpumask(next)) || prev != next) {
 		check_and_switch_context(next, tsk);
+		/** 20160604
+		 * cache가 vivt 타입이면 cpu를 prev mmv에서 제거한다.
+		 **/
 		if (cache_is_vivt())
 			cpumask_clear_cpu(cpu, mm_cpumask(prev));
 	}

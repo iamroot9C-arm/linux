@@ -37,7 +37,7 @@
  */
 	.macro	irq_handler
 #ifdef CONFIG_MULTI_IRQ_HANDLER
-	/** 20140816    
+	/** 20140816
 	 * handle_arch_irq에 저장된 irq handler의 주소를 가져와 실행한다.
 	 * 핸들러에 stack의 시작 주소를 인자로 전달한다.
 	 * 복귀주소는 이 매크로를 호출한 다음 명령의 주소이다.
@@ -75,7 +75,7 @@
 	@ The abort handler must return the aborted address in r0, and
 	@ the fault status register in r1.  r9 must be preserved.
 	@
-	/** 20151121    
+	/** 20151121
 	 * MULTI_DABORT가 정의되지 않으므로 (glue-df.h 참고)
 	 * CPU_DABORT_HANDLER로 지정된 v7_early_abort로 브랜치.
 	 **/
@@ -155,7 +155,7 @@ ENDPROC(__und_invalid)
 #define SPFIX(code...)
 #endif
 
-	/** 20150919    
+	/** 20150919
 	 * SVC mode.
 	 *
 	 * ex)
@@ -170,7 +170,7 @@ ENDPROC(__und_invalid)
 	.macro	svc_entry, stack_hole=0
  UNWIND(.fnstart		)
  UNWIND(.save {r0 - pc}		)
-	/** 20150919    
+	/** 20150919
 	 * pt_regs를 저장하기 위한 공간을 확보한다.
 	 **/
 	sub	sp, sp, #(S_FRAME_SIZE + \stack_hole - 4)
@@ -182,7 +182,7 @@ ENDPROC(__und_invalid)
 #else
  SPFIX(	tst	sp, #4		)
 #endif
- /** 20150919    
+ /** 20150919
   * tst : Works like ands, but does not store the result.
   * sp의 마지막이 0x0, 0x8인 경우 Z flag가 set.
   * subeq는 z set일 경우 4를 빼 alignment를 맞춘다.
@@ -191,14 +191,14 @@ ENDPROC(__und_invalid)
   * http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.faqs/14269.html
   **/
  SPFIX(	subeq	sp, sp, #4	)
-	/** 20150919    
+	/** 20150919
 	 * svc stack에 exception 발생 전 mode의 r1-r12를 svc 스택에 저장한다.
 	 * sp는 갱신되지 않았다.
 	 **/
 	stmia	sp, {r1 - r12}
 
-	/** 20150919    
-	 * vector_stub에서 exception mode의 stack에 
+	/** 20150919
+	 * vector_stub에서 exception mode의 stack에
 	 * r0, lr, spsr을 저장하고, r0에 그 sp를 복사해 두었다.
 	 * 그 내용을 가져온다.
 	 **/
@@ -207,14 +207,14 @@ ENDPROC(__und_invalid)
 	mov	r6, #-1			@  ""  ""      ""       ""
 	add	r2, sp, #(S_FRAME_SIZE + \stack_hole - 4)
  SPFIX(	addeq	r2, r2, #4	)
-	/** 20150919    
+	/** 20150919
 	 * exception mode의 stack에서 exception 발생 전 mode의 r0 레지스터값을 가져와
 	 * sp의 pt_regs[0] 에 저장한다.
 	 **/
 	str	r3, [sp, #-4]!		@ save the "real" r0 copied
 					@ from the exception stack
 
-	/** 20150919    
+	/** 20150919
 	 * r3에 svc mode의 lr 레지스터를 저장한다.
 	 **/
 	mov	r3, lr
@@ -228,9 +228,9 @@ ENDPROC(__und_invalid)
 	@  r5 - spsr_<exception>
 	@  r6 - orig_r0 (see pt_regs definition in ptrace.h)
 	@
-	/** 20150919    
+	/** 20150919
 	 * ptrace.h에 정의된 pt_regs layout만큼 준비한 스택의 나머지 위치에 저장한다.
-	 * 
+	 *
 	 * 구조체 pt_regs의 #S_SP, #S_LR, #S_PC, #S_PSR, #S_OLD_R0에
 	 * sp_svc, lr_svc, lr_<exception>, spsr_<exception>, orig_r0를 저장한다.
 	 **/
@@ -268,7 +268,7 @@ __irq_svc:
 	irq_handler
 
 #ifdef CONFIG_PREEMPT
-	/** 20140816    
+	/** 20140816
 	 * tsk에 thread_info를 받아와 선점 카운트와 flags를 추출한다.
 	 * 선점 카운트가 0이 아니라면, 즉 선점불가라면 가져온 flags를 0으로 만든다.
 	 * flags를 검사해 _TIF_NEED_RESCHED가 켜있다면 svc_preempt 루틴을 실행하고 돌아온다.
@@ -295,12 +295,12 @@ ENDPROC(__irq_svc)
 	 * literal pool의 현재 contents를 이 위치로 dump 시킨다.
 	 *
 	 * This directive causes the current contents of the literal pool to be dumped into the current section
-	 * (which is assumed to be the .text section) at the current location (aligned to a word boundary). 
+	 * (which is assumed to be the .text section) at the current location (aligned to a word boundary).
 	 **/
 	.ltorg
 
 #ifdef CONFIG_PREEMPT
-	/** 20140816    
+	/** 20140816
 	 * bl이 호출되어 lr이 변경되기 전에 백업을 받아둔다.
 	 * preempt_schedule_irq에서 선점을 위한 __schedule을 호출한 뒤,
 	 * 다시 flags를 가져와 TIF_NEED_RESCHED가 켜있다면 선점함수를 호출하고,
@@ -322,7 +322,7 @@ __und_fault:
 	@ subtract 4.  Otherwise, it is Thumb, and the PC will be
 	@ pointing at the second half of the Thumb instruction.  We
 	@ have to subtract 2.
-	/** 20151003    
+	/** 20151003
 	 * svc_entry에서 저장해둔 lr_<exception>를 가져와 r1(4)을 빼 다시 저장한다.
 	 **/
 	ldr	r2, [r0, #S_PC]
@@ -331,7 +331,7 @@ __und_fault:
 	b	do_undefinstr
 ENDPROC(__und_fault)
 
-	/** 20150919    
+	/** 20150919
 	 * 공통으로 svc_entry를 호출한다.
 	 **/
 	.align	5
@@ -351,7 +351,7 @@ __und_svc:
 	@
 	@  r0 - instruction
 	@
-	/** 20150919    
+	/** 20150919
 	 * svc_entry에서 r4에는 correction이 적용된 lr_<exception>를 저장해 두었다.
 	 *  (exception을 발생시킨 다음 명령)
 	 * exception을 발생시킨 instruction을 r0에 받아온다.
@@ -368,13 +368,13 @@ __und_svc:
 	str	r4, [sp, #S_PC]
 	orr	r0, r9, r0, lsl #16
 #endif
-	/** 20151003    
+	/** 20151003
 	 * emulated code가 처리된 뒤 리턴할 심볼의 주소를 r9에 저장한다.
 	 * svc_entry에서 받아온 lr_<exception> 주소를 r2에 저장한다.
 	 **/
 	adr	r9, BSYM(__und_svc_finish)
 	mov	r2, r4
-	/** 20151003    
+	/** 20151003
 	 * float point처리가 가능하면 handler로 처리하고 __und_svc_finish로 리턴한다.
 	 * (VFP, FPE에 해당)
 	 * 그렇지 않은 경우 __und_fault로 이동.
@@ -383,7 +383,7 @@ __und_svc:
 
 	mov	r1, #4				@ PC correction to apply
 __und_svc_fault:
-	/** 20151003    
+	/** 20151003
 	 * svc_entry에서 sp에 pt_regs 구조체에 해당하는 레지스터 값을 저장해 두었다.
 	 * r0에 넣어 argument로 전달.
 	 *
@@ -401,7 +401,7 @@ __und_svc_finish:
 	@
 	@ restore SPSR and restart the instruction
 	@
-	/** 20151003    
+	/** 20151003
 	 * svc_entry에서 저장한 spsr_<exception>을 r5에 저장한다.
 	 **/
 	ldr	r5, [sp, #S_PSR]		@ Get SVC cpsr
@@ -411,7 +411,7 @@ __und_svc_finish:
 	tst	r5, #PSR_I_BIT
 	blne	trace_hardirqs_off
 #endif
-	/** 20151003    
+	/** 20151003
 	 * svc_exit를 호출해 exception 처리 후 복귀주소로 돌아간다.
 	 **/
 	svc_exit r5				@ return from exception
@@ -446,7 +446,7 @@ ENDPROC(__pabt_svc)
 .LCprocfns:
 	.word	processor
 #endif
-	/** 20151003    
+	/** 20151003
 	 * fp_enter 주소를 저장하는 포인터 변수.
 	 * 기본값은 no_fp이지만,
 	 * nwfpe가 선택된 경우 nwfpe_enter 주소가 fp_enter 포인터 변수에 저장된다.
@@ -673,12 +673,12 @@ ENDPROC(__und_usr)
 	adr	r6, .LCneon_thumb_opcodes
 	b	2f
 #endif
-	/** 20151003    
+	/** 20151003
 	 * FPE : floating point emulator
 	 **/
 call_fpe:
 #ifdef CONFIG_NEON
-	/** 20151003    
+	/** 20151003
 	 * .LCneon_arm_opcodes에서 값을 가져와 mask값이 0이 아닐 때까지 반복.
 	 * r0에는 instruction이 들어 있고, neon_opcode mask와 연산해 opcode가 나오면
 	 * r10에 thread info를 받아온다.
@@ -696,8 +696,8 @@ call_fpe:
 	cmp	r8, r7				@ NEON instruction?
 	bne	2b
 	get_thread_info r10
-	/** 20151003    
-	 * struct thread_info의 used_cp 10, 11번에 mark를 하고 
+	/** 20151003
+	 * struct thread_info의 used_cp 10, 11번에 mark를 하고
 	 * do_vfp로 이동한다.
 	 **/
 	mov	r7, #1
@@ -706,7 +706,7 @@ call_fpe:
 	b	do_vfp				@ let VFP handler handle this
 1:
 #endif
-	/** 20151003    
+	/** 20151003
 	 * instruction의 bit 27, 26을 검사해 해당하지 않으면 리턴.
 	 *
 	 * 해당하면 instruction을 decoding 해 몇 번 cp를 사용하는지 식별하고,
@@ -735,7 +735,7 @@ call_fpe:
  THUMB(	add	pc, r8			)
 	nop
 
-	/** 20151003    
+	/** 20151003
 	 * coprocessor 에 따른 branch instruction table.
 	 *
 	 * 1,2는 do_fpe로, 10, 11은 do_vfp로 처리하고, 그 외 리턴 주소로 점프.
@@ -813,7 +813,7 @@ do_fpe:
  *  lr  = unrecognised FP instruction return address
  */
 
-	/** 20151003    
+	/** 20151003
 	 * fp_enter의 기본값은 no_fp.
 	 **/
 	.pushsection .data
@@ -862,7 +862,7 @@ ENDPROC(ret_from_exception)
  * r0 = previous task_struct, r1 = previous thread_info, r2 = next thread_info
  * previous and next are guaranteed not to be the same.
  */
-/** 20150118    
+/** 20150118
  * 두 task 사이의 문맥 전환 함수. register를 교환한다.
  *
  *   r0 : 이전 task_struct, r1 : 이전 thread_info, r2 : 다음 thread_info
@@ -877,7 +877,7 @@ ENDPROC(ret_from_exception)
  *   atomic_notifier_call_chain(thread_notify_head, THREAD_NOTIFY_SWITCH, r2);
  *   r0 = tmp;
  *   *next_ti => { r4 ~ sl, fp, sp, pc };
- * 
+ *
  * [APCS registers]
  * r0	a1	    argument 1/scratch register/result
  * r1	a2	    argument 2/scratch register/result
@@ -947,7 +947,7 @@ ENDPROC(__switch_to)
  * See Documentation/arm/kernel_user_helpers.txt for formal definitions.
  */
 /** 20130316
- * kuser_helper 동작을 끝내고 user_space로 return	
+ * kuser_helper 동작을 끝내고 user_space로 return
  **/
  THUMB(	.arm	)
 
@@ -959,7 +959,7 @@ ENDPROC(__switch_to)
 #endif
 	.endm
 
-	/** 20130309    
+	/** 20130309
 	 * instruction의 align 조정 (cache line)
 	 **/
 	.align	5
@@ -1074,7 +1074,7 @@ __kuser_cmpxchg:				@ 0xffff0fc0
 	 * The kernel itself must perform the operation.
 	 * A special ghost syscall is used for that (see traps.c).
 	 */
-	/** 20130309    
+	/** 20130309
 	 * 이전 버전 architecture 에서는 memory barrier instruction이 지원되지 않으므로
 	 * software interrupt를 발생시켜 처리한다.
 	**/
@@ -1127,18 +1127,18 @@ kuser_cmpxchg32_fixup:
 
 #else
 
-	/** 20130309    
+	/** 20130309
 	 * __kuser_cmpxchg 에 대해
-	 * CONFIG_NEEDS_SYSCALL_FOR_CMPXCHG 도 아니고, 
+	 * CONFIG_NEEDS_SYSCALL_FOR_CMPXCHG 도 아니고,
 	 * v6 이상일 경우 실행
 	 *
 	 * 20130316
 	 * r2 메모리 값과 r0 레지스터 값이 같을 때까지 비교하고 같을 때 r1 메모리
-	 * 값을 r2 메모리 값에 저장.		 
+	 * 값을 r2 메모리 값에 저장.
 	 *
-	 * ldrex, strex 는 atomic 동작을 보장하기 위한 명령어.		
+	 * ldrex, strex 는 atomic 동작을 보장하기 위한 명령어.
 	 * [참고] http://en.wikipedia.org/wiki/Load-link/store-conditional
-	 * 
+	 *
 	 * include/asm/atomic.h 에 정리해 두었음.
 	 **/
 
@@ -1150,7 +1150,7 @@ kuser_cmpxchg32_fixup:
 	beq	1b
 	rsbs	r0, r3, #0
 	/* beware -- each __kuser slot must be 8 instructions max */
-	/** 20130316 
+	/** 20130316
 	 * memory_barrier 함수 호출하고 user_space로 복귀.
 	 **/
 	ALT_SMP(b	__kuser_memory_barrier)
@@ -1159,8 +1159,8 @@ kuser_cmpxchg32_fixup:
 #endif
 
 	.align	5
-	/** 20130316 
-	 * get_tls의 return value (r0)는 tls value가 된다. 
+	/** 20130316
+	 * get_tls의 return value (r0)는 tls value가 된다.
 	 *
 	 * ldr	r0, [pc, #(16 - 8)]	@ read TLS, set in kuser_get_tls_init
 	 * usr_ret	lr
@@ -1202,7 +1202,7 @@ __kuser_helper_end:
  * SP points to a minimal amount of processor-private memory, the address
  * of which is copied into r0 for the mode specific abort handler.
  */
-	/** 20130309    
+	/** 20130309
 	 * 각 vector mode에 대한 공통 코드
 	 *
 	 *   vector_stub 진행 중 svc 모드로 전환된다.
@@ -1226,14 +1226,14 @@ __kuser_helper_end:
 	 *       9.1 Exception Handling
 	 **/
 	.macro	vector_stub, name, mode, correction=0
-	/** 20130309    
+	/** 20130309
 	 * 2 ** 5 (cache line 단위) align
 	 **/
 	.align	5
 
 vector_\name:
 	.if \correction
-	/** 20130309    
+	/** 20130309
 	 * 복귀 주소에 대한 correction 보상
 	 **/
 	sub	lr, lr, #\correction
@@ -1243,13 +1243,13 @@ vector_\name:
 	@ Save r0, lr_<exception> (parent PC) and spsr_<exception>
 	@ (parent CPSR)
 	@
-	/** 20130309    
+	/** 20130309
 	 * r0와 lr을 해당 모드의 stack에 저장 (sp는 증가하지 않은 상태)
 	 **/
 	stmia	sp, {r0, lr}		@ save r0, lr
-	/** 20130309    
+	/** 20130309
 	 * 이전 모드의 cpsr을 sp+8 위치에 저장
-	 *  |      |   
+	 *  |      |
 	 *  +------+    <- sp
 	 *  | r0   |
 	 *  +------+
@@ -1265,11 +1265,11 @@ vector_\name:
 	@ Prepare for SVC32 mode.  IRQs remain disabled.
 	@
 	mrs	r0, cpsr
-	/** 20130309    
+	/** 20130309
 	 * 해당 \mode를 clear하고, SVC_MODE로 전환
 	 * spsr_cxsf에 저장하는 이유는 movs pc, lr시에 cpsr로 채우기 위함
 	 *
-	 * svc_exit에서 
+	 * svc_exit에서
 	 * msr	spsr_cxsf, \rpsr
 	 * ldmia	sp, {r0 - pc}^			@ load r0 - pc, cpsr
 	 **/
@@ -1279,30 +1279,30 @@ vector_\name:
 	@
 	@ the branch table must immediately follow this code
 	@
-	/** 20130309    
+	/** 20130309
 	 * spsr로부터 이전 모드를 추출한다.
 	 **/
 	and	lr, lr, #0x0f
  THUMB(	adr	r0, 1f			)
  THUMB(	ldr	lr, [r0, lr, lsl #2]	)
-	/** 20130309    
+	/** 20130309
 	 * sp를 r0에 복사
 	 **/
 	mov	r0, sp
-	/** 20130309    
+	/** 20130309
 	 * exception 발생 당시의 mode에 따라 호출할 routine을 찾는다.
 	 *
 	 * lr <- pc + (mode * 4)	; pc는 vector_stub macro 호출 다음 instruction을 가리키고 있다.
 	 * 실행할 instruction을 lr에 저장
 	 **/
  ARM(	ldr	lr, [pc, lr, lsl #2]	)
-	/** 20130309    
+	/** 20130309
 	 * 찾은 routine으로 이동하면서 s접미사로 pc를 변경하므로 spsr이 cpsr로 복사됨.
 	 **/
 	movs	pc, lr			@ branch to handler in SVC mode
 ENDPROC(vector_\name)
 
-	/** 20130309    
+	/** 20130309
 	 * vector_stub 함수 선언 아래 handler address에 table에 대한 align을 정의한다.
 	 * 2 ** 2 (4 byte) align
 	 **/
@@ -1316,7 +1316,7 @@ __stubs_start:
 /*
  * Interrupt dispatcher
  */
- /** 20130309    
+ /** 20130309
   * vector_stub macro에 irq 관련 argument를 이용해 exception handler를 정의.
   * 이후 exception 발생시점의 mode에 따라 exception handler table을 나열한다.
   *
@@ -1449,14 +1449,14 @@ __stubs_end:
 
 	.equ	stubs_offset, __vectors_start + 0x200 - __stubs_start
 
-	/** 20130309    
-	 * vector table 선언 
+	/** 20130309
+	 * vector table 선언
 	 *
 	 *   - Exception과 연관된 Processor Mode
 	 *   -----------------------------------------------------------------
 	 *   Exception                Mode         Main purpose
 	 *   -----------------------------------------------------------------
-	 *   Fast Interrupt Request   FIQ          fast interrupt request handling 
+	 *   Fast Interrupt Request   FIQ          fast interrupt request handling
 	 *   Interrupt Request        IRQ          interrupt request handling
 	 *   SWI and Reset            SVC          protected mode for operating systems
 	 *   Prefetch/Data Abort      abort        virtual memory and/or memory protection handling
@@ -1475,12 +1475,12 @@ __vectors_start:
 	W(b)	vector_pabt + stubs_offset
 	W(b)	vector_dabt + stubs_offset
 	W(b)	vector_addrexcptn + stubs_offset
-	/** 20130309    
+	/** 20130309
 	 *		(stubs_start + 0) + (__vectors_start + 0x200 - __stubs_start)
 	 *			=> __vectors_start + 0x200 + 0
 	 *
 	 *		early_trap_init에서 __stubs_start부터 vectors + 0x200에 복사.
-	 **/	
+	 **/
 	W(b)	vector_irq + stubs_offset
 	W(b)	vector_fiq + stubs_offset
 
@@ -1497,7 +1497,7 @@ cr_no_alignment:
 	.space	4
 
 #ifdef CONFIG_MULTI_IRQ_HANDLER
-	/** 20140816    
+	/** 20140816
 	 * architecture의 irq 핸들러의 위치를 저장할 전역변수.
 	 *
 	 * setup_arch에서 machine의 handle_irq를 저장한다.

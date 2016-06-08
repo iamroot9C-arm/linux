@@ -730,7 +730,7 @@ struct perf_event;
 /**
  * struct pmu - generic performance monitoring unit
  */
-/** 20140712    
+/** 20140712
  * type		: type에 해당하는 idr handle.
  **/
 struct pmu {
@@ -1197,7 +1197,7 @@ static inline void perf_fetch_caller_regs(struct pt_regs *regs)
 	perf_arch_fetch_caller_regs(regs, CALLER_ADDR0);
 }
 
-/** 20130720    
+/** 20130720
  * CONFIG_PERF_EVENTS 정의되어 있음
  **/
 static __always_inline void
@@ -1205,7 +1205,7 @@ perf_sw_event(u32 event_id, u64 nr, struct pt_regs *regs, u64 addr)
 {
 	struct pt_regs hot_regs;
 
-	/** 20130720    
+	/** 20130720
 	 * perf_swevent_enabled의 event_id에 해당하는 static_key의 enabled 값을 조회
 	 * false로 리턴되었을 것이라 가정하고 블럭 내용은 분석하지 않음.
 	 **/
@@ -1307,7 +1307,7 @@ extern void perf_event_enable(struct perf_event *event);
 extern void perf_event_disable(struct perf_event *event);
 extern void perf_event_task_tick(void);
 #else
-/** 20160220    
+/** 20160220
  * PERF 분석 생략
  **/
 static inline void

@@ -113,7 +113,7 @@ DEFINE_PER_CPU_SHARED_ALIGNED(struct rq, runqueues);
 
 static void update_rq_clock_task(struct rq *rq, s64 delta);
 
-/** 20150530    
+/** 20150530
  * rq에 해당하는 cpu의 sched_clock 값으로 clock을 업데이트 한다.
  *
  * rq에 task를 en/dequeue 할 때, schedule_tick이 발생했을 경우 등일 때 호출된다.
@@ -122,13 +122,13 @@ void update_rq_clock(struct rq *rq)
 {
 	s64 delta;
 
-	/** 20150530    
+	/** 20150530
 	 * rq에 대한 clock update를 생략할 경우 리턴.
 	 **/
 	if (rq->skip_clock_update > 0)
 		return;
 
-	/** 20150530    
+	/** 20150530
 	 * cpu의 sched_clock을 읽어와 rq에 마지막 갱신된 clock의 차를 구하고,
 	 * rq->clock, rq->clock_task에 업데이트 한다.
 	 **/
@@ -144,7 +144,7 @@ void update_rq_clock(struct rq *rq)
 #define SCHED_FEAT(name, enabled)	\
 	(1UL << __SCHED_FEAT_##name) * enabled |
 
-/** 20130720    
+/** 20130720
  * kernel/sched/features.h 의 내용
  **/
 const_debug unsigned int sysctl_sched_features =
@@ -286,7 +286,7 @@ const_debug unsigned int sysctl_sched_nr_migrate = 32;
  *
  * default: 1s
  */
-/** 20150530    
+/** 20150530
  * RT time 소비를 측정할 기준 단위 (ms)
  **/
 const_debug unsigned int sysctl_sched_time_avg = MSEC_PER_SEC;
@@ -295,7 +295,7 @@ const_debug unsigned int sysctl_sched_time_avg = MSEC_PER_SEC;
  * period over which we measure -rt task cpu usage in us.
  * default: 1s
  */
-/** 20140419    
+/** 20140419
  * rt task의 sched rt period 값
  *
  * sysctl로 설정 가능한 rt period 값
@@ -306,7 +306,7 @@ const_debug unsigned int sysctl_sched_time_avg = MSEC_PER_SEC;
  **/
 unsigned int sysctl_sched_rt_period = 1000000;
 
-/** 20140426    
+/** 20140426
  * scheduler 동작 중임을 의미.
  **/
 __read_mostly int scheduler_running;
@@ -315,7 +315,7 @@ __read_mostly int scheduler_running;
  * part of the period that we allow rt tasks to run in us.
  * default: 0.95s
  */
-/** 20140419    
+/** 20140419
  * rt task가 갖는 rt runtime 값. period의 일부분.
  **/
 int sysctl_sched_rt_runtime = 950000;
@@ -325,7 +325,7 @@ int sysctl_sched_rt_runtime = 950000;
 /*
  * __task_rq_lock - lock the rq @p resides on.
  */
-/** 20130713    
+/** 20130713
  * task가 실행 중인 cpu의 runqueue에 lock을 걸고 rq를 리턴.
  **/
 static inline struct rq *__task_rq_lock(struct task_struct *p)
@@ -333,26 +333,26 @@ static inline struct rq *__task_rq_lock(struct task_struct *p)
 {
 	struct rq *rq;
 
-	/** 20130713    
+	/** 20130713
 	 * DEBUG용 함수
 	 **/
 	lockdep_assert_held(&p->pi_lock);
 
 	for (;;) {
-		/** 20130713    
+		/** 20130713
 		 * p가 실행될 cpu의 per_cpu 변수인 runqueue의 위치를 가져옴
 		 **/
 		rq = task_rq(p);
-		/** 20130713    
+		/** 20130713
 		 * rq에 대한 lock을 건다.
 		 **/
 		raw_spin_lock(&rq->lock);
-		/** 20130713    
+		/** 20130713
 		 * lock을 건 뒤에 다시 runqueue값을 가져와 일치할 경우 rq를 리턴.
 		 **/
 		if (likely(rq == task_rq(p)))
 			return rq;
-		/** 20130713    
+		/** 20130713
 		 * rq가 다를 경우 rq를 unlock 후 반복.
 		 **/
 		raw_spin_unlock(&rq->lock);
@@ -362,7 +362,7 @@ static inline struct rq *__task_rq_lock(struct task_struct *p)
 /*
  * task_rq_lock - lock p->pi_lock and lock the rq @p resides on.
  */
-/** 20150523    
+/** 20150523
  * task와 task의 rq에 lock을 동시에 잡고 리턴한다.
  **/
 static struct rq *task_rq_lock(struct task_struct *p, unsigned long *flags)
@@ -372,7 +372,7 @@ static struct rq *task_rq_lock(struct task_struct *p, unsigned long *flags)
 	struct rq *rq;
 
 	for (;;) {
-		/** 20150523    
+		/** 20150523
 		 * task에 pi_lock을 먼저 걸고,
 		 * task의 rq 포인터를 가져온다.
 		 *
@@ -385,11 +385,11 @@ static struct rq *task_rq_lock(struct task_struct *p, unsigned long *flags)
 		raw_spin_lock_irqsave(&p->pi_lock, *flags);
 		rq = task_rq(p);
 		raw_spin_lock(&rq->lock);
-		/** 20150523    
+		/** 20150523
 		 **/
 		if (likely(rq == task_rq(p)))
 			return rq;
-		/** 20150523    
+		/** 20150523
 		 * 만약 rq의 lock 전후에 rq가 변경되었다면 잡았던 lock을 해제하고
 		 * 다시 시도한다.
 		 **/
@@ -398,7 +398,7 @@ static struct rq *task_rq_lock(struct task_struct *p, unsigned long *flags)
 	}
 }
 
-/** 20130713    
+/** 20130713
  * runqueue의 spinlock을 unlock
  **/
 static void __task_rq_unlock(struct rq *rq)
@@ -407,7 +407,7 @@ static void __task_rq_unlock(struct rq *rq)
 	raw_spin_unlock(&rq->lock);
 }
 
-/** 20150523    
+/** 20150523
  * runqueue와 task의 lock을 순서대로 해제한다.
  **/
 static inline void
@@ -504,7 +504,7 @@ void hrtick_start(struct rq *rq, u64 delay)
 	}
 }
 
-/** 20150822    
+/** 20150822
  * cpu hotplug 이벤트를 처리하기 위한 콜백 함수. 추후 분석???
  **/
 static int
@@ -526,7 +526,7 @@ hotplug_hrtick(struct notifier_block *nfb, unsigned long action, void *hcpu)
 	return NOTIFY_DONE;
 }
 
-/** 20150822    
+/** 20150822
  * hrtick 초기화로 hotplug_hrtick 함수를 cpu notify로 등록한다.
  **/
 static __init void init_hrtick(void)
@@ -550,7 +550,7 @@ static inline void init_hrtick(void)
 }
 #endif /* CONFIG_SMP */
 
-/** 20140426    
+/** 20140426
  * scheduler tick으로 HRTICK을 사용하고 SMP인 경우
  * 자료구조 초기화.
  **/
@@ -568,14 +568,14 @@ static void init_rq_hrtick(struct rq *rq)
 	rq->hrtick_timer.function = hrtick;
 }
 #else	/* CONFIG_SCHED_HRTICK */
-/** 20150822    
+/** 20150822
  * CONFIG_SCHED_HRTICK이 정의되어 있지 않으면 NULL 함수.
  **/
 static inline void hrtick_clear(struct rq *rq)
 {
 }
 
-/** 20140426    
+/** 20140426
  * CONFIG_SCHED_HRTICK이 정의되어 있지 않으면 NULL 함수.
  **/
 static inline void init_rq_hrtick(struct rq *rq)
@@ -597,14 +597,14 @@ static inline void init_hrtick(void)
 #ifdef CONFIG_SMP
 
 #ifndef tsk_is_polling
-/** 20130713    
+/** 20130713
  * task의 thread_info의 flags 중 TIF_POLLING_NRFLAG가 켜져 있는지 검사
  * NEED_RESCHED를 polling으로 검사한다.
  **/
 #define tsk_is_polling(t) test_tsk_thread_flag(t, TIF_POLLING_NRFLAG)
 #endif
 
-/** 20130713    
+/** 20130713
  * 특정 task를 reschedule 될 것이라 표시한다.
  * 만약 현재 task에 resched를 표시하면, PREEMPT 설정이 되어 있는 경우 __irq_svc에서 선점이 발생한다.
  *
@@ -618,44 +618,44 @@ void resched_task(struct task_struct *p)
 {
 	int cpu;
 
-	/** 20130713    
+	/** 20130713
 	 * rq에 spinlock이 잡혀 있지 않다면 BUG_ON.
 	 *   ex) ttwu_remote 에서 lock을 걸고 들어옴
 	 **/
 	assert_raw_spin_locked(&task_rq(p)->lock);
 
-	/** 20130713    
+	/** 20130713
 	 * 이미 need_resched일 경우 return.
 	 **/
 	if (test_tsk_need_resched(p))
 		return;
 
-	/** 20130713    
+	/** 20130713
 	 * need_resched를 set.
 	 **/
 	set_tsk_need_resched(p);
 
-	/** 20130713    
+	/** 20130713
 	 * p가 수행될 cpu를 얻어온다.
 	 **/
 	cpu = task_cpu(p);
-	/** 20130713    
+	/** 20130713
 	 * 현재 이 함수가 실행되는 task의 cpu와 실행할 task가 수행될 cpu가 같다면 return.
 	 **/
 	if (cpu == smp_processor_id())
 		return;
 
 	/* NEED_RESCHED must be visible before we test polling */
-	/** 20130713    
+	/** 20130713
 	 * dmb()
 	 **/
 	smp_mb();
-	/** 20130713    
+	/** 20130713
 	 * task가 poll_idle()에서 polling 중이라면 false.
 	 * 그렇지 않다면 수행
 	 **/
 	if (!tsk_is_polling(p))
-		/** 20130713    
+		/** 20130713
 		 * cpu는 p가 수행될 cpu.
 		 * IPI를 이용해 해당 cpu에게 reschedule 메시지를 전달
 		 **/
@@ -682,7 +682,7 @@ void resched_cpu(int cpu)
  * selecting an idle cpu will add more delays to the timers than intended
  * (as that cpu's timer base may not be uptodate wrt jiffies etc).
  */
-/** 20141108    
+/** 20141108
  * nohz인 경우, idle cpu로부터 timer를 가져와 수행시킬 cpu를 가져온다.
  **/
 int get_nohz_timer_target(void)
@@ -692,7 +692,7 @@ int get_nohz_timer_target(void)
 	struct sched_domain *sd;
 
 	rcu_read_lock();
-	/** 20141108    
+	/** 20141108
 	 * 현재 cpu의 모든 sched_domain을 순회.
 	 * 각 domain에 속하는 모든 cpu를 순회.
 	 * cpu가 idle_cpu가 아닐 경우를 찾아 리턴한다.
@@ -719,7 +719,7 @@ unlock:
  * account when the CPU goes back to idle and evaluates the timer
  * wheel for the next timer event.
  */
-/** 20140920    
+/** 20140920
  * idle task를 수행 중인 다른 cpu를 깨운다.
  *
  * 해당 cpu의 rq를 받아와 need_resched를 켜고 IPI를 보내 schedule 하도록 한다.
@@ -746,17 +746,17 @@ void wake_up_idle_cpu(int cpu)
 	 * lockless. The worst case is that the other CPU runs the
 	 * idle task through an additional NOOP schedule()
 	 */
-	/** 20140920    
+	/** 20140920
 	 * 해당 rq의 idle task에 RESCHED flag를 켜준다.
 	 **/
 	set_tsk_need_resched(rq->idle);
 
 	/* NEED_RESCHED must be visible before we test polling */
-	/** 20140920    
+	/** 20140920
 	 * resched flag를 반영시키기 위해 memory barrier를 둔다.
 	 **/
 	smp_mb();
-	/** 20140920    
+	/** 20140920
 	 * poll_idle()이 폴링으로 NEED_RESCHED를 검사하지 않는다면
 	 * IPI로 reschedule을 통보한다.
 	 **/
@@ -779,18 +779,18 @@ static inline bool got_nohz_idle_kick(void)
 
 #endif /* CONFIG_NO_HZ */
 
-/** 20150530    
+/** 20150530
  * rq의 sched average를 update 한다 ???
  **/
 void sched_avg_update(struct rq *rq)
 {
-	/** 20150530    
+	/** 20150530
 	 * schedule average를 구할 기간을 계산한다.
 	 * sysctl에 영향을 받는다.
 	 **/
 	s64 period = sched_avg_period();
 
-	/** 20150530    
+	/** 20150530
 	 * schedule average를 구할 period가 확보되는 동안
 	 * rt_avg 를 계속 나눈다.
 	 **/
@@ -859,18 +859,18 @@ int tg_nop(struct task_group *tg, void *data)
 }
 #endif
 
-/** 20140426    
+/** 20140426
  * task의 load balance를 위한 load weigth롤 설정.
  *
  * 현재 task의 static priority를 기준으로 삼는다.
  **/
 static void set_load_weight(struct task_struct *p)
 {
-	/** 20140426    
+	/** 20140426
 	 * static_prio 에서 MAX_RT_PRIO (100)을 뺀다.
 	 **/
 	int prio = p->static_prio - MAX_RT_PRIO;
-	/** 20140426    
+	/** 20140426
 	 * task의 sched_entity 중 load 변수의 위치.
 	 **/
 	struct load_weight *load = &p->se.load;
@@ -878,11 +878,11 @@ static void set_load_weight(struct task_struct *p)
 	/*
 	 * SCHED_IDLE tasks get minimal weight:
 	 */
-	/** 20140426    
+	/** 20140426
 	 * task의 scheduling policy가 idel인 경우
 	 **/
 	if (p->policy == SCHED_IDLE) {
-		/** 20140426    
+		/** 20140426
 		 * weigth, inv_weigth는 idleprio에 따른 상수값을 설정
 		 **/
 		load->weight = scale_load(WEIGHT_IDLEPRIO);
@@ -890,7 +890,7 @@ static void set_load_weight(struct task_struct *p)
 		return;
 	}
 
-	/** 20140426    
+	/** 20140426
 	 * prio를 기준으로 미리 정의된 테이블 값으로
 	 * load weight와 inversion weigth를 지정한다.
 	 **/
@@ -898,17 +898,17 @@ static void set_load_weight(struct task_struct *p)
 	load->inv_weight = prio_to_wmult[prio];
 }
 
-/** 20150530    
+/** 20150530
  * rq의 clock을 갱신하고 task를 enqueue 한다.
  **/
 static void enqueue_task(struct rq *rq, struct task_struct *p, int flags)
 {
-	/** 20150530    
-	 * rq의 clock을 sched_clock값으로 업데이트 한다. 
+	/** 20150530
+	 * rq의 clock을 sched_clock값으로 업데이트 한다.
 	 **/
 	update_rq_clock(rq);
 	sched_info_queued(p);
-	/** 20150530    
+	/** 20150530
 	 * task에 지정된 sched_class의 enqueue_task 콜백을 호출한다.
 	 *
 	 * stop_sched_class의 경우 enqueue_task_stop으로 동작 중인 task 수를 증가.
@@ -916,35 +916,35 @@ static void enqueue_task(struct rq *rq, struct task_struct *p, int flags)
 	p->sched_class->enqueue_task(rq, p, flags);
 }
 
-/** 20150530    
+/** 20150530
  * rq의 clock을 갱신하고 task를 dequeue 한다.
  **/
 static void dequeue_task(struct rq *rq, struct task_struct *p, int flags)
 {
-	/** 20150530    
-	 * rq의 clock을 sched_clock값으로 업데이트 한다. 
+	/** 20150530
+	 * rq의 clock을 sched_clock값으로 업데이트 한다.
 	 **/
 	update_rq_clock(rq);
 	sched_info_dequeued(p);
-	/** 20150530    
+	/** 20150530
 	 * task에 지정된 sched_class의 dequeue_task 콜백을 호출한다.
 	 **/
 	p->sched_class->dequeue_task(rq, p, flags);
 }
 
-/** 20130720    
+/** 20130720
  * task를 동작시킨다. (새로 생성한 task를 동작시키는 경우 등)
  **/
 void activate_task(struct rq *rq, struct task_struct *p, int flags)
 {
-	/** 20130720    
+	/** 20130720
 	 * task p의 상태가 TASK_UNINTERRUPTIBLE이고, flags가 PF_FROZEN이 아닐 경우
 	 *   rq의 nr_uninterruptible를 하나 감소
 	 **/
 	if (task_contributes_to_load(p))
 		rq->nr_uninterruptible--;
 
-	/** 20130720    
+	/** 20130720
 	 * rq의 clock을 갱신하고 task를 enqueue한다.
 	 * sched_class에 따라 제공하는 enqueue_task 콜백을 호출한다.
 	 **/
@@ -1079,9 +1079,9 @@ static inline u64 steal_ticks(u64 steal)
 }
 #endif
 
-/** 20150530    
+/** 20150530
  * rq의 clock_task 항목을 업데이트 한다.
- * 
+ *
  * 매크로를 선언하지 않아 rq의 clock과 동일한 값으로 업데이트 될 것이다.
  **/
 static void update_rq_clock_task(struct rq *rq, s64 delta)
@@ -1136,7 +1136,7 @@ static void update_rq_clock_task(struct rq *rq, s64 delta)
 	}
 #endif
 
-	/** 20150530    
+	/** 20150530
 	 * delta를 clock_task에 업데이트 한다.
 	 **/
 	rq->clock_task += delta;
@@ -1184,14 +1184,14 @@ static int irqtime_account_si_update(void)
 
 #endif
 
-/** 20150801    
+/** 20150801
  * 해당 cpu의 stop task로 매개변수로 넘어온 stop task를 지정한다.
  *
  * (stop과 idle task는 percpu로 지정된다 - runqueue가 이미 percpu.)
  **/
 void sched_set_stop_task(int cpu, struct task_struct *stop)
 {
-	/** 20150801    
+	/** 20150801
 	 * task_struct에 sched 관련 설정을 할 때 사용되는 parameter.
 	 * 구조체에는 sched_priority를 지정하는 부분만 존재한다.
 	 *
@@ -1209,23 +1209,23 @@ void sched_set_stop_task(int cpu, struct task_struct *stop)
 		 * much confusion -- but then, stop work should not
 		 * rely on PI working anyway.
 		 */
-		/** 20150801    
+		/** 20150801
 		 * stop task를 SCHED_FIFO, param에 저장된 priority로 설정한다.
 		 **/
 		sched_setscheduler_nocheck(stop, SCHED_FIFO, &param);
 
-		/** 20150801    
+		/** 20150801
 		 * task의 sched_class를 stop_sched_class로 지정한다.
 		 **/
 		stop->sched_class = &stop_sched_class;
 	}
 
-	/** 20150801    
+	/** 20150801
 	 * 해당 cpu runqueue의 stop task로 설정한다.
 	 **/
 	cpu_rq(cpu)->stop = stop;
 
-	/** 20150801    
+	/** 20150801
 	 * 새로운 stop task 이전에 지정되었던 stop task는 RT sched class로 지정한다.
 	 **/
 	if (old_stop) {
@@ -1240,7 +1240,7 @@ void sched_set_stop_task(int cpu, struct task_struct *stop)
 /*
  * __normal_prio - return the priority that is based on the static prio
  */
-/** 20160326    
+/** 20160326
  * __normal_prio로 static_prio를 리턴한다.
  **/
 static inline int __normal_prio(struct task_struct *p)
@@ -1255,7 +1255,7 @@ static inline int __normal_prio(struct task_struct *p)
  * setprio syscalls, and whenever the interactivity
  * estimator recalculates.
  */
-/** 20160402    
+/** 20160402
  * task의 예상된 normal priority를 리턴한다.
  *
  * task의 prio는 RT-inheritance에 의해 값이 변경되므로 변경되지 않는 static_prio를
@@ -1265,7 +1265,7 @@ static inline int normal_prio(struct task_struct *p)
 {
 	int prio;
 
-	/** 20160326    
+	/** 20160326
 	 *		task_struct.prio:
 	 *			0-99 -> Realtime
 	 *			100-140 -> Normal priority
@@ -1294,7 +1294,7 @@ static inline int normal_prio(struct task_struct *p)
 	if (task_has_rt_policy(p))
 		prio = MAX_RT_PRIO-1 - p->rt_priority;
 	else
-		/** 20160326    
+		/** 20160326
 		 * __normal_prio는 static_prio.
 		 **/
 		prio = __normal_prio(p);
@@ -1308,7 +1308,7 @@ static inline int normal_prio(struct task_struct *p)
  * interactivity modifiers. Will be RT if the task got
  * RT-boosted. If not then it returns p->normal_prio.
  */
-/** 20160402    
+/** 20160402
  * task의 현재 priority를 재계산한다.
  *
  * task의 normal_prio를 갱신하고,
@@ -1317,7 +1317,7 @@ static inline int normal_prio(struct task_struct *p)
  **/
 static int effective_prio(struct task_struct *p)
 {
-	/** 20160402    
+	/** 20160402
 	 * task의 normal_prio를 계산해 normal_prio에 저장한다.
 	 **/
 	p->normal_prio = normal_prio(p);
@@ -1326,7 +1326,7 @@ static int effective_prio(struct task_struct *p)
 	 * keep the priority unchanged. Otherwise, update priority
 	 * to the normal priority:
 	 */
-	/** 20160402    
+	/** 20160402
 	 * 현재 prio를 기준으로
 	 * RT task이거나 RT priority boosting된 경우 현재 prio을 그대로 리턴.
 	 * 그렇지 않은 경우 재계산한 normal_prio를 리턴.
@@ -1340,12 +1340,12 @@ static int effective_prio(struct task_struct *p)
  * task_curr - is this task currently executing on a CPU?
  * @p: the task in question.
  */
-/** 20130713    
+/** 20130713
  * p가 현재 runqueue의 curr가 가리키는 task인지 여부를 리턴
  **/
 inline int task_curr(const struct task_struct *p)
 {
-	/** 20130713    
+	/** 20130713
 	 * p가 실행될 cpu의 runqueue 구조체의 curr가 가리키는 task인지 여부를 리턴
 	 **/
 	return cpu_curr(task_cpu(p)) == p;
@@ -1363,7 +1363,7 @@ static inline void check_class_changed(struct rq *rq, struct task_struct *p,
 		p->sched_class->prio_changed(rq, p, oldprio);
 }
 
-/** 20130713    
+/** 20130713
  * rq->curr task를 need_resched로 표시
  *   같은 cpu라면 리턴하고, 다른 cpu라면 IPI message를 전달
  *
@@ -1373,27 +1373,27 @@ void check_preempt_curr(struct rq *rq, struct task_struct *p, int flags)
 {
 	const struct sched_class *class;
 
-	/** 20130713    
+	/** 20130713
 	 * p의 sched_class 와 rq->curr->sched_class가 같을 때
 	 *  sched_class의check_preempt_curr에 등록되어 있는 함수 호출
 	 **/
 	if (p->sched_class == rq->curr->sched_class) {
 		rq->curr->sched_class->check_preempt_curr(rq, p, flags);
 	} else {
-		/** 20130713    
+		/** 20130713
 		 * 모든 sched_class를 순회하며
 		 **/
 		for_each_class(class) {
-			/** 20130713    
+			/** 20130713
 			 * rq->curr->sched_class가 같다면 빠져나감
 			 **/
 			if (class == rq->curr->sched_class)
 				break;
-			/** 20130713    
+			/** 20130713
 			 * p->sched_class가 class와 같다면
 			 **/
 			if (class == p->sched_class) {
-				/** 20130713    
+				/** 20130713
 				 * rq->curr task를 need_resched로 표시하고 빠져나감
 				 **/
 				resched_task(rq->curr);
@@ -1406,7 +1406,7 @@ void check_preempt_curr(struct rq *rq, struct task_struct *p, int flags)
 	 * A queue event has occurred, and we're going to schedule.  In
 	 * this case, we can save a useless back to back clock update.
 	 */
-	/** 20130713    
+	/** 20130713
 	 * rq->curr가 가리키는 task가 rq에 들어가 있고, need_resched라면
 	 *   skip_clock_update를 설정한다.
 	 * ???
@@ -1416,7 +1416,7 @@ void check_preempt_curr(struct rq *rq, struct task_struct *p, int flags)
 }
 
 #ifdef CONFIG_SMP
-/** 20130720    
+/** 20130720
  * task의 cpu값을 새로 지정
  **/
 void set_task_cpu(struct task_struct *p, unsigned int new_cpu)
@@ -1445,16 +1445,16 @@ void set_task_cpu(struct task_struct *p, unsigned int new_cpu)
 #endif
 #endif
 
-	/** 20130720    
+	/** 20130720
 	 * trace 관련 코드. 분석 안 함.
 	 **/
 	trace_sched_migrate_task(p, new_cpu);
 
-	/** 20130720    
+	/** 20130720
 	 * task p의 자료구조에 설정된 cpu와 new_cpu가 다른 경우
 	 **/
 	if (task_cpu(p) != new_cpu) {
-		/** 20130720    
+		/** 20130720
 		 * se = sched entry
 		 * nr_migrations 증가
 		 **/
@@ -1462,13 +1462,13 @@ void set_task_cpu(struct task_struct *p, unsigned int new_cpu)
 		perf_sw_event(PERF_COUNT_SW_CPU_MIGRATIONS, 1, NULL, 0);
 	}
 
-	/** 20130720    
+	/** 20130720
 	 * task p에 해당하는 thread_info의 cpu 값을 new_cpu로 저장
 	 **/
 	__set_task_cpu(p, new_cpu);
 }
 
-/** 20150523    
+/** 20150523
  * migrate 함수에서 사용하기 위해 task와 dest_cpu를 묶은 구조체
  **/
 struct migration_arg {
@@ -1494,7 +1494,7 @@ static int migration_cpu_stop(void *data);
  * smp_call_function() if an IPI is sent by the same process we are
  * waiting to become inactive.
  */
-/** 20160130    
+/** 20160130
  * thread가 unschedule (runnable도 아니고, running도 아닐 때) 될 때까지 기다린다.
  *
  * mache_state가 주어진 경우, task의 상태를 검사만 하고 변경하는 것은 기대하지 않는다. 만약 변경된다면, task가 깨어난 경우이며, 그 때는 0을 리턴한다. task가 CPU에서 벗어나 task를 기다리는데 성공했을 경우, positive number를 리턴한다. 잠시 뒤 두 번째 호출에서 동일한 숫자를 리턴했다면 함수 호출자는 task가 전체 시간동안 언스케쥴 되어 있었다고 확신할 수 있다.
@@ -1513,7 +1513,7 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
 		 * the runqueue lock when things look like they will
 		 * work out!
 		 */
-		/** 20160130    
+		/** 20160130
 		 * task의 rq 포인터를 받아온다.
 		 **/
 		rq = task_rq(p);
@@ -1529,7 +1529,7 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
 		 * return false if the runqueue has changed and p
 		 * is actually now running somewhere else!
 		 */
-		/** 20160130    
+		/** 20160130
 		 * task가 현재 동작 중인 동안 대기하는데,
 		 * match_state가 주어진 경우 task의 현재 상태와 다르다면 0으로 리턴한다.
 		 **/
@@ -1544,7 +1544,7 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
 		 * lock now, to be *sure*. If we're wrong, we'll
 		 * just go back and repeat.
 		 */
-		/** 20160130    
+		/** 20160130
 		 * task와 rq에 lock을 잡고 현재 동작 상태와 runqueue에 들어갔는지 여부를
 		 * 받아온다.
 		 **/
@@ -1552,7 +1552,7 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
 		trace_sched_wait_task(p);
 		running = task_running(rq, p);
 		on_rq = p->on_rq;
-		/** 20160130    
+		/** 20160130
 		 * match_state가 주어지지 않았거나 task의 상태가 match_state와 다르면
 		 * context switch 발생횟수를 저장한다.
 		 *
@@ -1567,7 +1567,7 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
 		/*
 		 * If it changed from the expected state, bail out now.
 		 */
-		/** 20160130    
+		/** 20160130
 		 * 위에서 조사한 context switch 횟수가 0이었다면 기대한 상태에서 성공적으로 기다렸음을 리턴한다.
 		 **/
 		if (unlikely(!ncsw))
@@ -1579,7 +1579,7 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
 		 *
 		 * Oops. Go back and try again..
 		 */
-		/** 20160130    
+		/** 20160130
 		 * task가 현재 동작 중(on_cpu)이라면 다시 처음으로 돌아가 기다린다.
 		 **/
 		if (unlikely(running)) {
@@ -1596,8 +1596,8 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
 		 * running right now), it's preempted, and we should
 		 * yield - it could be a while.
 		 */
-		/** 20160130    
-		 * running이 아니지만(on_cpu=0) runqueue에 존재한다면 
+		/** 20160130
+		 * running이 아니지만(on_cpu=0) runqueue에 존재한다면
 		 * HZ만큼 기다린 뒤 처음으로 돌아간다.
 		 *
 		 * runnable (on_rq) 하지만 현재 동작 중이지는 않을 경우, 즉 선점된 경우에 해당하며 양보를 해야 한다.
@@ -1615,7 +1615,7 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
 		 * runnable, which means that it will never become
 		 * running in the future either. We're all done!
 		 */
-		/** 20160130    
+		/** 20160130
 		 * running (on_cpu)도 아니고, runnable (on_rq)도 아닐 경우,
 		 * 즉 미래도 running이 되지 않을 것이므로 성공적으로 리턴가능하다.
 		 **/
@@ -1718,11 +1718,11 @@ out:
 /*
  * The caller (fork, wakeup) owns p->pi_lock, ->cpus_allowed is stable.
  */
-/** 20130720    
+/** 20130720
  * p의 sched_class에 따라 설정된 select_task_rq를 호출.
- * 내용은 분석하지 않았음 ??? 
+ * 내용은 분석하지 않았음 ???
  *
- * 20151128 
+ * 20151128
  * stopper의 경우 :
  * stop_sched_class로 하나의 stop task만 지정.
  *   select_task_rq_stop => 해당 task가 배정된 cpu번호가 리턴.
@@ -1756,7 +1756,7 @@ static void update_avg(u64 *avg, u64 sample)
 }
 #endif
 
-/** 20130713    
+/** 20130713
  * CONFIG_SCHEDSTATS가 정의되어 있을 때 /proc/schedstat에 출력할 통계자료를 생성
  *   -> 정의되어 있지 않아 분석하지 않음
  **/
@@ -1767,16 +1767,16 @@ ttwu_stat(struct task_struct *p, int cpu, int wake_flags)
 	struct rq *rq = this_rq();
 
 #ifdef CONFIG_SMP
-	/** 20130713    
+	/** 20130713
 	 * 현재 task가 수행 중인 cpu의 번호를 읽어온다.
 	 **/
 	int this_cpu = smp_processor_id();
 
-	/** 20130713    
+	/** 20130713
 	 * 수행될 cpu가 현재 이 함수가 수행 중인 cpu와 같다면
 	 **/
 	if (cpu == this_cpu) {
-		/** 20130713    
+		/** 20130713
 		 * schedstat 관련 자료구조 변경
 		 * 현재 config에서는 정의되어 있지 않음.
 		 **/
@@ -1812,16 +1812,16 @@ ttwu_stat(struct task_struct *p, int cpu, int wake_flags)
 
 static void ttwu_activate(struct rq *rq, struct task_struct *p, int en_flags)
 {
-	/** 20130720    
+	/** 20130720
 	 **/
 	activate_task(rq, p, en_flags);
-	/** 20130720    
+	/** 20130720
 	 * task p의 상태를 on runqueue로 설정.
 	 **/
 	p->on_rq = 1;
 
 	/* if a worker is waking up, notify workqueue */
-	/** 20130720    
+	/** 20130720
 	 * 깨워야 할 task p가 workqueue worker일 경우 wq_worker_waking_up 수행
 	 *  cpu_of(rq) : rq를 가지고 있는 cpu
 	 **/
@@ -1832,34 +1832,34 @@ static void ttwu_activate(struct rq *rq, struct task_struct *p, int en_flags)
 /*
  * Mark the task runnable and perform wakeup-preemption.
  */
-/** 20130713    
+/** 20130713
  * task p를 need_resched로 표시하고, state를 TASK_RUNNING으로 변경.
  **/
 static void
 ttwu_do_wakeup(struct rq *rq, struct task_struct *p, int wake_flags)
 {
-	/** 20130713    
+	/** 20130713
 	 * DECLARE_TRACE로 선언한 sched_wakeup 함수 호출
 	 **/
 	trace_sched_wakeup(p, true);
-	/** 20130713    
+	/** 20130713
 	 * need_resched flag 설정
 	 **/
 	check_preempt_curr(rq, p, wake_flags);
 
-	/** 20130713    
+	/** 20130713
 	 * task의 state를 TASK_RUNNING으로 변경
 	 **/
 	p->state = TASK_RUNNING;
 #ifdef CONFIG_SMP
-	/** 20130713    
+	/** 20130713
 	 * sched_class에 task_woken가 등록되어 있으면 호출
 	 * (초기값은 rt.c에만 존재)
 	 **/
 	if (p->sched_class->task_woken)
 		p->sched_class->task_woken(rq, p);
 
-	/** 20130713    
+	/** 20130713
 	 * idle_stamp는 idle_balance 함수가 호출될 때 rq->clock으로 저장됨.
 	 * 현재 rq->clock과 rq->idle_stamp의 차를 구해 rq->avg_idle에 저장.
 	 *   rq->avg_idle의 사용 용도는 schedule 관련 함수에서 분석해야 함???
@@ -1869,13 +1869,13 @@ ttwu_do_wakeup(struct rq *rq, struct task_struct *p, int wake_flags)
 		 * runqueue의 clock - idle_stamp를 해 delta로 저장
 		 **/
 		u64 delta = rq->clock - rq->idle_stamp;
-		/** 20130713    
+		/** 20130713
 		 * migration 에 필요한 cost * 2를 max에 저장
 		 **/
 		u64 max = 2*sysctl_sched_migration_cost;
 
-		/** 20130713    
-		 * delta가 max 이상이면 
+		/** 20130713
+		 * delta가 max 이상이면
 		 **/
 		if (delta > max)
 			rq->avg_idle = max;
@@ -1886,7 +1886,7 @@ ttwu_do_wakeup(struct rq *rq, struct task_struct *p, int wake_flags)
 #endif
 }
 
-/** 20130720    
+/** 20130720
  * task를 activate하고, wakeup 하는 함수
  *   ttwu_activate 추가분석 필요.
  **/
@@ -1894,7 +1894,7 @@ static void
 ttwu_do_activate(struct rq *rq, struct task_struct *p, int wake_flags)
 {
 #ifdef CONFIG_SMP
-	/** 20130720    
+	/** 20130720
 	 * sched_contributes_to_load가 true인 조건
 	 *   task의 상태가 TASK_UNINTERRUPTIBLE이고, flags가 PF_FROZEN이 아닐 경우
 	 *
@@ -1904,7 +1904,7 @@ ttwu_do_activate(struct rq *rq, struct task_struct *p, int wake_flags)
 		rq->nr_uninterruptible--;
 #endif
 
-	/** 20130720    
+	/** 20130720
 	 * ttwu_activate() 에서 activate_task를 호출하고, activate_task에서
 	 *   task_contributes_to_load(p)를 검사해 rq->nr_uninterruptible--; 하는데
 	 *   이렇게 되면 두 번 감소시키게 될텐데???
@@ -1919,7 +1919,7 @@ ttwu_do_activate(struct rq *rq, struct task_struct *p, int wake_flags)
  * since all we need to do is flip p->state to TASK_RUNNING, since
  * the task is still ->on_rq.
  */
-/** 20130713    
+/** 20130713
  * task p가 runqueue에 들어 있다면 ttwu_do_wakeup을 호출하고 1을 리턴.
  *   위의 경우 return 1.
  **/
@@ -1928,17 +1928,17 @@ static int ttwu_remote(struct task_struct *p, int wake_flags)
 	struct rq *rq;
 	int ret = 0;
 
-	/** 20130713    
+	/** 20130713
 	 * p가 실행될 cpu의 runqueue에 lock을 걸고 runqueue의 주소를 가져옴
 	 **/
 	rq = __task_rq_lock(p);
-	/** 20130713    
+	/** 20130713
 	 * p가 runqueue 안에 있을 경우 ttwu_do_wakeup으로
 	 *	need_resched를 설정하고 RUNNING 상태로 변경.
 	 **/
 	if (p->on_rq) {
 		ttwu_do_wakeup(rq, p, wake_flags);
-		/** 20130713    
+		/** 20130713
 		 * return값을 1로 지정
 		 **/
 		ret = 1;
@@ -1997,14 +1997,14 @@ void scheduler_ipi(void)
 	irq_exit();
 }
 
-/** 20130720    
+/** 20130720
  * task p를 수행될 cpu의 wake_list에 넣어주고,
  *   wake_list가 비어있는 상태에서 wake_list에 처음 추가한 것이라면
  *   IPI_RESCHEDULE 메시지를 전달
  **/
 static void ttwu_queue_remote(struct task_struct *p, int cpu)
 {
-	/** 20130720    
+	/** 20130720
 	 * 수행될 cpu의 wake_list에 깨울 task p의 wake_entry를 추가.
 	 * lock-less add.
 	 *
@@ -2040,7 +2040,7 @@ static int ttwu_activate_remote(struct task_struct *p, int wake_flags)
 }
 #endif /* __ARCH_WANT_INTERRUPTS_ON_CTXSW */
 
-/** 20130720    
+/** 20130720
  * SMP일 경우 다음 함수 수행
  *
  * cache share 여부를 검사하는 함수.
@@ -2048,7 +2048,7 @@ static int ttwu_activate_remote(struct task_struct *p, int wake_flags)
  **/
 bool cpus_share_cache(int this_cpu, int that_cpu)
 {
-	/** 20130720    
+	/** 20130720
 	 * sd:  sched domain
 	 * llc: last level cache
 	 **/
@@ -2056,7 +2056,7 @@ bool cpus_share_cache(int this_cpu, int that_cpu)
 }
 #endif /* CONFIG_SMP */
 
-/** 20130720    
+/** 20130720
  * task p와 p가 수행될 cpu를 받아
  *   TTWU_QUEUE를 사용하고, last level cache를 공유하지 않으면
  *     remote cpu의 wake_list에 task를 추가하고 IPI_RESCHEDULE message를 보낸다.
@@ -2065,13 +2065,13 @@ bool cpus_share_cache(int this_cpu, int that_cpu)
  **/
 static void ttwu_queue(struct task_struct *p, int cpu)
 {
-	/** 20130720    
+	/** 20130720
 	 * cpu에 해당하는 per_cpu 변수의 위치를 rq에 저장
 	 **/
 	struct rq *rq = cpu_rq(cpu);
 
 #if defined(CONFIG_SMP)
-	/** 20130720    
+	/** 20130720
 	 * kernel/sched/features.h에 sched_feat(TTWU_QUEUE)가 정의되어 있음
 	 *
 	 * smp_process_id() : 현재 이 함수를 수행하는 cpu
@@ -2079,11 +2079,11 @@ static void ttwu_queue(struct task_struct *p, int cpu)
 	 * 위 두 cpu가 cache를 shared하지 않는다면 if문 블럭 수행
 	 **/
 	if (sched_feat(TTWU_QUEUE) && !cpus_share_cache(smp_processor_id(), cpu)) {
-		/** 20130720    
+		/** 20130720
 		 * sched_clock_cpu 추후 분석
 		 **/
 		sched_clock_cpu(cpu); /* sync clocks x-cpu */
-		/** 20130720    
+		/** 20130720
 		 * task p를 새로 수행될 cpu의 wake_list에 추가
 		 **/
 		ttwu_queue_remote(p, cpu);
@@ -2091,11 +2091,11 @@ static void ttwu_queue(struct task_struct *p, int cpu)
 	}
 #endif
 
-	/** 20130720    
+	/** 20130720
 	 * TTWU_QUEUE feature가 없거나, cpu간의 last level cache를 share하는 경우
 	 **/
 	raw_spin_lock(&rq->lock);
-	/** 20130720    
+	/** 20130720
 	 * task를 activate 시키고 wakeup 시킨다.
 	 **/
 	ttwu_do_activate(rq, p, 0);
@@ -2117,7 +2117,7 @@ static void ttwu_queue(struct task_struct *p, int cpu)
  * Returns %true if @p was woken up, %false if it was already running
  * or @state didn't match @p's state.
  */
-/** 20130713    
+/** 20130713
  *  task p가 runqueue에 들어 있다면 reschedule message를 날리고,
  *  그렇지 않다면 task p를 runqueue에 넣고 scheduling 대기 상태로 만든다.
  **/
@@ -2127,15 +2127,15 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
 	unsigned long flags;
 	int cpu, success = 0;
 
-	/** 20130713    
+	/** 20130713
 	 * dmb() 호출
 	 **/
 	smp_wmb();
-	/** 20130713    
+	/** 20130713
 	 * task의pi_lock을 걸고, 현재 clsr을 flags에 저장한다.
 	 **/
 	raw_spin_lock_irqsave(&p->pi_lock, flags);
-	/** 20130713    
+	/** 20130713
 	 * process의 현재 상태가 state에 해당하면 계속 진행하고,
 	 * 아닐 경우 out으로 이동.
 	 *
@@ -2145,12 +2145,12 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
 		goto out;
 
 	success = 1; /* we're going to change ->state */
-	/** 20130713    
+	/** 20130713
 	 * task가 수행중인 cpu를 얻어온다.
 	 **/
 	cpu = task_cpu(p);
 
-	/** 20130713    
+	/** 20130713
 	 * on_rq : runqueue에 존재하는지 여부
 	 * runqueue에 들어 있고 ttwu_remote가 1을 리턴하면 stat으로 이동
 	 **/
@@ -2162,7 +2162,7 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
 	 * If the owning (remote) cpu is still in the middle of schedule() with
 	 * this task as prev, wait until its done referencing the task.
 	 */
-	/** 20130720    
+	/** 20130720
 	 * 이 부분부터는 task p가 run queue에 들어있지 않을 경우.
 	 *
 	 * 깨워야 할 task가 cpu에서 수행 중이라면 (schedule() 수행이 끝나지 않은 경우)
@@ -2180,7 +2180,7 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
 		if (ttwu_activate_remote(p, wake_flags))
 			goto stat;
 #else
-		/** 20130720    
+		/** 20130720
 		 * memory barrier
 		 **/
 		cpu_relax();
@@ -2189,8 +2189,8 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
 	/*
 	 * Pairs with the smp_wmb() in finish_lock_switch().
 	 */
-	/** 20130720    
-	 * finish_lock_switch에서 
+	/** 20130720
+	 * finish_lock_switch에서
 	 *	 smp_wmb();
 	 *   prev->on_cpu = 0;
 	 *
@@ -2198,44 +2198,44 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
 	 **/
 	smp_rmb();
 
-	/** 20130720    
+	/** 20130720
 	 * 깨울 task의 sched_contributes_to_load를 설정.
 	 *   사용되는 곳은 ttwu_do_activate에서 테스트.
 	 **/
 	p->sched_contributes_to_load = !!task_contributes_to_load(p);
-	/** 20130720    
+	/** 20130720
 	 * task의 상태를 TASK_WAKING으로 변경
 	 **/
 	p->state = TASK_WAKING;
 
-	/** 20130720    
+	/** 20130720
 	 * task의 sched_class에 task_waking가 정의되어 있다면 호출.
 	 *   task_waking은 현재 fair.c에서만 정의되어 있음.
 	 **/
 	if (p->sched_class->task_waking)
 		p->sched_class->task_waking(p);
 
-	/** 20130720    
+	/** 20130720
 	 * 새로 할당한 cpu 번호 리턴.
 	 *   내용은 아직 분석하지 않음 ???
 	 **/
 	cpu = select_task_rq(p, SD_BALANCE_WAKE, wake_flags);
-	/** 20130720    
+	/** 20130720
 	 * task p의 현재 자료구조에 설정된 cpu와 새로 수행할 cpu가 다르다면
 	 **/
 	if (task_cpu(p) != cpu) {
-		/** 20130720    
+		/** 20130720
 		 * wake_flags를 migrated로 설정.
 		 **/
 		wake_flags |= WF_MIGRATED;
-		/** 20130720    
+		/** 20130720
 		 * cpu 값을 변경
 		 **/
 		set_task_cpu(p, cpu);
 	}
 #endif /* CONFIG_SMP */
 
-	/** 20130720    
+	/** 20130720
 	 * task p가 runqueue에 들어있지 않다면 cpu에 해당하는 runqueue에 넣어주고
 	 * reshedule을 위한 준비 작업을 해준다.
 	 **/
@@ -2243,13 +2243,13 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
 stat:
 	ttwu_stat(p, cpu, wake_flags);
 out:
-	/** 20130713    
+	/** 20130713
 	 * pi_lock을 unlock하고 flags에 저장된 cpsr을 복원.
 	 **/
 	raw_spin_unlock_irqrestore(&p->pi_lock, flags);
 
-	/** 20130713    
-	 * task의 stat를 변경했다는 의므로 success를 리턴. 
+	/** 20130713
+	 * task의 stat를 변경했다는 의므로 success를 리턴.
 	 **/
 	return success;
 }
@@ -2299,7 +2299,7 @@ out:
  * It may be assumed that this function implies a write memory barrier before
  * changing the task state if and only if any tasks are woken up.
  */
-/** 20130713    
+/** 20130713
  * process를 깨운다 (need_resched를 체크하고, TASK_RUNNING으로 상태 변경)
  **/
 int wake_up_process(struct task_struct *p)
@@ -2319,17 +2319,17 @@ int wake_up_state(struct task_struct *p, unsigned int state)
  *
  * __sched_fork() is basic setup used by init_idle() too:
  */
-/** 20140426    
+/** 20140426
  * 'current' task에서 fork된 task p의 sched 관련 자료구조를 초기화 한다.
  **/
 static void __sched_fork(struct task_struct *p)
 {
-	/** 20140426    
+	/** 20140426
 	 * task가 runqueue에 포함되지 않는다.
 	 **/
 	p->on_rq			= 0;
 
-	/** 20140426    
+	/** 20140426
 	 * sched_entity 관련 자료구조의 초기화.
 	 **/
 	p->se.on_rq			= 0;
@@ -2340,19 +2340,19 @@ static void __sched_fork(struct task_struct *p)
 	p->se.vruntime			= 0;
 	INIT_LIST_HEAD(&p->se.group_node);
 
-	/** 20140426    
+	/** 20140426
 	 * 정의되지 않음
 	 **/
 #ifdef CONFIG_SCHEDSTATS
 	memset(&p->se.statistics, 0, sizeof(p->se.statistics));
 #endif
 
-	/** 20140426    
+	/** 20140426
 	 * sched_rt_entity의 run_list 초기화
 	 **/
 	INIT_LIST_HEAD(&p->rt.run_list);
 
-	/** 20140426    
+	/** 20140426
 	 * 정의되어 있지 않음
 	 **/
 #ifdef CONFIG_PREEMPT_NOTIFIERS
@@ -2363,18 +2363,18 @@ static void __sched_fork(struct task_struct *p)
 /*
  * fork()/clone()-time setup:
  */
-/** 20160402    
+/** 20160402
  * fork시 sched 관련 초기화를 수행한다.
  **/
 void sched_fork(struct task_struct *p)
 {
 	unsigned long flags;
-	/** 20160402    
+	/** 20160402
 	 * 선점불가로 만들고 현재 cpu의 번호를 가져온다.
 	 **/
 	int cpu = get_cpu();
 
-	/** 20160326    
+	/** 20160326
 	 * task p의 schedule 관련 초기화 수행 (주로 변수 초기화)
 	 **/
 	__sched_fork(p);
@@ -2383,7 +2383,7 @@ void sched_fork(struct task_struct *p)
 	 * nobody will actually run it, and a signal or other external
 	 * event cannot wake it up and insert it on the runqueue either.
 	 */
-	/** 20160326    
+	/** 20160326
 	 * process는 생성과 동시에 TASK_RUNNING.
 	 **/
 	p->state = TASK_RUNNING;
@@ -2391,7 +2391,7 @@ void sched_fork(struct task_struct *p)
 	/*
 	 * Make sure we do not leak PI boosting priority to the child.
 	 */
-	/** 20160326    
+	/** 20160326
 	 * prio는 current task의 prio가 PI boosting에 의해 변경된 상태일 수 있으므로
 	 * normal_prio로 대입한다.
 	 **/
@@ -2400,12 +2400,12 @@ void sched_fork(struct task_struct *p)
 	/*
 	 * Revert to default priority/policy on fork if requested.
 	 */
-	/** 20160402    
+	/** 20160402
 	 * task의 sched_reset_on_fork 요청이 설정되어 있다면
 	 * (sched_fork는 copy_process 중인데 이 필드가 설정될 가능성이 있는지???)
 	 **/
 	if (unlikely(p->sched_reset_on_fork)) {
-		/** 20160402    
+		/** 20160402
 		 * task가 rt policy인 경우 policy와 관련 prio를 같이 변경.
 		 **/
 		if (task_has_rt_policy(p)) {
@@ -2415,7 +2415,7 @@ void sched_fork(struct task_struct *p)
 		} else if (PRIO_TO_NICE(p->static_prio) < 0)
 			p->static_prio = NICE_TO_PRIO(0);
 
-		/** 20160326    
+		/** 20160326
 		 * prio, normal_prio를 초기값으로 설정하고,
 		 * load weight를 계산한다.
 		 **/
@@ -2426,20 +2426,20 @@ void sched_fork(struct task_struct *p)
 		 * We don't need the reset flag anymore after the fork. It has
 		 * fulfilled its duty:
 		 */
-		/** 20160402    
+		/** 20160402
 		 * flag reset.
 		 **/
 		p->sched_reset_on_fork = 0;
 	}
 
-	/** 20160402    
+	/** 20160402
 	 * task의 dynamic priority가 RT가 아닐 경우, fair_sched_class로 지정.
 	 * rt_prio는 부모 task의 값을 그대로 사용.
 	 **/
 	if (!rt_prio(p->prio))
 		p->sched_class = &fair_sched_class;
 
-	/** 20160402    
+	/** 20160402
 	 * sched_class의 해당 task_fork가 정의되어 있다면 호출.
 	 **/
 	if (p->sched_class->task_fork)
@@ -2452,7 +2452,7 @@ void sched_fork(struct task_struct *p)
 	 *
 	 * Silence PROVE_RCU.
 	 */
-	/** 20160402    
+	/** 20160402
 	 * pi_lock을 잡은 상태에서 task의 cpu를 현재 cpu로 지정한다.
 	 * 실제 thread_info의 cpu에 저장한다.
 	 **/
@@ -2465,14 +2465,14 @@ void sched_fork(struct task_struct *p)
 		memset(&p->sched_info, 0, sizeof(p->sched_info));
 #endif
 #if defined(CONFIG_SMP)
-	/** 20160402    
+	/** 20160402
 	 * on_cpu를 초기화.
 	 **/
 	p->on_cpu = 0;
 #endif
 #ifdef CONFIG_PREEMPT_COUNT
 	/* Want to start with kernel preemption disabled. */
-	/** 20160402    
+	/** 20160402
 	 * 커널 선점을 사용하도록 컴파일 된 경우 1로 초기화.
 	 **/
 	task_thread_info(p)->preempt_count = 1;
@@ -2481,7 +2481,7 @@ void sched_fork(struct task_struct *p)
 	plist_node_init(&p->pushable_tasks, MAX_PRIO);
 #endif
 
-	/** 20160402    
+	/** 20160402
 	 * 선점불가를 푼다.
 	 **/
 	put_cpu();
@@ -2571,7 +2571,7 @@ static void fire_sched_in_preempt_notifiers(struct task_struct *curr)
 {
 }
 
-/** 20160227    
+/** 20160227
  * CONFIG_PREEMPT_NOTIFIERS 정의하지 않았음.
  **/
 static void
@@ -2595,7 +2595,7 @@ fire_sched_out_preempt_notifiers(struct task_struct *curr,
  * prepare_task_switch sets up locking and calls architecture specific
  * hooks.
  */
-/** 20160227    
+/** 20160227
  * task switch 전 perf나 trace, sched_info 등의 처리를 한다.
  *
  * config에 따라 lock_switch를 위해 next task를 on_cpu로 처리한다.
@@ -2605,13 +2605,13 @@ prepare_task_switch(struct rq *rq, struct task_struct *prev,
 		    struct task_struct *next)
 {
 	trace_sched_switch(prev, next);
-	/** 20160227    
+	/** 20160227
 	 * CONFIG_SCHEDSTATS나 CONFIG_TASK_DELAY_ACCT를 정의한 경우 sched_info 처리.
 	 **/
 	sched_info_switch(prev, next);
 	perf_event_task_sched_out(prev, next);
 	fire_sched_out_preempt_notifiers(prev, next);
-	/** 20160130    
+	/** 20160130
 	 * switch 할 next task에 대한 준비단계로 lock을 건다.
 	 **/
 	prepare_lock_switch(rq, next);
@@ -2633,6 +2633,11 @@ prepare_task_switch(struct rq *rq, struct task_struct *prev,
  * with the lock held can cause deadlocks; see schedule() for
  * details.)
  */
+/** 20160604
+ * context switch 이후 호출되어 정리 작업을 수행한다.
+ * prepare_task_switch와 쌍을 이룬다.
+ *
+ **/
 static void finish_task_switch(struct rq *rq, struct task_struct *prev)
 	__releases(rq->lock)
 {
@@ -2748,16 +2753,16 @@ context_switch(struct rq *rq, struct task_struct *prev,
 {
 	struct mm_struct *mm, *oldmm;
 
-	/** 20160227    
+	/** 20160227
 	 * task switch 전 사전작업 호출.
 	 **/
 	prepare_task_switch(rq, prev, next);
 
-	/** 20160416    
+	/** 20160416
 	 * context switch할 task의 mm을 받아온다.
 	 **/
 	mm = next->mm;
-	/** 20160416    
+	/** 20160416
 	 * 이전 task의 active_mm을 받아온다.
 	 **/
 	oldmm = prev->active_mm;
@@ -2768,7 +2773,7 @@ context_switch(struct rq *rq, struct task_struct *prev,
 	 */
 	arch_start_context_switch(prev);
 
-	/** 20160227    
+	/** 20160227
 	 * next의 mm이 NULL이라면 kernel task다.
 	 * 이 경우
 	 * active_mm을 이전 task의 active_mm을 사용한다.
@@ -2783,7 +2788,7 @@ context_switch(struct rq *rq, struct task_struct *prev,
 	} else
 		switch_mm(oldmm, mm, next);
 
-	/** 20160416    
+	/** 20160416
 	 * 이전 task의 mm이 NULL이라면, 즉 kernel thread라면
 	 * active_mm을 NULL.
 	 * runqueue의 prev_mm을 oldmm으로 설정.
@@ -2803,8 +2808,14 @@ context_switch(struct rq *rq, struct task_struct *prev,
 #endif
 
 	/* Here we just switch the register state and the stack. */
+	/** 20160604
+	 * prev에서 next task로 문맥(register와 stack)을 전환한다.
+	 **/
 	switch_to(prev, next, prev);
 
+	/** 20160604
+	 * compiler barrier 사용
+	 **/
 	barrier();
 	/*
 	 * this_rq must be evaluated again because prev may have moved
@@ -2863,11 +2874,11 @@ unsigned long nr_iowait(void)
 {
 	unsigned long i, sum = 0;
 
-	/** 20131130    
+	/** 20131130
 	 * possible로 설정된 cpu들을 반복하면서
 	 **/
 	for_each_possible_cpu(i)
-	/** 20131130    
+	/** 20131130
 	 * i에 해당하는 cpu runqueue의 nr_iowait의 수를 읽어
 	 * sum에 누적
 	 **/
@@ -2937,7 +2948,7 @@ unsigned long this_cpu_load(void)
  */
 
 /* Variables and functions for calc_load */
-/** 20150530    
+/** 20150530
  * load를 구할 task들의 수.
  * 각 rq에서 actvie (running, uninterruptible) 중인 task 수가 합산된다.
  **/
@@ -2961,7 +2972,7 @@ void get_avenrun(unsigned long *loads, unsigned long offset, int shift)
 	loads[2] = (avenrun[2] + offset) << shift;
 }
 
-/** 20150530    
+/** 20150530
  * rq에서 active 중인 task의 수를 새로 계산해 이전에 계산한 값과 다르다면
  * 차를 구해 리턴하고, calc_load_active를 갱신한다.
  **/
@@ -2969,7 +2980,7 @@ static long calc_load_fold_active(struct rq *this_rq)
 {
 	long nr_active, delta = 0;
 
-	/** 20150530    
+	/** 20150530
 	 * running 중인 task와 uninterruptible로 대기 중인 task들을 active로 본다.
 	 **/
 	nr_active = this_rq->nr_running;
@@ -3265,27 +3276,27 @@ void calc_global_load(unsigned long ticks)
  * Called from update_cpu_load() to periodically update this CPU's
  * active count.
  */
-/** 20150530    
+/** 20150530
  * 주기적으로 현재 rq에서 active count를 업데이트 한다.
  **/
 static void calc_load_account_active(struct rq *this_rq)
 {
 	long delta;
 
-	/** 20150530    
+	/** 20150530
 	 * load를 계산할 때가 되지 않았으면 리턴.
 	 **/
 	if (time_before(jiffies, this_rq->calc_load_update))
 		return;
 
-	/** 20150530    
+	/** 20150530
 	 * rq에서 active task의 수가 변경되었다면 그 차를 전역변수에 업데이트 한다.
 	 **/
 	delta  = calc_load_fold_active(this_rq);
 	if (delta)
 		atomic_long_add(delta, &calc_load_tasks);
 
-	/** 20150530    
+	/** 20150530
 	 * 다음 cpu load를 계산할 시간을 설정한다.
 	 **/
 	this_rq->calc_load_update += LOAD_FREQ;
@@ -3367,7 +3378,7 @@ decay_load_missed(unsigned long load, unsigned long missed_updates, int idx)
  * scheduler tick (TICK_NSEC). With tickless idle this will not be called
  * every tick. We fix it up based on jiffies.
  */
-/** 20150530    
+/** 20150530
  * rq의 cpu_load를 업데이트 한다.
  * 대개 scheduler tick에 의해 호출된다.
  **/
@@ -3379,7 +3390,7 @@ static void __update_cpu_load(struct rq *this_rq, unsigned long this_load,
 	this_rq->nr_load_updates++;
 
 	/* Update our load: */
-	/** 20150530    
+	/** 20150530
 	 * rq의 cpu_load를 업데이트 한다.
 	 * 추후 분석???
 	 **/
@@ -3403,7 +3414,7 @@ static void __update_cpu_load(struct rq *this_rq, unsigned long this_load,
 		this_rq->cpu_load[i] = (old_load * (scale - 1) + new_load) >> i;
 	}
 
-	/** 20150530    
+	/** 20150530
 	 * rq의 sched average를 업데이트한다.
 	 **/
 	sched_avg_update(this_rq);
@@ -3474,7 +3485,7 @@ void update_cpu_load_nohz(void)
 /*
  * Called from scheduler_tick()
  */
-/** 20150530    
+/** 20150530
  * cpu load와 active count를 update 한다.
  **/
 static void update_cpu_load_active(struct rq *this_rq)
@@ -3482,14 +3493,14 @@ static void update_cpu_load_active(struct rq *this_rq)
 	/*
 	 * See the mess around update_idle_cpu_load() / update_cpu_load_nohz().
 	 */
-	/** 20150530    
+	/** 20150530
 	 * 마지막으로 load를 업데이트 한 tick을 기록하고,
 	 * rq의 cpu_load 배열을 load weigth로 업데이트 한다.
 	 **/
 	this_rq->last_load_update_tick = jiffies;
 	__update_cpu_load(this_rq, this_rq->load.weight, 1);
 
-	/** 20150530    
+	/** 20150530
 	 * rq의 active count를 업데이트 한다.
 	 **/
 	calc_load_account_active(this_rq);
@@ -3987,15 +3998,15 @@ void scheduler_tick(void)
 	sched_clock_tick();
 
 	raw_spin_lock(&rq->lock);
-	/** 20150530    
+	/** 20150530
 	 * rq의 clock을 업데이트 한다.
 	 **/
 	update_rq_clock(rq);
-	/** 20150530    
+	/** 20150530
 	 * cpu load와 active count를 업데이트 한다.
 	 **/
 	update_cpu_load_active(rq);
-	/** 20150530    
+	/** 20150530
 	 * rq의 sched_class의 task_tick을 호출해 tick이 task에서 발생했음을 처리한다.
 	 **/
 	curr->sched_class->task_tick(rq, curr, 0);
@@ -4004,7 +4015,7 @@ void scheduler_tick(void)
 	perf_event_task_tick();
 
 #ifdef CONFIG_SMP
-	/** 20160220    
+	/** 20160220
 	 * 현재 cpu가 idle 상태인지 여부를 저장한다.
 	 **/
 	rq->idle_balance = idle_cpu(cpu);
@@ -4119,7 +4130,7 @@ static void put_prev_task(struct rq *rq, struct task_struct *prev)
 /*
  * Pick up the highest-prio task:
  */
-/** 20151128    
+/** 20151128
  * 해당 rq에서 다음에 실행할 우선순위가 높은 task를 선택한다.
  **/
 static inline struct task_struct *
@@ -4132,7 +4143,7 @@ pick_next_task(struct rq *rq)
 	 * Optimization: we know that if all tasks are in
 	 * the fair class we can call that function directly:
 	 */
-	/** 20151128    
+	/** 20151128
 	 * 최적화를 위해 rq의 task가 모두 cfs에 enqueue된 task일 경우 바로 호출한다.
 	 **/
 	if (likely(rq->nr_running == rq->cfs.h_nr_running)) {
@@ -4141,7 +4152,7 @@ pick_next_task(struct rq *rq)
 			return p;
 	}
 
-	/** 20151128    
+	/** 20151128
 	 * highest class부터 순회하며 해당 sched_class에서 다음 실행할 task를 받는다.
 	 * 즉, 우선순위가 높은 클래스부터 찾아 task가 선택되면 바로 리턴한다.
 	 **/
@@ -4151,7 +4162,7 @@ pick_next_task(struct rq *rq)
 			return p;
 	}
 
-	/** 20151212    
+	/** 20151212
 	 * 적어도 idle_sched_class에 의해 task가 선택되므로 여기까지 도달할 수 없다.
 	 **/
 	BUG(); /* the idle class will always have a runnable task */
@@ -4169,13 +4180,13 @@ static void __sched __schedule(void)
 
 need_resched:
 	preempt_disable();
-	/** 20150117    
+	/** 20150117
 	 * 현재 task가 수행되는 cpu 번호를 가져온다.
 	 * 해당 cpu의 rq 포인터를 가져온다.
 	 **/
 	cpu = smp_processor_id();
 	rq = cpu_rq(cpu);
-	/** 20140830    
+	/** 20140830
 	 * rcu를 위해 context switch를 기록한다.
 	 *   (quiescent state로 진행함을 의미)
 	 **/
@@ -4189,11 +4200,11 @@ need_resched:
 
 	raw_spin_lock_irq(&rq->lock);
 
-	/** 20160416    
+	/** 20160416
 	 * context switching을 count할 기본값은 involuntary context switch.
 	 **/
 	switch_count = &prev->nivcsw;
-	/** 20160416    
+	/** 20160416
 	 * preempt_schedule() 등이 호출되었을 때 preempt_count에 PREEMPT_ACTIVE 설정.
 	 * 이 때는 involuntary이므로 if 조건이 false.
 	 **/
@@ -4222,7 +4233,7 @@ need_resched:
 
 	pre_schedule(rq, prev);
 
-	/** 20150117    
+	/** 20150117
 	 * 현재 task가 수행되는 cpu의 rq 포인터가 idle_balance로 넘어간다
 	 **/
 	if (unlikely(!rq->nr_running))
@@ -4235,7 +4246,7 @@ need_resched:
 
 	if (likely(prev != next)) {
 		rq->nr_switches++;
-		/** 20160402    
+		/** 20160402
 		 * runqueue의 curr를 switching할 task로 지정한다.
 		 **/
 		rq->curr = next;
@@ -4272,7 +4283,7 @@ static inline void sched_submit_work(struct task_struct *tsk)
 		blk_schedule_flush_plug(tsk);
 }
 
-/** 20130713    
+/** 20130713
  * schedule 함수는 나중에 보기로 함
  **/
 asmlinkage void __sched schedule(void)
@@ -4289,7 +4300,7 @@ EXPORT_SYMBOL(schedule);
  *
  * Returns with preemption disabled. Note: preempt_count must be 1
  */
-/** 20130713    
+/** 20130713
  * 선점 불가 상태에서 호출되어 선점 가능 상태로 변경 후 schedule 함수를 호출하고,
  * 깨어났을 때 다시 선점 불가로 리턴
  *
@@ -4305,12 +4316,12 @@ void __sched schedule_preempt_disabled(void)
 
 #ifdef CONFIG_MUTEX_SPIN_ON_OWNER
 
-/** 20130706    
+/** 20130706
  * owner가 mutex의 owner와 일치할 때 on_cpu의 상태를 리턴하는 inline 함수.
  **/
 static inline bool owner_running(struct mutex *lock, struct task_struct *owner)
 {
-	/** 20130706    
+	/** 20130706
 	 * lock->owner와 owner (앞에서 ACCESS_ONCE로 읽어온 값일 때)
 	 * 일치하지 않으면 바로 false 리턴.
 	 **/
@@ -4323,13 +4334,13 @@ static inline bool owner_running(struct mutex *lock, struct task_struct *owner)
 	 * point to free()d memory, if it still matches, the rcu_read_lock()
 	 * ensures the memory stays valid.
 	 */
-	/** 20130706    
+	/** 20130706
 	 * compiler level의 opitmization barrier.
 	 *   위 영문 주석의 의미는???
 	 **/
 	barrier();
 
-	/** 20130706    
+	/** 20130706
 	 * owner task의 on_cpu 변수를 리턴
 	 **/
 	return owner->on_cpu;
@@ -4339,13 +4350,13 @@ static inline bool owner_running(struct mutex *lock, struct task_struct *owner)
  * Look out! "owner" is an entirely speculative pointer
  * access and not reliable.
  */
-/** 20130706    
+/** 20130706
  * lock의 owner가 변경될 때까지 spin을 수행
  *   (need_resched 상황일 때는 false return)
  **/
 int mutex_spin_on_owner(struct mutex *lock, struct task_struct *owner)
 {
-	/** 20130706    
+	/** 20130706
 	 * sysctl_sched_features & (1UL << __SCHED_FEAT_OWNER_SPIN)
 	 *
 	 * kernel/sched/features.h
@@ -4357,7 +4368,7 @@ int mutex_spin_on_owner(struct mutex *lock, struct task_struct *owner)
 		return 0;
 
 	rcu_read_lock();
-	/** 20130706    
+	/** 20130706
 	 * owner_running()이 false가 되는 경우
 	 *	1. lock->owner != owner    ; owner가 변경되었음을 의미
 	 *	2. owner->on_cpu가 0       ; task_switching이 발생하여 교체
@@ -4366,13 +4377,13 @@ int mutex_spin_on_owner(struct mutex *lock, struct task_struct *owner)
 	 * 루프의 끝에는 항상 cpu_relax를 넣어준다.
 	 **/
 	while (owner_running(lock, owner)) {
-		/** 20130706    
+		/** 20130706
 		 * resched 가 필요하다면 spin을 종료한다.
 		 **/
 		if (need_resched())
 			break;
 
-		/** 20130706    
+		/** 20130706
 		 * barrier() 호출. loop의 끝에 위치해서 compiler 최적화로 인한 오작동을 방지.
 		 **/
 		arch_mutex_cpu_relax();
@@ -4384,7 +4395,7 @@ int mutex_spin_on_owner(struct mutex *lock, struct task_struct *owner)
 	 * owner changed, which is a sign for heavy contention. Return
 	 * success only when lock->owner is NULL.
 	 */
-	/** 20130706    
+	/** 20130706
 	 * 위 루프를 벗어났다는 것은 scheduling이 필요하거나 owner가 변경되었음을 의미한다.
 	 * 이는 lock의 소유권 주장이 발생할 것을 의미한다.
 	 * lock->owner가 NULL인 상태일 때만 true.
@@ -4399,13 +4410,13 @@ int mutex_spin_on_owner(struct mutex *lock, struct task_struct *owner)
  * off of preempt_enable. Kernel preemptions off return from interrupt
  * occur there and call schedule directly.
  */
-/** 20140622    
+/** 20140622
  * 선점 불가가 아니거나 인터럽트 금지 상태가 아닌 경우에
  * 현재 task를 선점하여 스케쥴러를 호출한다.
  *
  * comment:
  * preempt_enable의 in-kernel 선점금지로부터 schedule()을 호출하는 진입점.
- * 인터럽트 발생에서부터 복귀해서 커널 선점은 금지되어 있고, 
+ * 인터럽트 발생에서부터 복귀해서 커널 선점은 금지되어 있고,
  **/
 asmlinkage void __sched notrace preempt_schedule(void)
 {
@@ -4415,7 +4426,7 @@ asmlinkage void __sched notrace preempt_schedule(void)
 	 * If there is a non-zero preempt_count or interrupts are disabled,
 	 * we do not want to preempt the current task. Just return..
 	 */
-	/** 20140622    
+	/** 20140622
 	 * 선점불가 상태이거나 irq routine 등이 실행 중일 경우
 	 *   (현재 thread_info의 preempt_count가 0이 아니다)
 	 * cpsr의 인터럽트가 꺼진 상태일 때 schedule을 호출하지 않고 리턴.
@@ -4424,8 +4435,8 @@ asmlinkage void __sched notrace preempt_schedule(void)
 		return;
 
 	do {
-		/** 20140622    
-		 * 현재 task의 preempt_count에 선점 중임을 기록하고, 
+		/** 20140622
+		 * 현재 task의 preempt_count에 선점 중임을 기록하고,
 		 * __shcedule 을 호출해 스케쥴링 한다.
 		 * 복귀 후 선점 중 표시를 해제한다.
 		 **/
@@ -4437,7 +4448,7 @@ asmlinkage void __sched notrace preempt_schedule(void)
 		 * Check again in case we missed a preemption opportunity
 		 * between schedule and now.
 		 */
-		/** 20140622    
+		/** 20140622
 		 * schedule 함수에서 돌아와 resched가 필요한지 검사한다.
 		 * 명령 순서를 보장하기 위해 compiler barrier를 둔다.
 		 **/
@@ -4452,7 +4463,7 @@ EXPORT_SYMBOL(preempt_schedule);
  * Note, that this is called and return with irqs disabled. This will
  * protect us against recursive calling from irq.
  */
-/** 20140824    
+/** 20140824
  * 인터럽트 컨텍스트의 커널 선점금지로부터 schedule()을 호출하는 진입점.
  * 인터럽트 금지 상태에서 호출되어 인터럽트 금지 상태로 복귀하므로,
  * 인터럽트로부터 재귀적 호출을 막는다.
@@ -4465,7 +4476,7 @@ asmlinkage void __sched preempt_schedule_irq(void)
 	BUG_ON(ti->preempt_count || !irqs_disabled());
 
 	do {
-		/** 20140824    
+		/** 20140824
 		 * 선점 중 상태로 만들고, interrupt 가능 상태에서
 		 * schedule 함수를 호출해 선점시킨다.
 		 **/
@@ -4479,7 +4490,7 @@ asmlinkage void __sched preempt_schedule_irq(void)
 		 * Check again in case we missed a preemption opportunity
 		 * between schedule and now.
 		 */
-		/** 20140824    
+		/** 20140824
 		 * schedule 이후 다시 선점이 필요한지 검사한다.
 		 **/
 		barrier();
@@ -4488,7 +4499,7 @@ asmlinkage void __sched preempt_schedule_irq(void)
 
 #endif /* CONFIG_PREEMPT */
 
-/** 20131123    
+/** 20131123
  * try_to_wake_up에 깨울 entry의 private(보통 entry에 추가할 당시의 current)을 넘겨 task를 깨운다.
  **/
 int default_wake_function(wait_queue_t *curr, unsigned mode, int wake_flags,
@@ -4507,7 +4518,7 @@ EXPORT_SYMBOL(default_wake_function);
  * started to run but is not in state TASK_RUNNING. try_to_wake_up() returns
  * zero in this (rare) case, and we handle it by continuing to scan the queue.
  */
-/** 20131102    
+/** 20131102
  * waitqueue에 등록되어 sleep 상태인 task를 깨우는 함수.
  * nr_exclusive 개의 exclusive와 그 이전의 모든 non-exclusive를 깨운다.
  *   mode로 지정된 속성이 sleep 상태인 task에 저장된 mode가 일치될 때만 해당한다.
@@ -4517,14 +4528,14 @@ static void __wake_up_common(wait_queue_head_t *q, unsigned int mode,
 {
 	wait_queue_t *curr, *next;
 
-	/** 20131123    
+	/** 20131123
 	 * waitqueue의 task_list를 순회하며 task를 깨운다.
 	 * task를 깨우는 함수는 default 함수이거나, 추가할 당시 등록한 func이다.
 	 **/
 	list_for_each_entry_safe(curr, next, &q->task_list, task_list) {
 		unsigned flags = curr->flags;
 
-		/** 20131123    
+		/** 20131123
 		 * 현재 waitqueue에 등록된 .func을 호출해 wake up.
 		 * 성공적으로 깨웠으며 WQ_FLAG_EXCLUSIVE이고, nr_exclusive개만큼 깨웠으면 break;
 		 * func에 key가 함께 전달되는데, func 구현에 따라 전달되는 key값이 일치할 때만 깨우도록 할 수 있다.
@@ -4545,7 +4556,7 @@ static void __wake_up_common(wait_queue_head_t *q, unsigned int mode,
  * It may be assumed that this function implies a write memory barrier before
  * changing the task state if and only if any tasks are woken up.
  */
-/** 20131116    
+/** 20131116
  * wait queue에서 sleep 상태로 대기중인 task를 깨운다.
  *
  * mode 상태인 task만 깨우겠다.
@@ -4555,7 +4566,7 @@ void __wake_up(wait_queue_head_t *q, unsigned int mode,
 {
 	unsigned long flags;
 
-	/** 20131116    
+	/** 20131116
 	 * wait queue는 spinlock으로 보호된다.
 	 * nr_exclusive 개수만큼 wait queue에서 task를 깨운다.
 	 **/
@@ -4636,7 +4647,7 @@ EXPORT_SYMBOL_GPL(__wake_up_sync);	/* For internal use only */
  * It may be assumed that this function implies a write memory barrier before
  * changing the task state if and only if any tasks are woken up.
  */
-/** 20141025    
+/** 20141025
  * 'completion' 이벤트를 기다리는 하나의 task를 깨운다.
  * (대기하는 task는 wait_for_complete로 대기 중)
  *
@@ -4647,11 +4658,11 @@ void complete(struct completion *x)
 {
 	unsigned long flags;
 
-	/** 20130720    
+	/** 20130720
 	 * interrupt disable 상태로 spinlock을 건다.
 	 **/
 	spin_lock_irqsave(&x->wait.lock, flags);
-	/** 20130720    
+	/** 20130720
 	 * done을 증가.
 	 * completion이 먼저 호출되었다면 이후 호출된 wait_for_completion은 바로 리턴된다.
 	 **/
@@ -4681,13 +4692,13 @@ void complete_all(struct completion *x)
 }
 EXPORT_SYMBOL(complete_all);
 
-/** 20141025    
+/** 20141025
  * interrupt 받거나 timeout이 될 때까지 지정된 state 상태로 대기하는 함수.
  **/
 static inline long __sched
 do_wait_for_common(struct completion *x, long timeout, int state)
 {
-	/** 20141025    
+	/** 20141025
 	 * 처음 wait_for_complete_XXX가 호출되었다면 done이 0이므로,
 	 * waituqueue를 선언하고, completion을 queue에 달아준다.
 	 *
@@ -4697,23 +4708,23 @@ do_wait_for_common(struct completion *x, long timeout, int state)
 	if (!x->done) {
 		DECLARE_WAITQUEUE(wait, current);
 
-		/** 20141025    
+		/** 20141025
 		 * EXCLUSIVE로 wait queue에 추가한다.
 		 **/
 		__add_wait_queue_tail_exclusive(&x->wait, &wait);
-		/** 20141025    
+		/** 20141025
 		 * 깨어났을 때 done이 완료되지 않았거나 timeout이 남아있을 때까지
 		 * schedule 함수를 반복 호출한다.
 		 **/
 		do {
-			/** 20141025    
+			/** 20141025
 			 * task의 상태가 이미 지정된 state와 같다면 error.
 			 **/
 			if (signal_pending_state(state, current)) {
 				timeout = -ERESTARTSYS;
 				break;
 			}
-			/** 20141025    
+			/** 20141025
 			 * 현재 task의 상태를 변경하고 전달받은 timeout까지 sleep하도록
 			 * schedule 시킨다.
 			 **/
@@ -4722,11 +4733,11 @@ do_wait_for_common(struct completion *x, long timeout, int state)
 			timeout = schedule_timeout(timeout);
 			spin_lock_irq(&x->wait.lock);
 		} while (!x->done && timeout);
-		/** 20141025    
+		/** 20141025
 		 * 깨어난 뒤에 wait queue를 정리한다.
 		 **/
 		__remove_wait_queue(&x->wait, &wait);
-		/** 20141025    
+		/** 20141025
 		 * timeout으로 깨어났다면 timeout을 리턴한다.
 		 **/
 		if (!x->done)
@@ -4736,13 +4747,13 @@ do_wait_for_common(struct completion *x, long timeout, int state)
 	return timeout ?: 1;
 }
 
-/** 20141025    
+/** 20141025
  * timeout까지 state 상태로 scheduling 되어 기다린다.
  **/
 static long __sched
 wait_for_common(struct completion *x, long timeout, int state)
 {
-	/** 20141025    
+	/** 20141025
 	 * sleep 상태로 들어가기 전에 schedule 포인트를 둔다.
 	 **/
 	might_sleep();
@@ -4763,7 +4774,7 @@ wait_for_common(struct completion *x, long timeout, int state)
  * See also similar routines (i.e. wait_for_completion_timeout()) with timeout
  * and interrupt capability. Also see complete().
  */
-/** 20141025    
+/** 20141025
  * 완료를 기다리며 TASK_UNINTERRUPTIBLE 상태로 queue에 들어가 대기한다.
  *
  * 신호를 보내는 쪽은 complete()/complete_all()을 호출한다.
@@ -4974,8 +4985,8 @@ EXPORT_SYMBOL(sleep_on_timeout);
  *
  * Used by the rt_mutex code to implement priority inheritance logic.
  */
-/** 20160312    
- * 
+/** 20160312
+ *
  * taks의 'effective' priority를 변경한다 (prio를 변경).
  * __setscheduler처럼 normal_prio를 변경하는 것이 아니다.
  **/
@@ -4987,7 +4998,7 @@ void rt_mutex_setprio(struct task_struct *p, int prio)
 
 	BUG_ON(prio < 0 || prio > MAX_PRIO);
 
-	/** 20160312    
+	/** 20160312
 	 * task가 걸려 있는 rq에 lock을 잡고 rq를 받아온다.
 	 **/
 	rq = __task_rq_lock(p);
@@ -5004,7 +5015,7 @@ void rt_mutex_setprio(struct task_struct *p, int prio)
 	 * protected section without being interrupted. So there is no
 	 * real need to boost.
 	 */
-	/** 20160312    
+	/** 20160312
 	 * task가 rq의 idle인 경우 의미 없으므로 리턴.
 	 **/
 	if (unlikely(p == rq->idle)) {
@@ -5014,20 +5025,20 @@ void rt_mutex_setprio(struct task_struct *p, int prio)
 	}
 
 	trace_sched_pi_setprio(p, prio);
-	/** 20160312    
+	/** 20160312
 	 * 현재 prio와 sched_class를 백업.
 	 **/
 	oldprio = p->prio;
 	prev_class = p->sched_class;
-	/** 20160312    
+	/** 20160312
 	 * task의 on_rq 상태를 받아옴.
 	 **/
 	on_rq = p->on_rq;
-	/** 20160312    
+	/** 20160312
 	 * priority를 지정할 task가 rq의 curr인지 검사한다.
-	 * 
+	 *
 	 * on_rq는 task가 runqueue의 리스트에 등록된 상태.
-	 * running은 runqueue의 리스트에 등록된 task 중 
+	 * running은 runqueue의 리스트에 등록된 task 중
 	 **/
 	running = task_current(rq, p);
 	if (on_rq)
@@ -5052,7 +5063,7 @@ out_unlock:
 	__task_rq_unlock(rq);
 }
 #endif
-/** 20150704    
+/** 20150704
  * task의 nice를 적용해 priority를 조정한다.
  **/
 void set_user_nice(struct task_struct *p, long nice)
@@ -5061,7 +5072,7 @@ void set_user_nice(struct task_struct *p, long nice)
 	unsigned long flags;
 	struct rq *rq;
 
-	/** 20160402    
+	/** 20160402
 	 * 이미 task가 설정하고자 하는 nice값이거나,
 	 * 설정할 nice값의 범위가 잘못된 경우는 리턴.
 	 **/
@@ -5078,7 +5089,7 @@ void set_user_nice(struct task_struct *p, long nice)
 	 * it wont have any effect on scheduling until the task is
 	 * SCHED_FIFO/SCHED_RR:
 	 */
-	/** 20160402    
+	/** 20160402
 	 * task가 RT policy인 경우에 sched_setscheduler()를 사용해야 rt prio가 변경.
 	 * 하지만 nice 값 변경요청도 static_prio를 변경함으로써 지원한다.
 	 **/
@@ -5086,33 +5097,33 @@ void set_user_nice(struct task_struct *p, long nice)
 		p->static_prio = NICE_TO_PRIO(nice);
 		goto out_unlock;
 	}
-	/** 20160402    
+	/** 20160402
 	 * nice를 변경하는 task가 현재 runqueue에 있다면 priority 변경을 위해 dequeue.
 	 **/
 	on_rq = p->on_rq;
 	if (on_rq)
 		dequeue_task(rq, p, 0);
 
-	/** 20160402    
+	/** 20160402
 	 * 여기에서는 static_prio만 설정.
 	 * p->prio를 여기서 바꾸지 않은 경우의 예: RT-boosted.
 	 **/
 	p->static_prio = NICE_TO_PRIO(nice);
-	/** 20160402    
+	/** 20160402
 	 * load balancing을 위한 load weight 설정.
 	 **/
 	set_load_weight(p);
 	old_prio = p->prio;
-	/** 20160402    
+	/** 20160402
 	 * task의 priority를 재계산한다.
 	 **/
 	p->prio = effective_prio(p);
-	/** 20160402    
+	/** 20160402
 	 * RT나 RT-boosted가 아닌 normal task의 priority가 변경된 경우 delta값.
 	 **/
 	delta = p->prio - old_prio;
 
-	/** 20160402    
+	/** 20160402
 	 * task가 rq에 있었다면 다시 enqueue 시킨다.
 	 **/
 	if (on_rq) {
@@ -5121,9 +5132,9 @@ void set_user_nice(struct task_struct *p, long nice)
 		 * If the task increased its priority or is running and
 		 * lowered its priority, then reschedule its CPU:
 		 */
-		/** 20160402    
+		/** 20160402
 		 * prio가 높아졌거나, 낮아진 경우지만 현재 cpu에서 수행 중인 task인 경우
-		 * 
+		 *
 		 **/
 		if (delta < 0 || (delta > 0 && task_running(rq, p)))
 			resched_task(rq->curr);
@@ -5245,7 +5256,7 @@ int idle_cpu(int cpu)
  * idle_task - return the idle task for a given cpu.
  * @cpu: the processor in question.
  */
-/** 20160227    
+/** 20160227
  * 해당 cpu에 idle task로 지정된 task를 리턴한다.
  **/
 struct task_struct *idle_task(int cpu)
@@ -5294,7 +5305,7 @@ static bool check_same_owner(struct task_struct *p)
 	return match;
 }
 
-/** 20150801    
+/** 20150801
  * 추후 분석 ???
  **/
 static int __sched_setscheduler(struct task_struct *p, int policy,
@@ -5478,7 +5489,7 @@ EXPORT_SYMBOL_GPL(sched_setscheduler);
  * stop_machine(): we create temporary high priority worker threads,
  * but our caller might not have that capability.
  */
-/** 20150801    
+/** 20150801
  * task의 scheduling policy와 RT priority를 지정한다.
  **/
 int sched_setscheduler_nocheck(struct task_struct *p, int policy,
@@ -5793,7 +5804,7 @@ static inline int should_resched(void)
 	return need_resched() && !(preempt_count() & PREEMPT_ACTIVE);
 }
 
-/** 20140824    
+/** 20140824
  * 현재 task를 선점 중 상태로 표시하고 스케쥴러를 호출.
  **/
 static void __cond_resched(void)
@@ -5975,41 +5986,41 @@ void __sched io_schedule(void)
 }
 EXPORT_SYMBOL(io_schedule);
 
-/** 20131130    
+/** 20131130
  * blk_flush를 호출하고, 최대 timeout 시간동안 io를 대기하는 함수
  **/
 long __sched io_schedule_timeout(long timeout)
 {
-	/** 20131130    
+	/** 20131130
 	 * 현재 cpu에 해당하는 runqueue를 가져온다.
 	 **/
 	struct rq *rq = raw_rq();
 	long ret;
 
-	/** 20131130    
+	/** 20131130
 	 * NULL 함수
 	 **/
 	delayacct_blkio_start();
-	/** 20131130    
+	/** 20131130
 	 * runqueue의 nr_iowait을 증가시킨다.
 	 **/
 	atomic_inc(&rq->nr_iowait);
-	/** 20131130    
+	/** 20131130
 	 * 실제 flush 동작을 호출.
 	 **/
 	blk_flush_plug(current);
-	/** 20131130    
+	/** 20131130
 	 * in_iowait 상태에서 schedule_timeout 수행.
 	 * timeout이 완료될 때까지 미리 정의된 상태로 sleep한다.
 	 **/
 	current->in_iowait = 1;
 	ret = schedule_timeout(timeout);
 	current->in_iowait = 0;
-	/** 20131130    
+	/** 20131130
 	 * runqueue의 nr_iowait을 감소시킨다.
 	 **/
 	atomic_dec(&rq->nr_iowait);
-	/** 20131130    
+	/** 20131130
 	 * NULL 함수
 	 **/
 	delayacct_blkio_end();
@@ -6176,7 +6187,7 @@ void show_state_filter(unsigned long state_filter)
 		debug_show_all_locks();
 }
 
-/** 20160213    
+/** 20160213
  * 전달된 idle용 task의 sched_class를 idle_sched_class로 변경시킨다.
  * 스케쥴러에 의해 idle_sched_class는 다른 sched_class 중 실행시킬 task가 없을 때
  * 실행된다.
@@ -6194,37 +6205,37 @@ void __cpuinit init_idle_bootup_task(struct task_struct *idle)
  * NOTE: this function does not set the idle thread's NEED_RESCHED
  * flag, to make booting more robust.
  */
-/** 20140426    
+/** 20140426
  * cpu에 대한(rq) idle task로 전달받은 task가 지정된다.
- * 
+ *
  * idle thread의 thread_info의 cpu도 지정한다.
  **/
 void __cpuinit init_idle(struct task_struct *idle, int cpu)
 {
-	/** 20140426    
+	/** 20140426
 	 * percpu 변수에서 해당 cpu의 rq를 가져온다.
 	 **/
 	struct rq *rq = cpu_rq(cpu);
 	unsigned long flags;
 
-	/** 20140426    
+	/** 20140426
 	 * runqueue에 대한 조작은 spinlock과 irq disable로 보호한다.
 	 **/
 	raw_spin_lock_irqsave(&rq->lock, flags);
 
-	/** 20140426    
+	/** 20140426
 	 * idle task의 sched 관련 자료구조를 초기화 한다.
 	 *
 	 * idle의 state를 RUNNING으로 변경한다.
 	 **/
 	__sched_fork(idle);
 	idle->state = TASK_RUNNING;
-	/** 20140426    
+	/** 20140426
 	 * 현재의 sched_clock 값을 exec_start에 넣어준다.
 	 **/
 	idle->se.exec_start = sched_clock();
 
-	/** 20140426    
+	/** 20140426
 	 * 현재 cpu가 포함되어 있는 cpumask를 구해와 task idle에
 	 * cpus_allowed로 설정한다.
 	 **/
@@ -6239,19 +6250,19 @@ void __cpuinit init_idle(struct task_struct *idle, int cpu)
 	 *
 	 * Silence PROVE_RCU
 	 */
-	/** 20140426    
+	/** 20140426
 	 * task idle의 cpu를 설정.
 	 **/
 	rcu_read_lock();
 	__set_task_cpu(idle, cpu);
 	rcu_read_unlock();
 
-	/** 20140426    
+	/** 20140426
 	 * runqueue의 current, idle task를 idle로 지정.
 	 **/
 	rq->curr = rq->idle = idle;
 #if defined(CONFIG_SMP)
-	/** 20140426    
+	/** 20140426
 	 * task idle의 on_cpu를 1로 설정.
 	 **/
 	idle->on_cpu = 1;
@@ -6259,7 +6270,7 @@ void __cpuinit init_idle(struct task_struct *idle, int cpu)
 	raw_spin_unlock_irqrestore(&rq->lock, flags);
 
 	/* Set the preempt count _outside_ the spinlocks! */
-	/** 20140426    
+	/** 20140426
 	 * task idle의 thread_info에 접근해 preempt_count를 0으로 설정한다.
 	 *
 	 * preempt_count는 spinlock에 의한 임계구역에서 제외된다.
@@ -6269,13 +6280,13 @@ void __cpuinit init_idle(struct task_struct *idle, int cpu)
 	/*
 	 * The idle tasks have their own, simple scheduling class:
 	 */
-	/** 20140426    
-	 * task idle의 sched_class를 idle_sched_class로 지정. 
+	/** 20140426
+	 * task idle의 sched_class를 idle_sched_class로 지정.
 	 **/
 	idle->sched_class = &idle_sched_class;
 	ftrace_graph_init_idle_task(idle, cpu);
 #if defined(CONFIG_SMP)
-	/** 20140426    
+	/** 20140426
 	 * task idle의 command가 "swapper/0"로 지정된다.
 	 **/
 	sprintf(idle->comm, "%s/%d", INIT_TASK_COMM, cpu);
@@ -6283,23 +6294,23 @@ void __cpuinit init_idle(struct task_struct *idle, int cpu)
 }
 
 #ifdef CONFIG_SMP
-/** 20140426    
+/** 20140426
  * task p의 cpumask를 new_mask로 갱신한다.
  **/
 void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
 {
-	/** 20140426    
+	/** 20140426
 	 * task에 sched_class가 지정되어 있고, set_cpus_allowed 콜백이 존재하면
 	 * 해당 콜백을 호출.
 	 **/
 	if (p->sched_class && p->sched_class->set_cpus_allowed)
 		p->sched_class->set_cpus_allowed(p, new_mask);
 
-	/** 20140426    
+	/** 20140426
 	 * new_mask로 task p의 cpus_allowed를 갱신함.
 	 **/
 	cpumask_copy(&p->cpus_allowed, new_mask);
-	/** 20140426    
+	/** 20140426
 	 * new_mask에서 1로 설정된 비트의 수를 구해 nr_cpus_allowed에 넣어준다.
 	 **/
 	p->nr_cpus_allowed = cpumask_weight(new_mask);
@@ -6328,7 +6339,7 @@ void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
  * task must not exit() & deallocate itself prematurely. The
  * call is not atomic; no spinlocks may be held.
  */
-/** 20150530    
+/** 20150530
  * task의 cpu affinity를 변경한다.
  * 현재 실행 중인 cpu가 new_mask에 해당하지 않을 경우,
  * new_mask에서 수행할 cpu대상을 골라 실행되도록 migrate 한다.
@@ -6340,18 +6351,18 @@ int set_cpus_allowed_ptr(struct task_struct *p, const struct cpumask *new_mask)
 	unsigned int dest_cpu;
 	int ret = 0;
 
-	/** 20150523    
+	/** 20150523
 	 * task p와 그 rq의 lock을 획득한다.
 	 **/
 	rq = task_rq_lock(p, &flags);
 
-	/** 20150523    
+	/** 20150523
 	 * 새로운 cpumask가 현재 task의 cpus_allowed와 동일하다면 빠져나간다.
 	 **/
 	if (cpumask_equal(&p->cpus_allowed, new_mask))
 		goto out;
 
-	/** 20150523    
+	/** 20150523
 	 * 새로 주어진 mask와 active 중 교차되는 비트가 하나도 없다면 invalid.
 	 **/
 	if (!cpumask_intersects(new_mask, cpu_active_mask)) {
@@ -6359,7 +6370,7 @@ int set_cpus_allowed_ptr(struct task_struct *p, const struct cpumask *new_mask)
 		goto out;
 	}
 
-	/** 20150523    
+	/** 20150523
 	 * 주어진 task 속성에 PF_THREAD_BOUND가 있고,
 	 * 현재 task가 아닐 경우 invalid. 왜???
 	 **/
@@ -6368,20 +6379,20 @@ int set_cpus_allowed_ptr(struct task_struct *p, const struct cpumask *new_mask)
 		goto out;
 	}
 
-	/** 20150523    
+	/** 20150523
 	 * 현재 task의 cpumask를 new_mask로 변경한다.
 	 **/
 	do_set_cpus_allowed(p, new_mask);
 
 	/* Can the task run on the task's current CPU? If so, we're done */
-	/** 20150523    
+	/** 20150523
 	 * 현재 task가 수행 중인 cpu가 new_mask와 동일하다면
 	 * 다른 조치없이 나간다.
 	 **/
 	if (cpumask_test_cpu(task_cpu(p), new_mask))
 		goto out;
 
-	/** 20150523    
+	/** 20150523
 	 * 만약 현재 task가 실행되는 cpu가 new_mask에 속하지 않는다면,
 	 * new_mask 중 online mask인 cpu를 찾는다.
 	 *
@@ -6419,7 +6430,7 @@ EXPORT_SYMBOL_GPL(set_cpus_allowed_ptr);
  *
  * Returns non-zero if task was successfully migrated.
  */
-/** 20150523    
+/** 20150523
  * src cpu에서 실행 중인 task를 dest cpu로 옮겨 실행되도록 한다.
  *
  * task와 두 rq의 lock을 모두 획득한 상태에서 src rq에서 꺼내 dest rq에 넣고
@@ -6433,19 +6444,19 @@ static int __migrate_task(struct task_struct *p, int src_cpu, int dest_cpu)
 	if (unlikely(!cpu_active(dest_cpu)))
 		return ret;
 
-	/** 20150523    
+	/** 20150523
 	 * src와 dest rq를 가져온다.
 	 **/
 	rq_src = cpu_rq(src_cpu);
 	rq_dest = cpu_rq(dest_cpu);
 
-	/** 20150523    
+	/** 20150523
 	 * task 먼저, 그리고 src, dest rq를 lock시킨다.
 	 **/
 	raw_spin_lock(&p->pi_lock);
 	double_rq_lock(rq_src, rq_dest);
 	/* Already moved. */
-	/** 20150530    
+	/** 20150530
 	 * task가 현재 실행 중인 cpu가 src_cpu가 아니라면 이미 이동한 것으로 본다.
 	 **/
 	if (task_cpu(p) != src_cpu)
@@ -6458,7 +6469,7 @@ static int __migrate_task(struct task_struct *p, int src_cpu, int dest_cpu)
 	 * If we're not on a rq, the next wake-up will ensure we're
 	 * placed properly.
 	 */
-	/** 20150523    
+	/** 20150523
 	 * migrate 시킬 task가 현재 rq에 있을 때.
 	 *   src rq에서 task를 빼오고, task가 수행 중인 cpu 값을 갱신한 뒤,
 	 *   dst rq에 task를 넣는다.
@@ -6483,7 +6494,7 @@ fail:
  * and performs thread migration by bumping thread off CPU then
  * 'pushing' onto another runqueue.
  */
-/** 20150530    
+/** 20150530
  * 우선순위가 높은 stopper thread에 의해 실행되며,
  * 현재 cpu에서 수행 중이던 task를 dest_cpu에서 수행되도록 rq를 조정한다.
  **/
@@ -6495,7 +6506,7 @@ static int migration_cpu_stop(void *data)
 	 * The original target cpu might have gone down and we might
 	 * be on another cpu but it doesn't matter.
 	 */
-	/** 20150530    
+	/** 20150530
 	 * __migrate_task 내의 double_rq_lock 전에 disable interrupt를 해야 한다.
 	 * task를 현재 cpu에서 dest cpu로 옮겨 실행한다.
 	 **/
@@ -6758,7 +6769,7 @@ static void unregister_sched_domain_sysctl(void)
 		sd_free_ctl_entry(&sd_ctl_dir[0].child);
 }
 #else
-/** 20150808    
+/** 20150808
  * CONFIG_SCHED_DEBUG 정의되지 않아 NULL 함수
  **/
 static void register_sched_domain_sysctl(void)
@@ -6769,26 +6780,26 @@ static void unregister_sched_domain_sysctl(void)
 }
 #endif
 
-/** 20140426    
+/** 20140426
  * rq가 현재 online 상태가 아니라면
- *   rq에 해당하는 cpu를 online mask에 추가하고, 
+ *   rq에 해당하는 cpu를 online mask에 추가하고,
  *   sched class의 rq_online 콜백을 호출해 스케쥴링 대상에 포함시킨다.
  **/
 static void set_rq_online(struct rq *rq)
 {
-	/** 20140426    
+	/** 20140426
 	 * rq가 현재 online 상태가 아닐 경우
 	 **/
 	if (!rq->online) {
 		const struct sched_class *class;
 
-		/** 20140426    
+		/** 20140426
 		 * rq를 root domain의 online 마스크에 추가시키고, rq의 상태를 변경한다.
 		 **/
 		cpumask_set_cpu(rq->cpu, rq->rd->online);
 		rq->online = 1;
 
-		/** 20140426    
+		/** 20140426
 		 * 스케줄링 클래스를 순회하며 rq_online 콜백을 호출하여
 		 * 스케줄링 대상에 포함시킨다.
 		 **/
@@ -6799,19 +6810,19 @@ static void set_rq_online(struct rq *rq)
 	}
 }
 
-/** 20140426    
+/** 20140426
  * 특정 rq를 offline으로 변경한다.
  * 각 sched_class의 offline 핸들러를 호출한다.
  **/
 static void set_rq_offline(struct rq *rq)
 {
-	/** 20140426    
+	/** 20140426
 	 * rq가 현재 online 상태라면
 	 **/
 	if (rq->online) {
 		const struct sched_class *class;
 
-		/** 20140426    
+		/** 20140426
 		 * 각 sched class를 순회하며,
 		 *	해당 class가 rq_offline 핸들러가 지정되어 있다면 호출한다.
 		 **/
@@ -6820,11 +6831,11 @@ static void set_rq_offline(struct rq *rq)
 				class->rq_offline(rq);
 		}
 
-		/** 20140426    
+		/** 20140426
 		 * runqueue의 root domain 중 online 비트에서 현재 cpu를 제외한다.
 		 **/
 		cpumask_clear_cpu(rq->cpu, rq->rd->online);
-		/** 20140426    
+		/** 20140426
 		 * runqueue의 online 상태를 변경한다.
 		 **/
 		rq->online = 0;
@@ -6844,7 +6855,7 @@ migration_call(struct notifier_block *nfb, unsigned long action, void *hcpu)
 
 	switch (action & ~CPU_TASKS_FROZEN) {
 
-	/** 20150725    
+	/** 20150725
 	 * CPU_UP_PREPARE인 경우 전역 calc_load_update 값을 rq 내에 복사한다.
 	 **/
 	case CPU_UP_PREPARE:
@@ -6854,7 +6865,7 @@ migration_call(struct notifier_block *nfb, unsigned long action, void *hcpu)
 	case CPU_ONLINE:
 		/* Update our root-domain */
 		raw_spin_lock_irqsave(&rq->lock, flags);
-		/** 20150725    
+		/** 20150725
 		 * runqueue의 rootdomain이 지정되어 있으면
 		 * rq에 해당하는 cpu를 online mask에 넣고, 스케쥴 대상에 포함시킨다.
 		 **/
@@ -6895,7 +6906,7 @@ migration_call(struct notifier_block *nfb, unsigned long action, void *hcpu)
  * happens before everything else.  This has to be lower priority than
  * the notifier in the perf_event subsystem, though.
  */
-/** 20150725    
+/** 20150725
  * migration notifier block.
  **/
 static struct notifier_block __cpuinitdata migration_notifier = {
@@ -6903,14 +6914,14 @@ static struct notifier_block __cpuinitdata migration_notifier = {
 	.priority = CPU_PRI_MIGRATION,
 };
 
-/** 20150725    
+/** 20150725
  * cpu_notifier 블럭으로 등록되어 호출되는 함수로,
  * action에 따라 active mask에 추가한다.
  **/
 static int __cpuinit sched_cpu_active(struct notifier_block *nfb,
 				      unsigned long action, void *hcpu)
 {
-	/** 20150725    
+	/** 20150725
 	 * action에서 FROZEN을 제외한 동작을 보고 수행한다.
 	 **/
 	switch (action & ~CPU_TASKS_FROZEN) {
@@ -6923,7 +6934,7 @@ static int __cpuinit sched_cpu_active(struct notifier_block *nfb,
 	}
 }
 
-/** 20150725    
+/** 20150725
  * cpu_notifier 블럭으로 등록되어 호출되는 함수로,
  * action에 따라 active mask에 제거한다.
  **/
@@ -6939,7 +6950,7 @@ static int __cpuinit sched_cpu_inactive(struct notifier_block *nfb,
 	}
 }
 
-/** 20150725    
+/** 20150725
  * migration 초기화를 수행한다.
  *
  * migration_call로 부트 cpu에 대한 초기화를 직접 수행하고,
@@ -6953,7 +6964,7 @@ static int __init migration_init(void)
 	int err;
 
 	/* Initialize migration for the boot CPU */
-	/** 20150725    
+	/** 20150725
 	 * 현재 cpu에 대해 CPU_UP_PREPARE, CPU_ONLINE을 직접 날리고,
 	 * migration_notifier을 cpu notifier로 등록한다.
 	 **/
@@ -6963,7 +6974,7 @@ static int __init migration_init(void)
 	register_cpu_notifier(&migration_notifier);
 
 	/* Register cpu active notifiers */
-	/** 20150725    
+	/** 20150725
 	 * cpu active/inactive notifier block을 선언하고 cpu notifier로 등록한다.
 	 **/
 	cpu_notifier(sched_cpu_active, CPU_PRI_SCHED_ACTIVE);
@@ -7106,7 +7117,7 @@ static void sched_domain_debug(struct sched_domain *sd, int cpu)
 	}
 }
 #else /* !CONFIG_SCHED_DEBUG */
-/** 20150822    
+/** 20150822
  * SCHED_DEBUG 설정하지 않음.
  **/
 # define sched_domain_debug(sd, cpu) do { } while (0)
@@ -7116,19 +7127,19 @@ static inline bool sched_debug(void)
 }
 #endif /* CONFIG_SCHED_DEBUG */
 
-/** 20150822    
+/** 20150822
  * sched_domain이 degenerate 되어야 하면 1, 그렇지 않으면 0이 리턴.
  **/
 static int sd_degenerate(struct sched_domain *sd)
 {
-	/** 20150815    
+	/** 20150815
 	 * sched_domain에 속한 cpu 개수가 1개면 바로 1 리턴.
 	 **/
 	if (cpumask_weight(sched_domain_span(sd)) == 1)
 		return 1;
 
 	/* Following flags need at least 2 groups */
-	/** 20150822    
+	/** 20150822
 	 * sched_domain의 flag 중 2개 이상의 그룹이 필요한 속성이 있다면
 	 * 하나의 그룹만 존재하지 않는 이상 degenerate 하지 않는다.
 	 **/
@@ -7177,7 +7188,7 @@ sd_parent_degenerate(struct sched_domain *sd, struct sched_domain *parent)
 	return 1;
 }
 
-/** 20150815    
+/** 20150815
  * root_domain을 위해 할당한 메모리를 해제한다.
  **/
 static void free_rootdomain(struct rcu_head *rcu)
@@ -7191,7 +7202,7 @@ static void free_rootdomain(struct rcu_head *rcu)
 	kfree(rd);
 }
 
-/** 20140426    
+/** 20140426
  * rq의 rd로 새로운 root_domain을 지정한다.
  *
  * rq를 새로운 root domain에 추가한 경우
@@ -7203,18 +7214,18 @@ static void rq_attach_root(struct rq *rq, struct root_domain *rd)
 	struct root_domain *old_rd = NULL;
 	unsigned long flags;
 
-	/** 20140426    
+	/** 20140426
 	 * interrupt disable 상태로 rq에 spinlock을 걸고 수행한다.
 	 **/
 	raw_spin_lock_irqsave(&rq->lock, flags);
 
-	/** 20140426    
+	/** 20140426
 	 * rq에 기존 root domain이 있다면 연결을 해제하는 작업을 한다.
 	 **/
 	if (rq->rd) {
 		old_rd = rq->rd;
 
-		/** 20140426    
+		/** 20140426
 		 * 해당 cpu가 이전 root domain의 online에 속해 있다면
 		 * rq를 offline으로 만든다.
 		 *		- sched_class의 콜백이 호출된다.
@@ -7222,7 +7233,7 @@ static void rq_attach_root(struct rq *rq, struct root_domain *rd)
 		if (cpumask_test_cpu(rq->cpu, old_rd->online))
 			set_rq_offline(rq);
 
-		/** 20140426    
+		/** 20140426
 		 * 이전 root domain의 span 맵에서 제거한다.
 		 **/
 		cpumask_clear_cpu(rq->cpu, old_rd->span);
@@ -7232,24 +7243,24 @@ static void rq_attach_root(struct rq *rq, struct root_domain *rd)
 		 * set old_rd to NULL to skip the freeing later
 		 * in this function:
 		 */
-		/** 20140426    
+		/** 20140426
 		 * runqueue가 이전 root domain의 마지막 멤버였다면 old_rd는 NULL.
 		 **/
 		if (!atomic_dec_and_test(&old_rd->refcount))
 			old_rd = NULL;
 	}
 
-	/** 20140426    
+	/** 20140426
 	 * root domain의 refcount를 증가하고, runqueue의 root_domain으로 지정한다.
 	 **/
 	atomic_inc(&rd->refcount);
 	rq->rd = rd;
 
-	/** 20140426    
+	/** 20140426
 	 * root domain의 span 맵에 runqueue를 추가한다.
 	 **/
 	cpumask_set_cpu(rq->cpu, rd->span);
-	/** 20140426    
+	/** 20140426
 	 * 변경하는 rq가 active mask에 속해 있다면,
 	 * 해당 rq를 online으로 만든다.
 	 **/
@@ -7258,21 +7269,21 @@ static void rq_attach_root(struct rq *rq, struct root_domain *rd)
 
 	raw_spin_unlock_irqrestore(&rq->lock, flags);
 
-	/** 20140426    
+	/** 20140426
 	 * rcu_init 이후 분석???
 	 **/
 	if (old_rd)
 		call_rcu_sched(&old_rd->rcu, free_rootdomain);
 }
 
-/** 20140419    
+/** 20140419
  * rootdomain 데이터 초기화
  **/
 static int init_rootdomain(struct root_domain *rd)
 {
 	memset(rd, 0, sizeof(*rd));
 
-	/** 20140419    
+	/** 20140419
 	 * alloc_cpumask_var는 CPUMASK_OFFSTACK이 정의되지 않아 항상 true 리턴.
 	 **/
 	if (!alloc_cpumask_var(&rd->span, GFP_KERNEL))
@@ -7282,7 +7293,7 @@ static int init_rootdomain(struct root_domain *rd)
 	if (!alloc_cpumask_var(&rd->rto_mask, GFP_KERNEL))
 		goto free_online;
 
-	/** 20140419    
+	/** 20140419
 	 * root_domain의 cpupri 자료구조 초기화
 	 **/
 	if (cpupri_init(&rd->cpupri) != 0)
@@ -7303,28 +7314,28 @@ out:
  * By default the system creates a single root-domain with all cpus as
  * members (mimicking the global state we have today).
  */
-/** 20140419    
+/** 20140419
  * default로 시스템의 모든 cpu를 멤버로 가지는 하나의 root-domain을 생성한다.
  **/
 struct root_domain def_root_domain;
 
-/** 20140419    
+/** 20140419
  * default root domain 초기화.
  **/
 static void init_defrootdomain(void)
 {
-	/** 20140419    
+	/** 20140419
 	 * def_root_domain 자료구조 초기화.
 	 **/
 	init_rootdomain(&def_root_domain);
 
-	/** 20140419    
+	/** 20140419
 	 * reference count를 1로 초기화.
 	 **/
 	atomic_set(&def_root_domain.refcount, 1);
 }
 
-/** 20150808    
+/** 20150808
  * rootdomain을 위한 메모리를 할당받고 초기화해 리턴.
  **/
 static struct root_domain *alloc_rootdomain(void)
@@ -7362,7 +7373,7 @@ static void free_sched_groups(struct sched_group *sg, int free_sgp)
 	} while (sg != first);
 }
 
-/** 20150815    
+/** 20150815
  * sched_domain 해제를 위한 rcu 콜백함수.
  **/
 static void free_sched_domain(struct rcu_head *rcu)
@@ -7382,7 +7393,7 @@ static void free_sched_domain(struct rcu_head *rcu)
 	kfree(sd);
 }
 
-/** 20150815    
+/** 20150815
  * sched_domain 관련 rcu의 해제를 대기한다.
  * callback으로 free_sched_domain가 호출된다.
  **/
@@ -7391,7 +7402,7 @@ static void destroy_sched_domain(struct sched_domain *sd, int cpu)
 	call_rcu(&sd->rcu, free_sched_domain);
 }
 
-/** 20150815    
+/** 20150815
  * sched_domain의 parent를 순회하며 cpu의 sched_domain을 해제한다.
  **/
 static void destroy_sched_domains(struct sched_domain *sd, int cpu)
@@ -7414,7 +7425,7 @@ static void destroy_sched_domains(struct sched_domain *sd, int cpu)
  * the cpumask of the domain), this allows us to quickly tell if
  * two cpus are in the same cache domain, see cpus_share_cache().
  */
-/** 20150815    
+/** 20150815
  * SD_SHARE_PKG_RESOURCE을 가진 가장 높은 sched_domain을 특별한 포인터로 가리킨다.
  * 이렇게 하면 select_idle_sibling()에서 pointer chasing을 회피하도록 한다.
  *
@@ -7422,13 +7433,13 @@ static void destroy_sched_domains(struct sched_domain *sd, int cpu)
  * CPU들에게 select_idle_sibling()의 hw 버디가 되도록 지정한다.
  **/
 DEFINE_PER_CPU(struct sched_domain *, sd_llc);
-/** 20130720    
+/** 20130720
  * sd_llc_id라는 이름으로 int 타입의 per cpu 변수 선언
  * llc: last level cache
  **/
 DEFINE_PER_CPU(int, sd_llc_id);
 
-/** 20150822    
+/** 20150822
  * percpu 캐시에 sched_domain과 domain id를 업데이트 한다.
  **/
 static void update_top_cache_domain(int cpu)
@@ -7436,7 +7447,7 @@ static void update_top_cache_domain(int cpu)
 	struct sched_domain *sd;
 	int id = cpu;
 
-	/** 20150815    
+	/** 20150815
 	 * cpu의 sched_domain 중 SD_SHARE_PKG_RESOURCES flags가 포함된 가장 높은
 	 * sched_domain을 찾는다.
 	 **/
@@ -7451,19 +7462,19 @@ static void update_top_cache_domain(int cpu)
 		 * to cpu from there, switching direction on each
 		 * hop, never ever pointing the last CPU rightward.
 		 */
-		/** 20150815    
+		/** 20150815
 		 * sched_group에서 첫번째 cpu를 탐색하고, 거기에서 cpu까지 hop을 세고,
 		 * 각 hop에서 direction을 변경하여 마지막 CPU 오른쪽으로 가리키지 않는다.
 		 **/
 		do {
-			/** 20150815    
+			/** 20150815
 			 * tmp sched_domain의 첫번째 cpu를 id로 찾는다.
 			 **/
 			id = cpumask_first(sched_domain_span(tmp));
 			prev = sg = tmp->groups;
 			right = 1;
 
-			/** 20150815    
+			/** 20150815
 			 * sched_group의 첫번째 cpu가 sched_domain의 첫번째 cpu와 같을 때까지
 			 * 찾는다. 즉, sched_domain의 첫번째 sched_group을 찾는다.
 			 * (sched_group은 환형 연결 리스크 구조이다)
@@ -7471,7 +7482,7 @@ static void update_top_cache_domain(int cpu)
 			while (cpumask_first(sched_group_cpus(sg)) != id)
 				sg = sg->next;
 
-			/** 20150815    
+			/** 20150815
 			 * 찾은 sched_group에 cpu가 들어있지 않다면
 			 * 이전 sched_group을 저장하고 다음 sched_group으로 이동한다.
 			 **/
@@ -7482,13 +7493,13 @@ static void update_top_cache_domain(int cpu)
 			}
 
 			/* A CPU went down, never point back to domain start. */
-			/** 20150815    
+			/** 20150815
 			 * right가 true지만, sg의 next의 첫번째 cpu가 id와 같다면
 			 **/
 			if (right && cpumask_first(sched_group_cpus(sg->next)) == id)
 				right = false;
 
-			/** 20150815    
+			/** 20150815
 			 * rigth 면 sched_group next, 아니면 prev에서
 			 * 첫번째 cpu를 가져와 idle_buddy에 지정한다.
 			 **/
@@ -7499,7 +7510,7 @@ static void update_top_cache_domain(int cpu)
 		id = cpumask_first(sched_domain_span(sd));
 	}
 
-	/** 20150822    
+	/** 20150822
 	 * percpu인 sd_llc와 sd_llc_id에 sd와 id를 지정한다.
 	 **/
 	rcu_assign_pointer(per_cpu(sd_llc, cpu), sd);
@@ -7510,7 +7521,7 @@ static void update_top_cache_domain(int cpu)
  * Attach the domain 'sd' to 'cpu' as its base domain. Callers must
  * hold the hotplug lock.
  */
-/** 20150822    
+/** 20150822
  * sd를 cpu에 대한 base domain으로 붙인다.
  **/
 static void
@@ -7520,7 +7531,7 @@ cpu_attach_domain(struct sched_domain *sd, struct root_domain *rd, int cpu)
 	struct sched_domain *tmp;
 
 	/* Remove the sched domains which do not contribute to scheduling. */
-	/** 20150815    
+	/** 20150815
 	 * scheduling에 관련 없는 sched_domains를 제거한다.
 	 **/
 	for (tmp = sd; tmp; ) {
@@ -7537,7 +7548,7 @@ cpu_attach_domain(struct sched_domain *sd, struct root_domain *rd, int cpu)
 			tmp = tmp->parent;
 	}
 
-	/** 20150822    
+	/** 20150822
 	 * sd가 degenerate되어야 하는지 검사해 해당 sd를 제거한다.
 	 **/
 	if (sd && sd_degenerate(sd)) {
@@ -7550,7 +7561,7 @@ cpu_attach_domain(struct sched_domain *sd, struct root_domain *rd, int cpu)
 
 	sched_domain_debug(sd, cpu);
 
-	/** 20150815    
+	/** 20150815
 	 * rq에 새 root_domain을 붙인다.
 	 *
 	 * 새로운 sd를 rq->sd로 지정한다.
@@ -7561,15 +7572,15 @@ cpu_attach_domain(struct sched_domain *sd, struct root_domain *rd, int cpu)
 	rcu_assign_pointer(rq->sd, sd);
 	destroy_sched_domains(tmp, cpu);
 
-	/** 20150822    
+	/** 20150822
 	 * domain cache를 업데이트 한다.
 	 **/
 	update_top_cache_domain(cpu);
 }
 
 /* cpus with isolated domains */
-/** 20140426    
- * 
+/** 20140426
+ *
  **/
 static cpumask_var_t cpu_isolated_map;
 
@@ -7588,7 +7599,7 @@ static const struct cpumask *cpu_cpu_mask(int cpu)
 	return cpumask_of_node(cpu_to_node(cpu));
 }
 
-/** 20150808    
+/** 20150808
  * sched_domain, sched_group, scehd_group_power 모두 percpu 이중 포인터이다.
  **/
 struct sd_data {
@@ -7597,7 +7608,7 @@ struct sd_data {
 	struct sched_group_power **__percpu sgp;
 };
 
-/** 20150808    
+/** 20150808
  * percpu 이중 포인터 sched_domain과 root_domain으로 구성된 구조체
  **/
 struct s_data {
@@ -7619,7 +7630,7 @@ typedef const struct cpumask *(*sched_domain_mask_f)(int cpu);
 
 #define SDTL_OVERLAP	0x01
 
-/** 20150808    
+/** 20150808
  **/
 struct sched_domain_topology_level {
 	sched_domain_init_f init;
@@ -7743,7 +7754,7 @@ fail:
 	return -ENOMEM;
 }
 
-/** 20150815    
+/** 20150815
  * sd_data에서 cpu에 해당하는 per_cpu_ptr에 접근해 sched_group를 설정한다.
  *
  * 해당 sched_domain이 child를 가지고 있는 경우 child sched_domain의 첫번째 cpu,
@@ -7757,13 +7768,13 @@ static int get_group(int cpu, struct sd_data *sdd, struct sched_group **sg)
 	struct sched_domain *sd = *per_cpu_ptr(sdd->sd, cpu);
 	struct sched_domain *child = sd->child;
 
-	/** 20150815    
+	/** 20150815
 	 * child가 존재하면 child의 sched_domain 비트맵에서 첫번째 cpu 위치를 얻는다.
 	 **/
 	if (child)
 		cpu = cpumask_first(sched_domain_span(child));
 
-	/** 20150815    
+	/** 20150815
 	 * sched_group이 유효한 주소라면 sdd에서 해당 cpu의 포인터를 저장한다.
 	 **/
 	if (sg) {
@@ -7782,7 +7793,7 @@ static int get_group(int cpu, struct sd_data *sdd, struct sched_group **sg)
  *
  * Assumes the sched_domain tree is fully constructed
  */
-/** 20150815    
+/** 20150815
  * sched_domain 내에 cpu에 대한 sched_group을 구성한다.
  *
  * sched_group은 sched_domain의 sched_groups에 환형 연결 리스트로 구성된다.
@@ -7796,28 +7807,28 @@ build_sched_groups(struct sched_domain *sd, int cpu)
 	struct cpumask *covered;
 	int i;
 
-	/** 20150815    
+	/** 20150815
 	 * sd_data에서 cpu에 해당하는 sched_group 정보를 sd->groups에 저장하고,
 	 * reference count를 증가시킨다.
 	 **/
 	get_group(cpu, sdd, &sd->groups);
 	atomic_inc(&sd->groups->ref);
 
-	/** 20150815    
+	/** 20150815
 	 * 이후 동작은 cpu가 sched_domain의 첫번째 cpu일 경우만 수행한다.
 	 **/
 	if (cpu != cpumask_first(sched_domain_span(sd)))
 		return 0;
 
 	lockdep_assert_held(&sched_domains_mutex);
-	/** 20150815    
+	/** 20150815
 	 * covered로 tmpmask를 사용한다.
 	 **/
 	covered = sched_domains_tmpmask;
 
 	cpumask_clear(covered);
 
-	/** 20150815    
+	/** 20150815
 	 * span의 각 cpu를 순회하며
 	 **/
 	for_each_cpu(i, span) {
@@ -7825,21 +7836,21 @@ build_sched_groups(struct sched_domain *sd, int cpu)
 		int group = get_group(i, sdd, &sg);
 		int j;
 
-		/** 20150815    
+		/** 20150815
 		 * 해당 sched_class에 대해 그룹 구성을
 		 * 한번만 처리하기 위해 이미 covered에 속해 있는 cpu일 경우 패스.
 		 **/
 		if (cpumask_test_cpu(i, covered))
 			continue;
 
-		/** 20150815    
+		/** 20150815
 		 * sched_group의 cpumask를 클리어하고, mask를 설정한다.
 		 **/
 		cpumask_clear(sched_group_cpus(sg));
 		sg->sgp->power = 0;
 		cpumask_setall(sched_group_mask(sg));
 
-		/** 20150815    
+		/** 20150815
 		 * span의 각 cpu를 다시 순회하며 i와 같은 그룹인 j를
 		 * sched_group의 cpumask에 표시한다.
 		 * covered는 이중 반복의 비교횟수를 줄이기 위한 체크.
@@ -7852,7 +7863,7 @@ build_sched_groups(struct sched_domain *sd, int cpu)
 			cpumask_set_cpu(j, sched_group_cpus(sg));
 		}
 
-		/** 20150815    
+		/** 20150815
 		 * 첫번째 sched_group이 비어 있다면, sched_group을 first로 둔다.
 		 * 마지막 sched_group으로 설정한다.
 		 **/
@@ -7862,7 +7873,7 @@ build_sched_groups(struct sched_domain *sd, int cpu)
 			last->next = sg;
 		last = sg;
 	}
-	/** 20150815    
+	/** 20150815
 	 * 환형 구조로 구성한다.
 	 **/
 	last->next = first;
@@ -7880,7 +7891,7 @@ build_sched_groups(struct sched_domain *sd, int cpu)
  * having more cpu_power will pickup more load compared to the group having
  * less cpu_power.
  */
-/** 20150815    
+/** 20150815
  * sched_group의 cpu_power를 초기화 한다.
  * 추후 분석???
  **/
@@ -7918,7 +7929,7 @@ int __weak arch_sd_sibling_asym_packing(void)
 # define SD_INIT_NAME(sd, type)		do { } while (0)
 #endif
 
-/** 20150808    
+/** 20150808
  * sd_init_XXX라는 init 함수 선언 매크로.
  *
  * 매크로 아래에서 CONFIG가 설정되어 있는 타입의 init 함수를 선언한다.
@@ -7981,7 +7992,7 @@ static void set_domain_attribute(struct sched_domain *sd,
 static void __sdt_free(const struct cpumask *cpu_map);
 static int __sdt_alloc(const struct cpumask *cpu_map);
 
-/** 20150815    
+/** 20150815
  * s_alloc 된 상태에 따라 해제하는 함수를 호출한다.
  **/
 static void __free_domain_allocs(struct s_data *d, enum s_alloc what,
@@ -8000,7 +8011,7 @@ static void __free_domain_allocs(struct s_data *d, enum s_alloc what,
 	}
 }
 
-/** 20150808    
+/** 20150808
  * 전체 sched_domain topology를 위한 메모리를 할당받아 구성하고,
  * 전달받은 s_data에 메모리를 할당받아 저장한 뒤 sa_rootdomain을 리턴한다.
  **/
@@ -8009,18 +8020,18 @@ static enum s_alloc __visit_domain_allocation_hell(struct s_data *d,
 {
 	memset(d, 0, sizeof(*d));
 
-	/** 20150808    
+	/** 20150808
 	 * sched domain topology을 위한 메모리를 할당받는다.
 	 **/
 	if (__sdt_alloc(cpu_map))
 		return sa_sd_storage;
-	/** 20150808    
+	/** 20150808
 	 * s_data의 sched_domain과 root_domain 을 위한 메모리를 할당받아 저장한다.
 	 **/
 	d->sd = alloc_percpu(struct sched_domain *);
 	if (!d->sd)
 		return sa_sd_storage;
-	/** 20150822    
+	/** 20150822
 	 * root_domain을 위한 메모리를 할당 받고, 초기화 한다.
 	 **/
 	d->rd = alloc_rootdomain();
@@ -8034,7 +8045,7 @@ static enum s_alloc __visit_domain_allocation_hell(struct s_data *d,
  * sched_group structure so that the subsequent __free_domain_allocs()
  * will not free the data we're using.
  */
-/** 20150815    
+/** 20150815
  * sched_domain과 sched_group 구조체를 빌드하기 위해 사용되었던
  * sd_data에서 cpu에 해당하는 percpu 부분을 NULL로 초기화 한다.
  **/
@@ -8062,8 +8073,8 @@ static const struct cpumask *cpu_smt_mask(int cpu)
 /*
  * Topology list, bottom-up.
  */
-/** 20150808    
- * default_topology이라는 배열을 선언한다. 
+/** 20150808
+ * default_topology이라는 배열을 선언한다.
  *
  * init 함수는 SD_INIT_FUNC(XXX)에 의해서 선언된다.
  **/
@@ -8081,7 +8092,7 @@ static struct sched_domain_topology_level default_topology[] = {
 	{ NULL, },
 };
 
-/** 20150808    
+/** 20150808
  * sched_domain_topology
  **/
 static struct sched_domain_topology_level *sched_domain_topology = default_topology;
@@ -8306,7 +8317,7 @@ static void sched_init_numa(void)
 	sched_domain_topology = tl;
 }
 #else
-/** 20150808    
+/** 20150808
  * CONFIG_NUMA가 아니므로 NULL.
  **/
 static inline void sched_init_numa(void)
@@ -8314,7 +8325,7 @@ static inline void sched_init_numa(void)
 }
 #endif /* CONFIG_NUMA */
 
-/** 20150808    
+/** 20150808
  * 각 sched_domain_topology_level의 sd_data를 할당받아 채운다.
  **/
 static int __sdt_alloc(const struct cpumask *cpu_map)
@@ -8322,14 +8333,14 @@ static int __sdt_alloc(const struct cpumask *cpu_map)
 	struct sched_domain_topology_level *tl;
 	int j;
 
-	/** 20150808    
-	 * sched_domain_topology_level를 순회하며 
+	/** 20150808
+	 * sched_domain_topology_level를 순회하며
 	 * 각 toplogy level의 sd_data 초기화 한다.
 	 **/
 	for (tl = sched_domain_topology; tl->init; tl++) {
 		struct sd_data *sdd = &tl->data;
 
-		/** 20150808    
+		/** 20150808
 		 * sd_data의 각 멤버를 percpu 변수 포인터로 할당받고,
 		 * 다시 cpu를 순회하며 메모리 공간을 할당받아 초기화 한다.
 		 **/
@@ -8345,7 +8356,7 @@ static int __sdt_alloc(const struct cpumask *cpu_map)
 		if (!sdd->sgp)
 			return -ENOMEM;
 
-		/** 20150808    
+		/** 20150808
 		 * cpu_map에 포함된 각 core들을 순회하며 구조체를 초기화 한다.
 		 *
 		 * 추후 각 cpu들을 순회하며 sched_domain을 구성할 때 사용된다.
@@ -8415,7 +8426,7 @@ static void __sdt_free(const struct cpumask *cpu_map)
 	}
 }
 
-/** 20150808    
+/** 20150808
  * 해당 sched domain topology level에 대한 sched domain을 생성하고
  * 전달된 argument로 설정한다.
  *
@@ -8429,7 +8440,7 @@ struct sched_domain *build_sched_domain(struct sched_domain_topology_level *tl,
 		struct sched_domain_attr *attr, struct sched_domain *child,
 		int cpu)
 {
-	/** 20150808    
+	/** 20150808
 	 * 해당 level의 init 함수(SD_INIT_FUNC 매크로로 level별 선언)로 cpu에 대한 sched_domain을 초기화.
 	 **/
 	struct sched_domain *sd = tl->init(tl, cpu);
@@ -8452,7 +8463,7 @@ struct sched_domain *build_sched_domain(struct sched_domain_topology_level *tl,
  * Build sched domains for a given set of cpus and attach the sched domains
  * to the individual cpus
  */
-/** 20150822    
+/** 20150822
  * cpu_map을 위한 sched_domain을 구성하고, 각 cpu들의 base domain으로 지정한다.
  **/
 static int build_sched_domains(const struct cpumask *cpu_map,
@@ -8463,7 +8474,7 @@ static int build_sched_domains(const struct cpumask *cpu_map,
 	struct s_data d;
 	int i, ret = -ENOMEM;
 
-	/** 20150808    
+	/** 20150808
 	 * 전체 sched_domain_topology_level과 전달한 s_data를 위한 메모리를 할당 받는다.
 	 **/
 	alloc_state = __visit_domain_allocation_hell(&d, cpu_map);
@@ -8471,14 +8482,14 @@ static int build_sched_domains(const struct cpumask *cpu_map,
 		goto error;
 
 	/* Set up domains for cpus specified by the cpu_map. */
-	/** 20150808    
+	/** 20150808
 	 * cpu_map의 cpu들을 순회하며 각각을 위한 sched_domain을 구성한다.
 	 **/
 	for_each_cpu(i, cpu_map) {
 		struct sched_domain_topology_level *tl;
 
 		sd = NULL;
-		/** 20150808    
+		/** 20150808
 		 * sched_domain_topology를 낮은 레벨부터 순회하며
 		 * 각 레벨의 sched_domain을 설정한다.
 		 *
@@ -8492,33 +8503,33 @@ static int build_sched_domains(const struct cpumask *cpu_map,
 				break;
 		}
 
-		/** 20150815    
+		/** 20150815
 		 * 구성한 sched_domain의 child를 따라 내려가 최하위 레벨을
 		 * per_cpu 포인터에 저장한다.
 		 **/
 		while (sd->child)
 			sd = sd->child;
 
-		/** 20150815    
+		/** 20150815
 		 * build된 sched_domain을 s_data의 percpu sd에 저장한다.
 		 **/
 		*per_cpu_ptr(d.sd, i) = sd;
 	}
 
 	/* Build the groups for the domains */
-	/** 20150815    
+	/** 20150815
 	 * cpu_map 상의 cpu들을 순회한다.
 	 **/
 	for_each_cpu(i, cpu_map) {
-		/** 20150815    
+		/** 20150815
 		 * d.sd에 저장해둔 sched_domain의 자식에서 부모를 따라가며,
 		 **/
 		for (sd = *per_cpu_ptr(d.sd, i); sd; sd = sd->parent) {
-			/** 20150815    
+			/** 20150815
 			 * sched_domain에 속한 모든 cpu의 수를 구해 span_weight에 저장.
 			 **/
 			sd->span_weight = cpumask_weight(sched_domain_span(sd));
-			/** 20150815    
+			/** 20150815
 			 * flags에 OVERLAP 설정 여부에 따라 sched_groups 구성 함수를 호출한다.
 			 **/
 			if (sd->flags & SD_OVERLAP) {
@@ -8532,7 +8543,7 @@ static int build_sched_domains(const struct cpumask *cpu_map,
 	}
 
 	/* Calculate CPU power for physical packages and nodes */
-	/** 20150815    
+	/** 20150815
 	 * 전체 cpumask를 순회하며 cpu_map에 포함된 각 cpu에 대해
 	 * sched_domain을 child에서 parent 순서로 순회하여
 	 *   - 빌드하기 위해 사용했던 자료구조를 정리한다.
@@ -8549,7 +8560,7 @@ static int build_sched_domains(const struct cpumask *cpu_map,
 	}
 
 	/* Attach the domains */
-	/** 20150822    
+	/** 20150822
 	 * 구성한 sched_domain을 cpu_map에 속하는 각 cpu의 base domain으로 지정한다.
 	 **/
 	rcu_read_lock();
@@ -8561,14 +8572,14 @@ static int build_sched_domains(const struct cpumask *cpu_map,
 
 	ret = 0;
 error:
-	/** 20150822    
+	/** 20150822
 	 * alloc 성공 상태에 따라 할당했던 메모리를 해제한다.
 	 **/
 	__free_domain_allocs(&d, alloc_state, cpu_map);
 	return ret;
 }
 
-/** 20150808    
+/** 20150808
  * 현재 sched domains와 그 숫자.
  **/
 static cpumask_var_t *doms_cur;	/* current sched domains */
@@ -8593,7 +8604,7 @@ int __attribute__((weak)) arch_update_cpu_topology(void)
 	return 0;
 }
 
-/** 20150808    
+/** 20150808
  * ndoms개의 sched_domain을 위한 공간을 할당 받는다.
  **/
 cpumask_var_t *alloc_sched_domains(unsigned int ndoms)
@@ -8626,7 +8637,7 @@ void free_sched_domains(cpumask_var_t doms[], unsigned int ndoms)
  * For now this just excludes isolated cpus, but could be used to
  * exclude other special cases in the future.
  */
-/** 20150822    
+/** 20150822
  * scheduler domain, group들을 설정한다.
  *
  * 대상이 되는 cpu_map 중 isolate된 cpu들은 제외한 map에 대해 설정한다.
@@ -8635,12 +8646,12 @@ static int init_sched_domains(const struct cpumask *cpu_map)
 {
 	int err;
 
-	/** 20150808    
+	/** 20150808
 	 * architecture에서 정의한 cpu topology update 함수가 실행된다.
 	 * arm은 별도로 정의하지 않는다.
 	 **/
 	arch_update_cpu_topology();
-	/** 20150808    
+	/** 20150808
 	 * ndoms_cur를 1개로 설정해 sched_domains(cpumask)를 할당 받아오고,
 	 * 실패할 경우 fallback_doms를 사용한다.
 	 **/
@@ -8648,12 +8659,12 @@ static int init_sched_domains(const struct cpumask *cpu_map)
 	doms_cur = alloc_sched_domains(ndoms_cur);
 	if (!doms_cur)
 		doms_cur = &fallback_doms;
-	/** 20150808    
-	 * 매개변수 cpu_map에서 cpu_isolated_map에 포함된 것을 제외한 나머지를 
+	/** 20150808
+	 * 매개변수 cpu_map에서 cpu_isolated_map에 포함된 것을 제외한 나머지를
 	 * doms_cur[0]에 저장한다.
 	 **/
 	cpumask_andnot(doms_cur[0], cpu_map, cpu_isolated_map);
-	/** 20150808    
+	/** 20150808
 	 * current sched_domain 0번에 대한 sched_domains를 구성한다.
 	 **/
 	err = build_sched_domains(doms_cur[0], NULL);
@@ -8790,7 +8801,7 @@ static int num_cpus_frozen;	/* used to mark begin/end of suspend/resume */
  * If we come here as part of a suspend/resume, don't touch cpusets because we
  * want to restore it back to its original state upon resume anyway.
  */
-/** 20150822    
+/** 20150822
  * hotplug 사용시 호출되는 콜백함수. 추후분석???
  **/
 static int cpuset_cpu_active(struct notifier_block *nfb, unsigned long action,
@@ -8828,7 +8839,7 @@ static int cpuset_cpu_active(struct notifier_block *nfb, unsigned long action,
 	return NOTIFY_OK;
 }
 
-/** 20150822    
+/** 20150822
  * hotplug 사용시 호출되는 콜백함수. 추후분석???
  **/
 static int cpuset_cpu_inactive(struct notifier_block *nfb, unsigned long action,
@@ -8848,7 +8859,7 @@ static int cpuset_cpu_inactive(struct notifier_block *nfb, unsigned long action,
 	return NOTIFY_OK;
 }
 
-/** 20150822    
+/** 20150822
  * smp에서 sched 관련 초기화를 수행한다.
  *
  * - NUMA인 경우 sched_init_numa
@@ -8859,31 +8870,31 @@ void __init sched_init_smp(void)
 {
 	cpumask_var_t non_isolated_cpus;
 
-	/** 20150808    
+	/** 20150808
 	 * non_isolated_cpus, fallback_doms용 cpumask를 동적으로 생성한다.
 	 * config에서 CPUMASK_OFFSTACK가 정의되지 않은 경우 수행하는 내용이 없다.
 	 **/
 	alloc_cpumask_var(&non_isolated_cpus, GFP_KERNEL);
 	alloc_cpumask_var(&fallback_doms, GFP_KERNEL);
 
-	/** 20150808    
+	/** 20150808
 	 * CONFIG_NUMA가 아닌 경우 NULL.
 	 **/
 	sched_init_numa();
 
-	/** 20150808    
+	/** 20150808
 	 * CPU HOTPLUG에 대한 refcount를 올린다.
 	 *
 	 * 아래 put_online_cpus와 쌍이다.
 	 **/
 	get_online_cpus();
 	mutex_lock(&sched_domains_mutex);
-	/** 20150822    
+	/** 20150822
 	 * cpu_active_mask로 sched_domain, sched_group을 구성하고
 	 * 각 cpu의 base domain으로 지정한다.
 	 **/
 	init_sched_domains(cpu_active_mask);
-	/** 20150822    
+	/** 20150822
 	 * possible_mask에서 isolate되지 않은 map을 뽑아낸다.
 	 * non_isolated_cpus가 없으면 현재 cpu만 포함시킨다.
 	 **/
@@ -8893,7 +8904,7 @@ void __init sched_init_smp(void)
 	mutex_unlock(&sched_domains_mutex);
 	put_online_cpus();
 
-	/** 20150822    
+	/** 20150822
 	 * cpu notify 콜백으로 cpuset_cpu_active와 cpuset_cpu_inactive 를 지정한다.
 	 * 각각 호출 순서에 해당하는 priority를 가진다.
 	 **/
@@ -8901,29 +8912,29 @@ void __init sched_init_smp(void)
 	hotcpu_notifier(cpuset_cpu_inactive, CPU_PRI_CPUSET_INACTIVE);
 
 	/* RT runtime code needs to handle some hotplug events */
-	/** 20150822    
+	/** 20150822
 	 * RT runtime을 update하는 콜백 함수 지정.
 	 **/
 	hotcpu_notifier(update_runtime, 0);
 
-	/** 20150822    
+	/** 20150822
 	 * hrtick 관련 초기화를 수행한다 - 콜백 함수 등록
 	 **/
 	init_hrtick();
 
 	/* Move init over to a non-isolated CPU */
-	/** 20150822    
+	/** 20150822
 	 * 현재 task를 non-isolated cpu에서 수행하도록 한다.
 	 **/
 	if (set_cpus_allowed_ptr(current, non_isolated_cpus) < 0)
 		BUG();
-	/** 20150822    
+	/** 20150822
 	 * sched 관련 설정가능한 단위를 초기화 한다.
 	 **/
 	sched_init_granularity();
 	free_cpumask_var(non_isolated_cpus);
 
-	/** 20150822    
+	/** 20150822
 	 * sched_rt class 관련 초기화를 수행한다.
 	 **/
 	init_sched_rt_class();
@@ -8950,8 +8961,8 @@ struct task_group root_task_group;
 
 DECLARE_PER_CPU(cpumask_var_t, load_balance_tmpmask);
 
-/** 20140426    
- * scheduling 관련 자료구조 초기화. 
+/** 20140426
+ * scheduling 관련 자료구조 초기화.
  *
  * - percpu 변수인 rq의 자료구조 초기화
  * - sched_class의 지정 (cfs)
@@ -8971,7 +8982,7 @@ void __init sched_init(void)
 #ifdef CONFIG_CPUMASK_OFFSTACK
 	alloc_size += num_possible_cpus() * cpumask_size();
 #endif
-	/** 20140419    
+	/** 20140419
 	 * alloc_size가 초기값을 가지고 있으므로 0.
 	 **/
 	if (alloc_size) {
@@ -9005,13 +9016,13 @@ void __init sched_init(void)
 	init_defrootdomain();
 #endif
 
-	/** 20140419    
+	/** 20140419
 	 * default rt bandwidth 구조체를 초기화 한다.
 	 **/
 	init_rt_bandwidth(&def_rt_bandwidth,
 			global_rt_period(), global_rt_runtime());
 
-/** 20140419    
+/** 20140419
  * 수행 안 함
  **/
 #ifdef CONFIG_RT_GROUP_SCHED
@@ -9019,7 +9030,7 @@ void __init sched_init(void)
 			global_rt_period(), global_rt_runtime());
 #endif /* CONFIG_RT_GROUP_SCHED */
 
-/** 20140419    
+/** 20140419
  * 수행 안 함
  **/
 #ifdef CONFIG_CGROUP_SCHED
@@ -9030,7 +9041,7 @@ void __init sched_init(void)
 
 #endif /* CONFIG_CGROUP_SCHED */
 
-/** 20140419    
+/** 20140419
  * 수행 안 함
  **/
 #ifdef CONFIG_CGROUP_CPUACCT
@@ -9046,7 +9057,7 @@ void __init sched_init(void)
 	for_each_possible_cpu(i) {
 		struct rq *rq;
 
-		/** 20140426    
+		/** 20140426
 		 * per-cpu 변수 rq를 하나씩 가져온다.
 		 *
 		 * rq는 spinlock으로 보호된다.
@@ -9056,18 +9067,18 @@ void __init sched_init(void)
 		raw_spin_lock_init(&rq->lock);
 		rq->nr_running = 0;
 		rq->calc_load_active = 0;
-		/** 20140426    
+		/** 20140426
 		 * jiffies는 현재 초기값을 가진 상태.
 		 *
 		 * 현재 jiffies에 LOAD_FREQ를 더한 값으로 설정한다.
 		 **/
 		rq->calc_load_update = jiffies + LOAD_FREQ;
-		/** 20140426    
+		/** 20140426
 		 * rq와 연결된 cfs, rt runqueue를 초기화.
 		 **/
 		init_cfs_rq(&rq->cfs);
 		init_rt_rq(&rq->rt, rq);
-		/** 20140426    
+		/** 20140426
 		 * 수행 안 함
 		 **/
 #ifdef CONFIG_FAIR_GROUP_SCHED
@@ -9096,7 +9107,7 @@ void __init sched_init(void)
 		init_tg_cfs_entry(&root_task_group, &rq->cfs, NULL, i, NULL);
 #endif /* CONFIG_FAIR_GROUP_SCHED */
 
-		/** 20140426    
+		/** 20140426
 		 * default rt bandwidth의 rt_runtime으로 초기화.
 		 **/
 		rq->rt.rt_runtime = def_rt_bandwidth.rt_runtime;
@@ -9105,7 +9116,7 @@ void __init sched_init(void)
 		init_tg_rt_entry(&root_task_group, &rq->rt, NULL, i, NULL);
 #endif
 
-		/** 20140426    
+		/** 20140426
 		 * cpu_load는 무엇인가???
 		 * last_load_update_tick 초기화
 		 **/
@@ -9115,7 +9126,7 @@ void __init sched_init(void)
 		rq->last_load_update_tick = jiffies;
 
 #ifdef CONFIG_SMP
-		/** 20140426    
+		/** 20140426
 		 * SMP 에서 사용하는 자료구조 초기화.
 		 *
 		 * 각각의 의미는 차차 알아보기로 함???
@@ -9134,7 +9145,7 @@ void __init sched_init(void)
 
 		INIT_LIST_HEAD(&rq->cfs_tasks);
 
-		/** 20140426    
+		/** 20140426
 		 * rq를 default root domain에 추가.
 		 **/
 		rq_attach_root(rq, &def_root_domain);
@@ -9143,25 +9154,25 @@ void __init sched_init(void)
 #endif
 #endif
 		init_rq_hrtick(rq);
-		/** 20140426    
+		/** 20140426
 		 * nr_iowait 초기화
 		 **/
 		atomic_set(&rq->nr_iowait, 0);
 	}
 
-	/** 20140426    
+	/** 20140426
 	 * init task의 load weigth를 설정한다.
 	 **/
 	set_load_weight(&init_task);
 
-	/** 20140426    
+	/** 20140426
 	 * CONFIG_PREEMPT_NOTIFIERS가 선언되어 있지 않음.
 	 **/
 #ifdef CONFIG_PREEMPT_NOTIFIERS
 	INIT_HLIST_HEAD(&init_task.preempt_notifiers);
 #endif
 
-	/** 20140426    
+	/** 20140426
 	 * CONFIG_RT_MUTEXES 선언됨.
 	 * 우선순위 상속을 위해 사용되는 priority list의 header를 초기화.
 	 **/
@@ -9172,11 +9183,11 @@ void __init sched_init(void)
 	/*
 	 * The boot idle thread does lazy MMU switching as well:
 	 */
-	/** 20140426    
+	/** 20140426
 	 * init_mm의 mm_count (ref count)를 증가한다.
 	 **/
 	atomic_inc(&init_mm.mm_count);
-	/** 20140426    
+	/** 20140426
 	 * lazy tlb mode로 진입. arm의 경우 빈 함수.
 	 **/
 	enter_lazy_tlb(&init_mm, current);
@@ -9187,7 +9198,7 @@ void __init sched_init(void)
 	 * but because we are the idle thread, we just pick up running again
 	 * when this runqueue becomes "idle".
 	 */
-	/** 20140426    
+	/** 20140426
 	 * 현재 cpu의 idle task로 current (INIT_TASK)를 지정한다.
 	 *
 	 * 부팅 단계에서 scheduler가 초기화 되어 있지 않은 상태에서 init_task가
@@ -9198,7 +9209,7 @@ void __init sched_init(void)
 	 **/
 	init_idle(current, smp_processor_id());
 
-	/** 20140426    
+	/** 20140426
 	 * 전역변수 calc_load_update를 jiffies + LOAD_FREQ (5초) 로 설정
 	 **/
 	calc_load_update = jiffies + LOAD_FREQ;
@@ -9206,7 +9217,7 @@ void __init sched_init(void)
 	/*
 	 * During early bootup we pretend to be a normal task:
 	 */
-	/** 20140426    
+	/** 20140426
 	 * 현재 task의 sched_class는 fair_sched_class. cfs scheduler.
 	 *
 	 * init_idle에서 current의 sched_class가 idle_sched_class로 지정되므로
@@ -9215,7 +9226,7 @@ void __init sched_init(void)
 	current->sched_class = &fair_sched_class;
 
 #ifdef CONFIG_SMP
-	/** 20140426    
+	/** 20140426
 	 * GFP 속성으로 GFP_NOWAIT, 즉 메모리 할당이 ATOMIC이면서
 	 * 할당실패시 fallback을 하지 않도록 요청된다.
 	 *
@@ -9223,25 +9234,25 @@ void __init sched_init(void)
 	 **/
 	zalloc_cpumask_var(&sched_domains_tmpmask, GFP_NOWAIT);
 	/* May be allocated at isolcpus cmdline parse time */
-	/** 20140426    
+	/** 20140426
 	 * cpu_isolated_map이 지정되어 있지 않다면
 	 * cpu_isolated_map을 할당 받아 설정한다.
 	 **/
 	if (cpu_isolated_map == NULL)
 		zalloc_cpumask_var(&cpu_isolated_map, GFP_NOWAIT);
-	/** 20140426    
+	/** 20140426
 	 * idle_threads 중 boot cpu에 해당하는 task를 current로 지정.
 	 **/
 	idle_thread_set_boot_cpu();
 #endif
-	/** 20140426    
+	/** 20140426
 	 * cfs scheduler의 초기화 함수 호출.
 	 *
 	 * sched_class에 init function에 대한 콜백이 존재하지 않는다.
 	 **/
 	init_sched_fair_class();
 
-	/** 20140426    
+	/** 20140426
 	 * 이제 scheduler가 동작한다.
 	 **/
 	scheduler_running = 1;

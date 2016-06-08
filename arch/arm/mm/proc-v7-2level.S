@@ -25,8 +25,8 @@
 
 /* PTWs cacheable, inner WBWA shareable, outer WBWA not shareable */
 /** 20121020
-	TTB_FLAGS_SMP : 0b0110_1010 
-**/
+ * TTB_FLAGS_SMP : 0b0110_1010
+ **/
 #define TTB_FLAGS_SMP	TTB_IRGN_WBWA|TTB_S|TTB_NOS|TTB_RGN_OC_WBWA
 #define PMD_FLAGS_SMP	PMD_SECT_WBWA|PMD_SECT_S
 
@@ -40,18 +40,20 @@
  *	It is assumed that:
  *	- we are not using split page tables
  */
-/** 20150801    
- * translation table base pointer를 설정한다.
- * 
- * r0: pgd의 물리주소.
- * r1: mm_struct (context.id를 추출하기 위해 쓴다)
+/** 20150801, 20160604
+ * 새로운 mm으로 context를 시작하기 위해 TTB0와 context ID를 설정한다.
  *
- * MM_CONTEXT_ID : offset은 arch/arm/kernel/asm-offsets.c에 의해 생성되는 파일에 정의된다.
+ * cpu_switch_mm 함수 호출시 호출됨 (mm->pgd, mm)
+ * r0: pgd의 물리주소
+ * r1: mm_struct (context.id를 추출)
+ *
+ * MM_CONTEXT_ID : offset은 arch/arm/kernel/asm-offsets.c 에 의해 생성되는 파일에 정의된다.
+ *
  **/
 ENTRY(cpu_v7_switch_mm)
 #ifdef CONFIG_MMU
-	/** 20150801    
-	 * r0: pgd의 물리주소 | TTB_FLAGS_SMP => TTBR 레지스터에 설정 값을 생성.
+	/** 20150801
+	 * r0 <- pgd의 물리주소 | TTB_FLAGS_SMP
 	 * r1 <- mm->context.id
 	 * r2 <- 0
 	 **/
@@ -70,10 +72,10 @@ ENTRY(cpu_v7_switch_mm)
 #ifdef CONFIG_ARM_ERRATA_754322
 	dsb
 #endif
-	/** 20150801    
+	/** 20150801
 	 * B4.1.36 CONTEXTIDR, Context ID Register, VMSA
-	 * r1 -> context.id에 설정.
-	 * r0 -> TTBR0 레지스터에 설정값.
+	 * 위에서 준비한 r1 값을 context.id를 CONTEXTIDR에 설정
+	 * 위에서 준비한 r0 값을 TTBR0 레지스터에 설정
 	 **/
 	mcr	p15, 0, r1, c13, c0, 1		@ set context ID
 	isb
@@ -101,71 +103,71 @@ ENDPROC(cpu_v7_switch_mm)
  **/
 ENTRY(cpu_v7_set_pte_ext)
 #ifdef CONFIG_MMU
-	/** 20130309    
+	/** 20130309
 		pte의 linux pt에 linux 속성을 가진 pte value 저장
 	 **/
 	str	r1, [r0]			@ linux version
 
-	/** 20130309    
+	/** 20130309
 		pte의 값 중 b4 ~ b9까지 클리어 (Linux용 attribute의 일부)
 	**/
 	bic	r3, r1, #0x000003f0
 	/** 20130309
-		pte의 값 중 b0 ~ b1까지 클리어 
+		pte의 값 중 b0 ~ b1까지 클리어
 	**/
 	bic	r3, r3, #PTE_TYPE_MASK
-	/** 20130309    
+	/** 20130309
 		r2는 ext
 	**/
 	orr	r3, r3, r2
-	/** 20130309    
+	/** 20130309
 		b1, b4를 set
 	**/
 	orr	r3, r3, #PTE_EXT_AP0 | 2
 
-	/** 20130309    
+	/** 20130309
 		r1의 b4가 세팅되어 있는지 체크(bit and)
 	**/
 	tst	r1, #1 << 4
-	/** 20130309    
+	/** 20130309
 		같으면(set되어 있으면) z flag가 0으로 ne 수행
 		(v5에 해당)
 	**/
 	orrne	r3, r3, #PTE_EXT_TEX(1)
 
-	/** 20130309    
+	/** 20130309
 		DIRTY 비트를 반전
 	**/
 	eor	r1, r1, #L_PTE_DIRTY
-	/** 20130309    
+	/** 20130309
 		r1의 두 비트 중 하나라도 켜져 있는지 검사
 		(v6에 해당)
 	**/
 	tst	r1, #L_PTE_RDONLY | L_PTE_DIRTY
 	orrne	r3, r3, #PTE_EXT_APX
 
-	/** 20130309    
+	/** 20130309
 		PTE_USER가 set되어 있으면 PTE_EXT_AP1을 켜줌
 	**/
 	tst	r1, #L_PTE_USER
 	orrne	r3, r3, #PTE_EXT_AP1
 #ifdef CONFIG_CPU_USE_DOMAINS
-	/** 20130309    
+	/** 20130309
 	Cortex-A Series PG 10.7.3 Domain
-	  The use of domains is deprecated in the ARMv7 architecture, 
+	  The use of domains is deprecated in the ARMv7 architecture,
 	**/
 	@ allow kernel read/write access to read-only user pages
 	tstne	r3, #PTE_EXT_APX
 	bicne	r3, r3, #PTE_EXT_APX | PTE_EXT_AP0
 #endif
 
-	/** 20130309    
+	/** 20130309
 		PTE_XN 비트를 검사해 설정되어 있다면 PTE_EXT_NX을 켜줌
 	 **/
 	tst	r1, #L_PTE_XN
 	orrne	r3, r3, #PTE_EXT_XN
 
-	/** 20130309    
+	/** 20130309
 		L_PTE_YOUNG이 켜져 있을 때
 			L_PTE_PRESENT가 켜져 있을 때
 				r3 유지
@@ -178,13 +180,13 @@ ENTRY(cpu_v7_set_pte_ext)
 	tstne	r1, #L_PTE_PRESENT
 	moveq	r3, #0
 
-/** 20130309    
+/** 20130309
 	pte의 h/w pt 위치에 위에서 설정한 r3값을 저장. r0의 값이 +2048로 업데이트
 **/
  ARM(	str	r3, [r0, #2048]! )
  THUMB(	add	r0, r0, #2048 )
  THUMB(	str	r3, [r0] )
- /** 20130309    
+ /** 20130309
    DCCMVAC, Data Cache Clean by MVA to PoC
 	  Clean and Invalidate data or unified cache line by MVA to PoC.
 
@@ -230,7 +232,7 @@ ENDPROC(cpu_v7_set_pte_ext)
 	 * Macro for setting up the TTBRx and TTBCR registers.
 	 * - \ttb0 and \ttb1 updated with the corresponding flags.
 	 */
-	 /** 20150620    
+	 /** 20150620
 	  * ttbcr 레지스터를 설정. 0을 쓴다.
 	  *
 	  *  ARM Document

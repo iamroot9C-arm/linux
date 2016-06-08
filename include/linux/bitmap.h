@@ -285,6 +285,11 @@ static inline int bitmap_subset(const unsigned long *src1,
 		return __bitmap_subset(src1, src2, nbits);
 }
 
+/** 20160604
+ * src에서 nbits만큼이 비어있는지 검사한다.
+ *
+ * 비어있으면 1 리턴. 그렇지 않을 경우 0 리턴.
+ **/
 static inline int bitmap_empty(const unsigned long *src, int nbits)
 {
 	if (small_const_nbits(nbits))

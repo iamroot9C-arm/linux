@@ -11,9 +11,13 @@
 
 extern unsigned int cacheid;
 
+/** 20160604
+ * cache type이 vivt인지 검사한다.
+ * Cortex-A9은 VIPT NONALIASING.
+ **/
 #define cache_is_vivt()			cacheid_is(CACHEID_VIVT)
 #define cache_is_vipt()			cacheid_is(CACHEID_VIPT)
-/** 20131102    
+/** 20131102
  * cache type이 vipt_nonaliasing인지 검사.
  * cacheid_init에서 CACHEID_VIPT_NONALIASING으로 설정
  **/
@@ -47,10 +51,10 @@ extern unsigned int cacheid;
  * Mask out support which isn't configured
  */
 /** 20130119
-        Cortex A9 기준으로 현재 CONFIG에는 
-        CONFIG_CPU_CACHE_VIVT가 정의되어 있지 않고
-        CONFIG_CPU_CACHE_VIPT는 정의되어 있다.
-        따라서 __CACHEID_ALWAYS : 0, __CACHEID_NEVER는 CACHEID_VIVT
+ * Cortex A9 기준으로 현재 CONFIG에는
+ * CONFIG_CPU_CACHE_VIVT가 정의되어 있지 않고
+ * CONFIG_CPU_CACHE_VIPT는 정의되어 있다.
+ * 따라서 __CACHEID_ALWAYS : 0, __CACHEID_NEVER는 CACHEID_VIVT
  **/
 #if defined(CONFIG_CPU_CACHE_VIVT) && !defined(CONFIG_CPU_CACHE_VIPT)
 #define __CACHEID_ALWAYS	(CACHEID_VIVT)
@@ -64,7 +68,7 @@ extern unsigned int cacheid;
 #endif
 
 /** 20130119
-  cacheid 값과 mask값을 비교하여 같으면 1, 다르면 0을 리턴한다
+ * cacheid 값과 mask값을 비교하여 같으면 1, 다르면 0을 리턴한다
  **/
 static inline unsigned int __attribute__((pure)) cacheid_is(unsigned int mask)
 {

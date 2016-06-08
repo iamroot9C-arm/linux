@@ -32,7 +32,7 @@
  * the inline assembly constraint from =g to =r, in this particular
  * case either is valid.
  */
-/** 20130629    
+/** 20130629
  * ptr + off을 해주는 매크로. 왜 이렇게 복잡하게 하는지???
  **/
 #define RELOC_HIDE(ptr, off)					\
@@ -66,8 +66,8 @@
 #define __deprecated			__attribute__((deprecated))
 #define __packed			__attribute__((packed))
 /** 20121103
- * __weak를 이용하여 동일한 심볼이 global하게 정의되어 있는 경우(strong symbol), 그 심볼을 참조함. 
- * The weak attribute causes the declaration to be emitted as a weak symbol rather than a global. This is primarily useful in defining library functions which can be overridden in user code, though it can also be used with non-function declarations. Weak symbols are supported for ELF targets, and also for a.out targets when using the GNU assembler and linker. 
+ * __weak를 이용하여 동일한 심볼이 global하게 정의되어 있는 경우(strong symbol), 그 심볼을 참조함.
+ * The weak attribute causes the declaration to be emitted as a weak symbol rather than a global. This is primarily useful in defining library functions which can be overridden in user code, though it can also be used with non-function declarations. Weak symbols are supported for ELF targets, and also for a.out targets when using the GNU assembler and linker.
  **/
 #define __weak				__attribute__((weak))
 
@@ -97,28 +97,28 @@
  */
 #define __pure				__attribute__((pure))
 #define __aligned(x)			__attribute__((aligned(x)))
-/** 20150704    
+/** 20150704
  * 직접 구현한 printf, scanf의 parameter typechecking을 위해
  * format string이 시작되는 위치, 첫번째 가변 파라미터의 위치를 지정한다.
  **/
 #define __printf(a, b)			__attribute__((format(printf, a, b)))
 #define __scanf(a, b)			__attribute__((format(scanf, a, b)))
-/** 20160130    
+/** 20160130
  * attribute를 noinline으로 지정해 컴파일러 최적화를 방지한다.
  **/
 #define  noinline			__attribute__((noinline))
 #define __attribute_const__		__attribute__((__const__))
-/** 20140301    
+/** 20140301
  * 사용하지 않는 경우에도 compiler의 warning이 발생하지 않도록 한다.
  * http://gcc.gnu.org/onlinedocs/gcc/Variable-Attributes.html
  *
  * This attribute, attached to a variable, means that the variable is meant to be possibly unused.
- * GCC does not produce a warning for this variable. 
+ * GCC does not produce a warning for this variable.
  **/
 #define __maybe_unused			__attribute__((unused))
 #define __always_unused			__attribute__((unused))
 
-/** 20130406    
+/** 20130406
  * arm-linux-gnueabihf-gcc -dM -E - < /dev/null > arm-gcc-dump
  * #include gcc_header(__GNUC__)     <- dump를 확인해 보면 4
  * macro를 매개변수로 받는 macro가 확장되기 위해서 indirect로 한 번 더 macro 호출.
@@ -137,12 +137,12 @@
  * A trick to suppress uninitialized variable warning without generating any
  * code
  */
-/** 20140104    
+/** 20140104
  * 초기화 되지 않은 변수에 대한 gcc warning을 막기 위해 초기화 트릭.
  **/
 #define uninitialized_var(x) x = x
 
-/** 20130511 
+/** 20130511
 항상 inline함수로 만들어주는 매크로
 **/
 #define __always_inline		inline __attribute__((always_inline))

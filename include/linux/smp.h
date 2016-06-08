@@ -143,6 +143,8 @@ static inline int up_smp_call_function(smp_call_func_t func, void *info)
 #define smp_call_function(func, info, wait) \
 			(up_smp_call_function(func, info))
 /** 20131026    
+ * 20160604 SMP를 기준으로 분석하므로 해당 안 함
+ *
  * local irq disable, enable을 해주는 이유는???
  * func 함수를 실행하는 매크로
  **/

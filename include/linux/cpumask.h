@@ -515,6 +515,9 @@ static inline int cpumask_subset(const struct cpumask *src1p,
  * cpumask_empty - *srcp == 0
  * @srcp: the cpumask to that all cpus < nr_cpu_ids are clear.
  */
+/** 20160604
+ * 전달받은 cpumask가 비어있는 검사한다.
+ **/
 static inline bool cpumask_empty(const struct cpumask *srcp)
 {
 	return bitmap_empty(cpumask_bits(srcp), nr_cpumask_bits);
