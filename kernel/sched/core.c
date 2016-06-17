@@ -4198,6 +4198,9 @@ need_resched:
 	if (sched_feat(HRTICK))
 		hrtick_clear(rq);
 
+	/** 20160611
+	 * interrupt를 금지시키고 rq에 lock을 잡는다.
+	 **/
 	raw_spin_lock_irq(&rq->lock);
 
 	/** 20160416
@@ -4318,12 +4321,13 @@ void __sched schedule_preempt_disabled(void)
 
 /** 20130706
  * owner가 mutex의 owner와 일치할 때 on_cpu의 상태를 리턴하는 inline 함수.
+ *
+ * 자세한 내용은 mutex.c의 Optimistic spinning 참조.
  **/
 static inline bool owner_running(struct mutex *lock, struct task_struct *owner)
 {
 	/** 20130706
-	 * lock->owner와 owner (앞에서 ACCESS_ONCE로 읽어온 값일 때)
-	 * 일치하지 않으면 바로 false 리턴.
+	 * lock에서 읽은 owner가 전달받은 owner가 아닐 경우 owner의 변경.
 	 **/
 	if (lock->owner != owner)
 		return false;
@@ -4335,8 +4339,10 @@ static inline bool owner_running(struct mutex *lock, struct task_struct *owner)
 	 * ensures the memory stays valid.
 	 */
 	/** 20130706
-	 * compiler level의 opitmization barrier.
-	 *   위 영문 주석의 의미는???
+	 * compiler level의 최적화 배리어.
+	 *
+	 * owner가 일치하지 않는 경우, owner가 NULL일 수 있으므로
+	 * on_cpu에 접근해서 읽으면 안 된다.
 	 **/
 	barrier();
 

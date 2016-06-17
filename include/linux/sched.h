@@ -1382,11 +1382,12 @@ struct task_struct {
 	struct llist_node wake_entry;
 	/** 20130706    
 	 * SMP에서 task가 cpu에서 수행 중인지 나타내는 속성.
-	 * try_to_wake_up에서 검사하는데 어떤 용도인지???
-	 * 0일 때는 task가 다른 cpu로 migrate 될 수 있다는 의미.
-	 * 1은 반대의 의미로 lock처럼 사용된다.
+	 *
+	 * 0은 task가 다른 cpu로 migrate 될 수 있다는 의미.
+	 * lock처럼 사용된다.
 	 *
 	 * context_switch시 prepare_lock_switch에서 next task를 1로 설정.
+	 * finish_lock_switch에서 prev task를 0으로 설정.
 	 *
 	 * SMP가 아닌 경우 rq->curr == p로 current인지 판단.
 	 **/

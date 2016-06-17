@@ -190,17 +190,17 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 	mutex_acquire_nest(&lock->dep_map, subclass, 0, nest_lock, ip);
 
 #ifdef CONFIG_MUTEX_SPIN_ON_OWNER
-/** 20130706    
- *   긍정적인 spinning.
- *
- *   pending된 대기자가 없고, lock owner가 다른 CPU에서 수행되고 있다면,
- *   lock을 획득하기 위해 spin을 시도한다.
- *
- *   이렇게 하는 이유는 lock owner가 돌고 있다면(running) 아마도 lock을 금방 해제할 것이라 기대하기 때문이다.
- *
- *   이런 방식으로 사용하기 위해서는 lock owner가 필요하고,
- *   이 뮤텍스 구현 방식은 lock field에서 owner를 원자적으로 추적하지 않는다.
- **/
+	/** 20130706    
+	 *   긍정적인 spinning.
+	 *
+	 *   pending된 대기자가 없고, lock owner가 다른 CPU에서 수행되고 있다면,
+	 *   lock을 획득하기 위해 spin을 시도한다.
+	 *
+	 *   이렇게 하는 이유는 lock owner가 돌고 있다면(running) 아마도 lock을 금방 해제할 것이라 기대하기 때문이다.
+	 *
+	 *   이런 방식으로 사용하기 위해서는 lock owner가 필요하고,
+	 *   이 뮤텍스 구현 방식은 lock field에서 owner를 원자적으로 추적하지 않는다.
+	 **/
 	/*
 	 * Optimistic spinning.
 	 *

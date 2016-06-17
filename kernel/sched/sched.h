@@ -843,6 +843,11 @@ static inline void prepare_lock_switch(struct rq *rq, struct task_struct *next)
 #endif
 }
 
+/** 20160130
+ * prev task의 switch lock을 해제한다.
+ *
+ * prepare_lock_switch와 대응되는 부분.
+ **/
 static inline void finish_lock_switch(struct rq *rq, struct task_struct *prev)
 {
 #ifdef CONFIG_SMP
@@ -851,10 +856,6 @@ static inline void finish_lock_switch(struct rq *rq, struct task_struct *prev)
 	 * We must ensure this doesn't happen until the switch is completely
 	 * finished.
 	 */
-	/** 20160130
-	 * switch 되어 교체될 task의 on_cpu를 0으로 만든다.
-	 * prepare_lock_switch와 대응되는 부분.
-	 **/
 	smp_wmb();
 	prev->on_cpu = 0;
 #endif
@@ -869,6 +870,11 @@ static inline void finish_lock_switch(struct rq *rq, struct task_struct *prev)
 	 */
 	spin_acquire(&rq->lock.dep_map, 0, 0, _THIS_IP_);
 
+	/** 20160611
+	 * spinlock을 해제하고 interrupt enable시킨다.
+	 *
+	 * __schedule 함수의 도입부와 쌍을 이룬다.
+	 **/
 	raw_spin_unlock_irq(&rq->lock);
 }
 

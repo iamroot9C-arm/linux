@@ -77,8 +77,6 @@ _raw_spin_unlock_irqrestore(raw_spinlock_t *lock, unsigned long flags)
 #endif
 
 #ifndef CONFIG_UNINLINE_SPIN_UNLOCK
-/** 20130713    
- **/
 #define _raw_spin_unlock(lock) __raw_spin_unlock(lock)
 #endif
 
@@ -87,8 +85,6 @@ _raw_spin_unlock_irqrestore(raw_spinlock_t *lock, unsigned long flags)
 #endif
 
 #ifdef CONFIG_INLINE_SPIN_UNLOCK_IRQ
-/** 20131109
-**/
 #define _raw_spin_unlock_irq(lock) __raw_spin_unlock_irq(lock)
 #endif
 
@@ -118,12 +114,18 @@ static inline int __raw_spin_trylock(raw_spinlock_t *lock)
  */
 #if !defined(CONFIG_GENERIC_LOCKBREAK) || defined(CONFIG_DEBUG_LOCK_ALLOC)
 
+/** 20160611
+ * spinlock을 획득하는 함수
+ *
+ * SMP 환경에서 사용 가능하도록 원자성과 비선점성을 보장해야 한다.
+ * irq를 막고, 선점불가 상태에서 아키텍쳐에서 제공하는 함수를 사용해 락을 잡는다.
+ **/
 static inline unsigned long __raw_spin_lock_irqsave(raw_spinlock_t *lock)
 {
 	unsigned long flags;
 
 	/** 20121124
-	 * flags에 cpsr 저장
+	 * irq 상태를 flag에 저장하고 disable 시킨다.
 	 **/
 	local_irq_save(flags);
 	/** 20121124
@@ -225,20 +227,26 @@ static inline void __raw_spin_unlock(raw_spinlock_t *lock)
 	preempt_enable();
 }
 
+/** 20160611
+ * spinlock 해제함수.
+ *
+ * spinlock을 해제하고 irq 상태를 flag로부터 복원하고 선점 가능상태로 만든다.
+ **/
 static inline void __raw_spin_unlock_irqrestore(raw_spinlock_t *lock,
 					    unsigned long flags)
 {
-/** 20121201
- * #ifdef CONFIG_DEBUG_LOCK_ALLOC -> 설정되어 있지 않으면
- * #define spin_release(l, n, i)  do { } while (0)
- **/
+	/** 20121201
+	 * #ifdef CONFIG_DEBUG_LOCK_ALLOC -> 설정되어 있지 않으면
+	 * #define spin_release(l, n, i)  do { } while (0)
+	 **/
 	spin_release(&lock->dep_map, 1, _RET_IP_);
 	do_raw_spin_unlock(lock);
 	local_irq_restore(flags);
 	preempt_enable();
 }
+
 /** 20131109
- * spin lock을 해제하고 irq를 enable한다
+ * spin lock을 해제하고 irq를 enable시키고 선점 가능 상태로 만든다.
  **/
 static inline void __raw_spin_unlock_irq(raw_spinlock_t *lock)
 {
@@ -256,7 +264,7 @@ static inline void __raw_spin_unlock_irq(raw_spinlock_t *lock)
 	 **/
 	local_irq_enable();
 	/** 20131109
-	 * 정의 되어 있지 않으므로 NULL
+	 * 선점 가능 상태로 만든다.
 	 **/
 	preempt_enable();
 }
