@@ -2685,6 +2685,11 @@ static void finish_task_switch(struct rq *rq, struct task_struct *prev)
 #ifdef CONFIG_SMP
 
 /* assumes rq->lock is held */
+/** 20160618
+ * schedule 전에 sched_class의 pre_schedule 콜백을 호출한다.
+ *
+ * rq->lock은 홀드된 상태.
+ **/
 static inline void pre_schedule(struct rq *rq, struct task_struct *prev)
 {
 	if (prev->sched_class->pre_schedule)
@@ -4120,6 +4125,11 @@ static inline void schedule_debug(struct task_struct *prev)
 	schedstat_inc(this_rq(), sched_count);
 }
 
+/** 20160618
+ * 이전 task를 schedule out 하기 위한 콜백을 호출한다.
+ *
+ * sched_class queue의 끝에 다시 추가하는 방식으로 구현되어 있다.
+ **/
 static void put_prev_task(struct rq *rq, struct task_struct *prev)
 {
 	if (prev->on_rq || rq->skip_clock_update < 0)
@@ -4234,6 +4244,9 @@ need_resched:
 		switch_count = &prev->nvcsw;
 	}
 
+	/** 20160618
+	 * schedule 전에 이전 task에 대한 처리를 해준다.
+	 **/
 	pre_schedule(rq, prev);
 
 	/** 20150117
@@ -4243,14 +4256,23 @@ need_resched:
 		idle_balance(cpu, rq);
 
 	put_prev_task(rq, prev);
+	/** 20160618
+	 * 다음 실행할 task를 선택한다.
+	 **/
 	next = pick_next_task(rq);
+	/** 20160618
+	 * 이전 task에서 NEED_RESCHED 플래그를 제거한다.
+	 **/
 	clear_tsk_need_resched(prev);
 	rq->skip_clock_update = 0;
 
 	if (likely(prev != next)) {
+		/** 20160618
+		 * task switching 횟수 증가.
+		 **/
 		rq->nr_switches++;
 		/** 20160402
-		 * runqueue의 curr를 switching할 task로 지정한다.
+		 * switching할 task를 runqueue의 curr로 지정한다.
 		 **/
 		rq->curr = next;
 		++*switch_count;
