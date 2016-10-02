@@ -448,6 +448,9 @@ struct rq {
 	 **/
 	struct task_struct *curr, *idle, *stop;
 	unsigned long next_balance;
+	/** 20160625
+	 * context switching 하기 전에 이전 task의 mm 을 저장한다.
+	 **/
 	struct mm_struct *prev_mm;
 
 	/** 20150530
@@ -817,6 +820,9 @@ static inline int task_running(struct rq *rq, struct task_struct *p)
 #ifndef prepare_arch_switch
 # define prepare_arch_switch(next)	do { } while (0)
 #endif
+/** 20160625
+ * finish_arch_switch 정의하지 않음.
+ **/
 #ifndef finish_arch_switch
 # define finish_arch_switch(prev)	do { } while (0)
 #endif
@@ -844,7 +850,7 @@ static inline void prepare_lock_switch(struct rq *rq, struct task_struct *next)
 }
 
 /** 20160130
- * prev task의 switch lock을 해제한다.
+ * prev task의 switch lock을 해제하고 CPU migrate lock을 해제한다.
  *
  * prepare_lock_switch와 대응되는 부분.
  **/

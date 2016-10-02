@@ -1,22 +1,22 @@
 #include <asm/unwind.h>
 
 #if __LINUX_ARM_ARCH__ >= 6
-/** 20121208
-_set_bit일 경우 r0 : nr, r1 : p, instr : orr 
-  #define ATOMIC_BITOP(name,nr,p)		_##name(nr,p)
- **/
+	/** 20121208
+	 * _set_bit일 경우 r0 : nr, r1 : p, instr : orr 
+	 * #define ATOMIC_BITOP(name,nr,p)		_##name(nr,p)
+	 **/
 	.macro	bitop, name, instr
 ENTRY(	\name		)
   /** 20121208
-  UNWIND : unwind table에 등록해서 exeption이 발생했을 때 backtrace할 수 있는 정보를 제공하는 듯 ???
-  [참고] http://sourceware.org/binutils/docs/as/ARM-Unwinding-Tutorial.html
-         https://wiki.linaro.org/KenWerner/Sandbox/libunwind#exception_index_table_entry
+   * UNWIND : unwind table에 등록해서 exeption이 발생했을 때 backtrace할 수 있는 정보를 제공하는 듯 ???
+   * [참고] http://sourceware.org/binutils/docs/as/ARM-Unwinding-Tutorial.html
+   *   https://wiki.linaro.org/KenWerner/Sandbox/libunwind#exception_index_table_entry
    **/
   /** 20121208
-  1. word-aligned를 체크하여 data abort를 발생 시키는 듯 ???
-  2. 32비트 word 단위연산을 위해 and r3, r0, #31을 수행한다
-  3. r1에서 해당되는 비트를 찾는다
-  4. 비트 연산을 atomic하게 수행한다
+   * 1. word-aligned를 체크하여 data abort를 발생 시키는 듯 ???
+   * 2. 32비트 word 단위연산을 위해 and r3, r0, #31을 수행한다
+   * 3. r1에서 해당되는 비트를 찾는다
+   * 4. 비트 연산을 atomic하게 수행한다
    **/
 UNWIND(	.fnstart	)
 	ands	ip, r1, #3
@@ -37,12 +37,12 @@ ENDPROC(\name		)
 	.endm
 
 	.macro	testop, name, instr, store
-/** 20130406    
- * [참고] arm assembly 명령어 http://downrg.com/417
- *
- *      test_and_set_bit(idx, bdata->node_bootmem_map)
- * c.g. testop	_test_and_set_bit, orreq, streq
- **/
+	/** 20130406    
+	 * [참고] arm assembly 명령어 http://downrg.com/417
+	 *
+	 *      test_and_set_bit(idx, bdata->node_bootmem_map)
+	 * c.g. testop	_test_and_set_bit, orreq, streq
+	 **/
 ENTRY(	\name		)
 UNWIND(	.fnstart	)
 	/** 20130406    

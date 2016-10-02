@@ -2567,6 +2567,9 @@ fire_sched_out_preempt_notifiers(struct task_struct *curr,
 
 #else /* !CONFIG_PREEMPT_NOTIFIERS */
 
+/** 20160625
+ * CONFIG_PREEMPT_NOTIFIERS 정의하지 않았음.
+ **/
 static void fire_sched_in_preempt_notifiers(struct task_struct *curr)
 {
 }
@@ -2644,6 +2647,9 @@ static void finish_task_switch(struct rq *rq, struct task_struct *prev)
 	struct mm_struct *mm = rq->prev_mm;
 	long prev_state;
 
+	/** 20160625
+	 * runqueue에 저장했던 이전 mm을 제거한다. 
+	 **/
 	rq->prev_mm = NULL;
 
 	/*
@@ -2666,6 +2672,9 @@ static void finish_task_switch(struct rq *rq, struct task_struct *prev)
 #ifdef __ARCH_WANT_INTERRUPTS_ON_CTXSW
 	local_irq_enable();
 #endif /* __ARCH_WANT_INTERRUPTS_ON_CTXSW */
+	/** 20160625
+	 * runqueue의 lock을 해제하고 schedule lock을 해제한다.
+	 **/
 	finish_lock_switch(rq, prev);
 	finish_arch_post_lock_switch();
 

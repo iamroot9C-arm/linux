@@ -18,6 +18,8 @@
 #include <linux/lockdep.h>
 
 /** 20130427    
+ * spinlock 구조체 중 순수 spinlock의 기능에 해당하는 구조체.
+ *
  * raw_lock 외의 다른 구조체 멤버변수는 CONFIG되어 있지 않음
  **/
 typedef struct raw_spinlock {
@@ -74,6 +76,11 @@ typedef struct raw_spinlock {
  **/
 #define DEFINE_RAW_SPINLOCK(x)	raw_spinlock_t x = __RAW_SPIN_LOCK_UNLOCKED(x)
 
+/** 20160625
+ * spinlock 구조체.
+ *
+ * raw_spinlock과 DEBUG LOCK ALLOC이 union으로 선언.
+ **/
 typedef struct spinlock {
 	union {
 		struct raw_spinlock rlock;

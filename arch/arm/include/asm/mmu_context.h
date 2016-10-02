@@ -62,7 +62,7 @@ void __init_new_context(struct task_struct *tsk, struct mm_struct *mm);
 void __new_context(struct mm_struct *mm);
 void cpu_set_reserved_ttbr0(void);
 
-/**
+/** 20160604
  * mm에 새로운 context를 설정하고, 레지스터에 그 정보를 설정한다.
  **/
 static inline void switch_new_context(struct mm_struct *mm)
@@ -145,10 +145,18 @@ static inline void check_and_switch_context(struct mm_struct *mm,
  **/
 #define init_new_context(tsk,mm)	(__init_new_context(tsk,mm),0)
 
+/** 20160625
+ * SWITCH_MM 플래그를 조회하고 클리어한다.
+ * 지연되어 있었다면 context switch 한다.
+ **/
 #define finish_arch_post_lock_switch \
 	finish_arch_post_lock_switch
 static inline void finish_arch_post_lock_switch(void)
 {
+	/** 20160625
+	 * TIF_SWITCH_MM 플래그를 리턴하고 클리어한다.
+	 * 설정되어 있다면 해당 mm으로 switch 한다.
+	 **/
 	if (test_and_clear_thread_flag(TIF_SWITCH_MM))
 		switch_new_context(current->mm);
 }

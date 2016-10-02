@@ -215,6 +215,9 @@ pmd_populate(struct mm_struct *mm, pmd_t *pmdp, pgtable_t ptep)
 {
 	__pmd_populate(pmdp, page_to_phys(ptep), _PAGE_USER_TABLE);
 }
+/** 20160625
+ * pmd entry가 가리키는 page 구조체를 리턴한다.
+ **/
 #define pmd_pgtable(pmd) pmd_page(pmd)
 
 #endif /* CONFIG_MMU */

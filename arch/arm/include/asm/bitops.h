@@ -196,11 +196,8 @@ extern int _find_next_bit_be(const unsigned long *p, int size, int offset);
 /** 20121117
  * _set_bit(nr, p)의 정의가 어딘가 있어야 함. 
  * 	arch/arm/lib/setbit.S에 bitop macro를 통해 _set_bit(nr, p)가 정의됨. 
- *
- * 	20121117 오늘 여기까지 분석함. bitop macro는 보지 않음. 
- */
-/** 20121208
- * atomic bit operation set_bit 분석함
+ ** 20121208
+ * atomic bit operation set_bit 분석
  **/
 #define set_bit(nr,p)			ATOMIC_BITOP(set_bit,nr,p)
 #define clear_bit(nr,p)			ATOMIC_BITOP(clear_bit,nr,p)

@@ -103,6 +103,12 @@ static inline int test_ti_thread_flag(struct thread_info *ti, int flag)
 	return test_bit(flag, (unsigned long *)&ti->flags);
 }
 
+/** 20160625
+ * set_thread_flag : 현재 task의 thread_info에 'flag'를 설정한다.
+ * clear_thread_flag : 현재 task의 thread_info에 'flag'를 제거한다.
+ * test_and_set_thread_flag : 현재 task의 thread_info의 'flag'를 리턴하고 설정한다.
+ * test_and_clear_ti_thread_flag : 현재 task의 thread_info의 'flag'를 리턴하고 제거한다.
+ **/
 #define set_thread_flag(flag) \
 	set_ti_thread_flag(current_thread_info(), flag)
 #define clear_thread_flag(flag) \

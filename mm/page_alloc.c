@@ -980,8 +980,12 @@ static void free_pcppages_bulk(struct zone *zone, int count,
 		 */
 		/** 20130831    
 		 * pcp->lists에서 MIGRATE_UNMOVABLE부터 MIGRATE_PCPTYPES 전까지 돌며
-		 * lists를 성공적으로 가져올 때까지 반복한다.
-		 * batch_free는 반복하기 전마다 증가한다.
+		 * 빈 리스트가 아닌 것을 찾는다.
+		 *
+		 * 라운드 로빈 방식으로 리스트로부터 페이지를 제거한다.
+		 * batch_free 카운트는 empty list를 만날 때마다 증가된다.
+		 * empty list 주위를 지나치게 스피닝 하는대신,
+		 * 더 가득찬 리스트로부터 보다 많은 페이지를 해제하기 위한 것이다.
 		 **/
 		do {
 			batch_free++;
@@ -992,7 +996,7 @@ static void free_pcppages_bulk(struct zone *zone, int count,
 
 		/* This is the only non-empty list. Free them all. */
 		/** 20130831    
-		 * batch_free가 MIGRATE_PCPTYPES이라면 
+		 * batch_free가 MIGRATE_PCPTYPES이라면 non-empty 리스트가 하나이다.
 		 * batch_free를 to_free로 지정
 		 **/
 		if (batch_free == MIGRATE_PCPTYPES)

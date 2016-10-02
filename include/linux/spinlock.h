@@ -101,7 +101,7 @@ do {								\
 
 #else
 /** 20130427    
- * lock 구조체 초기화
+ * raw spinlock을 unlocked 상태로 초기화.
  **/
 # define raw_spin_lock_init(lock)				\
 	do { *(lock) = __RAW_SPIN_LOCK_UNLOCKED(lock); } while (0)
@@ -314,6 +314,8 @@ static inline raw_spinlock_t *spinlock_check(spinlock_t *lock)
 }
 
 /** 20121117
+ * spinlock을 unlocked 상태로 초기화 한다.
+ *
  * spinlock_check(_lock) ???
  * 이건 무엇을 위한걸까요
  */
@@ -324,17 +326,11 @@ do {							\
 } while (0)
 /** 20121117
 raw_spin_lock_init(&(_lock)->rlock);		
-
  *(lock) = __RAW_SPIN_LOCK_UNLOCKED(lock);
-
  *(lock) = (raw_spinlock_t) __RAW_SPIN_LOCK_INITIALIZER(lock)
- 
  *(lock) = (raw_spinlock_t) { .raw_lock = __ARCH_SPIN_LOCK_UNLOCKED;}
-
  (_lock)->rlock = (raw_spinlock_t) { .raw_lock = __ARCH_SPIN_LOCK_UNLOCKED;}
- 
  (_lock)->rlock = (raw_spinlock_t) { .raw_lock = { { 0 } };}
-
  */
 /** 20130706    
  * spin_lock 실행 함수

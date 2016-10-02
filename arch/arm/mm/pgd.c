@@ -139,6 +139,9 @@ void pgd_free(struct mm_struct *mm, pgd_t *pgd_base)
 	if (!pgd_base)
 		return;
 
+	/** 20160625
+	 * index 0에 해당하는 pgd, pud, pmd를 받아온다.
+	 **/
 	pgd = pgd_base + pgd_index(0);
 	if (pgd_none_or_clear_bad(pgd))
 		goto no_pgd;
@@ -151,6 +154,9 @@ void pgd_free(struct mm_struct *mm, pgd_t *pgd_base)
 	if (pmd_none_or_clear_bad(pmd))
 		goto no_pmd;
 
+	/** 20160625
+	 * pmd entry가 가리키는 page (pte table) 주소를 리턴.
+	 **/
 	pte = pmd_pgtable(*pmd);
 	pmd_clear(pmd);
 	pte_free(mm, pte);
