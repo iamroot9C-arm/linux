@@ -165,6 +165,8 @@
 /** 20140927    
  * CONFIG_PREEMPT_COUNT가 설정되어 있는 경우
  * IRQ_EXIT_OFFSET을 HARDIRQ_OFFSET 보다 하나 작은 값으로 설정한다.
+ *
+ * preempt_count는 softirq 등의 pending도 검사한다.
  **/
 #ifdef CONFIG_PREEMPT_COUNT
 # define preemptible()	(preempt_count() == 0 && !irqs_disabled())

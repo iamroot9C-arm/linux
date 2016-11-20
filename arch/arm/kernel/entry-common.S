@@ -553,6 +553,7 @@ local_restart:
 	 *     pc = tbl + (scno * 4);
 	 *
 	 * 실제 system call 번호 : arch/arm/include/asm/unistd.h
+	 * table 위치 : arch/arm/kernel/calls.S
 	 **/
 	cmp	scno, #NR_syscalls		@ check upper syscall limit
 	adr	lr, BSYM(ret_fast_syscall)	@ return address

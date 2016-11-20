@@ -387,9 +387,10 @@ extern struct root_domain def_root_domain;
  * acquire operations must be ordered by ascending &runqueue.
  */
 /** 20140426
- * sched_init에서 초기화.
+ * 스케쥴링의 대상이 되는 per-cpu runqueue.
  *
- * spinlock으로 보호됨.
+ * sched_init에서 초기화. spinlock으로 보호됨.
+ * locking rule: 복수의 runqueue에 lock을 걸 때(로드밸런싱이나 thread migration시)는 ascending 순으로 건다.
  **/
 struct rq {
 	/* runqueue lock: */

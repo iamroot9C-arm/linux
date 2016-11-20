@@ -16,7 +16,13 @@
  * up and requests are guaranteed to be served as long as the target
  * cpus are online.
  */
-/** 20150530    
+/** 20161120
+ * stop_cpu[s]는 단순하게 구현된 per-cpu 최대 우선순위 cpu 독점 매커니즘이다.
+ * 호출함수는 하나 또는 다수의 cpu들에서 non-sleeping 함수가
+ * 다른 프로세스들을 선점하고 완료될 때까지 cpu들을 독점하고 수행되도록 지정할 수 있다.
+ * 
+ * 이를 위해 필요한 리소스는 cpu가 up될 때 선할당되며, 타겟 cpu들이 온라인된 동안
+ * 제공되는 것이 보장된다.
  **/
 typedef int (*cpu_stop_fn_t)(void *arg);
 
