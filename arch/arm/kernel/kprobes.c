@@ -194,6 +194,11 @@ singlestep_skip(struct kprobe *p, struct pt_regs *regs)
 #endif
 }
 
+/** 20161126
+ * original instruction을 호출한다.
+ *
+ * arm의 경우 arm_singlestep을 등록한다.
+ **/
 static inline void __kprobes
 singlestep(struct kprobe *p, struct pt_regs *regs, struct kprobe_ctlblk *kcb)
 {
@@ -212,6 +217,9 @@ void __kprobes kprobe_handler(struct pt_regs *regs)
 	struct kprobe *p, *cur;
 	struct kprobe_ctlblk *kcb;
 
+	/** 20161126
+	 * kprobe control block 리턴
+	 **/
 	kcb = get_kprobe_ctlblk();
 	cur = kprobe_running();
 
@@ -297,6 +305,12 @@ void __kprobes kprobe_handler(struct pt_regs *regs)
 	}
 }
 
+/** 20161126
+ * kprobe용으로 등록한 instruction에 의해 trap이 발생한 경우
+ * 호출되는 핸들러
+ *
+ * - 인터럽트 disable 상태
+ **/
 static int __kprobes kprobe_trap_handler(struct pt_regs *regs, unsigned int instr)
 {
 	unsigned long flags;
@@ -595,6 +609,15 @@ static struct undef_hook kprobes_thumb32_break_hook = {
 
 #else  /* !CONFIG_THUMB2_KERNEL */
 
+/** 20161126
+ * kprobes 사용을 위해 undef trap 발생시 호출할 hook을 등록
+ *
+ * arm instruction break hook
+ *
+ * instr_mask를 씌워 instr_val이고,
+ * cpsr(thumb 모드인지 판단) mask를 씌워 cpsr이 나오면
+ * 해당 .fn을 호출해 처리한다.
+ **/
 static struct undef_hook kprobes_arm_break_hook = {
 	.instr_mask	= 0x0fffffff,
 	.instr_val	= KPROBE_ARM_BREAKPOINT_INSTRUCTION,
@@ -605,6 +628,12 @@ static struct undef_hook kprobes_arm_break_hook = {
 
 #endif /* !CONFIG_THUMB2_KERNEL */
 
+/** 20161126
+ * arm용 kprobe 등록 함수.
+ *
+ * - architecture 버전에 따른 처리 코드
+ * - undef로 처리할 instruction 등록
+ **/
 int __init arch_init_kprobes()
 {
 	arm_kprobe_decode_init();

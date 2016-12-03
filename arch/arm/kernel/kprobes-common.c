@@ -50,6 +50,9 @@ void __init find_str_pc_offset(void)
 
 bool load_write_pc_interworks;
 
+/** 20161126
+ * load write pc interworking???
+ **/
 void __init test_load_write_pc_interworking(void)
 {
 	int arch = cpu_architecture();

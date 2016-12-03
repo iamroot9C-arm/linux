@@ -54,6 +54,10 @@
 #include <asm/errno.h>
 #include <asm/uaccess.h>
 
+/** 20161126
+ * kprobe는 hash table 형태로 등록된 entry를 관리한다.
+ * hash table의 크기를 선언.
+ **/
 #define KPROBE_HASH_BITS 6
 #define KPROBE_TABLE_SIZE (1 << KPROBE_HASH_BITS)
 
@@ -337,6 +341,10 @@ struct kprobe __kprobes *get_kprobe(void *addr)
 	struct hlist_node *node;
 	struct kprobe *p;
 
+	/** 20161126
+	 * kprobe table에서 addr에 해당하는 list에서 addr과 일치하는
+	 * 노드를 찾아 리턴한다.
+	 **/
 	head = &kprobe_table[hash_ptr(addr, KPROBE_HASH_BITS)];
 	hlist_for_each_entry_rcu(p, node, head, hlist) {
 		if (p->addr == addr)
@@ -1951,6 +1959,12 @@ static struct notifier_block kprobe_module_nb = {
 	.priority = 0
 };
 
+/** 20161126
+ * kprobes 초기화 함수.
+ *
+ * - 자료구조 초기화
+ * - undef hook 등록
+ **/
 static int __init init_kprobes(void)
 {
 	int i, err = 0;
@@ -1962,6 +1976,9 @@ static int __init init_kprobes(void)
 
 	/* FIXME allocate the probe table, currently defined statically */
 	/* initialize all list heads */
+	/** 20161126
+	 * kprobe table의 각 hlist head 초기화
+	 **/
 	for (i = 0; i < KPROBE_TABLE_SIZE; i++) {
 		INIT_HLIST_HEAD(&kprobe_table[i]);
 		INIT_HLIST_HEAD(&kretprobe_inst_table[i]);
@@ -2013,6 +2030,10 @@ static int __init init_kprobes(void)
 	/* By default, kprobes are armed */
 	kprobes_all_disarmed = false;
 
+	/** 20161126
+	 * 각 아키텍쳐용 kprobes 초기화 함수 호출.
+	 * 주요 역할로는 register_undef_hook
+	 **/
 	err = arch_init_kprobes();
 	if (!err)
 		err = register_die_notifier(&kprobe_exceptions_nb);
@@ -2021,6 +2042,9 @@ static int __init init_kprobes(void)
 
 	kprobes_initialized = (err == 0);
 
+	/** 20161126
+	 * 성공적으로 초기화 되었으면 smoke test를 수행한다.
+	 **/
 	if (!err)
 		init_test_probes();
 	return err;

@@ -30,6 +30,12 @@ static noinline u32 kprobe_target(u32 value)
 	return (value / div_factor);
 }
 
+/** 20161126
+ * kprobe smoke test용 함수.
+ *
+ * 단순히 나누기 값을 pre/post에서 수행해 비교하는데,
+ * 굳이 나누기 연산을 택한 이유는???
+ **/
 static int kp_pre_handler(struct kprobe *p, struct pt_regs *regs)
 {
 	preh_val = (rand1 / div_factor);
@@ -357,6 +363,9 @@ static int test_kretprobes(void)
 }
 #endif /* CONFIG_KRETPROBES */
 
+/** 20161126
+ * 본격적으로 사용하기에 앞서 기본적인 동작을 테스트한다.
+ **/
 int init_test_probes(void)
 {
 	int ret;

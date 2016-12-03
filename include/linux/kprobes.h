@@ -111,6 +111,9 @@ struct kprobe {
 	kprobe_opcode_t opcode;
 
 	/* copy of the original instruction */
+	/** 20161126
+	 * original instruction
+	 **/
 	struct arch_specific_insn ainsn;
 
 	/*
@@ -205,6 +208,9 @@ struct kprobe_blackpoint {
 };
 
 #ifdef CONFIG_KPROBES
+/** 20161126
+ * percpu로 current_kprobe와 kprobe_ctlblk 선언
+ **/
 DECLARE_PER_CPU(struct kprobe *, current_kprobe);
 DECLARE_PER_CPU(struct kprobe_ctlblk, kprobe_ctlblk);
 
@@ -314,6 +320,9 @@ static inline void reset_current_kprobe(void)
 	__this_cpu_write(current_kprobe, NULL);
 }
 
+/** 20161126
+ * percpu로 선언된 kprobe_ctlblk 중 현재 cpu에 해당하는 변수 주소 리턴
+ **/
 static inline struct kprobe_ctlblk *get_kprobe_ctlblk(void)
 {
 	return (&__get_cpu_var(kprobe_ctlblk));

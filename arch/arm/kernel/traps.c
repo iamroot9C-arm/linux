@@ -432,6 +432,15 @@ static int call_undef_hook(struct pt_regs *regs, unsigned int instr)
  * 
  * 이 함수는 브랜치로 들어왔기 때문에 __und_fault 다음으로 리턴된다.
  *
+ * __und_svc:
+ *	svc_entry
+ *	__und_svc_fault
+ *
+ * __und_svc_fault:
+ *	bl __und_fault
+ *		b do_undefinstr.
+ *			call_undef_hook	// register_undef_hook(fn)
+ *
  * ptrace에 의한 und exception도 이 함수를 통해 SIGTRAP을 발생시킨다.
  **/
 asmlinkage void __exception do_undefinstr(struct pt_regs *regs)

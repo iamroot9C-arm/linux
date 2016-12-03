@@ -58,6 +58,9 @@ extern kprobe_check_cc * const kprobe_condition_checks[16];
 #if __LINUX_ARM_ARCH__ >= 7
 
 /* str_pc_offset is architecturally defined from ARMv7 onwards */
+/** 20161126
+ * find_str_pc_offset()가 필요 없음
+ **/
 #define str_pc_offset 8
 #define find_str_pc_offset()
 

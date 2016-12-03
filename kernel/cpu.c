@@ -168,6 +168,14 @@ EXPORT_SYMBOL_GPL(put_online_cpus);
 /** 20150808    
  * hotplug operation 작업 전에, refcount가 0인 경우에만 진입하도록 함.
  * cpu_maps_update_begin 이후 호출되므로 하나의 writer만 활성화되는 것이 보장된다.
+ *
+ *                                  get_online_cpus()
+ * cpu_hotplug_begin
+ *      if (refcount > 0)
+ *		sleep               put_online_cpus()
+ *                               <-     wake_up_process()
+ * hotplug routine
+ * cpu_hotplug_done
  **/
 static void cpu_hotplug_begin(void)
 {
@@ -178,6 +186,9 @@ static void cpu_hotplug_begin(void)
 
 	/** 20150808    
 	 * refcount가 0일 때(get_online_cpus가 아닌 상태)까지 lock을 잡은 상태로 리턴.
+	 *
+	 * get_online_cpus() 호출한 경우 refcount가 증가되고,
+	 * sleep 상태로 스케쥴링 된다.
 	 **/
 	for (;;) {
 		mutex_lock(&cpu_hotplug.lock);

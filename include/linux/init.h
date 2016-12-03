@@ -249,6 +249,9 @@ extern bool initcall_debug;
 #define late_initcall(fn)		__define_initcall("7",fn,7)
 #define late_initcall_sync(fn)		__define_initcall("7s",fn,7s)
 
+/** 20161126
+ * __initcall은 device_initcall.
+ **/
 #define __initcall(fn) device_initcall(fn)
 
 #define __exitcall(fn) \
@@ -318,6 +321,11 @@ void __init parse_early_options(char *cmdline);
  * builtin) or at module insertion time (if a module).  There can only
  * be one per module.
  */
+/** 20161126
+ * module은 __initcall.
+ *
+ * 현재 코드에서는 device_initcall.
+ **/
 #define module_init(x)	__initcall(x);
 
 /**
