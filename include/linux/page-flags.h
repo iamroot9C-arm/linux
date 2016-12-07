@@ -600,15 +600,19 @@ __PAGEFLAG(Head, compound)
 
 /** 20130803    
  * page flags를 보고 page tail인지 확인한다.
+ *
+ * PG_head_tail_mask가 설정되어 있다면 page tail이다.
+ *
+ * prep_compound_page에서 head 외 페이지들은 모두 PG_head_tail_mask 표시함.
  **/
 static inline int PageTail(struct page *page)
 {
-	/** 20130803    
-	 * PG_head_tail_mask가 설정되어 있다면 page tail이다.
-	 **/
 	return ((page->flags & PG_head_tail_mask) == PG_head_tail_mask);
 }
 
+/** 20161207
+ * PG_head_tail_mask 표시, 해제
+ **/
 static inline void __SetPageTail(struct page *page)
 {
 	page->flags |= PG_head_tail_mask;

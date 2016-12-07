@@ -164,6 +164,9 @@ struct pt_regs {
 #define processor_mode(regs) \
 	((regs)->ARM_cpsr & MODE_MASK)
 
+/** 20161206
+ * pt_regs를 조사해 IRQ/FIQ가 허용되어 있는지 검사
+ **/
 #define interrupts_enabled(regs) \
 	(!((regs)->ARM_cpsr & PSR_I_BIT))
 

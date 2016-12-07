@@ -315,16 +315,19 @@ EXPORT_SYMBOL(vmalloc_to_pfn);
 #define VM_LAZY_FREEING	0x02
 #define VM_VM_AREA	0x04
 
-/** 20140329    
+/** 20140329
+ * alloc_vmap_area
+ *
+ * 다음 두 가지 자료구조로 관리됨
+ *	rbtree : addr 순으로 sort됨. addr로 vmap_area를 검색할 때 사용
+ *	list   : addr 순으로 sort됨. vmap_area_list
+ *
  * alloc_vmap_area
  **/
 struct vmap_area {
 	unsigned long va_start;
 	unsigned long va_end;
 	unsigned long flags;
-	/** 20140329    
-	 * address를 기준으로 정렬되어 rbtree로 구성될 때 사용
-	 **/
 	struct rb_node rb_node;		/* address sorted rbtree */
 	struct list_head list;		/* address sorted list */
 	struct list_head purge_list;	/* "lazy purge" list */
@@ -347,8 +350,12 @@ static struct rb_root vmap_area_root = RB_ROOT;
 
 /* The vmap cache globals are protected by vmap_area_lock */
 /** 20140419    
+ * free(사용할 준비된)free_vmap_cache
+ *
  * alloc_vmap_area 에서 새로 추가된 vmap_area를 free_vmap_cache로 지정.
  * 동일 함수에서 vmap_area를 찾을 때 이 cache를 이용할 수 있는지 먼저 검사한다.
+ *
+ * __free_vmap_area에서는 해제할 vmap과 중첩되는 영역이 있으면 조정해준다.
  **/
 static struct rb_node *free_vmap_cache;
 static unsigned long cached_hole_size;
@@ -443,12 +450,13 @@ static void __insert_vmap_area(struct vmap_area *va)
 	 * 전체적인 구조 파악 필요???
 	 **/
 	/** 20140329    
-	 * 새로 추가한 vmap_area에 대해
-	 * rbtree에서의 이전 rb_node를 구해와 tmp에 저장
+	 * 새로 추가한 vmap_area에 대해 이전 rb_node를 받아온다.
 	 **/
 	tmp = rb_prev(&va->rb_node);
 	/** 20140329    
-	 * 이전 노드가 존재하는 경우, 그에 해당하는 struct vmap_area를 가져온다.
+	 * 정렬된 상태로 리스트에도 추가한다.
+	 *
+	 * 이전 노드가 존재하면, 이전 노드 다음에 추가한다.
 	 **/
 	if (tmp) {
 		struct vmap_area *prev;
@@ -460,7 +468,7 @@ static void __insert_vmap_area(struct vmap_area *va)
 		list_add_rcu(&va->list, &prev->list);
 	} else
 	/** 20140329    
-	 * 이전 노드가 존재하지 않는 경우 vmap_area_list의 다음에 추가한다.
+	 * 이전 rb 노드가 존재하지 않으면 vmap_area_list 다음에 추가한다.
 	 **/
 		list_add_rcu(&va->list, &vmap_area_list);
 }
@@ -473,7 +481,7 @@ static void purge_vmap_area_lazy(void);
  */
 /** 20140329    
  * vmap_area를 할당받고,
- * 자료구조(rbtree)를 조회해 적합한 addr를 가져온뒤,
+ * 자료구조(rbtree, list)를 조회해 적합한 addr를 가져온뒤,
  * 할당받은 vmap_area에 채우고,
  * 자료구조에 등록시킨다.
  **/
@@ -535,16 +543,13 @@ nocache:
 	 * free_vmap_cache가 존재한다면 먼저 cached에서 받아올 수 있는지 검사한다.
 	 **/
 	if (free_vmap_cache) {
-		/** 20140329    
-		 * free_vmap_cache가 존재하면 vmap_area 를 가져온다.
-		 **/
 		first = rb_entry(free_vmap_cache, struct vmap_area, rb_node);
 		/** 20140329    
-		 * first에서 va_end를 가져와 align 해서 addr에 저장.
+		 * cache 노드의 va_end를 정렬시켜 addr로 받아옴
 		 **/
 		addr = ALIGN(first->va_end, align);
 		/** 20140405    
-		 * vstart는 허용되는 range의 시작값 보다 작다면 해당 cache는 사용하지 못한다.
+		 * vstart(va 할당가능 구간) 보다 작다면 해당 cache는 사용하지 못한다.
 		 **/
 		if (addr < vstart)
 			goto nocache;
@@ -554,62 +559,64 @@ nocache:
 		if (addr + size - 1 < addr)
 			goto overflow;
 
+		/** 20161207
+		 * 이전에 해제한 vmap_cache를 list 순회의 first로 삼을 수 있다.
+		 **/
 	} else {
 		/** 20140329    
-		 * free_vmap_cache가 존재하지 않으면 
-		 *  vstart를 정렬해 addr에 저장.
+		 * free_vmap_cache가 존재하지 않으면 sort된 rbtree를 직접 뒤진다.
+		 *
+		 * vstart를 정렬해 addr에 저장.
 		 **/
 		addr = ALIGN(vstart, align);
 		/** 20140329    
-		 * 끝주소가 addr보다 작다면 size가 커서 overflow 발생
+		 * overflow check.
 		 **/
 		if (addr + size - 1 < addr)
 			goto overflow;
 
 		/** 20140329    
-		 * vmap_area_root에서부터 search하기 위해 n으로 가져옴
-		 * first는 NULL로 초기화 
+		 * rbtree root부터 search.
 		 **/
 		n = vmap_area_root.rb_node;
 		first = NULL;
 
+		/** 20161206
+		 * 일반적인 상황에서 할당받지 않은 va 영역을 찾기 위해
+		 * rb_tree의 leaf까지 찾아내려갈 것이다.
+		 **/
 		while (n) {
 			struct vmap_area *tmp;
-			/** 20140329    
-			 * rbtree를 순회하며 현재 n이 가리키는 vmap_area를 가져와
-			 **/
 			tmp = rb_entry(n, struct vmap_area, rb_node);
 			/** 20140329    
-			 * sort된 rbtree에서 addr(정렬된 vstart)를 각 rb_entry와 비교하며
+			 * rb_node의 va_end보다 addr(정렬된 vstart)이 작으면
+			 * 현재 rb_node가 first로 지정하고 왼쪽 순회
 			 **/
 			if (tmp->va_end >= addr) {
-				/** 20140405    
-				 * 현재 traverse 중인 rb_node의 va_end보다 작거나 같다면
-				 **/
 				first = tmp;
 				/** 20140405    
-				 * rb_node가 갖고 있는 va_start와 va_end사이에 addr이 포함되는 경우 break;
+				 * rb_node의 va_start~va_end 안에 addr이 포함되는 경우 break;
 				 **/
 				if (tmp->va_start <= addr)
 					break;
 				/** 20140405    
-				 * 현재 비교하는 rb_node의 va_start보다 addr이 작은 경우 왼쪽 순회
+				 * rb_node의 va_start보다 addr이 작은 경우 왼쪽 순회
+				 * 예를 들어 addr이 VMALLOC_START
 				 **/
 				n = n->rb_left;
 			} else
 				/** 20140405    
-				 * 현재 traverse 중인 rb_node의 va_end보다 크다면
+				 * se 중인 rb_node의 va_end보다 크다면
 				 * 오른쪽 순회
 				 **/
 				n = n->rb_right;
 		}
 
 		/** 20140329    
-		 * first가 NULL인 경우 found로 바로 이동해 다음 while block을 수행하지 않는다.
-		 *		- rb_tree의 가장 오른쪽 끝 노드까지 내려온 경우
+		 * first가 NULL인 경우 : addr(aligned vstart)이 rb_tree에 저장된
+		 *   vmap_area보다 큰 경우
 		 *
-		 * 20140405
-		 * first가 NULL이 아닌 경우 first는 비교를 시작할 위치를 갖고 있다.
+		 * first가 NULL이 아닌 경우 first는 list 비교를 시작할 노드.
 		 *
 		 * 즉, 이 routine은 현재 rb_tree 상의 node들이 갖고 있는 address range에서 홀을 찾는 과정과 같다.
 		 **/
@@ -618,6 +625,17 @@ nocache:
 	}
 
 	/* from the starting point, walk areas until a suitable hole is found */
+	/** 20161206
+	 * 새로운 vmap_area를 생성해 끼워넣을 적정한 위치를 찾기 위해
+	 * address로 정렬된 리스트를 순회한다.
+	 *
+	 * 캐시를 사용하는 경우:
+	 *	first는 cache node.
+	 *	addr = ALIGN(first->va_end, align);
+	 * rb_tree를 순회한 경우:
+	 *      first는 range에 따라 다르다. 편의상 가장 첫 노드라 가정
+	 *	addr = ALIGN(vstart, align);
+	 **/
 	while (addr + size > first->va_start && addr + size <= vend) {
 		if (addr + cached_hole_size < first->va_start)
 			cached_hole_size = first->va_start - addr;
@@ -626,14 +644,14 @@ nocache:
 			goto overflow;
 
 		/** 20140329    
-		 * list로 연결된 vmap_area 중 first가 last entry인 경우
-		 * found로 이동
+		 * first가 vmap_area_list에 연결된 마지막 노드인 경우
+		 * 그 다음 노드와 비교할 필요없이 해당 위치에 생성하면 된다.
 		 **/
 		if (list_is_last(&first->list, &vmap_area_list))
 			goto found;
 
 		/** 20140329    
-		 * last가 아닌 경우, sort되어 있는 list에서 다음 entry를 first로 삼는다.
+		 * last가 아닌 경우, 다음 entry(sort된 상태)의 주소와 비교한다.
 		 **/
 		first = list_entry(first->list.next,
 				struct vmap_area, list);
@@ -647,7 +665,7 @@ found:
 		goto overflow;
 
 	/** 20140329    
-	 * addr와 size를 바탕으로 vmap_area에 정보를 채운다.
+	 * vmap_area에 정보를 채운다.
 	 **/
 	va->va_start = addr;
 	va->va_end = addr + size;
@@ -2054,7 +2072,8 @@ EXPORT_SYMBOL_GPL(map_vm_area);
 /*** Old vmalloc interfaces ***/
 DEFINE_RWLOCK(vmlist_lock);
 
-/** 20140322    
+/** 20140322
+ * vm_struct를 관리하는 자료구조
  *
  * vmalloc_init 전 vmlist에 추가하는 부분
  *		vm_area_add_early
@@ -2558,7 +2577,7 @@ fail:
  *	kernel virtual space, using a pagetable protection of @prot.
  */
 /** 20140329    
- * start ~ end 사이에 해당하는 페이지를 할당 받아 가상 주소 공간에 mapping 하는 함수
+ * 페이지를 할당 받아 가상 주소 공간(start ~ end)에 mapping 하는 함수
  **/
 void *__vmalloc_node_range(unsigned long size, unsigned long align,
 			unsigned long start, unsigned long end, gfp_t gfp_mask,
@@ -2631,6 +2650,10 @@ fail:
  *	allocator with @gfp_mask flags.  Map them into contiguous
  *	kernel virtual space, using a pagetable protection of @prot.
  */
+/** 20161206
+ *
+ * VMALLOC_START ~ VMALLOC_END 영역에 매핑
+ **/
 static void *__vmalloc_node(unsigned long size, unsigned long align,
 			    gfp_t gfp_mask, pgprot_t prot,
 			    int node, const void *caller)
@@ -2646,6 +2669,9 @@ void *__vmalloc(unsigned long size, gfp_t gfp_mask, pgprot_t prot)
 }
 EXPORT_SYMBOL(__vmalloc);
 
+/** 20161206
+ * __vmalloc_node의 flags 전달 버전
+ **/
 static inline void *__vmalloc_node_flags(unsigned long size,
 					int node, gfp_t flags)
 {
@@ -2662,6 +2688,10 @@ static inline void *__vmalloc_node_flags(unsigned long size,
  *	For tight control over page level allocator and protection flags
  *	use __vmalloc() instead.
  */
+/** 20161206
+ *
+ * VA에서 연속적인 영역을 할당하는 함수.
+ **/
 void *vmalloc(unsigned long size)
 {
 	return __vmalloc_node_flags(size, -1, GFP_KERNEL | __GFP_HIGHMEM);

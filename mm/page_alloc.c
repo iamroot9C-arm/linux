@@ -4128,9 +4128,8 @@ EXPORT_SYMBOL(__alloc_pages_nodemask);
  * Common helper functions.
  */
 /** 20140705
- * 1. 메모리 할당을 하기 위한 인터페이스로 사용됨 (kmalloc으로도 호출됨)
- * 2. buddy로부터 물리적으로 연속적으로 2**order만큼 할당하여
- * 가상메모리주소를 반환한다
+ * 1. 메모리 할당을 하기 위한 인터페이스 (kmalloc에서도 호출)
+ * 2. buddy로부터 물리적으로 연속적으로 2**order만큼 할당하여 페이지의 VA 반환.
  */
 unsigned long __get_free_pages(gfp_t gfp_mask, unsigned int order)
 {

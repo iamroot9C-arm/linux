@@ -7,7 +7,7 @@
  * 'kernel.h' contains some often-used function prototypes etc
  */
 /** 20121222
- * x를 a단위로 round up 한다. 
+ * x를 a단위로 정렬(올림)
  *    mask의 역할을 하는 부분 : (typeof(x))(a) - 1
  * 20130420
  *    a가 1일 경우 (x) + 0 & ~0으로 x가 그대로 나온다.
@@ -48,7 +48,7 @@
 #define REPEAT_BYTE(x)	((~0ul / 0xff) * (x))
 
 /** 20130803    
- * x를 a단위로 ALIGN을 맞춘다 (__ALIGN_KERNEL에서 round up으로 구현)
+ * x를 a단위로 ALIGN을 맞춘다 (올림)
  *
  * PTR_ALIGN : pointer의 align을 맞춘다.
  **/

@@ -3724,6 +3724,9 @@ retry:
 	 * read mode and khugepaged takes it in write mode. So now it's
 	 * safe to run pte_offset_map().
 	 */
+	/** 20161206
+	 * pmd entry 중 address를 나타내는 pte 주소를 리턴
+	 **/
 	pte = pte_offset_map(pmd, address);
 
 	return handle_pte_fault(mm, vma, address, pte, pmd, flags);

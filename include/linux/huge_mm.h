@@ -170,6 +170,9 @@ static inline struct page *compound_trans_head(struct page *page)
 
 #define hpage_nr_pages(x) 1
 
+/** 20161206
+ * 현재 config에서는 CONFIG_TRANSPARENT_HUGEPAGE를 사용하지 않는다.
+ **/
 #define transparent_hugepage_enabled(__vma) 0
 
 #define transparent_hugepage_flags 0UL

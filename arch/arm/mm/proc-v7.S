@@ -406,7 +406,8 @@ __v7_setup_stack:
 
 	@ define struct processor (see <asm/proc-fns.h> and proc-macros.S)
 	/** 20151121    
-	 * 매크로로 v7_processor_functions 정의
+	 * struct processor를 정의하는 매크로 호출로
+	 * v7_processor_functions 정의. 호출시점은???
 	 **/
 	define_processor_functions v7, dabort=v7_early_abort, pabort=v7_pabort, suspend=1
 

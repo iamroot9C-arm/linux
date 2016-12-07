@@ -2907,8 +2907,8 @@ redo:
 		set_freepointer(s, object, c->freelist);
 
 	/** 20140315
-	 * 할당해제할 kmem_cache_cpu의 freelist에 등록되어 있는 
-	 * object에 대한 freelist 및 tid값과 현재 cpu의 
+	 * 할당해제할 kmem_cache_cpu의 freelist에 등록되어 있는
+	 * object에 대한 freelist 및 tid값과 현재 cpu의
 	 * freelist와 tid값을 비교해서 값이 같으면 object및 next_tid값을 갱신한다.
 	 **/
 		if (unlikely(!this_cpu_cmpxchg_double(
@@ -4131,6 +4131,12 @@ void kfree(const void *x)
 	if (unlikely(ZERO_OR_NULL_PTR(x)))
 		return;
 
+	/** 20161207
+	 * x가 속한 head page 정보를 가져온다.
+	 *
+	 * page가 slab이 아닐 경우, compound 페이지가 아니면 버그.
+	 * 한 페이지짜리는 가능성이 없나???
+	 **/
 	page = virt_to_head_page(x);
 	if (unlikely(!PageSlab(page))) {
 		BUG_ON(!PageCompound(page));

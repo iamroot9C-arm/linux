@@ -379,9 +379,7 @@ static inline void compound_unlock_irqrestore(struct page *page,
 
 /** 20130907    
  * compound page의 tail인 경우 first_page를 리턴하고,
- * 그렇지 않은 경우 page를 그대로 리턴하는 함수.
- *
- * compound page의 중간에 속한 page인 경우에는???
+ * 그렇지 않은 경우 page를 그대로 리턴
  **/
 static inline struct page *compound_head(struct page *page)
 {
@@ -456,6 +454,7 @@ static inline void get_page(struct page *page)
 /** 20140315
  * x가 가리키는 가상주소가 포함된 page에 대한 첫번째 주소를 리턴
  * slab에 대한 인스턴스를 얻어오기 위해 x(object)가 속해있는 page를 구한다.
+ * 이때 page가 compound_page라면 head를 받아온다.
  **/
 static inline struct page *virt_to_head_page(const void *x)
 {

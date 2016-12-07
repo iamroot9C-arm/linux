@@ -266,7 +266,7 @@
 	.endm
 
 /** 20151121    
- * struct processor 구조체에 해당하는 항목.
+ * struct processor 구조체에 해당하는 항목을 구성하는 매크로
  **/
 .macro define_processor_functions name:req, dabort:req, pabort:req, nommu=0, suspend=0
 	.type	\name\()_processor_functions, #object

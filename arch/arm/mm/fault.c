@@ -31,10 +31,18 @@
 #ifdef CONFIG_MMU
 
 #ifdef CONFIG_KPROBES
+/** 20161206
+ * kernel 모드였다면, kprobe가 동작 중인 경우 해당 kprobe에게 통보.
+ **/
 static inline int notify_page_fault(struct pt_regs *regs, unsigned int fsr)
 {
 	int ret = 0;
 
+	/** 20161206
+	 * kernel 모드에서 fault가 발생했다면
+	 *	kprobe가 동작 중인데 해당 kprobe의 fault_handler가 에러면
+	 *	1을 리턴.
+	 **/
 	if (!user_mode(regs)) {
 		/* kprobe_running() needs smp_processor_id() */
 		preempt_disable();
@@ -208,6 +216,12 @@ void do_bad_area(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
  * If we encountered a write fault, we must have write permission, otherwise
  * we allow any permission.
  */
+/** 20161206
+ * fault가 발생한 VMA의 퍼미션을 검사한다.
+ *
+ * write fault인 경우 write 권한이 있어야 하고, PrefetchAbort의 경우 실행권한이,
+ * 그 외의 경우 어떤 권한이라도 있으면 access_error가 아니다.
+ **/
 static inline bool access_error(unsigned int fsr, struct vm_area_struct *vma)
 {
 	unsigned int mask = VM_READ | VM_WRITE | VM_EXEC;
@@ -227,6 +241,9 @@ __do_page_fault(struct mm_struct *mm, unsigned long addr, unsigned int fsr,
 	struct vm_area_struct *vma;
 	int fault;
 
+	/** 20161206
+	 * mm에서 addr를 포함하는 vma를 찾아온다.
+	 **/
 	vma = find_vma(mm, addr);
 	fault = VM_FAULT_BADMAP;
 	if (unlikely(!vma))
@@ -239,6 +256,9 @@ __do_page_fault(struct mm_struct *mm, unsigned long addr, unsigned int fsr,
 	 * memory access, so we can handle it.
 	 */
 good_area:
+	/** 20161206
+	 * vma의 속성과 다른 access가 있었는지 검사해 에러처리한다.
+	 **/
 	if (access_error(fsr, vma)) {
 		fault = VM_FAULT_BADACCESS;
 		goto out;
@@ -265,6 +285,9 @@ do_page_fault(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
 	unsigned int flags = FAULT_FLAG_ALLOW_RETRY | FAULT_FLAG_KILLABLE |
 				(write ? FAULT_FLAG_WRITE : 0);
 
+	/** 20161206
+	 * page fault 통보 (현재는 kprobe에게) 결과 에러면 리턴
+	 **/
 	if (notify_page_fault(regs, fsr))
 		return 0;
 
@@ -279,6 +302,10 @@ do_page_fault(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
 	 * If we're in an interrupt or have no user
 	 * context, we must not take the fault..
 	 */
+	/** 20161206
+	 * atomic context이거나 kernel thread인 경우 user context가 존재하지
+	 * 않는다. 커널 폴트로 처리.
+	 **/
 	if (in_atomic() || !mm)
 		goto no_context;
 

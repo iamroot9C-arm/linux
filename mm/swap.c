@@ -172,14 +172,12 @@ skip_lock_tail:
 /** 20140111
  * page의 usage count를 감소.
  * 감소 결과 0이 되면 page를 해제한다.
- *
- * 자세한 분석은 생략???
  **/
 void put_page(struct page *page)
 {
 	/** 20140607    
-	 * compound page인 경우 put_compound_page로 해제.
-	 * put page를 해 usage count가 0인 경우 __put_single_page로 해제.
+	 * compound page인 경우 put_compound_page로 해제 (분석 생략???)
+	 * put page를 해 usage count가 0인 경우 __put_single_page로 해제
 	 **/
 	if (unlikely(PageCompound(page)))
 		put_compound_page(page);
