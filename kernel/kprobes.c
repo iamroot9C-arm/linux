@@ -916,6 +916,17 @@ static __kprobes struct kprobe *alloc_aggr_kprobe(struct kprobe *p)
 #endif /* CONFIG_OPTPROBES */
 
 /* Arm a kprobe with text_mutex */
+/** 20161203
+ * arm의 kprobe 등록함수. 
+ * text_mutex를 잡은 상태로 등록함수 수행
+ *
+ *	arm_kprobe
+ *		__arm_kprobe
+ *			arch_arm_kprobe
+ *				patch_text
+ *					stop_machine(patch_text_stop_machine, &patch, cpu_online_mask);
+ *						__patch_text(patch->addr, patch->insn);
+ **/
 static void __kprobes arm_kprobe(struct kprobe *kp)
 {
 	/*

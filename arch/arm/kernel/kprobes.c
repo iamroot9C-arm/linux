@@ -195,7 +195,7 @@ singlestep_skip(struct kprobe *p, struct pt_regs *regs)
 }
 
 /** 20161126
- * original instruction을 호출한다.
+ * kprobe handler에서 호출되어 original instruction을 호출한다.
  *
  * arm의 경우 arm_singlestep을 등록한다.
  **/
@@ -306,10 +306,8 @@ void __kprobes kprobe_handler(struct pt_regs *regs)
 }
 
 /** 20161126
- * kprobe용으로 등록한 instruction에 의해 trap이 발생한 경우
- * 호출되는 핸들러
- *
- * - 인터럽트 disable 상태
+ * kprobe용으로 등록한 instruction에 의해 trap이 발생한 경우 호출.
+ * 인터럽트 금지 상태로 kprobe handler를 수행한다.
  **/
 static int __kprobes kprobe_trap_handler(struct pt_regs *regs, unsigned int instr)
 {
