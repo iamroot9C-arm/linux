@@ -1480,8 +1480,15 @@ struct task_struct {
 #endif
 
 	/** 20160227    
+	 * mm : 프로세스가 소유한 메모리 디스크립터
+	 * active_mm : 프로세스가 실행 중에 사용하는 메모리 디스크립터
+	 *
 	 * kernel thread의 경우 mm은 NULL
 	 * user process의 경우 context switch시 mm을 active_mm으로 설정하여 동일.
+	 *
+	 * kernel thread가 실행되기 위해 선택되면
+	 * 의미없는 TLB, cache 플러시를 막기 위해, 커널 스레드는 직전에 수행된
+	 * 일반 프로세스의 active_mm을 사용한다.
 	 **/
 	struct mm_struct *mm, *active_mm;
 #ifdef CONFIG_COMPAT_BRK

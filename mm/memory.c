@@ -2674,6 +2674,11 @@ static inline void cow_user_page(struct page *dst, struct page *src, unsigned lo
  * but allow concurrent faults), with pte both mapped and locked.
  * We return with mmap_sem still held, but pte unmapped and unlocked.
  */
+/** 20161207
+ *
+ * 페이지가 존재하고, 공유 페이지에 write를 시도하였을 경우 처리.
+ * 새 주소로 페이지를 복사하고, 이전 페이지의 공유 페이지 카운터를 감소.
+ **/
 static int do_wp_page(struct mm_struct *mm, struct vm_area_struct *vma,
 		unsigned long address, pte_t *page_table, pmd_t *pmd,
 		spinlock_t *ptl, pte_t orig_pte)
@@ -3621,12 +3626,25 @@ int handle_pte_fault(struct mm_struct *mm,
 		return do_swap_page(mm, vma, address,
 					pte, pmd, flags, entry);
 	}
+	/** 20161207
+	 * 이후는 pte_present
+	 **/
 
 	ptl = pte_lockptr(mm, pmd);
 	spin_lock(ptl);
+	/** 20161207
+	 * ptl을 잡고보니 pte와 entry가 달라졌을 경우.
+	 **/
 	if (unlikely(!pte_same(*pte, entry)))
 		goto unlock;
+	/** 20161207
+	 * write access로 인한 fault인 경우
+	 **/
 	if (flags & FAULT_FLAG_WRITE) {
+		/** 20161207
+		 * entry가 write 불가이면 COW를 위해 write protect 걸린 경우.
+		 *
+		 **/
 		if (!pte_write(entry))
 			return do_wp_page(mm, vma, address,
 					pte, pmd, ptl, entry);

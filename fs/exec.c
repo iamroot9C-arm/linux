@@ -1548,6 +1548,9 @@ static int do_execve_common(const char *filename,
 	bprm->filename = filename;
 	bprm->interp = filename;
 
+	/** 20161207
+	 * mm_struct을 준비한다.
+	 **/
 	retval = bprm_mm_init(bprm);
 	if (retval)
 		goto out_file;

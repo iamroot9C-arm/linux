@@ -336,7 +336,7 @@ static inline void set_pte_at(struct mm_struct *mm, unsigned long addr,
 /** 20131026    
  * pte - pte entry의 주소
  *
- * pte_none		: pte entry가 비어 있다.
+ * pte_none	: pte entry가 비어 있다.
  * pte_present	: pte entry에 값이 들어 있고, 매핑된 페이지가 메모리에 존재한다.
  **/
 #define pte_none(pte)		(!pte_val(pte))
@@ -361,7 +361,8 @@ static inline void set_pte_at(struct mm_struct *mm, unsigned long addr,
 
 /** 20140531    
  * pte bit 조작 함수 생성 매크로.
- *		- pte_mkold 등
+ *	- pte_wrprotect ; copy-on-write시 사용
+ *	- pte_mkold 등
  **/
 #define PTE_BIT_FUNC(fn,op) \
 static inline pte_t pte_##fn(pte_t pte) { pte_val(pte) op; return pte; }

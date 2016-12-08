@@ -422,6 +422,10 @@ struct mm_rss_stat {
 
 /** 20160416
  * task의 memory management를 위한 구조체.
+ *
+ * struct task_struct		; process의 경우 mm으로 가리킴
+ *	struct mm_struct	; memory descriptor. vm_area_struct를 RB로 관리
+ *		struct vm_area_struct	: 같은 속성인 하나의 영역에 대한 디스크립터
  **/
 struct mm_struct {
 	/** 20160416
@@ -433,7 +437,7 @@ struct mm_struct {
 	 **/
 	struct rb_root mm_rb;
 	/** 20160528
-	 * find_vma로 찾은 마지막 vm_area_struct.
+	 * find_vma로 찾은 마지막 vm_area_struct. 이름 그대로 접근 캐시
 	 **/
 	struct vm_area_struct * mmap_cache;	/* last find_vma result */
 #ifdef CONFIG_MMU
@@ -454,7 +458,7 @@ struct mm_struct {
 	 **/
 	atomic_t mm_users;			/* How many users with user space? */
 	/** 20150801
-	 * 이 mm_struct가 참조되는 count.
+	 * 이 mm_struct가 참조되는 count (커널에 의한 참조시에도 증가)
 	 *
 	 * the number of "lazy" users (ie anonymous users) plus one
 	 * if there are any real users.
@@ -472,6 +476,9 @@ struct mm_struct {
 	struct rw_semaphore mmap_sem;
 
 	/** 20140531
+	 * 메모리 디스크립터들의 리스트에서 인접한 노드를 가리킴
+	 *
+	 * mmlist의 첫번째 element는 init_mm.
 	 * try_to_unmap_one에서 swapout 시킨 mm을 등록시키는 list head.
 	 **/
 	struct list_head mmlist;		/* List of maybe swapped mm's.	These are globally strung

@@ -799,14 +799,25 @@ static void check_mm(struct mm_struct *mm)
 /*
  * Allocate and initialize an mm_struct.
  */
+/** 20161207
+ * mm_struct 할당과 초기화.
+ *
+ * do_execve류에서 시작
+ **/
 struct mm_struct *mm_alloc(void)
 {
 	struct mm_struct *mm;
 
+	/** 20161207
+	 * kmem_cache로부터 mm_struct 오브젝트 할당
+	 **/
 	mm = allocate_mm();
 	if (!mm)
 		return NULL;
 
+	/** 20161207
+	 * 구조체 초기화해서 object 준비
+	 **/
 	memset(mm, 0, sizeof(*mm));
 	mm_init_cpumask(mm);
 	return mm_init(mm, current);
