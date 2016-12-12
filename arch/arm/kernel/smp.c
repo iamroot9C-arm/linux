@@ -316,6 +316,8 @@ asmlinkage void __cpuinit secondary_start_kernel(void)
 	printk("CPU%u: Booted secondary processor\n", cpu);
 
 	/** 20150808    
+	 * 부팅 cpu의 초기화.
+	 *
 	 * per-cpu로 und, irq, abr 상태의 stacks 주소를 설정한다.
 	 **/
 	cpu_init();

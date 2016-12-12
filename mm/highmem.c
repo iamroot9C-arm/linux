@@ -235,9 +235,9 @@ void kmap_flush_unused(void)
 
 /** 20131102    
  * map_new_virtual 이전에 lock_kmap.
- **/
-/** 20131109
- * highmem 사용시, page를 일시적으로 mapping시켜 VA주소를 반환한다.
+ *
+ * 20131109
+ * highmem 사용시, page를 일시적으로 PKMAP 영역에 mapping하고 VA를 반환한다.
  * 
  * pkmap_count가 0인 부분을 찾으면 페이지가 매핑 중이지 않은 주소영역이므로
  * set_page_addres함수를 통해 page를 매핑시켜 VA를 가져온다

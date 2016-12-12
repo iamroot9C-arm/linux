@@ -18,9 +18,15 @@
 #include <asm/tlbflush.h>
 #include "mm.h"
 /** 20131109
+ * page가 가리키는 페이지 프레임을 매핑하고 VA를 리턴한다.
+ *
  * page에 대한 virtual adddress를 리턴한다.
  * 단, mapping할 슬롯이 꽉차 VA를 할당받지 못할 때 sleep 하기 때문에
  * interrupt context에서 호출되어서는 안된다.
+ *
+ * kmap
+ *	kmap_high
+ *		map_new_virtual		// PKMAP_BASE부터 PMD 크기만큼 영역
  **/
 void *kmap(struct page *page)
 {
@@ -62,7 +68,7 @@ void kunmap(struct page *page)
 EXPORT_SYMBOL(kunmap);
 
 /** 20131026    
- * struct page *에 해당하는 VA를 리턴하는 함수
+ * page가 가리키는 페이지 프레임을 매핑하고 VA를 리턴한다.
  *
  * 1) highmem 영역이 아닌 page에 대한 요청일 경우
  *     이미 매핑된 VA를 리턴.
@@ -71,12 +77,12 @@ EXPORT_SYMBOL(kunmap);
  *       이미 매핑된 VA를 리턴.
  *     2-2) 이미 매핑된 주소가 아닌 경우
  *       cpu별로 준비된 fixmap address 영역에서 va를 할당 받아 매핑한 뒤,
- *       매핑된 주소를 리턴 (전역적인 lock이 필요 없다)
+ *       매핑된 주소를 리턴 (전역 lock이 필요 없다)
  *       
  *  - 물리 메모리까지 할당받는 함수는 아니다.
  *
  *  kmap_atomic   (pagefault_disable 부터 수행)
- *  ...
+ *  ...			// Fixmap 영역에 매핑
  *  kunmap_atomic (동작 후 pagefault_enable 수행)
  *
  * Documentation/vm/highmem.txt 참고.
@@ -123,33 +129,33 @@ void *kmap_atomic(struct page *page)
 	 * 현재 __kmap_atomic_idx (percpu 선언)값을 type에 저장하고, 1 증가시킨다. 
 	 **/
 	type = kmap_atomic_idx_push();
-    /** 20131019
-    idx               smp_id_processor
-    0    +-------------+       0
-    1    |     type 0  |                   
-    2    |     type 1  |
-    .    |     ......  |
-    15   |     type 15 |
-    16   +-------------+       1
-    .    |     type 0  |                 
-    .    |     type 1  |
-    .    |     ......  |
-    .    |     type 15 |
-    .    +-------------+       2
-    .    |     type 0  |               
-    .    |     type 1  |
-    .    |     ......  |
-    .    |     type 15 |
-    .    +-------------+       ...
-    .    |     type 0  |             
-    .    |     type 1  |
-              ......
+	/** 20131019
+	  idx               smp_id_processor
+	  0    +-------------+       0
+	  1    |     type 0  |
+	  2    |     type 1  |
+	  .    |     ......  |
+	  15   |     type 15 |
+	  16   +-------------+       1
+	  .    |     type 0  |
+	  .    |     type 1  |
+	  .    |     ......  |
+	  .    |     type 15 |
+	  .    +-------------+       2
+	  .    |     type 0  |
+	  .    |     type 1  |
+	  .    |     ......  |
+	  .    |     type 15 |
+	  .    +-------------+       ...
+	  .    |     type 0  |
+	  .    |     type 1  |
+	  ......
 
-     **/
+	 **/
 	idx = type + KM_TYPE_NR * smp_processor_id();
-    /** 20131019
-     * idx를 통해서 fixaddr 구간에 해당하는 가상주소를 얻어온다.
-     **/
+	/** 20131019
+	 * idx를 통해서 fixaddr 구간에 해당하는 가상주소를 얻어온다.
+	 **/
 	vaddr = __fix_to_virt(FIX_KMAP_BEGIN + idx);
 #ifdef CONFIG_DEBUG_HIGHMEM
 	/*

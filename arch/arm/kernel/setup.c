@@ -137,16 +137,17 @@ int __cpu_architecture __read_mostly = CPU_ARCH_UNKNOWN;
 
 struct stack {
 	/** 20121215
-	 * 왜 3개씩 가지고 있는 것일까???
+	 * 왜 3개씩 가지고 있는 것일까??? (answered)
 	 *
 	 * 20130810
 	 * irq, abt, und 세가지 모드의 스택으로 각각 3word만 가지는데
-	 * 이정도로 충분할까???
+	 * 이정도로 충분할까??? (answered)
 	 *
 	 * 20150801
-	 * entry-armv.S를 보면 vector table (__vector_start)에서 macro vector_stub을 사용해 선언한
-	 * 코드로 branch 한다.
-	 * vector_stub에서는 어떤 exception이든 해당 모드의 stack에 r0, lr, spsr만을 저장하고
+	 * entry-armv.S를 보면 vector table (__vector_start)에서
+	 * macro vector_stub을 사용해 선언한 코드로 branch 한다.
+	 * vector_stub에서는 어떤 exception이든 해당 모드의 stack에
+	 * r0, lr, spsr만을 저장하고
 	 * cpsr을 조작해 svc 모드의 핸들러로 진입한다.
 	 **/
 	u32 irq[3];
@@ -480,15 +481,13 @@ static void __init feat_v6_fixup(void)
 void cpu_init(void)
 {
 	/** 20121215
-	 * current_thread_info()->cpu는 0.
-	 * 부트 프로세스에서 실행되는 cpu를 의미함
-	 *
+	 * current_thread_info()->cpu를 읽어옴.
 	 * 20150801
 	 * 현재 실행 중인 cpu의 번호를 받아온다.
 	 **/
 	unsigned int cpu = smp_processor_id();
 	/** 20121215
-	 * cpu 0의 stack 주소를 가져옴
+	 * 현재 cpu의 stack 주소를 가져옴
 	 **/
 	struct stack *stk = &stacks[cpu];
 
@@ -526,8 +525,8 @@ void cpu_init(void)
 	 * 7 : "I" (PSR_F_BIT | PSR_I_BIT | SVC_MODE)
 	 *
 	 *  1. IRQ, ABT, UND 모드로 각각 전환
-	 *  2. 각 모드에서 사용하는 stack의 주소를 계산 (stk + offset)
-	 *  3. 해당 모드의 sp 레지스터에 저장
+	 *  2. 각 모드별 stack 구조체 주소를 계산 (stk + offset)
+	 *  3. 해당 모드의 sp 레지스터에 위 주소를 저장
 	 *  4. 위 세 가지 모드의 설정이 끝난 뒤 SVC로 돌아옴
 	 **/
 	__asm__ (
