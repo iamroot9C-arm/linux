@@ -26,7 +26,7 @@
 #endif
 
 /** 20121215
- * 바로 return하는 것인데, 아무런 동작이 필요 없다는 의미인가???
+ * 바로 return
  **/
 ENTRY(cpu_v7_proc_init)
 	mov	pc, lr
@@ -71,7 +71,7 @@ ENDPROC(cpu_v7_reset)
  *
  *	IRQs are already disabled.
  */
-/** 20160220    
+/** 20160220
  * arm에서 wait for interrupt로 대기.
  * 깨어난 뒤 리턴.
  **/
@@ -277,11 +277,11 @@ __v7_setup:
 #if defined(CONFIG_ARM_ERRATA_751472) && defined(CONFIG_SMP)
 	ALT_SMP(cmp r6, #0x30)			@ present prior to r3p0
 	ALT_UP_B(1f)
-/** 20121020
- 	cp15, 15, 0에 대한 자료는 reference manual, TRM	에 없음.
-	???
-	diagnostic register 관련 버그 땜질하는 듯.
-**/
+	/** 20121020
+	 * cp15, 15, 0에 대한 자료는 reference manual, TRM	에 없음.
+	 * ???
+	 * diagnostic register 관련 버그 땜질하는 듯.
+	 **/
 	mrclt	p15, 0, r10, c15, c0, 1		@ read diagnostic register
 	orrlt	r10, r10, #1 << 11		@ set bit #11
 	mcrlt	p15, 0, r10, c15, c0, 1		@ write diagnostic register
@@ -293,46 +293,46 @@ __v7_setup:
 	dsb
 #ifdef CONFIG_MMU
 	mcr	p15, 0, r10, c8, c7, 0		@ invalidate I + D TLBs
-/** 20121020
-	v7_ttb_setup은 proc-v7-2level.S에 정의된 매크로.. 
-	풀어보면,
-
-	TTBCR, Translation Table Base Control Register, VMSA
-	mcr	p15, 0, r10, c2, c0, 2	@ TTB control register
-
-	    r4 :
-		r8 : 
-
-	r4 = r8 = 0x60004000 [PA] page table address
-	orr	r4, r4, #TTB_FLAGS_SMP
-	orr	r8, r8, #TTB_FLAGS_SMP
-	mcr	p15, 0, r8, c2, c0, 1	@ load TTB1
-**/
+	/** 20121020
+	 * v7_ttb_setup은 proc-v7-2level.S에 정의된 매크로..
+	 * 풀어보면,
+	 *
+	 * TTBCR, Translation Table Base Control Register, VMSA
+	 * mcr	p15, 0, r10, c2, c0, 2	@ TTB control register
+	 *
+	 * r4 :
+	 * r8 :
+	 *
+	 * r4 = r8 = 0x60004000 [PA] page table address
+	 * orr	r4, r4, #TTB_FLAGS_SMP
+	 * orr	r8, r8, #TTB_FLAGS_SMP
+	 * mcr	p15, 0, r8, c2, c0, 1	@ load TTB1
+	 **/
 	v7_ttb_setup r10, r4, r8, r5		@ TTBCR, TTBRx setup
-/** 20121020
-	#define PRRR		(0x034)
-	#define NMRR		(0x038)
-
-	PRRR, Primary Region Remap Register, VMSA
-	NMRR, Normal Memory Remap Register, VMSA
-
-	PRRR, NMRR 각각은 무엇이고, 언제.. 왜.. 어떻게 사용되는가 ???
-	page tabel entry에 있는 TEX[0], C(cache), B(bufferable)을 참고하여, 
-		다시 페이지 속성과 캐시 속성을 설정하는데.. 
-		그 이유는 무엇일까 ???
-**/
+	/** 20121020
+	 * #define PRRR		(0x034)
+	 * #define NMRR		(0x038)
+	 *
+	 * PRRR, Primary Region Remap Register, VMSA
+	 * NMRR, Normal Memory Remap Register, VMSA
+	 *
+	 * PRRR, NMRR 각각은 무엇이고, 언제.. 왜.. 어떻게 사용되는가 ???
+	 * page tabel entry에 있는 TEX[0], C(cache), B(bufferable)을 참고하여, 
+	 *	다시 페이지 속성과 캐시 속성을 설정하는데..
+	 *	그 이유는 무엇일까 ???
+	 **/
 	ldr	r5, =PRRR			@ PRRR
 	ldr	r6, =NMRR			@ NMRR
 	mcr	p15, 0, r5, c10, c2, 0		@ write PRRR
 	mcr	p15, 0, r6, c10, c2, 1		@ write NMRR
 #endif
 #ifndef CONFIG_ARM_THUMBEE
-/** 20121020
-	ID_PFR0, Processor Feature Register 0, VMSA
-
-	TEEHBR 의 의미를 알 수 없음. 뭔가의 base handler의 주소인지 ???
-	TEECR 은 unpreviledged mode에서 TEEHBR 접근 허용 여부 결정.
-**/
+	/** 20121020
+	 * ID_PFR0, Processor Feature Register 0, VMSA
+	 *
+	 * TEEHBR 의 의미를 알 수 없음. 뭔가의 base handler의 주소인지 ???
+	 * TEECR 은 unpreviledged mode에서 TEEHBR 접근 허용 여부 결정.
+	 **/
 	mrc	p15, 0, r0, c0, c1, 0		@ read ID_PFR0 for ThumbEE
 	and	r0, r0, #(0xf << 12)		@ ThumbEE enabled field
 	teq	r0, #(1 << 12)			@ check if ThumbEE is present
@@ -345,48 +345,48 @@ __v7_setup:
 1:
 #endif
 	adr	r5, v7_crval
-/** 20121020
-	r5 =0x0120c302, r6 =0x10c03c7d
-
-	SCTLR, System Control Register, VMSA
-
-	SCTLR에서 아래 비트 클리어. 
-	r5 =0x0120c302 
-	0000 0001 0010 0000 1100 0011 0000 0010
-
-	VE	: Interrupt Vectors Enable. 0: enable
-	FI	: Fast interrupts configuration enable, 0: enable
-	RR	: Round Robin select. cache line 교체 정책. 0: random
-	A	: Alignment check enable. 
-		This is the enable bit for Alignment fault checking. The possible values of
-		0: Alignment fault checking disabled.
-
-	SCTLR에서 아래 비트 설정. 
-	r6 =0x10c03c7d
-	0001 0000 1100 0000 0011 1100 0111 1101
-
-	TRE : TEX remap enable. PRRR, NMRR 과 연관이 있는 것 처럼 보이는데.. ???
-	U	: 이건 필요없는 비트인 듯... ???
-	V	: 1: High exception vectors (Hivecs), base address 0xFFFF0000.
-	I	: Instruction caches enabled.
-	Z	: Branch prediction enable.
-	SW	: SWP and SWPB enable. CONFIG_SWP_EMULATE 과 연관... ???
-	CP15BEN	: CP15 barrier enable.
-	C	: Data and unified caches enabled.
-	M	: PL1&0 stage 1 MMU enabled. PL1&0 이 무엇인지 ??? stage 1 MMU ???
-**/
+	/** 20121020
+	 *r5 =0x0120c302, r6 =0x10c03c7d
+	 *
+	 * SCTLR, System Control Register, VMSA
+	 *
+	 * SCTLR에서 아래 비트 클리어.
+	 *	r5 =0x0120c302
+	 *	0000 0001 0010 0000 1100 0011 0000 0010
+	 *
+	 *	VE	: Interrupt Vectors Enable. 0: enable
+	 *	FI	: Fast interrupts configuration enable, 0: enable
+	 *	RR	: Round Robin select. cache line 교체 정책. 0: random
+	 *	A	: Alignment check enable.
+	 *	This is the enable bit for Alignment fault checking. The possible values of
+	 *		0: Alignment fault checking disabled.
+	 *
+	 * SCTLR에서 아래 비트 설정.
+	 *	r6 =0x10c03c7d
+	 *	0001 0000 1100 0000 0011 1100 0111 1101
+	 *
+	 *	TRE : TEX remap enable. PRRR, NMRR 과 연관이 있는 것 처럼 보이는데.. ???
+	 *	U	: 이건 필요없는 비트인 듯... ???
+	 *	V	: 1: High exception vectors (Hivecs), base address 0xFFFF0000.
+	 *	I	: Instruction caches enabled.
+	 *	Z	: Branch prediction enable.
+	 *	SW	: SWP and SWPB enable. CONFIG_SWP_EMULATE 과 연관... ???
+	 *	CP15BEN	: CP15 barrier enable.
+	 *	C	: Data and unified caches enabled.
+	 *	M	: PL1&0 stage 1 MMU enabled. PL1&0 이 무엇인지 ??? stage 1 MMU ???
+	 **/
 	ldmia	r5, {r5, r6}
 #ifdef CONFIG_CPU_ENDIAN_BE8
 	orr	r6, r6, #1 << 25		@ big-endian page tables
 #endif
-/** 20121020
-  ARMv6 architecture deprecates use of the SWP/SWPB instructions.
-  ARMv7 multiprocessing extensions introduce the ability to disable
-  these instructions, triggering an undefined instruction exception
-  when executed. Say Y here to enable software emulation of these
-  instructions for userspace (not kernel) using LDREX/STREX.
-  Also creates /proc/cpu/swp_emulation for statistics.
-**/
+	/** 20121020
+	 * ARMv6 architecture deprecates use of the SWP/SWPB instructions.
+	 * ARMv7 multiprocessing extensions introduce the ability to disable
+	 * these instructions, triggering an undefined instruction exception
+	 * when executed. Say Y here to enable software emulation of these
+	 * instructions for userspace (not kernel) using LDREX/STREX.
+	 * Also creates /proc/cpu/swp_emulation for statistics.
+	 **/
 #ifdef CONFIG_SWP_EMULATE
 	orr     r5, r5, #(1 << 10)              @ set SW bit in "clear"
 	bic     r6, r6, #(1 << 10)              @ clear it in "mmuset"
@@ -405,7 +405,7 @@ __v7_setup_stack:
 	__INITDATA
 
 	@ define struct processor (see <asm/proc-fns.h> and proc-macros.S)
-	/** 20151121    
+	/** 20151121
 	 * struct processor를 정의하는 매크로 호출로
 	 * v7_processor_functions 정의. 호출시점은???
 	 **/
@@ -417,7 +417,7 @@ __v7_setup_stack:
 	string	cpu_elf_name, "v7"
 	.align
 
-	/** 20151121    
+	/** 20151121
 	 * .proc.info.init 섹션에 저장.
 	 **/
 	.section ".proc.info.init", #alloc, #execinstr
@@ -425,18 +425,18 @@ __v7_setup_stack:
 	/*
 	 * Standard v7 proc info content
 	 */
- /** 20150620    
-  * struct proc_info_list 에서 __cpu_mm_mmu_flags부터 시작.
-  **/
+	/** 20150620
+	 * struct proc_info_list 에서 __cpu_mm_mmu_flags부터 시작.
+	 **/
 .macro __v7_proc initfunc, mm_mmuflags = 0, io_mmuflags = 0, hwcaps = 0
 	ALT_SMP(.long	PMD_TYPE_SECT | PMD_SECT_AP_WRITE | PMD_SECT_AP_READ | \
 			PMD_SECT_AF | PMD_FLAGS_SMP | \mm_mmuflags)
-/** 20121013
-    ALT_UP는 별도의 섹션에 저장하므로 index에 포함되지 않음
-	#define ALT_UP(instr...)					\
-		.pushsection ".alt.smp.init", "a"			;\
-		...
-**/
+	/** 20121013
+	 * ALT_UP는 별도의 섹션에 저장하므로 index에 포함되지 않음
+	 * #define ALT_UP(instr...)					\
+	 * .pushsection ".alt.smp.init", "a"			;\
+	 * ...
+	 **/
 	ALT_UP(.long	PMD_TYPE_SECT | PMD_SECT_AP_WRITE | PMD_SECT_AP_READ | \
 			PMD_SECT_AF | PMD_FLAGS_UP | \mm_mmuflags)
 	.long	PMD_TYPE_SECT | PMD_SECT_AP_WRITE | \

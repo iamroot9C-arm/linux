@@ -1479,9 +1479,9 @@ struct task_struct {
 	struct plist_node pushable_tasks;
 #endif
 
-	/** 20160227    
+	/** 20160227
 	 * mm : 프로세스가 소유한 메모리 디스크립터
-	 * active_mm : 프로세스가 실행 중에 사용하는 메모리 디스크립터
+	 * active_mm : 프로세스가 실행 중일 경우 사용되는 메모리 디스크립터
 	 *
 	 * kernel thread의 경우 mm은 NULL
 	 * user process의 경우 context switch시 mm을 active_mm으로 설정하여 동일.
