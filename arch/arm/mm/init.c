@@ -36,7 +36,7 @@
 
 #include "mm.h"
 
-/** 20150124    
+/** 20150124
  * initrd 물리 시작 주소와 크기가 저장되는 변수.
  *
  * atags에서 받아올 수도 있고, param으로 initrd의 start, size가 설정되었을 경우.
@@ -73,7 +73,7 @@ static int __init parse_tag_initrd(const struct tag *tag)
 
 __tagtable(ATAG_INITRD, parse_tag_initrd);
 
-/** 20150411    
+/** 20150411
  * qemu에서 -initrd debug_with_qemu/busybox-1.20.2/rootfs.img를 준 경우
  * atags를 파싱해 initrd 정보를 채움.
  **/
@@ -145,7 +145,7 @@ void show_mem(unsigned int filter)
 	printk("%d pages swap cached\n", cached);
 }
 
-/** 20130330    
+/** 20130330
  * meminfo의 entry 중 가장 낮은 pfn을 min에,
  * 가장 높은 pfn을 max_low, max_high에 저장한다.
  **/
@@ -156,17 +156,17 @@ static void __init find_limits(unsigned long *min, unsigned long *max_low,
 	int i;
 
 	/* This assumes the meminfo array is properly sorted */
-	/** 20130330    
+	/** 20130330
 	 * 첫번째 bank의 start 주소에 대한 pfn.
 	 **/
 	*min = bank_pfn_start(&mi->bank[0]);
-	/** 20130330    
+	/** 20130330
 	 * for (i = 0; i < (mi)->nr_banks; i++)
 	 **/
 	for_each_bank (i, mi)
 		if (mi->bank[i].highmem)
 				break;
-	/** 20130330    
+	/** 20130330
 	 * highmem이 true로 되어 break될 경우
 	 *     max_low는 highmem bank 이전의 bank의 마지막 주소에 대한 pfn
 	 *     max_high는 마지막 bank의 마지막 주소에 대한 pfn
@@ -176,7 +176,7 @@ static void __init find_limits(unsigned long *min, unsigned long *max_low,
 	*max_high = bank_pfn_end(&mi->bank[mi->nr_banks - 1]);
 }
 
-/** 20130406    
+/** 20130406
  * 해당 노드에 대한 bootmem을 초기화 하고, memblock의 memory와 reserved에 해당하는 비트를 설정한다.
  **/
 static void __init arm_bootmem_init(unsigned long start_pfn,
@@ -191,11 +191,11 @@ static void __init arm_bootmem_init(unsigned long start_pfn,
 	 * Allocate the bootmem bitmap page.  This must be in a region
 	 * of memory which has already been mapped.
 	 */
-	/** 20130330    
+	/** 20130330
 	 * boot_pages는 pfn을 비트맵으로 표현하기 위해 필요한 페이지 수
 	 **/
 	boot_pages = bootmem_bootmap_pages(end_pfn - start_pfn);
-	/** 20130330    
+	/** 20130330
 	 * 필요한 물리메모리의 크기 : boot_pages << PAGE_SHIFT
 	 * 정렬 단위                : L1_CACHE_BYTES
 	 * 할당 가능한 최대 물리 메모리 주소: __pfn_to_phys(end_pfn)
@@ -209,29 +209,29 @@ static void __init arm_bootmem_init(unsigned long start_pfn,
 	 * Initialise the bootmem allocator, handing the
 	 * memory banks over to bootmem.
 	 */
-	/** 20130330    
+	/** 20130330
 	 * vexpress는 null function
 	 **/
 	node_set_online(0);
-	/** 20130330    
+	/** 20130330
 	 * pgdata <- &contig_page_data
 	 **/
 	pgdat = NODE_DATA(0);
 	init_bootmem_node(pgdat, __phys_to_pfn(bitmap), start_pfn, end_pfn);
 
 	/* Free the lowmem regions from memblock into bootmem. */
-	/** 20130406    
+	/** 20130406
 	 * memblock 중 memory의 region을 순회
 	 **/
 	for_each_memblock(memory, reg) {
-		/** 20130330    
+		/** 20130330
 		 * start는 round up한 시작 pfn, end는 round down한 끝 pfn.
 		 * (정렬되지 않은 주소는 버려지는듯???)
 		 **/
 		unsigned long start = memblock_region_memory_base_pfn(reg);
 		unsigned long end = memblock_region_memory_end_pfn(reg);
 
-		/** 20130330    
+		/** 20130330
 		 * 경계값 검사
 		 **/
 		if (end >= end_pfn)
@@ -247,7 +247,7 @@ static void __init arm_bootmem_init(unsigned long start_pfn,
 	}
 
 	/* Reserve the lowmem memblock reserved regions in bootmem. */
-	/** 20130406    
+	/** 20130406
 	 * memblock 중 reserved의 region을 순회
 	 **/
 	for_each_memblock(reserved, reg) {
@@ -259,7 +259,7 @@ static void __init arm_bootmem_init(unsigned long start_pfn,
 		if (start >= end)
 			break;
 
-		/** 20130406    
+		/** 20130406
 		 * 해당 영역을 bootmem에서 reserve로 설정
 		 **/
 		reserve_bootmem(__pfn_to_phys(start),
@@ -307,7 +307,7 @@ void __init setup_dma_zone(struct machine_desc *mdesc)
 #endif
 }
 
-/** 20130511 
+/** 20130511
  * lowmem pfn의 최소, 최대, highmem pfn의 최대값을 받아
  * 각 zone의 크기(pfn수)를 계산하고 (hole을 포함한 것과 포함하지 않은 것 계산),
  * 0번 node에 대해서 free 상태로 초기화 작업을 수행한다.
@@ -378,7 +378,7 @@ static void __init arm_bootmem_free(unsigned long min, unsigned long max_low,
 }
 
 #ifdef CONFIG_HAVE_ARCH_PFN_VALID
-/** 20130518    
+/** 20130518
  * pfn이 물리 메모리 내에 속하는지 검사하는 루틴
  **/
 int pfn_valid(unsigned long pfn)
@@ -418,7 +418,7 @@ phys_addr_t __init arm_memblock_steal(phys_addr_t size, phys_addr_t align)
 	return phys;
 }
 
-/** 20130126    
+/** 20130126
  * meminfo  : cmdline에서 전달받은 물리적 메모리 구성 정보
  * memblock : kernel이 관리하는 logical memory blocks
  *
@@ -429,7 +429,7 @@ phys_addr_t __init arm_memblock_steal(phys_addr_t size, phys_addr_t align)
 void __init arm_memblock_init(struct meminfo *mi, struct machine_desc *mdesc)
 {
 	int i;
-	/** 20130126    
+	/** 20130126
 	 * meminfo의 bank 정보를 memblock의 memory 부분에 채워넣음
 	 **/
 	for (i = 0; i < mi->nr_banks; i++)
@@ -439,13 +439,13 @@ void __init arm_memblock_init(struct meminfo *mi, struct machine_desc *mdesc)
 #ifdef CONFIG_XIP_KERNEL
 	memblock_reserve(__pa(_sdata), _end - _sdata);
 #else
-	/** 20130126    
+	/** 20130126
 	 * kernel의 실행코드 (text~bss까지)를 memblock의 reserved 영역에 등록
 	 **/
 	memblock_reserve(__pa(_stext), _end - _stext);
 #endif
 #ifdef CONFIG_BLK_DEV_INITRD
-	/** 20130126    
+	/** 20130126
 	 * initrd로 주어진 메모리 공간이 memblock.memory 영역 안에 없다면 initrd를 무시
 	 **/
 	/** 20130810
@@ -458,7 +458,7 @@ void __init arm_memblock_init(struct meminfo *mi, struct machine_desc *mdesc)
 		       phys_initrd_start, phys_initrd_size);
 		phys_initrd_start = phys_initrd_size = 0;
 	}
-	/** 20130126    
+	/** 20130126
 	 * initrd로 주어진 메모리 공간이 memblock.reserved 영역과 겹쳐진다면 initrd를 무시
 	 **/
 	if (phys_initrd_size &&
@@ -468,10 +468,10 @@ void __init arm_memblock_init(struct meminfo *mi, struct machine_desc *mdesc)
 		phys_initrd_start = phys_initrd_size = 0;
 	}
 	/** 20130810
-	 * 그리고 initrd_size가 있다면.. 
+	 * 그리고 initrd_size가 있다면..
 	 **/
 	if (phys_initrd_size) {
-		/** 20130126    
+		/** 20130126
 		 * initrd 메모리 영역을 memblock.reserved에 등록
 		 **/
 		memblock_reserve(phys_initrd_start, phys_initrd_size);
@@ -482,11 +482,11 @@ void __init arm_memblock_init(struct meminfo *mi, struct machine_desc *mdesc)
 	}
 #endif
 
-	/** 20130126    
+	/** 20130126
 	 * swapper_pg_dir 영역을 memblock.reseved에 추가
 	 **/
 	arm_mm_memblock_reserve();
-	/** 20130126    
+	/** 20130126
 	 * device tree를 memblock.reserved에 추가하는 듯.
 	 * vexpress에서는 NULL 함수
 	 **/
@@ -511,23 +511,23 @@ void __init arm_memblock_init(struct meminfo *mi, struct machine_desc *mdesc)
 	 * reserve memory for DMA contigouos allocations,
 	 * must come from DMA area inside low memory
 	 */
-	/** 20130309    
+	/** 20130309
 	 * CONFIG_CMA가 not defined이므로 NULL을 리턴
 	 **/
 	dma_contiguous_reserve(min(arm_dma_limit, arm_lowmem_limit));
 
-	/** 20130126    
+	/** 20130126
 	 * memblock steal을 불가능하게 처리
 	 **/
 	arm_memblock_steal_permitted = false;
-	/** 20130126    
+	/** 20130126
 	 * memblock resize 허용
 	 **/
 	memblock_allow_resize();
 	memblock_dump_all();
 }
 
-/** 20130511 
+/** 20130511
  * 1. meminfo로부터 pfn 구간을 구한다.
  * 2. 물리 영역에 대해 bootmem bitmap을 초기화하고 설정한다.
  *    페이징이 시작되기 전에 boot time에서 메모리를 사용하기 위한 초기화 작업.
@@ -538,12 +538,12 @@ void __init bootmem_init(void)
 
 	max_low = max_high = 0;
 
-	/** 20130330    
+	/** 20130330
 	 * meminfo로부터 min (첫 pfn), max_low (마지막 pfn), max_high를 채움
 	 **/
 	find_limits(&min, &max_low, &max_high);
 
-	/** 20130406    
+	/** 20130406
 	 * find_limits에서 가져온 물리 영역에 대해 bootmem bitmap을 초기화하고 설정.
 	 **/
 	arm_bootmem_init(min, max_low);
@@ -552,7 +552,7 @@ void __init bootmem_init(void)
 	 * Sparsemem tries to allocate bootmem in memory_present(),
 	 * so must be done after the fixed reservations
 	 */
-	/** 20130406    
+	/** 20130406
 	 * SPARSEMEM이 설정되지 않았을 경우 NULL 함수
 	 **/
 	arm_memory_present();
@@ -560,7 +560,7 @@ void __init bootmem_init(void)
 	/*
 	 * sparse_init() needs the bootmem allocator up and running.
 	 */
-	/** 20130406    
+	/** 20130406
 	 * SPARSEMEM이 설정되지 않았을 경우 NULL 함수
 	 **/
 	sparse_init();
@@ -585,42 +585,42 @@ void __init bootmem_init(void)
 	 * the system, not the maximum PFN.
 	 */
 
-	/** 20130511 
+	/** 20130511
 	 * 커널이 사용하는 물리 주소의 pfn 수
 	 * max_low_pfn : 커널이 사용하는 (low memory 내에서의)pfn의 수
 	 * max_pfn : max_low_pfn+highmem pfn의 수
 	 *   (만약 highmem이 없을 경우는 max_low_pfn과 max_pfn는 같다. )
-	 **/	
+	 **/
 	max_low_pfn = max_low - PHYS_PFN_OFFSET;
 	max_pfn = max_high - PHYS_PFN_OFFSET;
 }
 
-/** 20130907    
+/** 20130907
  * pfn부터 end 사이 영역을 free시키고 해제된 페이지 수를 리턴하는 함수
  **/
 static inline int free_area(unsigned long pfn, unsigned long end, char *s)
 {
-	/** 20130907    
+	/** 20130907
 	 * PAGE_SHIFT - 10을 한 이유는 크기를 K 단위로 출력해 주기 위함
 	 **/
 	unsigned int pages = 0, size = (end - pfn) << (PAGE_SHIFT - 10);
 
 	for (; pfn < end; pfn++) {
-		/** 20130907    
+		/** 20130907
 		 * pfn에 해당하는 struct page *를 가져옴
 		 **/
 		struct page *page = pfn_to_page(pfn);
-		/** 20130907    
+		/** 20130907
 		 * page->flags에서 PG_reserved를 clear
 		 **/
 		ClearPageReserved(page);
-		/** 20130907    
+		/** 20130907
 		 * reference count를 초기화하고,
 		 * page를 해제한다.
 		 **/
 		init_page_count(page);
 		__free_page(page);
-		/** 20130907    
+		/** 20130907
 		 * 초기화한 page 수 counting
 		 **/
 		pages++;
@@ -636,7 +636,7 @@ static inline int free_area(unsigned long pfn, unsigned long end, char *s)
  * Poison init memory with an undefined instruction (ARM) or a branch to an
  * undefined instruction (Thumb).
  */
-/** 20160103    
+/** 20160103
  * init에서 사용한 메모리에 undefined instruction을 채워 초기화 없이 접근시
  * exception을 발생.
  **/
@@ -647,7 +647,7 @@ static inline void poison_init_mem(void *s, size_t count)
 		*p++ = 0xe7fddef0;
 }
 
-/** 20130803    
+/** 20130803
  * start_pfn과 end_pfn 사이 물리 영역을 bootmem에서 초기화 한다.
  **/
 static inline void
@@ -659,7 +659,7 @@ free_memmap(unsigned long start_pfn, unsigned long end_pfn)
 	/*
 	 * Convert start_pfn/end_pfn to a struct page pointer.
 	 */
-	/** 20130803    
+	/** 20130803
 	 * start_pfn, end_pfn에 대한 struct page *를 구한다.
 	 *
 	 * CONFIG_FLATMEM에서는 연속적이므로 -1을 해 구한 뒤 +1을 해줄 필요가 없지만,
@@ -672,7 +672,7 @@ free_memmap(unsigned long start_pfn, unsigned long end_pfn)
 	 * Convert to physical addresses, and
 	 * round start upwards and end downwards.
 	 */
-	/** 20130803    
+	/** 20130803
 	 * start_pg를 물리 주소로 변환하여 PAGE 단위로 ALIGN(올림)을 맞춘다.
 	 * end_pg를 물리 주소로 변환하여 PAGE 단위로 내림을 수행한다.
 	 **/
@@ -683,7 +683,7 @@ free_memmap(unsigned long start_pfn, unsigned long end_pfn)
 	 * If there are free pages between these,
 	 * free the section of the memmap array.
 	 */
-	/** 20130803    
+	/** 20130803
 	 * 실제 physical address로 정렬해 비교했을 때도 pgend가 pg보다 크다면
 	 *   bootmem bitmap 영역에서 free시킨다.
 	 **/
@@ -694,7 +694,7 @@ free_memmap(unsigned long start_pfn, unsigned long end_pfn)
 /*
  * The mem_map array can get very big.  Free the unused area of the memory map.
  */
-/** 20130803    
+/** 20130803
  * meminfo 를 순회하며 각 bank 사이의 연속적이지 않은 공간에 대해 free.
  **/
 static void __init free_unused_memmap(struct meminfo *mi)
@@ -709,7 +709,7 @@ static void __init free_unused_memmap(struct meminfo *mi)
 	for_each_bank(i, mi) {
 		struct membank *bank = &mi->bank[i];
 
-		/** 20130803    
+		/** 20130803
 		 * 각 bank의 시작주소에 해당하는 PFN를 구한다.
 		 **/
 		bank_start = bank_pfn_start(bank);
@@ -727,7 +727,7 @@ static void __init free_unused_memmap(struct meminfo *mi)
 		 * memmap entries are valid from the bank start aligned to
 		 * MAX_ORDER_NR_PAGES.
 		 */
-		/** 20130803    
+		/** 20130803
 		 * bank_start를 MAX_ORDER_NR_PAGES 단위로 내림한다.
 		 *   올림을 수행해야 하는 것이 아닐까???
 		 **/
@@ -737,7 +737,7 @@ static void __init free_unused_memmap(struct meminfo *mi)
 		 * If we had a previous bank, and there is a space
 		 * between the current bank and the previous, free it.
 		 */
-		/** 20130803    
+		/** 20130803
 		 * 처음 loop 수행시 prev_bank_end는 0.
 		 * 다음 수행시 prev_bank_end가 현재 bank_start 보다 작으면
 		 *   해당 영역을 free로 표시(사용 가능) 한다.
@@ -750,7 +750,7 @@ static void __init free_unused_memmap(struct meminfo *mi)
 		 * memmap entries are valid from the bank end aligned to
 		 * MAX_ORDER_NR_PAGES.
 		 */
-		/** 20130803    
+		/** 20130803
 		 * 현재 bank의 끝 pfn을 MAX_ORDER_NR_PAGES 단위로 정렬한다. 
 		 **/
 		prev_bank_end = ALIGN(bank_pfn_end(bank), MAX_ORDER_NR_PAGES);
@@ -763,14 +763,14 @@ static void __init free_unused_memmap(struct meminfo *mi)
 #endif
 }
 
-/** 20130907    
+/** 20130907
  * memblock의 memory 영역을 돌면서 1:1 매핑이 되어 있지 않은 high memory 영역에 대해
  * reserved 되어 있지 않은 영역에 대해 free_page를 호출.
  **/
 static void __init free_highpages(void)
 {
 #ifdef CONFIG_HIGHMEM
-	/** 20130907    
+	/** 20130907
 	 * max_low_pfn : 커널이 사용하는 pfn의 수
 	 * PHYS_PFN_OFFSET : 커널 영역 물리 메모리 시작 주소에 해당하는 pfn
 	 * highmem이 시작하는 pfn
@@ -779,7 +779,7 @@ static void __init free_highpages(void)
 	struct memblock_region *mem, *res;
 
 	/* set highmem page free */
-	/** 20130907    
+	/** 20130907
 	 * memblock 의 memory 각 region에 대해 루프를 수행한다.
 	 **/
 	for_each_memblock(memory, mem) {
@@ -787,21 +787,21 @@ static void __init free_highpages(void)
 		unsigned long end = memblock_region_memory_end_pfn(mem);
 
 		/* Ignore complete lowmem entries */
-		/** 20130907    
+		/** 20130907
 		 * 1:1 매핑 영역 안에 속한 region은 지나감
 		 **/
 		if (end <= max_low)
 			continue;
 
 		/* Truncate partial highmem entries */
-		/** 20130907    
+		/** 20130907
 		 * 1:1 매핑 된 영역을 제외한 부분부터 시작 주소로 설정
 		 **/
 		if (start < max_low)
 			start = max_low;
 
 		/* Find and exclude any reserved regions */
-		/** 20130907    
+		/** 20130907
 		 * reserved 영역이 포함되어 있는 경우, 그것을 제외한 영역에 대해 free_area.
 		 *
 		 * 빗금친 부분 free
@@ -836,12 +836,12 @@ static void __init free_highpages(void)
 			res_start = memblock_region_reserved_base_pfn(res);
 			res_end = memblock_region_reserved_end_pfn(res);
 
-			/** 20130907    
+			/** 20130907
 			 * reserved 영역이 모두 lowmem 영역에 속해 있다면 지나감
 			 **/
 			if (res_end < start)
 				continue;
-			/** 20130907    
+			/** 20130907
 			 * 걸쳐 있는 경우 start 위치 조정
 			 **/
 			if (res_start < start)
@@ -858,14 +858,14 @@ static void __init free_highpages(void)
 				break;
 		}
 
-		/** 20130907    
+		/** 20130907
 		 * reserved가 아닌 영역에 대해 free_area.
 		 **/
 		/* And now free anything which remains */
 		if (start < end)
 			totalhigh_pages += free_area(start, end, NULL);
 	}
-	/** 20130907    
+	/** 20130907
 	 * highmem에서 free시킨 페이지 수를 totalram_pages에 누적시킨다.
 	 **/
 	totalram_pages += totalhigh_pages;
@@ -877,7 +877,7 @@ static void __init free_highpages(void)
  * memory is free.  This is done after various parts of the system have
  * claimed their memory after the kernel image.
  */
-/** 20130907    
+/** 20130907
  * bootmem에서 사용 중이지 않은 공간과 bootmem 비트맵이 사용하던 공간을 free시키고, buddy에서 사용할 free_list에 추가한다.
  * CONFIG_HIGHMEM이 정의되어 있는 경우 highmem 영역에 속한 영역 중 memblock 의 memory region 중 reserved 되지 않은 영역을 free.
  * totalram_pages가 free한 pages를 저장한다.
@@ -887,7 +887,7 @@ void __init mem_init(void)
 	unsigned long reserved_pages, free_pages;
 	struct memblock_region *reg;
 	int i;
-	/** 20130803    
+	/** 20130803
 	 * vexpress에서 정의되어 있지 않음
 	 **/
 #ifdef CONFIG_HAVE_TCM
@@ -896,7 +896,7 @@ void __init mem_init(void)
 	extern u32 itcm_end;
 #endif
 
-	/** 20130803    
+	/** 20130803
 	 * PFN으로 해당하는 page 구조체를 찾는다.
 	 *   max_pfn         : 최대 pfn의 수
 	 *   PHYS_PFN_OFFSET : 커널 시작 주소에 대한 PFN
@@ -925,8 +925,8 @@ void __init mem_init(void)
 
 	free_highpages();
 
-	/** 20130907    
-	 * reserved_pages와 free_pages를 0으로 초기화 
+	/** 20130907
+	 * reserved_pages와 free_pages를 0으로 초기화
 	 **/
 	reserved_pages = free_pages = 0;
 
@@ -935,34 +935,34 @@ void __init mem_init(void)
 		unsigned int pfn1, pfn2;
 		struct page *page, *end;
 
-		/** 20130907    
+		/** 20130907
 		 * bank의 시작 pfn과 마지막 pfn을 가져옴
 		 **/
 		pfn1 = bank_pfn_start(bank);
 		pfn2 = bank_pfn_end(bank);
 
-		/** 20130907    
+		/** 20130907
 		 * pfn을 struct page * 주소값으로 변환
 		 * pfn2는 bank를 넘어선 주소이므로 마지막 bank에 대한 page 값을 가져와 1을 더한다.
 		 **/
 		page = pfn_to_page(pfn1);
 		end  = pfn_to_page(pfn2 - 1) + 1;
 
-		/** 20130907    
+		/** 20130907
 		 * bank의 각 pfn을 돌면서 free_pages와 reserved_pages를 각각 counting.
 		 **/
 		do {
-			/** 20130907    
+			/** 20130907
 			 * reserved된 page의 수를 counting.
 			 **/
 			if (PageReserved(page))
 				reserved_pages++;
-			/** 20130907    
+			/** 20130907
 			 * page의 _count가 0이라면 사용되지 않는 page이다.
 			 **/
 			else if (!page_count(page))
 				free_pages++;
-			/** 20130907    
+			/** 20130907
 			 * 다음 page를 가리킴
 			 **/
 			page++;
@@ -973,26 +973,25 @@ void __init mem_init(void)
 	 * Since our memory may not be contiguous, calculate the
 	 * real number of pages we have in this system
 	 */
-	/** 20130907    
+	/** 20130907
 	 * vexpress의 출력 예
-	 * 
-	Memory: 1024MB = 1024MB total
-	Memory: 1032552k/1032552k available, 16024k reserved, 0K highmem
-	Virtual kernel memory layout:
-		vector  : 0xffff0000 - 0xffff1000   (   4 kB)
-		fixmap  : 0xfff00000 - 0xfffe0000   ( 896 kB)
-		vmalloc : 0xc0800000 - 0xff000000   (1000 MB)
-		lowmem  : 0x80000000 - 0xc0000000   (1024 MB)
-		modules : 0x7f000000 - 0x80000000   (  16 MB)
-		  .text : 0x80008000 - 0x804450f0   (4341 kB)
-		  .init : 0x80446000 - 0x804729c0   ( 179 kB)
-		  .data : 0x80474000 - 0x804a2be0   ( 187 kB)
-		   .bss : 0x804a2c04 - 0x804c13b8   ( 122 kB)
 	 *
+	 *Memory: 1024MB = 1024MB total
+	 *Memory: 1032552k/1032552k available, 16024k reserved, 0K highmem
+	 *Virtual kernel memory layout:
+	 *        vector  : 0xffff0000 - 0xffff1000   (   4 kB)
+	 *        fixmap  : 0xfff00000 - 0xfffe0000   ( 896 kB)
+	 *        vmalloc : 0xc0800000 - 0xff000000   (1000 MB)
+	 *        lowmem  : 0x80000000 - 0xc0000000   (1024 MB)
+	 *        modules : 0x7f000000 - 0x80000000   (  16 MB)
+	 *          .text : 0x80008000 - 0x804450f0   (4341 kB)
+	 *          .init : 0x80446000 - 0x804729c0   ( 179 kB)
+	 *          .data : 0x80474000 - 0x804a2be0   ( 187 kB)
+	 *           .bss : 0x804a2c04 - 0x804c13b8   ( 122 kB)
 	 **/
 	printk(KERN_INFO "Memory:");
 	num_physpages = 0;
-	/** 20130907    
+	/** 20130907
 	 * memblock 의 memory region에 속한 pages의 수를 구해 num_physpages에 누적시킨다.
 	 **/
 	for_each_memblock(memory, reg) {
@@ -1064,7 +1063,7 @@ void __init mem_init(void)
 	 * be detected at build time already.
 	 */
 #ifdef CONFIG_MMU
-	/** 20130907    
+	/** 20130907
 	 * TASK_SIZE가 MODULES_VADDR보다 크면 BUG
 	 **/
 	BUILD_BUG_ON(TASK_SIZE				> MODULES_VADDR);
@@ -1076,7 +1075,7 @@ void __init mem_init(void)
 	BUG_ON(PKMAP_BASE + LAST_PKMAP * PAGE_SIZE	> PAGE_OFFSET);
 #endif
 
-	/** 20130907    
+	/** 20130907
 	 * PAGE_SIZE가 16KB 이상이고 num_physpages가 128 이하라면 OVERCOMMIT_ALWAYS 속성으로 지정한다.
 	 **/
 	if (PAGE_SIZE >= 16384 && num_physpages <= 128) {
@@ -1090,7 +1089,7 @@ void __init mem_init(void)
 	}
 }
 
-/** 20160130    
+/** 20160130
  * __init 섹션(__init_start ~ __init_end 사이)의 메모리를 해제한다.
  **/
 void free_initmem(void)
@@ -1104,7 +1103,7 @@ void free_initmem(void)
 				    "TCM link");
 #endif
 
-	/** 20160130    
+	/** 20160130
 	 * __init_begin ~ __init_end 사이 메모리를 exception을 발생시킬 명령으로 쓴다.
 	 * 사용 중이던 메모리를 페이지 할당자(버디)로 이관한다.
 	 *
@@ -1122,12 +1121,12 @@ void free_initmem(void)
 
 static int keep_initrd;
 
-/** 20160103    
+/** 20160103
  * initrd용으로 사용한 메모리를 해제한다.
  **/
 void free_initrd_mem(unsigned long start, unsigned long end)
 {
-	/** 20160103    
+	/** 20160103
 	 * keep_initrd가 설정되지 않았다면
 	 * 초기화 없이 직접 접근시 exception을 발생시키도록 내용을 오염시키고,
 	 * 사용한 메모리를 해제해 lru나 buddy로 이관시킨다.

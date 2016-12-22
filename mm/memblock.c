@@ -437,70 +437,70 @@ static void __init_memblock memblock_insert_region(struct memblock_type *type,
  */
 
 /** 20130119
-
-  <처리전>
-              rbase  rend     rbase   rend
-                +------+        +-------+
-  memblock      |   0  |        |  1    |
-                +------+        +-------+                      
-          base            end
-            +---------------+
-  meminfo   |               |
-            +---------------+
-
-            
-  <merge처리전>
-            +---------------+   +-------+
-  memblock  | 0 |   1   | 2 |   |  3    |
-            +---------------+   +-------+
-
-  <merge처리후>
-            +---------------+   +-------+
-  memblock  |       0       |   |   1   |
-            +---------------+   +-------+ 
+ *
+ *  <처리전>
+ *              rbase  rend     rbase   rend
+ *                +------+        +-------+
+ *  memblock      |   0  |        |  1    |
+ *                +------+        +-------+
+ *          base            end
+ *            +---------------+
+ *  meminfo   |               |
+ *            +---------------+
+ *
+ *
+ *  <merge처리전>
+ *            +---------------+   +-------+
+ *  memblock  | 0 |   1   | 2 |   |  3    |
+ *            +---------------+   +-------+
+ *
+ *  <merge처리후>
+ *            +---------------+   +-------+
+ *  memblock  |       0       |   |   1   |
+ *            +---------------+   +-------+
  **/
 
-/** 20130126    
+/** 20130126
  *  memblock에 새로운 region을 추가한다.
  *  logical memory block 을 관리하는 memblock 변수의 자료구조를 채운다.
  **/
 
 /** 20130810
-	type->cnt 1일 경우 
-
- <처리전>
-              rbase  rend    
-                +------+    
-  memblock      |   0  |   
-                +------+                        
-				    base  end
-					+------+
-  meminfo			|      |
-					+------+
-
-	1. for문에서 첫번째 루프 수행
-		- base가 rend 위치로 조정
-
-              rbase  rend    
-                +------+    
-  memblock      |   0  |   
-                +------+                        
-				      base end
-					   +---+
-  meminfo			   |   |
-					   +---+
-
-	2. for문을 벗어나 base가 end보다 작기때문에 nr_new증가 
-	3. insert가 false에서 true로 세팅되고 goto repeat  
-	4. nr_new를 0으로 세팅하고, 다시 for문 실행
-	5. base가 end보다 작으므로 nr_new를 1 증가 시키고 insert가
-	true므로 memblock_insert_region으로 memblock추가.
-  <처리후>     rbase       end
-                +----------+   
-  memblock      |     0    |   
-                +- --------+   
-
-**/
+ *        type->cnt 1일 경우
+ *
+ * <처리전>
+ *              rbase  rend
+ *                +------+
+ *  memblock      |   0  |
+ *                +------+
+ *                              base  end
+ *                              +------+
+ *  meminfo			|      |
+ *                              +------+
+ *
+ *        1. for문에서 첫번째 루프 수행
+ *                - base가 rend 위치로 조정
+ *
+ *              rbase  rend
+ *                +------+
+ *  memblock      |   0  |
+ *                +------+
+ *                                base end
+ *                                 +---+
+ *  meminfo			   |   |
+ *                                 +---+
+ *
+ *        2. for문을 벗어나 base가 end보다 작기때문에 nr_new증가
+ *        3. insert가 false에서 true로 세팅되고 goto repeat
+ *        4. nr_new를 0으로 세팅하고, 다시 for문 실행
+ *        5. base가 end보다 작으므로 nr_new를 1 증가 시키고 insert가
+ *        true므로 memblock_insert_region으로 memblock추가.
+ *  <처리후>     rbase       end
+ *                +----------+
+ *  memblock      |     0    |
+ *                +- --------+
+ *
+ **/
 static int __init_memblock memblock_add_region(struct memblock_type *type,
 				phys_addr_t base, phys_addr_t size, int nid)
 {
@@ -515,9 +515,9 @@ static int __init_memblock memblock_add_region(struct memblock_type *type,
 	/* special case for empty array */
 	if (type->regions[0].size == 0) {
         /** 20130119
-          type->regions가 memblock_memory_init_regions[128]로 초기화 되어 있음
-          최초에는 이 블록으로 들어옴
-        **/
+	 * type->regions가 memblock_memory_init_regions[128]로 초기화 되어 있음
+	 * 최초에는 이 블록으로 들어옴
+	 **/
 		WARN_ON(type->cnt != 1 || type->total_size);
 		type->regions[0].base = base;
 		type->regions[0].size = size;
@@ -532,7 +532,7 @@ repeat:
 	 * to accomodate the new area.  The second actually inserts them.
 	 */
 	base = obase;
-	/** 20130126    
+	/** 20130126
 	 * insert를 하려고 하는 memblock region의 수
 	 **/
 	nr_new = 0;
@@ -542,12 +542,12 @@ repeat:
 		struct memblock_region *rgn = &type->regions[i];
 		phys_addr_t rbase = rgn->base;
 		phys_addr_t rend = rbase + rgn->size;
-/** 20130119
-  rbase : memblock region의 base 값
-  rend  : memblock region의 end 값
-  base  : 추가할 meminfo의 base 값 
-  end   : 추가할 meminfo의 end 값
- **/
+		/** 20130119
+		 * rbase : memblock region의 base 값
+		 * rend  : memblock region의 end 값
+		 * base  : 추가할 meminfo의 base 값
+		 * end   : 추가할 meminfo의 end 값
+		 **/
 		if (rbase >= end)
 			break;
 		if (rend <= base)
@@ -559,22 +559,22 @@ repeat:
 		if (rbase > base) {
 			nr_new++;
 			if (insert)
-                /** 20130119
-                  memblock의 region을 새롭게 추가한다. 
-                  type->cnt, type->total_size값을 갱신한다 
-                 **/
+				/** 20130119
+				 * memblock의 region을 새롭게 추가한다.
+				 * type->cnt, type->total_size값을 갱신한다
+				 **/
 				memblock_insert_region(type, i++, base,
 						       rbase - base, nid);
 		}
 		/* area below @rend is dealt with, forget about it */
 
 		/** 20130119
-         만약 새로 추가할 meminfo의 end값이 기존memblock의 rend값보다 크다면
-         meminfo의 나머지 메모리 영역을 insert하기 위해 rend값을 base 값으로 설정한다
-         **/
-        base = min(rend, end);
+		 * 만약 새로 추가할 meminfo의 end값이 기존memblock의 rend값보다 크다면
+		 * meminfo의 나머지 메모리 영역을 insert하기 위해 rend값을 base 값으로 설정한다
+		 **/
+		base = min(rend, end);
 	}
-    
+
 	/* insert the remaining portion */
 	if (base < end) {
 		nr_new++;
@@ -587,8 +587,8 @@ repeat:
 	 * insertions; otherwise, merge and return.
 	 */
 	if (!insert) {
-		/** 20130126    
-		 * type->cnt 현재 memblock에 존재하는 region의 수 
+		/** 20130126
+		 * type->cnt 현재 memblock에 존재하는 region의 수
 		 * nr_new    새롭게 insert할 region의 수
 		 *
 		 * type->max는 128로 define.
@@ -723,14 +723,14 @@ int __init_memblock memblock_free(phys_addr_t base, phys_addr_t size)
 	return __memblock_remove(&memblock.reserved, base, size);
 }
 
-/** 20130126    
+/** 20130126
  * memblock 구조체의 reserved 영역에 등록
  **/
 int __init_memblock memblock_reserve(phys_addr_t base, phys_addr_t size)
 {
 	struct memblock_type *_rgn = &memblock.reserved;
 
-	/** 20130126    
+	/** 20130126
 	 * memblock=debug를 주면 early_memblock에서 debug 정보를 출력하도록 설정
 	 **/
 	memblock_dbg("memblock_reserve: [%#016llx-%#016llx] %pF\n",
@@ -738,7 +738,7 @@ int __init_memblock memblock_reserve(phys_addr_t base, phys_addr_t size)
 		     (unsigned long long)base + size,
 		     (void *)_RET_IP_);
 
-	/** 20130126    
+	/** 20130126
 	 * memblock.reserved에 등록
 	 **/
 	return memblock_add_region(_rgn, base, size, MAX_NUMNODES);
@@ -830,26 +830,27 @@ void __init_memblock __next_free_mem_range(u64 *idx, int nid,
  *
  * Reverse of __next_free_mem_range().
  */
- /** 20130302 
-   idx : &i(ULLONG_MAX)
-   nid : 1
-   out_start : &this_start 
-   end_start : &this_end
-   out_nid   : null
-
-	memblock memory region과 reserved region을 역순으로 돌면서 memory region영역에서 사용가능한 reserved region영역을 찾아서 리턴한다.
-	
-  **/	
+/** 20130302
+ * idx : &i(ULLONG_MAX)
+ * nid : 1
+ * out_start : &this_start
+ * end_start : &this_end
+ * out_nid   : null
+ *
+ * memblock memory region과 reserved region을 역순으로 돌면서
+ * memory region영역에서 사용가능한 reserved region영역을 찾아서 리턴한다.
+ *
+ **/
 void __init_memblock __next_free_mem_range_rev(u64 *idx, int nid,
 					   phys_addr_t *out_start,
 					   phys_addr_t *out_end, int *out_nid)
 {
-	/** 20130223    
+	/** 20130223
 	 * memblock.memory와 memblock.reserved 각각을 mem, rsv로 가리킴
 	 **/
 	struct memblock_type *mem = &memblock.memory;
 	struct memblock_type *rsv = &memblock.reserved;
-	/** 20130223    
+	/** 20130223
 	 * mi: *idx의 하위 32bit 값
 	 * ri: *idx의 상위 32bit 값
 	 */
@@ -860,58 +861,59 @@ void __init_memblock __next_free_mem_range_rev(u64 *idx, int nid,
 	 * 최초 값에는 UULONG_MAX로 같음
 	 **/
 	if (*idx == (u64)ULLONG_MAX) {
-		/** 20130223    
+		/** 20130223
 		 * mi를 memblock.memory region의 count - 1,
 		 * ri를 memblock.reserved region의 count로 설정
 		 **/
 		mi = mem->cnt - 1;
 		ri = rsv->cnt;
 	}
-/** 20130302 
-
-memblock memory region이 여러개인 상황을 테스트
-
-qemu-system-arm -M vexpress-a9    -kernel ./arch/arm/boot/zImage  -serial stdio -append "root=/dev/ram rdinit=/sbin/init console=ttyAMA0 debug mem=64M@0x60000000 mem=32M@0x66000000 memblock=debug"
-
-Machine: ARM-Versatile Express
-memblock_reserve: [0x000000600081c0-0x000000608e66d0] arm_memblock_init+0xd8/0x318
-memblock_reserve: [0x00000060004000-0x00000060008000] arm_mm_memblock_reserve+0x30/0x38
-MEMBLOCK configuration:
- memory size = 0x6000000 reserved size = 0x8e2510
- memory.cnt  = 0x2
- memory[0x0]    [0x00000060000000-0x00000063ffffff], 0x4000000 bytes
- memory[0x1]    [0x00000066000000-0x00000067ffffff], 0x2000000 bytes
- reserved.cnt  = 0x2
- reserved[0x0]  [0x00000060004000-0x00000060007fff], 0x4000 bytes
- reserved[0x1]  [0x000000600081c0-0x000000608e66cf], 0x8de510 bytes
-Memory policy: ECC disabled, Data cache writealloc
-memblock_reserve: [0x00000067fff000-0x00000068000000] memblock_alloc_base_nid+0x6c/0x90
-memblock_reserve: [0x00000067ffe000-0x00000067fff000] memblock_alloc_base_nid+0x6c/0x90
-memblock_reserve: [0x00000067ffdfe0-0x00000067ffe000] memblock_alloc_base_nid+0x6c/0x90
-memblock_reserve: [0x00000067ffc000-0x00000067ffd000] memblock_alloc_base_nid+0x6c/0x90
-memblock_reserve: [0x00000067ffdfc0-0x00000067ffdfe0] memblock_alloc_base_nid+0x6c/0x90
-memblock_reserve: [0x00000067ffb000-0x00000067ffc000] memblock_alloc_base_nid+0x6c/0x90
-memblock_reserve: [0x00000067ffa000-0x00000067ffb000] memblock_alloc_base_nid+0x6c/0x90
-memblock_reserve: [0x00000067ff9000-0x00000067ffa000] memblock_alloc_base_nid+0x6c/0x90
- **/	
+	/** 20130302
+	 *
+	 * memblock memory region이 여러개인 상황을 테스트
+	 *
+	 * qemu-system-arm -M vexpress-a9    -kernel ./arch/arm/boot/zImage  -serial stdio -append "root=/dev/ram rdinit=/sbin/init console=ttyAMA0 debug mem=64M@0x60000000 mem=32M@0x66000000 memblock=debug"
+	 *
+	 * Machine: ARM-Versatile Express
+	 * memblock_reserve: [0x000000600081c0-0x000000608e66d0] arm_memblock_init+0xd8/0x318
+	 * memblock_reserve: [0x00000060004000-0x00000060008000] arm_mm_memblock_reserve+0x30/0x38
+	 * MEMBLOCK configuration:
+	 * memory size = 0x6000000 reserved size = 0x8e2510
+	 * memory.cnt  = 0x2
+	 * memory[0x0]    [0x00000060000000-0x00000063ffffff], 0x4000000 bytes
+	 * memory[0x1]    [0x00000066000000-0x00000067ffffff], 0x2000000 bytes
+	 * reserved.cnt  = 0x2
+	 * reserved[0x0]  [0x00000060004000-0x00000060007fff], 0x4000 bytes
+	 * reserved[0x1]  [0x000000600081c0-0x000000608e66cf], 0x8de510 bytes
+	 * Memory policy: ECC disabled, Data cache writealloc
+	 * memblock_reserve: [0x00000067fff000-0x00000068000000] memblock_alloc_base_nid+0x6c/0x90
+	 * memblock_reserve: [0x00000067ffe000-0x00000067fff000] memblock_alloc_base_nid+0x6c/0x90
+	 * memblock_reserve: [0x00000067ffdfe0-0x00000067ffe000] memblock_alloc_base_nid+0x6c/0x90
+	 * memblock_reserve: [0x00000067ffc000-0x00000067ffd000] memblock_alloc_base_nid+0x6c/0x90
+	 * memblock_reserve: [0x00000067ffdfc0-0x00000067ffdfe0] memblock_alloc_base_nid+0x6c/0x90
+	 * memblock_reserve: [0x00000067ffb000-0x00000067ffc000] memblock_alloc_base_nid+0x6c/0x90
+	 * memblock_reserve: [0x00000067ffa000-0x00000067ffb000] memblock_alloc_base_nid+0x6c/0x90
+	 * memblock_reserve: [0x00000067ff9000-0x00000067ffa000] memblock_alloc_base_nid+0x6c/0x90
+	 **/
 	for ( ; mi >= 0; mi--) {
 		struct memblock_region *m = &mem->regions[mi];
 		phys_addr_t m_start = m->base;
 		phys_addr_t m_end = m->base + m->size;
 
 		/* only memory regions are associated with nodes, check it */
-		/** 20130223    
-		 * nid가 1로 넘어오면 MAX_NUMNODES와 같으므로 flase 
+		/** 20130223
+		 * nid가 1로 넘어오면 MAX_NUMNODES와 같으므로 flase
 		 **/
 		if (nid != MAX_NUMNODES && nid != memblock_get_region_node(m))
 			continue;
-		/** 20130302 
- 		vexpress 에서 reserved 영역은 text~bss영역, initrd가 있을경우 initrd, swapper_pg_dir영역이 존재한다.
- 		**/	
+		/** 20130302
+		 * in vexpress, reserved 영역은 text~bss영역, initrd가 있을 경우
+		 * initrd, swapper_pg_dir영역이 존재한다.
+		 **/
 		/* scan areas before each reservation for intersection */
 		for ( ; ri >= 0; ri--) {
 			struct memblock_region *r = &rsv->regions[ri];
-			/** 20130223    
+			/** 20130223
 			 * memblock.reserved의 개수가 1 이상이면 마지막 region의 base + size
 			 **/
 			phys_addr_t r_start = ri ? r[-1].base + r[-1].size : 0;
@@ -923,36 +925,37 @@ memblock_reserve: [0x00000067ff9000-0x00000067ffa000] memblock_alloc_base_nid+0x
 			 **/
 			phys_addr_t r_end = ri < rsv->cnt ? r->base : ULLONG_MAX;
 
-			/** 20130302 
-			 현재 memory region 이 현재reserved region과 겹치지 않으면 break 
-			 **/ 
+			/** 20130302
+			 * 현재 memory region 이 현재reserved region과 겹치지 않으면 break
+			 **/
 			/* if ri advanced past mi, break out to advance mi */
 			if (r_end <= m_start)
 				break;
 			/* if the two regions intersect, we're done */
-			/** 20130302 
-			 현재 memory region에서 reserved region으로 사용될 수 있는 영역을 찾아서 리턴한다
-			 **/	
+			/** 20130302
+			 * 현재 memory region에서 reserved region으로
+			 * 사용될 수 있는 영역을 찾아서 리턴한다
+			 **/
 			if (m_end > r_start) {
 				if (out_start)
 					*out_start = max(m_start, r_start);
 				if (out_end)
 					*out_end = min(m_end, r_end);
-					/** 20130302 
-					 	vexpress일경우 memblock_get_region_node 는 empty function
-					 **/ 
+					/** 20130302
+					 * in vexpress, memblock_get_region_node 는 empty function
+					 **/
 				if (out_nid)
 					*out_nid = memblock_get_region_node(m);
 
-				if (m_start >= r_start)	
-					/** 20130302 
-					 현제 reserved영역이 물리메모리 영역이 아닐 경우 mi를 감소한다
-					 **/	
+				if (m_start >= r_start)
+					/** 20130302
+					 * 현재 reserved영역이 물리메모리 영역이 아닐 경우 mi를 감소한다
+					 **/
 					mi--;
 				else
-					/** 20130302 
-					 현제 물리메모리에서 다른 reserved영역을 가리키게함
-					 **/ 
+					/** 20130302
+					 * 현재 물리메모리에서 다른 reserved영역을 가리키게함
+					 **/
 					ri--;
 				*idx = (u32)mi | (u64)ri << 32;
 				return;
@@ -1033,18 +1036,18 @@ static phys_addr_t __init memblock_alloc_base_nid(phys_addr_t size,
 	phys_addr_t found;
 
 	/* align @size to avoid excessive fragmentation on reserved array */
-	/** 20130302 
-	 	요구 사이즈가 align된 사이즈보다 작을 경우 최소 align된 사이즈로 맞추기 위해 round_up을 한다.
-	 **/	
+	/** 20130302
+	 * 요구 사이즈가 align된 사이즈보다 작을 경우 최소 align된 사이즈로 맞추기 위해 round_up을 한다.
+	 **/
 	size = round_up(size, align);
 
-	/** 20130302 
+	/** 20130302
  		max_addr 보다 작은 범위에서 memblock alloc 가능한 영역을 찾는다.
- 	**/	
+ 	**/
 	found = memblock_find_in_range_node(0, max_addr, size, align, nid);
-	/** 20130302 
-	 	alloc 가능한 영역을 찾으면 memblock reserved에 등록한다.
-	 **/	
+	/** 20130302
+	 * alloc 가능한 영역을 찾으면 memblock reserved에 등록한다.
+	 **/
 	if (found && !memblock_reserve(found, size))
 		return found;
 
@@ -1056,20 +1059,21 @@ phys_addr_t __init memblock_alloc_nid(phys_addr_t size, phys_addr_t align, int n
 	return memblock_alloc_base_nid(size, align, MEMBLOCK_ALLOC_ACCESSIBLE, nid);
 }
 
-/** 20130302 
-	max_addr보다 작은 범위에서만 alloc을 수행함. 
- **/	
+/** 20130302
+ * max_addr보다 작은 범위에서만 alloc을 수행함.
+ **/
 phys_addr_t __init __memblock_alloc_base(phys_addr_t size, phys_addr_t align, phys_addr_t max_addr)
 {
-/** 20130302 
- 	vexpress의 경우에는 MAX_NUMNODES 가 1이다.
- **/	
+	/** 20130302
+	 * in UMA, MAX_NUMNODES 가 1이다.
+	 **/
 	return memblock_alloc_base_nid(size, align, max_addr, MAX_NUMNODES);
 }
-/** 20130302 
- 	memblock의 memory alloc이 실패했을 경우 패닉정보 출력
-	max_addr : alloc 가능한 memblock의 최대 주소. memblock_alloc에서 호출했을 경우는 0.
- **/	
+
+/** 20130302
+ * memblock의 memory alloc이 실패했을 경우 패닉정보 출력
+ * max_addr : alloc 가능한 memblock의 최대 주소. memblock_alloc에서 호출했을 경우는 0.
+ **/
 phys_addr_t __init memblock_alloc_base(phys_addr_t size, phys_addr_t align, phys_addr_t max_addr)
 {
 	phys_addr_t alloc;
@@ -1083,17 +1087,17 @@ phys_addr_t __init memblock_alloc_base(phys_addr_t size, phys_addr_t align, phys
 	return alloc;
 }
 
-/** 20130223    
+/** 20130223
  * vexpress에서 이 함수 호출
+ *
+ * 20130302
+ * memblock 영역에서 사용가능한 align된 공간을 확보하는 함수
  **/
-/** 20130302 
-	memblock 영역에서 사용가능한 align된 공간을 확보하는 함수
-**/	
 phys_addr_t __init memblock_alloc(phys_addr_t size, phys_addr_t align)
 {
-/** 20130302 
- 	alloc가능한 memblock의 최대 주소를 MEMBLOCK_ALLOC_ACCESSIBLE 로 지정함
- **/	
+	/** 20130302
+	 * alloc가능한 memblock의 최대 주소를 MEMBLOCK_ALLOC_ACCESSIBLE 로 지정함
+	 **/
 	return memblock_alloc_base(size, align, MEMBLOCK_ALLOC_ACCESSIBLE);
 }
 
@@ -1153,12 +1157,12 @@ void __init memblock_enforce_memory_limit(phys_addr_t limit)
 	__memblock_remove(&memblock.reserved, max_addr, (phys_addr_t)ULLONG_MAX);
 }
 
-/** 20130126    
+/** 20130126
  * memblock에서 addr을 포함하는 region을 검사하는 함수
  **/
 static int __init_memblock memblock_search(struct memblock_type *type, phys_addr_t addr)
 {
-	/** 20130126    
+	/** 20130126
 	 * 0부터 type의 개수에 대해 binary search
 	 * addr을 포함하는 regions의 index를 리턴. 못 찾으면 -1 리턴.
 	 **/ 
@@ -1183,13 +1187,13 @@ int __init memblock_is_reserved(phys_addr_t addr)
 	return memblock_search(&memblock.reserved, addr) != -1;
 }
 
-/** 20130518    
+/** 20130518
  * addr이 memblock.memory에 포함된다면 1을 리턴.
  * 그렇지 않다면 0을 리턴.
  **/
 int __init_memblock memblock_is_memory(phys_addr_t addr)
 {
-	/** 20130518    
+	/** 20130518
 	 * addr가 memblock.memory의 region에 속하는지 검사
 	 **/
 	return memblock_search(&memblock.memory, addr) != -1;
@@ -1212,8 +1216,8 @@ int __init_memblock memblock_is_region_memory(phys_addr_t base, phys_addr_t size
 
 	if (idx == -1)
 		return 0;
-	/** 20130126    
-	 * 찾은 region의 index의 영역 안에 base와 end가 
+	/** 20130126
+	 * 찾은 region의 index의 영역 안에 base와 end가
 	 * reg[idx].base <= base ~ base+size <= reg[idx].end 이면 true
 	 **/
 	return memblock.memory.regions[idx].base <= base &&
@@ -1231,13 +1235,13 @@ int __init_memblock memblock_is_region_memory(phys_addr_t base, phys_addr_t size
  * RETURNS:
  * 0 if false, non-zero if true
  */
-/** 20130126    
+/** 20130126
  * memblock.reserved 영역과 주어진 주소 공간이 겹치는지 검사하는 함수
  **/
 int __init_memblock memblock_is_region_reserved(phys_addr_t base, phys_addr_t size)
 {
 	memblock_cap_size(base, &size);
-	/** 20130126    
+	/** 20130126
 	 * index 이므로 0과 비교
 	 **/
 	return memblock_overlaps_region(&memblock.reserved, base, size) >= 0;
@@ -1251,7 +1255,7 @@ void __init_memblock memblock_set_current_limit(phys_addr_t limit)
 	memblock.current_limit = limit;
 }
 
-/** 20130126    
+/** 20130126
  * memblock_type으로 주어진 배열을 순회하며 region 정보를 출력
  **/
 static void __init_memblock memblock_dump(struct memblock_type *type, char *name)
@@ -1277,7 +1281,7 @@ static void __init_memblock memblock_dump(struct memblock_type *type, char *name
 	}
 }
 
-/** 20130126    
+/** 20130126
  * memblock의 모든 내용을 출력
  **/
 void __init_memblock __memblock_dump_all(void)
@@ -1287,14 +1291,14 @@ void __init_memblock __memblock_dump_all(void)
 		(unsigned long long)memblock.memory.total_size,
 		(unsigned long long)memblock.reserved.total_size);
 
-	/** 20130126    
+	/** 20130126
 	 * memblock의 각 region 정보를 출력
 	 **/
 	memblock_dump(&memblock.memory, "memory");
 	memblock_dump(&memblock.reserved, "reserved");
 }
 
-/** 20130126    
+/** 20130126
  * memblock resize 를 허용
  **/
 void __init memblock_allow_resize(void)

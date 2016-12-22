@@ -172,12 +172,12 @@ int memblock_is_region_reserved(phys_addr_t base, phys_addr_t size);
 
 extern void __memblock_dump_all(void);
 
-/** 20130126    
+/** 20130126
  * memblock의 모든 내용을 출력해준다.
  **/
 static inline void memblock_dump_all(void)
 {
-	/** 20130126    
+	/** 20130126
 	 * memblock_debug는 early_memblock이 호출된 경우 1
 	 **/
 	if (memblock_debug)
@@ -205,7 +205,7 @@ void memblock_set_current_limit(phys_addr_t limit);
  * memblock_region_memory_base_pfn - Return the lowest pfn intersecting with the memory region
  * @reg: memblock_region structure
  */
-/** 20130330    
+/** 20130330
  * memblock region의 시작 주소를 round up한 pfn을 리턴
  **/
 static inline unsigned long memblock_region_memory_base_pfn(const struct memblock_region *reg)
