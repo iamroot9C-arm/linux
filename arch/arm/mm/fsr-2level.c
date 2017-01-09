@@ -1,7 +1,7 @@
-/** 20151121    
+/** 20151121
  * 아래 테이블의 정보는 hook_fault_code에 의해 업데이트 된다.
  *
- * do_DataAbort, do_PrefetchAbort 에서 이 테이블을 사용한다.
+ * dabt 발생시 do_DataAbort에서 해당 엔트리를 읽어 처리한다.
  **/
 static struct fsr_info fsr_info[] = {
 	/*
@@ -47,6 +47,11 @@ static struct fsr_info fsr_info[] = {
 	{ do_bad,		SIGBUS,  0,		"unknown 31"			   },
 };
 
+/** 20161228
+ * 아래 테이블의 정보는 hook_fault_code에 의해 업데이트 된다.
+ *
+ * dabt 발생시 do_PrefetchAbort에서 해당 엔트리를 읽어 처리한다.
+ **/
 static struct fsr_info ifsr_info[] = {
 	{ do_bad,		SIGBUS,  0,		"unknown 0"			   },
 	{ do_bad,		SIGBUS,  0,		"unknown 1"			   },

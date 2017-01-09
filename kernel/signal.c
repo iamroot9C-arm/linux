@@ -1066,7 +1066,7 @@ static inline void userns_fixup_signal_uid(struct siginfo *info, struct task_str
 	rcu_read_unlock();
 }
 #else
-/** 20151003    
+/** 20151003
  * CONFIG_USER_NS 정의하지 않은 경우 NULL 함수.
  **/
 static inline void userns_fixup_signal_uid(struct siginfo *info, struct task_struct *t)
@@ -3339,12 +3339,12 @@ __attribute__((weak)) const char *arch_vma_name(struct vm_area_struct *vma)
 	return NULL;
 }
 
-/** 20150502    
+/** 20150502
  * 시그널 초기화 함수.
  **/
 void __init signals_init(void)
 {
-	/** 20150502    
+	/** 20150502
 	 * "sigqueue" kmem_cache를 생성한다.
 	 * 오브젝트 할당 실패시 PANIC 함수를 호출한다.
 	 **/

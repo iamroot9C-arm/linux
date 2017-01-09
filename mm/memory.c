@@ -945,7 +945,7 @@ copy_one_pte(struct mm_struct *dst_mm, struct mm_struct *src_mm,
 	 * If it's a COW mapping, write protect it both
 	 * in the parent and the child
 	 */
-	/** 20160430    
+	/** 20160430
 	 * copy-on-write mapping인 경우
 	 **/
 	if (is_cow_mapping(vm_flags)) {
@@ -959,6 +959,11 @@ copy_one_pte(struct mm_struct *dst_mm, struct mm_struct *src_mm,
 	 */
 	if (vm_flags & VM_SHARED)
 		pte = pte_mkclean(pte);
+	/** 20170109
+	 * pte entry에서 L_PTE_YOUNG을 제거.
+	 *
+	 * set_pte_ext에서 L_PTE_YOUNG이 꺼져 있으면 hw pt 위치에 0을 저장한다.
+	 **/
 	pte = pte_mkold(pte);
 
 	page = vm_normal_page(vma, addr, pte);
@@ -988,22 +993,22 @@ int copy_pte_range(struct mm_struct *dst_mm, struct mm_struct *src_mm,
 	swp_entry_t entry = (swp_entry_t){0};
 
 again:
-	/** 20160430    
+	/** 20160430
 	 * rss vector 초기화.
 	 **/
 	init_rss_vec(rss);
 
-	/** 20160430    
+	/** 20160430
 	 * addr에 해당하는 pte를 할당 받고, pte의 주소를 리턴.
 	 **/
 	dst_pte = pte_alloc_map_lock(dst_mm, dst_pmd, addr, &dst_ptl);
 	if (!dst_pte)
 		return -ENOMEM;
-	/** 20160430    
+	/** 20160430
 	 * pmd에서 addr에 해당하는 pte entry의 주소를 가져와 src_pte에 저장.
 	 **/
 	src_pte = pte_offset_map(src_pmd, addr);
-	/** 20160430    
+	/** 20160430
 	 * src pte에 해당하는 spinlock의 위치를 받아온다.
 	 * ptl은 pte에 해당하는 struct page에 위치한다.
 	 **/
@@ -1018,7 +1023,7 @@ again:
 		 * We are holding two locks at this point - either of them
 		 * could generate latencies in another task on another CPU.
 		 */
-		/** 20160430    
+		/** 20160430
 		 * dst와 src ptr 모두에 대한 lock을 잡고 있기 때문에
 		 * progress가 어느 정도 수행되었다면 복사를 멈추고 나간다.
 		 * 아래에서 end까지 진행되지 않았다면 again.
@@ -1029,7 +1034,7 @@ again:
 			    spin_needbreak(src_ptl) || spin_needbreak(dst_ptl))
 				break;
 		}
-		/** 20160430    
+		/** 20160430
 		 * src entry가 비어 있으면 progress만 증가시키고 continue.
 		 **/
 		if (pte_none(*src_pte)) {
@@ -1115,14 +1120,14 @@ static inline int copy_pud_range(struct mm_struct *dst_mm, struct mm_struct *src
 	return 0;
 }
 
-/** 20160514    
+/** 20160514
  * parent의 vma 의 vm_start ~ vm_end에 해당하는 page table 영역을
  * child에 구성한다.
  *
  * vm_area_struct을 가리키는 멤버
  *   mm->mmap  (list   )
  *   mm->mm_rb (rb tree)
- * 
+ *
  * page table을 가리키는 멤버
  *   mm->pgd
  **/
@@ -1141,7 +1146,7 @@ int copy_page_range(struct mm_struct *dst_mm, struct mm_struct *src_mm,
 	 * readonly mappings. The tradeoff is that copy_page_range is more
 	 * efficient than faulting.
 	 */
-	/** 20160514    
+	/** 20160514
 	 * pte entry가 없으면 page fault가 발생한다.
 	 * page fault로 pte들이 채워질 수 있는 상황이면 굳이 pte를 복사하지 않는데,
 	 * 큰 공유 메모리 매핑이나 private지만 readonly 매핑인 경우 fork를 더
@@ -1157,13 +1162,13 @@ int copy_page_range(struct mm_struct *dst_mm, struct mm_struct *src_mm,
 			return 0;
 	}
 
-	/** 20160514    
+	/** 20160514
 	 * HUGETLB PAGE인 경우 처리. vexpress일 경우 해당 없음.
 	 **/
 	if (is_vm_hugetlb_page(vma))
 		return copy_hugetlb_page_range(dst_mm, src_mm, vma);
 
-	/** 20160514    
+	/** 20160514
 	 * vma가 special mapping인 경우(VM_PFNMAP)
 	 *
 	 * pfn mapping된 메모리에 대해 COW 되었음을 기록하기 위한 작업인듯???
@@ -1184,7 +1189,7 @@ int copy_page_range(struct mm_struct *dst_mm, struct mm_struct *src_mm,
 	 * parent mm. And a permission downgrade will only happen if
 	 * is_cow_mapping() returns true.
 	 */
-	/** 20160514    
+	/** 20160514
 	 * parent mm의 ptes 상에서 permission downgrade가 발생할 수 있는 경우에 한해
 	 * secondary MMU mapping들에 대해서 invalidate를 해줘야 한다.
 	 * (secondary MMU mappings의 의미??? vexpress config는 해당 안 함.)
@@ -1198,26 +1203,26 @@ int copy_page_range(struct mm_struct *dst_mm, struct mm_struct *src_mm,
 		mmu_notifier_invalidate_range_start(src_mm, addr, end);
 
 	ret = 0;
-	/** 20160528    
+	/** 20160528
 	 * vm_area_struct의 vm_start 주소에 해당하는 pgd offset.
 	 **/
 	dst_pgd = pgd_offset(dst_mm, addr);
 	src_pgd = pgd_offset(src_mm, addr);
-	/** 20160514    
+	/** 20160514
 	 * addr ~ end 사이 영역을 pgd entry 단위로 반복해 복사한다.
 	 **/
 	do {
-		/** 20160514    
+		/** 20160514
 		 * addr를 다음 pgd entry 하나 단위로 올림.
 		 * 마지막 pgd인 경우 end가 다음 boundary보다  next는 end가 됨.
 		 **/
 		next = pgd_addr_end(addr, end);
-		/** 20160514    
+		/** 20160514
 		 * src의 pgd를 복사할 필요가 없는 경우 skip하고 continue.
 		 **/
 		if (pgd_none_or_clear_bad(src_pgd))
 			continue;
-		/** 20160514    
+		/** 20160514
 		 * PUD -> PMD -> PTE로 타고 들어가며 해당 영역에 대해 복사한다.
 		 * ARM은 kernel에서 지원하는 level 중 pgd/pud와 pte만 사용한다.
 		 **/
@@ -1228,7 +1233,7 @@ int copy_page_range(struct mm_struct *dst_mm, struct mm_struct *src_mm,
 		}
 	} while (dst_pgd++, src_pgd++, addr = next, addr != end);
 
-	/** 20160514    
+	/** 20160514
 	 **/
 	if (is_cow_mapping(vma->vm_flags))
 		mmu_notifier_invalidate_range_end(src_mm,
@@ -1838,7 +1843,7 @@ int __get_user_pages(struct task_struct *tsk, struct mm_struct *mm,
 		struct vm_area_struct *vma;
 
 		vma = find_extend_vma(mm, start);
-		/** 20151114    
+		/** 20151114
 		 * 등록된 vma가 존재하지 않으며, 해당 영역이 gate_area 영역 내라면
 		 **/
 		if (!vma && in_gate_area(mm, start)) {
@@ -1851,7 +1856,7 @@ int __get_user_pages(struct task_struct *tsk, struct mm_struct *mm,
 			/* user gate pages are read-only */
 			if (gup_flags & FOLL_WRITE)
 				return i ? : -EFAULT;
-			/** 20151114    
+			/** 20151114
 			 * 커널영역의 주소인 경우 pgd_offset_k를 통해 pgd entry의 주소를 받아온다.
 			 * 유저 영역인 경우, mm의 정보에 따라 pg의 pgd entry의 주소를 받아온다.
 			 **/
@@ -1860,19 +1865,19 @@ int __get_user_pages(struct task_struct *tsk, struct mm_struct *mm,
 			else
 				pgd = pgd_offset_gate(mm, pg);
 			BUG_ON(pgd_none(*pgd));
-			/** 20151114    
+			/** 20151114
 			 * pud entry의 주소를 받아온다.
 			 **/
 			pud = pud_offset(pgd, pg);
 			BUG_ON(pud_none(*pud));
-			/** 20151114    
+			/** 20151114
 			 * pmd entry의 주소를 받아온다.
 			 **/
 			pmd = pmd_offset(pud, pg);
 			if (pmd_none(*pmd))
 				return i ? : -EFAULT;
 			VM_BUG_ON(pmd_trans_huge(*pmd));
-			/** 20151114    
+			/** 20151114
 			 * pmd에서 pg 주소에 해당하는 pte entry의 주소를 구해온다.
 			 **/
 			pte = pte_offset_map(pmd, pg);
@@ -2434,7 +2439,7 @@ static inline int remap_pud_range(struct mm_struct *mm, pgd_t *pgd,
  *
  *  Note: this is only safe if the mm semaphore is held when called.
  */
-/** 20160514    
+/** 20160514
  *
  * kernel로 mapping 되었던 메모리 영역(vma)를 userspace로 매핑.
  * VM_PFNMAP 옵션을 넣어주는 부분의 하나.
@@ -3027,7 +3032,7 @@ static inline void unmap_mapping_range_list(struct list_head *head,
  * @even_cows: 1 when truncating a file, unmap even private COWed pages;
  * but 0 when invalidating pagecache, don't throw away private data.
  */
-/** 20150418    
+/** 20150418
  * 추후 분석 ???
  **/
 void unmap_mapping_range(struct address_space *mapping,
@@ -3633,7 +3638,7 @@ int handle_pte_fault(struct mm_struct *mm,
 	ptl = pte_lockptr(mm, pmd);
 	spin_lock(ptl);
 	/** 20161207
-	 * ptl을 잡고보니 pte와 entry가 달라졌을 경우.
+	 * ptl을 잡고보니 pte와 entry가 다를 경우 lock을 해제하고 리턴.
 	 **/
 	if (unlikely(!pte_same(*pte, entry)))
 		goto unlock;
@@ -3650,6 +3655,9 @@ int handle_pte_fault(struct mm_struct *mm,
 					pte, pmd, ptl, entry);
 		entry = pte_mkdirty(entry);
 	}
+	/** 20170109
+	 * entry를 YOUNG 상태로 업데이트하여 해당 ptep에 기록
+	 **/
 	entry = pte_mkyoung(entry);
 	if (ptep_set_access_flags(vma, address, pte, entry, flags & FAULT_FLAG_WRITE)) {
 		update_mmu_cache(vma, address, pte);

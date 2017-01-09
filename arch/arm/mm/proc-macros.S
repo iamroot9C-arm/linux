@@ -65,14 +65,14 @@
  * on ARMv7.
  */
 /** 20130316
-	CTR 0x83338003 (from TRM Cache Type Register)
-    \tmp = 0x3  ( CTR >> 16 && 0xf )
-	\reg = 0x20 ( 0x4 << 0x3 ) ==> 캐쉬라인 사이즈..
-**/
-/** 20130511
-	 dcache의 라인 사이즈를 구하는 매크로
-	vexpress = 32값을 가져온다.
-**/
+ * CTR 0x83338003 (from TRM Cache Type Register)
+ * \tmp = 0x3  ( CTR >> 16 && 0xf )
+ * \reg = 0x20 ( 0x4 << 0x3 ) ==> 캐쉬라인 사이즈..
+ *
+ * 20130511
+ * 실제 dcache의 라인 사이즈를 구하는 매크로
+ * vexpress = 32값을 가져온다.
+ **/
 	.macro	dcache_line_size, reg, tmp
 	mrc	p15, 0, \tmp, c0, c0, 1		@ read ctr
 	lsr	\tmp, \tmp, #16
@@ -265,7 +265,7 @@
 	mcr	p15, 0, ip, c7, c10, 4		@ data write barrier
 	.endm
 
-/** 20151121    
+/** 20151121
  * struct processor 구조체에 해당하는 항목을 구성하는 매크로
  **/
 .macro define_processor_functions name:req, dabort:req, pabort:req, nommu=0, suspend=0
@@ -306,15 +306,13 @@ ENTRY(\name\()_processor_functions)
 .endm
 
 /** 20130316
-	 architecture 이름을 매개변수로 받아 캐시 함수를
-	선언하는 매크로 
-
-	arch/arm/mm/cache-v7.S 에서 다음과 같이 매크로 호출해 정의함.
-		define_cache_functions v7
-	
-	e.g.) v7_flush_kern_dcache_area 의 주소가 들어간다.
-	      arch/arm/mm/cache-v7.S에 정의됨.
-**/
+ * architecture 이름을 매개변수로 받아 캐시 함수를 선언하는 매크로
+ * arch/arm/mm/cache-v7.S 에서 다음과 같이 매크로 호출해 정의함.
+ * define_cache_functions v7
+ *
+ * e.g.) v7_flush_kern_dcache_area 의 주소가 들어간다.
+ *	arch/arm/mm/cache-v7.S에 정의됨.
+ **/
 .macro define_cache_functions name:req
 	.align 2
 	.type	\name\()_cache_fns, #object

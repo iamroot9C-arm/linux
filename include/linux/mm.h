@@ -94,7 +94,7 @@ extern unsigned int kobjsize(const void *objp);
 #define VM_GROWSUP	0x00000000
 #define VM_NOHUGEPAGE	0x00000200	/* MADV_NOHUGEPAGE marked this vma */
 #endif
-/** 20160514    
+/** 20160514
  * page-ranges를 struct page를 사용하지 않고 pfn만으로 관리하는 경우. 언제???
  *
  * 이 플래그를 설정하는 함수는 remap_pfn_range, vm_insert_pfn
@@ -182,7 +182,7 @@ static inline int is_linear_pfn_mapping(struct vm_area_struct *vma)
 	return !!(vma->vm_flags & VM_PFN_AT_MMAP);
 }
 
-/** 20160514    
+/** 20160514
  * special mapping인 경우인지 검사 (반대의 경우는 normal mapping)
  **/
 static inline int is_pfn_mapping(struct vm_area_struct *vma)
@@ -260,7 +260,7 @@ struct vm_operations_struct {
 struct mmu_gather;
 struct inode;
 
-/** 20130831    
+/** 20130831
  * struct page 의 private 멤버를 get/set 한다.
  **/
 #define page_private(page)		((page)->private)
@@ -289,7 +289,7 @@ struct inode;
 /*
  * Drop a ref, return true if the refcount fell to zero (the page has no users)
  */
-/** 20130803    
+/** 20130803
  * page의 _count (usage count)를 하나 감소시키고, 결과가 0인지 여부를 리턴
  **/
 static inline int put_page_testzero(struct page *page)
@@ -377,13 +377,13 @@ static inline void compound_unlock_irqrestore(struct page *page,
 #endif
 }
 
-/** 20130907    
+/** 20130907
  * compound page의 tail인 경우 first_page를 리턴하고,
  * 그렇지 않은 경우 page를 그대로 리턴
  **/
 static inline struct page *compound_head(struct page *page)
 {
-	/** 20130907    
+	/** 20130907
 	 * page가 CompoundPage의 tail이면 첫번째 page의 주소를 가져온다.
 	 **/
 	if (unlikely(PageTail(page)))
@@ -404,7 +404,7 @@ static inline void reset_page_mapcount(struct page *page)
 	atomic_set(&(page)->_mapcount, -1);
 }
 
-/** 20130824    
+/** 20130824
  * struct page 에서 _mapcount를 atomic으로 읽어 +1을 해 리턴한다.
  **/
 static inline int page_mapcount(struct page *page)
@@ -412,7 +412,7 @@ static inline int page_mapcount(struct page *page)
 	return atomic_read(&(page)->_mapcount) + 1;
 }
 
-/** 20130907    
+/** 20130907
  * page 구조체의 _count 값을 리턴한다.
  **/
 static inline int page_count(struct page *page)
@@ -472,7 +472,7 @@ static inline struct page *virt_to_head_page(const void *x)
  * get_page, put_page에서는 _count를 증가, 감소만 시키므로
  * 처음 페이지 할당자(버디 등)에게 메모리를 이관시킬 때, 초기화를 해야 한다.
  *
- * 20130511 
+ * 20130511
  * 커널내에서만 사용하는 lock 방식 (reference가 존재하므로 이용이 제약된다.). 
  **/
 static inline void init_page_count(struct page *page)
@@ -491,7 +491,7 @@ static inline void init_page_count(struct page *page)
  */
 #define PAGE_BUDDY_MAPCOUNT_VALUE (-128)
 
-/** 20130921    
+/** 20130921
  * page의 _mapcount가 PAGE_BUDDY_MAPCOUNT_VALUE면 buddy에 들어 있는 page이다.
  **/
 static inline int PageBuddy(struct page *page)
@@ -499,34 +499,34 @@ static inline int PageBuddy(struct page *page)
 	return atomic_read(&page->_mapcount) == PAGE_BUDDY_MAPCOUNT_VALUE;
 }
 
-/** 20130921    
+/** 20130921
  * page의 _mapcount를 설정해 page가 Buddy에 의해 관리됨을 나타낸다.
  * PageBuddy(page)로 검사할 수 있다.
  **/
 static inline void __SetPageBuddy(struct page *page)
 {
-	/** 20130921    
+	/** 20130921
 	 * 부팅단계에서 memmap_init_zone 에서 reset_page_mapcount 을 해주었다.
 	 * 또는 running 중일 때 이미 buddy로 사용 중일 경우 -1이 false일 겻이다.
 	 **/
 	VM_BUG_ON(atomic_read(&page->_mapcount) != -1);
-	/** 20130921    
+	/** 20130921
 	 * _mapcount를 PAGE_BUDDY_MAPCOUNT_VALUE로 설정해 Buddy에 의해 관리됨을 나타낸다.
 	 **/
 	atomic_set(&page->_mapcount, PAGE_BUDDY_MAPCOUNT_VALUE);
 }
 
-/** 20130921    
+/** 20130921
  * page를 Buddy에 의해 관리되지 않는 상태로 초기화 시킨다.
  * (Buddy에 의해 관리되는 것은 order 단위로 떨어지는 첫번째 page이다)
  **/
 static inline void __ClearPageBuddy(struct page *page)
 {
-	/** 20130921    
+	/** 20130921
 	 * page가 PageBuddy가 아닐 경우 정상적인 상태에서 호출되지 않았으므로 BUG.
 	 **/
 	VM_BUG_ON(!PageBuddy(page));
-	/** 20130921    
+	/** 20130921
 	 * page의 _mapcount를 -1로 초기화.
 	 **/
 	atomic_set(&page->_mapcount, -1);
@@ -545,7 +545,7 @@ int split_free_page(struct page *page);
  */
 typedef void compound_page_dtor(struct page *);
 
-/** 20131116    
+/** 20131116
  * compound_page desctructor 함수 포인터를 저장한다.
  *   저장 위치는 다음 page의 lru.next이다.
  *   첫번째 page가 갖는 lru.next는 유효한 값이어야 하므로,
@@ -557,7 +557,7 @@ static inline void set_compound_page_dtor(struct page *page,
 	page[1].lru.next = (void *)dtor;
 }
 
-/** 20140614    
+/** 20140614
  * compound_page의 desctructor 함수 포인터를 리턴한다.
  **/
 static inline compound_page_dtor *get_compound_page_dtor(struct page *page)
@@ -565,20 +565,20 @@ static inline compound_page_dtor *get_compound_page_dtor(struct page *page)
 	return (compound_page_dtor *)page[1].lru.next;
 }
 
-/** 20131116    
+/** 20131116
  * page의 compound order를 리턴한다.
  **/
 static inline int compound_order(struct page *page)
 {
-	/** 20131116    
+	/** 20131116
 	 * page가 compound page의 head가 아니라면 바로 리턴한다.
-	 * 
+	 *
 	 * PageHead는 __PAGEFLAG(Head, head) 매크로에 의해 생성된다.
 	 **/
 	if (!PageHead(page))
 		return 0;
-	/** 20131116    
-	 *   다음 page의 lru.prev에 compound order가 저장된다.
+	/** 20131116
+	 * 다음 page의 lru.prev에 compound order가 저장된다.
 	 **/
 	return (unsigned long)page[1].lru.prev;
 }
@@ -597,12 +597,12 @@ static inline int compound_trans_order(struct page *page)
 	return order;
 }
 
-/** 20131116    
+/** 20131116
  * compound order를 저장한다.
  **/
 static inline void set_compound_order(struct page *page, unsigned long order)
 {
-	/** 20131116    
+	/** 20131116
 	 * struct page *page의 다음 page의 lru.prev에 order를 저장한다.
 	 * 참고: set_compound_page_dtor(), get_compound_page_dtor()
 	 **/
@@ -752,7 +752,7 @@ NODES_PGOFF(32) - ZONES_WIDTH(1) -> 31
  * sections we define the shift as 0; that plus a 0 mask ensures
  * the compiler will optimise away reference to them.
  */
-/** 20130831    
+/** 20130831
  * struct page의 flags의 section, nodes, zonez를 지정하기 위한 bit shift값.
  **/
 #define SECTIONS_PGSHIFT	(SECTIONS_PGOFF * (SECTIONS_WIDTH != 0))
@@ -820,7 +820,7 @@ static inline int zone_to_nid(struct zone *zone)
 #ifdef NODE_NOT_IN_PAGE_FLAGS
 extern int page_to_nid(const struct page *page);
 #else
-/** 20130831    
+/** 20130831
  * struct page의 flags에 저장했던 node id값을 취한다.
  **/
 static inline int page_to_nid(const struct page *page)
@@ -829,12 +829,12 @@ static inline int page_to_nid(const struct page *page)
 }
 #endif
 
-/** 20130831    
+/** 20130831
  * page가 속해 있는 zone 정보를 리턴.
  **/
 static inline struct zone *page_zone(const struct page *page)
 {
-	/** 20130831    
+	/** 20130831
 	 * page로 node id를 가져오고, 해당 노드의 node_zones에서 page에 해당하는 zone을 가져온다.
 	 **/
 	return &NODE_DATA(page_to_nid(page))->node_zones[page_zonenum(page)];
@@ -880,7 +880,7 @@ static inline void set_page_node(struct page *page, unsigned long node)
 }
 /** 20130504
  * page struct 의 flags에 해당 zone과 node 세팅
- * page->flags layout 참고 : include/linux/mm.h 
+ * page->flags layout 참고 : include/linux/mm.h
  **/
 static inline void set_page_links(struct page *page, enum zone_type zone,
 	unsigned long node, unsigned long pfn)
@@ -897,15 +897,16 @@ static inline void set_page_links(struct page *page, enum zone_type zone,
  */
 #include <linux/vmstat.h>
 
-/** 20130511 
- * page가 lowmem, 즉 물리주소와 1:1 매핑된 경우, 해당 page를 가리키는 가상 메모리 주소를 리턴한다.
+/** 20130511
+ * page가 lowmem, 즉 물리주소와 1:1 매핑된 경우,
+ * 해당 page를 가리키는 가상 메모리 주소를 리턴한다.
  **/
 static __always_inline void *lowmem_page_address(const struct page *page)
 {
 	return __va(PFN_PHYS(page_to_pfn(page)));
 }
 
-/** 20131026    
+/** 20131026
  * CONFIG_HIGHMEM이고 !WANT_PAGE_VIRTUAL인 경우
  * HASHED_PAGE_VIRTUAL 선언됨.
  **/
@@ -922,7 +923,7 @@ static __always_inline void *lowmem_page_address(const struct page *page)
 #define page_address_init()  do { } while(0)
 #endif
 
-/** 20131026    
+/** 20131026
  * CONFIG_HIGHMEM이 선언되어 있다고 가정한 경우 해당됨
  **/
 #if defined(HASHED_PAGE_VIRTUAL)
@@ -930,10 +931,8 @@ void *page_address(const struct page *page);
 void set_page_address(struct page *page, void *virtual);
 void page_address_init(void);
 #endif
-/** 20130511 
-**/
 /** 20131012
- * CONFIG_HIGHMEM 꺼져있는 경우 
+ * CONFIG_HIGHMEM 꺼져있는 경우
  * HASHED_PAGE_VIRTUAL이 define되어있지 않으므로 lowmem_page_address(page)가 define됨
  **/
 #if !defined(HASHED_PAGE_VIRTUAL) && !defined(WANT_PAGE_VIRTUAL)
@@ -965,17 +964,17 @@ void page_address_init(void);
 extern struct address_space swapper_space;
 
 /** 20131109
- * page의 속성이 
-   1. swapcache일 경우 swapper_space의 주소를 리턴하고
-   2. PAGE_MAPPING_ANON이 설정된 경우(anon_vma 주소) NULL을 리턴한다.
-   3. 그 이외일 경우 page->mapping을 리턴한다.
+ * page의 속성이
+ * 1. swapcache일 경우 swapper_space의 주소를 리턴하고
+ * 2. PAGE_MAPPING_ANON이 설정된 경우(anon_vma 주소) NULL을 리턴한다.
+ * 3. 그 이외일 경우 page->mapping을 리턴한다.
  **/
 static inline struct address_space *page_mapping(struct page *page)
 {
 	struct address_space *mapping = page->mapping;
 
 	/** 20131109
-	 * page가 slab에서 할당된 페이지이면 버그를 출력 
+	 * page가 slab에서 할당된 페이지이면 버그를 출력
 	 **/
 	VM_BUG_ON(PageSlab(page));
 	/** 20131109
@@ -1005,7 +1004,7 @@ struct address_space *page_file_mapping(struct page *page)
 	return page->mapping;
 }
 
-/** 20130824    
+/** 20130824
  * page->mapping (struct address_space *)의 PAGE_MAPPING_ANON 비트가 설정되어 있는지 검사
  **/
 static inline int PageAnon(struct page *page)
@@ -1041,7 +1040,7 @@ static inline pgoff_t page_file_index(struct page *page)
 /*
  * Return true if this page is mapped into pagetables.
  */
-/** 20140104    
+/** 20140104
  * page가 pagetables에 mapping되어 있는지 리턴.
  **/
 static inline int page_mapped(struct page *page)
@@ -1282,7 +1281,7 @@ int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
 /*
  * per-process(per-mm_struct) statistics.
  */
-/** 20140531    
+/** 20140531
  * mm_struct의 rss_stat에서 member에 해당하는 page count를 조회한다.
  **/
 static inline unsigned long get_mm_counter(struct mm_struct *mm, int member)
@@ -1315,7 +1314,7 @@ static inline void dec_mm_counter(struct mm_struct *mm, int member)
 	atomic_long_dec(&mm->rss_stat.count[member]);
 }
 
-/** 20140531    
+/** 20140531
  * mm_struct에서 현재 memory를 점유하고 있는 filepage + anonpage 수를 리턴한다.
  **/
 static inline unsigned long get_mm_rss(struct mm_struct *mm)
@@ -1334,17 +1333,17 @@ static inline unsigned long get_mm_hiwater_vm(struct mm_struct *mm)
 	return max(mm->hiwater_vm, mm->total_vm);
 }
 
-/** 20140531    
+/** 20140531
  * mm의 rss high-watermark가 새로 계산한 값보다 작다면 올려준다.
  **/
 static inline void update_hiwater_rss(struct mm_struct *mm)
 {
-	/** 20140531    
+	/** 20140531
 	 * mm에서 filepage와 anonpage의 수를 가져온다.
 	 **/
 	unsigned long _rss = get_mm_rss(mm);
 
-	/** 20140531    
+	/** 20140531
 	 * hiwater_rss가 더 작게 설정되어 있다면 _rss로 늘려준다.
 	 **/
 	if ((mm)->hiwater_rss < _rss)
@@ -1387,7 +1386,7 @@ static inline pte_t *get_locked_pte(struct mm_struct *mm, unsigned long addr,
 }
 
 #ifdef __PAGETABLE_PUD_FOLDED
-/** 20140329    
+/** 20140329
  * PUD FOLDED되어 있어 0을 리턴
  **/
 static inline int __pud_alloc(struct mm_struct *mm, pgd_t *pgd,
@@ -1400,7 +1399,7 @@ int __pud_alloc(struct mm_struct *mm, pgd_t *pgd, unsigned long address);
 #endif
 
 #ifdef __PAGETABLE_PMD_FOLDED
-/** 20140329    
+/** 20140329
  * __pmd_alloc은 0을 리턴
  **/
 static inline int __pmd_alloc(struct mm_struct *mm, pud_t *pud,
@@ -1421,7 +1420,7 @@ int __pte_alloc_kernel(pmd_t *pmd, unsigned long address);
  * Remove it when 4level-fixup.h has been removed.
  */
 #if defined(CONFIG_MMU) && !defined(__ARCH_HAS_4LEVEL_HACK)
-/** 20140329    
+/** 20140329
  * PUD = PMD이므로 pud_offset을 바로 호출
  **/
 static inline pud_t *pud_alloc(struct mm_struct *mm, pgd_t *pgd, unsigned long address)
@@ -1430,7 +1429,7 @@ static inline pud_t *pud_alloc(struct mm_struct *mm, pgd_t *pgd, unsigned long a
 		NULL: pud_offset(pgd, address);
 }
 
-/** 20140329    
+/** 20140329
  * PUD가 FOLED된 경우 __pmd_alloc이 0을 리턴하므로 pmd_offset이 리턴된다.
  **/
 static inline pmd_t *pmd_alloc(struct mm_struct *mm, pud_t *pud, unsigned long address)
@@ -1447,7 +1446,7 @@ static inline pmd_t *pmd_alloc(struct mm_struct *mm, pud_t *pud, unsigned long a
  * overflow into the next struct page (as it might with DEBUG_SPINLOCK).
  * When freeing, reset page->mapping so free_pages_check won't complain.
  */
-/** 20140531    
+/** 20140531
  * page 내의 ptl 주소를 가져온다.
  **/
 #define __pte_lockptr(page)	&((page)->ptl)
@@ -1455,7 +1454,7 @@ static inline pmd_t *pmd_alloc(struct mm_struct *mm, pud_t *pud, unsigned long a
 	spin_lock_init(__pte_lockptr(_page));				\
 } while (0)
 #define pte_lock_deinit(page)	((page)->mapping = NULL)
-/** 20140531    
+/** 20140531
  * pmd entry에 해당하는 페이지에 대한 lock 변수 주소를 리턴.
  **/
 #define pte_lockptr(mm, pmd)	({(void)(mm); __pte_lockptr(pmd_page(*(pmd)));})
@@ -1468,16 +1467,16 @@ static inline pmd_t *pmd_alloc(struct mm_struct *mm, pud_t *pud, unsigned long a
 #define pte_lockptr(mm, pmd)	({(void)(pmd); &(mm)->page_table_lock;})
 #endif /* USE_SPLIT_PTLOCKS */
 
-/** 20160416    
+/** 20160416
  * pagetable용 page 생성자.
  **/
 static inline void pgtable_page_ctor(struct page *page)
 {
-	/** 20160416    
+	/** 20160416
 	 * pte_lock 초기화.
 	 **/
 	pte_lock_init(page);
-	/** 20160416    
+	/** 20160416
 	 * PAGETABLE용 page의 수를 증가.
 	 **/
 	inc_zone_page_state(page, NR_PAGETABLE);
@@ -1489,7 +1488,7 @@ static inline void pgtable_page_dtor(struct page *page)
 	dec_zone_page_state(page, NR_PAGETABLE);
 }
 
-/** 20160430    
+/** 20160430
  * pmd에 해당하는 pte가 속한 struct page의 ptl에 lock을 걸고, ptlp에 주소를 저장.
  * pmd에서 address에 해당하는 pte entry 주소를 리턴한다.
  **/
@@ -1502,7 +1501,7 @@ static inline void pgtable_page_dtor(struct page *page)
 	__pte;						\
 })
 
-/** 20140531    
+/** 20140531
  * ptl을 unlock 하고, pte 를 mapping을 해제(실제로 NULL)하는 매크로
  **/
 #define pte_unmap_unlock(pte, ptl)	do {		\
@@ -1510,7 +1509,7 @@ static inline void pgtable_page_dtor(struct page *page)
 	pte_unmap(pte);					\
 } while (0)
 
-/** 20160416    
+/** 20160416
  * pte를 할당받고 해당 pmd의 entry를 채우고,
  * 할당이 성공한 경우 pmd entry의 주소를 리턴한다.
  **/
@@ -1519,7 +1518,7 @@ static inline void pgtable_page_dtor(struct page *page)
 							pmd, address))?	\
 	 NULL: pte_offset_map(pmd, address))
 
-/** 20160430    
+/** 20160430
  * pmd가 none이면 pte table을 할당 받고 주소를 pmd entry에 채운다.
  * 할당이 성공하면 address에 해당하는 pte에 lock을 걸고 포인터를 ptlp에 채운다.
  * 해당 pte  리턴한다.
@@ -1529,7 +1528,7 @@ static inline void pgtable_page_dtor(struct page *page)
 							pmd, address))?	\
 		NULL: pte_offset_map_lock(mm, pmd, address, ptlp))
 
-/** 20140329    
+/** 20140329
  * pmd가 비어있다면, pte table을 할당받아 pmd entry에 기록하고
  *		address에 해당하는 pte entry 주소를 가져온다,
  * pmd가 비어있지 않다면
@@ -1707,7 +1706,7 @@ int write_one_page(struct page *page, int wait);
 void task_dirty_inc(struct task_struct *tsk);
 
 /* readahead.c */
-/** 20150307    
+/** 20150307
  * readahead의 MAX, MIN 값
  **/
 #define VM_MAX_READAHEAD	128	/* kbytes */
@@ -1762,7 +1761,7 @@ static inline struct vm_area_struct * find_vma_intersection(struct mm_struct * m
 	return vma;
 }
 
-/** 20160416    
+/** 20160416
  * vma 영역에 해당하는 page의 수.
  **/
 static inline unsigned long vma_pages(struct vm_area_struct *vma)
@@ -1828,7 +1827,7 @@ static inline void vm_stat_account(struct mm_struct *mm,
 }
 #endif /* CONFIG_PROC_FS */
 
-/** 20130824    
+/** 20130824
  * 정의되어 있지 않음
  **/
 #ifdef CONFIG_DEBUG_PAGEALLOC
@@ -1926,11 +1925,11 @@ static inline bool page_is_guard(struct page *page)
 	return test_bit(PAGE_DEBUG_FLAG_GUARD, &page->debug_flags);
 }
 #else
-/** 20130907    
+/** 20130907
  * page memory allocator 에 대한 DEBUG 를 사용하지 않으면 그냥 0을 리턴
  **/
 static inline unsigned int debug_guardpage_minorder(void) { return 0; }
-/** 20130921    
+/** 20130921
  * page memory allocator 에 대한 DEBUG 를 사용하지 않으면 false 리턴.
  **/
 static inline bool page_is_guard(struct page *page) { return false; }

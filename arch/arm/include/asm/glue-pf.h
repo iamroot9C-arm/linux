@@ -42,6 +42,9 @@
 # endif
 #endif
 
+/** 20161228
+ * v7 prefetch abort에 해당 : v7_pabort
+ **/
 #ifdef CONFIG_CPU_PABRT_V7
 # ifdef CPU_PABORT_HANDLER
 #  define MULTI_PABORT 1

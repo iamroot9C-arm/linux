@@ -114,7 +114,7 @@ int nr_processes(void)
 	return total;
 }
 
-/** 20150530    
+/** 20150530
  * arm에서 오버라이드 하지 않는다.
  **/
 void __weak arch_release_task_struct(struct task_struct *tsk)
@@ -122,12 +122,12 @@ void __weak arch_release_task_struct(struct task_struct *tsk)
 }
 
 #ifndef CONFIG_ARCH_TASK_STRUCT_ALLOCATOR
-/** 20150530    
+/** 20150530
  * fork_init에서 kmem_cache를 생성한다.
  **/
 static struct kmem_cache *task_struct_cachep;
 
-/** 20160227    
+/** 20160227
  * task_struct_cachep kmem_cache로부터 object를 생성한다. 생성한다.
  **/
 static inline struct task_struct *alloc_task_struct_node(int node)
@@ -135,7 +135,7 @@ static inline struct task_struct *alloc_task_struct_node(int node)
 	return kmem_cache_alloc_node(task_struct_cachep, GFP_KERNEL, node);
 }
 
-/** 20150530    
+/** 20150530
  * struct task_struct로 할당받은 메모리를 반환한다.
  **/
 static inline void free_task_struct(struct task_struct *tsk)
@@ -144,7 +144,7 @@ static inline void free_task_struct(struct task_struct *tsk)
 }
 #endif
 
-/** 20150530    
+/** 20150530
  * arm에서 오버라이드 하지 않음.
  **/
 void __weak arch_release_thread_info(struct thread_info *ti)
@@ -158,7 +158,7 @@ void __weak arch_release_thread_info(struct thread_info *ti)
  * kmemcache based allocator.
  */
 # if THREAD_SIZE >= PAGE_SIZE
-/** 20150117    
+/** 20150117
  * thread_info 용으로 사용할 메모리를 할당해 리턴한다.
  *
  * thread_info는 stack에 overlay 되어 있으므로 stack으로 사용할 크기만큼 할당.
@@ -174,7 +174,7 @@ static struct thread_info *alloc_thread_info_node(struct task_struct *tsk,
 	return page ? page_address(page) : NULL;
 }
 
-/** 20150530    
+/** 20150530
  * thread_info로 사용 중인 페이지를 해제한다.
  **/
 static inline void free_thread_info(struct thread_info *ti)
@@ -222,34 +222,34 @@ struct kmem_cache *vm_area_cachep;
 /* SLAB cache for mm_struct structures (tsk->mm) */
 static struct kmem_cache *mm_cachep;
 
-/** 20150530    
+/** 20150530
  * thread_info에 대한 account를 해당 zone에 반영한다.
  **/
 static void account_kernel_stack(struct thread_info *ti, int account)
 {
-	/** 20150530    
+	/** 20150530
 	 * thread_info가 할당된 page가 속한 zone을 찾는다.
 	 **/
 	struct zone *zone = page_zone(virt_to_page(ti));
 
-	/** 20150530    
+	/** 20150530
 	 * zone의 stat 중 NR_KERNEL_STACK 항목을 갱신한다.
 	 **/
 	mod_zone_page_state(zone, NR_KERNEL_STACK, account);
 }
 
-/** 20150530    
+/** 20150530
  * task 관리를 위해 사용 중이던 메모리를 반환한다.
  * task_struct 구조체와 thread_info 구조체.
  **/
 void free_task(struct task_struct *tsk)
 {
-	/** 20150530    
+	/** 20150530
 	 * kernel_stack 사용량을 하나 감소시킨다.
 	 **/
 	account_kernel_stack(tsk->stack, -1);
 	arch_release_thread_info(tsk->stack);
-	/** 20150530    
+	/** 20150530
 	 * thread_info로 할당된 메모리를 해제한다.
 	 **/
 	free_thread_info(tsk->stack);
@@ -257,27 +257,27 @@ void free_task(struct task_struct *tsk)
 	ftrace_graph_exit_task(tsk);
 	put_seccomp_filter(tsk);
 	arch_release_task_struct(tsk);
-	/** 20150530    
+	/** 20150530
 	 * task_struct로 할당된 메모리를 해제한다.
 	 **/
 	free_task_struct(tsk);
 }
 EXPORT_SYMBOL(free_task);
 
-/** 20150530    
+/** 20150530
  * 사용이 끝난 signal_struct 를 반환한다.
  **/
 static inline void free_signal_struct(struct signal_struct *sig)
 {
 	taskstats_tgid_free(sig);
 	sched_autogroup_exit(sig);
-	/** 20150530    
+	/** 20150530
 	 * struct signal_struct 하나를 해제한다.
 	 **/
 	kmem_cache_free(signal_cachep, sig);
 }
 
-/** 20150530    
+/** 20150530
  * signal_struct 하나의 sigcnt를 감소시키고, 0이 되었다면 메모리를 반환한다.
  **/
 static inline void put_signal_struct(struct signal_struct *sig)
@@ -286,7 +286,7 @@ static inline void put_signal_struct(struct signal_struct *sig)
 		free_signal_struct(sig);
 }
 
-/** 20150530    
+/** 20150530
  * task의 사용이 완료되어 task 관리를 위해 사용 중이던 리소스를 반환한다.
  **/
 void __put_task_struct(struct task_struct *tsk)
@@ -298,12 +298,12 @@ void __put_task_struct(struct task_struct *tsk)
 	security_task_free(tsk);
 	exit_creds(tsk);
 	delayacct_tsk_free(tsk);
-	/** 20150530    
+	/** 20150530
 	 * signal_struct의 사용을 종료한다.
 	 **/
 	put_signal_struct(tsk->signal);
 
-	/** 20150530    
+	/** 20150530
 	 * task 관리를 위해 사용 중이던 메모리를 반환한다.
 	 **/
 	if (!profile_handoff_task(tsk))
@@ -313,7 +313,7 @@ EXPORT_SYMBOL_GPL(__put_task_struct);
 
 void __init __weak arch_task_cache_init(void) { }
 
-/** 20150207    
+/** 20150207
  * fork 관련 동작 수행을 위한 초기화.
  **/
 void __init fork_init(unsigned long mempages)
@@ -323,7 +323,7 @@ void __init fork_init(unsigned long mempages)
 #define ARCH_MIN_TASKALIGN	L1_CACHE_BYTES
 #endif
 	/* create a slab on which task_structs can be allocated */
-	/** 20150207    
+	/** 20150207
 	 * struct task_struct 용 kmem_cache를 생성한다.
 	 **/
 	task_struct_cachep =
@@ -339,7 +339,7 @@ void __init fork_init(unsigned long mempages)
 	 * value: the thread structures can take up at most half
 	 * of memory.
 	 */
-	/** 20150207    
+	/** 20150207
 	 * mempages를 기준으로 하여 최대 threads의 수를 계산한다.
 	 **/
 	max_threads = mempages / (8 * THREAD_SIZE / PAGE_SIZE);
@@ -347,13 +347,13 @@ void __init fork_init(unsigned long mempages)
 	/*
 	 * we need to allow at least 20 threads to boot a system
 	 */
-	/** 20150207    
+	/** 20150207
 	 * max_threads는 최하 20이어야 한다.
 	 **/
 	if (max_threads < 20)
 		max_threads = 20;
 
-	/** 20150207    
+	/** 20150207
 	 * init_task의 signal handler 관련 rlimit 값을 채운다.
 	 **/
 	init_task.signal->rlim[RLIMIT_NPROC].rlim_cur = max_threads/2;
@@ -362,7 +362,7 @@ void __init fork_init(unsigned long mempages)
 		init_task.signal->rlim[RLIMIT_NPROC];
 }
 
-/** 20150117    
+/** 20150117
  * task_struct 내용 copy.
  **/
 int __attribute__((weak)) arch_dup_task_struct(struct task_struct *dst,
@@ -372,7 +372,7 @@ int __attribute__((weak)) arch_dup_task_struct(struct task_struct *dst,
 	return 0;
 }
 
-/** 20160227    
+/** 20160227
  * orig task를 복사해 task_struct를 리턴한다.
  *
  * task_struct과 thread_info용 메모리를 할당받고, task_struct의 내용은 복사하고
@@ -383,48 +383,48 @@ static struct task_struct *dup_task_struct(struct task_struct *orig)
 	struct task_struct *tsk;
 	struct thread_info *ti;
 	unsigned long *stackend;
-	/** 20160227    
+	/** 20160227
 	 * task에서 사용할 node 정보를 받아온다.
 	 **/
 	int node = tsk_fork_get_node(orig);
 	int err;
 
-	/** 20160227    
+	/** 20160227
 	 * task_struct object를 받아온다.
 	 **/
 	tsk = alloc_task_struct_node(node);
 	if (!tsk)
 		return NULL;
 
-	/** 20150117    
+	/** 20150117
 	 * thread_info용 메모리 할당
 	 **/
 	ti = alloc_thread_info_node(tsk, node);
 	if (!ti)
 		goto free_tsk;
 
-	/** 20150117    
+	/** 20150117
 	 * orig의 struct task_struct를 복사한다.
 	 **/
 	err = arch_dup_task_struct(tsk, orig);
 	if (err)
 		goto free_ti;
 
-	/** 20150117    
+	/** 20150117
 	 * task_struct의 .stack은 새로 할당한 thread_info를 지정한다.
 	 **/
 	tsk->stack = ti;
 
-	/** 20150117    
+	/** 20150117
 	 * orig task의 struct thread_info를 복사하되 task는 새 task를 가리킨다.
 	 **/
 	setup_thread_stack(tsk, orig);
 	clear_user_return_notifier(tsk);
-	/** 20160227    
+	/** 20160227
 	 * flag에서 need_resched flag는 제거한다.
 	 **/
 	clear_tsk_need_resched(tsk);
-	/** 20160227    
+	/** 20160227
 	 * stack은 thread_info 구조체를 침범하지 않을 때까지 자란다.
 	 * stack의 끝에 MAGIC키를 저장해 overflow detection 용으로 사용된다.
 	 **/
@@ -439,7 +439,7 @@ static struct task_struct *dup_task_struct(struct task_struct *orig)
 	 * One for us, one for whoever does the "release_task()" (usually
 	 * parent)
 	 */
-	/** 20160227    
+	/** 20160227
 	 * usage를 2로 초기화 한다.
 	 * 이 task를 위해 하나, parent를 위해 하나(release_task()를 호출하는).
 	 **/
@@ -447,12 +447,12 @@ static struct task_struct *dup_task_struct(struct task_struct *orig)
 #ifdef CONFIG_BLK_DEV_IO_TRACE
 	tsk->btrace_seq = 0;
 #endif
-	/** 20160227    
+	/** 20160227
 	 * NULL로 초기화.
 	 **/
 	tsk->splice_pipe = NULL;
 
-	/** 20160227    
+	/** 20160227
 	 * kernel_stack 사용량을 1증가시킨다.
 	 **/
 	account_kernel_stack(ti, 1);
@@ -475,11 +475,11 @@ static int dup_mmap(struct mm_struct *mm, struct mm_struct *oldmm)
 	unsigned long charge;
 	struct mempolicy *pol;
 
-	/** 20160416    
+	/** 20160416
 	 * mmap write semaphore를 잡는다.
 	 **/
 	down_write(&oldmm->mmap_sem);
-	/** 20160416    
+	/** 20160416
 	 * 복사전 oldmm의 cache flush.
 	 **/
 	flush_cache_dup_mm(oldmm);
@@ -507,14 +507,14 @@ static int dup_mmap(struct mm_struct *mm, struct mm_struct *oldmm)
 		goto out;
 
 	prev = NULL;
-	/** 20160416    
+	/** 20160416
 	 * oldmm (parent)의 mmap (vm_area_struct)을 하나씩 순회하며
 	 * new mm (child)에 복사. 해당 영역에 대한 page table entry도 구성.
 	 **/
 	for (mpnt = oldmm->mmap; mpnt; mpnt = mpnt->vm_next) {
 		struct file *file;
 
-		/** 20160416    
+		/** 20160416
 		 * vm_area_struct의 vm속성에 VM_DONTCOPY가 있다면 해당 vma는 건너뜀.
 		 **/
 		if (mpnt->vm_flags & VM_DONTCOPY) {
@@ -523,11 +523,11 @@ static int dup_mmap(struct mm_struct *mm, struct mm_struct *oldmm)
 			continue;
 		}
 		charge = 0;
-		/** 20160416    
-		 * VM_ACCOUNT 플래그가 주어진 경우 
+		/** 20160416
+		 * VM_ACCOUNT 플래그가 주어진 경우
 		 **/
 		if (mpnt->vm_flags & VM_ACCOUNT) {
-			/** 20160416    
+			/** 20160416
 			 * mpnt 영역에 해당하는 페이지 수를 얻어온다.
 			 **/
 			unsigned long len = vma_pages(mpnt);
@@ -536,18 +536,18 @@ static int dup_mmap(struct mm_struct *mm, struct mm_struct *oldmm)
 				goto fail_nomem;
 			charge = len;
 		}
-		/** 20160416    
+		/** 20160416
 		 * vm_area_struct 객체 할당.
 		 **/
 		tmp = kmem_cache_alloc(vm_area_cachep, GFP_KERNEL);
 		if (!tmp)
 			goto fail_nomem;
-		/** 20160416    
+		/** 20160416
 		 * oldmm의 현재 vm_area_struct를 복사.
 		 **/
 		*tmp = *mpnt;
 		INIT_LIST_HEAD(&tmp->anon_vma_chain);
-		/** 20160416    
+		/** 20160416
 		 * memory policy는 NUMA가 아닌 경우 NULL.
 		 **/
 		pol = mpol_dup(vma_policy(mpnt));
@@ -555,25 +555,25 @@ static int dup_mmap(struct mm_struct *mm, struct mm_struct *oldmm)
 		if (IS_ERR(pol))
 			goto fail_nomem_policy;
 		vma_set_policy(tmp, pol);
-		/** 20160416    
+		/** 20160416
 		 * vm_area_struct이 속한 mm을 초기화.
 		 **/
 		tmp->vm_mm = mm;
-		/** 20160430    
+		/** 20160430
 		 * parent의 vma 각각에 대해 anon_vma를 생성받고 연결한다.
 		 **/
 		if (anon_vma_fork(tmp, mpnt))
 			goto fail_nomem_anon_vma_fork;
-		/** 20160430    
+		/** 20160430
 		 * 복사한 vm_flags에서 VM_LOCKED 속성을 제거한다.
 		 **/
 		tmp->vm_flags &= ~VM_LOCKED;
-		/** 20160430    
+		/** 20160430
 		 * 선형 리스트 연결을 위한 vm_next와 vm_prev는 parent로부터 복사한 값을
 		 * 로 초기화시킨다.
 		 **/
 		tmp->vm_next = tmp->vm_prev = NULL;
-		/** 20160430    
+		/** 20160430
 		 * parent에서 복사한 vm_file 값이 있을 때
 		 * 파일의 address_space를 참조해 처리.
 		 **/
@@ -588,12 +588,12 @@ static int dup_mmap(struct mm_struct *mm, struct mm_struct *oldmm)
 			mutex_lock(&mapping->i_mmap_mutex);
 			if (tmp->vm_flags & VM_SHARED)
 				mapping->i_mmap_writable++;
-			/** 20160430    
+			/** 20160430
 			 * radix tree에 lock을 건다.
 			 **/
 			flush_dcache_mmap_lock(mapping);
 			/* insert tmp into the share list, just after mpnt */
-			/** 20160430    
+			/** 20160430
 			 * vma를 mpnt 다음으로 share list에 추가한다.
 			 **/
 			vma_prio_tree_add(tmp, mpnt);
@@ -606,7 +606,7 @@ static int dup_mmap(struct mm_struct *mm, struct mm_struct *oldmm)
 		 * affects MAP_PRIVATE mappings. Faults generated by the child
 		 * are not guaranteed to succeed, even if read-only
 		 */
-		/** 20160430    
+		/** 20160430
 		 * hugetlb 관련 page reserve를 clear한다.
 		 **/
 		if (is_vm_hugetlb_page(tmp))
@@ -615,7 +615,7 @@ static int dup_mmap(struct mm_struct *mm, struct mm_struct *oldmm)
 		/*
 		 * Link in the new vma and copy the page table entries.
 		 */
-		/** 20160528    
+		/** 20160528
 		 * parent의 mm_struct의 mmap을 하나씩 복사해
 		 * child의 mm_struct에 구성한다.
 		 **/
@@ -624,23 +624,23 @@ static int dup_mmap(struct mm_struct *mm, struct mm_struct *oldmm)
 		tmp->vm_prev = prev;
 		prev = tmp;
 
-		/** 20160528    
+		/** 20160528
 		 * 동일한 vm_area_struct을 rb tree로 관리하기 위해 mm_rb에 추가.
 		 **/
 		__vma_link_rb(mm, tmp, rb_link, rb_parent);
 		rb_link = &tmp->vm_rb.rb_right;
 		rb_parent = &tmp->vm_rb;
 
-		/** 20160528    
+		/** 20160528
 		 * VMA count 증가
 		 **/
 		mm->map_count++;
-		/** 20160528    
+		/** 20160528
 		 * mpnt에 해당하는 영역을 mm->pgd에 복사하여 구성.
 		 **/
 		retval = copy_page_range(mm, oldmm, mpnt);
 
-		/** 20160528    
+		/** 20160528
 		 * vm_ops 중 open이 구현된 경우 호출한다.
 		 *
 		 * 예를 들어 shared memory처럼 메모리 공간에 대한 독자적인 사용 방식이
@@ -656,13 +656,13 @@ static int dup_mmap(struct mm_struct *mm, struct mm_struct *oldmm)
 			goto out;
 	}
 	/* a new mm has just been created */
-	/** 20160528    
+	/** 20160528
 	 * architecture level의 dup_mmap 함수가 정의되어 있다면 호출.
 	 **/
 	arch_dup_mmap(oldmm, mm);
 	retval = 0;
 out:
-	/** 20160528    
+	/** 20160528
 	 * mm_struct의 write semaphore를 놓는다.
 	 **/
 	up_write(&mm->mmap_sem);
@@ -679,7 +679,7 @@ fail_nomem:
 	goto out;
 }
 
-/** 20160416    
+/** 20160416
  * pgd를 할당 받고, kernel 영역에 대한 정보를 복사한다.
  **/
 static inline int mm_alloc_pgd(struct mm_struct *mm)
@@ -702,7 +702,7 @@ static inline void mm_free_pgd(struct mm_struct *mm)
 
 __cacheline_aligned_in_smp DEFINE_SPINLOCK(mmlist_lock);
 
-/** 20160416    
+/** 20160416
  * mm_cachep kmem_cache에서 오브젝트를 하나 할당 받는다.
  **/
 #define allocate_mm()	(kmem_cache_alloc(mm_cachep, GFP_KERNEL))
@@ -730,7 +730,7 @@ static void mm_init_aio(struct mm_struct *mm)
 #endif
 }
 
-/** 20160416    
+/** 20160416
  * fork시 mm_struct를 초기화.
  *
  * user task의 mm_struct의 초기화시 pgd를 할당 받고, kernel 영역에 대한 entry는
@@ -738,18 +738,18 @@ static void mm_init_aio(struct mm_struct *mm)
  **/
 static struct mm_struct *mm_init(struct mm_struct *mm, struct task_struct *p)
 {
-	/** 20160416    
+	/** 20160416
 	 * mm_user와 mm_count는 1로 초기화.
 	 **/
 	atomic_set(&mm->mm_users, 1);
 	atomic_set(&mm->mm_count, 1);
-	/** 20160416    
+	/** 20160416
 	 * memory map rw semaphore 초기화.
 	 * mmlist 초기화.
 	 **/
 	init_rwsem(&mm->mmap_sem);
 	INIT_LIST_HEAD(&mm->mmlist);
-	/** 20160416    
+	/** 20160416
 	 * current의 mm이 존재하면 현재 설정된 flag 중 INIT_MASK에 해당하는 것만 복사
 	 **/
 	mm->flags = (current->mm) ?
@@ -763,7 +763,7 @@ static struct mm_struct *mm_init(struct mm_struct *mm, struct task_struct *p)
 	mm_init_aio(mm);
 	mm_init_owner(mm, p);
 
-	/** 20160416    
+	/** 20160416
 	 * mm의 pgd 할당이 성공했다면 def_flags와 notifier 등을 초기화 하고 리턴.
 	 **/
 	if (likely(!mm_alloc_pgd(mm))) {
@@ -772,7 +772,7 @@ static struct mm_struct *mm_init(struct mm_struct *mm, struct task_struct *p)
 		return mm;
 	}
 
-	/** 20160416    
+	/** 20160416
 	 * 실패한 경우 할당 받은 mm를 반환하고 리턴.
 	 **/
 	free_mm(mm);
@@ -895,7 +895,7 @@ void set_mm_exe_file(struct mm_struct *mm, struct file *new_exe_file)
 	mm->num_exe_file_vmas = 0;
 }
 
-/** 20160416    
+/** 20160416
  * mm의 exe_file의 참조카운트를 증가시키고 읽어온다.
  **/
 struct file *get_mm_exe_file(struct mm_struct *mm)
@@ -904,7 +904,7 @@ struct file *get_mm_exe_file(struct mm_struct *mm)
 
 	/* We need mmap_sem to protect against races with removal of
 	 * VM_EXECUTABLE vmas */
-	/** 20160416    
+	/** 20160416
 	 * read semaphore를 잡고 mm의 exe_file을 읽어
 	 * reference count를 증가시키고 리턴.
 	 **/
@@ -916,7 +916,7 @@ struct file *get_mm_exe_file(struct mm_struct *mm)
 	return exe_file;
 }
 
-/** 20160416    
+/** 20160416
  * oldmm의 exe_file 정보를 newmm으로 복사한다.
  **/
 static void dup_mm_exe_file(struct mm_struct *oldmm, struct mm_struct *newmm)
@@ -1081,14 +1081,14 @@ struct mm_struct *dup_mm(struct task_struct *tsk)
 	if (!oldmm)
 		return NULL;
 
-	/** 20160416    
+	/** 20160416
 	 * struct  mm_struct를 할당 받는다.
 	 **/
 	mm = allocate_mm();
 	if (!mm)
 		goto fail_nomem;
 
-	/** 20160416    
+	/** 20160416
 	 * 현재 task의 mm을 할당받은 mm에 복사한다.
 	 **/
 	memcpy(mm, oldmm, sizeof(*mm));
@@ -1099,20 +1099,20 @@ struct mm_struct *dup_mm(struct task_struct *tsk)
 #endif
 	uprobe_reset_state(mm);
 
-	/** 20160416    
+	/** 20160416
 	 * mm의 독자적인 부분을 초기화.
 	 * pgd 할당 포함.
 	 **/
 	if (!mm_init(mm, tsk))
 		goto fail_nomem;
 
-	/** 20160416    
+	/** 20160416
 	 * 새 context 초기화.
 	 **/
 	if (init_new_context(tsk, mm))
 		goto fail_nocontext;
 
-	/** 20160416    
+	/** 20160416
 	 * oldmm의 exe_file 정보를 복사한다.
 	 **/
 	dup_mm_exe_file(oldmm, mm);
@@ -1152,16 +1152,16 @@ static int copy_mm(unsigned long clone_flags, struct task_struct *tsk)
 	struct mm_struct *mm, *oldmm;
 	int retval;
 
-	/** 20160416    
+	/** 20160416
 	 * fault count를 0으로 초기화.
 	 **/
 	tsk->min_flt = tsk->maj_flt = 0;
-	/** 20160416    
+	/** 20160416
 	 * voluntary/involuntary context switching count를 초기화
 	 **/
 	tsk->nvcsw = tsk->nivcsw = 0;
 #ifdef CONFIG_DETECT_HUNG_TASK
-	/** 20160416    
+	/** 20160416
 	 * CONFIG_DETECT_HUNG_TASK 설정되어 있을 경우 last switch count를 가진다.
 	 **/
 	tsk->last_switch_count = tsk->nvcsw + tsk->nivcsw;
@@ -1175,14 +1175,14 @@ static int copy_mm(unsigned long clone_flags, struct task_struct *tsk)
 	 *
 	 * We need to steal a active VM for that..
 	 */
-	/** 20160416    
+	/** 20160416
 	 * 부모 프로세스의 mm이 NULL, 즉 kernel thread라면 바로 리턴.
 	 **/
 	oldmm = current->mm;
 	if (!oldmm)
 		return 0;
 
-	/** 20160416    
+	/** 20160416
 	 * CLONE_VM 플래그(vm shared)가 주어졌다면 mm을 새로 만들지 않고
 	 * user counter만 증가시키고 부모 task의 mm을 공유.
 	 **/
@@ -1206,7 +1206,7 @@ fail_nomem:
 	return retval;
 }
 
-/** 20160409    
+/** 20160409
  * CLONE_FS가 주어진 경우, 부모 프로세스의 fs_struct을 공유한다. users만 증가.
  * 주어지지 않은 경우, 새로 메모리를 할당 받아 부모의 현재 fs_struct을 복사한다.
  **/
@@ -1230,7 +1230,7 @@ static int copy_fs(unsigned long clone_flags, struct task_struct *tsk)
 	return 0;
 }
 
-/** 20160409    
+/** 20160409
  * clone_flags에 따라 부모 프로세스의 파일 디스크립터 테이블을 복사한다.
  *
  * CLONE_FILES 설정시: 부모와 자식 프로세스는 동일한 파일 기술자 테이블 공유.
@@ -1255,7 +1255,7 @@ static int copy_files(unsigned long clone_flags, struct task_struct *tsk)
 	if (!oldf)
 		goto out;
 
-	/** 20160409    
+	/** 20160409
 	 * CLONE_FILES 설정시 부모와 파일기술자를 공유하므로 참조카운트만 증가.
 	 **/
 	if (clone_flags & CLONE_FILES) {
@@ -1263,14 +1263,14 @@ static int copy_files(unsigned long clone_flags, struct task_struct *tsk)
 		goto out;
 	}
 
-	/** 20160409    
+	/** 20160409
 	 * CLONE_FILES 미설정시 현재 부모의 파일 기술자 테이블을 복사.
 	 **/
 	newf = dup_fd(oldf, &error);
 	if (!newf)
 		goto out;
 
-	/** 20160409    
+	/** 20160409
 	 * 자식 task에 새로 생성한 파일 기술자 테이블을 지정한다.
 	 **/
 	tsk->files = newf;
@@ -1305,9 +1305,9 @@ static int copy_io(unsigned long clone_flags, struct task_struct *tsk)
 	return 0;
 }
 
-/** 20160409    
+/** 20160409
  * 부모 프로세스의 sighand를 복사한다.
- * 
+ *
  * CLONE_SIGHAND 플래그가 주어진 경우 부모-자식 프로세스간의 sighand를 공유하므로
  * 레퍼런스 카운트만 증가시켜 리턴.
  * 그렇지 않은 경우 별도로 구조체를 할당받고 현재까지의 sighand를 복사해 리턴.
@@ -1316,7 +1316,7 @@ static int copy_sighand(unsigned long clone_flags, struct task_struct *tsk)
 {
 	struct sighand_struct *sig;
 
-	/** 20160409    
+	/** 20160409
 	 * CLONE_SIGHAND라면 부모와 자식 프로세스간에 시그널 핸들러를 공유하므로
 	 * 레퍼런스 카운트만 증가시키고 리턴.
 	 **/
@@ -1324,18 +1324,18 @@ static int copy_sighand(unsigned long clone_flags, struct task_struct *tsk)
 		atomic_inc(&current->sighand->count);
 		return 0;
 	}
-	/** 20160409    
+	/** 20160409
 	 * 별도의 sighand 관리를 위해 kmem_cache로부터 object를 할당 받아 task에 등록.
 	 **/
 	sig = kmem_cache_alloc(sighand_cachep, GFP_KERNEL);
 	rcu_assign_pointer(tsk->sighand, sig);
 	if (!sig)
 		return -ENOMEM;
-	/** 20160409    
+	/** 20160409
 	 * reference count는 1로 초기화
 	 **/
 	atomic_set(&sig->count, 1);
-	/** 20160409    
+	/** 20160409
 	 * 현재의 부모의 sighand 구조체를 복사한다.
 	 * 포인터 타입으로 별도 할당이 필요한 데이터가 없으므로 memcpy만 수행.
 	 **/
@@ -1355,7 +1355,7 @@ void __cleanup_sighand(struct sighand_struct *sighand)
 /*
  * Initialize POSIX timer handling for a thread group.
  */
-/** 20160409    
+/** 20160409
  * thread group에 대한 POSIX timer handling 초기화.
  **/
 static void posix_cpu_timers_init_group(struct signal_struct *sig)
@@ -1363,16 +1363,16 @@ static void posix_cpu_timers_init_group(struct signal_struct *sig)
 	unsigned long cpu_limit;
 
 	/* Thread group counters. */
-	/** 20160409    
+	/** 20160409
 	 * thread group cputimer 초기화 (thread_group_cputimer의 spinlock만 초기화)
 	 **/
 	thread_group_cputime_init(sig);
 
-	/** 20160409    
+	/** 20160409
 	 * signal_struct의 resource limit 중 cpu time 값을 얻어온다.
 	 **/
 	cpu_limit = ACCESS_ONCE(sig->rlim[RLIMIT_CPU].rlim_cur);
-	/** 20160409    
+	/** 20160409
 	 * INFINITY가 아니라면 cpu_limit으로 cputime_expires 중 prof_exp(stime)을 설정
 	 **/
 	if (cpu_limit != RLIM_INFINITY) {
@@ -1381,7 +1381,7 @@ static void posix_cpu_timers_init_group(struct signal_struct *sig)
 	}
 
 	/* The timer lists. */
-	/** 20160409    
+	/** 20160409
 	 * cpu_timers 리스트 초기화.
 	 **/
 	INIT_LIST_HEAD(&sig->cpu_timers[0]);
@@ -1389,21 +1389,21 @@ static void posix_cpu_timers_init_group(struct signal_struct *sig)
 	INIT_LIST_HEAD(&sig->cpu_timers[2]);
 }
 
-/** 20160409    
+/** 20160409
  * 시그널을 부모/자식 간에 공유하지 않으므로 별도로 메모리를 할당 받아 초기화.
  **/
 static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
 {
 	struct signal_struct *sig;
 
-	/** 20160409    
+	/** 20160409
 	 * THREAD인 경우 signal_struct을 공유하므로 리턴.
 	 * process는 CLONE 플래그 없이 독자적인 시그널을 사용한다.
 	 **/
 	if (clone_flags & CLONE_THREAD)
 		return 0;
 
-	/** 20160409    
+	/** 20160409
 	 * signal_struct kmem_cache로부터 오브젝트를 할당 받아 task에 저장한다.
 	 **/
 	sig = kmem_cache_zalloc(signal_cachep, GFP_KERNEL);
@@ -1411,7 +1411,7 @@ static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
 	if (!sig)
 		return -ENOMEM;
 
-	/** 20160409    
+	/** 20160409
 	 * 초기화.
 	 **/
 	sig->nr_threads = 1;
@@ -1424,13 +1424,13 @@ static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
 	init_sigpending(&sig->shared_pending);
 	INIT_LIST_HEAD(&sig->posix_timers);
 
-	/** 20160409    
+	/** 20160409
 	 * hrtimer를 초기화. monotonic
 	 **/
 	hrtimer_init(&sig->real_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
 	sig->real_timer.function = it_real_fn;
 
-	/** 20160409    
+	/** 20160409
 	 * 현재 task의 threadgroup leader에게 lock을 걸고,
 	 * signal의 rlim 값을 복사한다.
 	 **/
@@ -1447,7 +1447,7 @@ static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
 	init_rwsem(&sig->group_rwsem);
 #endif
 
-	/** 20160409    
+	/** 20160409
 	 * 부모 process의 oom 관련 정보를 복사한다.
 	 **/
 	sig->oom_adj = current->signal->oom_adj;
@@ -1462,9 +1462,9 @@ static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
 	return 0;
 }
 
-/** 20160319    
+/** 20160319
  * copy로 생성되는 tasks의 flag를 조절한다.
- * 
+ *
  * super-user priv, workqueue worker를 제거하고, exec에 의한 fork가 아님을 표시.
  **/
 static void copy_flags(unsigned long clone_flags, struct task_struct *p)
@@ -1483,7 +1483,7 @@ SYSCALL_DEFINE1(set_tid_address, int __user *, tidptr)
 	return task_pid_vnr(current);
 }
 
-/** 20160319    
+/** 20160319
  * task p에 대해 rt_mutex 관련 멤버를 초기화 한다.
  **/
 static void rt_mutex_init_task(struct task_struct *p)
@@ -1505,7 +1505,7 @@ void mm_init_owner(struct mm_struct *mm, struct task_struct *p)
 /*
  * Initialize POSIX timer handling for a single task.
  */
-/** 20160319    
+/** 20160319
  * POSIX timer 관련 초기화.
  **/
 static void posix_cpu_timers_init(struct task_struct *tsk)
@@ -1526,7 +1526,7 @@ static void posix_cpu_timers_init(struct task_struct *tsk)
  * parts of the process environment (as per the clone
  * flags). The actual kick-off is left to the caller.
  */
-/** 20160312    
+/** 20160312
  *
  * 이전 process를 복사해 새로운 process를 만든다.
  * 새로운 process의 시작은 caller에서 담당한다.
@@ -1543,7 +1543,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	struct task_struct *p;
 	int cgroup_callbacks_done = 0;
 
-	/** 20160312    
+	/** 20160312
 	 * clone_flags에 대한 validate.
 	 * NEWNS면서 FS SHARE면 error.
 	 **/
@@ -1580,7 +1580,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 		goto fork_out;
 
 	retval = -ENOMEM;
-	/** 20160227    
+	/** 20160227
 	 * 현재 task_struct를 복사한 새 task_struct을 리턴한다.
 	 **/
 	p = dup_task_struct(current);
@@ -1590,7 +1590,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	ftrace_graph_init_task(p);
 	get_seccomp_filter(p);
 
-	/** 20160319    
+	/** 20160319
 	 * rt_mutex를 위한 멤버를 초기화 한다.
 	 **/
 	rt_mutex_init_task(p);
@@ -1608,7 +1608,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	}
 	current->flags &= ~PF_NPROC_EXCEEDED;
 
-	/** 20160319    
+	/** 20160319
 	 * parent task의 cred를 속성을 복사한다.
 	 **/
 	retval = copy_creds(p, clone_flags);
@@ -1620,10 +1620,10 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	 * triggers too late. This doesn't hurt, the check is only there
 	 * to stop root fork bombs.
 	 */
-	/** 20160319    
+	/** 20160319
 	 * copy_process()가 여러 core에서 호출되어 max_threads를 초과 했다면
 	 * cleanup 하고 EAGAIN을 리턴시킨다.
-	 * 
+	 *
 	 * 여기서 체크하는 것은 늦다고 볼 수 있지만 문제될 것은 없기 때문에
 	 * root fork bombs에 대한 방비책으로 호출한 것이다.
 	 **/
@@ -1631,7 +1631,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	if (nr_threads >= max_threads)
 		goto bad_fork_cleanup_count;
 
-	/** 20160319    
+	/** 20160319
 	 * thread의 execution domain의 module 레퍼런스 획득에 실패하면 cleanup.
 	 **/
 	if (!try_module_get(task_thread_info(p)->exec_domain->module))
@@ -1642,17 +1642,17 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	copy_flags(clone_flags, p);
 	INIT_LIST_HEAD(&p->children);
 	INIT_LIST_HEAD(&p->sibling);
-	/** 20160319    
+	/** 20160319
 	 * rcu 관련 멤버 초기화.
 	 **/
 	rcu_copy_process(p);
 	p->vfork_done = NULL;
-	/** 20160319    
+	/** 20160319
 	 * alloc_lock을 초기화.
 	 **/
 	spin_lock_init(&p->alloc_lock);
 
-	/** 20160326    
+	/** 20160326
 	 * 생성한 task의 sigpending 구조체 초기화
 	 **/
 	init_sigpending(&p->pending);
@@ -1666,37 +1666,37 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	memset(&p->rss_stat, 0, sizeof(p->rss_stat));
 #endif
 
-	/** 20160319    
+	/** 20160319
 	 * parent의 timer_slack_ns를 새 프로세스의 default_timer_slack_ns로 저장.
 	 **/
 	p->default_timer_slack_ns = current->timer_slack_ns;
 
-	/** 20160319    
+	/** 20160319
 	 * accounting 관련 초기화
 	 **/
 	task_io_accounting_init(&p->ioac);
 	acct_clear_integrals(p);
 
-	/** 20160319    
+	/** 20160319
 	 * posix cpu timer 초기화
 	 **/
 	posix_cpu_timers_init(p);
 
-	/** 20160326    
+	/** 20160326
 	 * 생성한 task의 start_time과 real_start_time을 저장
 	 **/
 	do_posix_clock_monotonic_gettime(&p->start_time);
 	p->real_start_time = p->start_time;
-	/** 20160326    
+	/** 20160326
 	 * real_start_time은 boot based time으로 다시 저장.
 	 **/
 	monotonic_to_bootbased(&p->real_start_time);
-	/** 20160326    
+	/** 20160326
 	 * io_context와 audit_context는 초기화.
 	 **/
 	p->io_context = NULL;
 	p->audit_context = NULL;
-	/** 20160326    
+	/** 20160326
 	 * thread 생성시 threadgroup_change 구간을 시작한다.
 	 * CGROUPS가 정의되지 않은 경우 의미 없음.
 	 **/
@@ -1713,17 +1713,17 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	mpol_fix_fork_child_flag(p);
 #endif
 #ifdef CONFIG_CPUSETS
-	/** 20160326    
+	/** 20160326
 	 * cpuset을 사용하는 경우 cpuset의 mem과 slab을 rotor에 의해 분산.
 	 **/
 	p->cpuset_mem_spread_rotor = NUMA_NO_NODE;
 	p->cpuset_slab_spread_rotor = NUMA_NO_NODE;
-	/** 20160326    
+	/** 20160326
 	 * sequence count 초기화.
 	 **/
 	seqcount_init(&p->mems_allowed_seq);
 #endif
-	/** 20160326    
+	/** 20160326
 	 * TRACE 관련 분석 생략
 	 **/
 #ifdef CONFIG_TRACE_IRQFLAGS
@@ -1745,7 +1745,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	p->hardirq_context = 0;
 	p->softirq_context = 0;
 #endif
-	/** 20160326    
+	/** 20160326
 	 * LOCKDEP 분석 생략
 	 **/
 #ifdef CONFIG_LOCKDEP
@@ -1754,13 +1754,13 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	p->lockdep_recursion = 0;
 #endif
 
-	/** 20160326    
+	/** 20160326
 	 * DEBUG MUTEX 분석 생략
 	 **/
 #ifdef CONFIG_DEBUG_MUTEXES
 	p->blocked_on = NULL; /* not blocked yet */
 #endif
-	/** 20160326    
+	/** 20160326
 	 * MEMCG 분석 생략
 	 **/
 #ifdef CONFIG_MEMCG
@@ -1769,49 +1769,49 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 #endif
 
 	/* Perform scheduler related setup. Assign this task to a CPU. */
-	/** 20160402    
+	/** 20160402
 	 * scheduler 관련 설정을 수행한다.
 	 **/
 	sched_fork(p);
 
-	/** 20160402    
+	/** 20160402
 	 * PERF 관련 분석 생략
 	 **/
 	retval = perf_event_init_task(p);
 	if (retval)
 		goto bad_fork_cleanup_policy;
-	/** 20160402    
+	/** 20160402
 	 * AUDITSYSCALL 관련 분석 생략
 	 **/
 	retval = audit_alloc(p);
 	if (retval)
 		goto bad_fork_cleanup_policy;
 	/* copy all the process information */
-	/** 20160409    
+	/** 20160409
 	 * clone_flags에 따라 세마포어 undo_list 공유 여부를 결정한다.
 	 **/
 	retval = copy_semundo(clone_flags, p);
 	if (retval)
 		goto bad_fork_cleanup_audit;
-	/** 20160409    
+	/** 20160409
 	 * CLONE_FILES에 따라 파일 디스크립터 테이블을 복사한다.
 	 **/
 	retval = copy_files(clone_flags, p);
 	if (retval)
 		goto bad_fork_cleanup_semundo;
-	/** 20160409    
+	/** 20160409
 	 * CLONE_FS 플래그에 따라 task의 파일시스템 정보를 복사한다.
 	 **/
 	retval = copy_fs(clone_flags, p);
 	if (retval)
 		goto bad_fork_cleanup_files;
-	/** 20160409    
+	/** 20160409
 	 * CLONE_SIGHAND 플래그에 따라 task의 sighand 정보를 복사한다.
 	 **/
 	retval = copy_sighand(clone_flags, p);
 	if (retval)
 		goto bad_fork_cleanup_fs;
-	/** 20160409    
+	/** 20160409
 	 * task의 signal 정보를 설정한다. 공유데이터는 rlimit과 oom 설정 등 일부이다.
 	 **/
 	retval = copy_signal(clone_flags, p);
@@ -1830,7 +1830,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	if (retval)
 		goto bad_fork_cleanup_io;
 
-	/** 20160227    
+	/** 20160227
 	 * pid가 init_struct_pid라면 (fork_idle인 경우) init의 pid를 그대로 복사할
 	 * 것이므로 alloc_pid를 하지 않는다.
 	 * 그렇지 않은 경우에는 해당 pid_ns로부터 pid를 하나 받아온다.
@@ -2026,7 +2026,7 @@ fork_out:
 	return ERR_PTR(retval);
 }
 
-/** 20150801    
+/** 20150801
  * idle task를 위한 pt_regs를 받아 0으로 초기화 한다.
  **/
 noinline struct pt_regs * __cpuinit __attribute__((weak)) idle_regs(struct pt_regs *regs)
@@ -2035,14 +2035,14 @@ noinline struct pt_regs * __cpuinit __attribute__((weak)) idle_regs(struct pt_re
 	return regs;
 }
 
-/** 20150118    
+/** 20150118
  * taks의 pid_link 포인터를 받아와 PIDTYPE만큼 돌며 초기화 한다.
  **/
 static inline void init_idle_pids(struct pid_link *links)
 {
 	enum pid_type type;
 
-	/** 20150801    
+	/** 20150801
 	 * task의 pids를 순회하며 각 pid_link를 초기화 한다.
 	 *   hlist_node를 초기화 하고, struct pid를 init_struct_pid로 지정한다.
 	 **/
@@ -2052,7 +2052,7 @@ static inline void init_idle_pids(struct pid_link *links)
 	}
 }
 
-/** 20150118    
+/** 20150118
  * 지정된 cpu를 위한 idle thread를 생성하고, idle thread로 지정한다.
  **/
 struct task_struct * __cpuinit fork_idle(int cpu)
@@ -2060,24 +2060,24 @@ struct task_struct * __cpuinit fork_idle(int cpu)
 	struct task_struct *task;
 	struct pt_regs regs;
 
-	/** 20150118    
+	/** 20150118
 	 * current task를 복사해 새로운 task_struct를 생성한다.
 	 * pt_regs는 idle_regs로 설정하고 struct pid는 init_struct_pid를 지정한다.
 	 **/
 	task = copy_process(CLONE_VM, 0, idle_regs(&regs), 0, NULL,
 			    &init_struct_pid, 0);
 	if (!IS_ERR(task)) {
-		/** 20150801    
+		/** 20150801
 		 * task의 pids를 초기화 한다.
 		 **/
 		init_idle_pids(task->pids);
-		/** 20150117    
+		/** 20150117
 		 * cpu에 해당하는 rq의 idle thread로 task를 지정한다.
 		 **/
 		init_idle(task, cpu);
 	}
 
-	/** 20150117    
+	/** 20150117
 	 * 생성한 task를 리턴한다.
 	 **/
 	return task;
@@ -2104,7 +2104,7 @@ long do_fork(unsigned long clone_flags,
 	 * Do some preliminary argument and permissions checking before we
 	 * actually start allocating stuff
 	 */
-	/** 20160312    
+	/** 20160312
 	 * clone_flags에 CLONE_NEWUSER 속성이 있다면 처리
 	 *
 	 * 현재 커널에서 사용 중인 곳은 없음.
@@ -2126,7 +2126,7 @@ long do_fork(unsigned long clone_flags,
 	 * requested, no event is reported; otherwise, report if the event
 	 * for the type of forking is enabled.
 	 */
-	/** 20160312    
+	/** 20160312
 	 * ptrace 이벤트 관련 코드. 생략.
 	 **/
 	if (likely(user_mode(regs)) && !(clone_flags & CLONE_UNTRACED)) {
@@ -2141,7 +2141,7 @@ long do_fork(unsigned long clone_flags,
 			trace = 0;
 	}
 
-	/** 20160312    
+	/** 20160312
 	 **/
 	p = copy_process(clone_flags, stack_start, regs, stack_size,
 			 child_tidptr, NULL, trace);
@@ -2193,7 +2193,7 @@ static void sighand_ctor(void *data)
 	init_waitqueue_head(&sighand->signalfd_wqh);
 }
 
-/** 20150207    
+/** 20150207
  * process 관련 kmem_cache들을 생성한다.
  **/
 void __init proc_caches_init(void)
@@ -2222,11 +2222,11 @@ void __init proc_caches_init(void)
 			sizeof(struct mm_struct), ARCH_MIN_MMSTRUCT_ALIGN,
 			SLAB_HWCACHE_ALIGN|SLAB_PANIC|SLAB_NOTRACK, NULL);
 	vm_area_cachep = KMEM_CACHE(vm_area_struct, SLAB_PANIC);
-	/** 20150207   
+	/** 20150207
 	 * VMA 관련 초기화.
 	 **/
 	mmap_init();
-	/** 20150214    
+	/** 20150214
 	 * nsproxy cache 초기화 : kmem_cache 생성.
 	 **/
 	nsproxy_cache_init();

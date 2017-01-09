@@ -20,6 +20,12 @@
  * used to be done in the caller, but sparc needs minor faults to
  * force that call on sun4c so we changed this macro slightly
  */
+/** 20170109
+ * 대상 page table entry와 설정할 값이 다르다면
+ * 새로운 entry 값을 기록하고 해당 table entry에 대한 TLB를 flush한다.
+ *
+ * lazy mapping인 경우(L_PTE_YOUNG이 없을 때) fault 후 새로 mapping된다.
+ **/
 int ptep_set_access_flags(struct vm_area_struct *vma,
 			  unsigned long address, pte_t *ptep,
 			  pte_t entry, int dirty)
@@ -57,7 +63,7 @@ int pmdp_set_access_flags(struct vm_area_struct *vma,
  * __HAVE_ARCH_PTEP_CLEAR_YOUNG_FLUSH 정의되지 않아 generic 코드 실행.
  **/
 #ifndef __HAVE_ARCH_PTEP_CLEAR_YOUNG_FLUSH
-/** 20140531    
+/** 20140531
  * ptep 가 가리키는 entry 중 YOUNG 비트가 설정되어 있는지 검사하고,
  * 설정되어 있었다면 bit를 클리어하고 flush 시킨다.
  **/
@@ -90,14 +96,14 @@ int pmdp_clear_flush_young(struct vm_area_struct *vma,
 #endif
 
 #ifndef __HAVE_ARCH_PTEP_CLEAR_FLUSH
-/** 20140531    
+/** 20140531
  * pte entry의 내용을 clear 시키고, tlb를 flush 한다.
  **/
 pte_t ptep_clear_flush(struct vm_area_struct *vma, unsigned long address,
 		       pte_t *ptep)
 {
 	pte_t pte;
-	/** 20140531    
+	/** 20140531
 	 * 이전 pte 값을 가져오고, clear 시킨다.
 	 * address에 해당하는 tlb를 flush 한다.
 	 **/

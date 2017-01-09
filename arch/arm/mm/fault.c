@@ -527,7 +527,7 @@ do_sect_fault(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
 /*
  * This abort handler always returns "fault".
  */
-/** 20151121    
+/** 20151121
  * abort handler에서 0을 리턴하지 않으면 fault로 처리된다.
  **/
 static int
@@ -536,7 +536,7 @@ do_bad(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
 	return 1;
 }
 
-/** 20151121    
+/** 20151121
  * fault state register
  **/
 struct fsr_info {
@@ -547,7 +547,7 @@ struct fsr_info {
 };
 
 /* FSR definition */
-/** 20151121    
+/** 20151121
  * LPAE를 사용하지 않아 fsr-2level.c를 포함한다.
  **/
 #ifdef CONFIG_ARM_LPAE
@@ -556,14 +556,14 @@ struct fsr_info {
 #include "fsr-2level.c"
 #endif
 
-/** 20151121    
- * fault status register 테이블을 지정된 정보를 업데이트한다.
+/** 20151121
+ * fault status register 테이블을 지정된 정보로 업데이트한다.
  **/
 void __init
 hook_fault_code(int nr, int (*fn)(unsigned long, unsigned int, struct pt_regs *),
 		int sig, int code, const char *name)
 {
-	/** 20151121    
+	/** 20151121
 	 * fsr_info는 LPAE를 사용하지 않으므로 fsr-2level.c의 정보를 사용한다.
 	 **/
 	if (nr < 0 || nr >= ARRAY_SIZE(fsr_info))
@@ -578,43 +578,46 @@ hook_fault_code(int nr, int (*fn)(unsigned long, unsigned int, struct pt_regs *)
 /*
  * Dispatch a data abort to the relevant handler.
  */
-/** 20151121    
+/** 20151121
  * data abort를 처리한다. 핸들링 할 수 없는 fault일 경우 arm_notify_die 호출.
  **/
 asmlinkage void __exception
 do_DataAbort(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
 {
-	/** 20151121    
-	 * fsr_info 테이블에서 fs에 해당하는 정보를 가져온다.
+	/** 20151121
+	 * fsr_info 테이블에서 fault status 해당 엔트리를 가져온다.
 	 **/
 	const struct fsr_info *inf = fsr_info + fsr_fs(fsr);
 	struct siginfo info;
 
-	/**_20151121    
+	/**_20151121
 	 * fsr_info의 핸들러 함수를 호출해 정상 처리되면 리턴한다.
 	 **/
 	if (!inf->fn(addr, fsr & ~FSR_LNX_PF, regs))
 		return;
 
-	/** 20151121    
-	 * fault 메시지를 출력한다.
+	/** 20151121
+	 * 처리 실패 fault 메시지를 출력한다.
 	 **/
 	printk(KERN_ALERT "Unhandled fault: %s (0x%03x) at 0x%08lx\n",
 		inf->name, fsr, addr);
 
-	/** 20151121    
-	 * siginfo를 채워
+	/** 20151121
+	 * usermode인 경우 force signal 전송. kernel mode인 경우 die.
 	 **/
 	info.si_signo = inf->sig;
 	info.si_errno = 0;
 	info.si_code  = inf->code;
 	info.si_addr  = (void __user *)addr;
 	arm_notify_die("", regs, &info, fsr, 0);
-	/** 20151121    
+	/** 20151121
 	 * dabt_helper 호출 루틴으로 돌아간다. (__dabt_usr)
 	 **/
 }
 
+/** 20161228
+ * ifault status register 테이블을 지정된 정보로 업데이트한다.
+ **/
 void __init
 hook_ifault_code(int nr, int (*fn)(unsigned long, unsigned int, struct pt_regs *),
 		 int sig, int code, const char *name)
@@ -628,18 +631,33 @@ hook_ifault_code(int nr, int (*fn)(unsigned long, unsigned int, struct pt_regs *
 	ifsr_info[nr].name = name;
 }
 
+/** 20161228
+ * data abort를 처리한다. 핸들링 할 수 없는 fault일 경우 arm_notify_die 호출.
+ **/
 asmlinkage void __exception
 do_PrefetchAbort(unsigned long addr, unsigned int ifsr, struct pt_regs *regs)
 {
+	/** 20161228
+	 * ifsr_info 테이블에서 fault status 해당 엔트리를 가져온다.
+	 **/
 	const struct fsr_info *inf = ifsr_info + fsr_fs(ifsr);
 	struct siginfo info;
 
+	/**_20161228
+	 * fsr_info의 핸들러 함수를 호출해 정상 처리되면 리턴한다.
+	 **/
 	if (!inf->fn(addr, ifsr | FSR_LNX_PF, regs))
 		return;
 
+	/** 20161228
+	 * 처리 실패 fault 메시지를 출력한다.
+	 **/
 	printk(KERN_ALERT "Unhandled prefetch abort: %s (0x%03x) at 0x%08lx\n",
 		inf->name, ifsr, addr);
 
+	/** 20161228
+	 * usermode인 경우 force signal 전송. kernel mode인 경우 die.
+	 **/
 	info.si_signo = inf->sig;
 	info.si_errno = 0;
 	info.si_code  = inf->code;
@@ -648,12 +666,12 @@ do_PrefetchAbort(unsigned long addr, unsigned int ifsr, struct pt_regs *regs)
 }
 
 #ifndef CONFIG_ARM_LPAE
-/** 20151121    
+/** 20151121
  * architecture 버전에 따라 fault 처리 코드를 업데이트 한다.
  **/
 static int __init exceptions_init(void)
 {
-	/** 20151121    
+	/** 20151121
 	 * cpu architecture가 ARMv6 이후라면 fsr_info의 정보를 업데이트 한다.
 	 **/
 	if (cpu_architecture() >= CPU_ARCH_ARMv6) {
@@ -661,7 +679,7 @@ static int __init exceptions_init(void)
 				"I-cache maintenance fault");
 	}
 
-	/** 20151121    
+	/** 20151121
 	 * cpu architecture가 ARMv7 이후라면 fsr_info의 정보를 업데이트 한다.
 	 **/
 	if (cpu_architecture() >= CPU_ARCH_ARMv7) {

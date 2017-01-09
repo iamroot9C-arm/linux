@@ -59,14 +59,14 @@ static inline void ipi_flush_tlb_range(void *arg)
 	local_flush_tlb_range(ta->ta_vma, ta->ta_start, ta->ta_end);
 }
 
-/** 20131102    
+/** 20131102
  * 커널 address 영역에 대한 flush tlb 명령을 수행한다.
  **/
 static inline void ipi_flush_tlb_kernel_range(void *arg)
 {
 	struct tlb_args *ta = (struct tlb_args *)arg;
 
-	/** 20131102    
+	/** 20131102
 	 * arg로 넘어온 start~end 사이의 주소에 대해 TLB invalidate 시킴.
 	 **/
 	local_flush_tlb_kernel_range(ta->ta_start, ta->ta_end);
@@ -80,30 +80,30 @@ void flush_tlb_all(void)
 		local_flush_tlb_all();
 }
 
-/** 20160528    
+/** 20160528
  * mm 영역에 대한 tlb를 flush 시킨다.
+ *
+ * 20160528
+ * SMP에서 다른 프로세서의 MMU page table을 갱신할 필요가 있는 경우
+ *	- mm_cpumask에 해당하는 core들이 ipi_flush_tlb_mm를 호출하게 한다.
+ * 그렇지 않은 경우
+ *	- 현재 core의 tlb만 flush시킨다.
  **/
 void flush_tlb_mm(struct mm_struct *mm)
 {
-	/** 20160528    
-	 * tlb operation을 다른 core에도 알려야 하는 경우인지 판단하여
-	 * 그렇다면 mm_cpumask에 해당하는 core들이 ipi_flush_tlb_mm를 호출하게 한다.
-	 * 그렇지 않다면 현재 core의 tlb만 flush시킨다.
-	 **/
 	if (tlb_ops_need_broadcast())
 		on_each_cpu_mask(mm_cpumask(mm), ipi_flush_tlb_mm, mm, 1);
 	else
 		local_flush_tlb_mm(mm);
 }
 
-/** 20140531    
+/** 20140531
  * uaddr에 해당하는 tlb entry를 flush 한다.
- * 상세 내용은 SMP init 후 추후 분석 ???
  *
  * SMP에서 다른 프로세서의 MMU page table을 갱신할 필요가 있는 경우
- *		- IPI 메시지를 생성해 interrupt를 전달한다.
+ *	- IPI 메시지를 생성해 interrupt를 전달한다.
  * 그렇지 않은 경우
- *		- local tlb만 flush 한다.
+ *	- 현재 core의 tlb만 flush시킨다.
  **/
 void flush_tlb_page(struct vm_area_struct *vma, unsigned long uaddr)
 {

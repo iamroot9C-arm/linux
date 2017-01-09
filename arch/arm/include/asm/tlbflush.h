@@ -369,7 +369,7 @@ static inline void local_flush_tlb_all(void)
 	const unsigned int __tlb_flag = __cpu_tlb_flags;
 
 	/** 20130330
-	 * WB를 사용할 경우 data 동기화 barrier를 세움
+	 * WB 타입인 경우 이전 쓰기 캐시가 완료되도록 배리어 사용
 	 **/
 	if (tlb_flag(TLB_WB))
 		dsb();
@@ -430,17 +430,31 @@ static inline void local_flush_tlb_mm(struct mm_struct *mm)
 		dsb();
 }
 
+/** 20170109
+ * 현재 코어에서 uaddr에 해당하는 tlb entry를 flush 한다.
+ *
+ * uaddr이 페이지 테이블인 경우에 해당.
+ **/
 static inline void
 local_flush_tlb_page(struct vm_area_struct *vma, unsigned long uaddr)
 {
 	const int zero = 0;
 	const unsigned int __tlb_flag = __cpu_tlb_flags;
 
+	/** 20170109
+	 * TLB OP에 사용할 주소를 생성한다. (MVA | ASID)
+	 *
+	 * [참고] ARM B4.2.2 TLB maintenance operations, not in Hyp mode
+	 **/
 	uaddr = (uaddr & PAGE_MASK) | ASID(vma->vm_mm);
 
+	/** 20170109
+	 * WB 타입인 경우 이전 쓰기 캐시가 완료되도록 배리어 사용
+	 **/
 	if (tlb_flag(TLB_WB))
 		dsb();
 
+	/* 이전 아키텍쳐 버전 처리 */
 	if (possible_tlb_flags & (TLB_V3_PAGE|TLB_V4_U_PAGE|TLB_V4_D_PAGE|TLB_V4_I_PAGE|TLB_V4_I_FULL) &&
 	    cpumask_test_cpu(smp_processor_id(), mm_cpumask(vma->vm_mm))) {
 		tlb_op(TLB_V3_PAGE, "c6, c0, 0", uaddr);
@@ -451,6 +465,14 @@ local_flush_tlb_page(struct vm_area_struct *vma, unsigned long uaddr)
 			asm("mcr p15, 0, %0, c8, c5, 0" : : "r" (zero) : "cc");
 	}
 
+	/** 20170109
+	 * TLBIMVA   Invalidate unified TLB by MVA
+	 * DTLBIMVA  Invalidate data TLB entry by MVA
+	 * ITLBIMVA  Invalidate instruction TLB by MVA
+	 *
+	 * errata 720789
+	 * TLBIMVAAIS Invalidate unified TLB by MVA, all ASID
+	 **/
 	tlb_op(TLB_V6_U_PAGE, "c8, c7, 1", uaddr);
 	tlb_op(TLB_V6_D_PAGE, "c8, c6, 1", uaddr);
 	tlb_op(TLB_V6_I_PAGE, "c8, c5, 1", uaddr);
@@ -460,6 +482,9 @@ local_flush_tlb_page(struct vm_area_struct *vma, unsigned long uaddr)
 	tlb_op(TLB_V7_UIS_PAGE, "c8, c3, 1", uaddr);
 #endif
 
+	/** 20170109
+	 * TLB 명령 후 배리어가 필요한 경우 동기화 되도록 배리어 사용
+	 **/
 	if (tlb_flag(TLB_BARRIER))
 		dsb();
 }
@@ -610,6 +635,9 @@ extern void flush_tlb_kernel_range(unsigned long start, unsigned long end);
 extern void update_mmu_cache(struct vm_area_struct *vma, unsigned long addr,
 	pte_t *ptep);
 #else
+/** 20170109
+ * ARMv7이므로 이 부분은 구현되지 않았다.
+ **/
 static inline void update_mmu_cache(struct vm_area_struct *vma,
 				    unsigned long addr, pte_t *ptep)
 {

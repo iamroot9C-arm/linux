@@ -9,12 +9,15 @@
 
 #include <linux/ftrace.h>
 
+/** 20161228
+ * exception용 section에 배치
+ **/
 #define __exception	__attribute__((section(".exception.text")))
 #ifdef CONFIG_FUNCTION_GRAPH_TRACER
 #define __exception_irq_entry	__irq_entry
 #else
-/** 20130713    
- * CONFIG_FUNCTION_GRAPH_TRACER 정의되어 있지 않음
+/** 20130713
+ * CONFIG_FUNCTION_GRAPH_TRACER 정의되어 있지 않음 (FTRACE 사용 안 함)
  **/
 #define __exception_irq_entry	__exception
 #endif

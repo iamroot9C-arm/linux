@@ -20,9 +20,9 @@ extern int pmdp_set_access_flags(struct vm_area_struct *vma,
 #endif
 
 #ifndef __HAVE_ARCH_PTEP_TEST_AND_CLEAR_YOUNG
-/** 20140531    
- * pte entry의 값을 가져와 L_PTE_YOUNG 속성이 없다면 0을,
- * 있다면 속성을 제거한 값으로 갱신시킨다.
+/** 20140531
+ * ARCH 차원에서 YOUNG 관련 속성비트를 제공하지 않는 경우에 해당.
+ * pte entry가 YOUNG인지 여부를 리턴하고, YOUNG이라면 속성을 제거한다.
  **/
 static inline int ptep_test_and_clear_young(struct vm_area_struct *vma,
 					    unsigned long address,
@@ -170,6 +170,9 @@ extern void pmdp_splitting_flush(struct vm_area_struct *vma,
 #endif
 
 #ifndef __HAVE_ARCH_PTE_SAME
+/** 20170109
+ * pte의 값 두 개가 서로 같은지 리턴한다.
+ **/
 static inline int pte_same(pte_t pte_a, pte_t pte_b)
 {
 	return pte_val(pte_a) == pte_val(pte_b);
@@ -192,8 +195,8 @@ static inline int pmd_same(pmd_t pmd_a, pmd_t pmd_b)
 #endif
 
 #ifndef __HAVE_ARCH_PAGE_TEST_AND_CLEAR_DIRTY
-/** 20140531    
- * page_test_and_clear_dirty (0)
+/** 20140531
+ * 아키텍쳐 레벨에서 test하는 함수를 제공하지 않아 0을 리턴
  **/
 #define page_test_and_clear_dirty(pfn, mapped)	(0)
 #endif
@@ -209,7 +212,7 @@ static inline int pmd_same(pmd_t pmd_a, pmd_t pmd_b)
 #endif
 
 #ifndef __HAVE_ARCH_PGD_OFFSET_GATE
-/** 20151114    
+/** 20151114
  * mm의 pgd에서 addr에 해당하는 page table entry의 주소를 리턴한다.
  **/
 #define pgd_offset_gate(mm, addr)	pgd_offset(mm, addr)
@@ -237,7 +240,7 @@ static inline int pmd_same(pmd_t pmd_a, pmd_t pmd_b)
  * vma end wraps to 0, rounded up __boundary may wrap to 0 throughout.
  */
 
-/** 20130223    
+/** 20130223
  * __boundary는 addr을 PGDIR_SIZE (2MB)로 round-up
  * __boundary와 end 중에 작은 값을 취한다.
  **/
@@ -246,7 +249,7 @@ static inline int pmd_same(pmd_t pmd_a, pmd_t pmd_b)
 	(__boundary - 1 < (end) - 1)? __boundary: (end);		\
 })
 
-/** 20130309    
+/** 20130309
  * __boundary는 addr을 PUD_SIZE (2MB)로 round-up
  * __boundary와 end 중 작은 값을 취한다.
  **/
@@ -273,7 +276,7 @@ void pgd_clear_bad(pgd_t *);
 void pud_clear_bad(pud_t *);
 void pmd_clear_bad(pmd_t *);
 
-/** 20160514    
+/** 20160514
  * pgd entry가 pgd_none이거나 bad여서 clear를 했는지 여부를 리턴.
  **/
 static inline int pgd_none_or_clear_bad(pgd_t *pgd)
@@ -383,7 +386,7 @@ static inline void ptep_modify_prot_commit(struct mm_struct *mm,
  * it must synchronize the delayed page table writes properly on other CPUs.
  */
 #ifndef __HAVE_ARCH_ENTER_LAZY_MMU_MODE
-/** 20160430    
+/** 20160430
  * ???
  **/
 #define arch_enter_lazy_mmu_mode()	do {} while (0)
@@ -402,7 +405,7 @@ static inline void ptep_modify_prot_commit(struct mm_struct *mm,
  * in architecture-specific code, and so doesn't need a generic
  * definition.
  */
-/** 20160227    
+/** 20160227
  * 정의되지 않음.
  **/
 #ifndef __HAVE_ARCH_START_CONTEXT_SWITCH
@@ -430,7 +433,7 @@ static inline int track_pfn_vma_new(struct vm_area_struct *vma, pgprot_t *prot,
  * track_pfn_vma_copy is called when vma that is covering the pfnmap gets
  * copied through copy_page_range().
  */
-/** 20160514    
+/** 20160514
  * arm은 pfn mapping 한 메모리에 대한 추적 기능을 제공하지 않는다.
  * 추후 track_pfn_copy로 이름 변경.
  **/
@@ -462,7 +465,7 @@ extern void untrack_pfn_vma(struct vm_area_struct *vma, unsigned long pfn,
 #ifdef CONFIG_MMU
 
 #ifndef CONFIG_TRANSPARENT_HUGEPAGE
-/** 20151114    
+/** 20151114
  * CONFIG_TRANSPARENT_HUGEPAGE 정의하지 않았음.
  **/
 static inline int pmd_trans_huge(pmd_t pmd)

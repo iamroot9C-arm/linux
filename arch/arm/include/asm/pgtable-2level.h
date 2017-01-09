@@ -68,7 +68,7 @@
  * until either the TLB entry is evicted under pressure, or a context
  * switch which changes the user space mapping occurs.
  */
-/** 20130126    
+/** 20130126
  * 계속 봐야함 ???
  * http://studyfoss.egloos.com/5008142
  **/
@@ -93,7 +93,7 @@
 #define PMD_SHIFT		21
 #define PGDIR_SHIFT		21
 
-/** 20130330    
+/** 20130330
  * PMD_SHIFT는 2-level page table로 mapping할 수 있는 영역의 크기를 결정한다.
  * PMD_SIZE는 2MB 단위.
  *   4KB * (256 * 2) entries
@@ -106,7 +106,7 @@
 /*
  * section address mask and size definitions.
  */
-/** 20140322    
+/** 20140322
  * SECTION은 1MB 단위
  **/
 #define SECTION_SHIFT		20
@@ -120,7 +120,7 @@
 #define SUPERSECTION_SIZE	(1UL << SUPERSECTION_SHIFT)
 #define SUPERSECTION_MASK	(~(SUPERSECTION_SIZE-1))
 
-/** 20150613    
+/** 20150613
  * TASK_SIZE 영역을 표현할 PGDIR entry의 수를 구한다.
  *
  * TASK_SIZE 영역까지 entry 수를 의미한다.
@@ -138,13 +138,10 @@
  * The PTE table pointer refers to the hardware entries; the "Linux"
  * entries are stored 1024 bytes below.
  */
-/** 20131102    
+/** 20131102
  * struct mem_type을 보면
  * L_PTE_PRESENT	: 해당 페이지가 현재 메모리상에 존재하는지 여부
  *   항상 매핑되어 있는 vector table, memory, 매핑된 kernel 또는 user entry 등에 지정.
- *
- * L_PTE_USER
- *   
  **/
 #define L_PTE_PRESENT		(_AT(pteval_t, 1) << 0)
 #define L_PTE_YOUNG		(_AT(pteval_t, 1) << 1)
@@ -159,7 +156,7 @@
  * These are the memory types, defined to be compatible with
  * pre-ARMv6 CPUs cacheable and bufferable bits:   XXCB
  */
-/** 20150523    
+/** 20150523
  * linux용 page table의 Memory Type 속성 flags
  **/
 #define L_PTE_MT_UNCACHED	(_AT(pteval_t, 0x00) << 2)	/* 0000 */
@@ -197,7 +194,7 @@ static inline pmd_t *pmd_offset(pud_t *pud, unsigned long addr)
 	return (pmd_t *)pud;
 }
 
-/** 20130309    
+/** 20130309
  * pmd 값이 section이나 supersection에 해당하는 경우를 체크
  **/
 #define pmd_bad(pmd)		(pmd_val(pmd) & 2)
@@ -210,8 +207,8 @@ static inline pmd_t *pmd_offset(pud_t *pud, unsigned long addr)
 	} while (0)
 
 /** 20130216
- * 2 level page table에서는 2MB단위로 인덱싱이 이루어진다. 
- * arm에서는 1MB단위로 인덱싱이 이루어진다. 
+ * 2 level page table에서는 2MB단위로 인덱싱이 이루어진다.
+ * arm에서는 1MB단위로 인덱싱이 이루어진다.
  **/
 #define pmd_clear(pmdp)			\
 	do {				\
@@ -221,12 +218,12 @@ static inline pmd_t *pmd_offset(pud_t *pud, unsigned long addr)
 	} while (0)
 
 /* we don't need complex calculations here as the pmd is folded into the pgd */
-/** 20140329    
+/** 20140329
  * end가 바로 리턴됨.
  **/
 #define pmd_addr_end(addr,end) (end)
 
-/** 20130309    
+/** 20130309
  * ptep의 linux 속성 및  h/w 속성 부분을 각각 채움
  * cpu_v7_set_pte_ext가 호출됨.
  **/
