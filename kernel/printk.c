@@ -702,7 +702,7 @@ static int __init log_buf_len_setup(char *str)
 }
 early_param("log_buf_len", log_buf_len_setup);
 
-/** 20130727    
+/** 20130727
  * new_log_buf_len이 설정되어 있지 않으면 바로 리턴.
  * 아래 내용은 log_buf를 새로 할당받아 교체하는 작업
  **/
@@ -1909,7 +1909,7 @@ static int __cpuinit console_cpu_notify(struct notifier_block *self,
  *
  * Can sleep, returns nothing.
  */
-/** 20150124    
+/** 20150124
  * console에 대한 lock을 건다.
  **/
 void console_lock(void)

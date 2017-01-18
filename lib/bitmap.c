@@ -268,7 +268,7 @@ int __bitmap_subset(const unsigned long *bitmap1,
 }
 EXPORT_SYMBOL(__bitmap_subset);
 
-/** 20130608    
+/** 20130608
  * 각 word를 돌며 hweight (hamming weight)를 구해 합산해 리턴.
  **/
 int __bitmap_weight(const unsigned long *bitmap, int bits)
@@ -285,7 +285,7 @@ int __bitmap_weight(const unsigned long *bitmap, int bits)
 }
 EXPORT_SYMBOL(__bitmap_weight);
 
-/** 20140906    
+/** 20140906
  * bitmap에서 start부터 nr개만큼을 set 한다.
  *		MSB  .......... LSB
  *		1 1 1 1 ..... 0 0 0
@@ -293,18 +293,18 @@ EXPORT_SYMBOL(__bitmap_weight);
  **/
 void bitmap_set(unsigned long *map, int start, int nr)
 {
-	/** 20140906    
+	/** 20140906
 	 * bitmap 처리를 위한 시작 위치.
 	 **/
 	unsigned long *p = map + BIT_WORD(start);
 	const int size = start + nr;
 	int bits_to_set = BITS_PER_LONG - (start % BITS_PER_LONG);
-	/** 20140906    
+	/** 20140906
 	 * start가 포함된 WORD에 적용할 set mask를 구한다.
 	 **/
 	unsigned long mask_to_set = BITMAP_FIRST_WORD_MASK(start);
 
-	/** 20140906    
+	/** 20140906
 	 * WORD 단위로 nr개만큼 mask를 적용한다.
 	 **/
 	while (nr - bits_to_set >= 0) {
@@ -314,7 +314,7 @@ void bitmap_set(unsigned long *map, int start, int nr)
 		mask_to_set = ~0UL;
 		p++;
 	}
-	/** 20140906    
+	/** 20140906
 	 * 마지막 WORD에 대한 mask를 구해 설정한다.
 	 **/
 	if (nr) {
@@ -357,7 +357,7 @@ EXPORT_SYMBOL(bitmap_clear);
  * the bit offset of all zero areas this function finds is multiples of that
  * power of 2. A @align_mask of 0 means no alignment is required.
  */
-/** 20140906    
+/** 20140906
  * start부터 nr개의 연속적인 0이 나오는 위치를 찾아 리턴한다.
  **/
 unsigned long bitmap_find_next_zero_area(unsigned long *map,
@@ -368,7 +368,7 @@ unsigned long bitmap_find_next_zero_area(unsigned long *map,
 {
 	unsigned long index, end, i;
 again:
-	/** 20140906    
+	/** 20140906
 	 * bitmap에서 start부터 size까지 찾아 zero bit의 위치를 리턴한다.
 	 **/
 	index = find_next_zero_bit(map, size, start);
@@ -376,14 +376,14 @@ again:
 	/* Align allocation */
 	index = __ALIGN_MASK(index, align_mask);
 
-	/** 20140906    
+	/** 20140906
 	 * index에서 nr개만큼 확보해야 하므로 end를 잡는다.
 	 * size보다 크다면 end가 리턴된다.
 	 **/
 	end = index + nr;
 	if (end > size)
 		return end;
-	/** 20140906    
+	/** 20140906
 	 * map에서 index부터 end까지 찾아 bit 1인 위치를 찾는다.
 	 * end까지 연속적인 0들을 찾아야 하므로 중간에 1이 발견되면
 	 * 그 이후부터 다시 찾기 시작한다.
@@ -1091,7 +1091,7 @@ enum {
 	REG_OP_RELEASE,		/* clear all bits in region */
 };
 
-/** 20140405    
+/** 20140405
  * bitmap의 특정 bit부터 order 만큼에 대해 reg_op 연산을 수행한다.
  *
  * bitmap : 연산을 수행할 대상 bitmap
@@ -1115,12 +1115,12 @@ static int __reg_op(unsigned long *bitmap, int pos, int order, int reg_op)
 	 * or (offset == 0 && mask == ~0UL) (for larger multiword orders.)
 	 */
 	nbits_reg = 1 << order;
-	/** 20140405    
+	/** 20140405
 	 * long 에서의 시작 위치
 	 **/
 	index = pos / BITS_PER_LONG;
 	offset = pos - (index * BITS_PER_LONG);
-	/** 20140405    
+	/** 20140405
 	 * reg를 표현하기 위한 long의 수
 	 **/
 	nlongs_reg = BITS_TO_LONGS(nbits_reg);
@@ -1134,26 +1134,26 @@ static int __reg_op(unsigned long *bitmap, int pos, int order, int reg_op)
 	mask += mask - 1;
 	mask <<= offset;
 
-	/** 20140405    
+	/** 20140405
 	 * 요청한 operation 종류에 따른 연산 수행
 	 **/
 	switch (reg_op) {
 	case REG_OP_ISFREE:
 		for (i = 0; i < nlongs_reg; i++) {
-			/** 20140405    
+			/** 20140405
 			 * bitmap의 특정 bit index의 상태를 검사.o
 			 * free가 아닌 비트가 존재하면 ret이 0인 상태로 return.
 			 **/
 			if (bitmap[index + i] & mask)
 				goto done;
 		}
-		/** 20140405    
+		/** 20140405
 		 * 해당 index 사이의 모든 bit가 free인 경우 ret이 1인 상태로 리턴
 		 **/
 		ret = 1;	/* all bits in region free (zero) */
 		break;
 
-	/** 20140405    
+	/** 20140405
 	 * ALLOC은 해당 bit를 setting
 	 **/
 	case REG_OP_ALLOC:
@@ -1161,7 +1161,7 @@ static int __reg_op(unsigned long *bitmap, int pos, int order, int reg_op)
 			bitmap[index + i] |= mask;
 		break;
 
-	/** 20140405    
+	/** 20140405
 	 * RELEASE는 해당 bit를 clear
 	 **/
 	case REG_OP_RELEASE:
@@ -1187,7 +1187,7 @@ done:
  * Return the bit offset in bitmap of the allocated region,
  * or -errno on failure.
  */
-/** 20140405    
+/** 20140405
  * bitmap에서 free region을 찾아 order만큼 bit를 설정해 alloc을 표시한다.
  * (bits argument는 bitmap의 bits의 수)
  **/
@@ -1195,16 +1195,16 @@ int bitmap_find_free_region(unsigned long *bitmap, int bits, int order)
 {
 	int pos, end;		/* scans bitmap by regions of size order */
 
-	/** 20140405    
+	/** 20140405
 	 * bitmap에서 0번 bit부터 1 ** order만큼 비트 단위로 순회
 	 **/
 	for (pos = 0 ; (end = pos + (1 << order)) <= bits; pos = end) {
-		/** 20140405    
+		/** 20140405
 		 * pos부터 order 만큼의 bit가 free가 아니라면 다음 반복문으로 이동.
 		 **/
 		if (!__reg_op(bitmap, pos, order, REG_OP_ISFREE))
 			continue;
-		/** 20140405    
+		/** 20140405
 		 * pos부터 order만큼의 bit를 alloc.
 		 **/
 		__reg_op(bitmap, pos, order, REG_OP_ALLOC);

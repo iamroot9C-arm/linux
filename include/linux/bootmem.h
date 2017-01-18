@@ -25,7 +25,7 @@ extern unsigned long max_pfn;
  * memory pages (including holes) on the node.
  */
 typedef struct bootmem_data {
-	/** 20130420    
+	/** 20130420
 	 * node에 속한 모든 물리 메모리를 bits로 표현하기 위한 자료구조.
 	 *
 	 * node_min_pfn  : 노드의 물리 메모리의 시작 주소에 대한 pfn
@@ -137,7 +137,7 @@ extern void *__alloc_bootmem_low_node(pg_data_t *pgdat,
 	__alloc_bootmem_nopanic(x, PAGE_SIZE, BOOTMEM_LOW_LIMIT)
 #define alloc_bootmem_node(pgdat, x) \
 	__alloc_bootmem_node(pgdat, x, SMP_CACHE_BYTES, BOOTMEM_LOW_LIMIT)
-/** 20130420    
+/** 20130420
  * __alloc_bootmem_node_nopanic 호출
  * SMP_CACHE_BYTES   : L1 cache size
  * BOOTMEM_LOW_LIMIT : __pa(MAX_DMA_ADDRESS)
@@ -149,7 +149,7 @@ extern void *__alloc_bootmem_low_node(pg_data_t *pgdat,
 #define alloc_bootmem_pages_node_nopanic(pgdat, x) \
 	__alloc_bootmem_node_nopanic(pgdat, x, PAGE_SIZE, BOOTMEM_LOW_LIMIT)
 
-/** 20130518    
+/** 20130518
  **/
 #define alloc_bootmem_low(x) \
 	__alloc_bootmem_low(x, SMP_CACHE_BYTES, 0)

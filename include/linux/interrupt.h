@@ -108,7 +108,7 @@ typedef irqreturn_t (*irq_handler_t)(int, void *);
  * @thread_mask:	bitmask for keeping track of @thread activity
  * @dir:	pointer to the proc/irq/NN/name entry
  */
-/** 20140913    
+/** 20140913
  * interrupt의 action descriptor.
  **/
 struct irqaction {
@@ -395,7 +395,7 @@ static inline int disable_irq_wake(unsigned int irq)
 #endif /* CONFIG_GENERIC_HARDIRQS */
 
 
-/** 20140927    
+/** 20140927
  * force_irqthreads는 0.
  **/
 #ifdef CONFIG_IRQ_FORCED_THREADING
@@ -404,7 +404,7 @@ extern bool force_irqthreads;
 #define force_irqthreads	(0)
 #endif
 
-/** 20140726    
+/** 20140726
  * ARCH에서 별도로 SOFTIRQ PENDING을 기록하는 함수가 지정되지 않을 때
  * 현재 cpu의 softirq pending 상태를 덮어쓰거나, or로 추가하는 함수.
  *
@@ -422,7 +422,7 @@ extern bool force_irqthreads;
  * really been disabled in hardware. Such architectures need to
  * implement the following hook.
  */
-/** 20130720    
+/** 20130720
  * arm은 NULL 함수
  **/
 #ifndef hard_irq_disable
@@ -435,7 +435,7 @@ extern bool force_irqthreads;
    al. should be converted to tasklets, not to softirqs.
  */
 
-/** 20140426    
+/** 20140426
  * 커널에서 사용되는 약속된 SOFTIRQ 번호.
  * 이 순서가 우선순위로, __do_softirq에서 우선순위 순으로 작업을 실행한다.
  **/
@@ -450,7 +450,7 @@ enum
 	TASKLET_SOFTIRQ,
 	SCHED_SOFTIRQ,
 	HRTIMER_SOFTIRQ,
-	/** 20140726    
+	/** 20140726
 	 * RCU는 우선순위가 가장 낮아야 하므로 마지막에 배치시킨다.
 	 **/
 	RCU_SOFTIRQ,    /* Preferable RCU should always be the last softirq */
@@ -528,14 +528,14 @@ extern void __send_remote_softirq(struct call_single_data *cp, int cpu,
      he makes it with spinlocks.
  */
 
-/** 20140920    
+/** 20140920
  * tasklet_struct
  *	softirq에 기반한 bottom-half 매커니즘의 하나.
  *
  * tasklet은 softirq로 구현되며, interrupt context에서 실행된다.
  * 한 종류의 tasklet은 softirq와 달리 한 시점에 하나의 CPU에서만 수행된다.
  * 반면, 다른 bottom-half와 달리 각기 다른 taslket은 다른 CPU들에서 각각 실행될 수 있다.
- * 
+ *
  * 속성:
  * - tasklet_schedule()이 호출되면, tasklet은 어떤 cpu에서 최소 한 번은 실행된다.
  * - tasklet이 이미 스케쥴 되었지만 아직 시작되지 않았다면, 한 번만 실행된다.
@@ -556,7 +556,7 @@ struct tasklet_struct
 	unsigned long data;
 };
 
-/** 20150214    
+/** 20150214
  * tasklet을 생성한다.
  **/
 #define DECLARE_TASKLET(name, func, data) \
@@ -566,7 +566,7 @@ struct tasklet_struct name = { NULL, 0, ATOMIC_INIT(0), func, data }
 struct tasklet_struct name = { NULL, 0, ATOMIC_INIT(1), func, data }
 
 
-/** 20150214    
+/** 20150214
  * tasklet state에 사용되는 두 가지 속성.
  *   TASKLET_STATE_SCHED : 실행을 위해 schedule 되어 있다.
  *   TASKLET_STATE_RUN   : tasklet이 진행 중이다. (SMP에서만 사용)
@@ -585,7 +585,7 @@ enum
 };
 
 #ifdef CONFIG_SMP
-/** 20150214    
+/** 20150214
  * 해당 tasklet의 현재 상태가 state run 중이 아니라면 참.
  *
  * TASKLET_STATE_RUN인 경우 다른 곳에서 lock을 잡고 있다.
@@ -595,21 +595,21 @@ static inline int tasklet_trylock(struct tasklet_struct *t)
 	return !test_and_set_bit(TASKLET_STATE_RUN, &(t)->state);
 }
 
-/** 20150214    
+/** 20150214
  * tasklet lock을 해제한다.
  *
  * state에서 run 속성을 제거한다.
  **/
 static inline void tasklet_unlock(struct tasklet_struct *t)
 {
-	/** 20150214    
+	/** 20150214
 	 * bit clear 이전에 smp barrier를 둔다.
 	 **/
 	smp_mb__before_clear_bit(); 
 	clear_bit(TASKLET_STATE_RUN, &(t)->state);
 }
 
-/** 20150221    
+/** 20150221
  * 주어진 tasklet의 상태가 RUN인동안 계속 대기한다.
  **/
 static inline void tasklet_unlock_wait(struct tasklet_struct *t)
@@ -624,7 +624,7 @@ static inline void tasklet_unlock_wait(struct tasklet_struct *t)
 
 extern void __tasklet_schedule(struct tasklet_struct *t);
 
-/** 20141011    
+/** 20141011
  * tasklet을 스케쥴(리스트에 등록)하는 함수.
  *
  * 현재 tasklet의 상태를 schedule 중으로 변경하고,
@@ -659,7 +659,7 @@ static inline void tasklet_hi_schedule_first(struct tasklet_struct *t)
 }
 
 
-/** 20150221    
+/** 20150221
  * tasklet의 disable count를 증가시키고, smp 메모리 배리어를 둔다.
  * nosync의 의미는 현재 실행 중인 함수가 종료될 때까지 대기하지 않는다는 의미이다.
  **/
@@ -669,7 +669,7 @@ static inline void tasklet_disable_nosync(struct tasklet_struct *t)
 	smp_mb__after_atomic_inc();
 }
 
-/** 20150221    
+/** 20150221
  * 주어진 tasklet을 disable 시킨다.
  * tasklet_schedule에 의해 계속 스케쥴 될 수는 있지만, 실행은 tasklet_enable이 될 때까지 연기된다.
  * tasklet이 현재 실행 중이라면, 종료될 때까지 busy-wait 한다.
@@ -684,7 +684,7 @@ static inline void tasklet_disable(struct tasklet_struct *t)
 	smp_mb();
 }
 
-/** 20150221    
+/** 20150221
  * 기존의 disable된 tasklet을 enable한다. tasklet이 스케줄 되어 있는 상태라면 해당 tasklet은 곧 실행될 것이다.
  * 항상 tasklet_disable과 쌍을 이뤄야 하며, 커널은 disable count를 각 tasklet마다 유지한다.
  **/

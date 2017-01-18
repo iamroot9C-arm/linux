@@ -3,7 +3,7 @@
 #include <asm/types.h>
 
 #ifdef	__KERNEL__
-/** 20141220    
+/** 20141220
  * nr번째 BIT값을 얻어오는 매크로.
  **/
 #define BIT(nr)			(1UL << (nr))
@@ -11,7 +11,7 @@
  *  word내의 Mask 위치를 찾아준다.
 **/
 #define BIT_MASK(nr)		(1UL << ((nr) % BITS_PER_LONG))
-/** 20130420    
+/** 20130420
  * 해당 비트가 위치한 word의 index를 리턴 (0 base)
  **/
 #define BIT_WORD(nr)		((nr) / BITS_PER_LONG)
@@ -55,7 +55,7 @@ extern unsigned long __sw_hweight64(__u64 w);
 	     (bit) < (size);					\
 	     (bit) = find_next_zero_bit((addr), (size), (bit) + 1))
 
-/** 20151031    
+/** 20151031
  * fls를 사용해 숫자의 bitmask order를 구해온다.
  **/
 static __inline__ int get_bitmask_order(unsigned int count)
@@ -76,7 +76,7 @@ static __inline__ int get_count_order(unsigned int count)
 	return order;
 }
 
-/** 20130608    
+/** 20130608
  * long type 변수에 대해 hweight (hamming weight) 구함.
  * 1인 bit 수 count.
  **/
@@ -176,7 +176,7 @@ static inline __s32 sign_extend32(__u32 value, int index)
 	return (__s32)(value << shift) >> shift;
 }
 
-/** 20130727    
+/** 20130727
  * long의 크기가 4일 경우 일반적인 fls 호출,
  * 그렇지 않다면 (8) fls64 호출
  **/

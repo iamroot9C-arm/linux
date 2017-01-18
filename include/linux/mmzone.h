@@ -23,13 +23,13 @@
 #ifndef CONFIG_FORCE_MAX_ZONEORDER
 #define MAX_ORDER 11
 #else
-/** 20140517    
+/** 20140517
  * zoned buddy allocator의 최대 ORDER.
  * CONFIG_FORCE_MAX_ZONEORDER가 11로 설정됨
  **/
 #define MAX_ORDER CONFIG_FORCE_MAX_ZONEORDER
 #endif
-/** 20130420    
+/** 20130420
  * MAX_ORDER_NR_PAGES의 의미는?
  * 20140517
  *   ==> zoned buddy allocator에서 사용하는 MAX_ORDER에서 가리키는 pages의 개수
@@ -42,7 +42,7 @@
  * coalesce naturally under reasonable reclaim pressure and those which
  * will not.
  */
-/** 20140517    
+/** 20140517
  *
  **/
 #define PAGE_ALLOC_COSTLY_ORDER 3
@@ -73,7 +73,7 @@ enum {
 	MIGRATE_TYPES
 };
 
-/** 20130928    
+/** 20130928
  * vexpress 기본 설정으로 CONFIG_CMA를 사용하지 않는다.
  **/
 #ifdef CONFIG_CMA
@@ -90,7 +90,7 @@ enum {
 
 extern int page_group_by_mobility_disabled;
 
-/** 20130831    
+/** 20130831
  * page가 속한 pageblock의 migratetype을 리턴한다.
  **/
 static inline int get_pageblock_migratetype(struct page *page)
@@ -98,7 +98,7 @@ static inline int get_pageblock_migratetype(struct page *page)
 	return get_pageblock_flags_group(page, PB_migrate, PB_migrate_end);
 }
 
-/** 20130921    
+/** 20130921
  * 2.6.19 이전
  * struct free_area {
  *     struct list_head    free_list;
@@ -110,7 +110,7 @@ static inline int get_pageblock_migratetype(struct page *page)
  **/
 struct free_area {
 	struct list_head	free_list[MIGRATE_TYPES];
-	/** 20130928    
+	/** 20130928
 	 * 가용한 개수 (해당 order 단위로 몇 개의 블럭을 사용 가능하다)
 	 **/
 	unsigned long		nr_free;
@@ -133,7 +133,7 @@ struct zone_padding {
 #define ZONE_PADDING(name)
 #endif
 
-/** 20131214    
+/** 20131214
  * vmstat으로 확인 할 수 있는 항목
  **/
 enum zone_stat_item {
@@ -191,7 +191,7 @@ enum zone_stat_item {
 #define LRU_ACTIVE 1
 #define LRU_FILE 2
 
-/** 20130427    
+/** 20130427
  * EVICTABLE한 LRU list는
  *	먼저 ANON / FLIE로 구분되고, 다시 ACTIVE / INACTIVE 상태에 따라 구분된다.
  * UNEVICTABLE 한 LRU list도 존재한다.
@@ -226,7 +226,7 @@ static inline int is_file_lru(enum lru_list lru)
 }
 /** 20131221
  * lru_list가 active면 true를 리턴한다.
- **/ 
+ **/
 static inline int is_active_lru(enum lru_list lru)
 {
 	return (lru == LRU_ACTIVE_ANON || lru == LRU_ACTIVE_FILE);
@@ -234,7 +234,7 @@ static inline int is_active_lru(enum lru_list lru)
 
 /** 20131221
  * lru_list가 unevictable속성이면 true를 리턴한다.
- **/ 
+ **/
 static inline int is_unevictable_lru(enum lru_list lru)
 {
 	return (lru == LRU_UNEVICTABLE);
@@ -249,17 +249,17 @@ struct zone_reclaim_stat {
 	 *
 	 * The anon LRU stats live in [0], file LRU stats in [1]
 	 */
-	/** 20130427    
-	 * enum lru_list의 
+	/** 20130427
+	 * enum lru_list의
 	 * 각각의 0은 LRU_INACTIVE_ANON, LRU_ACTIVE_ANON
 	 * 각각의 1은 LRU_INACTIVE_FILE, LRU_ACTIVE_FILE 인듯하고,
 	 * 각 변수는 각 리스트에 접근한 수를 저장한듯???
 	 **/
-	 /** 20140104    
+	 /** 20140104
 	  * inactivate -> activate 인 경우 rotated 증가.
 	  *   update_page_reclaim_stat 함수의 세번째 arg에 따라 증가 여부 결정
 	  **/
-	/** 20140118    
+	/** 20140118
 	 * shrink 등의 동작과정에서 lru 내의 page들을 scan한 갯수가 저장된다.
 	 **/
 	unsigned long		recent_rotated[2];
@@ -267,7 +267,7 @@ struct zone_reclaim_stat {
 };
 
 struct lruvec {
-	/** 20130427    
+	/** 20130427
 	 * list_head 배열 (NR_LRU_LISTS : 5)
 	 **/
 	struct list_head lists[NR_LRU_LISTS];
@@ -300,14 +300,14 @@ enum zone_watermarks {
 };
 
 #define min_wmark_pages(z) (z->watermark[WMARK_MIN])
-/** 20131116    
+/** 20131116
  * zone의 watermark[WMARK_LOW] 값
  * zone의 watermark[WMARK_HIGH] 값
  **/
 #define low_wmark_pages(z) (z->watermark[WMARK_LOW])
 #define high_wmark_pages(z) (z->watermark[WMARK_HIGH])
 
-/** 20140621    
+/** 20140621
  * cpu별로 page들을 리스트로 구성해 두고,
  * list가 비었다면 batch 단위로 buddy로부터 가져와 채워 넣는다.
  * 만약 high 값을 넘었다면 충분히 많은 페이지가 들어있으므로
@@ -327,7 +327,7 @@ struct per_cpu_pages {
 	struct list_head lists[MIGRATE_PCPTYPES];
 };
 
-/** 20150110    
+/** 20150110
  * cpu별 pageset을 정의하는 자료구조.
  **/
 struct per_cpu_pageset {
@@ -336,7 +336,7 @@ struct per_cpu_pageset {
 	s8 expire;
 #endif
 #ifdef CONFIG_SMP
-	/** 20130928    
+	/** 20130928
 	 * 추후 확인 필요 ???
 	 **/
 	s8 stat_threshold;
@@ -407,9 +407,8 @@ enum zone_type {
  * match the requested limits. See gfp_zone() in include/linux/gfp.h
  */
 /** 20130504
-MAX_NR_ZONES가 2이므로 
-ZONE_SHIFT는 1
-**/
+ * MAX_NR_ZONES가 2이므로 ZONES_SHIFT는 1
+ **/
 #if MAX_NR_ZONES < 2
 #define ZONES_SHIFT 0
 #elif MAX_NR_ZONES <= 2
@@ -420,7 +419,7 @@ ZONE_SHIFT는 1
 #error ZONES_SHIFT -- too many zones configured adjust calculation
 #endif
 
-/** 20150110    
+/** 20150110
  * memory zone 구조체
  **/
 struct zone {
@@ -434,9 +433,10 @@ struct zone {
 	 * when reading the number of free pages to avoid per-cpu counter
 	 * drift allowing watermarks to be breached
 	 */
-	/** 20131116    
+	/** 20131116
 	 * free pages 수가 이 지점 아래로 떨어질 때 추가단계가 수행된다.
-	 * free pages의 수를 읽을 때 per-cpu 카운터 드리프트가 허용되는 watermask를 넘어서지 않기 위해서.
+	 * free pages의 수를 읽을 때 per-cpu 카운터 드리프트가 허용되는
+	 * watermask를 넘어서지 않기 위해서.
 	 **/
 	unsigned long percpu_drift_mark;
 
@@ -451,8 +451,8 @@ struct zone {
 	unsigned long		lowmem_reserve[MAX_NR_ZONES];
 
 	/** 20130914
-	dirtyable이 되면 안되는 zone 당 reserve page의 수
-	**/
+	 * dirtyable이 되면 안되는 zone 당 reserve page의 수
+	 **/
 	/*
 	 * This is a per-zone reserve of pages that should not be
 	 * considered dirtyable memory.
@@ -467,7 +467,7 @@ struct zone {
 	unsigned long		min_unmapped_pages;
 	unsigned long		min_slab_pages;
 #endif
-	/** 20130427    
+	/** 20130427
 	 * zone_pcp_init 에서 할당.
 	 * cpu별로 per_cpu_pages 구조체를 갖는다.
 	 *
@@ -479,7 +479,7 @@ struct zone {
 	 * free areas of different sizes
 	 */
 	spinlock_t		lock;
-	/** 20131214    
+	/** 20131214
 	 * zone 의 모든 page들이 고정되어 있어 reclaimable 하지 않다는 의미.
 	 * balance_pgdat에서 1로 설정.
 	 **/
@@ -524,7 +524,7 @@ struct zone {
 
 	/* Fields commonly accessed by the page reclaim scanner */
 	spinlock_t		lru_lock;
-	/** 20131214    
+	/** 20131214
 	 * free_area_init_core에서 자료구조 초기화.
 	 * lrulist를 갖고 있다.
 	 **/
@@ -570,7 +570,7 @@ struct zone {
 	 * primary users of these fields, and in mm/page_alloc.c
 	 * free_area_init_core() performs the initialization of them.
 	 */
-	/** 20150315    
+	/** 20150315
 	 * zone_wait_table_init에서 초기화.
 	 **/
 	wait_queue_head_t	* wait_table;
@@ -580,7 +580,7 @@ struct zone {
 	/*
 	 * Discontig memory support fields.
 	 */
-	/** 20130427    
+	/** 20130427
 	 * free_area_init_core 에서 초기화
 	 * 20131214
 	 * zone이 속한 node 자료구조를 가리키는 포인터
@@ -602,7 +602,7 @@ struct zone {
 	 * frequently read in proximity to zone->lock.  It's good to
 	 * give them a chance of being in the same cacheline.
 	 */
-	/** 20140621    
+	/** 20140621
 	 * spanned_pages : 홀을 포함한 보유 중인 전체 페이지 개수
 	 * present_pages : 홀을 제외한 보유 중인 페이지 개수
 	 **/
@@ -631,7 +631,7 @@ typedef enum {
 					 */
 } zone_flags_t;
 
-/** 20140628    
+/** 20140628
  * zone의 flags에 특정 bit를 설정한다. atomic.
  **/
 static inline void zone_set_flag(struct zone *zone, zone_flags_t flag)
@@ -644,7 +644,7 @@ static inline int zone_test_and_set_flag(struct zone *zone, zone_flags_t flag)
 	return test_and_set_bit(flag, &zone->flags);
 }
 
-/** 20140628    
+/** 20140628
  * zone의 flags에 특정 bit를 제거한다. atomic.
  **/
 static inline void zone_clear_flag(struct zone *zone, zone_flags_t flag)
@@ -652,7 +652,7 @@ static inline void zone_clear_flag(struct zone *zone, zone_flags_t flag)
 	clear_bit(flag, &zone->flags);
 }
 
-/** 20131123    
+/** 20131123
  * zone flags에서 ZONE_CONGESTED 비트를 검사. non-atomic.
  *   ZONE_CONGESTED: zone has many dirty pages backed by a congested BDI
  **/
@@ -666,7 +666,7 @@ static inline int zone_is_reclaim_locked(const struct zone *zone)
 	return test_bit(ZONE_RECLAIM_LOCKED, &zone->flags);
 }
 
-/** 20140628    
+/** 20140628
  * zone에 대해 OOM이 진행되어 oom이 lock되었는지 검사한다.
  **/
 static inline int zone_is_oom_locked(const struct zone *zone)
@@ -682,7 +682,7 @@ static inline int zone_is_oom_locked(const struct zone *zone)
 #define DEF_PRIORITY 12
 
 /* Maximum number of zones on a zonelist */
-/** 20130629    
+/** 20130629
  * ZONELIST당 최대 포함될 수 있는 ZONES의 수를 계산.
  *   최대 NODE의 개수 * 최대 ZONES의 개수
  *   vexpress에서는 1 * 2
@@ -798,10 +798,10 @@ struct zoneref {
  */
 struct zonelist {
 	struct zonelist_cache *zlcache_ptr;		     // NULL or &zlcache
-	/** 20130629    
+	/** 20130629
 	 * zoneref 구조체의 배열을 선언
 	 *
-	 * 20130907    
+	 * 20130907
 	 * MAX_ZONES_PER_ZONELIST : 총 NODE 수 * zone 종류 개수
 	 **/
 	struct zoneref _zonerefs[MAX_ZONES_PER_ZONELIST + 1];
@@ -836,19 +836,19 @@ extern struct page *mem_map;
  */
 struct bootmem_data;
 typedef struct pglist_data {
-	/** 20130427    
+	/** 20130427
 	 * free_area_init_core 에서 채워줌.
 	 * 20131214
 	 * node에 속한 zone 자료구조를 배열로 가지고 있다.
 	 **/
 	struct zone node_zones[MAX_NR_ZONES];
-	/** 20130629    
+	/** 20130629
 	 * node_zonelists 배열 선언. build_zonelists()에서 초기화.
 	 **/
 	struct zonelist node_zonelists[MAX_ZONELISTS];
 	int nr_zones;
 #ifdef CONFIG_FLAT_NODE_MEM_MAP	/* means !SPARSEMEM */
-	/** 20130420    
+	/** 20130420
 	 * node에 속한 page frame 각각을 관리하기 위한 struct page 배열의 시작 위치.
 	 * alloc_node_mem_map에서 할당.
 	 **/
@@ -870,11 +870,11 @@ typedef struct pglist_data {
 	 */
 	spinlock_t node_size_lock;
 #endif
-	/** 20130427    
+	/** 20130427
 	 * free_area_init_node에서 할당. meminfo의 첫번째 pfn
 	 **/
 	unsigned long node_start_pfn;
-	/** 20140125    
+	/** 20140125
 	 * node_present_pages :  hole을 제외한 노드에 속한 pages 수
 	 * node_spanned_pages :  hole을 포함한 노드에 속한 pages 수
 	 **/
@@ -882,21 +882,21 @@ typedef struct pglist_data {
 	unsigned long node_spanned_pages; /* total size of physical page
 					     range, including holes */
 	int node_id;
-	/** 20130427    
+	/** 20130427
 	 * free_area_init_core에서 초기화
 	 *
-	 * 20140125    
-	 * page out을 위한 대기큐. 
+	 * 20140125
+	 * page out을 위한 대기큐.
 	 * pfmemalloc_watermark_ok에서
 	 *   watermark test에 실패하고, 대기큐에 대기 중인 큐가 있으면 동작시킨다.
 	 **/
 	wait_queue_head_t kswapd_wait;
-	/** 20131214    
+	/** 20131214
 	 * throttle_direct_reclaim 등에서 pfmemalloc이 available 할 때까지 대기할 wait queue
 	 **/
 	wait_queue_head_t pfmemalloc_wait;
 	struct task_struct *kswapd;	/* Protected by lock_memory_hotplug() */
-	/** 20131116    
+	/** 20131116
 	 * wakeup_kswapd 에서 업데이트
 	 **/
 	int kswapd_max_order;
@@ -938,7 +938,7 @@ extern int init_currently_empty_zone(struct zone *zone, unsigned long start_pfn,
 
 extern void lruvec_init(struct lruvec *lruvec, struct zone *zone);
 
-/** 20131214    
+/** 20131214
  * 해당 lruvec을 포함하고 있는 zone 구조체 포인터를 리턴한다.
  **/
 static inline struct zone *lruvec_zone(struct lruvec *lruvec)
@@ -970,18 +970,18 @@ unsigned long __init node_memmap_size_bytes(int, unsigned long, unsigned long);
  * zone_idx() returns 0 for the ZONE_DMA zone, 1 for the ZONE_NORMAL zone, etc.
  */
 /** 20130504
-zone 의 인덱스를 구함
-
-20131214
-[zone 0][zone 1][zone 2][zone 3] ...
-^               ^
-|               |_ zone
-|
-|_ zone->zone_pgda->node_zones
-**/
+ * zone 의 인덱스를 구함
+ *
+ * 20131214
+ * [zone 0][zone 1][zone 2][zone 3] ...
+ * ^               ^
+ * |               |_ zone
+ * |
+ * |_ zone->zone_pgda->node_zones
+ **/
 #define zone_idx(zone)		((zone) - (zone)->zone_pgdat->node_zones)
 
-/** 20130629    
+/** 20130629
  * zone에 page가 존재하는지 여부를 리턴한다.
  *
  * zone의 present_pages의 값이 설정되었는지 검사.
@@ -1002,7 +1002,7 @@ static inline int zone_movable_is_highmem(void)
 #endif
 }
 
-/** 20130427    
+/** 20130427
  * vexpress에서는 CONFIG_HIGHMEM이 정의되어 있지 않아 0 리턴
  **/
 static inline int is_highmem_idx(enum zone_type idx)
@@ -1032,23 +1032,23 @@ static inline int is_normal_idx(enum zone_type idx)
 static inline int is_highmem(struct zone *zone)
 {
 #ifdef CONFIG_HIGHMEM
-		/** 20131109
-		 * 해당 zone구조체위치에서 node_zones배열 구조체의 위치의 offset을 구한다.
-		
-		 struct zone
-		+-----------+ node_zones[0]
-		|			|
-		| DMA		|
-		+-----------+ node_zones[1]
-		|			|
-		| NORMAL	|
-		+-----------+ node_zones[2]
-		|			|
-		| HIGHMEM	|
-		+-----------+ ....
-		|			|
-		| ...		|
-		 **/
+	/** 20131109
+	 * 해당 zone구조체위치에서 node_zones배열 구조체의 위치의 offset을 구한다.
+	 *
+	 * struct zone
+	 * +-----------+ node_zones[0]
+	 * |           |
+	 * | DMA       |
+	 * +-----------+ node_zones[1]
+	 * |           |
+	 * | NORMAL    |
+	 * +-----------+ node_zones[2]
+	 * |           |
+	 * | HIGHMEM   |
+	 * +-----------+ ....
+	 * |           |
+	 * | ...       |
+	 **/
 	int zone_off = (char *)zone - (char *)zone->zone_pgdat->node_zones;
 	/** 20131109
 	  zone에 해당하는 배열의 오프셋을 리턴한다.
@@ -1107,7 +1107,7 @@ extern char numa_zonelist_order[];
 #ifndef CONFIG_NEED_MULTIPLE_NODES
 
 extern struct pglist_data contig_page_data;
-/** 20130330    
+/** 20130330
  * NODE의 struct pglist_data 를 리턴.
  * NODE가 1개이므로 항상 contig_page_data 구조체의 시작 주소를 리턴
  **/
@@ -1144,7 +1144,7 @@ extern struct zone *next_zone(struct zone *zone);
 	     zone;					\
 	     zone = next_zone(zone))
 
-/** 20140621    
+/** 20140621
  * first_online_pgdat (node_data)의 zones를 순회하며
  * page를 보유한 zone에 대한 루프.
  **/
@@ -1156,7 +1156,7 @@ extern struct zone *next_zone(struct zone *zone);
 			; /* do nothing */		\
 		else
 
-/** 20130727    
+/** 20130727
  * zoneref에 해당하는 zone 자료구조의 주소를 리턴한다.
  **/
 static inline struct zone *zonelist_zone(struct zoneref *zoneref)
@@ -1164,7 +1164,7 @@ static inline struct zone *zonelist_zone(struct zoneref *zoneref)
 	return zoneref->zone;
 }
 
-/** 20130727    
+/** 20130727
  * zoneref가 가리키는 zone의 zone index를 리턴한다.
  **/
 static inline int zonelist_zone_idx(struct zoneref *zoneref)
@@ -1172,7 +1172,7 @@ static inline int zonelist_zone_idx(struct zoneref *zoneref)
 	return zoneref->zone_idx;
 }
 
-/** 20130727    
+/** 20130727
  * NUMA일 경우 zone의 node를 리턴
  * UMA일 경우 0을 리턴
  **/
@@ -1216,7 +1216,7 @@ struct zoneref *next_zones_zonelist(struct zoneref *z,
  * used to iterate the zonelist with next_zones_zonelist by advancing it by
  * one before calling.
  */
-/** 20130727    
+/** 20130727
  * zonelist에서 첫번째 zoneref가 가리키는 struct zone의 주소를 리턴한다.
  **/
 static inline struct zoneref *first_zones_zonelist(struct zonelist *zonelist,
@@ -1224,7 +1224,7 @@ static inline struct zoneref *first_zones_zonelist(struct zonelist *zonelist,
 					nodemask_t *nodes,
 					struct zone **zone)
 {
-	/** 20130727    
+	/** 20130727
 	 * zonelist의 첫번째 zoneref의 값을 zoneref로 넘기고,
 	 * highest_zoneidx와 특정 nodemask에 해당하는 node에서 zone을 찾아
 	 * zone 자료구조의 주소를 zone에 저장해 리턴한다.
@@ -1244,7 +1244,7 @@ static inline struct zoneref *first_zones_zonelist(struct zonelist *zonelist,
  * This iterator iterates though all zones at or below a given zone index and
  * within a given nodemask
  */
-/** 20130727    
+/** 20130727
  * zonelist를 순회하며 nodemask에 포함되는 node 중에서 (UMA일 경우 nodemask는 NULL)
  * highidx를 넘지않는 zone_type인 zone들을 순회한다.
  *  (first_zones_zonelist 역시 next_zones_zonelist 함수로 구현되어 있음)
@@ -1263,7 +1263,7 @@ static inline struct zoneref *first_zones_zonelist(struct zonelist *zonelist,
  *
  * This iterator iterates though all zones at or below a given zone index.
  */
-/** 20130727    
+/** 20130727
  * highidex를 넘지 않는 zlist (zonelist)의 각 zone을 순회하는 매크로
  **/
 #define for_each_zone_zonelist(zone, z, zlist, highidx) \
@@ -1478,7 +1478,7 @@ unsigned long __init node_memmap_size_bytes(int, unsigned long, unsigned long);
 #ifdef CONFIG_HOLES_IN_ZONE
 #define pfn_valid_within(pfn) pfn_valid(pfn)
 #else
-/** 20130921    
+/** 20130921
  * CONFIG_HOLES_IN_ZONE 정의되어 있지 않아 항상 1
  **/
 #define pfn_valid_within(pfn) (1)

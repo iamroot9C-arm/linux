@@ -3555,6 +3555,9 @@ static int do_linear_fault(struct mm_struct *mm, struct vm_area_struct *vma,
 		unsigned long address, pte_t *page_table, pmd_t *pmd,
 		unsigned int flags, pte_t orig_pte)
 {
+	/** 20170110
+	 * vma의 페이지 주소와 vm_file 내의 offset인 vm_pgoff을 더한다.
+	 **/
 	pgoff_t pgoff = (((address & PAGE_MASK)
 			- vma->vm_start) >> PAGE_SHIFT) + vma->vm_pgoff;
 
@@ -3614,6 +3617,18 @@ int handle_pte_fault(struct mm_struct *mm,
 	pte_t entry;
 	spinlock_t *ptl;
 
+	/** 20170110
+	 * pte에 매핑된 페이지가 메모리가 존재하지 않는 경우
+	 *
+	 *	pte entry가 비어 있다면
+	 *		vma->vm_ops->fault가 존재하면 =>
+	 *			do_linear_fault
+	 *		존재하지 않으면 => 메모리 영역이 디스크의 파일에 맵되어
+	 *		있지 않다.
+	 *			do_anonymous_page
+	 *	pte entry는 존재한다면
+	 *		file
+	 **/
 	entry = *pte;
 	if (!pte_present(entry)) {
 		if (pte_none(entry)) {
@@ -3632,7 +3647,8 @@ int handle_pte_fault(struct mm_struct *mm,
 					pte, pmd, flags, entry);
 	}
 	/** 20161207
-	 * 이후는 pte_present
+	 * pte에 매핑된 페이지가 메모리가 존재하는 경우
+	 *   => fault에 의한 emulation 동작이 여기서 처리됨
 	 **/
 
 	ptl = pte_lockptr(mm, pmd);
@@ -3699,6 +3715,9 @@ int handle_mm_fault(struct mm_struct *mm, struct vm_area_struct *vma,
 		return hugetlb_fault(mm, vma, address, flags);
 
 retry:
+	/** 20170110
+	 * mm_struct에서 address에 해당하는 pmd를 받아온다.
+	 **/
 	pgd = pgd_offset(mm, address);
 	pud = pud_alloc(mm, pgd, address);
 	if (!pud)

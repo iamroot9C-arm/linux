@@ -23,7 +23,7 @@
 static struct lock_class_key irq_desc_lock_class;
 
 #if defined(CONFIG_SMP)
-/** 20140906    
+/** 20140906
  * irq_default_affinity를 위한 cpumask를 생성하고,
  * default로 전체 mask를 지정한다.
  *
@@ -41,7 +41,7 @@ static void __init init_irq_default_affinity(void)
 #endif
 
 #ifdef CONFIG_SMP
-/** 20140906    
+/** 20140906
  * irq_data의 affinity용 cpumask를 할당한다.
  **/
 static int alloc_masks(struct irq_desc *desc, gfp_t gfp, int node)
@@ -50,7 +50,7 @@ static int alloc_masks(struct irq_desc *desc, gfp_t gfp, int node)
 		return -ENOMEM;
 
 #ifdef CONFIG_GENERIC_PENDING_IRQ
-	/** 20140906    
+	/** 20140906
 	 * GENERIC_PENDING_IRQ가 선언되어 있지 않음.
 	 **/
 	if (!zalloc_cpumask_var_node(&desc->pending_mask, gfp, node)) {
@@ -61,13 +61,13 @@ static int alloc_masks(struct irq_desc *desc, gfp_t gfp, int node)
 	return 0;
 }
 
-/** 20140906    
+/** 20140906
  * irq_desc 중 smp 관련된 부분을 초기화 한다.
  **/
 static void desc_smp_init(struct irq_desc *desc, int node)
 {
 	desc->irq_data.node = node;
-	/** 20140906    
+	/** 20140906
 	 * default affinity를 복사해 초기화.
 	 **/
 	cpumask_copy(desc->irq_data.affinity, irq_default_affinity);
@@ -88,7 +88,7 @@ static inline void desc_smp_init(struct irq_desc *desc, int node) { }
 static inline int desc_node(struct irq_desc *desc) { return 0; }
 #endif
 
-/** 20140906    
+/** 20140906
  * irq_desc를 기본값으로 초기화 한다.
  **/
 static void desc_set_defaults(unsigned int irq, struct irq_desc *desc, int node,
@@ -114,14 +114,14 @@ static void desc_set_defaults(unsigned int irq, struct irq_desc *desc, int node,
 	desc_smp_init(desc, node);
 }
 
-/** 20140906    
+/** 20140906
  * irq 개수.
  **/
 int nr_irqs = NR_IRQS;
 EXPORT_SYMBOL_GPL(nr_irqs);
 
 static DEFINE_MUTEX(sparse_irq_lock);
-/** 20140906    
+/** 20140906
  * irq 번호가 할당되었음을 기록하는 전역 bitmap.
  * 크기는 NR_IRQS와 같다.
  **/
@@ -268,7 +268,7 @@ int __init early_irq_init(void)
 
 #else /* !CONFIG_SPARSE_IRQ */
 
-/** 20140906    
+/** 20140906
  * IRQ수만큼 irq_desc 배열을 정의. 초기값은 모두 handle_bad_irq.
  **/
 struct irq_desc irq_desc[NR_IRQS] __cacheline_aligned_in_smp = {
@@ -279,7 +279,7 @@ struct irq_desc irq_desc[NR_IRQS] __cacheline_aligned_in_smp = {
 	}
 };
 
-/** 20140906    
+/** 20140906
  * irq 관련 자료구조, 특히 irq_desc를 초기화 한다.
  **/
 int __init early_irq_init(void)
@@ -289,7 +289,7 @@ int __init early_irq_init(void)
 
 	init_irq_default_affinity();
 
-	/** 20140906    
+	/** 20140906
 	 * IRQS 개수 출력.
 	 *   - architecture마다 다르다.
 	 *
@@ -300,7 +300,7 @@ int __init early_irq_init(void)
 	desc = irq_desc;
 	count = ARRAY_SIZE(irq_desc);
 
-	/** 20140906    
+	/** 20140906
 	 * IRQ 개수만큼 순회하며 irq_desc를 초기화 한다.
 	 **/
 	for (i = 0; i < count; i++) {
@@ -310,13 +310,13 @@ int __init early_irq_init(void)
 		lockdep_set_class(&desc[i].lock, &irq_desc_lock_class);
 		desc_set_defaults(i, &desc[i], node, NULL);
 	}
-	/** 20140906    
+	/** 20140906
 	 * architecture specific 한 irq init 함수를 호출한다.
 	 **/
 	return arch_early_irq_init();
 }
 
-/** 20140906    
+/** 20140906
  * irq번째 irq_desc의 위치를 리턴한다.
  **/
 struct irq_desc *irq_to_desc(unsigned int irq)
@@ -329,7 +329,7 @@ static void free_desc(unsigned int irq)
 	dynamic_irq_cleanup(irq);
 }
 
-/** 20140906    
+/** 20140906
  * irq_desc의 owner를 지정하고 시작 위치를 리턴한다.
  **/
 static inline int alloc_descs(unsigned int start, unsigned int cnt, int node,
@@ -345,7 +345,7 @@ static inline int alloc_descs(unsigned int start, unsigned int cnt, int node,
 	return start;
 }
 
-/** 20140906    
+/** 20140906
  * SPARSE_IRQ가 아닌 경우 irq의 수를 확장되지 않는다.
  **/
 static int irq_expand_nr_irqs(unsigned int nr)
@@ -404,7 +404,7 @@ EXPORT_SYMBOL_GPL(irq_free_descs);
  *
  * Returns the first irq number or error code
  */
-/** 20140906    
+/** 20140906
  * irq descriptor를 cnt만큼 할당하고 초기화 한다.
  **/
 int __ref
@@ -416,7 +416,7 @@ __irq_alloc_descs(int irq, unsigned int from, unsigned int cnt, int node,
 	if (!cnt)
 		return -EINVAL;
 
-	/** 20140906    
+	/** 20140906
 	 * irq가 -1이 아닌 지정값인 경우, from은 irq로 조정된다.
 	 **/
 	if (irq >= 0) {
@@ -427,19 +427,19 @@ __irq_alloc_descs(int irq, unsigned int from, unsigned int cnt, int node,
 
 	mutex_lock(&sparse_irq_lock);
 
-	/** 20140906    
+	/** 20140906
 	 * allocated_irqs에서 from부터 IRQ_BITMAP_BITS까지 nr개의 연속적인 0이 나오는 위치를 가져온다.
 	 **/
 	start = bitmap_find_next_zero_area(allocated_irqs, IRQ_BITMAP_BITS,
 					   from, cnt, 0);
 	ret = -EEXIST;
-	/** 20140906    
+	/** 20140906
 	 * irq가 -1이 아닌 지정값이고, 찾은 start와 irq가 다르면 실패이다.
 	 **/
 	if (irq >=0 && start != irq)
 		goto err;
 
-	/** 20140906    
+	/** 20140906
 	 * start부터 cnt만큼 확보한 크기가 nr_irqs(NR_IRQS)를 초과하면 확장하고,
 	 * 실패하면 에러처리 한다.
 	 **/
@@ -449,7 +449,7 @@ __irq_alloc_descs(int irq, unsigned int from, unsigned int cnt, int node,
 			goto err;
 	}
 
-	/** 20140906    
+	/** 20140906
 	 * allocated_irqs에 start부터 cnt개를 설정한다.
 	 **/
 	bitmap_set(allocated_irqs, start, cnt);
@@ -469,7 +469,7 @@ EXPORT_SYMBOL_GPL(__irq_alloc_descs);
  *
  * Returns 0 on success or an appropriate error code
  */
-/** 20140906    
+/** 20140906
  * from부터 cnt개의 irq 번호를 할당되었다고 기록한다.
  **/
 int irq_reserve_irqs(unsigned int from, unsigned int cnt)
@@ -481,7 +481,7 @@ int irq_reserve_irqs(unsigned int from, unsigned int cnt)
 		return -EINVAL;
 
 	mutex_lock(&sparse_irq_lock);
-	/** 20140906    
+	/** 20140906
 	 * allocated_irqs에서 start를 다시 찾아 from과 같다면 여전히 사용할 수 있는
 	 * 상태이므로 bitmap에 start부터 cnt개만큼 설정한다.
 	 *
@@ -507,20 +507,20 @@ unsigned int irq_get_next_irq(unsigned int offset)
 	return find_next_bit(allocated_irqs, nr_irqs, offset);
 }
 
-/** 20140906    
+/** 20140906
  * irq에 해당하는 irq_desc를 찾아 spinlock을 걸고 리턴한다.
  **/
 struct irq_desc *
 __irq_get_desc_lock(unsigned int irq, unsigned long *flags, bool bus,
 		    unsigned int check)
 {
-	/** 20140906    
+	/** 20140906
 	 * irq에 해당하는 irq desc를 얻어온다.
 	 **/
 	struct irq_desc *desc = irq_to_desc(irq);
 
 	if (desc) {
-		/** 20140906    
+		/** 20140906
 		 * check에 _IRQ_DESC_CHECK 요청이 포함되어 있다면
 		 * _IRQ_DESC_PERCPU 체크인데 status에 devid가 포함되어 있지 않거나
 		 * 또는 그 반대의 경우라면 NULL을 리턴한다.
@@ -535,12 +535,12 @@ __irq_get_desc_lock(unsigned int irq, unsigned long *flags, bool bus,
 				return NULL;
 		}
 
-		/** 20140906    
-		 * bus가 지정된 경우 irq chip의 bus lock을 건다. 
+		/** 20140906
+		 * bus가 지정된 경우 irq chip의 bus lock을 건다.
 		 **/
 		if (bus)
 			chip_bus_lock(desc);
-		/** 20140906    
+		/** 20140906
 		 * irq_desc에 spinlock을 건다.
 		 **/
 		raw_spin_lock_irqsave(&desc->lock, *flags);
@@ -548,7 +548,7 @@ __irq_get_desc_lock(unsigned int irq, unsigned long *flags, bool bus,
 	return desc;
 }
 
-/** 20140906    
+/** 20140906
  * irq_desc의 spinlock을 해제한다.
  *
  * __irq_get_desc_lock에 대응.
@@ -560,7 +560,7 @@ void __irq_put_desc_unlock(struct irq_desc *desc, unsigned long flags, bool bus)
 		chip_bus_sync_unlock(desc);
 }
 
-/** 20140906    
+/** 20140906
  * irq가 percpu devid를 갖도록 설정한다.
  **/
 int irq_set_percpu_devid(unsigned int irq)
@@ -573,7 +573,7 @@ int irq_set_percpu_devid(unsigned int irq)
 	if (desc->percpu_enabled)
 		return -EINVAL;
 
-	/** 20140906    
+	/** 20140906
 	 * percpu_enabled를 동적할당 받아 0으로 초기화 한다.
 	 **/
 	desc->percpu_enabled = kzalloc(sizeof(*desc->percpu_enabled), GFP_KERNEL);
@@ -581,7 +581,7 @@ int irq_set_percpu_devid(unsigned int irq)
 	if (!desc->percpu_enabled)
 		return -ENOMEM;
 
-	/** 20140906    
+	/** 20140906
 	 * irq의 속성에 devid가 per_cpu 임을 설정한다.
 	 **/
 	irq_set_percpu_devid_flags(irq);

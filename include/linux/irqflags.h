@@ -129,8 +129,9 @@
 		trace_hardirqs_off();			\
 	} while (0)
 
- /** 20130720  
-  * 
+ /** 20130720
+  * 현재 코어의 irq 상태를 flags대로 복원한다.
+  *
   * flags에 irq가 disabled 되어 있다면 trace 하는 순서만 다르고
   * 공통으로 flags 값으로 restore 한다.
   * trace_hardirqs_off : NULL function
@@ -138,7 +139,7 @@
 
 #define local_irq_restore(flags)			\
 	do {						\
-			if (raw_irqs_disabled_flags(flags)) {	\
+		if (raw_irqs_disabled_flags(flags)) {	\
 			raw_local_irq_restore(flags);	\
 			trace_hardirqs_off();		\
 		} else {				\

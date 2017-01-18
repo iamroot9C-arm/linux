@@ -26,7 +26,7 @@
 #include <linux/compiler.h>
 #include <linux/irqflags.h>
 
-/** 20140607    
+/** 20140607
  * clear bit 전후의 smp barrier.
  **/
 #define smp_mb__before_clear_bit()	smp_mb()
@@ -184,7 +184,7 @@ extern int _find_next_bit_be(const unsigned long *p, int size, int offset);
 #define ATOMIC_BITOP(name,nr,p)			\
 	(__builtin_constant_p(nr) ? ____atomic_##name(nr, p) : _##name(nr,p))
 #else
-/** 20130406    
+/** 20130406
  * _를 name과 붙인 symbol을 호출
  **/
 #define ATOMIC_BITOP(name,nr,p)		_##name(nr,p)
@@ -194,15 +194,17 @@ extern int _find_next_bit_be(const unsigned long *p, int size, int offset);
  * Native endian atomic definitions.
  */
 /** 20121117
- * _set_bit(nr, p)의 정의가 어딘가 있어야 함. 
- * 	arch/arm/lib/setbit.S에 bitop macro를 통해 _set_bit(nr, p)가 정의됨. 
- ** 20121208
+ * arch/arm/lib/setbit.S의 bitop macro로 _set_bit가 정의됨
+ *
+ * 20121208
  * atomic bit operation set_bit 분석
+ *
+ * pointer p에서 nr번째 비트를 set/clear/change 한다.
  **/
 #define set_bit(nr,p)			ATOMIC_BITOP(set_bit,nr,p)
 #define clear_bit(nr,p)			ATOMIC_BITOP(clear_bit,nr,p)
 #define change_bit(nr,p)		ATOMIC_BITOP(change_bit,nr,p)
-/** 20130406    
+/** 20130406
  * 현재 설정값을 리턴하고, 새로 비트를 설정하는 atomic operation 호출
  **/
 #define test_and_set_bit(nr,p)		ATOMIC_BITOP(test_and_set_bit,nr,p)
@@ -213,16 +215,16 @@ extern int _find_next_bit_be(const unsigned long *p, int size, int offset);
 /*
  * These are the little endian, atomic definitions.
  */
-/** 20151031    
+/** 20151031
  * pointer에서 size 범위내에 첫번째 0인 비트 인덱스를 리턴한다.
  **/
 #define find_first_zero_bit(p,sz)	_find_first_zero_bit_le(p,sz)
-/** 20130420    
+/** 20130420
  *  arch/arm/lib/findbit.S
  **/
 #define find_next_zero_bit(p,sz,off)	_find_next_zero_bit_le(p,sz,off)
 #define find_first_bit(p,sz)		_find_first_bit_le(p,sz)
-/** 20140301    
+/** 20140301
  * p에서 off만큼 떨어진 부분부터 sz까지 1인 비트를 찾아 리턴한다.
  **/
 #define find_next_bit(p,sz,off)		_find_next_bit_le(p,sz,off)
@@ -248,7 +250,7 @@ extern int _find_next_bit_be(const unsigned long *p, int size, int offset);
 
 #else
 
-/** 20130427    
+/** 20130427
  * MSB 부터 0이 아닌 첫번째 위치를 구함.
  *	(index는 32 ... 1)
  **/
@@ -301,14 +303,14 @@ static inline int fls(int x)
 
 	/** 20130323
 	*	clz : count leading zero (from MSB)
-	*   ret : 32 - clz 
+	*   ret : 32 - clz
 	*/
 	asm("clz\t%0, %1" : "=r" (ret) : "r" (x));
        	ret = 32 - ret;
 	return ret;
 }
 
-/** 20130427    
+/** 20130427
  * __t & -__t : 2의 보수와 비트 and.
  *   -> LSB부터 0이 아닌 첫번째 비트만 남겨두고 나머지 비트는 0.
  *   ex) 0x00000080
