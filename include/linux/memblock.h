@@ -112,13 +112,9 @@ void __next_free_mem_range_rev(u64 *idx, int nid, phys_addr_t *out_start,
  * Walks over free (memory && !reserved) areas of memblock in reverse
  * order.  Available as soon as memblock is initialized.
  */
-/** 20130223    
- *  주석의 의미로 보아 memblock의 free areas를 역순으로 탐색하는 것이지만,
- *  __next_free_mem_range_rev을 아직 보진 않았음.
+/** 20130223
+ * memblock의 free areas를 역순으로 탐색
  **/
- /** 20130302 
-  	분석완료
-  **/	
 #define for_each_free_mem_range_reverse(i, nid, p_start, p_end, p_nid)	\
 	for (i = (u64)ULLONG_MAX,					\
 	     __next_free_mem_range_rev(&i, nid, p_start, p_end, p_nid);	\
@@ -217,7 +213,7 @@ static inline unsigned long memblock_region_memory_base_pfn(const struct membloc
  * memblock_region_memory_end_pfn - Return the end_pfn this region
  * @reg: memblock_region structure
  */
-/** 20130330    
+/** 20130330
  * memblock region의 끝 주소를 round down한 pfn을 리턴
  **/
 static inline unsigned long memblock_region_memory_end_pfn(const struct memblock_region *reg)
@@ -243,7 +239,7 @@ static inline unsigned long memblock_region_reserved_end_pfn(const struct memblo
 	return PFN_UP(reg->base + reg->size);
 }
 
-/** 20130330    
+/** 20130330
  * memblock_type은 memory, reserved 2가지 존재
  * 지정된 memblock_type의 regions를 순회.
  **/
@@ -253,7 +249,7 @@ static inline unsigned long memblock_region_reserved_end_pfn(const struct memblo
 	     region++)
 
 
-/** 20130126    
+/** 20130126
  * vexpress config에서는 정의되어 있지 않음
  **/
 #ifdef CONFIG_ARCH_DISCARD_MEMBLOCK

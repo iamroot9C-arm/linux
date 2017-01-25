@@ -36,7 +36,7 @@ struct memblock memblock __initdata_memblock = {
 };
 
 int memblock_debug __initdata_memblock;
-/** 20130126    
+/** 20130126
  * memblock_can_resize 은 memblock_double_array 등에서 사용
  **/
 static int memblock_can_resize __initdata_memblock;
@@ -66,7 +66,7 @@ static inline phys_addr_t memblock_cap_size(phys_addr_t base, phys_addr_t *size)
 /*
  * Address comparison utilities
  */
-/** 20130126    
+/** 20130126
  * addr가 서로 겹치는지 검사하는 함수 (포함관계까지 검사됨)
  **/
 static unsigned long __init_memblock memblock_addrs_overlap(phys_addr_t base1, phys_addr_t size1,
@@ -75,7 +75,7 @@ static unsigned long __init_memblock memblock_addrs_overlap(phys_addr_t base1, p
 	return ((base1 < (base2 + size2)) && (base2 < (base1 + size1)));
 }
 
-/** 20130126    
+/** 20130126
  * memblock의 regions를 돌면서 주어진 addr와 겹치는 부분이 있는지 검사하는 함수
  * 겹쳐져 있으면 겹친 영역의 index를 리턴
  * 아니면 -1 리턴
@@ -108,9 +108,9 @@ static long __init_memblock memblock_overlaps_region(struct memblock_type *type,
  * RETURNS:
  * Found address on success, %0 on failure.
  */
- /** 20130302 
-  	주어진 범위와 노드에서 alloc 가능한 메모리 영역(aligned)을 찾는다.
-  **/	
+ /** 20130302
+  * 주어진 범위와 노드에서 alloc 가능한 메모리 영역(aligned)을 찾는다.
+  **/
 phys_addr_t __init_memblock memblock_find_in_range_node(phys_addr_t start,
 					phys_addr_t end, phys_addr_t size,
 					phys_addr_t align, int nid)
@@ -119,14 +119,14 @@ phys_addr_t __init_memblock memblock_find_in_range_node(phys_addr_t start,
 	u64 i;
 
 	/* pump up @end */
-	/** 20130223    
+	/** 20130223
 	 * end가 0으로 넘어왔다면 end를 memblock의 current_limit으로 잡음
 	 **/
 	if (end == MEMBLOCK_ALLOC_ACCESSIBLE)
 		end = memblock.current_limit;
 
 	/* avoid allocating the first page */
-	/** 20130223    
+	/** 20130223
 	 * start와 PAGE_SIZE 중 큰 값을 취해 첫번째 page를 할당하는 것을 피한다. 왜???
 	 **/
 	start = max_t(phys_addr_t, start, PAGE_SIZE);
@@ -237,7 +237,7 @@ static int __init_memblock memblock_double_array(struct memblock_type *type,
 	struct memblock_region *new_array, *old_array;
 	phys_addr_t old_alloc_size, new_alloc_size;
 	phys_addr_t old_size, new_size, addr;
-	/** 20130126    
+	/** 20130126
 	 * 현재 slab_state를 초기화하는 부분이 나오지 않았음.
 	 * false라 가정하고 분석시작.
 	 **/
@@ -247,7 +247,7 @@ static int __init_memblock memblock_double_array(struct memblock_type *type,
 	/* We don't allow resizing until we know about the reserved regions
 	 * of memory that aren't suitable for allocation
 	 */
-	/** 20130126    
+	/** 20130126
 	 * memblock_can_resize는 static 전역변수.
 	 * memblock_add_region에서 호출될 때는 초기값 상태로 들어와 return -1.
 	 **/
@@ -346,7 +346,7 @@ static int __init_memblock memblock_double_array(struct memblock_type *type,
  *
  * Scan @type and merge neighboring compatible regions.
  */
-/** 20130126    
+/** 20130126
  * 인접하는 region을 하나의 region으로 통합
  * (함수 호출 전에 overlap된 정보를 새로운 region으로 등록시킨 상태)
  **/
@@ -359,7 +359,7 @@ static void __init_memblock memblock_merge_regions(struct memblock_type *type)
 		struct memblock_region *this = &type->regions[i];
 		struct memblock_region *next = &type->regions[i + 1];
 
-		/** 20130126    
+		/** 20130126
 		 * 현재 region의 마지막 address가 다음 region의 address와 인접하는지 검사
 		 **/
 		if (this->base + this->size != next->base ||
@@ -370,13 +370,13 @@ static void __init_memblock memblock_merge_regions(struct memblock_type *type)
 		    memblock_get_region_node(next)) {
 			BUG_ON(this->base + this->size > next->base);
 			i++;
-			/** 20130126    
+			/** 20130126
 			 * 인접하지 않을 경우 merge 대상에서 제외
 			 **/
 			continue;
 		}
 
-		/** 20130126    
+		/** 20130126
 		 * 다음 region의 size를 더해주고, 앞으로 하나씩 당김
 		 **/
 		this->size += next->size;
@@ -395,7 +395,7 @@ static void __init_memblock memblock_merge_regions(struct memblock_type *type)
  * Insert new memblock region [@base,@base+@size) into @type at @idx.
  * @type must already have extra room to accomodate the new region.
  */
-/** 20130126    
+/** 20130126
  * memblock에 새로운 region을 추가한다.
  **/
 static void __init_memblock memblock_insert_region(struct memblock_type *type,
@@ -405,15 +405,15 @@ static void __init_memblock memblock_insert_region(struct memblock_type *type,
 	struct memblock_region *rgn = &type->regions[idx];
 
 	BUG_ON(type->cnt >= type->max);
-	/** 20130126    
+	/** 20130126
 	 * idx부터 뒤의 모든 rgn을 밀어 insert 할 공간을 확보.
 	 * 초기 type->cnt 1, idx 역시 1로 들어오면 실제로 공간 확보를 이뤄지지 않음.
 	 **/
 	memmove(rgn + 1, rgn, (type->cnt - idx) * sizeof(*rgn));
 	rgn->base = base;
 	rgn->size = size;
-	/** 20130126    
-	 * 현재 vexpress 기준 config에서는 NULL 함수
+	/** 20130126
+	 * MEMBLOCK NODE MAP을 사용하지 않을 경우 NULL 함수
 	 **/
 	memblock_set_region_node(rgn, nid);
 	type->cnt++;
@@ -831,15 +831,14 @@ void __init_memblock __next_free_mem_range(u64 *idx, int nid,
  * Reverse of __next_free_mem_range().
  */
 /** 20130302
+ * memblock memory region과 reserved region을 역순으로 탐색하여
+ * memory region영역에서 사용가능한 reserved region영역을 찾아 리턴.
+ *
  * idx : &i(ULLONG_MAX)
  * nid : 1
  * out_start : &this_start
  * end_start : &this_end
  * out_nid   : null
- *
- * memblock memory region과 reserved region을 역순으로 돌면서
- * memory region영역에서 사용가능한 reserved region영역을 찾아서 리턴한다.
- *
  **/
 void __init_memblock __next_free_mem_range_rev(u64 *idx, int nid,
 					   phys_addr_t *out_start,
@@ -1037,13 +1036,14 @@ static phys_addr_t __init memblock_alloc_base_nid(phys_addr_t size,
 
 	/* align @size to avoid excessive fragmentation on reserved array */
 	/** 20130302
-	 * 요구 사이즈가 align된 사이즈보다 작을 경우 최소 align된 사이즈로 맞추기 위해 round_up을 한다.
+	 * 요구 사이즈가 align된 사이즈보다 작을 경우, 최소 align된 사이즈로
+	 * 맞추기 위해 round_up을 한다.
 	 **/
 	size = round_up(size, align);
 
 	/** 20130302
- 		max_addr 보다 작은 범위에서 memblock alloc 가능한 영역을 찾는다.
- 	**/
+	 * max_addr 보다 작은 범위에서 memblock alloc 가능한 영역을 찾는다.
+	 **/
 	found = memblock_find_in_range_node(0, max_addr, size, align, nid);
 	/** 20130302
 	 * alloc 가능한 영역을 찾으면 memblock reserved에 등록한다.

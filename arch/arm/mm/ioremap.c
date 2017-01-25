@@ -190,7 +190,7 @@ remap_area_supersections(unsigned long virt, unsigned long pfn,
 }
 #endif
 
-/** 20140419    
+/** 20140419
  * page frame을 mapping할 vm_struct, vmap_area를 할당 받고 (VA),
  * page table에 MT_DEVICE에 해당하는 속성으로 등록시키는 함수
  **/
@@ -223,7 +223,7 @@ void __iomem * __arm_ioremap_pfn_caller(unsigned long pfn,
 	/*
 	 * Page align the mapping size, taking account of any offset.
 	 */
-	/** 20140419    
+	/** 20140419
 	 * off과 마찬가지로 size 역시 page align
 	 **/
 	size = PAGE_ALIGN(offset + size);
@@ -232,7 +232,7 @@ void __iomem * __arm_ioremap_pfn_caller(unsigned long pfn,
 	 * Try to reuse one of the static mapping whenever possible.
 	 */
 	read_lock(&vmlist_lock);
-	/** 20140419    
+	/** 20140419
 	 * vmlist에 등록된 vm_struct 중 STATIC MAPPING은
 	 * 매핑할 VA를 이미 가지고 있다.
 	 * (architecture 초기화 과정에서 iotable_init 호출)
@@ -242,7 +242,7 @@ void __iomem * __arm_ioremap_pfn_caller(unsigned long pfn,
 	for (area = vmlist; area; area = area->next) {
 		if (!size || (sizeof(phys_addr_t) == 4 && pfn >= 0x100000))
 			break;
-		/** 20140419    
+		/** 20140419
 		 * VM_ARM_STATIC_MAPPING 매핑인 경우 vmlist의 VA를 리턴한다.
 		 * 
 		 * vexpress의 경우,
@@ -252,7 +252,7 @@ void __iomem * __arm_ioremap_pfn_caller(unsigned long pfn,
 			continue;
 		if ((area->flags & VM_ARM_MTYPE_MASK) != VM_ARM_MTYPE(mtype))
 			continue;
-		/** 20130518    
+		/** 20130518
 		 * vmlist에서 가져온 entry의 phys_addr (start) 보다 작거나
 		 *                                     (end)보다 크면
 		 * vmlist에서 다음 entry를 찾음 (continue)
@@ -261,7 +261,7 @@ void __iomem * __arm_ioremap_pfn_caller(unsigned long pfn,
 		    __pfn_to_phys(pfn) + size-1 > area->phys_addr + area->size-1)
 			continue;
 		/* we can drop the lock here as we know *area is static */
-		/** 20130518    
+		/** 20130518
 		 * 새로운 pfn이 vmlist에 등록한 entry의 주소 범위 내에 있으면
 		 * offset을 map_desc의 .virtual에 더해 리턴. (vexpress의 경우 V2T_PERIPH)
 		 **/
@@ -272,28 +272,29 @@ void __iomem * __arm_ioremap_pfn_caller(unsigned long pfn,
 	}
 	read_unlock(&vmlist_lock);
 
-/** 20130323
-*	이하는 다음 진입 시 분석 (SLUB ....)
-*	20130518
-*	vmlist에 등록한 entry의 주소 범위 밖에 있는 경우 아래 루틴 수행.
-*/
+	/** 20130323
+	 * 이하는 다음 진입 시 분석 (SLUB ....)
+	 *
+	 * 20130518
+	 * vmlist에 등록한 entry의 주소 범위 밖에 있는 경우 아래 루틴 수행.
+	 */
 
 	/*
 	 * Don't allow RAM to be mapped - this causes problems with ARMv6+
 	 */
-	/** 20130518    
+	/** 20130518
 	 * pfn이 물리 메모리 영역에 속한다면 WARN()을 호출하고 NULL을 리턴.
 	 **/
 	if (WARN_ON(pfn_valid(pfn)))
 		return NULL;
 
-	/** 20140419    
+	/** 20140419
 	 * vm_struct와 vmap_area(VA 할당을 의미)를 받아온다.
 	 **/
 	area = get_vm_area_caller(size, VM_IOREMAP, caller);
  	if (!area)
  		return NULL;
-	/** 20140419    
+	/** 20140419
 	 * vm_struct의 가상 주소 할당
 	 **/
  	addr = (unsigned long)area->addr;
@@ -310,7 +311,7 @@ void __iomem * __arm_ioremap_pfn_caller(unsigned long pfn,
 		err = remap_area_sections(addr, pfn, size, type);
 	} else
 #endif
-		/** 20140419    
+		/** 20140419
 		 * 할당받은 VA와 PA를 매핑 (page table에 등록)
 		 * prot는 MT_DEVICE type에 대한 protection 설정.
 		 **/
@@ -322,19 +323,19 @@ void __iomem * __arm_ioremap_pfn_caller(unsigned long pfn,
  		return NULL;
  	}
 
-	/** 20140419    
+	/** 20140419
 	 * addr ~ addr + size에 대한 cache flush
 	 * if/else에 따라 ioremap_page_range가 호출되지 않았다면 cache flush 되지 않을 수 있음
 	 **/
 	flush_cache_vmap(addr, addr + size);
-	/** 20140419    
-	 * page단위로 mapping 하였으므로 PA의 정렬되지 않은 주소에 
+	/** 20140419
+	 * page단위로 mapping 하였으므로 PA의 정렬되지 않은 주소에
 	 * 매핑한 addr(PA)을 더해 리턴
 	 **/
 	return (void __iomem *) (offset + addr);
 }
 
-/** 20140419    
+/** 20140419
  * architecture specific ioremap 함수.
  * pfn을 매핑할 VA를 할당 받아 page table에 매핑한다.
  **/
@@ -342,11 +343,11 @@ void __iomem *__arm_ioremap_caller(unsigned long phys_addr, size_t size,
 	unsigned int mtype, void *caller)
 {
 	unsigned long last_addr;
-	/** 20140419    
+	/** 20140419
 	 * offset은 phys_addr의 page의 정렬되지 않은 주소
 	 **/
  	unsigned long offset = phys_addr & ~PAGE_MASK;
-	/** 20140419    
+	/** 20140419
 	 * phys_addr로 pfn 을 구함
 	 **/
  	unsigned long pfn = __phys_to_pfn(phys_addr);
@@ -354,7 +355,7 @@ void __iomem *__arm_ioremap_caller(unsigned long phys_addr, size_t size,
  	/*
  	 * Don't allow wraparound or zero size
 	 */
-	/** 20140419    
+	/** 20140419
 	 * last_addr에 대한 체크
 	 **/
 	last_addr = phys_addr + size - 1;
@@ -383,7 +384,7 @@ __arm_ioremap_pfn(unsigned long pfn, unsigned long offset, size_t size,
 }
 EXPORT_SYMBOL(__arm_ioremap_pfn);
 
-/** 20140419    
+/** 20140419
  * func pointer. __arm_ioremap_caller를 지정
  **/
 void __iomem * (*arch_ioremap_caller)(unsigned long, size_t,

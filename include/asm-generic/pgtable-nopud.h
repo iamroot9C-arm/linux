@@ -22,7 +22,7 @@ typedef struct { pgd_t pgd; } pud_t;
  * setup: the pud is never bad, and a pud always exists (as it's folded
  * into the pgd entry)
  */
-/** 20160514    
+/** 20160514
  * arm은 nopud이므로 generic pgtable-nopud 헤더를 포함.
  * pgd_none과 pgd_bad는 동일.
  **/

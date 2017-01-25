@@ -88,7 +88,7 @@ extern void mca_init(void);
 extern void sbus_init(void);
 extern void prio_tree_init(void);
 extern void radix_tree_init(void);
-/** 20160130    
+/** 20160130
  * DEBUG_RODATA 가 정의되지 않았음.
  **/
 #ifndef CONFIG_DEBUG_RODATA
@@ -108,7 +108,7 @@ extern void tc_init(void);
  */
 bool early_boot_irqs_disabled __read_mostly;
 
-/** 20130629    
+/** 20130629
  * system_state : 전역 변수이므로 초기값 0 (SYSTEM_BOOTING)
  *
  * 20160130
@@ -136,7 +136,7 @@ char *saved_command_line;
 static char *static_command_line;
 
 static char *execute_command;
-/** 20160130    
+/** 20160130
  * rdinit_setup 등에서 ramdisk 로 실행할 프로그램을 지정하여 갱신된다.
  **/
 static char *ramdisk_execute_command;
@@ -161,7 +161,7 @@ static int __init set_reset_devices(char *str)
 
 __setup("reset_devices", set_reset_devices);
 
-/** 20160206    
+/** 20160206
  * init용 argv, envp는 전역 변수로 설정.
  **/
 static const char * argv_init[MAX_INIT_ARGS+2] = { "init", NULL, };
@@ -203,7 +203,7 @@ static int __init obsolete_checksetup(char *line)
  * This should be approx 2 Bo*oMips to start (note initial shift), and will
  * still work even if initially too large, it will just take slightly longer
  */
-/** 20150606    
+/** 20150606
  * calibrate_delay 함수에서 delay loop 횟수를 저장한다.
  **/
 unsigned long loops_per_jiffy = (1<<12);
@@ -323,7 +323,7 @@ static int __init init_setup(char *str)
 }
 __setup("init=", init_setup);
 
-/** 20160109    
+/** 20160109
  * rdinit 옵션을 주었을 경우, 파라미터를 ramdisk 실행 명령을 지정한다.
  *
  * qemu 실행환경에서 rdinit=/sbin/init을 지정
@@ -361,13 +361,13 @@ static inline void smp_prepare_cpus(unsigned int maxcpus) { }
  * parsing is performed in place, and we should allow a component to
  * store reference of name/value for future reference.
  */
-/** 20130608    
+/** 20130608
  * static_command_line, saved_command_line에 각각 복사.
  * saved_command_line은 추후 /proc/cmdline에 보여주는 용도 등으로 저장.
  **/
 static void __init setup_command_line(char *command_line)
 {
-	/** 20130608    
+	/** 20130608
 	 * boot_command_line은 ATAG에서 넘어온 command line.
 	 * command_line은 setup_arch에서 동일한 내용을 copy.
 	 **/
@@ -386,12 +386,12 @@ static void __init setup_command_line(char *command_line)
  * gcc-3.4 accidentally inlines this function, so use noinline.
  */
 
-/** 20150523    
+/** 20150523
  * kthreadd_done completion 선언 및 초기화.
  **/
 static __initdata DECLARE_COMPLETION(kthreadd_done);
 
-/** 20160227    
+/** 20160227
  * 부팅을 마치고 idle 상태로 진입한다.
  *
  * - kernel_init과 kthradd kthread를 생성.
@@ -402,7 +402,7 @@ static noinline void __init_refok rest_init(void)
 {
 	int pid;
 
-	/** 20150523    
+	/** 20150523
 	 * rcu scheduler가 동작하도록 한다.
 	 **/
 	rcu_scheduler_starting();
@@ -411,24 +411,24 @@ static noinline void __init_refok rest_init(void)
 	 * the init task will end up wanting to create kthreads, which, if
 	 * we schedule it before we create kthreadd, will OOPS.
 	 */
-	/** 20160206    
+	/** 20160206
 	 * kernel_init을 커널 스레드로 실행시킨다. pid 1.
 	 * init을 마치고 userspace의 init 프로그램을 실행시킨다.
 	 **/
 	kernel_thread(kernel_init, NULL, CLONE_FS | CLONE_SIGHAND);
 	numa_default_policy();
-	/** 20160213    
+	/** 20160213
 	 * kthreadd을 커널 스레드로 실행시킨다. pid 2.
 	 **/
 	pid = kernel_thread(kthreadd, NULL, CLONE_FS | CLONE_FILES);
 	rcu_read_lock();
-	/** 20160213    
+	/** 20160213
 	 * kernel_thread가 생성된 pid를 리턴하므로,
 	 * init_pid_ns에서 pid를 찾아 task_struct 형태로 kthreadd_task에 저장한다.
 	 **/
 	kthreadd_task = find_task_by_pid_ns(pid, &init_pid_ns);
 	rcu_read_unlock();
-	/** 20160213    
+	/** 20160213
 	 * 먼저 생성된 kthread_init가 kthreadd의 동작을 대기 중이므로 대기를 종료.
 	 **/
 	complete(&kthreadd_done);
@@ -437,7 +437,7 @@ static noinline void __init_refok rest_init(void)
 	 * The boot idle thread must execute schedule()
 	 * at least once to get things moving:
 	 */
-	/** 20160220    
+	/** 20160220
 	 * current task를 idle_sched_class로 변경한다.
 	 * 선점가능 상태로 scheduler를 한 번 돌리고, 돌아오면 다시 선점 불가로
 	 * cpu_idle에 진입한다.
@@ -445,7 +445,7 @@ static noinline void __init_refok rest_init(void)
 	init_idle_bootup_task(current);
 	schedule_preempt_disabled();
 	/* Call into cpu_idle with preempt disabled */
-	/** 20160227    
+	/** 20160227
 	 * 선점 불가 상태로 cpu_idle 호출.
 	 *
 	 * 이로써 부팅을 담당했던 0번 task는 런타임시 idle task로써 동작하게 된다.
@@ -522,7 +522,7 @@ void __init parse_early_param(void)
  *	Activate the first processor.
  */
 
-/** 20140426    
+/** 20140426
  * 부팅시 사용된 cpu를 cpu mask에 추가한다.
  **/
 static void __init boot_cpu_init(void)
@@ -551,7 +551,7 @@ void __init __weak smp_setup_processor_id(void)
 {
 }
 
-/** 20150207    
+/** 20150207
  * NULL 함수.
  * thread_info의 크기가 PAGE_SIZE 이상이 아니다.
  **/
@@ -562,7 +562,7 @@ void __init __weak thread_info_cache_init(void)
 /*
  * Set up kernel memory allocators
  */
-/** 20140322    
+/** 20140322
  * mm_init
  *	커널이 사용하는 메모리 관련 자료구조를 초기화 한다.
  *
@@ -580,12 +580,12 @@ static void __init mm_init(void)
 	 * page_cgroup requires contiguous pages,
 	 * bigger than MAX_ORDER unless SPARSEMEM.
 	 */
-	/** 20130803    
+	/** 20130803
 	 * CONFIG_MEMCG 가 define되지 않아 바로 return
 	 **/
 	page_cgroup_init_flatmem();
 	mem_init();
-	/** 20130907    
+	/** 20130907
 	 * CONFIG_SLUB이 정의되어 있으므로 mm/Makefile에서 slub.o가 생성된다.
 	 *
 	 * 20140322
@@ -677,47 +677,44 @@ asmlinkage void __init start_kernel(void)
 	 * boot시 사용된 cpu 비트맵 변수들을 초기화
      **/
 	boot_cpu_init();
-    /** 20121208
-	 * vexpress에서는 NULL함수임
-     **/
-	/** 20131026    
-	 * CONFIG_HIGHMEM인 경우 호출됨
+	/** 20121208
+	 * CONFIG_HIGHMEM인 경우 호출됨. vexpress는 HIGHMEM 사용 안함
 	 **/
 	page_address_init();
 
 	printk(KERN_NOTICE "%s", linux_banner);
 	setup_arch(&command_line);
-	/** 20130608    
+	/** 20130608
 	 * vexpress에서 NULL 함수
 	 **/
 	mm_init_owner(&init_mm, &init_task);
-	/** 20130608    
+	/** 20130608
 	 * vexpress에서 NULL 함수
 	 **/
 	mm_init_cpumask(&init_mm);
 	setup_command_line(command_line);
 	setup_nr_cpu_ids();
-	/** 20130629    
+	/** 20130629
 	 * percpu를 사용하기 위한 자료구조 초기화
 	 **/
 	setup_per_cpu_areas();
-	/** 20130629    
+	/** 20130629
 	 * vexpress 에서 NULL 함수
 	 **/
 	smp_prepare_boot_cpu();	/* arch-specific boot-cpu hooks */
 
-	/** 20130727    
+	/** 20130727
 	 * zonelists 자료구조 생성
 	 **/
 	build_all_zonelists(NULL, NULL);
 	page_alloc_init();
 
-	/** 20130727    
+	/** 20130727
 	 * ATAG에서 넘어온 command line 문자열을 출력한다.
 	 **/
 	printk(KERN_NOTICE "Kernel command line: %s\n", boot_command_line);
 	parse_early_param();
-	/** 20130727    
+	/** 20130727
 	 * setup_command_line에서 복사해둔 static_command_line 파라미터에서 
 	 *
 	 * 파싱되지 못한 구식 argument들은 unknown_bootoption으로 처리.
@@ -726,7 +723,7 @@ asmlinkage void __init start_kernel(void)
 		   __stop___param - __start___param,
 		   -1, -1, &unknown_bootoption);
 
-	/** 20130727    
+	/** 20130727
 	 * vexpress에서는 NULL 함수
 	 **/
 	jump_label_init();
@@ -735,22 +732,22 @@ asmlinkage void __init start_kernel(void)
 	 * These use large bootmem allocations and must precede
 	 * kmem_cache_init()
 	 */
-	/** 20130727    
+	/** 20130727
 	 * early_param("log_buf_len", log_buf_len_setup)이 호출되지 않으면
 	 * new_log_buf_len이 0이 되어 바로 리턴됨.
 	 **/
 	setup_log_buf(0);
 	pidhash_init();
-	/** 20130803    
+	/** 20130803
 	 * vfs에서 cache로 사용할 hash table 초기화
 	 **/
 	vfs_caches_init_early();
 	sort_main_extable();
-	/** 20130803    
+	/** 20130803
 	 * NULL 함수
 	 **/
 	trap_init();
-	/** 20140419    
+	/** 20140419
 	 * memory management 초기화 (kernel space)
 	 **/
 	mm_init();
@@ -760,7 +757,7 @@ asmlinkage void __init start_kernel(void)
 	 * timer interrupt). Full topology setup happens at smp_init()
 	 * time - but meanwhile we still have a functioning scheduler.
 	 */
-	/** 20140510    
+	/** 20140510
 	 * scheduling 관련 자료구조 초기화.
 	 *   - runqueue
 	 *   - sched class 지정
@@ -770,11 +767,11 @@ asmlinkage void __init start_kernel(void)
 	 * Disable preemption - early bootup scheduling is extremely
 	 * fragile until we cpu_idle() for the first time.
 	 */
-	/** 20140510    
+	/** 20140510
 	 * 명시적으로 선점 불가 상태로 만든다.
 	 **/
 	preempt_disable();
-	/** 20140510    
+	/** 20140510
 	 * cpsr에서 irq flags를 검사해 irq가 발생 가능하다면
 	 * 경고 메시지를 출력하고 irq disable 상태로 만든다.
 	 **/
@@ -791,25 +788,25 @@ asmlinkage void __init start_kernel(void)
 	 * perf_event 관련 자료 구조 초기화
 	 **/
 	perf_event_init();
-	/** 20140906    
+	/** 20140906
 	 * rcu_state 생성 등 rcu 초기화
 	 **/
 	rcu_init();
-	/** 20140906    
+	/** 20140906
 	 * radix tree 자료구조 관련 초기화 - page cache용.
 	 **/
 	radix_tree_init();
 	/* init some links before init_ISA_irqs() */
 	early_irq_init();
-	/** 20140920    
+	/** 20140920
 	 * machine의 irq 초기화 함수를 호출한다.
 	 **/
 	init_IRQ();
-	/** 20140920    
+	/** 20140920
 	 * prio tree를 초기화 한다.
 	 **/
 	prio_tree_init();
-	/** 20140920    
+	/** 20140920
 	 * timer를 사용하기 위한 초기화를 수행한다.
 	 **/
 	init_timers();
@@ -822,28 +819,28 @@ asmlinkage void __init start_kernel(void)
 	 * timekeeper관련 변수들을 초기화한다.
 	 **/
 	timekeeping_init();
-	/** 20150103    
+	/** 20150103
 	 * machine speicific한 timer를 초기화하고, sched_clock timer를 설정한다.
 	 **/
 	time_init();
-	/** 20150103    
+	/** 20150103
 	 * profile을 동작시키기 위한 초기화.
 	 **/
 	profile_init();
 	call_function_init();
-	/** 20150117    
+	/** 20150117
 	 * 인터럽트는 disabled 상태여야 한다.
 	 **/
 	if (!irqs_disabled())
 		printk(KERN_CRIT "start_kernel(): bug: interrupts were "
 				 "enabled early\n");
 	early_boot_irqs_disabled = false;
-	/** 20150124    
+	/** 20150124
 	 * boot cpu의 interrupt를 활성화 한다.
 	 **/
 	local_irq_enable();
 
-	/** 20150124    
+	/** 20150124
 	 * slub은 특별한 동작을 취하지 않는다.
 	 **/
 	kmem_cache_init_late();
@@ -853,7 +850,7 @@ asmlinkage void __init start_kernel(void)
 	 * we've done PCI setups etc, and console_init() must be aware of
 	 * this. But we do want output early, in case something goes wrong.
 	 */
-	/** 20150124    
+	/** 20150124
 	 * console을 초기화 한다.
 	 *
 	 * console이 초기화 된 상태이므로 panic이 발생할 상황이면 발생시킨다.
@@ -862,7 +859,7 @@ asmlinkage void __init start_kernel(void)
 	if (panic_later)
 		panic(panic_later, panic_param);
 
-	/** 20150124    
+	/** 20150124
 	 * LOCKDEP 설정 정보를 출력한다.
 	 * 분석 생략.
 	 **/
@@ -873,14 +870,14 @@ asmlinkage void __init start_kernel(void)
 	 * to self-test [hard/soft]-irqs on/off lock inversion bugs
 	 * too:
 	 */
-	/** 20150124    
+	/** 20150124
 	 * locking API를 boot-time에 테스트 한다.
 	 * 분석 생략.
 	 **/
 	locking_selftest();
 
 #ifdef CONFIG_BLK_DEV_INITRD
-	/** 20150124    
+	/** 20150124
 	 * INITRD가 잘못 설정되어 있는 경우 (min_low_pfn보다 낮은 경우)
 	 * initrd를 disable 한다.
 	 *
@@ -895,91 +892,91 @@ asmlinkage void __init start_kernel(void)
 		initrd_start = 0;
 	}
 #endif
-	/** 20150124    
+	/** 20150124
 	 * CONFIG_SPARSEMEM을 설정하지 않아 NULL 함수.
 	 **/
 	page_cgroup_init();
-	/** 20150124    
+	/** 20150124
 	 * CONFIG_DEBUG_OBJECTS를 설정하지 않아 NULL 함수.
 	 **/
 	debug_objects_mem_init();
-	/** 20150124    
+	/** 20150124
 	 * CONFIG_DEBUG_KMEMLEAK를 설정하지 않아 NULL 함수.
 	 **/
 	kmemleak_init();
 	setup_per_cpu_pageset();
-	/** 20150124    
+	/** 20150124
 	 * CONFIG_NUMA가 아니므로 NULL 함수.
 	 **/
 	numa_policy_init();
-	/** 20150124    
+	/** 20150124
 	 * machine의 timer init 함수에서 late_time_init을 등록했다면 실행한다.
 	 * vexpress는 지정하지 않음.
 	 **/
 	if (late_time_init)
 		late_time_init();
-	/** 20150124    
+	/** 20150124
 	 * sched_clock이 동작 중임을 표시한다.
 	 **/
 	sched_clock_init();
-	/** 20150131    
+	/** 20150131
 	 * BogoMIPS를 계산한다.
 	 **/
 	calibrate_delay();
-	/** 20150207    
+	/** 20150207
 	 * pidmap 관련 변수를 구하고, init_pid_ns를 위한 초기화를 한다.
 	 **/
 	pidmap_init();
-	/** 20150207    
+	/** 20150207
 	 * anon_vma를 위한 초기화로 kmem_cache를 생성한다.
 	 **/
 	anon_vma_init();
 	thread_info_cache_init();
-	/** 20150207    
+	/** 20150207
 	 * credentials 초기화 : kmem_cache 생성
 	 **/
 	cred_init();
-	/** 20150207    
+	/** 20150207
 	 * fork 초기화 : kmem_cache 생성, max_threads 설정
 	 **/
 	fork_init(totalram_pages);
-	/** 20150207    
+	/** 20150207
 	 * process 초기화 : kmem_cache 생성, VMA 관련 초기화.
 	 **/
 	proc_caches_init();
-	/** 20150214    
+	/** 20150214
 	 * buffer head 초기화 : kmem_cache 생성, max_buffer_heads 설정 등
 	 **/
 	buffer_init();
-	/** 20150214    
+	/** 20150214
 	 * CONFIG_KEYS가 설정되지 않아 NULL 함수.
 	 **/
 	key_init();
-	/** 20150214    
+	/** 20150214
 	 * CONFIG_SECURITY가 설정되지 않아 NULL 함수.
 	 **/
 	security_init();
-	/** 20150214    
+	/** 20150214
 	 * CONFIG_KGDB가 설정되지 않아 NULL 함수.
 	 **/
 	dbg_late_init();
-	/** 20150502    
+	/** 20150502
 	 * VFS에서 사용되는 kmem_cache 초기화, rootfs 초기화 등을 수행하는 함수.
 	 **/
 	vfs_caches_init(totalram_pages);
-	/** 20150502    
+	/** 20150502
 	 * 시그널 초기화 함수.
 	 **/
 	signals_init();
 	/* rootfs populating might need page-writeback */
 	page_writeback_init();
 #ifdef CONFIG_PROC_FS
-	/** 20150516    
+	/** 20150516
 	 * proc 파일시스템을 초기화 한다.
 	 **/
 	proc_root_init();
 #endif
-	/** 20150523    
+	/** 20150523
 	 * cgroup_init, cpuset_init 추후 분석 ???
 	 **/
 	cgroup_init();
@@ -987,7 +984,7 @@ asmlinkage void __init start_kernel(void)
 	taskstats_init_early();
 	delayacct_init();
 
-	/** 20150523    
+	/** 20150523
 	 * MMU를 사용하는 경우 writebuffer bug를 체크한다.
 	 **/
 	check_bugs();
@@ -1001,13 +998,13 @@ asmlinkage void __init start_kernel(void)
 	ftrace_init();
 
 	/* Do the rest non-__init'ed, we're now alive */
-	/** 20150523    
+	/** 20150523
 	 **/
 	rest_init();
 }
 
 /* Call all constructor functions linked into the kernel. */
-/** 20150912    
+/** 20150912
  * CONFIG_CONSTRUCTORS 를 설정하지 않아 NULL 함수.
  **/
 static void __init do_ctors(void)
@@ -1020,7 +1017,7 @@ static void __init do_ctors(void)
 #endif
 }
 
-/** 20150613    
+/** 20150613
  **/
 bool initcall_debug;
 core_param(initcall_debug, initcall_debug, bool, 0644);
@@ -1050,7 +1047,7 @@ int __init_or_module do_one_initcall(initcall_t fn)
 	int count = preempt_count();
 	int ret;
 
-	/** 20150613    
+	/** 20150613
 	 * fn()을 수행하고 결과를 받아온다.
 	 **/
 	if (initcall_debug)
@@ -1090,7 +1087,7 @@ extern initcall_t __initcall6_start[];
 extern initcall_t __initcall7_start[];
 extern initcall_t __initcall_end[];
 
-/** 20150912    
+/** 20150912
  * initcall level
  * 0 - ealry
  * 1 - core
@@ -1127,7 +1124,7 @@ static char *initcall_level_names[] __initdata = {
 
 static void __init do_initcall_level(int level)
 {
-	/** 20151226    
+	/** 20151226
 	 * include/asm-generic/vmlinux.lds.h에 선언.
 	 **/
 	extern const struct kernel_param __start___param[], __stop___param[];
@@ -1140,7 +1137,7 @@ static void __init do_initcall_level(int level)
 		   level, level,
 		   &repair_env_string);
 
-	/** 20151226    
+	/** 20151226
 	 * level이 5라면, __initcall5_start <= fn < __initcall6_start 이므로
 	 * initcall 5s와 rootfs까지도 수행된다.
 	 **/
@@ -1148,14 +1145,14 @@ static void __init do_initcall_level(int level)
 		do_one_initcall(*fn);
 }
 
-/** 20160116    
+/** 20160116
  * level별로 init 함수를 호출한다.
  **/
 static void __init do_initcalls(void)
 {
 	int level;
 
-	/** 20150912    
+	/** 20150912
 	 * initcall 0부터 initcall 7까지 초기화 함수를 수행한다.
 	 **/
 	for (level = 0; level < ARRAY_SIZE(initcall_levels) - 1; level++)
@@ -1169,7 +1166,7 @@ static void __init do_initcalls(void)
  *
  * Now we can finally start doing some real work..
  */
-/** 20160116    
+/** 20160116
  * subsystem을 초기화 한다.
  *
  * - 드라이버 모델 초기화
@@ -1177,35 +1174,35 @@ static void __init do_initcalls(void)
  **/
 static void __init do_basic_setup(void)
 {
-	/** 20150829    
+	/** 20150829
 	 * cpuset_init_smp 추후분석???
 	 **/
 	cpuset_init_smp();
-	/** 20150822    
+	/** 20150822
 	 * "khelper" workqueue를 생성한다.
 	 **/
 	usermodehelper_init();
-	/** 20150822    
+	/** 20150822
 	 * shmem 초기화를 수행한다.
 	 **/
 	shmem_init();
-	/** 20150912    
+	/** 20150912
 	 * device model을 초기화 한다.
 	 **/
 	driver_init();
-	/** 20150912    
+	/** 20150912
 	 * "/proc/irq/" 아래 irq 번호에 해당하는 파일을 생성한다.
 	 **/
 	init_irq_proc();
 	do_ctors();
-	/** 20150912    
+	/** 20150912
 	 * usermodehelper 상태를 enable로 변경한다.
 	 **/
 	usermodehelper_enable();
 	do_initcalls();
 }
 
-/** 20150613    
+/** 20150613
  * __initcall_start ~ __initcall0_start 사이에 배치된 함수들을 호출한다.
  * 배치된 함수는 System.map에서 __initcall_start로 검색해 찾을 수 있다.
  *
@@ -1219,11 +1216,11 @@ static void __init do_pre_smp_initcalls(void)
 		do_one_initcall(*fn);
 }
 
-/** 20160206    
+/** 20160206
  * init 프로그램을 실행시킨다.
  * 성공적으로 실행되면 kernel_init task가 init 프로그램으로 변경된다.
  *
- * init을 위한 argv와 envp는 전역변수로 준비해 두었다. 
+ * init을 위한 argv와 envp는 전역변수로 준비해 두었다.
  **/
 static void run_init_process(const char *init_filename)
 {
@@ -1234,7 +1231,7 @@ static void run_init_process(const char *init_filename)
 /* This is a non __init function. Force it to be noinline otherwise gcc
  * makes it inline to init() and it becomes part of init.text section
  */
-/** 20160130    
+/** 20160130
  * init의 완료과정으로, init에서 사용했던 메모리를 해제하고, 
  * userspace의 init 프로그램을 실행한다.
  *
@@ -1245,31 +1242,31 @@ static void run_init_process(const char *init_filename)
 static noinline int init_post(void)
 {
 	/* need to finish all async __init code before freeing the memory */
-	/** 20160130    
+	/** 20160130
 	 * async_domains에 등록된 async 함수 호출이 완료될 때까지 기다린다.
 	 **/
 	async_synchronize_full();
-	/** 20160130    
+	/** 20160130
 	 * __init 섹션 메모리를 해제한다.
 	 **/
 	free_initmem();
 	mark_rodata_ro();
-	/** 20160130    
+	/** 20160130
 	 * system_state를 SYSNTE_RUNNING으로 변경한다.
 	 **/
 	system_state = SYSTEM_RUNNING;
 	numa_default_policy();
 
-	/** 20160130    
+	/** 20160130
 	 * 현재 task(kthread_init)의 signal flag에 기록해 unkillable로 만든다.
 	 **/
 	current->signal->flags |= SIGNAL_UNKILLABLE;
-	/** 20160130    
+	/** 20160130
 	 * 지연되었던 fput 기능을 flush시킨다.
 	 **/
 	flush_delayed_fput();
 
-	/** 20160130    
+	/** 20160130
 	 * ramdisk_execute_command가 지정된 경우, 이곳에서 execute 시킨다.
 	 **/
 	if (ramdisk_execute_command) {
@@ -1284,10 +1281,10 @@ static noinline int init_post(void)
 	 * The Bourne shell can be used instead of init if we are
 	 * trying to recover a really broken machine.
 	 */
-	/** 20160206    
+	/** 20160206
 	 * execute_command가 지정된 경우 실행시키고,
 	 * 실패시 몇 가지 다른 프로그램 실행을 시도한다.
-	 * 결국 실패할 경우 panic. 
+	 * 결국 실패할 경우 panic.
 	 **/
 	if (execute_command) {
 		run_init_process(execute_command);
@@ -1303,7 +1300,7 @@ static noinline int init_post(void)
 	      "See Linux Documentation/init.txt for guidance.");
 }
 
-/** 20160116    
+/** 20160116
  * rest_init()에서 생성한 task지만, kthreadd_done 까지 대기 후 동작한다.
  *
  * - smp 실행을 위한 준비 작업을 수행
@@ -1320,13 +1317,13 @@ static int __init kernel_init(void * unused)
 	/*
 	 * Wait until kthreadd is all set-up.
 	 */
-	/** 20150523    
+	/** 20150523
 	 * kthreadd가 설정이 완료된 뒤에 동작하도록 대기시킨다.
 	 **/
 	wait_for_completion(&kthreadd_done);
 
 	/* Now the scheduler is fully set up and can do blocking allocations */
-	/** 20150523    
+	/** 20150523
 	 * 커널이 동작할 수 있도록 준비를 마쳤기 때문에
 	 * GFP_BOOT_MASK로 갖고 있던 default 값을 바꿔준다.
 	 **/
@@ -1335,50 +1332,50 @@ static int __init kernel_init(void * unused)
 	/*
 	 * init can allocate pages on any node
 	 */
-	/** 20150523    
+	/** 20150523
 	 * 현재 task의 mems_allowed를 변경한다.
 	 **/
 	set_mems_allowed(node_states[N_HIGH_MEMORY]);
 	/*
 	 * init can run on any cpu.
 	 */
-	/** 20150530    
+	/** 20150530
 	 * 현재 task(init)은 모든 cpu에서 실행될 수 있다.
 	 **/
 	set_cpus_allowed_ptr(current, cpu_all_mask);
 
-	/** 20150530    
+	/** 20150530
 	 * cad_pid에 현재 태스크의 pid를 저장한다.
 	 **/
 	cad_pid = task_pid(current);
 
-	/** 20150530    
+	/** 20150530
 	 * smp_init 수행 전에 준비 작업을 한다.
 	 **/
 	smp_prepare_cpus(setup_max_cpus);
 
-	/** 20150808    
+	/** 20150808
 	 * __initcall_start ~ __initcall0_start 사이에 배치된 함수를 호출한다.
 	 **/
 	do_pre_smp_initcalls();
 	lockup_detector_init();
 
-	/** 20150822    
+	/** 20150822
 	 * boot core로 나머지들을 깨운다.
 	 **/
 	smp_init();
-	/** 20150822    
+	/** 20150822
 	 * SMP 환경에서 sched 관련 초기화를 호출한다
 	 **/
 	sched_init_smp();
 
-	/** 20160123    
+	/** 20160123
 	 * subsystem을 초기화 한다.
 	 **/
 	do_basic_setup();
 
 	/* Open the /dev/console on the rootfs, this should never fail */
-	/** 20160123    
+	/** 20160123
 	 * "/dev/console"을 연다.
 	 * 처음 열었기 때문에 0을 가리킬 것이고, 1,2번을 복사해 생성한다.
 	 **/
@@ -1392,13 +1389,13 @@ static int __init kernel_init(void * unused)
 	 * the work
 	 */
 
-	/** 20160109    
+	/** 20160109
 	 * ramdisk_execute_command가 없는 경우 /init으로 지정한다.
 	 **/
 	if (!ramdisk_execute_command)
 		ramdisk_execute_command = "/init";
 
-	/** 20160109    
+	/** 20160109
 	 * ramdisk_execute_command에 대한 접근이 실패했을 경우
 	 * prepare_namespace를 진행한다.
 	 **/
@@ -1413,7 +1410,7 @@ static int __init kernel_init(void * unused)
 	 * initmem segments and start the user-mode stuff..
 	 */
 
-	/** 20160206    
+	/** 20160206
 	 * 부팅을 위한 준비 과정이 끝나고, initmem 영역을 정리하고 user-mode의
 	 * init 프로그램을 시작한다.
 	 **/

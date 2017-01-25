@@ -90,7 +90,7 @@ EXPORT_SYMBOL(__machine_arch_type);
 unsigned int cacheid __read_mostly;
 EXPORT_SYMBOL(cacheid);
 
-/** 20130518    
+/** 20130518
  * head-common.S
  **/
 unsigned int __atags_pointer __initdata;
@@ -130,7 +130,7 @@ EXPORT_SYMBOL(outer_cache);
  * C code should use the cpu_architecture() function instead of accessing this
  * variable directly.
  */
-/** 20150620    
+/** 20150620
  * setup_processor()에서 armv7를 저장한다.
  **/
 int __cpu_architecture __read_mostly = CPU_ARCH_UNKNOWN;
@@ -159,7 +159,7 @@ struct stack {
 	 **/
 } ____cacheline_aligned;
 
-/** 20150801    
+/** 20150801
  * CPU 개수만큼 stack 배열을 선언한다.
  **/
 static struct stack stacks[NR_CPUS];
@@ -181,7 +181,7 @@ static union { char c[4]; unsigned long l; } endian_test __initdata = { { 'l', '
  * */
 #define ENDIANNESS ((char)endian_test.l)
 
-/** 20150606    
+/** 20150606
  * struct cpuinfo_arm 타입의 percpu 변수 cpu_data 선언.
  **/
 DEFINE_PER_CPU(struct cpuinfo_arm, cpu_data);
@@ -189,7 +189,7 @@ DEFINE_PER_CPU(struct cpuinfo_arm, cpu_data);
 /*
  * Standard memory resources
  */
-/** 20130518    
+/** 20130518
  **/
 static struct resource mem_res[] = {
 	{
@@ -300,7 +300,7 @@ static int __get_cpu_architecture(void)
 	return cpu_arch;
 }
 
-/** 20151121    
+/** 20151121
  * setup_processor()에서 설정된 정보를 리턴한다.
  **/
 int __pure cpu_architecture(void)
@@ -552,11 +552,11 @@ void cpu_init(void)
 	    : "r14");
 }
 
-/** 20140621    
+/** 20140621
  **/
 int __cpu_logical_map[NR_CPUS];
 
-/** 20140621    
+/** 20140621
  * cpu의 물리 ID를 읽어 logical map에 저장한다.
  *
  * gic 등에서 register 설정시 실제 물리 CPU 번호를 가져오기 위해 사용.
@@ -593,7 +593,7 @@ static void __init setup_processor(void)
 	 * types.  The linker builds this table for us from the
 	 * entries in arch/arm/mm/proc-*.S
 	 */
-	/** 20130608    
+	/** 20130608
 	 * arch/arm/mm/proc-v7.S 에서
 	 * __v7_proc_info:
 	 *	.long	0x000f0000		@ Required ID value
@@ -818,7 +818,7 @@ setup_ramdisk(int doload, int prompt, int image_start, unsigned int rd_sz)
 #endif
 }
 
-/** 20130518    
+/** 20130518
  * resource 구조체를 이용한 메모리 계층 생성. (root는 iomem_resource)
  **/
 static void __init request_standard_resources(struct machine_desc *mdesc)
@@ -826,7 +826,7 @@ static void __init request_standard_resources(struct machine_desc *mdesc)
 	struct memblock_region *region;
 	struct resource *res;
 
-	/** 20130518    
+	/** 20130518
 	 * arch/arm/kernel/vmlinux.lds 정의된 가상주소.
 	 *
 	 * struct resource mem_res[1], [2]의 주소 값을 채움.
@@ -836,7 +836,7 @@ static void __init request_standard_resources(struct machine_desc *mdesc)
 	kernel_data.start   = virt_to_phys(_sdata);
 	kernel_data.end     = virt_to_phys(_end - 1);
 
-	/** 20130518    
+	/** 20130518
 	 * memblock의 memory의 각 region을 resource 구조체로 만들어
 	 * iomem_resource에 등록.
 	 *
@@ -850,12 +850,12 @@ static void __init request_standard_resources(struct machine_desc *mdesc)
 		res->end = __pfn_to_phys(memblock_region_memory_end_pfn(region)) - 1;
 		res->flags = IORESOURCE_MEM | IORESOURCE_BUSY;
 
-		/** 20130518    
+		/** 20130518
 		 * "System RAM"이라는 이름으로 새로운 resource를 등록.
 		 **/
 		request_resource(&iomem_resource, res);
 
-		/** 20130518    
+		/** 20130518
 		 * kernel_code 영역이 새로운 res 영역에 포함될 경우
 		 *   kernel_code를 child로 등록함.
 		 *   kernel_data를 child로 등록함.
@@ -868,7 +868,7 @@ static void __init request_standard_resources(struct machine_desc *mdesc)
 			request_resource(res, &kernel_data);
 	}
 
-	/** 20130518    
+	/** 20130518
 	 * video_start가 지정되어 있다면 iomem_resource에 video_ram으로 등록한다.
 	 * vexpress의 경우 정의되어 있지 않음.
 	 **/
@@ -882,7 +882,7 @@ static void __init request_standard_resources(struct machine_desc *mdesc)
 	 * Some machines don't have the possibility of ever
 	 * possessing lp0, lp1 or lp2
 	 */
-	/** 20130518    
+	/** 20130518
 	 * 예약된 lp가 존재한다면 resource로 등록한다.
 	 **/
 	if (mdesc->reserve_lp0)
@@ -1012,7 +1012,7 @@ __tagtable(ATAG_CMDLINE, parse_tag_cmdline);
  * The tag table is built by the linker from all the __tagtable
  * declarations.
  */
-/** 20150411    
+/** 20150411
  * tag table을 검색해 들어온 tag에 해당하는 header를 검색해 처리한다.
  **/
 static int __init parse_tag(const struct tag *tag)
@@ -1055,7 +1055,7 @@ static int __init parse_tag(const struct tag *tag)
 static void __init parse_tags(const struct tag *t)
 {
 	for (; t->hdr.size; t = tag_next(t))
-		/** 20150411    
+		/** 20150411
 		 * parse_tag
 		 **/
 		if (!parse_tag(t))
@@ -1081,7 +1081,7 @@ static struct init_tags {
 	{ 0, ATAG_NONE }
 };
 
-/** 20151114    
+/** 20151114
  * machine specific한 작업을 진행한다.
  *
  * platform device를 customize 하거나 새로운 디바이스들을 추가한다.
@@ -1089,7 +1089,7 @@ static struct init_tags {
 static int __init customize_machine(void)
 {
 	/* customizes platform devices, or adds new ones */
-	/** 20140920    
+	/** 20140920
 	 * v2m_init 호출.
 	 **/
 	if (machine_desc->init_machine)
@@ -1098,7 +1098,7 @@ static int __init customize_machine(void)
 }
 arch_initcall(customize_machine);
 
-/** 20151128    
+/** 20151128
  * MACHINE descriptor에 등록된 init_late가 있다면 호출한다.
  **/
 static int __init init_machine_late(void)
@@ -1343,28 +1343,28 @@ void __init setup_arch(char **cmdline_p)
 	 * 메모리 뱅크들에 대한 적정한 설정이 되어 있는지 조사하고 수정한다
 	 **/
     sanity_check_meminfo();
-	/** 20130126    
+	/** 20130126
 	 * memblock 자료구조 초기화
 	 **/
 	arm_memblock_init(&meminfo, mdesc);
 
-	/** 20130518    
+	/** 20130518
 	 * page table 생성 및 bootmem_init
 	 **/
 	paging_init(mdesc);
-	/** 20130518    
+	/** 20130518
 	 * machine에 대한 resource 계층도 생성
 	 **/
 	request_standard_resources(mdesc);
 
-	/** 20130518    
+	/** 20130518
 	 * restart 함수 포인터가 정의되어 있으면 arm_pm_restart 전역변수에 저장
 	 * vexpress의 경우 v2m_restart 함수.
 	 **/
 	if (mdesc->restart)
 		arm_pm_restart = mdesc->restart;
 
-	/** 20130518    
+	/** 20130518
 	 * vexpress의 경우 NULL 함수.
 	 **/
 	unflatten_device_tree();
@@ -1373,18 +1373,18 @@ void __init setup_arch(char **cmdline_p)
 	if (is_smp())
 		smp_init_cpus();
 #endif
-	/** 20130518    
+	/** 20130518
 	 * vepress에서 NULL 함수.
 	 **/
 	reserve_crashkernel();
 
-	/** 20130518    
+	/** 20130518
 	 * vexpress에서 NULL 함수.
 	 **/
 	tcm_init();
 
 #ifdef CONFIG_MULTI_IRQ_HANDLER
-	/** 20130518    
+	/** 20130518
 	 * interrupt 발생시 호출할 architecture의 irq handler 지정.
 	 *
 	 * vexpress의 경우 MACHINE_START에서 .handle_irq = gic_handle_irq 가 등록
@@ -1392,14 +1392,14 @@ void __init setup_arch(char **cmdline_p)
 	handle_arch_irq = mdesc->handle_irq;
 #endif
 
-	/** 20130518    
+	/** 20130518
 	 * VIRTUAL TERMINAL 함수 등록
 	 **/
 #ifdef CONFIG_VT
 #if defined(CONFIG_VGA_CONSOLE)
 	conswitchp = &vga_con;
 #elif defined(CONFIG_DUMMY_CONSOLE)
-	/** 20130518    
+	/** 20130518
 	 * console switcher 지정.
 	 * vexpress의 경우 dummy_con.
 	 **/
@@ -1407,7 +1407,7 @@ void __init setup_arch(char **cmdline_p)
 #endif
 #endif
 
-	/** 20130518    
+	/** 20130518
 	 * vexpress의 경우
 	 * .init_early = v2m_init_early,
 	 * 함수 실행
@@ -1417,7 +1417,7 @@ void __init setup_arch(char **cmdline_p)
 }
 
 
-/** 20151121    
+/** 20151121
  * 각 possible cpu들을 순회하며 cpu_data의 hotpluggable을 1로 설정한다.
  **/
 static int __init topology_init(void)
@@ -1435,7 +1435,7 @@ static int __init topology_init(void)
 subsys_initcall(topology_init);
 
 #ifdef CONFIG_HAVE_PROC_CPU
-/** 20151128    
+/** 20151128
  * "/proc/cpu" 디렉토리 생성
  **/
 static int __init proc_cpu_init(void)

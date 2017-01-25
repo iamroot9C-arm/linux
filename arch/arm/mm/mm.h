@@ -16,7 +16,7 @@ extern pmd_t *top_pmd;
 /* PFN alias flushing, for VIPT caches */
 #define FLUSH_ALIAS_START	0xffff4000
 
-/** 20130518    
+/** 20130518
  * va에 해당하는 top_pte 주소에 pte를 써주고,
  * va에 해당하는 tlb를 flush 하는 함수
  **/
@@ -46,15 +46,16 @@ static inline pte_t get_top_pte(unsigned long va)
 
 /** 20130216
  * 해당 pmd entry의 주소. (2 level 사용시에는 pgd=pmd)
- **/
-/** 20131019
-* virt가 pgd, pud, pmd를 거치는 과정에서 변환되는 pmd entry의 주소를 리턴
+ *
+ * 20131019
+ * virt가 pgd, pud, pmd를 거치는 과정에서 변환되는 pmd entry의 주소를 리턴
  **/
 static inline pmd_t *pmd_off_k(unsigned long virt)
 {
 	/** 20130216
-	 * pmd_offset, pud_offset 은 무슨 역할을 할까요 ??? 
-	 * 아래 코드는 return pgd_offset_k(virt); 로 대체될 수 있는듯..
+	 * Q. pmd_offset, pud_offset 은 무슨 역할을 할까요???
+	 * A. pgd -> pud -> pmd를 따라가 virtual address에 해당하는 entry를
+	 * 가져옴
 	 * */
 	return pmd_offset(pud_offset(pgd_offset_k(virt), virt), virt);
 }

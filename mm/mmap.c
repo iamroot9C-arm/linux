@@ -92,7 +92,7 @@ int sysctl_max_map_count __read_mostly = DEFAULT_MAX_MAP_COUNT;
  * Make sure vm_committed_as in one cacheline and not cacheline shared with
  * other variables. It can be updated by several CPUs frequently.
  */
-/** 20150207    
+/** 20150207
  * 커밋된 vm 사용량을 percpu별로 저장한다.
  *
  * cacheline에 align 시킨다.
@@ -1620,7 +1620,7 @@ struct vm_area_struct *find_vma(struct mm_struct *mm, unsigned long addr)
 
 	/* Check the cache first. */
 	/* (Cache hit rate is typically around 35%.) */
-	/** 20160528    
+	/** 20160528
 	 * 먼저 mmap_cache를 보고, cache로 들고 있는 vma에 속할 경우 바로 리턴.
 	 * 그렇지 않은 경우 rb tree search.
 	 **/
@@ -1637,7 +1637,7 @@ struct vm_area_struct *find_vma(struct mm_struct *mm, unsigned long addr)
 			vma_tmp = rb_entry(rb_node,
 					   struct vm_area_struct, vm_rb);
 
-			/** 20160528    
+			/** 20160528
 			 * 주소 순으로 정렬된 rb tree에서 탐색.
 			 **/
 			if (vma_tmp->vm_end > addr) {
@@ -1648,7 +1648,7 @@ struct vm_area_struct *find_vma(struct mm_struct *mm, unsigned long addr)
 			} else
 				rb_node = rb_node->rb_right;
 		}
-		/** 20160528    
+		/** 20160528
 		 * rb tree에서 찾은 경우 mmap_cache 업데이트.
 		 **/
 		if (vma)
@@ -2719,14 +2719,14 @@ void mm_drop_all_locks(struct mm_struct *mm)
 /*
  * initialise the VMA slab
  */
-/** 20150207    
+/** 20150207
  * mmap 관련 초기화를 수행한다.
  **/
 void __init mmap_init(void)
 {
 	int ret;
 
-	/** 20150207    
+	/** 20150207
 	 * percpu virtual memory counter인 vm_committed_as 를 0으로 초기화.
 	 **/
 	ret = percpu_counter_init(&vm_committed_as, 0);
