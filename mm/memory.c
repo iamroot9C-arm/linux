@@ -70,8 +70,8 @@
 #ifndef CONFIG_NEED_MULTIPLE_NODES
 /* use the per-pgdat data instead for discontigmem - mbligh */
 unsigned long max_mapnr;
-/** 20150103    
- * alloc_node_mem_map()에서 
+/** 20150103
+ * alloc_node_mem_map()에서
  * mem_map = NODE_DATA(0)->node_mem_map;
  **/
 struct page *mem_map;
@@ -88,7 +88,7 @@ unsigned long num_physpages;
  * highstart_pfn must be the same; there must be no gap between ZONE_NORMAL
  * and ZONE_HIGHMEM.
  */
-/** 20140329    
+/** 20140329
  * sanity_check_meminfo에서 초기화
  **/
 void * high_memory;
@@ -122,12 +122,12 @@ unsigned long highest_memmap_pfn __read_mostly;
 /*
  * CONFIG_MMU architectures set up ZERO_PAGE in their paging_init()
  */
-/** 20151010    
+/** 20151010
  * zero page의 pfn을 저장한다.
  **/
 static int __init init_zero_pfn(void)
 {
-	/** 20151010    
+	/** 20151010
 	 * VA에 대한 ZERO_PAGE를 받아 page frame number로 변환해 저장한다.
 	 **/
 	zero_pfn = page_to_pfn(ZERO_PAGE(0));
@@ -586,13 +586,13 @@ void free_pgtables(struct mmu_gather *tlb, struct vm_area_struct *vma,
 	}
 }
 
-/** 20160416    
+/** 20160416
  * pte를 할당받고, pte에 해당하는 pmd의 entry를 채운다.
  **/
 int __pte_alloc(struct mm_struct *mm, struct vm_area_struct *vma,
 		pmd_t *pmd, unsigned long address)
 {
-	/** 20160416    
+	/** 20160416
 	 * pte용 page를 할당 받아 초기화.
 	 **/
 	pgtable_t new = pte_alloc_one(mm, address);
@@ -615,20 +615,20 @@ int __pte_alloc(struct mm_struct *mm, struct vm_area_struct *vma,
 	 */
 	smp_wmb(); /* Could be smp_wmb__xxx(before|after)_spin_lock */
 
-	/** 20160416    
+	/** 20160416
 	 * page_table을 접근할 때 spinlock을 사용해 보호한다.
 	 **/
 	spin_lock(&mm->page_table_lock);
 	wait_split_huge_page = 0;
-	/** 20160416    
+	/** 20160416
 	 * 할당된 pte가 속한 pmd가 할당(populate)되지 않아 NULL인 경우.
 	 **/
 	if (likely(pmd_none(*pmd))) {	/* Has another populated it ? */
-		/** 20160416    
+		/** 20160416
 		 * nr_ptes 증가.
 		 **/
 		mm->nr_ptes++;
-		/** 20160416    
+		/** 20160416
 		 * 해당 pmd에 새 pte 주소와 flag를 포함한 값을 채운다.
 		 * populate된 후 new는 NULL로 초기화.
 		 **/
@@ -644,35 +644,35 @@ int __pte_alloc(struct mm_struct *mm, struct vm_area_struct *vma,
 	return 0;
 }
 
-/** 20140329    
+/** 20140329
  * pte table을 할당받아 kernel prot을 추가해 pmd entry에 기록한다.
  **/
 int __pte_alloc_kernel(pmd_t *pmd, unsigned long address)
 {
-	/** 20140329    
+	/** 20140329
 	 * pte table을 하나 할당받는다.
 	 **/
 	pte_t *new = pte_alloc_one_kernel(&init_mm, address);
-	/** 20140329    
+	/** 20140329
 	 * 실패시 NO MEMORY리턴
 	 **/
 	if (!new)
 		return -ENOMEM;
 
-	/** 20140329    
+	/** 20140329
 	 * smp 환경에서도 사용 가능한 memory barrier 호출
 	 **/
 	smp_wmb(); /* See comment in __pte_alloc */
 
-	/** 20140329    
+	/** 20140329
 	 * init_mm의 page table 조작시 spin lock을 걸어준다.
 	 **/
 	spin_lock(&init_mm.page_table_lock);
-	/** 20140329    
+	/** 20140329
 	 * pmd entry에 데이터가 저장되어 있지 않을 경우
 	 **/
 	if (likely(pmd_none(*pmd))) {	/* Has another populated it ? */
-		/** 20140329    
+		/** 20140329
 		 * pmd에 new 주소값을 기록한다.
 		 **/
 		pmd_populate_kernel(&init_mm, pmd, new);
@@ -685,7 +685,7 @@ int __pte_alloc_kernel(pmd_t *pmd, unsigned long address)
 	return 0;
 }
 
-/** 20160430    
+/** 20160430
  * rss vector를 초기화 (file/anon/swap별로 관리)
  **/
 static inline void init_rss_vec(int *rss)
@@ -768,7 +768,7 @@ static void print_bad_pte(struct vm_area_struct *vma, unsigned long addr,
 	add_taint(TAINT_BAD_PAGE);
 }
 
-/** 20160430    
+/** 20160430
  * flags가 shared가 아니면서 write 가능(MAYWRITE)할 경우 cow mapping.
  **/
 static inline int is_cow_mapping(vm_flags_t flags)
@@ -3663,8 +3663,8 @@ int handle_pte_fault(struct mm_struct *mm,
 	 **/
 	if (flags & FAULT_FLAG_WRITE) {
 		/** 20161207
-		 * entry가 write 불가이면 COW를 위해 write protect 걸린 경우.
-		 *
+		 * entry가 write 불가이면 COW를 위해 write protect로 처리
+		 * 그렇지 않은 경우 dirty 속성을 기록
 		 **/
 		if (!pte_write(entry))
 			return do_wp_page(mm, vma, address,
@@ -3673,6 +3673,7 @@ int handle_pte_fault(struct mm_struct *mm,
 	}
 	/** 20170109
 	 * entry를 YOUNG 상태로 업데이트하여 해당 ptep에 기록
+	 * (페이지가 access 되었음을 표시)
 	 **/
 	entry = pte_mkyoung(entry);
 	if (ptep_set_access_flags(vma, address, pte, entry, flags & FAULT_FLAG_WRITE)) {

@@ -59,7 +59,7 @@ int pmdp_set_access_flags(struct vm_area_struct *vma,
 }
 #endif
 
-/** 20140531    
+/** 20140531
  * __HAVE_ARCH_PTEP_CLEAR_YOUNG_FLUSH 정의되지 않아 generic 코드 실행.
  **/
 #ifndef __HAVE_ARCH_PTEP_CLEAR_YOUNG_FLUSH
