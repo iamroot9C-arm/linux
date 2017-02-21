@@ -279,7 +279,7 @@ inline int __clk_get_prepare_count(struct clk *clk)
 	return !clk ? -EINVAL : clk->prepare_count;
 }
 
-/** 20141227    
+/** 20141227
  * clk 구조체에서 rate를 받아와 리턴한다.
  **/
 unsigned long __clk_get_rate(struct clk *clk)
@@ -296,7 +296,7 @@ unsigned long __clk_get_rate(struct clk *clk)
 	if (clk->flags & CLK_IS_ROOT)
 		goto out;
 
-	/** 20141227    
+	/** 20141227
 	 * 만약 ROOT가 아닌데 parent clk이 존재하지 않는다면 0을 리턴한다.
 	 **/
 	if (!clk->parent)
@@ -350,7 +350,7 @@ static struct clk *__clk_lookup_subtree(const char *name, struct clk *clk)
 	return NULL;
 }
 
-/** 20141220    
+/** 20141220
  * 이름으로 clk_root_list, clk_orphan_list에서 검색해 clk을 리턴한다.
  * 없으면 NULL이 리턴된다.
  **/
@@ -364,7 +364,7 @@ struct clk *__clk_lookup(const char *name)
 		return NULL;
 
 	/* search the 'proper' clk tree first */
-	/** 20141220    
+	/** 20141220
 	 *
 	 **/
 	hlist_for_each_entry(root_clk, tmp, &clk_root_list, child_node) {
@@ -423,39 +423,39 @@ void clk_unprepare(struct clk *clk)
 }
 EXPORT_SYMBOL_GPL(clk_unprepare);
 
-/** 20141227    
+/** 20141227
  * clk의 hierarchy를 타고 올라가 parent가 존재한다면 차례로 prepare를 호출한다.
  **/
 int __clk_prepare(struct clk *clk)
 {
 	int ret = 0;
 
-	/** 20141227    
+	/** 20141227
 	 * clk이 없다면 0이 리턴된다.
 	 * 재귀호출시 parent가 없다면 0이 리턴된다.
 	 **/
 	if (!clk)
 		return 0;
 
-	/** 20141227    
+	/** 20141227
 	 * prepare_count가 0이라면 처음 prepare.
 	 **/
 	if (clk->prepare_count == 0) {
-		/** 20141227    
+		/** 20141227
 		 * parent가 있다면 hierarchy를 타고 올라가 prepare를 각각 호출하기 위함
 		 **/
 		ret = __clk_prepare(clk->parent);
 		if (ret)
 			return ret;
 
-		/** 20141227    
+		/** 20141227
 		 * clk 콜백에 prepare가 등록되어 있다면 호출한다.
 		 *
 		 * fixed_rate의 경우 clk_fixed_rate_ops를 참고한다.
 		 **/
 		if (clk->ops->prepare) {
 			ret = clk->ops->prepare(clk->hw);
-			/** 20141227    
+			/** 20141227
 			 * prepare에 실패하면 unprepare로 만든다.
 			 **/
 			if (ret) {
@@ -465,7 +465,7 @@ int __clk_prepare(struct clk *clk)
 		}
 	}
 
-	/** 20141227    
+	/** 20141227
 	 * prepare_count를 증가시킨다.
 	 **/
 	clk->prepare_count++;
@@ -485,7 +485,7 @@ int __clk_prepare(struct clk *clk)
  * exclusive.  In fact clk_prepare must be called before clk_enable.
  * Returns 0 on success, -EERROR otherwise.
  */
-/** 20141227    
+/** 20141227
  * clk의 prepare clk_ops.prepare를 호출한다.
  * parent가 존재하면 parent의 prepare부터 호출한다.
  **/
@@ -493,7 +493,7 @@ int clk_prepare(struct clk *clk)
 {
 	int ret;
 
-	/** 20141227    
+	/** 20141227
 	 * prepare_lock을 획득한 상태에서 호출한다.
 	 **/
 	mutex_lock(&prepare_lock);
@@ -546,7 +546,7 @@ void clk_disable(struct clk *clk)
 }
 EXPORT_SYMBOL_GPL(clk_disable);
 
-/** 20141227    
+/** 20141227
  * clk의 hierarchy를 타고 올라가 parent가 존재한다면 차례로 enable을 호출한다.
  **/
 static int __clk_enable(struct clk *clk)
@@ -591,7 +591,7 @@ static int __clk_enable(struct clk *clk)
  * must be called before clk_enable.  Returns 0 on success, -EERROR
  * otherwise.
  */
-/** 20141227    
+/** 20141227
  * spinlock으로 임계구역을 생성한 상태에서
  * parent가 존재하면 따라올라가 각각 clk_ops.enable을 호출한다.
  **/
@@ -600,7 +600,7 @@ int clk_enable(struct clk *clk)
 	unsigned long flags;
 	int ret;
 
-	/** 20141227    
+	/** 20141227
 	 * prepare와 달리 enable_lock은 spinlock.
 	 **/
 	spin_lock_irqsave(&enable_lock, flags);
@@ -618,14 +618,14 @@ EXPORT_SYMBOL_GPL(clk_enable);
  * Simply returns the cached rate of the clk.  Does not query the hardware.  If
  * clk is NULL then returns 0.
  */
-/** 20141227    
+/** 20141227
  * clk에 등록된 rate를 받아와 리턴한다.
  **/
 unsigned long clk_get_rate(struct clk *clk)
 {
 	unsigned long rate;
 
-	/** 20141227    
+	/** 20141227
 	 * prepare_lock으로 임계구역을 생성한다.
 	 **/
 	mutex_lock(&prepare_lock);
@@ -733,7 +733,7 @@ static int __clk_notify(struct clk *clk, unsigned long msg,
  *
  * Caller must hold prepare_lock.
  */
-/** 20141220    
+/** 20141220
  * clk의 rates를 recalc 한다.
  * 자식 clk들이 존재하는 경우 재귀적으로 호출해 rate 변경을 처리한다.
  **/
@@ -749,7 +749,7 @@ static void __clk_recalc_rates(struct clk *clk, unsigned long msg)
 	if (clk->parent)
 		parent_rate = clk->parent->rate;
 
-	/** 20141220    
+	/** 20141220
 	 * ops에 제공된 recalc_rate 콜백이 있다면 호출하고,
 	 * 없다면 parent_rate를 그대로 사용한다.
 	 **/
@@ -762,13 +762,13 @@ static void __clk_recalc_rates(struct clk *clk, unsigned long msg)
 	 * ignore NOTIFY_STOP and NOTIFY_BAD return values for POST_RATE_CHANGE
 	 * & ABORT_RATE_CHANGE notifiers
 	 */
-	/** 20141220    
+	/** 20141220
 	 * notifier_count가 존재하고 msg가 존재하면 변경된 rate 정보를 알린다.
 	 **/
 	if (clk->notifier_count && msg)
 		__clk_notify(clk, msg, old_rate, clk->rate);
 
-	/** 20141220    
+	/** 20141220
 	 * children들을 순회하며 재귀로 호출한다.
 	 **/
 	hlist_for_each_entry(child, tmp, &clk->children, child_node)
@@ -1046,7 +1046,7 @@ EXPORT_SYMBOL_GPL(clk_get_parent);
  * .parents array exists, and if so use it to avoid an expensive tree
  * traversal.  If .parents does not exist then walk the tree with __clk_lookup.
  */
-/** 20141220    
+/** 20141220
  * clk의 parent 포인터 배열 초기화 및 첫번째 parent를 리턴한다.
  * 
  *   => 중복되는 작업이 추후 커널에서 수정되었다.
@@ -1058,13 +1058,13 @@ static struct clk *__clk_init_parent(struct clk *clk)
 
 	/* handle the trivial cases */
 
-	/** 20141220    
+	/** 20141220
 	 * num_parents가 0이면 바로 리턴.
 	 **/
 	if (!clk->num_parents)
 		goto out;
 
-	/** 20141220    
+	/** 20141220
 	 * num_parents가 1이면 parent에 등록.
 	 **/
 	if (clk->num_parents == 1) {
@@ -1087,7 +1087,7 @@ static struct clk *__clk_init_parent(struct clk *clk)
 	 * clk->parent here; that is done by the calling function
 	 */
 
-	/** 20141220    
+	/** 20141220
 	 * parent가 여러개인 경우 get_parent를 해서 index를 리턴받는다.
 	 **/
 	index = clk->ops->get_parent(clk->hw);
@@ -1097,7 +1097,7 @@ static struct clk *__clk_init_parent(struct clk *clk)
 			kzalloc((sizeof(struct clk*) * clk->num_parents),
 					GFP_KERNEL);
 
-	/** 20141220    
+	/** 20141220
 	 * index에 해당하는 parent clk을 찾아 ret에 저장한다.
 	 **/
 	if (!clk->parents)
@@ -1112,7 +1112,7 @@ out:
 	return ret;
 }
 
-/** 20141220    
+/** 20141220
  * clk의 parent를 new_parent로 지정한다.
  * new_parent가 NULL이라면 orphan_list에 추가한다.
  * clk rates를 재계산한다.
@@ -1127,12 +1127,12 @@ void __clk_reparent(struct clk *clk, struct clk *new_parent)
 	if (!clk || !new_parent)
 		return;
 
-	/** 20141220    
+	/** 20141220
 	 * clk을 parent의 child hlist에서 제거한다.
 	 **/
 	hlist_del(&clk->child_node);
 
-	/** 20141220    
+	/** 20141220
 	 * new_parent가 지정된 경우, new_parent의 children 리스트에 등록시키고,
 	 * 그렇지 않은 경우 orphan_list에 등록한다.
 	 **/
@@ -1160,12 +1160,12 @@ void __clk_reparent(struct clk *clk, struct clk *new_parent)
 out:
 #endif
 
-	/** 20141220    
+	/** 20141220
 	 * clk의 parent new_parent로 지정한다.
 	 **/
 	clk->parent = new_parent;
 
-	/** 20141220    
+	/** 20141220
 	 * parent가 변경되었으므로 clk의 rates를 재계산한다.
 	 **/
 	__clk_recalc_rates(clk, POST_RATE_CHANGE);
@@ -1298,7 +1298,7 @@ EXPORT_SYMBOL_GPL(clk_set_parent);
  * parent and rate and sets them both.
  */
 
-/** 20141220    
+/** 20141220
  * clk을 초기화 한다.
  **/
 int __clk_init(struct device *dev, struct clk *clk)
@@ -1310,13 +1310,13 @@ int __clk_init(struct device *dev, struct clk *clk)
 	if (!clk)
 		return -EINVAL;
 
-	/** 20141220    
+	/** 20141220
 	 * clk에 대한 operation을 위해 prepare_lock이 필요하다.
 	 **/
 	mutex_lock(&prepare_lock);
 
 	/* check to see if a clock with this name is already registered */
-	/** 20141220    
+	/** 20141220
 	 * 이미 등록된 이름인지 검색한다.
 	 **/
 	if (__clk_lookup(clk->name)) {
@@ -1327,7 +1327,7 @@ int __clk_init(struct device *dev, struct clk *clk)
 	}
 
 	/* check that clk_ops are sane.  See Documentation/clk.txt */
-	/** 20141220    
+	/** 20141220
 	 * ops의 제약사항을 검사한다.
 	 * set_rate ops가 존재하는데 round_rate와 recalc_rate 중 하나라도 존재하지 않으면 위반.
 	 **/
@@ -1347,7 +1347,7 @@ int __clk_init(struct device *dev, struct clk *clk)
 	}
 
 	/* throw a WARN if any entries in parent_names are NULL */
-	/** 20141220    
+	/** 20141220
 	 * clk의 parent_names를 검사한다.
 	 **/
 	for (i = 0; i < clk->num_parents; i++)
@@ -1365,7 +1365,7 @@ int __clk_init(struct device *dev, struct clk *clk)
 	 * If clk->parents is not NULL we skip this entire block.  This allows
 	 * for clock drivers to statically initialize clk->parents.
 	 */
-	/** 20141220    
+	/** 20141220
 	 * 부모 클럭이 1개 이상이고 parents가 지정되지 않은 상태라면
 	 * 부모 클럭을 연결하기 위한 포인터를 할당하고,
 	 * 기존에 등록된 clk에서 찾아 등록한다.
@@ -1385,7 +1385,7 @@ int __clk_init(struct device *dev, struct clk *clk)
 					__clk_lookup(clk->parent_names[i]);
 	}
 
-	/** 20141220    
+	/** 20141220
 	 * 하나만 parent에 저장한다.
 	 **/
 	clk->parent = __clk_init_parent(clk);
@@ -1400,19 +1400,19 @@ int __clk_init(struct device *dev, struct clk *clk)
 	 * clocks and re-parent any that are children of the clock currently
 	 * being clk_init'd.
 	 */
-	/** 20141220    
+	/** 20141220
 	 * 먼저 parent를 보고 존재하면 parent의 children에 등록한다.
 	 * 즉, child clk은 하나의 parent에만 등록된다.
 	 **/
 	if (clk->parent)
 		hlist_add_head(&clk->child_node,
 				&clk->parent->children);
-	/** 20141220    
+	/** 20141220
 	 * flags에 ROOT 속성이 있다면 root_list에 추가한다.
 	 **/
 	else if (clk->flags & CLK_IS_ROOT)
 		hlist_add_head(&clk->child_node, &clk_root_list);
-	/** 20141220    
+	/** 20141220
 	 * 그렇지 않다면 orphan_list에 추가한다.
 	 **/
 	else
@@ -1424,7 +1424,7 @@ int __clk_init(struct device *dev, struct clk *clk)
 	 * parent's rate.  If a clock doesn't have a parent (or is orphaned)
 	 * then rate is set to zero.
 	 */
-	/** 20141220    
+	/** 20141220
 	 * recalc_rate ops가 정의되어 있으면 호출.
 	 * 정의되지 않았으면 parent의 rate를 사용한다.
 	 **/
@@ -1440,7 +1440,7 @@ int __clk_init(struct device *dev, struct clk *clk)
 	 * walk the list of orphan clocks and reparent any that are children of
 	 * this clock
 	 */
-	/** 20141220    
+	/** 20141220
 	 * 새로운 clk이 등록되면
 	 * orphan_list에 등록된 clk들을 순회하며
 	 * orphan의 parent_names와 일치하는지 검사해
@@ -1461,7 +1461,7 @@ int __clk_init(struct device *dev, struct clk *clk)
 	 * Please consider other ways of solving initialization problems before
 	 * using this callback, as it's use is discouraged.
 	 */
-	/** 20141220    
+	/** 20141220
 	 * platform-specific한 .init 콜백이 있는 경우 호출한다.
 	 *
 	 * 주석에 의하면 이상한 hw의 경우 여기서 동작을 수행하겠지만,
@@ -1531,7 +1531,7 @@ EXPORT_SYMBOL_GPL(__clk_register);
  * rest of the clock API.  In the event of an error clk_register will return an
  * error code; drivers must test for an error code after calling clk_register.
  */
-/** 20141220    
+/** 20141220
  * clk_hw를 바탕으로 clk객체를 생성하고, clk hierarchy에 등록하고 초기화 한다.
  **/
 struct clk *clk_register(struct device *dev, struct clk_hw *hw)
@@ -1556,7 +1556,7 @@ struct clk *clk_register(struct device *dev, struct clk_hw *hw)
 		ret = -ENOMEM;
 		goto fail_name;
 	}
-	/** 20141220    
+	/** 20141220
 	 * 넘겨받은 clk_hw로부터 정보를 가져와 struct clk의 내용을 채운다.
 	 **/
 	clk->ops = hw->init->ops;
@@ -1566,7 +1566,7 @@ struct clk *clk_register(struct device *dev, struct clk_hw *hw)
 	hw->clk = clk;
 
 	/* allocate local copy in case parent_names is __initdata */
-	/** 20141220    
+	/** 20141220
 	 * parents 수만큼 names를 가리키기 위한 포인터를 할당한다.
 	 *
 	 * num_parents가 0일 경우, 리턴되는 값은 ZERO_SIZE_PTR이다.
@@ -1574,7 +1574,7 @@ struct clk *clk_register(struct device *dev, struct clk_hw *hw)
 	clk->parent_names = kzalloc((sizeof(char*) * clk->num_parents),
 			GFP_KERNEL);
 
-	/** 20141220    
+	/** 20141220
 	 * 할당 자체가 실패했다면 에러처리를 위해 나간다.
 	 **/
 	if (!clk->parent_names) {
@@ -1585,7 +1585,7 @@ struct clk *clk_register(struct device *dev, struct clk_hw *hw)
 
 
 	/* copy each string name in case parent_names is __initdata */
-	/** 20141220    
+	/** 20141220
 	 * parents의 수만큼 parent_names를 복사한다.
 	 **/
 	for (i = 0; i < clk->num_parents; i++) {

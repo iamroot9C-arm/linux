@@ -10,7 +10,7 @@ struct siginfo;
 /* Most things should be clean enough to redefine this at will, if care
    is taken to make libc match.  */
 
-/** 20130713    
+/** 20130713
  * signal을 표현하기 위한 bit map의 크기
  **/
 #define _NSIG		64
@@ -19,7 +19,7 @@ struct siginfo;
 
 typedef unsigned long old_sigset_t;		/* at least 32 bits */
 
-/** 20160206    
+/** 20160206
  * 비트맵으로 구현되는 시그널셋.
  **/
 typedef struct {

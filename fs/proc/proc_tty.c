@@ -18,7 +18,7 @@
 /*
  * The /proc/tty directory inodes...
  */
-/** 20150510    
+/** 20150510
  **/
 static struct proc_dir_entry *proc_tty_ldisc, *proc_tty_driver;
 
@@ -174,12 +174,12 @@ void proc_tty_unregister_driver(struct tty_driver *driver)
 /*
  * Called by proc_root_init() to initialize the /proc/tty subtree
  */
-/** 20150509    
+/** 20150509
  * "/proc/tty" 와 하위 entry를 생성한다.
  **/
 void __init proc_tty_init(void)
 {
-	/** 20150509    
+	/** 20150509
 	 * /proc 아래 "tty", "tty/ldisc" 디렉토리를 추가한다.
 	 * 
 	 **/
@@ -192,7 +192,7 @@ void __init proc_tty_init(void)
 	 * password lengths and inter-keystroke timings during password
 	 * entry.
 	 */
-	/** 20150509    
+	/** 20150509
 	 * /proc 아래 "tty/driver", "tty/ldiscs", "tty/drivers"를 추가한다.
 	 **/
 	proc_tty_driver = proc_mkdir_mode("tty/driver", S_IRUSR|S_IXUSR, NULL);

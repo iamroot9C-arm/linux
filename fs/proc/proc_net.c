@@ -178,7 +178,7 @@ const struct file_operations proc_net_operations = {
 };
 
 
-/** 20151031    
+/** 20151031
  * proc의 net entry에 새로운 항목을 추가한다.
  * 사용할 file_operations를 추가한다.
  **/
@@ -195,7 +195,7 @@ void proc_net_remove(struct net *net, const char *name)
 }
 EXPORT_SYMBOL_GPL(proc_net_remove);
 
-/** 20150509    
+/** 20150509
  * 추후 분석???
  **/
 static __net_init int proc_net_ns_init(struct net *net)
@@ -229,7 +229,7 @@ out:
 	return err;
 }
 
-/** 20150509    
+/** 20150509
  * 추후 분석???
  **/
 static __net_exit void proc_net_ns_exit(struct net *net)
@@ -238,7 +238,7 @@ static __net_exit void proc_net_ns_exit(struct net *net)
 	kfree(net->proc_net);
 }
 
-/** 20150509    
+/** 20150509
  * proc net을 위한 pernet_operations.
  **/
 static struct pernet_operations __net_initdata proc_net_ns_ops = {
@@ -246,19 +246,19 @@ static struct pernet_operations __net_initdata proc_net_ns_ops = {
 	.exit = proc_net_ns_exit,
 };
 
-/** 20150509    
+/** 20150509
  * proc의 net을 위한 초기화를 수행한다.
  *
  * "net" 심볼릭 링크를 생성하고, network namespace subsystem을 등록한다.
  **/
 int __init proc_net_init(void)
 {
-	/** 20150509    
+	/** 20150509
 	 * /proc에 "self/net"을 대상으로 하는 "net" 심볼릭 링크를 생성한다.
 	 **/
 	proc_symlink("net", NULL, "self/net");
 
-	/** 20150509    
+	/** 20150509
 	 * proc net을 위한 network namespae subsystem을 등록한다.
 	 * 자세한 내용은 추후 분석???
 	 **/

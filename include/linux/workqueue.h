@@ -21,7 +21,7 @@ typedef void (*work_func_t)(struct work_struct *work);
  * The first word is the work queue pointer and the flags rolled into
  * one
  */
-/** 20150725    
+/** 20150725
  * work의 data에 workqueue pointer와 flags가 같이 들어가 있다.
  **/
 #define work_data_bits(work) ((unsigned long *)(&(work)->data))
@@ -118,7 +118,7 @@ struct execute_work {
 #define __WORK_INIT_LOCKDEP_MAP(n, k)
 #endif
 
-/** 20160130    
+/** 20160130
  * work_struct의 멤버를 넘어온 argument로 초기화 한다.
  **/
 #define __WORK_INITIALIZER(n, f) {				\
@@ -138,7 +138,7 @@ struct execute_work {
 	.timer = TIMER_DEFERRED_INITIALIZER(NULL, 0, 0),	\
 	}
 
-/** 20160130    
+/** 20160130
  * f라는 함수를 수행할 n이라는 이름의 work를 선언.
  **/
 #define DECLARE_WORK(n, f)					\
@@ -153,7 +153,7 @@ struct execute_work {
 /*
  * initialize a work item's function pointer
  */
-/** 20150214    
+/** 20150214
  * work의 func 등록.
  **/
 #define PREPARE_WORK(_work, _func)				\
@@ -172,7 +172,7 @@ static inline unsigned int work_static(struct work_struct *work)
 	return *work_data_bits(work) & WORK_STRUCT_STATIC;
 }
 #else
-/** 20150214    
+/** 20150214
  * CONFIG_DEBUG_OBJECTS_WORK가 설정되지 않을 경우 NULL 함수.
  **/
 static inline void __init_work(struct work_struct *work, int onstack) { }
@@ -199,7 +199,7 @@ static inline unsigned int work_static(struct work_struct *work) { return 0; }
 		PREPARE_WORK((_work), (_func));				\
 	} while (0)
 #else
-/** 20150214    
+/** 20150214
  * workqueue의 작업 초기화.
  * func은 work에서 실행할 함수이다.
  **/
@@ -212,7 +212,7 @@ static inline unsigned int work_static(struct work_struct *work) { return 0; }
 	} while (0)
 #endif
 
-/** 20150214    
+/** 20150214
  * workqueue 작업 초기화.
  * 
  * func을 work에서 실행할 함수로 등록한다.
@@ -271,7 +271,7 @@ static inline unsigned int work_static(struct work_struct *work) { return 0; }
  * Workqueue flags and constants.  For details, please refer to
  * Documentation/workqueue.txt.
  */
-/** 20150711    
+/** 20150711
  * WQ의 flags와 몇몇 상수들.
  *
  * WQ_FREEZABLE  : suspend 중 freeze 시키는 속성
@@ -294,7 +294,7 @@ enum {
 };
 
 /* unbound wq's aren't per-cpu, scale max_active according to #cpus */
-/** 20150711    
+/** 20150711
  * unbound WQ는 per-cpu가 아니므로 WQ_MAX_ACTIVE와 4 * #cpus 중 큰 값을 택한다.
  **/
 #define WQ_UNBOUND_MAX_ACTIVE	\
@@ -368,7 +368,7 @@ __alloc_workqueue_key(const char *fmt, unsigned int flags, int max_active,
 			      &__key, __lock_name, ##args);	\
 })
 #else
-/** 20150711    
+/** 20150711
  * workqueue를 할당한다.
  **/
 #define alloc_workqueue(fmt, flags, max_active, args...)	\
@@ -396,7 +396,7 @@ __alloc_workqueue_key(const char *fmt, unsigned int flags, int max_active,
 	alloc_workqueue((name), WQ_MEM_RECLAIM, 1)
 #define create_freezable_workqueue(name)			\
 	alloc_workqueue((name), WQ_FREEZABLE | WQ_UNBOUND | WQ_MEM_RECLAIM, 1)
-/** 20150822    
+/** 20150822
  **/
 #define create_singlethread_workqueue(name)			\
 	alloc_workqueue((name), WQ_UNBOUND | WQ_MEM_RECLAIM, 1)

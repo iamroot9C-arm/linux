@@ -19,7 +19,7 @@
 #include <linux/sched.h>
 #include <linux/capability.h>
 
-/** 20151010    
+/** 20151010
  * KERNEL 관련 read-only attribute를 선언한다.
  **/
 #define KERNEL_ATTR_RO(_name) \
@@ -147,14 +147,14 @@ KERNEL_ATTR_RO(fscaps);
 /*
  * Make /sys/kernel/notes give the raw contents of our kernel .notes section.
  */
-/** 20151010    
+/** 20151010
  * kernel의 .notes 섹션을 binary로 제공하는 "/sys/kernel/notes" 파일을 정의한다.
  **/
 extern const void __start_notes __attribute__((weak));
 extern const void __stop_notes __attribute__((weak));
 #define	notes_size (&__stop_notes - &__start_notes)
 
-/** 20151010    
+/** 20151010
  * elf 섹션 중 "notes"를 buffer에 복사한다.
  **/
 static ssize_t notes_read(struct file *filp, struct kobject *kobj,
@@ -165,7 +165,7 @@ static ssize_t notes_read(struct file *filp, struct kobject *kobj,
 	return count;
 }
 
-/** 20151010    
+/** 20151010
  * "notes"라는 이름의 bin_attribute를 선언한다.
  *
  * attribute용 read 함수는 notes_read로 지정한다.
@@ -184,7 +184,7 @@ static struct bin_attribute notes_attr = {
 struct kobject *kernel_kobj;
 EXPORT_SYMBOL_GPL(kernel_kobj);
 
-/** 20151010    
+/** 20151010
  * kernel 관련 struct attribute 배열.
  *
  * 각 attribute는 KERNEL_ATTR_RW(), KERNEL_ATTR_RO() 등으로 선언한
@@ -199,7 +199,7 @@ static struct attribute * kernel_attrs[] = {
 #ifdef CONFIG_PROFILING
 	&profiling_attr.attr,
 #endif
-	/** 20151010    
+	/** 20151010
 	 * kexec: 현재 커널을 shutdown 시키고, 새로운 kernel을 시작하는 기법.
 	 *
 	 * UEFI secure boot을 kexec가 우회하는 문제가 있는데, 3.17 버전부터
@@ -214,7 +214,7 @@ static struct attribute * kernel_attrs[] = {
 	NULL
 };
 
-/** 20151010    
+/** 20151010
  * kernel attribute group 설정.
  * 
  * .name이 지정되지 않았으므로 kernel 디렉토리 아래 attribute가 바로 생성된다.
@@ -224,14 +224,14 @@ static struct attribute_group kernel_attr_group = {
 	.attrs = kernel_attrs,
 };
 
-/** 20151010    
+/** 20151010
  * "kernel" kobject를 생성해 등록하고, 하위 attribute 파일들을 만든다.
  **/
 static int __init ksysfs_init(void)
 {
 	int error;
 
-	/** 20151010    
+	/** 20151010
 	 * "kernel" kobject를 생성하고 sysfs에 등록한다.
 	 **/
 	kernel_kobj = kobject_create_and_add("kernel", NULL);
@@ -239,14 +239,14 @@ static int __init ksysfs_init(void)
 		error = -ENOMEM;
 		goto exit;
 	}
-	/** 20151010    
+	/** 20151010
 	 * "kernel" kobject아래 kernel attribute group을 등록한다.
 	 **/
 	error = sysfs_create_group(kernel_kobj, &kernel_attr_group);
 	if (error)
 		goto kset_exit;
 
-	/** 20151010    
+	/** 20151010
 	 * notes 섹션에 데이터가 들어 있다면 notes를 위한 bin attribute를 만든다.
 	 **/
 	if (notes_size > 0) {

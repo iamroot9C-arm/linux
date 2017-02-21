@@ -59,7 +59,7 @@ static inline unsigned long find_zero(unsigned long mask)
  * and the next page not being mapped, take the exception and
  * return zeroes in the non-existing part.
  */
-/** 20150404    
+/** 20150404
  * kernel space에서 정렬되지 않은 워드를 읽어오는 함수.
  *
  * 자세한 내용은 추후 분석???
@@ -87,7 +87,7 @@ static inline unsigned long load_unaligned_zeropad(const void *addr)
 	"	.popsection"
 	: "=&r" (ret), "=&r" (offset)
 	: "r" (addr), "Qo" (*(unsigned long *)addr));
-	/** 20151024    
+	/** 20151024
 	 * ret = *addr;
 	 *
 	 * 아래 코드 블럭을 .fixup섹션으로 배치시킨다. 2**2 정렬.

@@ -114,7 +114,7 @@ static BLOCKING_NOTIFIER_HEAD(module_notify_list);
 
 /* Bounds of module allocation, for speeding __module_address.
  * Protected by module_mutex. */
-/** 20140823    
+/** 20140823
  * __module_address의 min,  max.
  * init_module이 호출되었을 때 module_alloc_update_bounds에서 갱신된다.
  **/
@@ -911,13 +911,13 @@ static ssize_t show_refcnt(struct module_attribute *mattr,
 static struct module_attribute modinfo_refcnt =
 	__ATTR(refcnt, 0444, show_refcnt, NULL);
 
-/** 20150307    
+/** 20150307
  * module을 사용 중임을 표시한다.
  **/
 void __module_get(struct module *module)
 {
 	if (module) {
-		/** 20150307    
+		/** 20150307
 		 * 현재 core의 선점을 금지한 상태에서 module의 ref 카운트를 증가시키다.
 		 **/
 		preempt_disable();
@@ -928,23 +928,23 @@ void __module_get(struct module *module)
 }
 EXPORT_SYMBOL(__module_get);
 
-/** 20150425    
+/** 20150425
  * 해당 모듈이 동작 중인 경우 ref 카운트를 증가시키고 리턴한다.
  **/
 bool try_module_get(struct module *module)
 {
 	bool ret = true;
 
-	/** 20151107    
+	/** 20151107
 	 * MODULE이 아닌 경우, module이 THIS_MODULE에서 0이 들어온다.
 	 **/
 	if (module) {
-		/** 20150425    
+		/** 20150425
 		 * 선점 금지
 		 **/
 		preempt_disable();
 
-		/** 20150425    
+		/** 20150425
 		 * 모듈이 동작 중인 경우 ref 카운트를 증가시킨다.
 		 **/
 		if (likely(module_is_live(module))) {
@@ -953,7 +953,7 @@ bool try_module_get(struct module *module)
 		} else
 			ret = false;
 
-		/** 20150425    
+		/** 20150425
 		 * 선점 허용
 		 **/
 		preempt_enable();
@@ -962,13 +962,13 @@ bool try_module_get(struct module *module)
 }
 EXPORT_SYMBOL(try_module_get);
 
-/** 20150307    
+/** 20150307
  * module의 reference count를 감소시킨다.
  **/
 void module_put(struct module *module)
 {
 	if (module) {
-		/** 20150307    
+		/** 20150307
 		 * 선점 불가 상태에서 모듈의 reference count 중 decs를 증가시킨다.
 		 * 최신 소스에서는 module의 ref. count가 atomic operation으로 변경됨.
 		 **/
@@ -3489,20 +3489,20 @@ bool is_module_address(unsigned long addr)
  * Must be called with preempt disabled or module mutex held so that
  * module doesn't get freed during this.
  */
-/** 20140823    
+/** 20140823
  * address가 속하는 module의 위치를 리턴한다.
  **/
 struct module *__module_address(unsigned long addr)
 {
 	struct module *mod;
 
-	/** 20140823    
+	/** 20140823
 	 * addr가 module용으로 할당 boundary 사이에 있는지 검사한다.
 	 **/
 	if (addr < module_addr_min || addr > module_addr_max)
 		return NULL;
 
-	/** 20140823    
+	/** 20140823
 	 * 등록된 module들을 순회하며
 	 *		address가 module의 core 또는 init 영역에 속한다면
 	 *		해당 모듈 위치를 리턴한다.
@@ -3523,7 +3523,7 @@ EXPORT_SYMBOL_GPL(__module_address);
  * anywhere in a module.  See kernel_text_address() for testing if an
  * address corresponds to kernel or module code.
  */
-/** 20140823    
+/** 20140823
  * address가 module의 text address 영역에 속하는지 리턴한다.
  **/
 bool is_module_text_address(unsigned long addr)
@@ -3544,7 +3544,7 @@ bool is_module_text_address(unsigned long addr)
  * Must be called with preempt disabled or module mutex held so that
  * module doesn't get freed during this.
  */
-/** 20140823    
+/** 20140823
  * address를 포함하는 module을 리턴한다.
  **/
 struct module *__module_text_address(unsigned long addr)

@@ -1,7 +1,7 @@
 #ifndef __LINUX_MAGIC_H__
 #define __LINUX_MAGIC_H__
 
-/** 20150314    
+/** 20150314
  * 파일시스템별 magic number.
  **/
 #define ADFS_SUPER_MAGIC	0xadf5
@@ -14,7 +14,7 @@
 #define DEBUGFS_MAGIC          0x64626720
 #define SECURITYFS_MAGIC	0x73636673
 #define SELINUX_MAGIC		0xf97cff8c
-/** 20150502    
+/** 20150502
  * RAMFS MAGIC
  **/
 #define RAMFS_MAGIC		0x858458f6	/* some random number */
@@ -62,7 +62,7 @@
 
 #define V9FS_MAGIC		0x01021997
 
-/** 20150502    
+/** 20150502
  * BDEV 파일시스템 매직넘버.
  **/
 #define BDEVFS_MAGIC            0x62646576
@@ -72,7 +72,7 @@
 #define PIPEFS_MAGIC            0x50495045
 #define PROC_SUPER_MAGIC	0x9fa0
 #define SOCKFS_MAGIC		0x534F434B
-/** 20150314    
+/** 20150314
  * sysfs의 magic number.
  **/
 #define SYSFS_MAGIC		0x62656572

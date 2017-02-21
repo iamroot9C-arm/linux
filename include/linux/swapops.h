@@ -75,7 +75,7 @@ static inline swp_entry_t pte_to_swp_entry(pte_t pte)
  * Convert the arch-independent representation of a swp_entry_t into the
  * arch-dependent pte representation.
  */
-/** 20140607    
+/** 20140607
  * architecture dependent한 swap entry로 변환해 
  * pte 값을 가져온다.
  **/

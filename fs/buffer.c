@@ -471,7 +471,7 @@ static void __remove_assoc_queue(struct buffer_head *bh)
 	bh->b_assoc_map = NULL;
 }
 
-/** 20150321    
+/** 20150321
  * inode의 address_space에 private_list가 존재하면 inode는 buffers 들을 갖고 있다.
  **/
 int inode_has_buffers(struct inode *inode)
@@ -613,7 +613,7 @@ EXPORT_SYMBOL(mark_buffer_dirty_inode);
  * If warn is true, then emit a warning if the page is not uptodate and has
  * not been truncated.
  */
-/** 20140531    
+/** 20140531
  * 추후 분석 ???
  **/
 static void __set_page_dirty(struct page *page,
@@ -622,7 +622,7 @@ static void __set_page_dirty(struct page *page,
 	spin_lock_irq(&mapping->tree_lock);
 	if (page->mapping) {	/* Race with truncate? */
 		WARN_ON_ONCE(warn && !PageUptodate(page));
-		/** 20140531    
+		/** 20140531
 		 * page mapping 정보를 따라가 CAP을 조회해 dirty account가 가능하면 호출한다.
 		 **/
 		account_page_dirtied(page, mapping);
@@ -658,7 +658,7 @@ static void __set_page_dirty(struct page *page,
  * FIXME: may need to call ->reservepage here as well.  That's rather up to the
  * address_space though.
  */
-/** 20140531    
+/** 20140531
  * page를 dirty page로 설정한다.
  * buffer_head를 가지고 있다면 각각에 대해 모두 dirty로 설정한다.
  * 새롭게 dirty로 설정되었는지 여부를 리턴한다.
@@ -668,43 +668,43 @@ int __set_page_dirty_buffers(struct page *page)
 	int newly_dirty;
 	struct address_space *mapping = page_mapping(page);
 
-	/** 20140531    
+	/** 20140531
 	 * mapping이 존재하지 않는 경우 struct page flags에 Dirty를 설정하고 설정되어 있던 값을 리턴한다.
 	 **/
 	if (unlikely(!mapping))
 		return !TestSetPageDirty(page);
 
 	spin_lock(&mapping->private_lock);
-	/** 20140531    
+	/** 20140531
 	 * page가 buffer_head를 가지고 있다면 각각을 따라가 dirty로 설정한다.
 	 **/
 	if (page_has_buffers(page)) {
-		/** 20140531    
+		/** 20140531
 		 * page의 private에 저장된 buffer_head를 가져온다.
 		 **/
 		struct buffer_head *head = page_buffers(page);
 		struct buffer_head *bh = head;
 
 		do {
-			/** 20140531    
+			/** 20140531
 			 * buffer_head에 dirty속성을 설정한다.
 			 **/
 			set_buffer_dirty(bh);
-			/** 20140531    
+			/** 20140531
 			 * 다음 buffer_head로 이동.
 			 * 환형 buffer이므로 head와 같다면 한 바퀴 순회한 것이다.
 			 **/
 			bh = bh->b_this_page;
 		} while (bh != head);
 	}
-	/** 20140531    
+	/** 20140531
 	 * 현재 설정된 page의 dirty상태를 리턴하고 새로 dirty로 설정한다.
 	 * 이전 값이 0이었다면 새롭게 dirty로 표시된 것이다.
 	 **/
 	newly_dirty = !TestSetPageDirty(page);
 	spin_unlock(&mapping->private_lock);
 
-	/** 20140531    
+	/** 20140531
 	 * page가 새롭게 dirty로 설정되었다면, __set_page_dirty를 호출한다.
 	 **/
 	if (newly_dirty)
@@ -3191,7 +3191,7 @@ static struct kmem_cache *bh_cachep __read_mostly;
  * Once the number of bh's in the machine exceeds this level, we start
  * stripping them in writeback.
  */
-/** 20150214    
+/** 20150214
  **/
 static int max_buffer_heads;
 
@@ -3242,7 +3242,7 @@ void free_buffer_head(struct buffer_head *bh)
 }
 EXPORT_SYMBOL(free_buffer_head);
 
-/** 20150214    
+/** 20150214
  * 추후분석
  **/
 static void buffer_exit_cpu(int cpu)
@@ -3258,7 +3258,7 @@ static void buffer_exit_cpu(int cpu)
 	per_cpu(bh_accounting, cpu).nr = 0;
 }
 
-/** 20150214    
+/** 20150214
  * HOTCPU 이벤트시 호출되는 콜백 함수.
  *
  * CPU_DEAD와 CPU_DEAD_FROZEN notify를 받으면 해당 cpu의 bh 관련 정보를 갱신한다.
@@ -3315,7 +3315,7 @@ int bh_submit_read(struct buffer_head *bh)
 }
 EXPORT_SYMBOL(bh_submit_read);
 
-/** 20150214    
+/** 20150214
  * buffer heads 관련 초기화를 수행한다.
  *
  * kmem_cache를 생성하고, 관련 전역변수 설정 및 hotcpu 콜백을 등록한다.
@@ -3324,7 +3324,7 @@ void __init buffer_init(void)
 {
 	int nrpages;
 
-	/** 20150214    
+	/** 20150214
 	 * buffer_head에 대한 kmem_cache를 생성한다.
 	 *
 	 * SLAB_RECLAIM_ACCOUNT 속성에 의해
@@ -3339,13 +3339,13 @@ void __init buffer_init(void)
 	/*
 	 * Limit the bh occupancy to 10% of ZONE_NORMAL
 	 */
-	/** 20150214    
+	/** 20150214
 	 * buffer heads용으로 사용할 메모리는 ZONE_NORMAL까지 페이지 중 10%이다.
 	 * 한 페이지에 들어갈 수 있는 buffer_head의 수를 계산해 max_buffer_heads로 잡는다.
 	 **/
 	nrpages = (nr_free_buffer_pages() * 10) / 100;
 	max_buffer_heads = nrpages * (PAGE_SIZE / sizeof(struct buffer_head));
-	/** 20150214    
+	/** 20150214
 	 * HOTCPU 이벤트시 호출될 콜백을 등록한다.
 	 **/
 	hotcpu_notifier(buffer_cpu_notify, 0);

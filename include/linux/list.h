@@ -6,7 +6,7 @@
 #include <linux/poison.h>
 #include <linux/const.h>
 
-/** 20130803    
+/** 20130803
  * hlist의 특성
  *   - 해당 bucket의 처음부터 entry를 찾아가면 된다.
  *
@@ -26,12 +26,12 @@
  * using the generic single-entry routines.
  */
 
-/** 20130330    
+/** 20130330
  * list_head가 prev, next로 자기 자신을 가리키도록 초기화함
  **/
 #define LIST_HEAD_INIT(name) { &(name), &(name) }
 
-/** 20140322    
+/** 20140322
  * 주로 전역변수로 list_head를 선언하고 초기화
  **/
 #define LIST_HEAD(name) \
@@ -52,7 +52,7 @@ static inline void INIT_LIST_HEAD(struct list_head *list)
  * the prev/next entries already!
  */
 #ifndef CONFIG_DEBUG_LIST
-/** 20130330    
+/** 20130330
  * prev와 next 사이에 new entry를 삽입
  **/
 static inline void __list_add(struct list_head *new,
@@ -78,7 +78,7 @@ extern void __list_add(struct list_head *new,
  * Insert a new entry after the specified head.
  * This is good for implementing stacks.
  */
-/** 20130928    
+/** 20130928
  * head와 head->next 사이에 새로운 entry를 추가시킨다.
  **/
 static inline void list_add(struct list_head *new, struct list_head *head)
@@ -95,7 +95,7 @@ static inline void list_add(struct list_head *new, struct list_head *head)
  * Insert a new entry before the specified head.
  * This is useful for implementing queues.
  */
-/** 20130330    
+/** 20130330
  * 가장 끝에 새로운 entry를 삽입.
  *
  * list_add와 동일하게 __list_add 함수를 사용해 구현.
@@ -105,7 +105,7 @@ static inline void list_add(struct list_head *new, struct list_head *head)
  **/
 static inline void list_add_tail(struct list_head *new, struct list_head *head)
 {
-	/** 20130330    
+	/** 20130330
 	 * head->prev는 자기 자신으로 초기화 되어 있어야 함
 	 **/
 	__list_add(new, head->prev, head);
@@ -118,7 +118,7 @@ static inline void list_add_tail(struct list_head *new, struct list_head *head)
  * This is only for internal list manipulation where we know
  * the prev/next entries already!
  */
-/** 20130713    
+/** 20130713
  * prev와 next를 서로 연결. 자신을 list에서 제거할 때 사용
  **/
 static inline void __list_del(struct list_head * prev, struct list_head * next)
@@ -134,7 +134,7 @@ static inline void __list_del(struct list_head * prev, struct list_head * next)
  * in an undefined state.
  */
 #ifndef CONFIG_DEBUG_LIST
-/** 20131005    
+/** 20131005
  * entry의 prev와 next를 서로 가리키게 하여 자신을 list에서 제거한다.
  **/
 static inline void __list_del_entry(struct list_head *entry)
@@ -142,12 +142,12 @@ static inline void __list_del_entry(struct list_head *entry)
 	__list_del(entry->prev, entry->next);
 }
 
-/** 20130831    
+/** 20130831
  * entry를 list에서 제거한다.
  **/
 static inline void list_del(struct list_head *entry)
 {
-	/** 20130831    
+	/** 20130831
 	 * list에서 실제 entry를 제거하는 함수
 	 **/
 	__list_del(entry->prev, entry->next);
@@ -166,7 +166,7 @@ extern void list_del(struct list_head *entry);
  *
  * If @old was empty, it will be overwritten.
  */
-/** 20140621    
+/** 20140621
  * list의 old entry를 new entry로 변경한다.
  **/
 static inline void list_replace(struct list_head *old,
@@ -178,7 +178,7 @@ static inline void list_replace(struct list_head *old,
 	new->prev->next = new;
 }
 
-/** 20140621    
+/** 20140621
  * list의 old entry를 new entry로 변경하고, old를 초기화 시킨다.
  *
  * 예를 들어 percpu list를 떼어와 local 변수 list에 달아줄 때 사용된다.
@@ -194,12 +194,12 @@ static inline void list_replace_init(struct list_head *old,
  * list_del_init - deletes entry from list and reinitialize it.
  * @entry: the element to delete from the list.
  */
-/** 20131130    
+/** 20131130
  * 현재 entry를 연결된 list에서 삭제하고, 포인터를 초기화
  **/
 static inline void list_del_init(struct list_head *entry)
 {
-	/** 20131123    
+	/** 20131123
 	 * entry를 list에서 삭제하고, entry의 list 연결 포인트를 초기화 한다.
 	 * 참고로 list_del로 삭제시켰을 경우 POISON 값을 써준다.
 	 **/
@@ -212,16 +212,16 @@ static inline void list_del_init(struct list_head *entry)
  * @list: the entry to move
  * @head: the head that will precede our entry
  */
-/** 20131005    
+/** 20131005
  * 'list'를 원래 존재하던 list에서 제거한 뒤 새로운 list 'head'에 추가한다.
  **/
 static inline void list_move(struct list_head *list, struct list_head *head)
 {
-	/** 20131005    
+	/** 20131005
 	 * 'list'라는 entry를 list에서 제거한다.
 	 **/
 	__list_del_entry(list);
-	/** 20131005    
+	/** 20131005
 	 * 'list'를 head가 가리키는 list에 추가한다.
 	 **/
 	list_add(list, head);
@@ -232,17 +232,17 @@ static inline void list_move(struct list_head *list, struct list_head *head)
  * @list: the entry to move
  * @head: the head that will follow our entry
  */
-/** 20140104    
+/** 20140104
  * entry를 기존의 list에서 제거하고, head가 가리키는 새로운 list의 tail로 삽입
  **/
 static inline void list_move_tail(struct list_head *list,
 				  struct list_head *head)
 {
-	/** 20140104    
+	/** 20140104
 	 * list 에서 기존의 entry를 삭제
 	 **/
 	__list_del_entry(list);
-	/** 20140104    
+	/** 20140104
 	 * head가 가리키는 list의 끝에 새로운 entry를 추가한다.
 	 **/
 	list_add_tail(list, head);
@@ -253,7 +253,7 @@ static inline void list_move_tail(struct list_head *list,
  * @list: the entry to test
  * @head: the head of the list
  */
-/** 20140329    
+/** 20140329
  * list의 next가 head면 list가 마지막 entry이다.
  **/
 static inline int list_is_last(const struct list_head *list,
@@ -266,7 +266,7 @@ static inline int list_is_last(const struct list_head *list,
  * list_empty - tests whether a list is empty
  * @head: the list to test.
  */
-/** 20130713    
+/** 20130713
  * head의 next가 head를 가리키면 list가 비어 있다.
  **/
 static inline int list_empty(const struct list_head *head)
@@ -287,7 +287,7 @@ static inline int list_empty(const struct list_head *head)
  * to the list entry is list_del_init(). Eg. it cannot be used
  * if another CPU could re-list_add() it.
  */
-/** 20131130    
+/** 20131130
  * next와 head를 같이 비교해
  * 다른 cpu에서 다른 멤버를 수정 중이지 않음을 판단 가능하다.
  *
@@ -364,7 +364,7 @@ static inline void list_cut_position(struct list_head *list,
 		__list_cut_position(list, head, entry);
 }
 
-/** 20140607    
+/** 20140607
  * prev와 next 사이에 list를 추가시킨다.
  **/
 static inline void __list_splice(const struct list_head *list,
@@ -386,7 +386,7 @@ static inline void __list_splice(const struct list_head *list,
  * @list: the new list to add.
  * @head: the place to add it in the first list.
  */
-/** 20140607    
+/** 20140607
  * 두 list를 합친다.
  * head와 head->next 사이에 list를 추가한다.
  **/
@@ -416,13 +416,13 @@ static inline void list_splice_tail(struct list_head *list,
  *
  * The list at @list is reinitialised
  */
-/** 20140920    
+/** 20140920
  * head 다음에 list를 추가하고, 이전의 list는 empty list로 초기화 한다.
  **/
 static inline void list_splice_init(struct list_head *list,
 				    struct list_head *head)
 {
-	/** 20140920    
+	/** 20140920
 	 * list가 비어있지 않다면 head와 head->next 사이에 list를 추가한다.
 	 **/
 	if (!list_empty(list)) {
@@ -439,7 +439,7 @@ static inline void list_splice_init(struct list_head *list,
  * Each of the lists is a queue.
  * The list at @list is reinitialised
  */
-/** 20150905    
+/** 20150905
  * head 끝에 list를 추가하고, empty list로 초기화 한다.
  **/
 static inline void list_splice_tail_init(struct list_head *list,
@@ -457,7 +457,7 @@ static inline void list_splice_tail_init(struct list_head *list,
  * @type:	the type of the struct this is embedded in.
  * @member:	the name of the list_struct within the struct.
  */
-/** 20130713    
+/** 20130713
  * ptr이 가리키는 member를 포함하는 type 구조체의 위치를 리턴
  **/
 #define list_entry(ptr, type, member) \
@@ -471,7 +471,7 @@ static inline void list_splice_tail_init(struct list_head *list,
  *
  * Note, that list is expected to be not empty.
  */
-/** 20150530    
+/** 20150530
  * 리스트의 첫번째 member를 가져와 이것을 포함하고 있는 type 구조체를 리턴한다.
  **/
 #define list_first_entry(ptr, type, member) \
@@ -531,7 +531,7 @@ static inline void list_splice_tail_init(struct list_head *list,
  * @head:	the head for your list.
  * @member:	the name of the list_struct within the struct.
  */
-/** 20130330    
+/** 20130330
  * list를 전체 순회
  *
  * pos : list 자료구조로 탐색하고자 하는 구조체 포인터
@@ -616,7 +616,7 @@ static inline void list_splice_tail_init(struct list_head *list,
  * @head:	the head for your list.
  * @member:	the name of the list_struct within the struct.
  */
-/** 20131123    
+/** 20131123
  * list head부터 각 entry를 순회한다.
  *
  * iteration 중에 entry가 삭제되어도 자료구조가 깨어지지 않도록 next entry에
@@ -654,7 +654,7 @@ static inline void list_splice_tail_init(struct list_head *list,
  * Iterate over list of given type from current point, safe against
  * removal of list entry.
  */
-/** 20150725    
+/** 20150725
  * list를 순회하되, 처리 과정에서 node가 제거되어도 미리 복사해 놓은 next 포인터로
  * 에러 없이 동작시키는 매크로.
  **/
@@ -710,7 +710,7 @@ static inline void INIT_HLIST_NODE(struct hlist_node *h)
 	h->pprev = NULL;
 }
 
-/** 20150404    
+/** 20150404
  * hash node가 현재 hlist에 등록되어 있지 않은 상태인지 검사한다.
  *
  * hlist_node의 pprev가 NULL이라면 hash list에 등록되지 않은 상태.
@@ -727,7 +727,7 @@ static inline int hlist_empty(const struct hlist_head *h)
 
 static inline void __hlist_del(struct hlist_node *n)
 {
-	/** 20130803    
+	/** 20130803
 	 * 삭제할 노드의 next와 pprev를 지역변수로 저장한다.
 	 * 이전 노드의 next를 삭제할 노드가 가리키고 있던 next로 변경한다.
 	 * 삭제할 노드의 next가 있다면 다음 노드의 pprev를 삭제할 노드의 pprev로 변경한다.
@@ -754,31 +754,31 @@ static inline void hlist_del_init(struct hlist_node *n)
 	}
 }
 
-/** 20130803    
+/** 20130803
  * hlist에 hash node를 첫번째 노드로 새로 추가하는 함수
  * 구조는 hlist_head 참고.
  **/
 static inline void hlist_add_head(struct hlist_node *n, struct hlist_head *h)
 {
-	/** 20130803    
+	/** 20130803
 	 * 첫번째 hlist_head가 현재 가리키고 있는 first를 저장
 	 **/
 	struct hlist_node *first = h->first;
-	/** 20130803    
+	/** 20130803
 	 * 새로 추가할 노드의 next에 기존 first(가 가리키던) 노드를 저장
 	 **/
 	n->next = first;
-	/** 20130803    
+	/** 20130803
 	 * first가 존재한다면
 	 *   기존 first 노드의 pprev를 새로 추가하는 노드의 next에 저장
 	 **/
 	if (first)
 		first->pprev = &n->next;
-	/** 20130803    
+	/** 20130803
 	 * 새로 추가할 노드를 head의 first로 지정한다.
 	 **/
 	h->first = n;
-	/** 20130803    
+	/** 20130803
 	 * 새로 추가할 노드의 pprev가 자신을 가리킨다.
 	 **/
 	n->pprev = &h->first;
@@ -824,7 +824,7 @@ static inline void hlist_move_list(struct hlist_head *old,
 	old->first = NULL;
 }
 
-/** 20150509    
+/** 20150509
  * hlist_node를 포함하는 entry를 의미한다.
  *
  * 예를 들어 아래의 구조에서
@@ -850,7 +850,7 @@ static inline void hlist_move_list(struct hlist_head *old,
  * @head:	the head for your list.
  * @member:	the name of the hlist_node within the struct.
  */
-/** 20141220    
+/** 20141220
  * hlist에서 연결된 entry를 순회하는 매크로.
  *
  *  tpos : cursor용 변수.

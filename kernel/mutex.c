@@ -88,12 +88,12 @@ __mutex_lock_slowpath(atomic_t *lock_count);
  *
  * This function is similar to (but not equivalent to) down().
  */
-/** 20130706    
+/** 20130706
  * mutex lock.
  **/
 void __sched mutex_lock(struct mutex *lock)
 {
-	/** 20130706    
+	/** 20130706
 	 * preemption point를 둔다.
 	 **/
 	might_sleep();
@@ -102,7 +102,7 @@ void __sched mutex_lock(struct mutex *lock)
 	 * 'unlocked' into 'locked' state.
 	 */
 	__mutex_fastpath_lock(&lock->count, __mutex_lock_slowpath);
-	/** 20130713    
+	/** 20130713
 	 * lock의 owner로 지정
 	 **/
 	mutex_set_owner(lock);
@@ -124,7 +124,7 @@ static __used noinline void __sched __mutex_unlock_slowpath(atomic_t *lock_count
  *
  * This function is similar to (but not equivalent to) up().
  */
-/** 20130720    
+/** 20130720
  * mutex unlock 함수.
  * mutex lock과 다른 부분은 wait_list에 대기 중인 task가 있다면 가져와 실행시킨다.
  **/
@@ -140,12 +140,12 @@ void __sched mutex_unlock(struct mutex *lock)
 	 * the slow path will always be taken, and that clears the owner field
 	 * after verifying that it was indeed current.
 	 */
-	/** 20130713    
+	/** 20130713
 	 * lock의 owner 해제
 	 **/
 	mutex_clear_owner(lock);
 #endif
-	/** 20130720    
+	/** 20130720
 	 * __mutex_fastpath_unlock는 __mutex_unlock_slowpath를 호출한다.
 	 **/
 	__mutex_fastpath_unlock(&lock->count, __mutex_unlock_slowpath);
@@ -156,7 +156,7 @@ EXPORT_SYMBOL(mutex_unlock);
 /*
  * Lock a mutex (possibly interruptible), slowpath:
  */
-/** 20130706    
+/** 20130706
  * case: __mutex_lock_slowpath
 	__mutex_lock_common(lock, TASK_UNINTERRUPTIBLE, 0, NULL, _RET_IP_);
 
@@ -180,17 +180,17 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 	struct mutex_waiter waiter;
 	unsigned long flags;
 
-	/** 20130706    
+	/** 20130706
 	 * lock을 소유한 채 선점당하면 안 되므로 선점 불가로 설정.
 	 **/
 	preempt_disable();
-	/** 20130706    
+	/** 20130706
 	 * mutex debugging을 위해 호출.
 	 **/
 	mutex_acquire_nest(&lock->dep_map, subclass, 0, nest_lock, ip);
 
 #ifdef CONFIG_MUTEX_SPIN_ON_OWNER
-	/** 20130706    
+	/** 20130706
 	 *   긍정적인 spinning.
 	 *
 	 *   pending된 대기자가 없고, lock owner가 다른 CPU에서 수행되고 있다면,
@@ -226,11 +226,11 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 		 * If there's an owner, wait for it to either
 		 * release the lock or go to sleep.
 		 */
-		/** 20130706    
+		/** 20130706
 		 * 메모리에 접근해 lock->owner의 값을 가져온다.
 		 **/
 		owner = ACCESS_ONCE(lock->owner);
-		/** 20130706    
+		/** 20130706
 		 * 위에서 가져온 owner 정보가 변경되었는지 검사한다.
 		 * lock->owner가 NULL인 경우에만 true 리턴.
 		 *
@@ -245,21 +245,21 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 		if (owner && !mutex_spin_on_owner(lock, owner))
 			break;
 
-		/** 20130706    
+		/** 20130706
 		 * atomic_cmpxchg에서 검사한 이전값이 1이라면 아래 문장 수행.
 		 * 1->0을 원자적으로 수행하는데 이전 값이 1이라면 수행
 		 *   -> 자신을 owner로 지정 하고 리턴.
 		 **/
 		if (atomic_cmpxchg(&lock->count, 1, 0) == 1) {
-			/** 20130706    
+			/** 20130706
 			 * LOCK DEBUG를 사용하지 않아 NULL 함수
 			 **/
 			lock_acquired(&lock->dep_map, ip);
-			/** 20130706    
+			/** 20130706
 			 * mutex의 owner를 현재 task로 설정
 			 **/
 			mutex_set_owner(lock);
-			/** 20130706    
+			/** 20130706
 			 * preempt를 사용한다면 enable로 돌려놓고 return.
 			 * vexpress 기본 설정에서는 사용하지 않음.
 			 **/
@@ -273,7 +273,7 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 		 * we're an RT task that will live-lock because we won't let
 		 * the owner complete.
 		 */
-		/** 20130706    
+		/** 20130706
 		 * 처음 owner가 NULL이거나, spin으로 대기 후 NULL로 변경되었을 때와
 		 * atomic_cmpxchg로 count를 감소시키기 전에 선점이 되었다면,
 		 * 이곳까지 진행되었을 것이다.
@@ -294,7 +294,7 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 		arch_mutex_cpu_relax();
 	}
 #endif
-	/** 20130713    
+	/** 20130713
 	 * mutex의 wait_list에 대한 wait_lock을 spin_lock으로 획득.
 	 **/
 	spin_lock_mutex(&lock->wait_lock, flags);
@@ -303,24 +303,24 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 	debug_mutex_add_waiter(lock, &waiter, task_thread_info(task));
 
 	/* add waiting tasks to the end of the waitqueue (FIFO): */
-	/** 20130713    
+	/** 20130713
 	 * lock의 wait_list에 waiter를 추가
 	 *   waiter는 지역변수인데 wait_list에 추가???
 	 **/
 	list_add_tail(&waiter.list, &lock->wait_list);
-	/** 20130713    
+	/** 20130713
 	 * task(current)를 waiter.task로 지정.
 	 **/
 	waiter.task = task;
 
-	/** 20130713    
+	/** 20130713
 	 * lock->count를 -1로 변경.
 	 * 이전값이 1이라면 unlocked로 wait_list에 넣어줄 필요가 없어 done으로 이동.
 	 **/
 	if (atomic_xchg(&lock->count, -1) == 1)
 		goto done;
 
-	/** 20130713    
+	/** 20130713
 	 * debug 함수 호출
 	 **/
 	lock_contended(&lock->dep_map, ip);
@@ -335,7 +335,7 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 		 * that when we release the lock, we properly wake up the
 		 * other waiters:
 		 */
-		/** 20130713    
+		/** 20130713
 		 * loop을 돌 때마다 lock->count를 -1로 변경 (unlock에 의해 상태가 변경되었을 경우에도),
 		 * 이전 값이 1일 경우(unlocked) break
 		 *   -> wait_list에 들어가서 sleep되어 있다가 unlock 함수에 의해 깨어날 경우, lock->count가 1이라면 unlock 상태이므로 루프를 벗어난다.
@@ -347,7 +347,7 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 		 * got a signal? (This code gets eliminated in the
 		 * TASK_UNINTERRUPTIBLE case.)
 		 */
-		/** 20130713    
+		/** 20130713
 		 * task의 state에 따라 pending된 signal을 처리해야 할 경우
 		 *   ex) state가 TASK_UNINTERRUPTIBLE일 경우 false
 		 * wait_list에서 제거하고, EINTR을 리턴.
@@ -356,84 +356,84 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 		 * [참고]  http://www.test104.com/kr/tech/3844.html
 		 **/
 		if (unlikely(signal_pending_state(state, task))) {
-			/** 20130713    
+			/** 20130713
 			 * waiter를 wait_list에서 제거.
 			 **/
 			mutex_remove_waiter(lock, &waiter,
 					    task_thread_info(task));
-			/** 20130713    
+			/** 20130713
 			 * DEBUG용
 			 **/
 			mutex_release(&lock->dep_map, 1, ip);
-			/** 20130713    
+			/** 20130713
 			 * wait_lock을 해제.
 			 **/
 			spin_unlock_mutex(&lock->wait_lock, flags);
 
-			/** 20130713    
+			/** 20130713
 			 * NULL 함수
 			 **/
 			debug_mutex_free_waiter(&waiter);
-			/** 20130713    
+			/** 20130713
 			 * 선점 가능하게 변경.
 			 * preemption을 사용하지 않아  NULL 함수.
 			 **/
 			preempt_enable();
 			return -EINTR;
 		}
-		/** 20130713    
+		/** 20130713
 		 * task의 state를 지정.
 		 *   ex) task를 TASK_UNINTERRUPT로 설정.
 		 **/
 		__set_task_state(task, state);
 
 		/* didn't get the lock, go to sleep: */
-		/** 20130713    
+		/** 20130713
 		 * wait_lock을 해제
 		 **/
 		spin_unlock_mutex(&lock->wait_lock, flags);
-		/** 20130713    
+		/** 20130713
 		 * scheduling 수행.
 		 **/
 		schedule_preempt_disabled();
-		/** 20130713    
+		/** 20130713
 		 * sleep에서 벗어났을 경우 wait_lock에 lock을 다시 건다.
 		 **/
 		spin_lock_mutex(&lock->wait_lock, flags);
 	}
 
 done:
-	/** 20130713    
+	/** 20130713
 	 * DEBUG용 함수
 	 **/
 	lock_acquired(&lock->dep_map, ip);
 	/* got the lock - rejoice! */
-	/** 20130713    
+	/** 20130713
 	 * 자신을 wait_list에서 제거.
 	 **/
 	mutex_remove_waiter(lock, &waiter, current_thread_info());
-	/** 20130713    
+	/** 20130713
 	 * lock의 owner로 자신을 등록.
 	 **/
 	mutex_set_owner(lock);
 
 	/* set it to 0 if there are no waiters left: */
-	/** 20130713    
+	/** 20130713
 	 * wait_list가 비어 있다면 lock->count를 0으로 만든다.
 	 **/
 	if (likely(list_empty(&lock->wait_list)))
 		atomic_set(&lock->count, 0);
 
-	/** 20130713    
+	/** 20130713
 	 * wait_lock의 lock을 해제.
 	 **/
 	spin_unlock_mutex(&lock->wait_lock, flags);
 
-	/** 20130713    
+	/** 20130713
 	 * mutex lock DEBUG용 함수
 	 **/
 	debug_mutex_free_waiter(&waiter);
-	/** 20130713    
+	/** 20130713
 	 * 선점 가능으로 변경
 	 **/
 	preempt_enable();
@@ -482,7 +482,7 @@ EXPORT_SYMBOL_GPL(mutex_lock_interruptible_nested);
 /*
  * Release the lock, slowpath:
  */
-/** 20130720    
+/** 20130720
  * wait_list에서 waiter를 가져와 깨워준다
  **/
 static inline void
@@ -491,15 +491,15 @@ __mutex_unlock_common_slowpath(atomic_t *lock_count, int nested)
 	struct mutex *lock = container_of(lock_count, struct mutex, count);
 	unsigned long flags;
 
-	/** 20130713    
+	/** 20130713
 	 * wait_lock을 spin_lock으로 잡는다.
 	 **/
 	spin_lock_mutex(&lock->wait_lock, flags);
-	/** 20130713    
+	/** 20130713
 	 * NULL 함수
 	 **/
 	mutex_release(&lock->dep_map, nested, _RET_IP_);
-	/** 20130713    
+	/** 20130713
 	 * MUTEX DEBUG용 함수.
 	 **/
 	debug_mutex_unlock(lock);
@@ -509,38 +509,38 @@ __mutex_unlock_common_slowpath(atomic_t *lock_count, int nested)
 	 * case, others need to leave it locked. In the later case we have to
 	 * unlock it here
 	 */
-	/** 20130713    
+	/** 20130713
 	 * include/asm-generic/mutex-xchg.h
 	 *     #define __mutex_slowpath_needs_to_unlock()		0
 	 **/
 	if (__mutex_slowpath_needs_to_unlock())
 		atomic_set(&lock->count, 1);
 
-	/** 20130713    
+	/** 20130713
 	 * wait_list가 비어 있지 않으면 수행
 	 **/
 	if (!list_empty(&lock->wait_list)) {
 		/* get the first entry from the wait-list: */
-		/** 20130713    
+		/** 20130713
 		 * list_entry로 wait_list의 next가 가리키는 멤버를 포함한 구조체를 가져온다.
 		 **/
 		struct mutex_waiter *waiter =
 				list_entry(lock->wait_list.next,
 					   struct mutex_waiter, list);
 
-		/** 20130713    
+		/** 20130713
 		 * DEBUG용 함수
 		 **/
 		debug_mutex_wake_waiter(lock, waiter);
 
-		/** 20130720    
+		/** 20130720
 		 * wait_list에서 가져온 waiter를 깨운다.
 		 * (runqueue에 넣는다)
 		 **/
 		wake_up_process(waiter->task);
 	}
 
-	/** 20130720    
+	/** 20130720
 	 * wait_lock을 해제하고 flags에 저장된 cpsr을 복원
 	 **/
 	spin_unlock_mutex(&lock->wait_lock, flags);
@@ -549,13 +549,13 @@ __mutex_unlock_common_slowpath(atomic_t *lock_count, int nested)
 /*
  * Release the lock, slowpath:
  */
-/** 20130720    
+/** 20130720
  * mutex unlock하고 wait_list에 entry가 있다면 깨운다.
  **/
 static __used noinline void
 __mutex_unlock_slowpath(atomic_t *lock_count)
 {
-	/** 20130713    
+	/** 20130713
 	 * lock_count와 nested를 1로 전달
 	 **/
 	__mutex_unlock_common_slowpath(lock_count, 1);
@@ -612,7 +612,7 @@ int __sched mutex_lock_killable(struct mutex *lock)
 }
 EXPORT_SYMBOL(mutex_lock_killable);
 
-/** 20130713    
+/** 20130713
  * mutex lock 함수
  *
  *   mutex lock 관련 코드는 noinline으로 명시적으로 선언.
@@ -621,12 +621,12 @@ EXPORT_SYMBOL(mutex_lock_killable);
 static __used noinline void __sched
 __mutex_lock_slowpath(atomic_t *lock_count)
 {
-	/** 20130706    
+	/** 20130706
 	 * lock_count를 가지고 있는 mutex 자료구조를 lock으로 가리킴
 	 **/
 	struct mutex *lock = container_of(lock_count, struct mutex, count);
 
-	/** 20130713    
+	/** 20130713
 	 * mutex lock 획득.
 	 *
 	 * TASK_UNINTERRUPTIBLE로 호출되었기 때문에 -EINTR로 리턴되지 않는다.

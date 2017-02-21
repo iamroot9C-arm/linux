@@ -98,7 +98,7 @@ static int load_script(struct linux_binprm *bprm,struct pt_regs *regs)
 	return search_binary_handler(bprm,regs);
 }
 
-/** 20151010    
+/** 20151010
  * binary format 중 script를 load하기 위한 함수들을 정의한다.
  *
  * 다른 binfmt과 달리 binfmt_script는 항상 포함된다.
@@ -108,7 +108,7 @@ static struct linux_binfmt script_format = {
 	.load_binary	= load_script,
 };
 
-/** 20151010    
+/** 20151010
  * script binary format을 사용하기 위한 초기화로 등록한다.
  **/
 static int __init init_script_binfmt(void)

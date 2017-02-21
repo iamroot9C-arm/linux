@@ -36,7 +36,7 @@
  * Adds the timer node to the timerqueue, sorted by the
  * node's expires value.
  */
-/** 20141115    
+/** 20141115
  * timerqueue에 node를 추가한다.
  *
  * expires기준으로 rb_tree로 정렬된 데이터이다.
@@ -74,7 +74,7 @@ EXPORT_SYMBOL_GPL(timerqueue_add);
  *
  * Removes the timer node from the timerqueue.
  */
-/** 20141108    
+/** 20141108
  * timerqueue에서 timer를 제거한다.
  **/
 void timerqueue_del(struct timerqueue_head *head, struct timerqueue_node *node)

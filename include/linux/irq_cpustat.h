@@ -16,7 +16,7 @@
  * definitions instead of differing sets for each arch.
  */
 
-/** 20140726    
+/** 20140726
  * ARCH에서 별도로 IRQ STAT을 기록하는 함수가 지정되지 않을 때
  * irq_stat[cpu]의 member를 정의한다.
  **/
@@ -26,7 +26,7 @@ extern irq_cpustat_t irq_stat[];		/* defined in asm/hardirq.h */
 #endif
 
   /* arch independent irq_stat fields */
-/** 20140726    
+/** 20140726
  * ARCH에 독립적인 irq_stat 중 현재 cpu의 __softirq_pending 필드를 의미한다.
  **/
 #define local_softirq_pending() \

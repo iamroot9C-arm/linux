@@ -197,7 +197,7 @@ void ptrace_disable(struct task_struct *child)
 /*
  * Handle hitting a breakpoint.
  */
-/** 20151003    
+/** 20151003
  * breakpoint에서 SIGTRAP을 task에 강제(block시켜도 받도록 설정)로 발생시킨다.
  **/
 void ptrace_break(struct task_struct *tsk, struct pt_regs *regs)
@@ -212,7 +212,7 @@ void ptrace_break(struct task_struct *tsk, struct pt_regs *regs)
 	force_sig_info(SIGTRAP, &info, tsk);
 }
 
-/** 20151003    
+/** 20151003
  * hook이 걸렸을 때 실행되는 함수.
  **/
 static int break_trap(struct pt_regs *regs, unsigned int instr)
@@ -221,7 +221,7 @@ static int break_trap(struct pt_regs *regs, unsigned int instr)
 	return 0;
 }
 
-/** 20151003    
+/** 20151003
  * arm instruction break hook
  * instr_mask를 씌워 instr_val이고,
  * cpsr(thumb 모드인지 판단) mask를 씌워 cpsr이 나오면
@@ -251,7 +251,7 @@ static struct undef_hook thumb2_break_hook = {
 	.fn		= break_trap,
 };
 
-/** 20150912    
+/** 20150912
  * Process Trace를 위한 초기화 함수.
  *   https://en.wikipedia.org/wiki/Ptrace
  *   http://www.linuxjournal.com/article/6100

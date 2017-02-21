@@ -16,7 +16,7 @@
 #include <linux/slab.h>
 #include <linux/bug.h>
 
-/** 20151010    
+/** 20151010
  * fsnotify는 filesystem notification의 backend이다.
  * dnotify, inotify, fanotify 같은 다른 notification의 base를 제공한다.
  *
@@ -29,7 +29,7 @@
 /*
  * fsnotify_d_instantiate - instantiate a dentry for inode
  */
-/** 20150328    
+/** 20150328
  * fsnotify 추후 분석 ???
  **/
 static inline void fsnotify_d_instantiate(struct dentry *dentry,
@@ -128,7 +128,7 @@ static inline void fsnotify_move(struct inode *old_dir, struct inode *new_dir,
 /*
  * fsnotify_inode_delete - and inode is being evicted from cache, clean up is needed
  */
-/** 20150321    
+/** 20150321
  * 추후분석???
  **/
 static inline void fsnotify_inode_delete(struct inode *inode)

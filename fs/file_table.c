@@ -32,7 +32,7 @@
 #include "internal.h"
 
 /* sysctl tunables... */
-/** 20151219    
+/** 20151219
  * files_init에서 전체 메모리량을 보고 update 시킨다.
  **/
 struct files_stat_struct files_stat = {
@@ -44,7 +44,7 @@ DEFINE_LGLOCK(files_lglock);
 /* SLAB cache for file structures */
 static struct kmem_cache *filp_cachep __read_mostly;
 
-/** 20150221    
+/** 20150221
  * percpu counter로 nr_files를 선언.
  * 
  * threshold를 넘어설 때 업데이트 되는 전역 카운터와 percpu 카운터가 존재.
@@ -69,7 +69,7 @@ static inline void file_free(struct file *f)
 /*
  * Return the total number of open files in the system
  */
-/** 20151219    
+/** 20151219
  * percpu_counter로 관리하는 파일 개수를 리턴한다.
  **/
 static long get_nr_files(void)
@@ -114,7 +114,7 @@ int proc_nr_files(ctl_table *table, int write,
  * done, you will imbalance int the mount's writer count
  * and a warning at __fput() time.
  */
-/** 20151219    
+/** 20151219
  * 시스템 limit에 도달하지 않았다면 file 구조체를 할당 받아 리턴한다.
  **/
 struct file *get_empty_filp(void)
@@ -126,7 +126,7 @@ struct file *get_empty_filp(void)
 	/*
 	 * Privileged users can go above max_files
 	 */
-	/** 20151219    
+	/** 20151219
 	 * 시스템의 파일수가 limit에 도달했을 경우에는 ADMIN의 경우에만 추가 생성이 가능하다.
 	 **/
 	if (get_nr_files() >= files_stat.max_files && !capable(CAP_SYS_ADMIN)) {
@@ -134,7 +134,7 @@ struct file *get_empty_filp(void)
 		 * percpu_counters are inaccurate.  Do an expensive check before
 		 * we go and fail.
 		 */
-		/** 20151219    
+		/** 20151219
 		 * get_nr_files는 전역 카운트값만 반영하므로 에러 처리 전에
 		 * 정확한 값으로 다시 확인한다.
 		 **/
@@ -142,14 +142,14 @@ struct file *get_empty_filp(void)
 			goto over;
 	}
 
-	/** 20151219    
+	/** 20151219
 	 * filp 캐시로부터 오브젝트를 할당 받는다.
 	 **/
 	f = kmem_cache_zalloc(filp_cachep, GFP_KERNEL);
 	if (f == NULL)
 		goto fail;
 
-	/** 20151219    
+	/** 20151219
 	 * nr_files 증가.
 	 **/
 	percpu_counter_inc(&nr_files);
@@ -157,7 +157,7 @@ struct file *get_empty_filp(void)
 	if (security_file_alloc(f))
 		goto fail_sec;
 
-	/** 20151219    
+	/** 20151219
 	 * filp의 멤버 초기화.
 	 **/
 	INIT_LIST_HEAD(&f->f_u.fu_list);
@@ -197,7 +197,7 @@ fail:
  * If all the callers of init_file() are eliminated, its
  * code should be moved into this function.
  */
-/** 20151219    
+/** 20151219
  * file 구조체를 할당 받고,  전달받은 mode와 fop을 채운다.
  **/
 struct file *alloc_file(struct path *path, fmode_t mode,
@@ -205,14 +205,14 @@ struct file *alloc_file(struct path *path, fmode_t mode,
 {
 	struct file *file;
 
-	/** 20151219    
+	/** 20151219
 	 * file 구조체를 할당 받는다.
 	 **/
 	file = get_empty_filp();
 	if (!file)
 		return NULL;
 
-	/** 20151219    
+	/** 20151219
 	 * 전달받은 argument로 file 구조체를 설정한다.
 	 **/
 	file->f_path = *path;
@@ -226,14 +226,14 @@ struct file *alloc_file(struct path *path, fmode_t mode,
 	 * visible.  We do this for consistency, and so
 	 * that we can do debugging checks at __fput()
 	 */
-	/** 20151219    
+	/** 20151219
 	 * write 모드로 열렸고, special file이 아닌 경우 간단히 write access를 획득.
 	 **/
 	if ((mode & FMODE_WRITE) && !special_file(path->dentry->d_inode->i_mode)) {
 		file_take_write(file);
 		WARN_ON(mnt_clone_write(path->mnt));
 	}
-	/** 20151219    
+	/** 20151219
 	 * readonly로 요청된 경우
 	 **/
 	if ((mode & (FMODE_READ | FMODE_WRITE)) == FMODE_READ)
@@ -268,7 +268,7 @@ static void drop_file_write_access(struct file *file)
 
 /* the real guts of fput() - releasing the last reference to file
  */
-/** 20160130    
+/** 20160130
  *
  * file->f_op->release
  **/
@@ -313,26 +313,26 @@ static void __fput(struct file *file)
 	mntput(mnt);
 }
 
-/** 20160130    
+/** 20160130
  * 전역변수 delayed_fput_list와 spinlock을 정의.
  **/
 static DEFINE_SPINLOCK(delayed_fput_lock);
 static LIST_HEAD(delayed_fput_list);
-/** 20160130    
+/** 20160130
  * fput에서 지연되어 리스트에 달려 있던 작업을 수행한다.
  *
  * delayed_fput_work으로 등록되어 실행되는 함수.
  **/
 static void delayed_fput(struct work_struct *unused)
 {
-	/** 20160130    
+	/** 20160130
 	 * 지역변수 head를 선언하고, delayed_fput_list의 내용을 이관시킨다.
 	 **/
 	LIST_HEAD(head);
 	spin_lock_irq(&delayed_fput_lock);
 	list_splice_init(&delayed_fput_list, &head);
 	spin_unlock_irq(&delayed_fput_lock);
-	/** 20160130    
+	/** 20160130
 	 * 가져온 리스트가 비어있지 않다면 맨 앞의 entry부터 제거하고 __fput을
 	 * 수행시킨다.
 	 **/
@@ -358,7 +358,7 @@ static void ____fput(struct callback_head *work)
  * held and never call that from a thread that might need to do
  * some work on any kind of umount.
  */
-/** 20160130    
+/** 20160130
  * delayed_fput을 직접 호출해 지연되어 있던 fput 기능을 flush 시킨다.
  **/
 void flush_delayed_fput(void)
@@ -366,12 +366,12 @@ void flush_delayed_fput(void)
 	delayed_fput(NULL);
 }
 
-/** 20160130    
+/** 20160130
  * delayed_fput를 수행할 delayed_fput_work 정의.
  **/
 static DECLARE_WORK(delayed_fput_work, delayed_fput);
 
-/** 20160130    
+/** 20160130
  *
  * fput
  **/
@@ -380,7 +380,7 @@ void fput(struct file *file)
 	if (atomic_long_dec_and_test(&file->f_count)) {
 		struct task_struct *task = current;
 		file_sb_list_del(file);
-		/** 20160130    
+		/** 20160130
 		 * interrupt context이거나 kernel thread에서 호출되었다면
 		 * delayed_fput_list에 등록시키고 work으로 걸어 실행시킨다.
 		 **/
@@ -392,7 +392,7 @@ void fput(struct file *file)
 			spin_unlock_irqrestore(&delayed_fput_lock, flags);
 			return;
 		}
-		/** 20160130    
+		/** 20160130
 		 * file 구조체의 rcuhead에 ____fput을 지정한다.
 		 **/
 		init_task_work(&file->f_u.fu_rcuhead, ____fput);
@@ -651,7 +651,7 @@ void mark_files_ro(struct super_block *sb)
 	lg_global_unlock(&files_lglock);
 }
 
-/** 20150221    
+/** 20150221
  * file 관련 초기화를 수행한다.
  *
  * "filp" kmem_cache를 생성하고, max_files 등 관련 전역 변수를 초기화 한다.
@@ -660,7 +660,7 @@ void __init files_init(unsigned long mempages)
 { 
 	unsigned long n;
 
-	/** 20150214    
+	/** 20150214
 	 * "filp" kmem_cache를 생성한다.
 	 **/
 	filp_cachep = kmem_cache_create("filp", sizeof(struct file), 0,
@@ -671,7 +671,7 @@ void __init files_init(unsigned long mempages)
 	 * Per default don't use more than 10% of our memory for files. 
 	 */ 
 
-	/** 20150214    
+	/** 20150214
 	 * inode와 dcache가 필요한 용량을 대략 1K로 잡고
 	 * 한 페이지에 표현할 수 있는 갯수를 구하고,
 	 * 제공된 mempages의 10%만큼 페이지를 사용한다고 했을 때 생성할 수 있는
@@ -681,15 +681,15 @@ void __init files_init(unsigned long mempages)
 	 **/
 	n = (mempages * (PAGE_SIZE / 1024)) / 10;
 	files_stat.max_files = max_t(unsigned long, n, NR_FILE);
-	/** 20150214    
+	/** 20150214
 	 * files defer list init.
 	 **/
 	files_defer_init();
-	/** 20150221    
+	/** 20150221
 	 * local global lock init.
 	 **/
 	lg_lock_init(&files_lglock, "files_lglock");
-	/** 20150221    
+	/** 20150221
 	 * nr_files percpu counter 초기화.
 	 **/
 	percpu_counter_init(&nr_files, 0);

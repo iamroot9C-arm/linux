@@ -14,7 +14,7 @@
 #include <linux/cgroup.h>
 #include <linux/mm.h>
 
-/** 20130629    
+/** 20130629
  * vexpress에서 정의되어 있음.
  **/
 #ifdef CONFIG_CPUSETS
@@ -45,7 +45,7 @@ static inline int cpuset_node_allowed_softwall(int node, gfp_t gfp_mask)
 		__cpuset_node_allowed_softwall(node, gfp_mask);
 }
 
-/** 20131116    
+/** 20131116
  * cpuset 참고
  * https://access.redhat.com/site/documentation/ko-KR/Red_Hat_Enterprise_Linux/6/html/Resource_Management_Guide/sec-cpuset.html
  **/
@@ -55,7 +55,7 @@ static inline int cpuset_node_allowed_hardwall(int node, gfp_t gfp_mask)
 		__cpuset_node_allowed_hardwall(node, gfp_mask);
 }
 
-/** 20130928    
+/** 20130928
  * 추후 보기로 함 ???
  **/
 static inline int cpuset_zone_allowed_softwall(struct zone *z, gfp_t gfp_mask)
@@ -63,7 +63,7 @@ static inline int cpuset_zone_allowed_softwall(struct zone *z, gfp_t gfp_mask)
 	return cpuset_node_allowed_softwall(zone_to_nid(z), gfp_mask);
 }
 
-/** 20131123    
+/** 20131123
  **/
 static inline int cpuset_zone_allowed_hardwall(struct zone *z, gfp_t gfp_mask)
 {

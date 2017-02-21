@@ -29,7 +29,7 @@
 #define DUMMY_ROWS	25
 #endif
 
-/** 20150124    
+/** 20150124
  * dummy console이 시작되고 문자열을 리턴한다.
  **/
 static const char *dummycon_startup(void)
@@ -60,7 +60,7 @@ static int dummycon_dummy(void)
  *  Most of the operations are dummies.
  */
 
-/** 20150124    
+/** 20150124
  *
  **/
 const struct consw dummy_con = {

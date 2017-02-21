@@ -24,7 +24,7 @@
 #include <linux/spinlock.h>
 #include <asm/current.h>
 
-/** 20150314    
+/** 20150314
  * wait_queue_t 자료구조. 
  *
  * wait_queue_head_t로부터 연결.
@@ -33,24 +33,24 @@ typedef struct __wait_queue wait_queue_t;
 typedef int (*wait_queue_func_t)(wait_queue_t *wait, unsigned mode, int flags, void *key);
 int default_wake_function(wait_queue_t *wait, unsigned mode, int flags, void *key);
 
-/** 20150314    
+/** 20150314
  * wait_queue 자료구조.
  **/
 struct __wait_queue {
 	unsigned int flags;
 #define WQ_FLAG_EXCLUSIVE	0x01
 	void *private;
-	/** 20131123    
+	/** 20131123
 	 * __wake_up_common 등에서 task를 깨울 때 호출할 콜백함수를 저장한다.
 	 **/
 	wait_queue_func_t func;
-	/** 20131130    
+	/** 20131130
 	 * list 연결을 위한 list_head
 	 **/
 	struct list_head task_list;
 };
 
-/** 20150314    
+/** 20150314
  *
  **/
 struct wait_bit_key {
@@ -58,7 +58,7 @@ struct wait_bit_key {
 	int bit_nr;
 };
 
-/** 20150314    
+/** 20150314
  * wait bit queue
  **/
 struct wait_bit_queue {
@@ -66,7 +66,7 @@ struct wait_bit_queue {
 	wait_queue_t wait;
 };
 
-/** 20150314    
+/** 20150314
  * wait_queue_t (struct __wait_queue) 들이 연결되는 리스트 head.
  **/
 struct __wait_queue_head {
@@ -81,7 +81,7 @@ struct task_struct;
  * Macros for declaration and initialisaton of the datatypes
  */
 
-/** 20131102    
+/** 20131102
  * struct __wait_queue 초기화
  **/
 #define __WAITQUEUE_INITIALIZER(name, tsk) {				\
@@ -89,26 +89,26 @@ struct task_struct;
 	.func		= default_wake_function,			\
 	.task_list	= { NULL, NULL } }
 
-/** 20131102    
+/** 20131102
  * wait_queue를 생성
  **/
 #define DECLARE_WAITQUEUE(name, tsk)					\
 	wait_queue_t name = __WAITQUEUE_INITIALIZER(name, tsk)
 
-/** 20131102    
+/** 20131102
  * WAIT QUEUE HEAD 초기화값.
  **/
 #define __WAIT_QUEUE_HEAD_INITIALIZER(name) {				\
 	.lock		= __SPIN_LOCK_UNLOCKED(name.lock),		\
 	.task_list	= { &(name).task_list, &(name).task_list } }
 
-/** 20131102    
+/** 20131102
  * wait queue head를 초기화와 함께 선언.
  **/
 #define DECLARE_WAIT_QUEUE_HEAD(name) \
 	wait_queue_head_t name = __WAIT_QUEUE_HEAD_INITIALIZER(name)
 
-/** 20150314    
+/** 20150314
  * word, bit로 wait bit key를 설정한다.
  **/
 #define __WAIT_BIT_KEY_INITIALIZER(word, bit)				\
@@ -116,7 +116,7 @@ struct task_struct;
 
 extern void __init_waitqueue_head(wait_queue_head_t *q, const char *name, struct lock_class_key *);
 
-/** 20130427    
+/** 20130427
  * waitqueue head 초기화.
 
  * CONFIG_LOCKDEP가 정의되어 있지 않아 lock_class_key는 빈 구조체
@@ -164,12 +164,12 @@ extern void add_wait_queue(wait_queue_head_t *q, wait_queue_t *wait);
 extern void add_wait_queue_exclusive(wait_queue_head_t *q, wait_queue_t *wait);
 extern void remove_wait_queue(wait_queue_head_t *q, wait_queue_t *wait);
 
-/** 20131123    
+/** 20131123
  * waitqueue의 task_list에 새로운 wait_queue_t를 등록시킨다.
  **/
 static inline void __add_wait_queue(wait_queue_head_t *head, wait_queue_t *new)
 {
-	/** 20131123    
+	/** 20131123
 	 * head->task_list 다음에 새로운 task_list를 등록한다.
 	 **/
 	list_add(&new->task_list, &head->task_list);
@@ -185,7 +185,7 @@ static inline void __add_wait_queue_exclusive(wait_queue_head_t *q,
 	__add_wait_queue(q, wait);
 }
 
-/** 20141025    
+/** 20141025
  * wait queue 리스트의 tail에 task를 추가한다.
  **/
 static inline void __add_wait_queue_tail(wait_queue_head_t *head,
@@ -194,7 +194,7 @@ static inline void __add_wait_queue_tail(wait_queue_head_t *head,
 	list_add_tail(&new->task_list, &head->task_list);
 }
 
-/** 20141025    
+/** 20141025
  * wait queue 리스트의 tail에 EXCLUSIVE로 task를 추가한다.
  *
  * EXCLUSIVE 속성이 지정된 task는 wake_up시에 배타적으로 깨워져야 한다.
@@ -206,13 +206,13 @@ static inline void __add_wait_queue_tail_exclusive(wait_queue_head_t *q,
 	__add_wait_queue_tail(q, wait);
 }
 
-/** 20131102    
+/** 20131102
  * wait queue에서 old라는 wait queue를 제거한다.
  **/
 static inline void __remove_wait_queue(wait_queue_head_t *head,
 							wait_queue_t *old)
 {
-	/** 20131102    
+	/** 20131102
 	 * old->task_list를 list에서 제거함
 	 **/
 	list_del(&old->task_list);
@@ -232,7 +232,7 @@ int out_of_line_wait_on_bit(void *, int, int (*)(void *), unsigned);
 int out_of_line_wait_on_bit_lock(void *, int, int (*)(void *), unsigned);
 wait_queue_head_t *bit_waitqueue(void *, int);
 
-/** 20160409    
+/** 20160409
  * waitqueue에서 NORMAL 상태의 task 하나를 깨운다.
  **/
 #define wake_up(x)			__wake_up(x, TASK_NORMAL, 1, NULL)
@@ -241,7 +241,7 @@ wait_queue_head_t *bit_waitqueue(void *, int);
 #define wake_up_locked(x)		__wake_up_locked((x), TASK_NORMAL, 1)
 #define wake_up_all_locked(x)		__wake_up_locked((x), TASK_NORMAL, 0)
 
-/** 20131116    
+/** 20131116
  * TASK_INTERRUPTIBLE 속성을 사용해 nr_exclusive 1개를 포함한 task를 깨운다.
  **/
 #define wake_up_interruptible(x)	__wake_up(x, TASK_INTERRUPTIBLE, 1, NULL)
@@ -261,7 +261,7 @@ wait_queue_head_t *bit_waitqueue(void *, int);
 #define wake_up_interruptible_sync_poll(x, m)				\
 	__wake_up_sync_key((x), TASK_INTERRUPTIBLE, 1, (void *) (m))
 
-/** 20160123    
+/** 20160123
  * condition을 만족할 때까지 wq에서 schedule out 되며 기다린다.
  **/
 #define __wait_event(wq, condition) 					\
@@ -289,7 +289,7 @@ do {									\
  * wake_up() has to be called after changing any variable that could
  * change the result of the wait condition.
  */
-/** 20160123    
+/** 20160123
  * 이미 condition을 만족하지 않다면 __wait_event로 schedule out 되어 기다린다.
  **/
 #define wait_event(wq, condition) 					\
@@ -661,7 +661,7 @@ do {									\
  * The function will return -ERESTARTSYS if it was interrupted by a
  * signal and 0 if @condition evaluated to true.
  */
-/** 20131214    
+/** 20131214
  * condition을 만족하지 않았을 경우 __wait_event_killable 호출
  *   wait 상태로 들어가기 전 1차로 condition 검사.
  *   return값은 wait_event_killable를 호출한 곳으로 전달됨.
@@ -697,7 +697,7 @@ void abort_exclusive_wait(wait_queue_head_t *q, wait_queue_t *wait,
 int autoremove_wake_function(wait_queue_t *wait, unsigned mode, int sync, void *key);
 int wake_bit_function(wait_queue_t *wait, unsigned mode, int sync, void *key);
 
-/** 20131123    
+/** 20131123
  * waitqueue 선언.
  * .private에 current를 지정하고, .func에 매개변수로 받은 function을 지정한다.
  * .task_list는 일반적인 list_head.
@@ -710,12 +710,12 @@ int wake_bit_function(wait_queue_t *wait, unsigned mode, int sync, void *key);
 		.task_list	= LIST_HEAD_INIT((name).task_list),	\
 	}
 
-/** 20131123    
+/** 20131123
  * default로 autoremove_wake_function를 function으로 하는 waitqueue를 선언
  **/
 #define DEFINE_WAIT(name) DEFINE_WAIT_FUNC(name, autoremove_wake_function)
 
-/** 20150314    
+/** 20150314
  * 특정 비트가 풀릴 때까지 대기하는 wait_bit_queue를 정의한다.
  *
  * .key  = word의 특정 bit.
@@ -757,13 +757,13 @@ int wake_bit_function(wait_queue_t *wait, unsigned mode, int sync, void *key);
  * One uses wait_on_bit() where one is waiting for the bit to clear,
  * but has no intention of setting it.
  */
-/** 20150314    
+/** 20150314
  * word에서 bit가 클리어 될 때까지 기다린다.
  **/
 static inline int wait_on_bit(void *word, int bit,
 				int (*action)(void *), unsigned mode)
 {
-	/** 20150314    
+	/** 20150314
 	 * word에서 bit가 설정되어 있지 않다면 대기할 필요 없이 바로 리턴.
 	 * 그렇지 않다면 bit가 클리어 될 때까지 기다린다.
 	 **/

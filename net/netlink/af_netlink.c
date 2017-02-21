@@ -61,7 +61,7 @@
 #include <net/scm.h>
 #include <net/netlink.h>
 
-/** 20151031    
+/** 20151031
  * NETLINK 그룹 크기
  * group size는 unsigned long * 8 단위로 정렬시킨 뒤 8로 나눈 값
  **/
@@ -88,7 +88,7 @@ struct netlink_sock {
 	struct module		*module;
 };
 
-/** 20151107    
+/** 20151107
  * listeners
  **/
 struct listeners {
@@ -96,7 +96,7 @@ struct listeners {
 	unsigned long		masks[0];
 };
 
-/** 20151107    
+/** 20151107
  * NETLINK_KERNEL_SOCKET인 경우 0x1
  **/
 #define NETLINK_KERNEL_SOCKET	0x1
@@ -104,7 +104,7 @@ struct listeners {
 #define NETLINK_BROADCAST_SEND_ERROR	0x4
 #define NETLINK_RECV_NO_ENOBUFS	0x8
 
-/** 20151107    
+/** 20151107
  * struct sock을 통해 netlink_sock 구조체를 받아온다.
  *
  * netlink_sock은 sk_alloc에서 obj_size 크기만큼 할당 되었으므로 container_of로
@@ -120,7 +120,7 @@ static inline int netlink_is_kernel(struct sock *sk)
 	return nlk_sk(sk)->flags & NETLINK_KERNEL_SOCKET;
 }
 
-/** 20151031    
+/** 20151031
  * netlink의 pid hash 관련 정보를 정의한 구조체.
  **/
 struct nl_pid_hash {
@@ -136,7 +136,7 @@ struct nl_pid_hash {
 	u32			rnd;
 };
 
-/** 20151031    
+/** 20151031
  * netlink 프로토콜별 table 속성을 정의한 구조체.
  *
  * nl_nonroot : 용어의 의미는???
@@ -153,7 +153,7 @@ struct netlink_table {
 	int			registered;
 };
 
-/** 20151024    
+/** 20151024
  * netlink 프로토콜 패밀리 테이블.
  * netlink_proto_init에서 MAX_LINKS만큼 할당 받았다.
  **/
@@ -173,7 +173,7 @@ static inline u32 netlink_group_mask(u32 group)
 	return group ? 1 << (group - 1) : 0;
 }
 
-/** 20151107    
+/** 20151107
  * netlink pid hash table의 특정 entry를 리턴하는 hash 함수.
  *
  * jhash라는 알고리즘으로 pid와 random 값을 통해 결과값을 만든다.
@@ -225,7 +225,7 @@ static void netlink_sock_destruct(struct sock *sk)
  * this, _but_ remember, it adds useless work on UP machines.
  */
 
-/** 20151031    
+/** 20151031
  *  nl_table에 대한 write lock을 잡는다.
  *  nl_table_users가 존재하면 wait에서 대기한다.
  **/
@@ -236,11 +236,11 @@ void netlink_table_grab(void)
 
 	write_lock_irq(&nl_table_lock);
 
-	/** 20151031    
+	/** 20151031
 	 * nl_table_users가 존재하면, 즉 read lock이 걸려 있다면 wait에서 대기한다.
 	 **/
 	if (atomic_read(&nl_table_users)) {
-		/** 20151031    
+		/** 20151031
 		 * waitqueue 를 정의하고, nl_table_wait에 등록시킨다.
 		 **/
 		DECLARE_WAITQUEUE(wait, current);
@@ -260,7 +260,7 @@ void netlink_table_grab(void)
 	}
 }
 
-/** 20151031    
+/** 20151031
  * nl_table에 대한 write lock을 풀고, 대기 중인 wait을 깨운다.
  **/
 void netlink_table_ungrab(void)
@@ -270,7 +270,7 @@ void netlink_table_ungrab(void)
 	wake_up(&nl_table_wait);
 }
 
-/** 20151031    
+/** 20151031
  * netlink table의 reader lock.
  * user counter를 증가시킨다.
  **/
@@ -284,14 +284,14 @@ netlink_lock_table(void)
 	read_unlock(&nl_table_lock);
 }
 
-/** 20151031    
+/** 20151031
  * netlink table의 reader unlock.
  * 모든 reader가 나갔을 경우 대기 중인 writer를 깨운다.
  **/
 static inline void
 netlink_unlock_table(void)
 {
-	/** 20151031    
+	/** 20151031
 	 * netlink table의 user count를 감소하고,
 	 * 모든 user가 빠져나가면 대기 중인 writer를 깨운다.
 	 **/
@@ -330,7 +330,7 @@ static struct hlist_head *nl_pid_hash_zalloc(size_t size)
 					 get_order(size));
 }
 
-/** 20151107    
+/** 20151107
  * netlink pid hash table로 사용했던 메모리를 해제한다.
  **/
 static void nl_pid_hash_free(struct hlist_head *table, size_t size)
@@ -341,7 +341,7 @@ static void nl_pid_hash_free(struct hlist_head *table, size_t size)
 		free_pages((unsigned long)table, get_order(size));
 }
 
-/** 20151107    
+/** 20151107
  * netlink pid hash table을 새로 만들어 재해쉬 한다.
  * 새로 생성한 hash table은 랜덤값이 달라 pid가 동일해도 재해쉬가 된다.
  *
@@ -358,7 +358,7 @@ static int nl_pid_hash_rehash(struct nl_pid_hash *hash, int grow)
 	osize = size = (mask + 1) * sizeof(*table);
 	shift = hash->shift;
 
-	/** 20151107    
+	/** 20151107
 	 * grow가 필요하면 size를 2배 늘린다.
 	 **/
 	if (grow) {
@@ -368,7 +368,7 @@ static int nl_pid_hash_rehash(struct nl_pid_hash *hash, int grow)
 		size *= 2;
 	}
 
-	/** 20151107    
+	/** 20151107
 	 * 새로 hash table을 할당 받는다.
 	 **/
 	table = nl_pid_hash_zalloc(size);
@@ -379,12 +379,12 @@ static int nl_pid_hash_rehash(struct nl_pid_hash *hash, int grow)
 	hash->table = table;
 	hash->mask = mask;
 	hash->shift = shift;
-	/** 20151107    
+	/** 20151107
 	 * 새로운 random number를 받아온다.
 	 **/
 	get_random_bytes(&hash->rnd, sizeof(hash->rnd));
 
-	/** 20151107    
+	/** 20151107
 	 * 이전 hash table을 순회하며 각 node를 재해쉬 한다.
 	 **/
 	for (i = 0; i <= omask; i++) {
@@ -395,31 +395,31 @@ static int nl_pid_hash_rehash(struct nl_pid_hash *hash, int grow)
 			__sk_add_node(sk, nl_pid_hashfn(hash, nlk_sk(sk)->pid));
 	}
 
-	/** 20151107    
+	/** 20151107
 	 * old hash table을 해제한다.
 	 **/
 	nl_pid_hash_free(otable, osize);
-	/** 20151107    
+	/** 20151107
 	 * 다음 rehash시간을 10분 뒤로 잡아준다.
 	 **/
 	hash->rehash_time = jiffies + 10 * 60 * HZ;
 	return 1;
 }
 
-/** 20151107    
+/** 20151107
  * 재해쉬를 하여 hash를 희석한다.
  **/
 static inline int nl_pid_hash_dilute(struct nl_pid_hash *hash, int len)
 {
 	int avg = hash->entries >> hash->shift;
 
-	/** 20151107    
+	/** 20151107
 	 * average 값이 1을 넘거나 rehash가 되었다면 리턴한다.
 	 **/
 	if (unlikely(avg > 1) && nl_pid_hash_rehash(hash, 1))
 		return 1;
 
-	/** 20151107    
+	/** 20151107
 	 * len이 average 값을 넘고 일정시간이 초과되었다면 rehash 한다.
 	 **/
 	if (unlikely(len > avg) && time_after(jiffies, hash->rehash_time)) {
@@ -430,7 +430,7 @@ static inline int nl_pid_hash_dilute(struct nl_pid_hash *hash, int len)
 	return 0;
 }
 
-/** 20151107    
+/** 20151107
  * protocol별 operation 구조체.
  **/
 static const struct proto_ops netlink_ops;
@@ -455,7 +455,7 @@ netlink_update_listeners(struct sock *sk)
 	 * makes sure updates are visible before bind or setsockopt return. */
 }
 
-/** 20151107    
+/** 20151107
  * sock 구조체를 pid 정보로 hash table의 위치를 구해 entry로 등록한다.
  **/
 static int netlink_insert(struct sock *sk, struct net *net, u32 pid)
@@ -467,16 +467,16 @@ static int netlink_insert(struct sock *sk, struct net *net, u32 pid)
 	struct hlist_node *node;
 	int len;
 
-	/** 20151107    
+	/** 20151107
 	 * netlink table에 대한 write lock을 잡는다.
 	 **/
 	netlink_table_grab();
-	/** 20151107    
+	/** 20151107
 	 * hash와 pid를 통해 nl_table의 hash entry의 위치를 받아온다.
 	 **/
 	head = nl_pid_hashfn(hash, pid);
 	len = 0;
-	/** 20151107    
+	/** 20151107
 	 * hlist head의 각 노드를 순회하며 데이터 구조체 sock을 받아온다.
 	 *
 	 * hlist를 순회하면서 이미 같은 net의 같은 pid를 사용하는 node가 있다면
@@ -498,25 +498,25 @@ static int netlink_insert(struct sock *sk, struct net *net, u32 pid)
 	if (BITS_PER_LONG > 32 && unlikely(hash->entries >= UINT_MAX))
 		goto err;
 
-	/** 20151107    
+	/** 20151107
 	 * len이 존재하고 hash 재배치가 진행되었다면
 	 * hash와 pid로 새로운 hash 위치를 구해온다.
 	 **/
 	if (len && nl_pid_hash_dilute(hash, len))
 		head = nl_pid_hashfn(hash, pid);
-	/** 20151107    
+	/** 20151107
 	 * hash 전체의 entries가 증가되었고, hash에 사용된 pid를 저장한다.
 	 **/
 	hash->entries++;
 	nlk_sk(sk)->pid = pid;
-	/** 20151107    
+	/** 20151107
 	 * hlist 위치에 sock 구조체를 등록한다.
 	 **/
 	sk_add_node(sk, head);
 	err = 0;
 
 err:
-	/** 20151107    
+	/** 20151107
 	 * netlink table에 대한 write lock을 해제한다.
 	 **/
 	netlink_table_ungrab();
@@ -533,7 +533,7 @@ static void netlink_remove(struct sock *sk)
 	netlink_table_ungrab();
 }
 
-/** 20151031    
+/** 20151031
  * netlink protocol 정의
  *
  * .obj_size : netlink 프로토콜 자체의 구조체 사이즈를 잡아둔다.
@@ -544,7 +544,7 @@ static struct proto netlink_proto = {
 	.obj_size = sizeof(struct netlink_sock),
 };
 
-/** 20151107    
+/** 20151107
  * netlink 소켓을 생성하고, sock 구조체 데이터를 초기화 한다.
  *
  * sock구조체를 할당 받고(이 때 netlink_sock 구조체만큼 할당), sock data를 초기화 한다.
@@ -559,12 +559,12 @@ static int __netlink_create(struct net *net, struct socket *sock,
 	struct sock *sk;
 	struct netlink_sock *nlk;
 
-	/** 20151107    
+	/** 20151107
 	 * socket의 ops를 netlink_ops로 지정한다.
 	 **/
 	sock->ops = &netlink_ops;
 
-	/** 20151107    
+	/** 20151107
 	 * struct sock을 할당 받는다.
 	 *
 	 * struct socket은 공통 인터페이스이므로 외부에서 할당 받았고,
@@ -574,16 +574,16 @@ static int __netlink_create(struct net *net, struct socket *sock,
 	if (!sk)
 		return -ENOMEM;
 
-	/** 20151107    
+	/** 20151107
 	 * 할당 받은 sock 구조체의 멤버를 초기화 하고, socket 구조체와 서로 연결한다.
 	 **/
 	sock_init_data(sock, sk);
 
-	/** 20151107    
+	/** 20151107
 	 * sock 자료구조로부터 netlink_sock 구조체를 받아온다.
 	 **/
 	nlk = nlk_sk(sk);
-	/** 20151107    
+	/** 20151107
 	 * cb_mutex가 넘어온 경우 netlink_sock의 멤버로 지정.
 	 * 그렇지 않은 경우 default mutex를 멤버로 지정.
 	 **/
@@ -593,12 +593,12 @@ static int __netlink_create(struct net *net, struct socket *sock,
 		nlk->cb_mutex = &nlk->cb_def_mutex;
 		mutex_init(nlk->cb_mutex);
 	}
-	/** 20151107    
+	/** 20151107
 	 * waitqueue 초기화.
 	 **/
 	init_waitqueue_head(&nlk->wait);
 
-	/** 20151107    
+	/** 20151107
 	 * sock 구조체의 destruct와 프로토콜을 지정한다.
 	 * 
 	 * 프로토콜은 NETLINK_KOBJECT_UEVENT.
@@ -1677,7 +1677,7 @@ out:
 	return err ? : copied;
 }
 
-/** 20151107    
+/** 20151107
  * netlink는 sk_data_ready가 호출되지 않는다.
  **/
 static void netlink_data_ready(struct sock *sk, int len)
@@ -1691,7 +1691,7 @@ static void netlink_data_ready(struct sock *sk, int len)
  *	queueing.
  */
 
-/** 20151107    
+/** 20151107
  * netlink 중 unit (프로토콜)에 해당하는 kernel socket을 pid 0으로 생성한다.
  * 생성한 소켓은 hash table에 등록된다.
  *
@@ -1714,7 +1714,7 @@ netlink_kernel_create(struct net *net, int unit,
 	if (unit < 0 || unit >= MAX_LINKS)
 		return NULL;
 
-	/** 20151107    
+	/** 20151107
 	 * socket을 할당 받고, SOCK_DGRAM type으로 설정한다.
 	 * 생성된 socket은 sock으로 받아온다.
 	 **/
@@ -1727,19 +1727,19 @@ netlink_kernel_create(struct net *net, int unit,
 	 * So we create one inside init_net and the move it to net.
 	 */
 
-	/** 20151107    
+	/** 20151107
 	 * netlink 소켓을 생성한다.
 	 **/
 	if (__netlink_create(&init_net, sock, cb_mutex, unit) < 0)
 		goto out_sock_release_nosk;
 
-	/** 20151107    
+	/** 20151107
 	 * 할당 받은 sock구조체를 받아와 net을 지정한다.
 	 **/
 	sk = sock->sk;
 	sk_change_net(sk, net);
 
-	/** 20151107    
+	/** 20151107
 	 * cfg가 없거나 설정된 groups가 32 미만이면 32로 지정.
 	 **/
 	if (!cfg || cfg->groups < 32)
@@ -1747,7 +1747,7 @@ netlink_kernel_create(struct net *net, int unit,
 	else
 		groups = cfg->groups;
 
-	/** 20151107    
+	/** 20151107
 	 * 가변배열을 포함한 listeners와 groups의 숫자만큼 메모리를 할당 받는다.
 	 **/
 	listeners = kzalloc(sizeof(*listeners) + NLGRPSZ(groups), GFP_KERNEL);
@@ -1755,20 +1755,20 @@ netlink_kernel_create(struct net *net, int unit,
 		goto out_sock_release;
 
 	sk->sk_data_ready = netlink_data_ready;
-	/** 20151107    
+	/** 20151107
 	 * cfg의 input이 정의되어 있다면 netlink_rcv로 설정한다.
 	 **/
 	if (cfg && cfg->input)
 		nlk_sk(sk)->netlink_rcv = cfg->input;
 
-	/** 20151107    
+	/** 20151107
 	 * 생성한 소켓을 netlink hash table에 hash를 구해 등록시킨다.
 	 * kernel socket이므로 pid는 0을 사용한다.
 	 **/
 	if (netlink_insert(sk, net, 0))
 		goto out_sock_release;
 
-	/** 20151107    
+	/** 20151107
 	 * sock 구조체를 통해 netlink_sock 구조체를 받아온다.
 	 * netlink socket이 kernel socket용임을 설정한다.
 	 **/
@@ -1776,7 +1776,7 @@ netlink_kernel_create(struct net *net, int unit,
 	nlk->flags |= NETLINK_KERNEL_SOCKET;
 
 	netlink_table_grab();
-	/** 20151107    
+	/** 20151107
 	 * netlink protocol table의 unit이 이미 등록되어 있지 않으면 새로 등록한 뒤
 	 * entry를 채운다.
 	 *
@@ -1886,7 +1886,7 @@ void netlink_clear_multicast_users(struct sock *ksk, unsigned int group)
 	netlink_table_ungrab();
 }
 
-/** 20151024    
+/** 20151024
  * nl_table의 protocol에 해당하는 entry 중 nonroot에 flags를 저장한다.
  *
  * nl_nonroot는 현재 capable 검사시에만 사용한다???
@@ -2325,7 +2325,7 @@ static const struct proto_ops netlink_ops = {
 	.sendpage =	sock_no_sendpage,
 };
 
-/** 20151031    
+/** 20151031
  * netlink family (AF/PF) ops를 추가한다.
  *
  * .create는 sock_create()에서 socket 구조체를 생성한 이후 호출되어
@@ -2337,7 +2337,7 @@ static const struct net_proto_family netlink_family_ops = {
 	.owner	= THIS_MODULE,	/* for consistency 8) */
 };
 
-/** 20151031    
+/** 20151031
  * netlink pernet ops 중 init 콜백.
  *
  * proc에 지정한 fops로 netlink라는 파일을 생성한다.
@@ -2345,7 +2345,7 @@ static const struct net_proto_family netlink_family_ops = {
 static int __net_init netlink_net_init(struct net *net)
 {
 #ifdef CONFIG_PROC_FS
-	/** 20151031    
+	/** 20151031
 	 * procfs를 사용할 경우 net 아래 netlink 항목을 생성한다.
 	 * 이 항목에 대한 file ops를 지정한다.
 	 **/
@@ -2362,7 +2362,7 @@ static void __net_exit netlink_net_exit(struct net *net)
 #endif
 }
 
-/** 20151031    
+/** 20151031
  * netlink table의 usersock 프로토콜에 대한 항목을 채운다.
  **/
 static void __init netlink_add_usersock_entry(void)
@@ -2370,19 +2370,19 @@ static void __init netlink_add_usersock_entry(void)
 	struct listeners *listeners;
 	int groups = 32;
 
-	/** 20151031    
+	/** 20151031
 	 * listener와 nl group의 크기만큼 메모리를 할당한다.
 	 **/
 	listeners = kzalloc(sizeof(*listeners) + NLGRPSZ(groups), GFP_KERNEL);
 	if (!listeners)
 		panic("netlink_add_usersock_entry: Cannot allocate listeners\n");
 
-	/** 20151031    
+	/** 20151031
 	 * netlink table에 대한 writer lock을 잡은 상태로 진행한다.
 	 **/
 	netlink_table_grab();
 
-	/** 20151031    
+	/** 20151031
 	 * netlink table의 usersock 항목을 채운다.
 	 **/
 	nl_table[NETLINK_USERSOCK].groups = groups;
@@ -2393,7 +2393,7 @@ static void __init netlink_add_usersock_entry(void)
 	netlink_table_ungrab();
 }
 
-/** 20151031    
+/** 20151031
  * netlink pernet ops.
  **/
 static struct pernet_operations __net_initdata netlink_net_ops = {
@@ -2401,7 +2401,7 @@ static struct pernet_operations __net_initdata netlink_net_ops = {
 	.exit = netlink_net_exit,
 };
 
-/** 20151017    
+/** 20151017
  * kernel <-> userspace 인터페이스로 사용되는 netlink 소켓을 초기화 한다.
  *
  * - netlink 프로토콜 등록
@@ -2414,7 +2414,7 @@ static int __init netlink_proto_init(void)
 	int i;
 	unsigned long limit;
 	unsigned int order;
-	/** 20151031    
+	/** 20151031
 	 * netlink 프로토콜을 등록한다.
 	 **/
 	int err = proto_register(&netlink_proto, 0);
@@ -2424,14 +2424,14 @@ static int __init netlink_proto_init(void)
 
 	BUILD_BUG_ON(sizeof(struct netlink_skb_parms) > sizeof(dummy_skb->cb));
 
-	/** 20151031    
+	/** 20151031
 	 * netlink 프로토콜 패밀리용 table 배열을 MAX_LINKS만큼 할당 받는다.
 	 **/
 	nl_table = kcalloc(MAX_LINKS, sizeof(*nl_table), GFP_KERNEL);
 	if (!nl_table)
 		goto panic;
 
-	/** 20151031    
+	/** 20151031
 	 * 전체 페이지 수에 따라 limit 크기를 결정한다.
 	 **/
 	if (totalram_pages >= (128 * 1024))
@@ -2443,7 +2443,7 @@ static int __init netlink_proto_init(void)
 	limit = (1UL << order) / sizeof(struct hlist_head);
 	order = get_bitmask_order(min(limit, (unsigned long)UINT_MAX)) - 1;
 
-	/** 20151031    
+	/** 20151031
 	 * 각 netlink 프로토콜별 hash 정보를 초기화 한다.
 	 **/
 	for (i = 0; i < MAX_LINKS; i++) {
@@ -2460,28 +2460,28 @@ static int __init netlink_proto_init(void)
 		hash->max_shift = order;
 		hash->shift = 0;
 		hash->mask = 0;
-		/** 20151107    
+		/** 20151107
 		 * 현재 시간을 rehash_time으로 넣어준다.
 		 **/
 		hash->rehash_time = jiffies;
 	}
 
-	/** 20151031    
+	/** 20151031
 	 * netlink 테이블의 usersock  entry를 추가한다.
 	 **/
 	netlink_add_usersock_entry();
 
-	/** 20151031    
+	/** 20151031
 	 * netlink 프로토콜 패밀리를 등록한다.
 	 **/
 	sock_register(&netlink_family_ops);
-	/** 20151031    
+	/** 20151031
 	 * netlink 프로토콜의 net ops를 pernet subsystem으로 등록한다.
 	 * 등록 과정에서 init 함수가 호출된다.
 	 **/
 	register_pernet_subsys(&netlink_net_ops);
 	/* The netlink device handler may be needed early. */
-	/** 20151031    
+	/** 20151031
 	 * netlink 핸들러 중 빠르게 초기화 되어야 할 프로토콜 초기화를 직접 호출한다.
 	 *
 	 * routing table 초기화.

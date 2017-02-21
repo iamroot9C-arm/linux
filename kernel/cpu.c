@@ -24,7 +24,7 @@
 
 #ifdef CONFIG_SMP
 /* Serializes the updates to cpu_online_mask, cpu_present_mask */
-/** 20150801    
+/** 20150801
  * cpu_add_remove_lock으로 cpu_online_mask, cpu_present_mask을 보호한다.
  **/
 static DEFINE_MUTEX(cpu_add_remove_lock);
@@ -33,7 +33,7 @@ static DEFINE_MUTEX(cpu_add_remove_lock);
  * The following two API's must be used when attempting
  * to serialize the updates to cpu_online_mask, cpu_present_mask.
  */
-/** 20130727    
+/** 20130727
  * cpu_online_mask, cpu_present_mask가 변경되는 작업을 serialize 시킨다.
  *   - cpu_add_remove_lock을 mutex lock으로 건다
  *
@@ -52,7 +52,7 @@ void cpu_maps_update_done(void)
 	mutex_unlock(&cpu_add_remove_lock);
 }
 
-/** 20130727    
+/** 20130727
  * cpu_chain이라는 이름으로 notifier head를 선언한다.
  *
  * notifier block이 등록되는 전역 chain.
@@ -63,7 +63,7 @@ static RAW_NOTIFIER_HEAD(cpu_chain);
 /* If set, cpu_up and cpu_down will return -EBUSY and do nothing.
  * Should always be manipulated under cpu_add_remove_lock
  */
-/** 20151010    
+/** 20151010
  * cpu hotplug 동작을 불가능하게 하는 조건 변수.
  * 이 변수가 설정되어 있으면 cpu_up, cpu_down시 -EBUSY가 리턴된다.
  *
@@ -88,20 +88,20 @@ static struct {
 	.refcount = 0,
 };
 
-/** 20130706    
+/** 20130706
  * CONFIG_HOTPLUG_CPU 옵션이 켜 있어 이 함수 실행
  **/
-/** 20130720    
+/** 20130720
  * cpu_hotplug를 참조하는 refcount를 증가시킨다.
  *     cpu_hotplug_begin 에서 refcount가 0이 될 때까지 반복하며 대기한다.
  **/
 void get_online_cpus(void)
 {
-	/** 20130720    
+	/** 20130720
 	 * schedule 포인트를 둔다
 	 **/
 	might_sleep();
-	/** 20130706    
+	/** 20130706
 	 * cpu_hotplug_begin 전에는 초기값 NULL.
 	 * cpu_hotplug_begin에서 active_writer를 current로 넣어 수행 중인 task를 기록한다.
 	 * activate_writer가 현재 함수를 수행 중인 task와 같다면
@@ -110,7 +110,7 @@ void get_online_cpus(void)
 	if (cpu_hotplug.active_writer == current)
 		return;
 	mutex_lock(&cpu_hotplug.lock);
-	/** 20130713    
+	/** 20130713
 	 * refcount를 증가.
 	 *
 	 * from kernel/cpu.c
@@ -123,7 +123,7 @@ void get_online_cpus(void)
 }
 EXPORT_SYMBOL_GPL(get_online_cpus);
 
-/** 20140510    
+/** 20140510
  * cpu_hotplug의 사용을 끝낸다.
  **/
 void put_online_cpus(void)
@@ -131,7 +131,7 @@ void put_online_cpus(void)
 	if (cpu_hotplug.active_writer == current)
 		return;
 	mutex_lock(&cpu_hotplug.lock);
-	/** 20140510    
+	/** 20140510
 	 * cpu_hotplug가 다른 작업에 의해 참조되지 않고 (refcount),
 	 * active_write가 존재한다면 (cpu_hotplug_begin 상태에서 대기)
 	 * 해당 task를 깨운다.
@@ -165,7 +165,7 @@ EXPORT_SYMBOL_GPL(put_online_cpus);
  * get_online_cpus() not an api which is called all that often.
  *
  */
-/** 20150808    
+/** 20150808
  * hotplug operation 작업 전에, refcount가 0인 경우에만 진입하도록 함.
  * cpu_maps_update_begin 이후 호출되므로 하나의 writer만 활성화되는 것이 보장된다.
  *
@@ -179,12 +179,12 @@ EXPORT_SYMBOL_GPL(put_online_cpus);
  **/
 static void cpu_hotplug_begin(void)
 {
-	/** 20150808    
+	/** 20150808
 	 * 현재 task를 active_writer로 기록한다.
 	 **/
 	cpu_hotplug.active_writer = current;
 
-	/** 20150808    
+	/** 20150808
 	 * refcount가 0일 때(get_online_cpus가 아닌 상태)까지 lock을 잡은 상태로 리턴.
 	 *
 	 * get_online_cpus() 호출한 경우 refcount가 증가되고,
@@ -200,7 +200,7 @@ static void cpu_hotplug_begin(void)
 	}
 }
 
-/** 20150808    
+/** 20150808
  * cpu_hotplug의 active_writer를 비우고, hotplug lock을 해제한다.
  **/
 static void cpu_hotplug_done(void)
@@ -215,7 +215,7 @@ static void cpu_hotplug_done(void) {}
 #endif	/* #else #if CONFIG_HOTPLUG_CPU */
 
 /* Need to know about CPUs going up/down? */
-/** 20130727    
+/** 20130727
  * cpu_chain이라는 notifier head에 nb를 등록한다.
  * notifier_block은 우선순위가 높은 순서부터 정렬된다.
  *
@@ -224,11 +224,11 @@ static void cpu_hotplug_done(void) {}
 int __ref register_cpu_notifier(struct notifier_block *nb)
 {
 	int ret;
-	/** 20130727    
+	/** 20130727
 	 * cpu 관련 자료구조 전후에  호출해 원자성을 보장한다.
 	 **/
 	cpu_maps_update_begin();
-	/** 20130727    
+	/** 20130727
 	 * cpu_chain이라는 notifier chain에 notifier_block을 등록한다.
 	 **/
 	ret = raw_notifier_chain_register(&cpu_chain, nb);
@@ -236,7 +236,7 @@ int __ref register_cpu_notifier(struct notifier_block *nb)
 	return ret;
 }
 
-/** 20140927    
+/** 20140927
  * cpu_chain에 등록된 notifier_block을 호출한다.
  *
  * val : 전달할 event
@@ -255,7 +255,7 @@ static int __cpu_notify(unsigned long val, void *v, int nr_to_call,
 	return notifier_to_errno(ret);
 }
 
-/** 20140927    
+/** 20140927
  * register_cpu_notifier로 등록한 notifier_block을 호출한다.
  **/
 static int cpu_notify(unsigned long val, void *v)
@@ -265,7 +265,7 @@ static int cpu_notify(unsigned long val, void *v)
 
 #ifdef CONFIG_HOTPLUG_CPU
 
-/** 20140927    
+/** 20140927
  **/
 static void cpu_notify_nofail(unsigned long val, void *v)
 {
@@ -362,7 +362,7 @@ static int __ref take_cpu_down(void *_param)
 static int __ref _cpu_down(unsigned int cpu, int tasks_frozen)
 {
 	int err, nr_calls = 0;
-	/** 20141018    
+	/** 20141018
 	 * handled cpu.
 	 **/
 	void *hcpu = (void *)(long)cpu;
@@ -405,7 +405,7 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen)
 	 *
 	 * Wait for the stop thread to go away.
 	 */
-	/** 20160227    
+	/** 20160227
 	 * stop_machine 과정을 완료하고, migration이 완료되면 해당 cpu는 idle이 되고
 	 * 그 뒤에 cpu_die 작업을 진행한다.
 	 **/
@@ -416,7 +416,7 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen)
 	__cpu_die(cpu);
 
 	/* CPU is completely dead: tell everyone.  Too late to complain. */
-	/** 20140927    
+	/** 20140927
 	 * hcpu가 정상적으로 죽은 경우 CPU_DEAD message를 보낸다.
 	 **/
 	cpu_notify_nofail(CPU_DEAD | mod, hcpu);
@@ -451,7 +451,7 @@ EXPORT_SYMBOL(cpu_down);
 #endif /*CONFIG_HOTPLUG_CPU*/
 
 /* Requires cpu_add_remove_lock to be held */
-/** 20150808    
+/** 20150808
  * 주어진 cpu를 up시킨다. 
  * 임계구역의 직렬화를 위해 cpu_maps_update_begin ~ cpu_maps_update_done 사이에서 진행한다.
  **/
@@ -465,12 +465,12 @@ static int __cpuinit _cpu_up(unsigned int cpu, int tasks_frozen)
 	if (cpu_online(cpu) || !cpu_present(cpu))
 		return -EINVAL;
 
-	/** 20150808    
+	/** 20150808
 	 * cpu hotplug 동작이 진행되므로 lock을 잡은 상태로 진행한다.
 	 **/
 	cpu_hotplug_begin();
 
-	/** 20150118    
+	/** 20150118
 	 * idle_threads_init에서 넣어둔 idle thread를 cpu에 대한 idle task로 지정하고,
 	 * 해당 task를 받아온다.
 	 **/
@@ -480,13 +480,13 @@ static int __cpuinit _cpu_up(unsigned int cpu, int tasks_frozen)
 		goto out;
 	}
 
-	/** 20150801    
+	/** 20150801
 	 * __cpu_up 이전에 CPU_UP_PREPARE notify를 보낸다.
 	 * 
 	 * 등록되어 있는 각 nb의 callback 함수들에서 CPU_UP_PREPARE에 해당하는 동작을 실행한다.
 	 **/
 	ret = __cpu_notify(CPU_UP_PREPARE | mod, hcpu, -1, &nr_calls);
-	/** 20150801    
+	/** 20150801
 	 *
 	 **/
 	if (ret) {
@@ -497,7 +497,7 @@ static int __cpuinit _cpu_up(unsigned int cpu, int tasks_frozen)
 	}
 
 	/* Arch-specific enabling code. */
-	/** 20150808    
+	/** 20150808
 	 * architecture에서 제공하는 방식으로 cpu를 up시킨다.
 	 **/
 	ret = __cpu_up(cpu, idle);
@@ -506,20 +506,20 @@ static int __cpuinit _cpu_up(unsigned int cpu, int tasks_frozen)
 	BUG_ON(!cpu_online(cpu));
 
 	/* Now call notifier in preparation. */
-	/** 20150808    
+	/** 20150808
 	 * cpu가 up 되었으므로 CPU_ONLINE notify를 날린다.
 	 **/
 	cpu_notify(CPU_ONLINE | mod, hcpu);
 
 out_notify:
-	/** 20150801    
+	/** 20150801
 	 * ret이 0이 아닌 경우, 성공한 notifier chain의 callback 함수들에게
 	 * CPU_UP_CANCELED notify를 보낸다.
 	 **/
 	if (ret != 0)
 		__cpu_notify(CPU_UP_CANCELED | mod, hcpu, nr_calls, NULL);
 out:
-	/** 20150808    
+	/** 20150808
 	 * cpu hotplug 작업을 마치고 lock을 해제한다.
 	 **/
 	cpu_hotplug_done();
@@ -527,7 +527,7 @@ out:
 	return ret;
 }
 
-/** 20150808    
+/** 20150808
  * 해당 cpu를 up시킨다.
  **/
 int __cpuinit cpu_up(unsigned int cpu)
@@ -539,7 +539,7 @@ int __cpuinit cpu_up(unsigned int cpu)
 	pg_data_t	*pgdat;
 #endif
 
-	/** 20150801    
+	/** 20150801
 	 * cpu가 possible하지 않는다면 error.
 	 **/
 	if (!cpu_possible(cpu)) {
@@ -552,7 +552,7 @@ int __cpuinit cpu_up(unsigned int cpu)
 		return -EINVAL;
 	}
 
-	/** 20150801    
+	/** 20150801
 	 * MEMORY HOTPLUG가 정의되어 있지 않다.
 	 **/
 #ifdef	CONFIG_MEMORY_HOTPLUG
@@ -577,7 +577,7 @@ int __cpuinit cpu_up(unsigned int cpu)
 	}
 #endif
 
-	/** 20150801    
+	/** 20150801
 	 * cpu online, present mask가 변경되는 작업을 serialize 한다.
 	 **/
 	cpu_maps_update_begin();
@@ -587,7 +587,7 @@ int __cpuinit cpu_up(unsigned int cpu)
 		goto out;
 	}
 
-	/** 20150808    
+	/** 20150808
 	 * cpu를 up시킨다.
 	 *
 	 * 내부에서 platform 의존적인 함수를 호출한다.
@@ -595,7 +595,7 @@ int __cpuinit cpu_up(unsigned int cpu)
 	err = _cpu_up(cpu, 0);
 
 out:
-	/** 20150808    
+	/** 20150808
 	 * cpu online, present mask가 변경되는 임계구역의 끝.
 	 **/
 	cpu_maps_update_done();
@@ -604,7 +604,7 @@ out:
 EXPORT_SYMBOL_GPL(cpu_up);
 
 #ifdef CONFIG_PM_SLEEP_SMP
-/** 20151010    
+/** 20151010
  * PM_SLEEP_SMP가 선언되어 있으므로 frozen_cpus인 cpumask를 사용한다.
  **/
 static cpumask_var_t frozen_cpus;
@@ -695,7 +695,7 @@ out:
 	cpu_maps_update_done();
 }
 
-/** 20151010    
+/** 20151010
  * frozen_cpus를 위한 cpumask 변수를 할당한다.
  *
  * CPUMASK_OFFSTACK를 선언하지 않았으므로 실제로 취하는 동작은 없다.
@@ -719,7 +719,7 @@ core_initcall(alloc_frozen_cpus);
  * (and hence the freezer) will block here until any currently running CPU
  * hotplug operation gets completed.
  */
-/** 20151010    
+/** 20151010
  * CPU hotplug 동작과 freezer 사이의 경쟁을 방지하기 위해 freeze 동작 전
  * hotplug 불가상태로 만든다.
  **/
@@ -735,7 +735,7 @@ void cpu_hotplug_disable_before_freeze(void)
  * When tasks have been thawed, re-enable regular CPU hotplug (which had been
  * disabled while beginning to freeze tasks).
  */
-/** 20151010    
+/** 20151010
  * tasks들(freezer 포함)의 재개가 이뤄진 후, CPU hotplug 동작을 가능하도록 한다.
  **/
 void cpu_hotplug_enable_after_thaw(void)
@@ -756,7 +756,7 @@ void cpu_hotplug_enable_after_thaw(void)
  * hotplug and Suspend/Hibernate call paths by hooking onto the Suspend/
  * Hibernate notifications.
  */
-/** 20151010    
+/** 20151010
  * PM 관련 작업이 이뤄지기 전, CPU hotplug와 freezer 사이의 경쟁을 회피하기 위한
  * 콜백 함수.
  *
@@ -789,7 +789,7 @@ cpu_hotplug_pm_callback(struct notifier_block *nb,
 }
 
 
-/** 20151003    
+/** 20151003
  * PM 관련 동기화를 위한 cpu hotplug notifier block을 선언하고 등록한다.
  **/
 static int __init cpu_hotplug_pm_sync_init(void)
@@ -809,7 +809,7 @@ core_initcall(cpu_hotplug_pm_sync_init);
  * It must be called by the arch code on the new cpu, before the new cpu
  * enables interrupts and before the "boot" cpu returns from __cpu_up().
  */
-/** 20150808    
+/** 20150808
  * 해당 cpu가 시작했음을 cpu_notify로 통보한다.
  *
  * PM_SLEEP에서 깨어난 경우 CPU_STARTING_FROZEN를 그렇지 않은 경우 CPU_STARTING.
@@ -818,7 +818,7 @@ void __cpuinit notify_cpu_starting(unsigned int cpu)
 {
 	unsigned long val = CPU_STARTING;
 
-	/** 20150808    
+	/** 20150808
 	 * PM_SLEEP_SMP가 정의되어 있고, 이 cpu가 frozen_cpus에 들어 있다면
 	 * val를 CPU_STARTING_FROZEN로 지정한다.
 	 **/
@@ -826,7 +826,7 @@ void __cpuinit notify_cpu_starting(unsigned int cpu)
 	if (frozen_cpus != NULL && cpumask_test_cpu(cpu, frozen_cpus))
 		val = CPU_STARTING_FROZEN;
 #endif /* CONFIG_PM_SLEEP_SMP */
-	/** 20150808    
+	/** 20150808
 	 * 설정된 val로 cpu notify를 날린다.
 	 *
 	 * PM_SLEEP이 아닌 경우 CPU_STARTING notify를 날리고, 
@@ -846,7 +846,7 @@ void __cpuinit notify_cpu_starting(unsigned int cpu)
  */
 
 /* cpu_bit_bitmap[0] is empty - so we can back into it */
-/** 20141122    
+/** 20141122
  * mask를 1개, 2개, 4개, 8개 선언하는 매크로.
  * 각 mask에는 비트당 
  **/
@@ -855,7 +855,7 @@ void __cpuinit notify_cpu_starting(unsigned int cpu)
 #define MASK_DECLARE_4(x)	MASK_DECLARE_2(x), MASK_DECLARE_2(x+2)
 #define MASK_DECLARE_8(x)	MASK_DECLARE_4(x), MASK_DECLARE_4(x+4)
 
-/** 20141122    
+/** 20141122
  * 비트가 설정된 비트맵을 왼쪽 끝으로 몰아놓은 형태의 table.
  * (re-ordering)
  *
@@ -877,7 +877,7 @@ const unsigned long cpu_bit_bitmap[BITS_PER_LONG+1][BITS_TO_LONGS(NR_CPUS)] = {
 };
 EXPORT_SYMBOL_GPL(cpu_bit_bitmap);
 
-/** 20141122    
+/** 20141122
  * cpu 개수(NR_CPUS)만큼 1로 채워진 cpu_mask를 선언.
  **/
 const DECLARE_BITMAP(cpu_all_bits, NR_CPUS) = CPU_BITS_ALL;
@@ -887,13 +887,13 @@ EXPORT_SYMBOL(cpu_all_bits);
 static DECLARE_BITMAP(cpu_possible_bits, CONFIG_NR_CPUS) __read_mostly
 	= CPU_BITS_ALL;
 #else
-/** 20130518    
+/** 20130518
  * unsigned long cpu_possible_bits[BITS_TO_LONGS(CONFIG_NR_CPUS)]
  *   -> unsigned long cpu_possible_bits[1]
  **/
 static DECLARE_BITMAP(cpu_possible_bits, CONFIG_NR_CPUS) __read_mostly;
 #endif
-/** 20150523    
+/** 20150523
  * cpu_XXX_bits로 cpumask로 변환한다.
  *
  * cpu_possible_mask - 해당 비트에 대한 CPU가 존재할 수 있다.
@@ -922,7 +922,7 @@ static DECLARE_BITMAP(cpu_active_bits, CONFIG_NR_CPUS) __read_mostly;
 const struct cpumask *const cpu_active_mask = to_cpumask(cpu_active_bits);
 EXPORT_SYMBOL(cpu_active_mask);
 
-/** 20130518    
+/** 20130518
  * cpu possible bitmap mask 설정.
  *
  * cpu: n번째 cpu bit.
@@ -958,7 +958,7 @@ void set_cpu_online(unsigned int cpu, bool online)
 		cpumask_clear_cpu(cpu, to_cpumask(cpu_online_bits));
 }
 
-/** 20150725    
+/** 20150725
  * active에 따라 cpu를 active mask에 포함하거나 제거한다.
  **/
 void set_cpu_active(unsigned int cpu, bool active)
@@ -969,7 +969,7 @@ void set_cpu_active(unsigned int cpu, bool active)
 		cpumask_clear_cpu(cpu, to_cpumask(cpu_active_bits));
 }
 
-/** 20150613    
+/** 20150613
  * 소스 cpumask를 present mask에 복사.
  **/
 void init_cpu_present(const struct cpumask *src)
@@ -977,7 +977,7 @@ void init_cpu_present(const struct cpumask *src)
 	cpumask_copy(to_cpumask(cpu_present_bits), src);
 }
 
-/** 20150613    
+/** 20150613
  * 소스 cpumask를 possible mask에 복사.
  **/
 void init_cpu_possible(const struct cpumask *src)
@@ -985,7 +985,7 @@ void init_cpu_possible(const struct cpumask *src)
 	cpumask_copy(to_cpumask(cpu_possible_bits), src);
 }
 
-/** 20150613    
+/** 20150613
  * 소스 cpumask를 online mask에 복사.
  **/
 void init_cpu_online(const struct cpumask *src)

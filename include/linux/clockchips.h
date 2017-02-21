@@ -79,7 +79,7 @@ enum clock_event_nofitiers {
  * @cpumask:		cpumask to indicate for which CPUs this device works
  * @list:		list head for the management code
  */
-/** 20141108    
+/** 20141108
  * 특정 시간에 이벤트(인터럽트)를 발생시키는 장치이다.
  *
  * next_event : oneshot 모드에서 다음 event가 발생할 시간(tick_next_period)을 저장한다.
@@ -155,7 +155,7 @@ extern int clockevents_program_event(struct clock_event_device *dev,
 
 extern void clockevents_handle_noop(struct clock_event_device *dev);
 
-/** 20141227    
+/** 20141227
  * 
  **/
 static inline void

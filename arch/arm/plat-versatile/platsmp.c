@@ -30,7 +30,7 @@ volatile int __cpuinitdata pen_release = -1;
  * observers, irrespective of whether they're taking part in coherency
  * or not.  This is necessary for the hotplug code to work reliably.
  */
-/** 20150118    
+/** 20150118
  * pen_release에 val로 넘어온 cpu번호를 쓰고, cache를 flush한다.
  *
  * 다른 core에서 실행 중인 versatile_secondary_startup에서 pen_release에
@@ -48,7 +48,7 @@ static void __cpuinit write_pen_release(int val)
 
 static DEFINE_SPINLOCK(boot_lock);
 
-/** 20150808    
+/** 20150808
  * 깨어난 core가 platform 종속적인 작업을 수행한다.
  **/
 void __cpuinit platform_secondary_init(unsigned int cpu)
@@ -58,7 +58,7 @@ void __cpuinit platform_secondary_init(unsigned int cpu)
 	 * core (e.g. timer irq), then they will not have been enabled
 	 * for us: do so
 	 */
-	/** 20150808    
+	/** 20150808
 	 * secondary core가 부팅함에 따로 필요한 설정을 한다.
 	 **/
 	gic_secondary_init(0);
@@ -67,7 +67,7 @@ void __cpuinit platform_secondary_init(unsigned int cpu)
 	 * let the primary processor know we're out of the
 	 * pen, then head off into the C entry point
 	 */
-	/** 20150124    
+	/** 20150124
 	 * pen_release에 -1을 넣어주면 부팅시킨 후 대기 중이던
 	 * primary processor (boot cpu)가 다음 부분을 수행한다.
 	 **/
@@ -76,7 +76,7 @@ void __cpuinit platform_secondary_init(unsigned int cpu)
 	/*
 	 * Synchronise with the boot thread.
 	 */
-	/** 20150124    
+	/** 20150124
 	 * pen_release 이후 boot thread가 대기를 마치고 진행하면 spinlock을 해제한다.
 	 * 그것을 대기하기 위한 코드이다.
 	 **/
@@ -84,7 +84,7 @@ void __cpuinit platform_secondary_init(unsigned int cpu)
 	spin_unlock(&boot_lock);
 }
 
-/** 20150124    
+/** 20150124
  * 특정 cpu를 pen_release 방식으로 깨우고,
  * 깨어난 뒤에 spinlock으로 동기화를 맞추고 진행한다.
  **/
@@ -104,7 +104,7 @@ int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
 	 * since we haven't sent them a soft interrupt, they shouldn't
 	 * be there.
 	 */
-	/** 20150124    
+	/** 20150124
 	 * 깨울 cpu에 해당하는 물리번호를 가져와 pen_release 위치에 쓴다.
 	 * 쓰고 나서 cache를 clean 시킨다.
 	 **/
@@ -115,7 +115,7 @@ int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
 	 * the boot monitor to read the system wide flags register,
 	 * and branch to the address found there.
 	 */
-	/** 20150124    
+	/** 20150124
 	 * 깨울 cpu로 cpumask로 생성해 그 mask에 gic를 통해 irq 0(SGI)을 날린다.
 	 *
 	 * platform_smp_prepare_cpus에서 secondary startup 주소를 기록해 두었다.
@@ -124,7 +124,7 @@ int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
 	 **/
 	gic_raise_softirq(cpumask_of(cpu), 0);
 
-	/** 20150124    
+	/** 20150124
 	 * 깨어난 cpu가 init 과정을 마치고 pen_release에 -1을 넣어줄 때까지 대기한다.
 	 *
 	 * platform_secondary_init에서 부팅을 마친 코어가 pen_release에 -1을 쓴다.
@@ -144,7 +144,7 @@ int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
 	 */
 	spin_unlock(&boot_lock);
 
-	/** 20150801    
+	/** 20150801
 	 * pen_release가 -1이면 up시킬 cpu가 정상 부팅이 된 것이다.
 	 **/
 	return pen_release != -1 ? -ENOSYS : 0;

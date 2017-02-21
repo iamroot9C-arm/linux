@@ -68,7 +68,7 @@ void __init page_cgroup_init_flatmem(void)
 
 	int nid, fail;
 
-	/** 20130803    
+	/** 20130803
 	 * true가 리턴되므로 바로 return.
 	 **/
 	if (mem_cgroup_disabled())

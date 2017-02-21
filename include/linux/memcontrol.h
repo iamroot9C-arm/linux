@@ -220,7 +220,7 @@ static inline void mem_cgroup_cancel_charge_swapin(struct mem_cgroup *memcg)
 {
 }
 
-/** 20140524    
+/** 20140524
  **/
 static inline void mem_cgroup_uncharge_start(void)
 {
@@ -238,7 +238,7 @@ static inline void mem_cgroup_uncharge_cache_page(struct page *page)
 {
 }
 
-/** 20131214    
+/** 20131214
  * zone의 lruvec을 리턴.
  **/
 static inline struct lruvec *mem_cgroup_zone_lruvec(struct zone *zone,
@@ -247,7 +247,7 @@ static inline struct lruvec *mem_cgroup_zone_lruvec(struct zone *zone,
 	return &zone->lruvec;
 }
 
-/** 20140104    
+/** 20140104
  * zone의 lruvec을 리턴.
  **/
 static inline struct lruvec *mem_cgroup_page_lruvec(struct page *page,
@@ -295,7 +295,7 @@ static inline void mem_cgroup_end_migration(struct mem_cgroup *memcg,
 {
 }
 
-/** 20131214    
+/** 20131214
  * NULL.
  **/
 static inline struct mem_cgroup *
@@ -311,7 +311,7 @@ static inline void mem_cgroup_iter_break(struct mem_cgroup *root,
 {
 }
 
-/** 20130803    
+/** 20130803
  * 항상 true를 리턴
  **/
 static inline bool mem_cgroup_disabled(void)
@@ -337,7 +337,7 @@ mem_cgroup_get_lru_size(struct lruvec *lruvec, enum lru_list lru)
 	return 0;
 }
 
-/** 20140524    
+/** 20140524
  * MEM_CG를 사용하지 않아 정의되지 않음
  **/
 static inline void
@@ -371,7 +371,7 @@ static inline void mem_cgroup_dec_page_stat(struct page *page,
 {
 }
 
-/** 20131214    
+/** 20131214
  * 정의되어 있지 않음.
  **/
 static inline
@@ -397,7 +397,7 @@ static inline void mem_cgroup_replace_page_cache(struct page *oldpage,
 #endif /* CONFIG_MEMCG */
 
 #if !defined(CONFIG_MEMCG) || !defined(CONFIG_DEBUG_VM)
-/** 20131005    
+/** 20131005
  * CONFIG_MEMCG 가 정의되어 있지 않아 항상 false.
  **/
 static inline bool

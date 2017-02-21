@@ -5,7 +5,7 @@
 	.macro set_tls_none, tp, tmp1, tmp2
 	.endm
 
-	/** 20150118    
+	/** 20150118
 	 * CP15 명령을 사용해 TLS register를 설정한다.
 	 * (이후 버전에서 switch_tls로 바뀌면서 구현내용도 변경되었다)
 	 **/
@@ -41,7 +41,7 @@
 #define has_tls_reg		(elf_hwcap & HWCAP_TLS)
 #define set_tls		set_tls_v6
 #elif defined(CONFIG_CPU_32v6K)
-/** 20150118    
+/** 20150118
  * TLS 관련 config.
  * Cortex-A 시리즈에 TLS 레지스터가 제공되므로,
  * TLS emulation이 필요하지 않다.

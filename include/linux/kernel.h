@@ -47,7 +47,7 @@
 
 #define REPEAT_BYTE(x)	((~0ul / 0xff) * (x))
 
-/** 20130803    
+/** 20130803
  * x를 a단위로 ALIGN을 맞춘다 (올림)
  *
  * PTR_ALIGN : pointer의 align을 맞춘다.
@@ -69,7 +69,7 @@
  * as wide as the result!), and we want to evaluate the macro
  * arguments just once each.
  */
-/** 20130803    
+/** 20130803
  * __round_mask : (x)(y-1)
  * round_up     : mask와 bit or를 해 모든 비트를 켜준 뒤 1을 더해 올림 수행
  * round_down   : mask에 해당하는 비트들을 제거해 내림
@@ -96,7 +96,7 @@
 #endif
 
 /* The `const' in roundup() prevents gcc-3.3 from calling __divdi3 */
-/** 20130608    
+/** 20130608
  * x를 y 단위로 round up 시킴.
  **/
 #define roundup(x, y) (					\
@@ -111,7 +111,7 @@
 	__x - (__x % (y));				\
 }							\
 )
-/** 20141227    
+/** 20141227
  * x를 divisor로 나눠 몫을 반올림한다.
  **/
 #define DIV_ROUND_CLOSEST(x, divisor)(			\
@@ -175,7 +175,7 @@ struct completion;
 struct pt_regs;
 struct user;
 
-/** 20130706    
+/** 20130706
  *  "explicit preemption points"를 더 많이 두어 latency를 줄이고자 할 때 사용.
  *
  *  might_resched는 might_sleep에서 호출.
@@ -185,7 +185,7 @@ struct user;
 extern int _cond_resched(void);
 # define might_resched() _cond_resched()
 #else
-/** 20130706    
+/** 20130706
  * 옵션이 꺼져 있어 NULL.
  **/
 # define might_resched() do { } while (0)
@@ -208,14 +208,14 @@ extern int _cond_resched(void);
 #else
   static inline void __might_sleep(const char *file, int line,
 				   int preempt_offset) { }
-/** 20130706    
+/** 20130706
  * resched가 필요하다면 voluntary하게 schedule를 호출할 수 있다.
  * CONFIG_DEBUG_ATOMIC_SLEEP config가 꺼져 있어 아래 함수 실행
  **/
 # define might_sleep() do { might_resched(); } while (0)
 #endif
 
-/** 20130907    
+/** 20130907
  * condition을 만족하면 might_sleep() 함수 호출.
  **/
 #define might_sleep_if(cond) do { if (cond) might_sleep(); } while (0)
@@ -426,7 +426,7 @@ extern int root_mountflags;
 extern bool early_boot_irqs_disabled;
 
 /* Values used for system_state */
-/** 20160130    
+/** 20160130
  * system_states
  **/
 extern enum system_states {
@@ -615,7 +615,7 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
  * strict type-checking.. See the
  * "unnecessary" pointer comparison.
  */
-/** 20130406    
+/** 20130406
  * 작은 값을 취하는 macro.
  * 주소값을 비교하는 이유는 비교할 대상의 타입 체킹을 하기 위함임.
  **/
@@ -726,7 +726,7 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
  * type and min and max are literals that will otherwise be assigned a signed
  * integer type.
  */
-/** 20150711    
+/** 20150711
  * value와 min과 max를 넘어가면 value를 min과 max로 잡아준다.
  *
  * value는 unsigned 값이고, min과 max는 literal이어서 signed 일 때 유용하다.
@@ -752,7 +752,7 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
  * @member:	the name of the member within the struct.
  *
  */
-/** 20130330    
+/** 20130330
  * ptr를 member로 가지고 있는 type 구조체의 위치를 반환한다.
  *
  * ptr : 구조체에 포함된 멤버 포인터.
@@ -782,14 +782,14 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
 #endif
 
 /* This helps us avoid #ifdef CONFIG_COMPACTION */
-/** 20140118    
+/** 20140118
  * CONFIG_COMPACTION이 정의되어 있지 않아
  *  COMPACTION_BUILD는 0
  **/
 #ifdef CONFIG_COMPACTION
 #define COMPACTION_BUILD 1
 #else
-/** 20131214    
+/** 20131214
  * CONFIG_COMPACTION 설정되어 있지 않다.
  **/
 #define COMPACTION_BUILD 0

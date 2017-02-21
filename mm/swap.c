@@ -36,7 +36,7 @@
 /* How many pages do we try to swap or page in/out together? */
 int page_cluster;
 
-/** 20140104    
+/** 20140104
  * lru_add_pvecs는 LRU 종류의 수만큼 pagevec이 배열로 percpu로 존재한다.
  * lru_add_pvecs : lru cache
  **/
@@ -175,7 +175,7 @@ skip_lock_tail:
  **/
 void put_page(struct page *page)
 {
-	/** 20140607    
+	/** 20140607
 	 * compound page인 경우 put_compound_page로 해제 (분석 생략???)
 	 * put page를 해 usage count가 0인 경우 __put_single_page로 해제
 	 **/
@@ -313,7 +313,7 @@ int get_kernel_page(unsigned long start, int write, struct page **pages)
 }
 EXPORT_SYMBOL_GPL(get_kernel_page);
 
-/** 20140104    
+/** 20140104
  * pagevec으로 참조되는 page들을 arg(분석한 path에서는 lru)로 이동시키는 함수.
  *   이동하는 동작을 수행할 함수는 move_fn으로 전달 받는다.
  * lru에서 move 시킨 뒤에 release_pages를 호출.
@@ -344,7 +344,7 @@ static void pagevec_lru_move_fn(struct pagevec *pvec,
 			spin_lock_irqsave(&zone->lru_lock, flags);
 		}
 
-		/** 20140104    
+		/** 20140104
 		 * mem cgroup을 사용하지 않을 경우 일반적인 zone의 lruvec을 가져온다.
 		 **/
 		lruvec = mem_cgroup_page_lruvec(page, zone);
@@ -356,7 +356,7 @@ static void pagevec_lru_move_fn(struct pagevec *pvec,
 	if (zone)
 		spin_unlock_irqrestore(&zone->lru_lock, flags);
 
-	/** 20140104    
+	/** 20140104
 	 * move_fn로 이동되었으므로
 	 *   pvec->nr 개수만큼의 page들을 각각 release 한다.
 	 **/
@@ -364,7 +364,7 @@ static void pagevec_lru_move_fn(struct pagevec *pvec,
 	pagevec_reinit(pvec);
 }
 
-/** 20140104    
+/** 20140104
  * page를 page type에 따라 새로운 INACTIVE lru list에 등록.
  **/
 static void pagevec_move_tail_fn(struct page *page, struct lruvec *lruvec,
@@ -372,16 +372,16 @@ static void pagevec_move_tail_fn(struct page *page, struct lruvec *lruvec,
 {
 	int *pgmoved = arg;
 
-	/** 20140104    
+	/** 20140104
 	 * page가 LRU에 등록되어 있고, Active 상태가 아니고, evictable이라면
 	 **/
 	if (PageLRU(page) && !PageActive(page) && !PageUnevictable(page)) {
-		/** 20140104    
+		/** 20140104
 		 * page의 type에 해당하는 INACTIVE LRU를 가져온다. 
 		 **/
 		enum lru_list lru = page_lru_base_type(page);
 		list_move_tail(&page->lru, &lruvec->lists[lru]);
-		/** 20140104    
+		/** 20140104
 		 * pgmoved를 하나 증가
 		 **/
 		(*pgmoved)++;
@@ -392,7 +392,7 @@ static void pagevec_move_tail_fn(struct page *page, struct lruvec *lruvec,
  * pagevec_move_tail() must be called with IRQ disabled.
  * Otherwise this may cause nasty races.
  */
-/** 20140104    
+/** 20140104
  * pvec에 들어있는 page들을 pagevec_move_tail_fn을 통해
  * 새로운 lru list의 tail에 추가시킨다.
  **/
@@ -439,42 +439,42 @@ static void update_page_reclaim_stat(struct lruvec *lruvec,
 		reclaim_stat->recent_rotated[file]++;
 }
 
-/** 20140104    
+/** 20140104
  * page를 기존의 lru list에서 제거하고 (보통 cpu lru list),
  * active 시켜 zone의 해당 타입에 맞는 active lru list에 등록한다.
  **/
 static void __activate_page(struct page *page, struct lruvec *lruvec,
 			    void *arg)
 {
-	/** 20140104    
+	/** 20140104
 	 * page가 LRU list에 속해 있고, Active 하지 않고, evictable 하다면
 	 **/
 	if (PageLRU(page) && !PageActive(page) && !PageUnevictable(page)) {
-		/** 20140104    
+		/** 20140104
 		 * lru의 flie/anon 여부, base type 을 가져옴
 		 **/
 		int file = page_is_file_cache(page);
 		int lru = page_lru_base_type(page);
 
-		/** 20140104    
+		/** 20140104
 		 * page를 현재 lru에서 제거한다.
 		 **/
 		del_page_from_lru_list(page, lruvec, lru);
-		/** 20140104    
+		/** 20140104
 		 * page의 속성을 active로 만든다.
 		 **/
 		SetPageActive(page);
-		/** 20140104    
+		/** 20140104
 		 * inactive lru -> active lru로 옮긴다.
 		 **/
 		lru += LRU_ACTIVE;
 		add_page_to_lru_list(page, lruvec, lru);
 
-		/** 20140104    
+		/** 20140104
 		 * PGACTIVATE event를 업데이트한다.
 		 **/
 		__count_vm_event(PGACTIVATE);
-		/** 20140104    
+		/** 20140104
 		 * reclaim stat를 업데이트 한다.
 		 **/
 		update_page_reclaim_stat(lruvec, file, 1);
@@ -484,17 +484,17 @@ static void __activate_page(struct page *page, struct lruvec *lruvec,
 #ifdef CONFIG_SMP
 static DEFINE_PER_CPU(struct pagevec, activate_page_pvecs);
 
-/** 20140104    
+/** 20140104
  * cpu의 lru list에서 제거하고, active시켜 zone의 lru list에 등록시킨다.
  **/
 static void activate_page_drain(int cpu)
 {
-	/** 20140104    
+	/** 20140104
 	 * cpu에 해당하는 activate_page_pvecs pagevec을 가져옴
 	 **/
 	struct pagevec *pvec = &per_cpu(activate_page_pvecs, cpu);
 
-	/** 20140104    
+	/** 20140104
 	 * pvec이 비어 있지 않다면 activate_page로 move 한다.
 	 **/
 	if (pagevec_count(pvec))
@@ -635,7 +635,7 @@ void add_page_to_unevictable_list(struct page *page)
  * be write it out by flusher threads as this is much more effective
  * than the single-page writeout from reclaim.
  */
-/** 20140104    
+/** 20140104
  * active lru list에서 zone lruvec의 inactive lru list로 이동시킨다.
  **/
 static void lru_deactivate_fn(struct page *page, struct lruvec *lruvec,
@@ -644,50 +644,50 @@ static void lru_deactivate_fn(struct page *page, struct lruvec *lruvec,
 	int lru, file;
 	bool active;
 
-	/** 20140104    
+	/** 20140104
 	 * page가 LRU에 속해 있지 않다면 return
 	 **/
 	if (!PageLRU(page))
 		return;
 
-	/** 20140104    
+	/** 20140104
 	 * page가 Unevictable 하다면 return
 	 **/
 	if (PageUnevictable(page))
 		return;
 
 	/* Some processes are using the page */
-	/** 20140104    
+	/** 20140104
 	 * page가 page_mapped라면 리턴
 	 **/
 	if (page_mapped(page))
 		return;
 
-	/** 20140104    
+	/** 20140104
 	 * page의 현재 active 여부, file_cache 여부, lru base type을 가져옴
 	 **/
 	active = PageActive(page);
 	file = page_is_file_cache(page);
 	lru = page_lru_base_type(page);
 
-	/** 20140104    
+	/** 20140104
 	 * page를 lru list에서 제거한다.
 	 **/
 	del_page_from_lru_list(page, lruvec, lru + active);
-	/** 20140104    
+	/** 20140104
 	 * flags에서 Active 속성을 제거
 	 **/
 	ClearPageActive(page);
-	/** 20140104    
+	/** 20140104
 	 * flags에서 refereced 속성을 제거
 	 **/
 	ClearPageReferenced(page);
-	/** 20140104    
+	/** 20140104
 	 * active 속성만 제거하고 zone의 inactive lru list에 추가한다.
 	 **/
 	add_page_to_lru_list(page, lruvec, lru);
 
-	/** 20140104    
+	/** 20140104
 	 * page가 page_mapped가 아니면서 writeback이거나 dirty라면
 	 **/
 	if (PageWriteback(page) || PageDirty(page)) {
@@ -696,12 +696,12 @@ static void lru_deactivate_fn(struct page *page, struct lruvec *lruvec,
 		 * It can make readahead confusing.  But race window
 		 * is _really_ small and  it's non-critical problem.
 		 */
-		/** 20140104    
+		/** 20140104
 		 * page에 PG_reclaim으로 표시
 		 **/
 		SetPageReclaim(page);
 	} else {
-		/** 20140104    
+		/** 20140104
 		 * 그렇지 않다면 새로운 inactive lru list로 옮긴다.
 		 **/
 		/*
@@ -709,19 +709,19 @@ static void lru_deactivate_fn(struct page *page, struct lruvec *lruvec,
 		 * We moves tha page into tail of inactive.
 		 */
 		list_move_tail(&page->lru, &lruvec->lists[lru]);
-		/** 20140104    
+		/** 20140104
 		 * ROTATED 이벤트를 갱신
 		 **/
 		__count_vm_event(PGROTATED);
 	}
 
-	/** 20140104    
+	/** 20140104
 	 * page가 기존에 active 상태였다면 deactivate 정보를 갱신한다.
 	 **/
 	if (active)
 		__count_vm_event(PGDEACTIVATE);
 	
-	/** 20140104    
+	/** 20140104
 	 * reclaim stat을 증가시킨다.
 	 *   scanned는 증가시키고, rotate는 증가시키지 않는다.
 	 **/
@@ -733,7 +733,7 @@ static void lru_deactivate_fn(struct page *page, struct lruvec *lruvec,
  * Either "cpu" is the current CPU, and preemption has already been
  * disabled; or "cpu" is being hot-unplugged, and is already dead.
  */
-/** 20140104    
+/** 20140104
  * cpu pagevecs에 있던 pages 들을 zone의 lruvec의 해당하는 lru list로 옮긴다.
  **/
 void lru_add_drain_cpu(int cpu)
@@ -745,23 +745,23 @@ void lru_add_drain_cpu(int cpu)
 	struct pagevec *pvec;
 	int lru;
 
-	/** 20140104    
+	/** 20140104
 	 * percpu lru_add_pvecs의 lru list 별 pagevec에 대해
 	 **/
 	for_each_lru(lru) {
 		pvec = &pvecs[lru - LRU_BASE];
-		/** 20140104    
+		/** 20140104
 		 * pagevec에 등록된 page가 있다면, 해당 page들을 lru에 추가한다.
 		 **/
 		if (pagevec_count(pvec))
 			__pagevec_lru_add(pvec, lru);
 	}
 
-	/** 20140104    
+	/** 20140104
 	 * 현재 cpu에 해당하는 lru_rotate_pvecs 변수를 가져온다.
 	 **/
 	pvec = &per_cpu(lru_rotate_pvecs, cpu);
-	/** 20140104    
+	/** 20140104
 	 * 해당 cpu의 lru_rotate_pvecs에 page가 존재하면
 	 **/
 	if (pagevec_count(pvec)) {
@@ -769,7 +769,7 @@ void lru_add_drain_cpu(int cpu)
 
 		/* No harm done if a racing interrupt already did this */
 		local_irq_save(flags);
-		/** 20140104    
+		/** 20140104
 		 * percpu lru list에서 제거해
 		 * zone의 INACTIVE lru list에 등록한다.
 		 **/
@@ -777,21 +777,21 @@ void lru_add_drain_cpu(int cpu)
 		local_irq_restore(flags);
 	}
 
-	/** 20140104    
+	/** 20140104
 	 * 현재 cpu에 해당하는 lru_deactivate_pvecs 변수를 가져온다.
 	 **/
 	pvec = &per_cpu(lru_deactivate_pvecs, cpu);
-	/** 20140104    
+	/** 20140104
 	 * 해당 cpu의 lru_deactivate_pvecs에 page가 존재하면
 	 **/
 	if (pagevec_count(pvec))
-		/** 20140104    
+		/** 20140104
 		 * percpu lru list에서 제거해
 		 * zone lruvec의 inactive lru list에 등록한다.
 		 **/
 		pagevec_lru_move_fn(pvec, lru_deactivate_fn, NULL);
 
-	/** 20140104    
+	/** 20140104
 	 * cpu의 activate_page_pvecs의 lru에서 제거하고,
 	 *   zone lruvec의 active lru list에 추가한다.
 	 **/
@@ -824,16 +824,16 @@ void deactivate_page(struct page *page)
 	}
 }
 
-/** 20140104    
+/** 20140104
  * 해당 cpu의 lru list에 머물러 있던 page들을 zone의 lru list로 옮긴다.
  **/
 void lru_add_drain(void)
 {
-	/** 20140104    
+	/** 20140104
 	 * cpu의 lru list에 있던 page들을 zone의 해당 lru list로 옮긴다.
 	 **/
 	lru_add_drain_cpu(get_cpu());
-	/** 20140104    
+	/** 20140104
 	 * 선점 가능 여부를 리턴한다.
 	 **/
 	put_cpu();
@@ -865,7 +865,7 @@ int lru_add_drain_all(void)
  * grabbed the page via the LRU.  If it did, give up: shrink_inactive_list()
  * will free it.
  */
-/** 20140104    
+/** 20140104
  * page의 usage count를 감소시키고, 그 결과 0가 되었다면
  *   page를 lru에서 제거하고, free 한다.
  **/
@@ -880,7 +880,7 @@ void release_pages(struct page **pages, int nr, int cold)
 	for (i = 0; i < nr; i++) {
 		struct page *page = pages[i];
 
-		/** 20140104    
+		/** 20140104
 		 * Compound Page라면 수행
 		 *   - lock을 풀고, zone은 NULL
 		 **/
@@ -893,29 +893,29 @@ void release_pages(struct page **pages, int nr, int cold)
 			continue;
 		}
 
-		/** 20140104    
+		/** 20140104
 		 * page의 usage count를 감소시키고, 그 결과 0이면 이후 라인 진행
 		 **/
 		if (!put_page_testzero(page))
 			continue;
 
-		/** 20140104    
+		/** 20140104
 		 * LRU에 등록된 page라면
 		 **/
 		if (PageLRU(page)) {
-			/** 20140104    
+			/** 20140104
 			 * page의 zone 정보를 얻어와서
 			 **/
 			struct zone *pagezone = page_zone(page);
 
-			/** 20140104    
+			/** 20140104
 			 * page가 속한 zone과 zone 정보가 다르면
 			 **/
 			if (pagezone != zone) {
 				if (zone)
 					spin_unlock_irqrestore(&zone->lru_lock,
 									flags);
-				/** 20140104    
+				/** 20140104
 				 * zone을 page가 속한 zone에 대한 포인터로 만든다.
 				 **/
 				zone = pagezone;
@@ -924,14 +924,14 @@ void release_pages(struct page **pages, int nr, int cold)
 
 			lruvec = mem_cgroup_page_lruvec(page, zone);
 			VM_BUG_ON(!PageLRU(page));
-			/** 20140104    
+			/** 20140104
 			 * page의 flags에서 LRU에 해당하는 bit속성을 clear.
 			 **/
 			__ClearPageLRU(page);
 			del_page_from_lru_list(page, lruvec, page_off_lru(page));
 		}
 
-		/** 20140104    
+		/** 20140104
 		 * 한 번에 등록해 주기 위해 함수 내 지역변수에 우선 등록해 둔다.
 		 **/
 		list_add(&page->lru, &pages_to_free);
@@ -939,7 +939,7 @@ void release_pages(struct page **pages, int nr, int cold)
 	if (zone)
 		spin_unlock_irqrestore(&zone->lru_lock, flags);
 
-	/** 20140104    
+	/** 20140104
 	 * hot/cold 여부에 따라 pages_to_free 개수만큼 page를 해제 한다.
 	 **/
 	free_hot_cold_page_list(&pages_to_free, cold);
@@ -1040,7 +1040,7 @@ static void __pagevec_lru_add_fn(struct page *page, struct lruvec *lruvec,
 	if (active)
 		SetPageActive(page);
 
-	/** 20140104    
+	/** 20140104
 	 * lru list에 page를 추가한다.
 	 **/
 	add_page_to_lru_list(page, lruvec, lru);
@@ -1051,18 +1051,18 @@ static void __pagevec_lru_add_fn(struct page *page, struct lruvec *lruvec,
  * Add the passed pages to the LRU, then drop the caller's refcount
  * on them.  Reinitialises the caller's pagevec.
  */
-/** 20140104    
+/** 20140104
  * pvec으로 가리키던 page들을 zone의 lru list로 이동시킨다.
  *   move 동작을 수행할 함수는 __pagevec_lru_add_fn를 지정한다.
  **/
 void __pagevec_lru_add(struct pagevec *pvec, enum lru_list lru)
 {
-	/** 20140104    
+	/** 20140104
 	 * lru가 unevictable_lru이면 BUG.
 	 **/
 	VM_BUG_ON(is_unevictable_lru(lru));
 
-	/** 20140104    
+	/** 20140104
 	 **/
 	pagevec_lru_move_fn(pvec, __pagevec_lru_add_fn, (void *)lru);
 }

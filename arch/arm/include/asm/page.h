@@ -143,7 +143,7 @@ extern void __cpu_copy_user_highpage(struct page *to, struct page *from,
 #define copy_user_highpage(to,from,vaddr,vma)	\
 	__cpu_copy_user_highpage(to, from, vaddr, vma)
 
-/** 20131026    
+/** 20131026
  * page의 시작주소(VA)부터 PAGE 크기만큼 0으로 초기화 하는 매크로.
  * memset의 위치는 arch/arm/lib/memset.S. 내용은 추후 분석???
  **/

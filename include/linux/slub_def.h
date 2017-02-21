@@ -44,12 +44,12 @@ enum stat_item {
 	NR_SLUB_STAT_ITEMS };
 
 struct kmem_cache_cpu {
-	/** 20140322    
+	/** 20140322
 	 * fastpath로 다음 사용 가능한 object를 찾기 위한 포인터
 	 **/
 	void **freelist;	/* Pointer to next available object */
 	unsigned long tid;	/* Globally unique transaction id */
-	/** 20140322    
+	/** 20140322
 	 * page : allocation 한 slab
 	 **/
 	struct page *page;	/* The slab from which we are allocating */
@@ -96,10 +96,10 @@ struct kmem_cache_order_objects {
 /*
  * Slab cache management.
  */
-/** 20150502    
+/** 20150502
  **/
 struct kmem_cache {
-	/** 20140510    
+	/** 20140510
 	 * kmem_cache_cpu가 percpu변수로 존재한다.
 	 **/
 	struct kmem_cache_cpu __percpu *cpu_slab;
@@ -123,21 +123,21 @@ struct kmem_cache {
 	struct kmem_cache_order_objects min;
 	gfp_t allocflags;	/* gfp flags to use on each alloc */
 	int refcount;		/* Refcount for slab cache destroy */
-	/** 20150822    
+	/** 20150822
 	 * 새 slab을 생성할 때 page를 할당받은 뒤 호출되는 함수.
 	 **/
 	void (*ctor)(void *);
-	/** 20140510    
+	/** 20140510
 	 * object에 의해 실제 사용되는 공간. 정렬된 크기를 가져야 한다.
 	 **/
 	int inuse;		/* Offset to metadata */
 	int align;		/* Alignment */
-	/** 20140510    
+	/** 20140510
 	 * rcu 등을 위해 slab에 예약된 크기(bytes 단위)
 	 **/
 	int reserved;		/* Reserved bytes at the end of slabs */
 	const char *name;	/* Name (only for display!) */
-	/** 20140322    
+	/** 20140322
 	 * slab_caches로 관리하기 위한 list_head
 	 **/
 	struct list_head list;	/* List of slab caches */
@@ -157,7 +157,7 @@ struct kmem_cache {
 /*
  * Kmalloc subsystem.
  */
-/** 20140405    
+/** 20140405
  * KMALLOC_MIN_SIZE는 DMA_MINALIGN (L1 CACHE SIZE => vexpress는 64)
  **/
 #if defined(ARCH_DMA_MINALIGN) && ARCH_DMA_MINALIGN > 8
@@ -166,7 +166,7 @@ struct kmem_cache {
 #define KMALLOC_MIN_SIZE 8
 #endif
 
-/** 20140322    
+/** 20140322
  * KMALLOC_MIN_SIZE의 지수값을 KMALLOC_SHIFT_LOW로 사용
  * (2^6 = 64이므로 6)
  **/
@@ -181,12 +181,12 @@ struct kmem_cache {
  * This should be dropped to PAGE_SIZE / 2 once the page allocator
  * "fastpath" becomes competitive with the slab allocator fastpaths.
  */
-/** 20140405    
+/** 20140405
  * SLUB_MAX_SIZE는 페이지 2개 크기. 현재 8KB.
  **/
 #define SLUB_MAX_SIZE (2 * PAGE_SIZE)
 
-/** 20140322    
+/** 20140322
  * PAGE_SHIFT는 현재 12.
  * SLUB_PAGE_SHIFT는 14.
  **/
@@ -209,7 +209,7 @@ extern struct kmem_cache *kmalloc_caches[SLUB_PAGE_SHIFT];
  * Sorry that the following has to be that ugly but some versions of GCC
  * have trouble with constant propagation and loops.
  */
-/** 20140405    
+/** 20140405
  * 요청한 size에 따라 적절한 index를 리턴.
  *
  * index가 SLAB MAX 이상까지 지정되어 있는 것은 어떤 경우를 고려한 것인지???
@@ -219,7 +219,7 @@ static __always_inline int kmalloc_index(size_t size)
 	if (!size)
 		return 0;
 
-	/** 20140405    
+	/** 20140405
 	 * MIN SIZE보다 작으면 SHIFT_LOW로 index를 가장 작은 크기로 지정
 	 **/
 	if (size <= KMALLOC_MIN_SIZE)
@@ -227,7 +227,7 @@ static __always_inline int kmalloc_index(size_t size)
 
 	if (KMALLOC_MIN_SIZE <= 32 && size > 64 && size <= 96)
 		return 1;
-	/** 20140405    
+	/** 20140405
 	 * 128 < size <= 192인 경우 고정된 index를 리턴.
 	 **/
 	if (KMALLOC_MIN_SIZE <= 64 && size > 128 && size <= 192)
@@ -274,12 +274,12 @@ static __always_inline int kmalloc_index(size_t size)
  * This ought to end up with a global pointer to the right cache
  * in kmalloc_caches.
  */
-/** 20140405    
+/** 20140405
  * 요청한 size에 따라 kmalloc_caches에서 적합한 kmem_cache를 찾아 리턴하는 함수
  **/
 static __always_inline struct kmem_cache *kmalloc_slab(size_t size)
 {
-	/** 20140405    
+	/** 20140405
 	 * 요청한 size로 kmalloc index를 찾아온다.
 	 * kmem_cache_init 부분에서 kmalloc size별 kmem_cache를 생성해 두었다.
 	 **/
@@ -288,7 +288,7 @@ static __always_inline struct kmem_cache *kmalloc_slab(size_t size)
 	if (index == 0)
 		return NULL;
 
-	/** 20140405    
+	/** 20140405
 	 * index로 kmalloc kmem_cache 하나를 찾아 리턴
 	 **/
 	return kmalloc_caches[index];
@@ -326,7 +326,7 @@ extern void *
 kmem_cache_alloc_trace(struct kmem_cache *s, gfp_t gfpflags, size_t size);
 extern void *kmalloc_order_trace(size_t size, gfp_t flags, unsigned int order);
 #else
-/** 20140517    
+/** 20140517
  * tracing을 사용하지 않을 경우 kmem_cache_alloc만 호출.
  * object를 하나 할당받아 리턴한다.
  **/
@@ -397,7 +397,7 @@ extern void *kmem_cache_alloc_node_trace(struct kmem_cache *s,
 					   gfp_t gfpflags,
 					   int node, size_t size);
 #else
-/** 20140405    
+/** 20140405
  * CONFIG_TRACING을 정의하지 않은 경우
  * 
  * kmem_cache object를 지정한 노드로부터 할당 받는다.
@@ -413,7 +413,7 @@ kmem_cache_alloc_node_trace(struct kmem_cache *s,
 
 static __always_inline void *kmalloc_node(size_t size, gfp_t flags, int node)
 {
-	/** 20140405    
+	/** 20140405
 	 * size가 compile time에 상수로 확인가능한 경우이며,
 	 * SLUB_MAX_SIZE보다 작거나 같고,
 	 * SLUB_DMA 요청이 아닌 경우

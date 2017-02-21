@@ -16,7 +16,7 @@
 #include <linux/kref.h>
 #include <linux/list.h>
 
-/** 20150905    
+/** 20150905
  * klist 구조체.
  *
  * k_lock : klist의 k_list 접근을 원자적으로 보호하는 락.
@@ -42,7 +42,7 @@ struct klist {
 extern void klist_init(struct klist *k, void (*get)(struct klist_node *),
 		       void (*put)(struct klist_node *));
 
-/** 20150829    
+/** 20150829
  * klist node에 대한 구조체.
  *
  * list_head와 reference count를 가지고 있다.
@@ -64,7 +64,7 @@ extern void klist_remove(struct klist_node *n);
 extern int klist_node_attached(struct klist_node *n);
 
 
-/** 20150912    
+/** 20150912
  * klist 순회용 iterator.
  *
  * i_klist : 이 iterator가 가리키는 klist에 대한 포인터

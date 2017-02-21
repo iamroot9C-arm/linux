@@ -151,7 +151,7 @@ extern const struct gtype##_id __mod_##gtype##_table		\
   local headers in "srcversion".
 */
 
-/** 20151128    
+/** 20151128
  * builtin module의 경우 MODULE이 정의되지 않고,
  * 현재 config에서 CONFIG_SYSFS는 정의되어 else에 해당한다.
  **/
@@ -200,7 +200,7 @@ struct module_use {
 	struct module *source, *target;
 };
 
-/** 20150425    
+/** 20150425
  * MODULE STATE.
  *
  * MODULE_STATE_LIVE   : 초기화 완료. 동작 중.
@@ -223,7 +223,7 @@ enum module_state
  * put @incs/@decs in same cache line, with no extra memory cost,
  * since alloc_percpu() is fine grained.
  */
-/** 20150307    
+/** 20150307
  * module 참조횟수를 관리하는 구조체.
  *
  * module_get시에 incs를 증가시키고,
@@ -293,7 +293,7 @@ struct module
 	void *module_init;
 
 	/* Here is the actual code + data, vfree'd on unload. */
-	/** 20140823    
+	/** 20140823
 	 * module의 code + data 영역의 위치. unload 시 해제된다.
 	 **/
 	void *module_core;
@@ -397,7 +397,7 @@ extern struct mutex module_mutex;
 /* FIXME: It'd be nice to isolate modules during init, too, so they
    aren't used before they (may) fail.  But presently too much code
    (IDE & SCSI) require entry into the module during init.*/
-/** 20150425    
+/** 20150425
  * module 상태가 제거 중이 아닐 경우 동작 중.
  **/
 static inline int module_is_live(struct module *mod)
@@ -411,7 +411,7 @@ bool is_module_address(unsigned long addr);
 bool is_module_percpu_address(unsigned long addr);
 bool is_module_text_address(unsigned long addr);
 
-/** 20140823    
+/** 20140823
  * address가 module의 core 영역(code + data)에 속하는지 검사한다.
  **/
 static inline int within_module_core(unsigned long addr, struct module *mod)
@@ -420,7 +420,7 @@ static inline int within_module_core(unsigned long addr, struct module *mod)
 	       addr < (unsigned long)mod->module_core + mod->core_size;
 }
 
-/** 20140823    
+/** 20140823
  * address가 module의 init 영역에 속하는지 검사한다.
  **/
 static inline int within_module_init(unsigned long addr, struct module *mod)
@@ -483,7 +483,7 @@ extern void __module_get(struct module *module);
 
 /* This is the Right Way to get a module: if it fails, it's being removed,
  * so pretend it's not there. */
-/** 20151107    
+/** 20151107
  * CONFIG_MODULE_UNLOAD가 설정되어 있다.
  **/
 extern bool try_module_get(struct module *module);

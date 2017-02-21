@@ -17,7 +17,7 @@
 #define CPUID_EXT_MMFR0	"c1, 4"
 #define CPUID_EXT_MMFR1	"c1, 5"
 #define CPUID_EXT_MMFR2	"c1, 6"
-/** 20131026    
+/** 20131026
  * ID_MMFR3, Memory Model Feature Register 3, VMSA
  **/
 #define CPUID_EXT_MMFR3	"c1, 7"
@@ -40,7 +40,7 @@ extern unsigned int processor_id;
 		    : "cc");						\
 		__val;							\
 	})
-/** 20131026    
+/** 20131026
  * ext_reg에 따라 coprocessor read 명령을 생성한다.
  **/
 #define read_cpuid_ext(ext_reg)						\

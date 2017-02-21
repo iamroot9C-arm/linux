@@ -50,7 +50,7 @@ static inline void cache_wait_way(void __iomem *reg, unsigned long mask)
 }
 
 #ifdef CONFIG_CACHE_PL310
-/** 20140920    
+/** 20140920
  * PL310은 line 별로 cache operation이 atomic하기 때문에 다시 읽어 확인할 필요가 없다.
  **/
 static inline void cache_wait(void __iomem *reg, unsigned long mask)
@@ -61,7 +61,7 @@ static inline void cache_wait(void __iomem *reg, unsigned long mask)
 #define cache_wait	cache_wait_way
 #endif
 
-/** 20140920    
+/** 20140920
  * L2Cache Sync 명령 수행.
  *
  * PL310 datasheet 참고.
@@ -145,7 +145,7 @@ static inline void l2x0_flush_line(unsigned long addr)
 }
 #endif
 
-/** 20140920    
+/** 20140920
  * l2 cache controller에 lock을 걸고, cache_sync 명령을 수행한다.
  **/
 static void l2x0_cache_sync(void)
@@ -403,7 +403,7 @@ void __init l2x0_init(void __iomem *base, u32 aux_val, u32 aux_mask)
 		writel_relaxed(1, l2x0_base + L2X0_CTRL);
 	}
 
-	/** 20140920    
+	/** 20140920
 	 * L2C (vexpress는 PL310)의 callback function을 지정한다.
 	 **/
 	outer_cache.inv_range = l2x0_inv_range;

@@ -18,7 +18,7 @@
 
 #define ___module_cat(a,b) __mod_ ## a ## b
 #define __module_cat(a,b) ___module_cat(a,b)
-/** 20151128    
+/** 20151128
  * module_param(...)으로 선언된 symbol들을 .modinfo 섹션에 배치.
  * __start___param ~ __stop___param 사이.
  **/
@@ -104,7 +104,7 @@ struct kparam_array
  *	bool: a bool, values 0/1, y/n, Y/N.
  *	invbool: the above, only sense-reversed (N = true).
  */
-/** 20151128    
+/** 20151128
  **/
 #define module_param(name, type, perm)				\
 	module_param_named(name, name, type, perm)
@@ -120,7 +120,7 @@ struct kparam_array
  * same, but that's harder if the variable must be non-static or is inside a
  * structure.  This allows exposure under a different name.
  */
-/** 20151128    
+/** 20151128
  **/
 #define module_param_named(name, value, type, perm)			   \
 	param_check_##type(name, &(value));				   \
@@ -147,7 +147,7 @@ struct kparam_array
  *
  * The ops can have NULL set or get functions.
  */
-/** 20151226    
+/** 20151226
  * level의 지정하여 parameter 선언.
  **/
 #define __level_param_cb(name, ops, arg, perm, level)			\
@@ -186,7 +186,7 @@ struct kparam_array
 
 /* This is the fundamental function for registering boot/module
    parameters. */
-/** 20151226    
+/** 20151226
  * 새로운 parameter를 __param 섹션에 배치시키는 매크로.
  *
  * include/asm-generic/vmlinux.lds.h의 RO_DATA_SECTION 매크로 참고.
@@ -286,7 +286,7 @@ static inline void __kernel_param_unlock(void)
  * with __setup(), and it makes sense as truly core parameters aren't
  * tied to the particular file they're in.
  */
-/** 20151128    
+/** 20151128
  * parameter를 등록.
  **/
 #define core_param(name, var, type, perm)				\
@@ -358,7 +358,7 @@ static inline void destroy_params(const struct kernel_param *params,
 #define __param_check(name, p, type) \
 	static inline type *__check_##name(void) { return(p); }
 
-/** 20151226    
+/** 20151226
  * param 구조체의 type별 get/set 함수.
  **/
 extern struct kernel_param_ops param_ops_byte;

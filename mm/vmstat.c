@@ -208,14 +208,14 @@ void set_pgdat_percpu_threshold(pg_data_t *pgdat,
 /*
  * For use when we know that interrupts are disabled.
  */
-/** 20130831    
+/** 20130831
  * zone의 page state를 delta만큼 증감시키는 함수.
  **/
 void __mod_zone_page_state(struct zone *zone, enum zone_stat_item item,
 				int delta)
 {
 	struct per_cpu_pageset __percpu *pcp = zone->pageset;
-	/** 20130831    
+	/** 20130831
 	 * pcp->vm_stat_diff는 zone stat item들의 array.
 	 * item에 해당하는 멤버의 주소를 가져온다.
 	 **/
@@ -223,17 +223,17 @@ void __mod_zone_page_state(struct zone *zone, enum zone_stat_item item,
 	long x;
 	long t;
 
-	/** 20130831    
+	/** 20130831
 	 * delta에 percpu 중 현재 cpu에 해당하는 값을 더해 x로 한다.
 	 **/
 	x = delta + __this_cpu_read(*p);
 
-	/** 20130831    
+	/** 20130831
 	 * 현재 cpu에 해당하는 stat_threshold 값을 가져온다.
 	 **/
 	t = __this_cpu_read(pcp->stat_threshold);
 
-	/** 20130831    
+	/** 20130831
 	 * x가 threshold를 넘어서면 zone, global page_state에 x를 더하고
 	 * x를 0으로 만든다.
 	 **/
@@ -241,7 +241,7 @@ void __mod_zone_page_state(struct zone *zone, enum zone_stat_item item,
 		zone_page_state_add(x, zone, item);
 		x = 0;
 	}
-	/** 20130831    
+	/** 20130831
 	 * *p = x;
 	 **/
 	__this_cpu_write(*p, x);
@@ -416,7 +416,7 @@ void inc_zone_state(struct zone *zone, enum zone_stat_item item)
 	local_irq_restore(flags);
 }
 
-/** 20160416    
+/** 20160416
  * page가 속한 zone의 state에 item을 반영.
  *
  * local_irq_save만 해주는 이유는???
@@ -426,7 +426,7 @@ void inc_zone_page_state(struct page *page, enum zone_stat_item item)
 	unsigned long flags;
 	struct zone *zone;
 
-	/** 20160416    
+	/** 20160416
 	 * page가 속한 zone을 얻어와 irq를 막은 상태에서 state에 item을 업데이트.
 	 **/
 	zone = page_zone(page);

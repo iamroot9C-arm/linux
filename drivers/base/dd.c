@@ -48,7 +48,7 @@
  * of the (struct device*)->p->deferred_probe pointers are manipulated
  */
 static DEFINE_MUTEX(deferred_probe_mutex);
-/** 20150905    
+/** 20150905
  * probe가 pending된 device들을 연결하는 전역 리스트.
  **/
 static LIST_HEAD(deferred_probe_pending_list);
@@ -108,7 +108,7 @@ static void deferred_probe_work_func(struct work_struct *work)
 	}
 	mutex_unlock(&deferred_probe_mutex);
 }
-/** 20150905    
+/** 20150905
  * work 선언. 추후 분석???
  **/
 static DECLARE_WORK(deferred_probe_work, deferred_probe_work_func);
@@ -123,7 +123,7 @@ static void driver_deferred_probe_add(struct device *dev)
 	mutex_unlock(&deferred_probe_mutex);
 }
 
-/** 20150905    
+/** 20150905
  * 리스트에 연결된 device의 deferred_probe를 초기화 한다.
  **/
 void driver_deferred_probe_del(struct device *dev)
@@ -136,7 +136,7 @@ void driver_deferred_probe_del(struct device *dev)
 	mutex_unlock(&deferred_probe_mutex);
 }
 
-/** 20150905    
+/** 20150905
  * deferred probe 동작의 활성화 여부를 결정한다.
  * deferred_probe_initcall()에서 true로 변경.
  **/
@@ -148,7 +148,7 @@ static bool driver_deferred_probe_enable = false;
  * list and schedules the deferred probe workqueue to process them.  It
  * should be called anytime a driver is successfully bound to a device.
  */
-/** 20150905    
+/** 20150905
  * deferred device 리스트를 다시 probe 하기 위해 queue_work을 돌린다.
  **/
 static void driver_deferred_probe_trigger(void)
@@ -161,7 +161,7 @@ static void driver_deferred_probe_trigger(void)
 	 * should be triggered to be reprobed.  Move all the deferred devices
 	 * into the active list so they can be retried by the workqueue
 	 */
-	/** 20150905    
+	/** 20150905
 	 * probe pending list를 probe active list로 옮겨달고, pending list를 클리어.
 	 **/
 	mutex_lock(&deferred_probe_mutex);
@@ -173,7 +173,7 @@ static void driver_deferred_probe_trigger(void)
 	 * Kick the re-probe thread.  It may already be scheduled, but it is
 	 * safe to kick it again.
 	 */
-	/** 20150905    
+	/** 20150905
 	 * re-probe thread를 돌린다.
 	 **/
 	queue_work(deferred_wq, &deferred_probe_work);
@@ -198,12 +198,12 @@ static int deferred_probe_initcall(void)
 }
 late_initcall(deferred_probe_initcall);
 
-/** 20150905    
+/** 20150905
  * device에 driver를 붙인다.
  **/
 static void driver_bound(struct device *dev)
 {
-	/** 20150905    
+	/** 20150905
 	 * device에 이미 driver와 연결되어 있다면 리턴.
 	 **/
 	if (klist_node_attached(&dev->p->knode_driver)) {
@@ -215,7 +215,7 @@ static void driver_bound(struct device *dev)
 	pr_debug("driver: '%s': %s: bound to device '%s'\n", dev_name(dev),
 		 __func__, dev->driver->name);
 
-	/** 20150905    
+	/** 20150905
 	 * device가 연결된 driver의 klist_devices 리스트에 device를 추가한다.
 	 **/
 	klist_add_tail(&dev->p->knode_driver, &dev->driver->p->klist_devices);
@@ -224,13 +224,13 @@ static void driver_bound(struct device *dev)
 	 * Make sure the device is no longer in one of the deferred lists and
 	 * kick off retrying all pending devices
 	 */
-	/** 20150905    
+	/** 20150905
 	 * device가 더 이상 deferred list에 남아있지 않도록 한다.
 	 **/
 	driver_deferred_probe_del(dev);
 	driver_deferred_probe_trigger();
 
-	/** 20150905    
+	/** 20150905
 	 * device에 bus가 지정되어 있다면, device가 driver에 bound되었음을 통보한다.
 	 **/
 	if (dev->bus)
@@ -238,7 +238,7 @@ static void driver_bound(struct device *dev)
 					     BUS_NOTIFY_BOUND_DRIVER, dev);
 }
 
-/** 20150905    
+/** 20150905
  * driver를 sysfs에 추가한다.
  * - device가 속한 bus에 BUS_NOTIFY_BIND_DRIVER를 통보한다.
  * - device와 driver에 서로 심볼릭 링크를 연결한다.
@@ -249,7 +249,7 @@ static int driver_sysfs_add(struct device *dev)
 {
 	int ret;
 
-	/** 20150905    
+	/** 20150905
 	 * device에 bus가 존재하는 경우,
 	 * bus_notifier에 BUS_NOTIFY_BIND_DRIVER를 통보한다.
 	 **/
@@ -257,7 +257,7 @@ static int driver_sysfs_add(struct device *dev)
 		blocking_notifier_call_chain(&dev->bus->p->bus_notifier,
 					     BUS_NOTIFY_BIND_DRIVER, dev);
 
-	/** 20150905    
+	/** 20150905
 	 * 디바이스 드라이버 아래, device 이름으로 device에 대한 심볼릭 링크 생성.
 	 * 성공시 device 아래, "driver"라는 이름으로 driver에 대한 심볼릭 링크 생성.
 	 **/
@@ -297,19 +297,19 @@ static void driver_sysfs_remove(struct device *dev)
  *
  * This function must be called with the device lock held.
  */
-/** 20150905    
+/** 20150905
  * device에 driver가 지정된 경우 driver를 붙인다.
  **/
 int device_bind_driver(struct device *dev)
 {
 	int ret;
 
-	/** 20150905    
+	/** 20150905
 	 * device driver를 sysfs에 추가한다.
 	 **/
 	ret = driver_sysfs_add(dev);
 	if (!ret)
-		/** 20150905    
+		/** 20150905
 		 * device에 driver를 붙인다.
 		 **/
 		driver_bound(dev);
@@ -317,16 +317,16 @@ int device_bind_driver(struct device *dev)
 }
 EXPORT_SYMBOL_GPL(device_bind_driver);
 
-/** 20150905    
+/** 20150905
  * probe 중인지 관리하기 위한 atomic 변수.
  **/
 static atomic_t probe_count = ATOMIC_INIT(0);
-/** 20150905    
+/** 20150905
  * probe를 대기하는 waitqueue 정의
  **/
 static DECLARE_WAIT_QUEUE_HEAD(probe_waitqueue);
 
-/** 20150905    
+/** 20150905
  * bus 또는 driver의 probe() 함수를 호출해
  * 주어진 device를 주어진 driver로 구동 가능한지 검사하고,
  * 가능하다면 bind한다.
@@ -340,7 +340,7 @@ static int really_probe(struct device *dev, struct device_driver *drv)
 		 drv->bus->name, __func__, drv->name, dev_name(dev));
 	WARN_ON(!list_empty(&dev->devres_head));
 
-	/** 20150905    
+	/** 20150905
 	 * 넘어온 driver를 device의 driver로 포인팅하고,
 	 * 드라이버를 sysfs에 추가한다.
 	 **/
@@ -351,7 +351,7 @@ static int really_probe(struct device *dev, struct device_driver *drv)
 		goto probe_failed;
 	}
 
-	/** 20150905    
+	/** 20150905
 	 * 먼저 device의 bus 드라이버에서 probe 함수를 제공하는지 검사해 호출한다.
 	 * 만약 bus 드라이버가 존재하지 않고 driver가 probe 함수를 제공하면 호출한다.
 	 *
@@ -367,7 +367,7 @@ static int really_probe(struct device *dev, struct device_driver *drv)
 			goto probe_failed;
 	}
 
-	/** 20150905    
+	/** 20150905
 	 * device에 driver를 bind 한다.
 	 **/
 	driver_bound(dev);
@@ -401,7 +401,7 @@ probe_failed:
 	 */
 	ret = 0;
 done:
-	/** 20150905    
+	/** 20150905
 	 * probe_count를 감소시키고, probe_waitqueue에서 대기 중인 task를 깨운다.
 	 **/
 	atomic_dec(&probe_count);
@@ -428,13 +428,13 @@ int driver_probe_done(void)
  * wait_for_device_probe
  * Wait for device probing to be completed.
  */
-/** 20160123    
+/** 20160123
  * device probing이 완료될 때까지 기다린다.
  **/
 void wait_for_device_probe(void)
 {
 	/* wait for the known devices to complete their probing */
-	/** 20160123    
+	/** 20160123
 	 * probe_count가 0이 되는 것을 probe_waitqueue 에서 기다린다.
 	 *
 	 * 실제 probe를 시작할 때 증가하는 count. 시작된 probe가 완료되기를 기다린다.
@@ -455,7 +455,7 @@ EXPORT_SYMBOL_GPL(wait_for_device_probe);
  * This function must be called with @dev lock held.  When called for a
  * USB interface, @dev->parent lock must be held as well.
  */
-/** 20150905    
+/** 20150905
  * device를 driver로 구동 가능한지 검사한다.
  *
  * 1 : bound까지 성공적으로 이루어졌을 경우
@@ -466,7 +466,7 @@ int driver_probe_device(struct device_driver *drv, struct device *dev)
 {
 	int ret = 0;
 
-	/** 20150905    
+	/** 20150905
 	 * 등록되지 않은 디바이스라면 에러리턴.
 	 **/
 	if (!device_is_registered(dev))
@@ -475,11 +475,11 @@ int driver_probe_device(struct device_driver *drv, struct device *dev)
 	pr_debug("bus: '%s': %s: matched device %s with driver %s\n",
 		 drv->bus->name, __func__, dev_name(dev), drv->name);
 
-	/** 20150905    
+	/** 20150905
 	 * PM_RUNTIME을 정의하지 않아 NULL 함수.
 	 **/
 	pm_runtime_barrier(dev);
-	/** 20150905    
+	/** 20150905
 	 * device를 해당 driver로 구동가능한지 검사한다.
 	 **/
 	ret = really_probe(dev, drv);
@@ -488,7 +488,7 @@ int driver_probe_device(struct device_driver *drv, struct device *dev)
 	return ret;
 }
 
-/** 20150905    
+/** 20150905
  * device에 driver를 붙인다.
  *
  * bus의 match 콜백으로 먼저 걸러내고, match가 제공되지 않거나 검사를 통과하면
@@ -498,13 +498,13 @@ static int __device_attach(struct device_driver *drv, void *data)
 {
 	struct device *dev = data;
 
-	/** 20150905    
+	/** 20150905
 	 * match 함수가 존재하지만 match되지 않는다면 바로 리턴.
 	 **/
 	if (!driver_match_device(drv, dev))
 		return 0;
 
-	/** 20150905    
+	/** 20150905
 	 * 실제로 해당 driver로 device를 구동 가능한지 검사하고,
 	 * 가능하다면 bind한다.
 	 **/
@@ -525,7 +525,7 @@ static int __device_attach(struct device_driver *drv, void *data)
  *
  * When called for a USB interface, @dev->parent lock must be held.
  */
-/** 20150905    
+/** 20150905
  * device에 driver를 붙인다.
  *
  * 이미 device가 driver에 붙어 있는 경우 바로 리턴.
@@ -537,11 +537,11 @@ int device_attach(struct device *dev)
 {
 	int ret = 0;
 
-	/** 20150905    
+	/** 20150905
 	 * device 자료구조 접근은 lock 안에서 이뤄져야 한다.
 	 **/
 	device_lock(dev);
-	/** 20150905    
+	/** 20150905
 	 * 디바이스에 드라이버가 지정되어 있다면
 	 *   이미 driver에 attach 되어 있는 경우에는 바로 리턴.
 	 **/
@@ -550,7 +550,7 @@ int device_attach(struct device *dev)
 			ret = 1;
 			goto out_unlock;
 		}
-		/** 20150905    
+		/** 20150905
 		 * device에 driver를 bind 시킨다.
 		 **/
 		ret = device_bind_driver(dev);
@@ -561,7 +561,7 @@ int device_attach(struct device *dev)
 			ret = 0;
 		}
 	} else {
-	/** 20150905    
+	/** 20150905
 	 * device에 driver가 지정되어 있지 않은 경우
 	 * dev의 bus에 등록된 driver 리스트에 대해 __device_attach 함수를 실행한다.
 	 **/
@@ -574,7 +574,7 @@ out_unlock:
 }
 EXPORT_SYMBOL_GPL(device_attach);
 
-/** 20151121    
+/** 20151121
  * 디바이스가 넘어온 드라이버로 구동가능한지 검사해 probe - bind시킨다.
  **/
 static int __driver_attach(struct device *dev, void *data)
@@ -591,7 +591,7 @@ static int __driver_attach(struct device *dev, void *data)
 	 * is an error.
 	 */
 
-	/** 20151121    
+	/** 20151121
 	 * match 함수가 존재하지만 driver와 device가 match되지 않는다면 리턴.
 	 **/
 	if (!driver_match_device(drv, dev))
@@ -600,7 +600,7 @@ static int __driver_attach(struct device *dev, void *data)
 	if (dev->parent)	/* Needed for USB */
 		device_lock(dev->parent);
 	device_lock(dev);
-	/** 20151121    
+	/** 20151121
 	 * 디바이스에 드라이버가 지정되지 않았으면 probe해 성공하면 bind.
 	 **/
 	if (!dev->driver)
@@ -621,12 +621,12 @@ static int __driver_attach(struct device *dev, void *data)
  * returns 0 and the @dev->driver is set, we've found a
  * compatible pair.
  */
-/** 20151121    
+/** 20151121
  * 버스의 각 디바이스에 대해 드라이버를 bind 시도한다.
  **/
 int driver_attach(struct device_driver *drv)
 {
-	/** 20151121    
+	/** 20151121
 	 * 각 디바이스에 대해 drv를 매개변수로 __driver_attach를 호출한다.
 	 **/
 	return bus_for_each_dev(drv->bus, NULL, drv, __driver_attach);
@@ -736,14 +736,14 @@ void *dev_get_drvdata(const struct device *dev)
 }
 EXPORT_SYMBOL(dev_get_drvdata);
 
-/** 20151114    
+/** 20151114
  * device의 driver_data를 지정한다.
  **/
 int dev_set_drvdata(struct device *dev, void *data)
 {
 	int error;
 
-	/** 20151114    
+	/** 20151114
 	 * device_private이 초기화 되지 않았다면, driver_data를 지정하기 위해
 	 * device_private을 초기화 한다.
 	 **/
@@ -752,7 +752,7 @@ int dev_set_drvdata(struct device *dev, void *data)
 		if (error)
 			return error;
 	}
-	/** 20151114    
+	/** 20151114
 	 * device_private의 driver_data에 넘어온 data를 지정.
 	 **/
 	dev->p->driver_data = data;

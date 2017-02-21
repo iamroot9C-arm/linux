@@ -44,7 +44,7 @@
  * SLAB caches for signal bits.
  */
 
-/** 20150502    
+/** 20150502
  * signals_init에서 kmem_cache를 생성해 저장한다.
  **/
 static struct kmem_cache *sigqueue_cachep;
@@ -389,7 +389,7 @@ __sigqueue_alloc(int sig, struct task_struct *t, gfp_t flags, int override_rlimi
 	return q;
 }
 
-/** 20160206    
+/** 20160206
  * sigqueue를 free시킨다.
  **/
 static void __sigqueue_free(struct sigqueue *q)
@@ -405,7 +405,7 @@ void flush_sigqueue(struct sigpending *queue)
 {
 	struct sigqueue *q;
 
-	/** 20160206    
+	/** 20160206
 	 * sigpending의 signal을 초기화.
 	 * 큐잉된 sigqueue를 리스트에서 제거
 	 **/
@@ -420,12 +420,12 @@ void flush_sigqueue(struct sigpending *queue)
 /*
  * Flush all pending signals for a task.
  */
-/** 20160206    
+/** 20160206
  * task에 pending된 signal 정보를 flush 시킨다.
  **/
 void __flush_signals(struct task_struct *t)
 {
-	/** 20160206    
+	/** 20160206
 	 * thread_info의 flag 중 TIF_SIGPENDING를 제거한다.
 	 * private와 shared인 sigqueue를 비워준다.
 	 **/
@@ -477,7 +477,7 @@ void flush_itimer_signals(void)
 	spin_unlock_irqrestore(&tsk->sighand->siglock, flags);
 }
 
-/** 20160213    
+/** 20160213
  * task가 시그널을 처리하지 않도록 만든다.
  * - 시그널 핸들러를 모두 SIG_IGN로 만든다.
  * - 펜딩 정보를 모두 제거한다.
@@ -486,13 +486,13 @@ void ignore_signals(struct task_struct *t)
 {
 	int i;
 
-	/** 20160206    
+	/** 20160206
 	 * task의 signal handler을 모두 SIG_IGN로 채운다.
 	 **/
 	for (i = 0; i < _NSIG; ++i)
 		t->sighand->action[i].sa.sa_handler = SIG_IGN;
 
-	/** 20160206    
+	/** 20160206
 	 * task에 펜딩된 시그널 정보를 플러시 시킨다.
 	 **/
 	flush_signals(t);
@@ -626,7 +626,7 @@ static int __dequeue_signal(struct sigpending *pending, sigset_t *mask,
  *
  * All callers have to hold the siglock.
  */
-/** 20160409    
+/** 20160409
  * 추후 분석???
  **/
 int dequeue_signal(struct task_struct *tsk, sigset_t *mask, siginfo_t *info)

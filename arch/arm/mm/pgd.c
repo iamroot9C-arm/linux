@@ -23,7 +23,7 @@
 #define __pgd_alloc()	kmalloc(PTRS_PER_PGD * sizeof(pgd_t), GFP_KERNEL)
 #define __pgd_free(pgd)	kfree(pgd)
 #else
-/** 20150613    
+/** 20150613
  * 2 ** 2개의 page를 KERNEL 속성으로 할당 받는다.
  **/
 #define __pgd_alloc()	(pgd_t *)__get_free_pages(GFP_KERNEL, 2)
@@ -33,7 +33,7 @@
 /*
  * need to get a 16k page for level 1
  */
-/** 20150613    
+/** 20150613
  * Level 1 page table을 위한 page를 할당받고,
  * 초기화된 page table로부터 kernel 영역과 IO 영역의 page table을 복사한다.
  **/
@@ -44,14 +44,14 @@ pgd_t *pgd_alloc(struct mm_struct *mm)
 	pmd_t *new_pmd, *init_pmd;
 	pte_t *new_pte, *init_pte;
 
-	/** 20150613    
+	/** 20150613
 	 * L1 page table 크기만큼 page를 할당받는다.
 	 **/
 	new_pgd = __pgd_alloc();
 	if (!new_pgd)
 		goto no_pgd;
 
-	/** 20150613    
+	/** 20150613
 	 * 할당받은 page를 0으로 초기화 한다.
 	 **/
 	memset(new_pgd, 0, USER_PTRS_PER_PGD * sizeof(pgd_t));
@@ -59,14 +59,14 @@ pgd_t *pgd_alloc(struct mm_struct *mm)
 	/*
 	 * Copy over the kernel and IO PGD entries
 	 */
-	/** 20150613    
+	/** 20150613
 	 * 새로 할당받은 pgd 영역에 기존의 kernel 영역과 IO PGD entry를 복사한다.
 	 **/
 	init_pgd = pgd_offset_k(0);
 	memcpy(new_pgd + USER_PTRS_PER_PGD, init_pgd + USER_PTRS_PER_PGD,
 		       (PTRS_PER_PGD - USER_PTRS_PER_PGD) * sizeof(pgd_t));
 
-	/** 20150620    
+	/** 20150620
 	 * new_pgd 영역의 dcache를 클린시킨다.
 	 **/
 	clean_dcache_area(new_pgd, PTRS_PER_PGD * sizeof(pgd_t));
@@ -85,7 +85,7 @@ pgd_t *pgd_alloc(struct mm_struct *mm)
 		goto no_pmd;
 #endif
 
-	/** 20150620    
+	/** 20150620
 	 * high vector가 아닌 경우 vector table에 대한 pte entry를 설정한다.
 	 * low vector인 경우 추후분석???
 	 **/
@@ -103,7 +103,7 @@ pgd_t *pgd_alloc(struct mm_struct *mm)
 		if (!new_pmd)
 			goto no_pmd;
 
-		/** 20160416    
+		/** 20160416
 		 **/
 		new_pte = pte_alloc_map(mm, NULL, new_pmd, 0);
 		if (!new_pte)

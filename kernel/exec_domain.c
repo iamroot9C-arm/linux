@@ -20,7 +20,7 @@
 #include <linux/types.h>
 #include <linux/fs_struct.h>
 
-/** 20160319    
+/** 20160319
  * 다른 ABI를 다루기 위한 시스템 콜.
  * personality를 execution domain으로 관리한다.
  **/
@@ -39,7 +39,7 @@ static unsigned long ident_map[32] = {
 	24,	25,	26,	27,	28,	29,	30,	31
 };
 
-/** 20160319    
+/** 20160319
  * default execution domain은 linux.
  **/
 struct exec_domain default_exec_domain = {
@@ -52,7 +52,7 @@ struct exec_domain default_exec_domain = {
 };
 
 
-/** 20160109    
+/** 20160109
  * execdomain에 대해 bad_syscall이 발생해 default 핸들러가 실행되었을 경우,
  * exec_domain의 핸들러가 default_handler임에도(즉 별도의 execdomain이 아님에도)
  * 처리하지 못했다면, syscall이 잘못된 것이므로 SIGSEGV를 보낸다.

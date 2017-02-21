@@ -25,7 +25,7 @@ ENTRY(_find_first_zero_bit_le)
 		teq	r1, #0	
 		beq	3f
 		mov	r2, #0
-/** 20130420    
+/** 20130420
 	_find_first_zero_bit_le, _find_next_zero_bit_le 에서 공통으로 사용.
 	_find_first_zero_bit_le에서 올 경우 r2에 0을 넣어줌
  **/
@@ -52,7 +52,7 @@ ENTRY(_find_first_zero_bit_le)
  **/
 2:		cmp	r2, r1			@ any more?
 		blo	1b
-/** 20130420    
+/** 20130420
   찾지 못하고 max까지 도달한 경우 maxbit를 리턴
  **/
 3:		mov	r0, r1			@ no free bits
@@ -64,12 +64,12 @@ ENDPROC(_find_first_zero_bit_le)
  * Prototype: int find_next_zero_bit(void *addr, unsigned int maxbit, int offset)
  */
 ENTRY(_find_next_zero_bit_le)
-/** 20130420    
+/** 20130420
  *      maxbit가 0으로 넘어오면 _find_first_zero_bit_le의 3:의 리턴 코드를 수행
  **/
 		teq	r1, #0
 		beq	3b
-/** 20130420    
+/** 20130420
 		maxbit가 0이 아닌 경우, offset의 하위 3비트를 ip에 저장
 		하위 3비트가 0인 경우 _find_first_zero_bit_le의 1:부터 수행
  **/
@@ -84,7 +84,7 @@ ENTRY(_find_next_zero_bit_le)
  **/
 		movs	r3, r3, lsr ip		@ shift off unused bits
 		bne	.L_found
-/** 20130420    
+/** 20130420
 		해당 바이트에서 0을 찾지 못하면
 		다음 바이트부터 정렬된 상태에서 찾기 위해 r2 값을 조정.
 		정렬을 맞춘 뒤 2b부터 수행
@@ -212,7 +212,7 @@ ENDPROC(_find_next_bit_be)
  */
 .L_found:
 #if __LINUX_ARM_ARCH__ >= 5
-/** 20130420    
+/** 20130420
 		ex) r3 : 0x18
 		rsb r0, r3, #0  ->  r3의  2의 보수를 취한다.
 		    r3 : 0xE8
@@ -240,7 +240,7 @@ ENDPROC(_find_next_bit_be)
 		addeq	r2, r2, #1
 		mov	r0, r2
 #endif
-/** 20130420    
+/** 20130420
 		찾은 값이 max보다 크다면 max를 리턴
  **/
 		cmp	r1, r0			@ Clamp to maxbit

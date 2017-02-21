@@ -29,7 +29,7 @@ static inline void ipi_flush_tlb_all(void *ignored)
 	local_flush_tlb_all();
 }
 
-/** 20160528    
+/** 20160528
  **/
 static inline void ipi_flush_tlb_mm(void *arg)
 {
@@ -141,18 +141,18 @@ void flush_tlb_range(struct vm_area_struct *vma,
 		local_flush_tlb_range(vma, start, end);
 }
 
-/** 20131026    
+/** 20131026
  * CONFIG_SMP일 경우
  * start ~ end 사이의 커널 주소 공간에 대해 flush tlb 를 수행
  **/
 void flush_tlb_kernel_range(unsigned long start, unsigned long end)
 {
-	/** 20131026    
+	/** 20131026
 	 * tlb operation이 broadcast되어야 하는 경우
 	 * (operation이 local structures에만 반영되는 경우)
 	 **/
 	if (tlb_ops_need_broadcast()) {
-		/** 20131026    
+		/** 20131026
 		 * tlb_args 구조체를 채운다.
 		 * kernel range이므로 vm_area_struct는 채우지 않는다.
 		 **/

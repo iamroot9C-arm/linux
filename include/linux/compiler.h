@@ -24,7 +24,7 @@
 extern void __chk_user_ptr(const volatile void __user *);
 extern void __chk_io_ptr(const volatile void __iomem *);
 #else
-/** 20131026    
+/** 20131026
  * __CHECKER__가 아닌 경우 관련 attribute를 선언하지 않는다.
  **/
 # define __user
@@ -51,7 +51,7 @@ extern void __chk_io_ptr(const volatile void __iomem *);
 #include <linux/compiler-gcc.h>
 #endif
 
-/** 20130427    
+/** 20130427
  * no_instrument_function은 함수 애트리뷰트는 프로파일링 함수에 제공되어 프로파일링 함수가 루프가 되지 않도록하여 필요없는 추가 데이터를 생기지 않도록 한다.
  * -- from: http://ospace.tistory.com/86
  **/
@@ -249,7 +249,7 @@ void ftrace_likely_update(struct ftrace_branch_data *f, int val, int expect);
  * Rather then using noinline to prevent stack consumption, use
  * noinline_for_stack instead.  For documentation reasons.
  */
-/** 20140524    
+/** 20140524
  * compiler에게 명시적으로 inline 함수로 최적화 하지 말도록 지시
  **/
 #define noinline_for_stack noinline

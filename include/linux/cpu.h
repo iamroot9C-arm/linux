@@ -53,7 +53,7 @@ extern ssize_t arch_print_cpu_modalias(struct device *dev,
 /*
  * CPU notifier priorities.
  */
-/** 20150627    
+/** 20150627
  * cpu notifier 우선순위. 
  **/
 enum {
@@ -74,14 +74,14 @@ enum {
 	CPU_PRI_CPUSET_INACTIVE	= INT_MIN,
 
 	/* migration should happen before other stuff but after perf */
-	/** 20150725    
+	/** 20150725
 	 * notifier의 priority를 정의한다.
 	 * PERF가 가장 높고, MIGRATION이 그 다음으로 한다.
 	 **/
 	CPU_PRI_PERF		= 20,
 	CPU_PRI_MIGRATION	= 10,
 	/* bring up workqueues before normal notifiers and down after */
-	/** 20150627    
+	/** 20150627
 	 * up시에는 일반 notifier보다 workqueue 관련 notifier를 앞에 위치시키고,
 	 * down시에는 일반 notifier보다 workqueue 관련 notifier를 뒤에 위치시킨다.
 	 **/
@@ -125,7 +125,7 @@ enum {
 #ifdef CONFIG_SMP
 /* Need to know about CPUs going up/down? */
 #if defined(CONFIG_HOTPLUG_CPU) || !defined(MODULE)
-/** 20130727    
+/** 20130727
  * notifier_block을 하나 선언하고, register_cpu_notifier를 통해 cpu_chain에 등록.
  * HOTPLUG_CPU인 경우 cpu event에 따라 호출할 notifier block을 등록.
  *
@@ -192,7 +192,7 @@ extern struct bus_type cpu_subsys;
 
 extern void get_online_cpus(void);
 extern void put_online_cpus(void);
-/** 20130727    
+/** 20130727
  * vexpress의 경우 CONFIG_HOTPLUG_CPU 설정되어 있으므로 cpu_notifier 호출
  * hotcpu notifier 등록.
  *
@@ -210,7 +210,7 @@ int cpu_down(unsigned int cpu);
 extern void cpu_hotplug_driver_lock(void);
 extern void cpu_hotplug_driver_unlock(void);
 #else
-/** 20140927    
+/** 20140927
  * cpu hotplug driver lock/unlock은 NULL 함수.
  **/
 static inline void cpu_hotplug_driver_lock(void)

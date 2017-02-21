@@ -9,7 +9,7 @@
  *
  *  This file is included thrice in entry-common.S
  */
- /** 20160305    
+ /** 20160305
   * 시스템콜 table.
   *
   * entry-common.S에서 3번 include 된다.
@@ -395,7 +395,7 @@
 /* 375 */	CALL(sys_setns)
 		CALL(sys_process_vm_readv)
 		CALL(sys_process_vm_writev)
-		/** 20160305    
+		/** 20160305
 		 * syscalls_counted 선언하지 않았을 경우 3의 배수로 roundup 시키고,
 		 * padding된 수만큼 sys_ni_syscall로 채운다.
 		 **/

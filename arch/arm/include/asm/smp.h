@@ -18,7 +18,7 @@
 # error "<asm/smp.h> included in non-SMP build"
 #endif
 
-/** 20130713    
+/** 20130713
  * 현재 task의 thread_info에서 cpu를 가져온다.
  * 즉 현재 task 실행 중인 cpu 를 조회한다.
  **/

@@ -24,7 +24,7 @@
 #include <asm/sched_clock.h>
 #include <plat/sched_clock.h>
 
-/** 20150103    
+/** 20150103
  * versatile_sched_clock_init에서 지정한 레지스터.
  **/
 static void __iomem *ctr;

@@ -155,7 +155,7 @@ static const struct file_operations socket_file_ops = {
  *	The protocol list. Each protocol is registered in here.
  */
 
-/** 20151031    
+/** 20151031
  * 프로토콜 개수만큼 프로토콜 패밀리를 저장할 포인터 배열을 정의한다.
  **/
 static DEFINE_SPINLOCK(net_family_lock);
@@ -165,7 +165,7 @@ static const struct net_proto_family __rcu *net_families[NPROTO] __read_mostly;
  *	Statistics counters of the socket lists
  */
 
-/** 20151107    
+/** 20151107
  * 소켓 리스트의 멤버를 나타내는 percpu 변수 sockets_in_use.
  **/
 static DEFINE_PER_CPU(int, sockets_in_use);
@@ -243,7 +243,7 @@ static int move_addr_to_user(struct sockaddr_storage *kaddr, int klen,
 
 static struct kmem_cache *sock_inode_cachep __read_mostly;
 
-/** 20151017    
+/** 20151017
  * socket을 할당하고 초기화 해 리턴한다.
  *
  * 실제로 socket과 inode를 묶은 struct socket_alloc 구조체를 할당한다.
@@ -253,7 +253,7 @@ static struct inode *sock_alloc_inode(struct super_block *sb)
 	struct socket_alloc *ei;
 	struct socket_wq *wq;
 
-	/** 20151017    
+	/** 20151017
 	 * socket_alloc 구조체를 통해 socket을 할당 받는다.
 	 *
 	 * 내부의 inode 구조체는 object 생성시 호출되어 vfs inode를 초기화 한다.
@@ -279,7 +279,7 @@ static struct inode *sock_alloc_inode(struct super_block *sb)
 	return &ei->vfs_inode;
 }
 
-/** 20151017    
+/** 20151017
  * inode를 받아 socket_alloc 제거함수.
  **/
 static void sock_destroy_inode(struct inode *inode)
@@ -287,7 +287,7 @@ static void sock_destroy_inode(struct inode *inode)
 	struct socket_alloc *ei;
 	struct socket_wq *wq;
 
-	/** 20151017    
+	/** 20151017
 	 * 전달받은 inode로 구조체를 받아와 할당받은 메모리를 해제하는 등 정리한다.
 	 **/
 	ei = container_of(inode, struct socket_alloc, vfs_inode);
@@ -296,7 +296,7 @@ static void sock_destroy_inode(struct inode *inode)
 	kmem_cache_free(sock_inode_cachep, ei);
 }
 
-/** 20151017    
+/** 20151017
  * inode 객체를 생성 후 init_init_once 함수로 초기화 한다.
  **/
 static void init_once(void *foo)
@@ -306,12 +306,12 @@ static void init_once(void *foo)
 	inode_init_once(&ei->vfs_inode);
 }
 
-/** 20151017    
+/** 20151017
  * socket inode를 위한 kmem_cache를 생성한다.
  **/
 static int init_inodecache(void)
 {
-	/** 20151017    
+	/** 20151017
 	 * socket_alloc을 위한 kmem_cache를 생성한다.
 	 *
 	 * inode cache이므로 reclaimable 속성을 갖고 있고,
@@ -329,7 +329,7 @@ static int init_inodecache(void)
 	return 0;
 }
 
-/** 20151017    
+/** 20151017
  * sockfs의 superblock operation.
  *
  * alloc_inode/destroy_inode 콜백이 지정되어 있으므로 superblock에서 inode를
@@ -354,26 +354,26 @@ static const struct dentry_operations sockfs_dentry_operations = {
 	.d_dname  = sockfs_dname,
 };
 
-/** 20151017    
+/** 20151017
  * sockfs 마운트 함수.
  **/
 static struct dentry *sockfs_mount(struct file_system_type *fs_type,
 			 int flags, const char *dev_name, void *data)
 {
-	/** 20151017    
+	/** 20151017
 	 * 가상 파일시스템(nodev)으로 mount 한다.
 	 **/
 	return mount_pseudo(fs_type, "socket:", &sockfs_ops,
 		&sockfs_dentry_operations, SOCKFS_MAGIC);
 }
 
-/** 20151017    
+/** 20151017
  * sockfs mount로 설정되는 vfsmount 구조체.
  * sock_init 함수에서 mount.
  **/
 static struct vfsmount *sock_mnt __read_mostly;
 
-/** 20151017    
+/** 20151017
  * sock fs 구조체.
  *
  * socket 구조체가 VFS 서브시스템과 연동시켜 파일 연산이 가능하도록 한다.
@@ -518,7 +518,7 @@ static struct socket *sockfd_lookup_light(int fd, int *err, int *fput_needed)
  *	NULL is returned.
  */
 
-/** 20151107    
+/** 20151107
  * 새 inode와 socket와 할당 받는다.
  *
  * sockfs의 s_ops 중 alloc_inode을 통해 inode와 socket 오브젝트를 할당 받고,
@@ -529,7 +529,7 @@ static struct socket *sock_alloc(void)
 	struct inode *inode;
 	struct socket *sock;
 
-	/** 20151031    
+	/** 20151031
 	 * sockfs의 mount시 지정한 super_operations의 sock_alloc_inode 함수로
 	 * inode를 할당 받아 온다. socket_alloc 구조체가 할당된다.
 	 *
@@ -539,13 +539,13 @@ static struct socket *sock_alloc(void)
 	if (!inode)
 		return NULL;
 
-	/** 20151107    
+	/** 20151107
 	 * inode와 묶여있는 socket 구조체를 받아온다.
 	 **/
 	sock = SOCKET_I(inode);
 
 	kmemcheck_annotate_bitfield(sock, type);
-	/** 20151107    
+	/** 20151107
 	 * inode 번호를 받아와 채우고, mode는 socket, uid와 gid를 받아온다.
 	 **/
 	inode->i_ino = get_next_ino();
@@ -553,7 +553,7 @@ static struct socket *sock_alloc(void)
 	inode->i_uid = current_fsuid();
 	inode->i_gid = current_fsgid();
 
-	/** 20151107    
+	/** 20151107
 	 * 현재 cpu에 사용 중인 cpu를 하나 증가시킨다.
 	 **/
 	this_cpu_add(sockets_in_use, 1);
@@ -1139,7 +1139,7 @@ static long sock_ioctl(struct file *file, unsigned cmd, unsigned long arg)
 	return err;
 }
 
-/** 20151107    
+/** 20151107
  * socket을 할당 받고, 전달받은 type으로 설정한다.
  **/
 int sock_create_lite(int family, int type, int protocol, struct socket **res)
@@ -1147,14 +1147,14 @@ int sock_create_lite(int family, int type, int protocol, struct socket **res)
 	int err;
 	struct socket *sock = NULL;
 
-	/** 20151107    
+	/** 20151107
 	 * NULL 함수
 	 **/
 	err = security_socket_create(family, type, protocol, 1);
 	if (err)
 		goto out;
 
-	/** 20151107    
+	/** 20151107
 	 * inode와 socket 구조체를 할당 받는다.
 	 **/
 	sock = sock_alloc();
@@ -1163,7 +1163,7 @@ int sock_create_lite(int family, int type, int protocol, struct socket **res)
 		goto out;
 	}
 
-	/** 20151107    
+	/** 20151107
 	 * socket을 전달받은 type의 소켓으로 설정한다.
 	 **/
 	sock->type = type;
@@ -1322,7 +1322,7 @@ int __sock_create(struct net *net, int family, int type, int protocol,
 	 *	the protocol is 0, the family is instructed to select an appropriate
 	 *	default.
 	 */
-	/** 20151031    
+	/** 20151031
 	 * struct socket 메모리 할당
 	 *
 	 * inode와 socket 구조체 메모리를 할당한다.
@@ -1363,7 +1363,7 @@ int __sock_create(struct net *net, int family, int type, int protocol,
 	/* Now protected by module ref count */
 	rcu_read_unlock();
 
-	/** 20151031    
+	/** 20151031
 	 * protocol family 별 create 콜백을 호출한다.
 	 *
 	 * struct sock을 할당해 struct socket의 sk에 연결시킨다.
@@ -2563,7 +2563,7 @@ SYSCALL_DEFINE2(socketcall, int, call, unsigned long __user *, args)
  *	socket interface. The value ops->family coresponds to the
  *	socket system call protocol family.
  */
-/** 20151031    
+/** 20151031
  * 새로운 프로토콜 패밀리를 등록한다.
  * 이 시점 이후부터 시스템이 인식된다.
  **/
@@ -2577,11 +2577,11 @@ int sock_register(const struct net_proto_family *ops)
 		return -ENOBUFS;
 	}
 
-	/** 20151031    
+	/** 20151031
 	 * net_families 접근은 spin lock으로 보호된다.
 	 **/
 	spin_lock(&net_family_lock);
-	/** 20151031    
+	/** 20151031
 	 * 이미 해당 family가 등록되어 있다면 리턴.
 	 * 그렇지 않다면 family 자리에 새로 ops를 등록한다.
 	 **/
@@ -2626,7 +2626,7 @@ void sock_unregister(int family)
 }
 EXPORT_SYMBOL(sock_unregister);
 
-/** 20151017    
+/** 20151017
  * socket을 사용하기 위한 초기화 함수.
  *
  * - kmem_cache 생성, sockfs 등록, vfs 마운트.
@@ -2637,7 +2637,7 @@ static int __init sock_init(void)
 	/*
 	 *      Initialize the network sysctl infrastructure.
 	 */
-	/** 20151017    
+	/** 20151017
 	 * network sysctl 초기화.
 	 **/
 	err = net_sysctl_init();
@@ -2661,7 +2661,7 @@ static int __init sock_init(void)
 
 	init_inodecache();
 
-	/** 20151017    
+	/** 20151017
 	 * sock_fs_type을 등록하고, kernel mount 한다.
 	 **/
 	err = register_filesystem(&sock_fs_type);

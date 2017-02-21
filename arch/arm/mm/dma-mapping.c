@@ -184,7 +184,7 @@ static void __dma_clear_buffer(struct page *page, size_t size)
  * Allocate a DMA buffer for 'dev' of size 'size' using the
  * specified gfp mask.  Note that 'size' must be page aligned.
  */
-/** 20151017    
+/** 20151017
  * size만큼 페이지를 할당 받고, 해당 영역에 대한 cache를 clean/invalidate시킨다.
  **/
 static struct page *__dma_alloc_buffer(struct device *dev, size_t size, gfp_t gfp)
@@ -192,7 +192,7 @@ static struct page *__dma_alloc_buffer(struct device *dev, size_t size, gfp_t gf
 	unsigned long order = get_order(size);
 	struct page *page, *p, *e;
 
-	/** 20151017    
+	/** 20151017
 	 * 일반적인 페이지 할당 함수를 통해 페이지를 받아온다.
 	 **/
 	page = alloc_pages(gfp, order);
@@ -202,7 +202,7 @@ static struct page *__dma_alloc_buffer(struct device *dev, size_t size, gfp_t gf
 	/*
 	 * Now split the huge page and free the excess pages
 	 */
-	/** 20151017    
+	/** 20151017
 	 * order 단위로 받은 페이지를 한 페이지 단위로 끊고,
 	 * 사용할 페이지 이외의 남은 페이지는 반환한다.
 	 **/
@@ -210,7 +210,7 @@ static struct page *__dma_alloc_buffer(struct device *dev, size_t size, gfp_t gf
 	for (p = page + (size >> PAGE_SHIFT), e = page + (1 << order); p < e; p++)
 		__free_page(p);
 
-	/** 20151017    
+	/** 20151017
 	 * 사용할 페이지 메모리에 대해 cache를 clean시킨다.
 	 **/
 	__dma_clear_buffer(page, size);
@@ -243,7 +243,7 @@ static void *__alloc_remap_buffer(struct device *dev, size_t size, gfp_t gfp,
 				 pgprot_t prot, struct page **ret_page,
 				 const void *caller);
 
-/** 20151017    
+/** 20151017
  * 가상 메모리를 할당 받아 페이지의 물리메모리와 매핑시킨다.
  **/
 static void *
@@ -257,7 +257,7 @@ __dma_alloc_remap(struct page *page, size_t size, gfp_t gfp, pgprot_t prot,
 	 * DMA allocation can be mapped to user space, so lets
 	 * set VM_USERMAP flags too.
 	 */
-	/** 20151017    
+	/** 20151017
 	 * vmalloc으로 사용하도록 va 공간을 받아온다.
 	 * user space에서 사용가능 하다는 플래그를 포함한다.
 	 **/
@@ -268,7 +268,7 @@ __dma_alloc_remap(struct page *page, size_t size, gfp_t gfp, pgprot_t prot,
 	addr = (unsigned long)area->addr;
 	area->phys_addr = __pfn_to_phys(page_to_pfn(page));
 
-	/** 20151017    
+	/** 20151017
 	 * 물리주소와 가상주소를 전달해 page table에 매핑시킨다.
 	 **/
 	if (ioremap_page_range(addr, addr + size, area->phys_addr, prot)) {
@@ -290,7 +290,7 @@ static void __dma_free_remap(void *cpu_addr, size_t size)
 	vunmap(cpu_addr);
 }
 
-/** 20151017    
+/** 20151017
  * dma pool 자료구조.
  *
  * 관리하는 페이지 정보와 가상 주소, 페이지의 상태를 나타내는 bitmap 정보 저장.
@@ -304,7 +304,7 @@ struct dma_pool {
 	struct page *page;
 };
 
-/** 20151017    
+/** 20151017
  * atomic_pool용 dma_pool 정의.
  *
  * pool의 크기는 256K.
@@ -323,7 +323,7 @@ early_param("coherent_pool", early_coherent_pool);
 /*
  * Initialise the coherent pool for atomic allocations.
  */
-/** 20151017    
+/** 20151017
  * atomic pool용 dma pool을 할당 받고 페이지와 가상 메모리를 채워 리턴한다.
  **/
 static int __init atomic_pool_init(void)
@@ -334,12 +334,12 @@ static int __init atomic_pool_init(void)
 	unsigned long *bitmap;
 	struct page *page;
 	void *ptr;
-	/** 20151017    
+	/** 20151017
 	 * pool에 존재하는 page들을 관리하기 위해 필요한 bitmap의 크기를 구한다.
 	 **/
 	int bitmap_size = BITS_TO_LONGS(nr_pages) * sizeof(long);
 
-	/** 20151017    
+	/** 20151017
 	 * page관리를 위한 bitmap용 메모리를 할당 받는다.
 	 **/
 	bitmap = kzalloc(bitmap_size, GFP_KERNEL);
@@ -349,14 +349,14 @@ static int __init atomic_pool_init(void)
 	if (IS_ENABLED(CONFIG_CMA))
 		ptr = __alloc_from_contiguous(NULL, pool->size, prot, &page);
 	else
-		/** 20151017    
+		/** 20151017
 		 * CONFIG_CMA가 정의되지 않은 경우 remap 함수를 이용해 pool->size만큼
 		 * 페이지를 할당 받고 매핑시킨다.
 		 **/
 		ptr = __alloc_remap_buffer(NULL, pool->size, GFP_KERNEL, prot,
 					   &page, NULL);
 	if (ptr) {
-		/** 20151017    
+		/** 20151017
 		 * 매핑이 성공하면 pool에 정보를 채우고 리턴한다.
 		 **/
 		spin_lock_init(&pool->lock);
@@ -395,7 +395,7 @@ void __init dma_contiguous_early_fixup(phys_addr_t base, unsigned long size)
 	dma_mmu_remap_num++;
 }
 
-/** 20130309    
+/** 20130309
  * vexpress 에서 CONFIG_CMA가 정의되어 있지 않아 dma_mmu_remap_num이 0.
  * for 문을 수행하지 않음.
  **/
@@ -449,7 +449,7 @@ static void __dma_remap(struct page *page, size_t size, pgprot_t prot)
 	flush_tlb_kernel_range(start, end);
 }
 
-/** 20151017    
+/** 20151017
  * dma 버퍼용 메모리 공간을 할당 받고, 가상 주소에 매핑시킨다.
  *
  * 리턴 주소는 가상주소, 할당 받은 page 정보는 ret_page에 저장한다.
@@ -460,14 +460,14 @@ static void *__alloc_remap_buffer(struct device *dev, size_t size, gfp_t gfp,
 {
 	struct page *page;
 	void *ptr;
-	/** 20151017    
+	/** 20151017
 	 * dma 버퍼용 메모리 공간을 size만큼 할당 받는다.
 	 **/
 	page = __dma_alloc_buffer(dev, size, gfp);
 	if (!page)
 		return NULL;
 
-	/** 20151017    
+	/** 20151017
 	 * 가상 메모리 공간을 할당받고 앞에서 할당 받은 페이지와 매핑시킨다.
 	 **/
 	ptr = __dma_alloc_remap(page, size, gfp, prot, caller);
@@ -480,7 +480,7 @@ static void *__alloc_remap_buffer(struct device *dev, size_t size, gfp_t gfp,
 	return ptr;
 }
 
-/** 20151017    
+/** 20151017
  * atomic_pool에서 연속적인 page를 할당 받아 가상 메모리 주소와 page 정보를 리턴.
  **/
 static void *__alloc_from_pool(size_t size, struct page **ret_page)
@@ -502,12 +502,12 @@ static void *__alloc_from_pool(size_t size, struct page **ret_page)
 	 * small, so align them to their order in pages, minimum is a page
 	 * size. This helps reduce fragmentation of the DMA space.
 	 */
-	/** 20151017    
+	/** 20151017
 	 * DMA 공간에 대한 파편화를 막기 위해 PAGE 단위로 align한다.
 	 **/
 	align = PAGE_SIZE << get_order(size);
 
-	/** 20151017    
+	/** 20151017
 	 * spinlock과 interrupt를 막아 임계구역을 만든다.
 	 * pool 내에서 연속적으로 할당 가능한 페이지를 찾아온다.
 	 **/
@@ -555,7 +555,7 @@ static void *__alloc_from_contiguous(struct device *dev, size_t size,
 	size_t count = size >> PAGE_SHIFT;
 	struct page *page;
 
-	/** 20141122    
+	/** 20141122
 	 **/
 	page = dma_alloc_from_contiguous(dev, count, order);
 	if (!page)
@@ -649,7 +649,7 @@ static void *__dma_alloc(struct device *dev, size_t size, dma_addr_t *handle,
 
 	if (arch_is_coherent() || nommu())
 		addr = __alloc_simple_buffer(dev, size, gfp, &page);
-	/** 20151017    
+	/** 20151017
 	 * GFP_ATOMIC 속성이 요구된 경우
 	 * atomic pool에서 할당 받는다.
 	 **/
@@ -658,7 +658,7 @@ static void *__dma_alloc(struct device *dev, size_t size, dma_addr_t *handle,
 	else if (!IS_ENABLED(CONFIG_CMA))
 		addr = __alloc_remap_buffer(dev, size, gfp, prot, &page, caller);
 	else
-		/** 20141122    
+		/** 20141122
 		 **/
 		addr = __alloc_from_contiguous(dev, size, prot, &page);
 
@@ -681,7 +681,7 @@ void *arm_dma_alloc(struct device *dev, size_t size, dma_addr_t *handle,
 	if (dma_alloc_from_coherent(dev, size, handle, &memory))
 		return memory;
 
-	/** 20141122    
+	/** 20141122
 	 **/
 	return __dma_alloc(dev, size, handle, gfp, prot,
 			   __builtin_return_address(0));

@@ -11,7 +11,7 @@
 
 #ifdef CONFIG_GENERIC_CLOCKEVENTS
 
-/** 20141122    
+/** 20141122
  * tick device mode
  **/
 enum tick_device_mode {
@@ -19,7 +19,7 @@ enum tick_device_mode {
 	TICKDEV_MODE_ONESHOT,
 };
 
-/** 20141115    
+/** 20141115
  * percpu 변수로 설정된다.
  * vexpress의 경우, core마다 local_timer가 있어 percpu 변수인 evtdev를 가리킨다.
  **/
@@ -28,7 +28,7 @@ struct tick_device {
 	enum tick_device_mode mode;
 };
 
-/** 20141115    
+/** 20141115
  * NOHZ와 HIGH_RES_TIMERS는 의존성이 없으므로
  * NOHZ mode의 속성은 아래 세 가지로 나뉜다.
  *
@@ -62,7 +62,7 @@ enum tick_nohz_mode {
  * @sleep_length:	Duration of the current idle sleep
  * @do_timer_lst:	CPU was the last one doing do_timer before going idle
  */
-/** 20141108    
+/** 20141108
  * scheduling 등에 사용하는 tick을 emulation하기 위한 자료구조.
  *
  * nohz_mode : NOHZ 동작 모드를 설정한다.
@@ -116,7 +116,7 @@ extern struct cpumask *tick_get_broadcast_oneshot_mask(void);
 
 # endif /* BROADCAST */
 
-/** 20140920    
+/** 20140920
  * vexpress config에서
  * CONFIG_GENERIC_CLOCKEVENTS 선언이 되어 있고,
  * CONFIG_TICK_ONESHOT 선언은 안 되어 있다.
@@ -133,7 +133,7 @@ extern int tick_oneshot_mode_active(void);
 #   define arch_needs_cpu(cpu) (0)
 #  endif
 # else
-/** 20151212    
+/** 20151212
  * vexpress의 config에 따라 TICK_ONESHOT에 해당하지 않는다.
  **/
 static inline void tick_clock_notify(void) { }
@@ -159,7 +159,7 @@ extern ktime_t tick_nohz_get_sleep_length(void);
 extern u64 get_cpu_idle_time_us(int cpu, u64 *last_update_time);
 extern u64 get_cpu_iowait_time_us(int cpu, u64 *last_update_time);
 # else
-/** 20160227    
+/** 20160227
  * CONIFG_NO_HZ가 아닐 경우.
  **/
 static inline void tick_nohz_idle_enter(void) { }

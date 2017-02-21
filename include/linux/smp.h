@@ -15,7 +15,7 @@
 extern void cpu_idle(void);
 
 typedef void (*smp_call_func_t)(void *info);
-/** 20140621    
+/** 20140621
  * call_function_data의 member이기도 함.
  **/
 struct call_single_data {
@@ -142,7 +142,7 @@ static inline int up_smp_call_function(smp_call_func_t func, void *info)
 }
 #define smp_call_function(func, info, wait) \
 			(up_smp_call_function(func, info))
-/** 20131026    
+/** 20131026
  * 20160604 SMP를 기준으로 분석하므로 해당 안 함
  *
  * local irq disable, enable을 해주는 이유는???
@@ -173,7 +173,7 @@ static inline int up_smp_call_function(smp_call_func_t func, void *info)
  * Preemption is disabled here to make sure the cond_func is called under the
  * same condtions in UP and SMP.
  */
-/** 20140510    
+/** 20140510
  * 선점 불가 상태에서 cond_func을 만족할 경우
  * atomic context (SMP인 경우 포함)에서 func을 실행한다.
  *
@@ -227,7 +227,7 @@ static inline void kick_all_cpus_sync(void) {  }
   extern unsigned int debug_smp_processor_id(void);
 # define smp_processor_id() debug_smp_processor_id()
 #else
-/** 20130713    
+/** 20130713
  * CONFIG_DEBUG_PREEMPT 정의되어 있지 않아 다음 매크로가 호출된다.
  * 현재 task의 thread_info로부터 cpu번호를 리턴한다.
  **/

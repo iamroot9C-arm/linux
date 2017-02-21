@@ -41,7 +41,7 @@
 	"nop.w"					\
 )
 #else
-/** 20140329    
+/** 20140329
  * sev를 보내 wfe로 대기 중인 core를 동작시킨다.
  **/
 #define SEV		ALT_SMP("sev", "nop")
@@ -52,7 +52,7 @@
 #define WFE(cond)	ALT_SMP("wfe" cond, "nop")
 #endif
 
-/** 20141021    
+/** 20141021
  * unlock 전 memory barrier를 두어 변경 사항이 반영되도록 한다.
  * 또한 sev를 날리기 전에 unlock이 메모리에 모두 반영되어야 한다.
  *
@@ -96,7 +96,7 @@ static inline void dsb_sev(void)
 #define arch_spin_unlock_wait(lock) \
 	do { while (arch_spin_is_locked(lock)) cpu_relax(); } while (0)
 
-/** 20130706    
+/** 20130706
  * do_raw_spin_lock_flags 에서 온 경우
  **/
 #define arch_spin_lock_flags(lock, flags) arch_spin_lock(lock)
@@ -158,7 +158,7 @@ static inline void arch_spin_lock(arch_spinlock_t *lock)
 	smp_mb();
 }
 
-/** 20140809    
+/** 20140809
  * asm 분석은 하지 않았음.
  **/
 static inline int arch_spin_trylock(arch_spinlock_t *lock)
@@ -166,7 +166,7 @@ static inline int arch_spin_trylock(arch_spinlock_t *lock)
 	unsigned long tmp;
 	u32 slock;
 
-	/** 20140809    
+	/** 20140809
 	 *  ldrex/strex 쌍을 이용해 구현
 	 *  %0: slock
 	 *  %1: tmp
@@ -230,16 +230,16 @@ static inline void arch_spin_unlock(arch_spinlock_t *lock)
 	dsb_sev();
 }
 
-/** 20130713    
+/** 20130713
  * lock의 tickets의 owner와 next가 같지 않다면 lock 상태
  **/
 static inline int arch_spin_is_locked(arch_spinlock_t *lock)
 {
-	/** 20130713    
+	/** 20130713
 	 * lock의 tickets 값을 얻어온다.
 	 **/
 	struct __raw_tickets tickets = ACCESS_ONCE(lock->tickets);
-	/** 20130713    
+	/** 20130713
 	 * tickets의 owner과 tickets의 next가 같지 않은지 결과를 리턴
 	 **/
 	return tickets.owner != tickets.next;
@@ -260,7 +260,7 @@ static inline int arch_spin_is_contended(arch_spinlock_t *lock)
  * just write zero since the lock is exclusively held.
  */
 
-/** 20141021    
+/** 20141021
  * rwlock의 writer lock 함수.
  * 
  * lock 변수가 0이 아닐 경우 다른 reader 또는 writer가 lock을 보유하고 있으므로
@@ -298,7 +298,7 @@ static inline void arch_write_lock(arch_rwlock_t *rw)
 	smp_mb();
 }
 
-/** 20141021    
+/** 20141021
  * 현재 다른 reader나 writer가 lock을 소유하고 있지 않고, (lock 변수 0)
  * 성공적으로 lock을 획득했으면 (exclusive monitor 상태값 0)
  * lock에 0x80000000을 기록하고 성공을 리턴한다. (이제 다른 reader나 writer가 접근하지 못한다)
@@ -323,7 +323,7 @@ static inline int arch_write_trylock(arch_rwlock_t *rw)
 	}
 }
 
-/** 20141021    
+/** 20141021
  * rwlock 중 writer unlock의 구현.
  *
  * lock에 0을 쓰고, (오직 하나의 writer만 lock을 획득하므로)
@@ -343,7 +343,7 @@ static inline void arch_write_unlock(arch_rwlock_t *rw)
 	: "r" (&rw->lock), "r" (0)
 	: "cc");
 
-	/** 20140329    
+	/** 20140329
 	 * dsb, sev
 	 **/
 	dsb_sev();
@@ -364,7 +364,7 @@ static inline void arch_write_unlock(arch_rwlock_t *rw)
  * currently active.  However, we know we won't have any write
  * locks.
  */
-/** 20141021    
+/** 20141021
  * rwlock의 read lock 함수.
  *
  * lock 변수가 음수거나(writer가 lock을 보유 중) exclusive monitor가 변경되었다면 wfe로 대기.
@@ -402,7 +402,7 @@ static inline void arch_read_lock(arch_rwlock_t *rw)
 	smp_mb();
 }
 
-/** 20141021    
+/** 20141021
  * rwlock의 read unlock 함수.
  *
  * lock 변수에 1을 뺀다.
@@ -439,7 +439,7 @@ static inline void arch_read_unlock(arch_rwlock_t *rw)
 		dsb_sev();
 }
 
-/** 20141021    
+/** 20141021
  * 현재 다른 writer가 lock을 소유하고 있지 않고, (lock 변수 0이상)
  * 성공적으로 lock을 획득했으면 (exclusive monitor 상태값 0)
  * lock에 1을 더하고 성공을 리턴한다.

@@ -17,12 +17,12 @@
 
 int in_lock_functions(unsigned long addr);
 
-/** 20130713    
+/** 20130713
  * spinlock이 잠겨 있지 않다면 BUG.
  **/
 #define assert_raw_spin_locked(x)	BUG_ON(!raw_spin_is_locked(x))
 
-/** 20130706    
+/** 20130706
  * __acquires는 attribute
  **/
 void __lockfunc _raw_spin_lock(raw_spinlock_t *lock)		__acquires(lock);
@@ -35,7 +35,7 @@ void __lockfunc _raw_spin_lock_bh(raw_spinlock_t *lock)		__acquires(lock);
 void __lockfunc _raw_spin_lock_irq(raw_spinlock_t *lock)
 								__acquires(lock);
 
-/** 20131005    
+/** 20131005
  * 이곳에서 선언
  **/
 unsigned long __lockfunc _raw_spin_lock_irqsave(raw_spinlock_t *lock)
@@ -92,7 +92,7 @@ _raw_spin_unlock_irqrestore(raw_spinlock_t *lock, unsigned long flags)
 #define _raw_spin_unlock_irqrestore(lock, flags) __raw_spin_unlock_irqrestore(lock, flags)
 #endif
 
-/** 20140809    
+/** 20140809
  * 선점불가 상태에서 lock 획득을 시도.
  * 성공시 1 리턴. 실패시 0 리턴.
  **/
@@ -153,30 +153,30 @@ static inline unsigned long __raw_spin_lock_irqsave(raw_spinlock_t *lock)
 	return flags;
 }
 
-/** 20131026    
+/** 20131026
  * irq disable, preempt_disable 호출 후 spinlock을 획득하는 함수
  **/
 static inline void __raw_spin_lock_irq(raw_spinlock_t *lock)
 {
-	/** 20131026    
+	/** 20131026
 	 * local irq disable. 이전 상태는 별도로 저장하지 않는다.
 	 **/
 	local_irq_disable();
-	/** 20131026    
+	/** 20131026
 	 * 선점 불가.
 	 **/
 	preempt_disable();
-	/** 20131026    
+	/** 20131026
 	 * vexpress에서 NULL함수
 	 **/
 	spin_acquire(&lock->dep_map, 0, 0, _RET_IP_);
-	/** 20131026    
+	/** 20131026
 	 *do_raw_spin_lock을 호출해 lock을 획득.
 	 **/
 	LOCK_CONTENDED(lock, do_raw_spin_trylock, do_raw_spin_lock);
 }
 
-/** 20150214    
+/** 20150214
  * bottom-half를 막고, 선점을 금지시킨 상태로 spinlock을 건다.
  **/
 static inline void __raw_spin_lock_bh(raw_spinlock_t *lock)
@@ -187,20 +187,20 @@ static inline void __raw_spin_lock_bh(raw_spinlock_t *lock)
 	LOCK_CONTENDED(lock, do_raw_spin_trylock, do_raw_spin_lock);
 }
 
-/** 20130706    
+/** 20130706
  * spin_lock을 실행하는 부분.
  **/
 static inline void __raw_spin_lock(raw_spinlock_t *lock)
 {
-	/** 20130706    
+	/** 20130706
 	 * 선점불가로 지정. lock을 잡은채로 선점당하면 안 된다.
 	 **/
 	preempt_disable();
-	/** 20130706    
+	/** 20130706
 	 * LOCK DEBUG를 사용하지 않으면 NULL 함수
 	 **/
 	spin_acquire(&lock->dep_map, 0, 0, _RET_IP_);
-	/** 20130706    
+	/** 20130706
 	 * LOCK DEBUG를 사용하지 않으면 do_raw_spin_lock 실행
 	 **/
 	LOCK_CONTENDED(lock, do_raw_spin_trylock, do_raw_spin_lock);
@@ -208,20 +208,20 @@ static inline void __raw_spin_lock(raw_spinlock_t *lock)
 
 #endif /* CONFIG_PREEMPT */
 
-/** 20130713    
+/** 20130713
  * spin unlock.
  **/
 static inline void __raw_spin_unlock(raw_spinlock_t *lock)
 {
-	/** 20130713    
+	/** 20130713
 	 * DEBUG용. NULL 함수
 	 **/
 	spin_release(&lock->dep_map, 1, _RET_IP_);
-	/** 20130713    
+	/** 20130713
 	 * 실제 lock 해제.
 	 **/
 	do_raw_spin_unlock(lock);
-	/** 20130713    
+	/** 20130713
 	 * non preempt로 NULL 함수.
 	 **/
 	preempt_enable();

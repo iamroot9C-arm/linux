@@ -5,7 +5,7 @@
 
 #include <linux/cpumask.h>
 
-/** 20150530    
+/** 20150530
  * arm용 cpu topology
  **/
 struct cputopo_arm {

@@ -29,18 +29,18 @@
  *	Once the reference is obtained we can drop the spinlock.
  */
 
-/** 20150221    
+/** 20150221
  * 시스템 전체 file_system이 single list 형태로 구성되어 있다.
  * file_systems을 변경시킬 때 rwlock을 사용한다.
  **/
 static struct file_system_type *file_systems;
-/** 20150221    
+/** 20150221
  * file systems 전역 RW lock.
  **/
 static DEFINE_RWLOCK(file_systems_lock);
 
 /* WARNING: This can be used only if we _already_ own a reference */
-/** 20150307    
+/** 20150307
  * filesystem의 owner module을 사용 중으로 표시한다.
  **/
 void get_filesystem(struct file_system_type *fs)
@@ -48,7 +48,7 @@ void get_filesystem(struct file_system_type *fs)
 	__module_get(fs->owner);
 }
 
-/** 20150307    
+/** 20150307
  * filesystem의 owner module를 사용 안함으로 표시한다.
  **/
 void put_filesystem(struct file_system_type *fs)
@@ -56,7 +56,7 @@ void put_filesystem(struct file_system_type *fs)
 	module_put(fs->owner);
 }
 
-/** 20150221    
+/** 20150221
  * file_systems에 name이라는 file_system_type을 찾는다.
  * 존재하면 해당 위치에서 리턴. 존재하지 않으면 리스트의 마지막까지 이동해 리턴.
  **/
@@ -83,7 +83,7 @@ static struct file_system_type **find_filesystem(const char *name, unsigned len)
  *	unregistered.
  */
  
-/** 20150221    
+/** 20150221
  * 새로운 file_system_type을 등록한다.
  *
  * file_systems 리스트에 추가할 때 write_lock을 사용한다.
@@ -97,7 +97,7 @@ int register_filesystem(struct file_system_type * fs)
 	if (fs->next)
 		return -EBUSY;
 	write_lock(&file_systems_lock);
-	/** 20150221    
+	/** 20150221
 	 * 이미 fs가 file_systems에 등록되어 있다면(*p) 에러를 리턴.
 	 * 등록되어 있지 않다면 fs를 가리킨다.
 	 **/
@@ -124,18 +124,18 @@ EXPORT_SYMBOL(register_filesystem);
  *	may be freed or reused.
  */
  
- /** 20150411    
+ /** 20150411
   * 주어진 파일시스템을 파일시스템 리스트에서 제거해 등록해제한다.
   **/
 int unregister_filesystem(struct file_system_type * fs)
 {
 	struct file_system_type ** tmp;
 
-	/** 20150411    
+	/** 20150411
 	 * file_systems 리스트는 rwlock으로 보호된다.
 	 **/
 	write_lock(&file_systems_lock);
-	/** 20150411    
+	/** 20150411
 	 * 시스템의 filesystem 리스트를 순회하며,
 	 * argument로 전달받은 fs인 경우 리스트에서 제거한다.
 	 **/
@@ -145,7 +145,7 @@ int unregister_filesystem(struct file_system_type * fs)
 			*tmp = fs->next;
 			fs->next = NULL;
 			write_unlock(&file_systems_lock);
-			/** 20150411    
+			/** 20150411
 			 * 현재 존재하는 모든 rcu read-size critical section이 완료될 때까지
 			 * 대기한다.
 			 **/
@@ -294,18 +294,18 @@ static int __init proc_filesystems_init(void)
 module_init(proc_filesystems_init);
 #endif
 
-/** 20150425    
+/** 20150425
  * 파일시스템에서 name을 찾아 리턴한다.
  **/
 static struct file_system_type *__get_fs_type(const char *name, int len)
 {
 	struct file_system_type *fs;
 
-	/** 20150425    
+	/** 20150425
 	 * file_systems_lock read lock.
 	 **/
 	read_lock(&file_systems_lock);
-	/** 20150425    
+	/** 20150425
 	 * file_systems에서 name인 파일시스템을 찾는다.
 	 * 파일시스템이 존재하면 module 참조 카운트를 증가시킨다.
 	 * module 획득이 실패하면 파일시스템이 NULL을 리턴한다.
@@ -317,26 +317,26 @@ static struct file_system_type *__get_fs_type(const char *name, int len)
 	return fs;
 }
 
-/** 20150425    
+/** 20150425
  * name인 파일시스템을 찾아 리턴한다.
  **/
 struct file_system_type *get_fs_type(const char *name)
 {
 	struct file_system_type *fs;
-	/** 20150425    
+	/** 20150425
 	 * '.' 전까지 문자열 길이를 리턴
 	 **/
 	const char *dot = strchr(name, '.');
 	int len = dot ? dot - name : strlen(name);
 
-	/** 20150425    
+	/** 20150425
 	 * name으로 등록된 파일시스템을 찾는다.
 	 **/
 	fs = __get_fs_type(name, len);
 	if (!fs && (request_module("%.*s", len, name) == 0))
 		fs = __get_fs_type(name, len);
 
-	/** 20150425    
+	/** 20150425
 	 * name에 dot이 포함되어 있지만, 서브타입이 존재하지 않는 경우에는
 	 * 파일시스템 사용이 불가능한 것으로 리턴.
 	 **/

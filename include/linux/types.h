@@ -236,14 +236,14 @@ typedef struct {
 } atomic64_t;
 #endif
 
-/** 20130330    
+/** 20130330
  * list_head 구조체
  **/
 struct list_head {
 	struct list_head *next, *prev;
 };
 
-/** 20150314    
+/** 20150314
  *
  * +-----------+
  * |           |      hlist_node      hlist_node      hlist_node
@@ -260,7 +260,7 @@ struct hlist_head {
 	struct hlist_node *first;
 };
 
-/** 20150314    
+/** 20150314
  * hlist_node 구조체
  **/
 struct hlist_node {
@@ -279,7 +279,7 @@ struct ustat {
  * @next: next update requests in a list
  * @func: actual update function to call after the grace period.
  */
-/** 20140726    
+/** 20140726
  * callback_head는 RCU와 task_work에서 사용하기 위한 콜백 구조체로, 
  * 다음 entry를 가리키는 포인터와 실행할 함수 포인터만을 갖고 있다.
  *

@@ -23,7 +23,7 @@
 #define swp_is_buggy
 #endif
 
-/** 20130713    
+/** 20130713
  * ptr를 x로 변경하고 이전 값을 return.
  *
  * x   : 변경할 값
@@ -41,7 +41,7 @@ static inline unsigned long __xchg(unsigned long x, volatile void *ptr, int size
 	unsigned int tmp;
 #endif
 
-	/** 20130713    
+	/** 20130713
 	 * dmb();
 	 **/
 	smp_mb();
@@ -58,7 +58,7 @@ static inline unsigned long __xchg(unsigned long x, volatile void *ptr, int size
 			: "r" (x), "r" (ptr)
 			: "memory", "cc");
 		break;
-	/** 20130713    
+	/** 20130713
 	 * ex) atomic_t 
 	 *
 	 * %0  : ret   - ptr에서 읽어온 값(이전값)
@@ -113,7 +113,7 @@ static inline unsigned long __xchg(unsigned long x, volatile void *ptr, int size
 		__bad_xchg(ptr, size), ret = 0;
 		break;
 	}
-	/** 20130713    
+	/** 20130713
 	 * dmb()
 	 **/
 	smp_mb();
@@ -121,7 +121,7 @@ static inline unsigned long __xchg(unsigned long x, volatile void *ptr, int size
 	return ret;
 }
 
-/** 20130713    
+/** 20130713
  * __xchg()를 수행하고, 이전 값을 *ptr의 자료형으로 리턴.
  **/
 #define xchg(ptr,x) \
@@ -157,7 +157,7 @@ extern void __bad_cmpxchg(volatile void *ptr, int size);
  * cmpxchg only support 32-bits operands on ARMv6.
  */
 
-/** 20130720    
+/** 20130720
  * compare and exchange - 원자적 수행
  **/
 static inline unsigned long __cmpxchg(volatile void *ptr, unsigned long old,
@@ -193,7 +193,7 @@ static inline unsigned long __cmpxchg(volatile void *ptr, unsigned long old,
 		break;
 #endif
 	case 4:
-		/** 20130720    
+		/** 20130720
 		 * %0  : res
 		 * %1  : oldval
 		 * %2  : ptr
@@ -227,13 +227,13 @@ static inline unsigned long __cmpxchg(volatile void *ptr, unsigned long old,
 		oldval = 0;
 	}
 
-	/** 20130720    
+	/** 20130720
 	 * *ptr에서 읽은 값 리턴
 	 **/
 	return oldval;
 }
 
-/** 20130720    
+/** 20130720
  * __cmpxchg 전후에 memory barrier를 두는 함수.
  * 리턴 값은 *ptr에 현재 저장된 값
  **/
@@ -242,7 +242,7 @@ static inline unsigned long __cmpxchg_mb(volatile void *ptr, unsigned long old,
 {
 	unsigned long ret;
 
-	/** 20130720    
+	/** 20130720
 	 * __cmpxchg 전후에 dmb()
 	 **/
 	smp_mb();
@@ -252,7 +252,7 @@ static inline unsigned long __cmpxchg_mb(volatile void *ptr, unsigned long old,
 	return ret;
 }
 
-/** 20130720    
+/** 20130720
  * __cmpxchg_mb 호출.
  **/
 #define cmpxchg(ptr,o,n)						\

@@ -87,7 +87,7 @@
 # endif
 #endif
 
-/** 20151121    
+/** 20151121
  * v7의 data abort model.
  * CPU_DABORT_HANDLER가 정의되지 않았으므로 CPU_DABORT_HANDLER는
  * v7_early_abort

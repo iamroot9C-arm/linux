@@ -17,7 +17,7 @@
 #include <asm/barrier.h>
 #include <asm/cmpxchg.h>
 
-/** 20130706    
+/** 20130706
  * 단순히 i를 리턴.
  **/
 #define ATOMIC_INIT(i)	{ (i) }
@@ -81,12 +81,12 @@
 	ARM: A3.4.1 Exclusive access instructions and Non-shareable memory regions
 	http://www.iamroot.org/xe/66152
  */
-/** 20130706    
+/** 20130706
  * 코드에서 clrex가 실제 호출되는 곳은 arch/arm/kernel/entry-header.S의
  * svc_exit, restore_user_regs이다.
  *     -> context switching이 발생하는 시점은 scheduler가 불리는 시점이므로 svc_exit를 호출할 것이므로 svc_exit 안에 clrex를 넣어준다.
  **/
- /** 20130706    
+ /** 20130706
   * ARM에서 일반적인 str 명령은 local exclusive monitor를 clear하지 않는다.
   * ldr/str 명령은 그 자체로 atomic 하다.
   * 모든 exception return시에 clrex나 dummy strex (ARMv6 이전)가 수행된다.
@@ -153,7 +153,7 @@ static inline void atomic_add(int i, atomic_t *v)
 	: "cc");
 }
 
-/** 20140517    
+/** 20140517
  * ldrex/strex 로 atomic 하게 증가시키고 결과 값 리턴.
  *
  * 연산 전,후로 memory barrier를 두어 메모리 접근 연산의 순서를 보장한다.
@@ -196,7 +196,7 @@ static inline void atomic_sub(int i, atomic_t *v)
 	: "cc");
 }
 
-/** 20130803    
+/** 20130803
  * ARMv6 이상
  *
  * %0 : result
@@ -234,7 +234,7 @@ static inline int atomic_sub_return(int i, atomic_t *v)
 	return result;
 }
 
-/** 20130706    
+/** 20130706
  * vexpress는 __LINUX_ARM_ARCH__가 7.
  * old->new 변경을 원자적으로 실행하고, ptr->counter를 리턴.
  **/
@@ -242,12 +242,12 @@ static inline int atomic_cmpxchg(atomic_t *ptr, int old, int new)
 {
 	unsigned long oldval, res;
 
-	/** 20130706    
+	/** 20130706
 	 * memory barrier를 수행
 	 **/
 	smp_mb();
 
-	/** 20130706    
+	/** 20130706
 	 * http://gcc.gnu.org/onlinedocs/gcc/Machine-Constraints.html#Machine-Constraints
 	 * %0 : res
 	 * %1 : oldval
@@ -285,12 +285,12 @@ static inline int atomic_cmpxchg(atomic_t *ptr, int old, int new)
 		    : "cc");
 	} while (res);
 
-	/** 20130706    
+	/** 20130706
 	 * memory barrier를 수행
 	 **/
 	smp_mb();
 
-	/** 20130706    
+	/** 20130706
 	 * 이전 값 리턴
 	 **/
 	return oldval;
@@ -370,7 +370,7 @@ static inline void atomic_clear_mask(unsigned long mask, unsigned long *addr)
 
 #endif /* __LINUX_ARM_ARCH__ */
 
-/** 20130713    
+/** 20130713
  **/
 #define atomic_xchg(v, new) (xchg(&((v)->counter), new))
 
@@ -393,7 +393,7 @@ static inline int __atomic_add_unless(atomic_t *v, int a, int u)
 #define atomic_dec(v)		atomic_sub(1, v)
 
 #define atomic_inc_and_test(v)	(atomic_add_return(1, v) == 0)
-/** 20130803    
+/** 20130803
  * atomic_dec_and_test(v)
  *   v를 1 감소시키고, 감소시킨 결과가 0인지 리턴한다.
  * atomic_dec_return(v)
@@ -408,7 +408,7 @@ static inline int __atomic_add_unless(atomic_t *v, int a, int u)
 
 #define atomic_add_negative(i,v) (atomic_add_return(i, v) < 0)
 
-/** 20141004    
+/** 20141004
  * atomic operation은 local cpu에 원자적인 연산이므로,
  * SMP의 동기화가 필요한 경우 다음 매크로들을 사용해야 한다.
  **/

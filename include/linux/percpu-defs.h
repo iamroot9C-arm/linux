@@ -11,7 +11,7 @@
  * linkage errors occur due the compiler generating the wrong code to access
  * that section.
  */
-/** 20130427    
+/** 20130427
  * __percpu : __CHECKER__를 사용하지 않으면 전처리 과정에서 생략됨
  * CONFIG_SMP이므로 PER_CPU_BASE_SECTION는 ".data..percpu"
  **/
@@ -27,7 +27,7 @@
  * @ptr.  This is to be used in percpu accessors to verify that the
  * input parameter is a percpu pointer.
  */
-/** 20130629    
+/** 20130629
  * ptr이 __percpu로 선언되어 있는지 type check를 하기 위한 macro.
  * __percpu는 __CHECKER__ 일 때만 사용되어 type check.
  *
@@ -73,7 +73,7 @@
 	extern __PCPU_DUMMY_ATTRS char __pcpu_scope_##name;		\
 	extern __PCPU_ATTRS(sec) __typeof__(type) name
 
-/** 20140621    
+/** 20140621
  * 지정된 섹션에 percpu 변수를 선언한다.
  **/
 #define DEFINE_PER_CPU_SECTION(type, name, sec)				\
@@ -89,7 +89,7 @@
 #define DECLARE_PER_CPU_SECTION(type, name, sec)			\
 	extern __PCPU_ATTRS(sec) __typeof__(type) name
 
-/** 20130427    
+/** 20130427
  * PER_CPU_DEF_ATTRIBUTES는 전처리 과정에서 생략
  * __PCPU_ATTRS => __attribute__((section(".data..percpu" sec)))	
  **/
@@ -139,7 +139,7 @@
 	DECLARE_PER_CPU_SECTION(type, name, PER_CPU_SHARED_ALIGNED_SECTION) \
 	____cacheline_aligned_in_smp
 
-/** 20140621    
+/** 20140621
  * PER_CPU_SHARED_ALIGNED_SECTION 섹션에 cache align된
  * type percpu변수 name을 선언하는 매크로.
  **/

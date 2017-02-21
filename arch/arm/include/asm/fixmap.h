@@ -13,7 +13,7 @@
  * 0xfffe0000 and 0xfffeffff.
  */
 
-/** 20131026    
+/** 20131026
  * FIXADDR memory layout은 다음 document 참고.
  * Documentation/arm/memory.txt
  **/

@@ -66,7 +66,7 @@ extern long do_no_restart_syscall(struct restart_block *parm);
  * - pass TIF_xxxx constants to these functions
  */
 
-/** 20130713    
+/** 20130713
  * set_ti_thread_flag   : ti->flags 중 해당 bit를 set.
  * clear_ti_thread_flag : ti->flags 중 해당 bit를 clear.
  * test_and_set_ti_thread_flag : ti->flags 중 해당 bit의 값을 리턴하고 set.
@@ -92,12 +92,12 @@ static inline int test_and_clear_ti_thread_flag(struct thread_info *ti, int flag
 	return test_and_clear_bit(flag, (unsigned long *)&ti->flags);
 }
 
-/** 20130706    
+/** 20130706
  * thread_info의 flags의 flag 비트를 검사
  **/
 static inline int test_ti_thread_flag(struct thread_info *ti, int flag)
 {
-	/** 20130706    
+	/** 20130706
 	 * &ti->flags에서 flag 비트의 상태를 리턴
 	 **/
 	return test_bit(flag, (unsigned long *)&ti->flags);
@@ -117,7 +117,7 @@ static inline int test_ti_thread_flag(struct thread_info *ti, int flag)
 	test_and_set_ti_thread_flag(current_thread_info(), flag)
 #define test_and_clear_thread_flag(flag) \
 	test_and_clear_ti_thread_flag(current_thread_info(), flag)
-/** 20130706    
+/** 20130706
  * 현재 thread_info에 flag가 설정되어 있는지 검사하는 매크로 함수
  * flag의 종류는 아래 파일에 있음
  *   arch/arm/include/asm/thread_info.h
@@ -125,7 +125,7 @@ static inline int test_ti_thread_flag(struct thread_info *ti, int flag)
 #define test_thread_flag(flag) \
 	test_ti_thread_flag(current_thread_info(), flag)
 
-/** 20141011    
+/** 20141011
  * 현재 TASK의 thread_info에 reschedule을 기록/삭제
  **/
 #define set_need_resched()	set_thread_flag(TIF_NEED_RESCHED)

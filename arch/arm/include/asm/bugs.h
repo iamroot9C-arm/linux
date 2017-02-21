@@ -11,7 +11,7 @@
 #define __ASM_BUGS_H
 
 #ifdef CONFIG_MMU
-/** 20150523    
+/** 20150523
  * MMU를 사용하는 경우, writebuffer bug를 검사한다.
  **/
 extern void check_writebuffer_bugs(void);

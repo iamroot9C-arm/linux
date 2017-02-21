@@ -61,7 +61,7 @@ static DECLARE_WAIT_QUEUE_HEAD(wakeup_count_wait_queue);
  * Callers must ensure that the @name string won't be freed when @ws is still in
  * use.
  */
-/** 20151121    
+/** 20151121
  * 새 wakeup source를 초기화에 사용하기 위해 준비한다.
  *
  * - 이름을 지정한다.
@@ -79,7 +79,7 @@ EXPORT_SYMBOL_GPL(wakeup_source_prepare);
  * wakeup_source_create - Create a struct wakeup_source object.
  * @name: Name of the new wakeup source.
  */
-/** 20151121    
+/** 20151121
  * 주어진 이름의 새 wakeup source를 할당해 준비한다.
  **/
 struct wakeup_source *wakeup_source_create(const char *name)
@@ -102,7 +102,7 @@ EXPORT_SYMBOL_GPL(wakeup_source_create);
  * Callers must ensure that __pm_stay_awake() or __pm_wakeup_event() will never
  * be run in parallel with this function for the same wakeup source object.
  */
-/** 20151121    
+/** 20151121
  * wakeup source의 제거 전 작업을 진행한다.
  * 
  * 동작 중인 timer를 제거하고, PM core에서 해당 wakeup source가 끝났음을 알린다.
@@ -124,7 +124,7 @@ EXPORT_SYMBOL_GPL(wakeup_source_drop);
  *
  * Use only for wakeup source objects created with wakeup_source_create().
  */
-/** 20151121    
+/** 20151121
  * wakeup source의 제거 전 처리를 진행하고 메모리를 해제한다.
  **/
 void wakeup_source_destroy(struct wakeup_source *ws)
@@ -142,7 +142,7 @@ EXPORT_SYMBOL_GPL(wakeup_source_destroy);
  * wakeup_source_add - Add given object to the list of wakeup sources.
  * @ws: Wakeup source object to add to the list.
  */
-/** 20151121    
+/** 20151121
  * 주어진 waekup source를 전역 리스트에 등록한다.
  **/
 void wakeup_source_add(struct wakeup_source *ws)
@@ -151,7 +151,7 @@ void wakeup_source_add(struct wakeup_source *ws)
 		return;
 
 	spin_lock_init(&ws->lock);
-	/** 20151121    
+	/** 20151121
 	 * timer 자료구조 설정.
 	 **/
 	setup_timer(&ws->timer, pm_wakeup_timer_fn, (unsigned long)ws);
@@ -168,7 +168,7 @@ EXPORT_SYMBOL_GPL(wakeup_source_add);
  * wakeup_source_remove - Remove given object from the wakeup sources list.
  * @ws: Wakeup source object to remove from the list.
  */
-/** 20151121    
+/** 20151121
  * wakeup source를 리스트에서 제거한다.
  **/
 void wakeup_source_remove(struct wakeup_source *ws)
@@ -179,7 +179,7 @@ void wakeup_source_remove(struct wakeup_source *ws)
 	spin_lock_irq(&events_lock);
 	list_del_rcu(&ws->entry);
 	spin_unlock_irq(&events_lock);
-	/** 20151121    
+	/** 20151121
 	 * rcu로 관리되는 리스트이므로 reader가 완료될 때까지 대기한다.
 	 **/
 	synchronize_rcu();
@@ -190,7 +190,7 @@ EXPORT_SYMBOL_GPL(wakeup_source_remove);
  * wakeup_source_register - Create wakeup source and add it to the list.
  * @name: Name of the wakeup source to register.
  */
-/** 20151121    
+/** 20151121
  * 새 wakeup source를 생성하고, 생성이 완료되었다면 등록한다.
  **/
 struct wakeup_source *wakeup_source_register(const char *name)
@@ -209,7 +209,7 @@ EXPORT_SYMBOL_GPL(wakeup_source_register);
  * wakeup_source_unregister - Remove wakeup source from the list and remove it.
  * @ws: Wakeup source object to unregister.
  */
-/** 20151121    
+/** 20151121
  * 주어진 wakeup source를 제거한다.
  **/
 void wakeup_source_unregister(struct wakeup_source *ws)
@@ -228,7 +228,7 @@ EXPORT_SYMBOL_GPL(wakeup_source_unregister);
  *
  * This causes @dev to be treated as a wakeup device.
  */
-/** 20151121    
+/** 20151121
  * device power lock을 걸고, wakeup source를 디바이스에 지정한다.
  **/
 static int device_wakeup_attach(struct device *dev, struct wakeup_source *ws)
@@ -249,7 +249,7 @@ static int device_wakeup_attach(struct device *dev, struct wakeup_source *ws)
  *
  * Create a wakeup source object, register it and attach it to @dev.
  */
-/** 20151121    
+/** 20151121
  * device가 wakeup 가능한 경우 wakeup source를 생성해 등록한다.
  **/
 int device_wakeup_enable(struct device *dev)
@@ -257,20 +257,20 @@ int device_wakeup_enable(struct device *dev)
 	struct wakeup_source *ws;
 	int ret;
 
-	/** 20151121    
+	/** 20151121
 	 * device는 wakeup 가능한 상태로 설정되어 있어야 한다.
 	 **/
 	if (!dev || !dev->power.can_wakeup)
 		return -EINVAL;
 
-	/** 20151121    
+	/** 20151121
 	 * 디바이스 이름으로 wakeup source를 생성하고 등록한다.
 	 **/
 	ws = wakeup_source_register(dev_name(dev));
 	if (!ws)
 		return -ENOMEM;
 
-	/** 20151121    
+	/** 20151121
 	 * device에 wakeup source를 등록한다.
 	 **/
 	ret = device_wakeup_attach(dev, ws);
@@ -332,22 +332,22 @@ EXPORT_SYMBOL_GPL(device_wakeup_disable);
  * This function may sleep and it can't be called from any context where
  * sleeping is not allowed.
  */
-/** 20151121    
+/** 20151121
  * device에 wakeup capable 속성을 지정한다.
  **/
 void device_set_wakeup_capable(struct device *dev, bool capable)
 {
-	/** 20151121    
+	/** 20151121
 	 * 지정하려고 하는 capable 상태가 이미 디바이스에 설정된 값과 같다면 리턴.
 	 **/
 	if (!!dev->power.can_wakeup == !!capable)
 		return;
 
-	/** 20151121    
+	/** 20151121
 	 * 디바이스가 등록되어 있고, pm list에 등록되어 있다면 capable에 따라 처리.
 	 **/
 	if (device_is_registered(dev) && !list_empty(&dev->power.entry)) {
-		/** 20151121    
+		/** 20151121
 		 * capable인 경우 sysfs에 wakeup 관련 attribute들을 추가.
 		 * 그렇지 않은 경우 제거.
 		 **/
@@ -358,7 +358,7 @@ void device_set_wakeup_capable(struct device *dev, bool capable)
 			wakeup_sysfs_remove(dev);
 		}
 	}
-	/** 20151121    
+	/** 20151121
 	 * device에 설정하고자 하는 capable을 지정한다.
 	 **/
 	dev->power.can_wakeup = capable;
@@ -376,7 +376,7 @@ EXPORT_SYMBOL_GPL(device_set_wakeup_capable);
  * own wakeup requests but merely forward requests from one bus to another
  * (like PCI bridges) should have wakeup enabled by default.
  */
-/** 20151121    
+/** 20151121
  * device의 wakeup을 초기화 한다.
  * 
  * 지정하지 않으면 디바이스는 wakeup disabled 상태이다.
@@ -385,7 +385,7 @@ int device_init_wakeup(struct device *dev, bool enable)
 {
 	int ret = 0;
 
-	/** 20151121    
+	/** 20151121
 	 * enable인 경우device의 wake capable을 true로 지정하고,
 	 * 디바이스의 wakeup source를 등록한다.
 	 **/
@@ -603,7 +603,7 @@ static void wakeup_source_deactivate(struct wakeup_source *ws)
  *
  * It is safe to call it from interrupt context.
  */
-/** 20151121    
+/** 20151121
  * PM core에게 wakeup event 작동이 끝났음을 통보한다.
  **/
 void __pm_relax(struct wakeup_source *ws)
@@ -897,7 +897,7 @@ static int print_wakeup_source_stats(struct seq_file *m,
  * wakeup_sources_stats_show - Print wakeup sources statistics information.
  * @m: seq_file to print the statistics into.
  */
-/** 20151121    
+/** 20151121
  * wakeup_sources 목록을 순회하며 정보를 출력한다.
  *
  * wakeup_source_add 함수로 등록.
@@ -926,7 +926,7 @@ static int wakeup_sources_stats_show(struct seq_file *m, void *unused)
 	return 0;
 }
 
-/** 20151114    
+/** 20151114
  * seq_file을 사용하므로 wakeup_sources_stats_open은 seq_open을 호출해야 한다.
  * single interface를 사용해 seq_open과 관련된 함수 구현을 대체하였다.
  **/
@@ -935,7 +935,7 @@ static int wakeup_sources_stats_open(struct inode *inode, struct file *file)
 	return single_open(file, wakeup_sources_stats_show, NULL);
 }
 
-/** 20151114    
+/** 20151114
  * wakeup_source_stats 파일에 대한 vfs 콜백 함수를 정의한다.
  * seq_file 인터페이스를 사용한다.
  **/
@@ -947,7 +947,7 @@ static const struct file_operations wakeup_sources_stats_fops = {
 	.release = single_release,
 };
 
-/** 20151114    
+/** 20151114
  * "wakeup_source"라는 debugfs 파일을 생성한다.
  * parent가 지정되지 않았으므로 루트에 생성된다.
  **/

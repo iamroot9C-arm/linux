@@ -320,7 +320,7 @@ extern void key_init(void);
 
 #else /* CONFIG_KEYS */
 
-/** 20150214    
+/** 20150214
  * CONFIG_KEY가 설정되지 않아 NULL.
  **/
 #define key_validate(k)			0

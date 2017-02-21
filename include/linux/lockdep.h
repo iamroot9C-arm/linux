@@ -364,7 +364,7 @@ extern void lockdep_trace_alloc(gfp_t mask);
 #define lockdep_recursing(tsk)	((tsk)->lockdep_recursion)
 
 #else /* !LOCKDEP */
-/** 20130907    
+/** 20130907
  * CONFIG_LOCKDEP 이 정의되어 있지 않은 경우 관련 함수는 NULL 함수처리됨.
  **/
 static inline void lockdep_off(void)
@@ -384,7 +384,7 @@ static inline void lockdep_on(void)
 # define lockdep_trace_alloc(g)			do { } while (0)
 # define lockdep_init()				do { } while (0)
 # define lockdep_info()				do { } while (0)
-/** 20140628    
+/** 20140628
  **/
 # define lockdep_init_map(lock, name, key, sub) \
 		do { (void)(name); (void)(key); } while (0)
@@ -410,14 +410,14 @@ static inline void lockdep_on(void)
 /*
  * The class key takes no space if lockdep is disabled:
  */
-/** 20150207    
+/** 20150207
  * NULL
  **/
 struct lock_class_key { };
 
 #define lockdep_depth(tsk)	(0)
 
-/** 20130713    
+/** 20130713
  * NULL 함수
  **/
 #define lockdep_assert_held(l)			do { } while (0)
@@ -442,13 +442,13 @@ do {								\
 
 #else /* CONFIG_LOCK_STAT */
 
-/** 20130706    
+/** 20130706
  * CONFIG_LOCK_STAT가 설정되어 있지 않아 NULL.
  **/
 #define lock_contended(lockdep_map, ip) do {} while (0)
 #define lock_acquired(lockdep_map, ip) do {} while (0)
 
-/** 20130518    
+/** 20130518
  * try 없이 바로 lock을 수행.
  **/
 #define LOCK_CONTENDED(_lock, try, lock) \
@@ -486,7 +486,7 @@ static inline void print_irqtrace_events(struct task_struct *curr)
  * global define can be used. (Subsystems with multiple levels
  * of nesting should define their own lock-nesting subclasses.)
  */
-/** 20150524    
+/** 20150524
  **/
 #define SINGLE_DEPTH_NESTING			1
 
@@ -505,7 +505,7 @@ static inline void print_irqtrace_events(struct task_struct *curr)
 # endif
 # define spin_release(l, n, i)			lock_release(l, n, i)
 #else
-/** 20130706    
+/** 20130706
  * CONFIG_DEBUG_LOCK_ALLOC 설정되어 있지 않은 경우 acquire, release 부분은 NULL 함수.
  **/
 # define spin_acquire(l, s, t, i)		do { } while (0)
@@ -537,7 +537,7 @@ static inline void print_irqtrace_events(struct task_struct *curr)
 # endif
 # define mutex_release(l, n, i)			lock_release(l, n, i)
 #else
-/** 20130706    
+/** 20130706
  * mutex debugging을 사용하지 않으면 nest 관련 code는 NULL.
  **/
 # define mutex_acquire(l, s, t, i)		do { } while (0)
@@ -555,7 +555,7 @@ static inline void print_irqtrace_events(struct task_struct *curr)
 # endif
 # define rwsem_release(l, n, i)			lock_release(l, n, i)
 #else
-/** 20140531    
+/** 20140531
  * LOCK ALLOC DEBUGGING을 사용하지 않는다.
  **/
 # define rwsem_acquire(l, s, t, i)		do { } while (0)

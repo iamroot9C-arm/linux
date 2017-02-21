@@ -44,7 +44,7 @@ typedef int (*pm_callback_t)(struct device *);
  * dpm_list_mutex.
  */
 
-/** 20150905    
+/** 20150905
  * Device PM list
  **/
 LIST_HEAD(dpm_list);
@@ -63,7 +63,7 @@ static int async_error;
  * device_pm_init - Initialize the PM-related part of a device object.
  * @dev: Device object being initialized.
  */
-/** 20150829    
+/** 20150829
  * 각 device object의 PM 관련 함수를 초기화 한다.
  **/
 void device_pm_init(struct device *dev)
@@ -99,7 +99,7 @@ void device_pm_unlock(void)
  * device_pm_add - Add a device to the PM core's list of active devices.
  * @dev: Device to add to the list.
  */
-/** 20150905    
+/** 20150905
  * device를 PM 리스트에 추가한다.
  **/
 void device_pm_add(struct device *dev)
@@ -110,7 +110,7 @@ void device_pm_add(struct device *dev)
 	if (dev->parent && dev->parent->power.is_prepared)
 		dev_warn(dev, "parent %s should not be sleeping\n",
 			dev_name(dev->parent));
-	/** 20150905    
+	/** 20150905
 	 * dpm_list에 device를 추가한다.
 	 **/
 	list_add_tail(&dev->power.entry, &dpm_list);

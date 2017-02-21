@@ -24,7 +24,7 @@
 	ALT_UP_B(9997f)
 	movne	r1, sp
 	adrne	lr, BSYM(1b)
-	/** 20130713    
+	/** 20130713
 	IPI 처리 함수 호출
 	**/
 	bne	do_IPI

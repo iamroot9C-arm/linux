@@ -80,7 +80,7 @@ static int notifier_chain_unregister(struct notifier_block **nl,
  *	@returns:	notifier_call_chain returns the value returned by the
  *			last notifier function called.
  */
-/** 20140823    
+/** 20140823
  * notifier list를 순회하며
  * nr_to_call만큼 호출했거나 callback 함수가 STOP_MASK를 리턴할 때까지
  * 등록된 callback 함수를 호출한다.
@@ -95,16 +95,16 @@ static int __kprobes notifier_call_chain(struct notifier_block **nl,
 	int ret = NOTIFY_DONE;
 	struct notifier_block *nb, *next_nb;
 
-	/** 20140823    
+	/** 20140823
 	 * rcu 변수인 *nl에 접근해 가리키는 head의 위치를 가져온다. 
 	 **/
 	nb = rcu_dereference_raw(*nl);
 
-	/** 20140823    
+	/** 20140823
 	 * nb이 존재하고, 호출할 개수가 0이 아닌동안 반복 수행.
 	 **/
 	while (nb && nr_to_call) {
-		/** 20140823    
+		/** 20140823
 		 * 다음 nb.
 		 * debug에서 다음 nb로 이동할 때 사용하기 위해 먼저 가져옴.
 		 **/
@@ -117,19 +117,19 @@ static int __kprobes notifier_call_chain(struct notifier_block **nl,
 			continue;
 		}
 #endif
-		/** 20140823    
+		/** 20140823
 		 * 해당 nb에 지정된 notifier_call (callback)을 호출한다.
 		 * 호출시 전달할 value와 pointer를 지정할 수 있다.
 		 **/
 		ret = nb->notifier_call(nb, val, v);
 
-		/** 20140823    
+		/** 20140823
 		 * 필요하다면 호출된 개수를 증가시킨다.
 		 **/
 		if (nr_calls)
 			(*nr_calls)++;
 
-		/** 20140823    
+		/** 20140823
 		 * callback 함수의 리턴값에 STOP_MASK가 되어 있다면 중지.
 		 **/
 		if ((ret & NOTIFY_STOP_MASK) == NOTIFY_STOP_MASK)
@@ -214,7 +214,7 @@ EXPORT_SYMBOL_GPL(atomic_notifier_chain_unregister);
  *	Otherwise the return value is the return value
  *	of the last notifier function called.
  */
-/** 20150118    
+/** 20150118
  * atomic notifier에 등록된 notify block의 CB을 호출한다.
  **/
 int __kprobes __atomic_notifier_call_chain(struct atomic_notifier_head *nh,
@@ -230,7 +230,7 @@ int __kprobes __atomic_notifier_call_chain(struct atomic_notifier_head *nh,
 }
 EXPORT_SYMBOL_GPL(__atomic_notifier_call_chain);
 
-/** 20150118    
+/** 20150118
  * atomic notifier에 등록된 notify block의 CB을 호출한다.
  **/
 int __kprobes atomic_notifier_call_chain(struct atomic_notifier_head *nh,
@@ -273,7 +273,7 @@ int blocking_notifier_chain_register(struct blocking_notifier_head *nh,
 	 * not yet working and interrupts must remain disabled.  At
 	 * such times we must not call down_write().
 	 */
-	/** 20140628    
+	/** 20140628
 	 * 시스템 부팅 중에는 semaphore 관련 부분이 초기화 되지 않았으므로
 	 * notifier_chain_register만 호출.
 	 **/
@@ -358,7 +358,7 @@ EXPORT_SYMBOL_GPL(blocking_notifier_chain_unregister);
  *	Otherwise the return value is the return value
  *	of the last notifier function called.
  */
-/** 20140628    
+/** 20140628
  * notifier_call_chain의 nb를 nr_to_call만큼 호출.
  * 추후분석???
  **/
@@ -383,7 +383,7 @@ int __blocking_notifier_call_chain(struct blocking_notifier_head *nh,
 }
 EXPORT_SYMBOL_GPL(__blocking_notifier_call_chain);
 
-/** 20140628    
+/** 20140628
  * blocking_notifier_head에 등록된 nb를 호출한다.
  **/
 int blocking_notifier_call_chain(struct blocking_notifier_head *nh,
@@ -408,7 +408,7 @@ EXPORT_SYMBOL_GPL(blocking_notifier_call_chain);
  *
  *	Currently always returns zero.
  */
-/** 20130727    
+/** 20130727
  * notifier chain에 struct notifier_block를 등록한다.
  **/
 int raw_notifier_chain_register(struct raw_notifier_head *nh,
@@ -454,7 +454,7 @@ EXPORT_SYMBOL_GPL(raw_notifier_chain_unregister);
  *	Otherwise the return value is the return value
  *	of the last notifier function called.
  */
-/** 20140927    
+/** 20140927
  * notifier chain에 등록된 콜백 함수들을 호출한다.
  *
  * v : notifier function에 전달할 값.
@@ -467,7 +467,7 @@ int __raw_notifier_call_chain(struct raw_notifier_head *nh,
 }
 EXPORT_SYMBOL_GPL(__raw_notifier_call_chain);
 
-/** 20150606    
+/** 20150606
  * notifier chain에 등록된 notify block을 콜백 함수를 호출한다.
  * nr_to_call에 상관 없이 호출한다.
  **/

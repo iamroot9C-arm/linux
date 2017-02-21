@@ -4,7 +4,7 @@
 #ifndef __ASMARM_CACHE_H
 #define __ASMARM_CACHE_H
 
-/** 20130330    
+/** 20130330
  * vexpress에서 CONFIG_ARM_L1_CACHE_SHIFT는 6.
  * 따라서 L1_CACHE_BYTES는 64.
  **/

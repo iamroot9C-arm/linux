@@ -20,7 +20,7 @@
 
 #include <asm/irq.h>
 
-/** 20151107    
+/** 20151107
  *
  **/
 #define to_amba_driver(d)	container_of(d, struct amba_driver, drv)
@@ -84,7 +84,7 @@ amba_attr_func(resource, "\t%016llx\t%016llx\t%016lx\n",
 	 (unsigned long long)dev->res.start, (unsigned long long)dev->res.end,
 	 dev->res.flags);
 
-/** 20151114    
+/** 20151114
  * amba device의 공통 attribute들.
  **/
 static struct device_attribute amba_dev_attrs[] = {
@@ -284,7 +284,7 @@ static int amba_pm_runtime_resume(struct device *dev)
 
 #ifdef CONFIG_PM
 
-/** 20151114    
+/** 20151114
  * CONFIG_PM이 설정되어 amba pm ops를 등록한다.
  **/
 static const struct dev_pm_ops amba_pm = {
@@ -313,7 +313,7 @@ static const struct dev_pm_ops amba_pm = {
  * Primecells are part of the Advanced Microcontroller Bus Architecture,
  * so we call the bus "amba".
  */
-/** 20151107    
+/** 20151107
  * amba bus를 정의한다.
  **/
 struct bus_type amba_bustype = {
@@ -324,7 +324,7 @@ struct bus_type amba_bustype = {
 	.pm		= AMBA_PM,
 };
 
-/** 20151107    
+/** 20151107
  * amba 버스를 등록한다.
  **/
 static int __init amba_init(void)
@@ -436,19 +436,19 @@ static void amba_shutdown(struct device *dev)
  *	core.  If devices pre-exist, the drivers probe function will
  *	be called.
  */
-/** 20151121    
+/** 20151121
  * amba driver를 설정해 amba 버스에 추가한다.
  *
  * 설정에 따라 probe - bind까지 진행한다.
  **/
 int amba_driver_register(struct amba_driver *drv)
 {
-	/** 20151121    
+	/** 20151121
 	 * 드라이버 bus는 amba bus.
 	 **/
 	drv->drv.bus = &amba_bustype;
 
-	/** 20151121    
+	/** 20151121
 	 * 드라이버 핸들링 함수를 지정한다.
 	 **/
 #define SETFN(fn)	if (drv->fn) drv->drv.fn = amba_##fn
@@ -456,7 +456,7 @@ int amba_driver_register(struct amba_driver *drv)
 	SETFN(remove);
 	SETFN(shutdown);
 
-	/** 20151121    
+	/** 20151121
 	 * 드라이버를 버스에 추가한다.
 	 **/
 	return driver_register(&drv->drv);
@@ -476,7 +476,7 @@ void amba_driver_unregister(struct amba_driver *drv)
 }
 
 
-/** 20151121    
+/** 20151121
  * amba 디바이스의 리소스를 릴리즈하고 amba 디바이스 메모리를 해제한다.
  **/
 static void amba_device_release(struct device *dev)
@@ -506,7 +506,7 @@ int amba_device_add(struct amba_device *dev, struct resource *parent)
 	WARN_ON(dev->irq[0] == (unsigned int)-1);
 	WARN_ON(dev->irq[1] == (unsigned int)-1);
 
-	/** 20151121    
+	/** 20151121
 	 * parent resource 아래에 amba 디바이스 리소스를 등록한다.
 	 * 충돌이 발생했다면 err_out.
 	 **/
@@ -628,12 +628,12 @@ amba_ahb_device_add(struct device *parent, const char *name,
 }
 EXPORT_SYMBOL_GPL(amba_ahb_device_add);
 
-/** 20151121    
+/** 20151121
  * amba device를 초기화 한다.
  **/
 static void amba_device_initialize(struct amba_device *dev, const char *name)
 {
-	/** 20151121    
+	/** 20151121
 	 * 디바이스 구조체를 초기화 한다.
 	 **/
 	device_initialize(&dev->dev);
@@ -682,7 +682,7 @@ EXPORT_SYMBOL_GPL(amba_device_alloc);
  */
 int amba_device_register(struct amba_device *dev, struct resource *parent)
 {
-	/** 20151121    
+	/** 20151121
 	 * amba 디바이스 구조체를 초기화 한다.
 	 **/
 	amba_device_initialize(dev, dev->dev.init_name);

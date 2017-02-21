@@ -80,7 +80,7 @@ static void put_ldisc(struct tty_ldisc *ld)
  *		takes tty_ldisc_lock to guard against ldisc races
  */
 
-/** 20150124    
+/** 20150124
  * tty_ldiscs에 disc를 등록한다.
  **/
 int tty_register_ldisc(int disc, struct tty_ldisc_ops *new_ldisc)
@@ -92,7 +92,7 @@ int tty_register_ldisc(int disc, struct tty_ldisc_ops *new_ldisc)
 		return -EINVAL;
 
 	spin_lock_irqsave(&tty_ldisc_lock, flags);
-	/** 20150124    
+	/** 20150124
 	 * tty_ldiscs 배열의 disc에 해당 ops를 추가한다.
 	 **/
 	tty_ldiscs[disc] = new_ldisc;
@@ -973,7 +973,7 @@ void tty_ldisc_deinit(struct tty_struct *tty)
 	tty_ldisc_assign(tty, NULL);
 }
 
-/** 20150124    
+/** 20150124
  * tty_ldisc에 default TTY를 등록한다.
  **/
 void tty_ldisc_begin(void)

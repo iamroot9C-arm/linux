@@ -63,7 +63,7 @@ struct regulator_consumer_supply;
 struct platform_device *regulator_register_always_on(int id, const char *name,
 		struct regulator_consumer_supply *supplies, int num_supplies, int uv);
 #else
-/** 20151114    
+/** 20151114
  * 현재 사용하는 vexpress defconfig는 REGULATOR관련 설정이 빠져 있다.
  **/
 static inline struct platform_device *regulator_register_always_on(int id, const char *name,
@@ -73,7 +73,7 @@ static inline struct platform_device *regulator_register_always_on(int id, const
 }
 #endif
 
-/** 20151114    
+/** 20151114
  * regulator를 항상 on 상태로 등록한다.
  **/
 #define regulator_register_fixed(id, s, ns) regulator_register_always_on(id, \

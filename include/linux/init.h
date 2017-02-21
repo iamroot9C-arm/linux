@@ -41,7 +41,7 @@
 
 /* These are for everybody (although not all archs will actually
    discard it in modules) */
-/** 20150214    
+/** 20150214
  * section 지정 매크로.
  *
  * function 리턴타입과 이름 사이에 위치시킨다.
@@ -102,7 +102,7 @@
 #define __devexitconst   __section(.devexit.rodata)
 
 /* Used for HOTPLUG_CPU */
-/** 20140426    
+/** 20140426
  * HOTPLUG_CPU인 경우 cpuinit/cpuexit 섹션 지정
  **/
 #define __cpuinit        __section(.cpuinit.text) __cold notrace
@@ -133,7 +133,7 @@
 #define __DEVINITDATA    .section	".devinit.data", "aw"
 #define __DEVINITRODATA  .section	".devinit.rodata", "a"
 
-/** 20150118    
+/** 20150118
  * cpuinit section 관련 매크로
  **/
 #define __CPUINIT        .section	".cpuinit.text", "ax"
@@ -153,7 +153,7 @@
 /*
  * Used for initialization calls..
  */
-/** 20151226    
+/** 20151226
  * initcall : argument를 받지 않고 실행 결과 int를 리턴하는 function pointer
  * exitcall : argument를 받지 않고 리턴도 하지 않는 function pointer
  **/
@@ -196,7 +196,7 @@ extern bool initcall_debug;
  * can point at the same handler without causing duplicate-symbol build errors.
  */
 
-/** 20150613    
+/** 20150613
  * __initcall_XXX_early
  * __initcall_XXX_0
  * __initcall_XXX_1
@@ -214,7 +214,7 @@ extern bool initcall_debug;
  *
  * Only for built-in code, not modules.
  */
-/** 20150613    
+/** 20150613
  * SMP init 초기화 전에 호출해야 하는 initcalls 호출
  **/
 #define early_initcall(fn)		__define_initcall("early",fn,early)
@@ -226,7 +226,7 @@ extern bool initcall_debug;
  * This only exists for built-in code, not for modules.
  * Keep main.c:initcall_level_names[] in sync.
  */
-/** 20151017    
+/** 20151017
  * init level 정의 매크로.
  * 0을 제외한 각 레벨별로 sync 함수가 존재하여 해당 phase의 함수들이 완료된 뒤
  * 호출된다.
@@ -257,7 +257,7 @@ extern bool initcall_debug;
 #define __exitcall(fn) \
 	static exitcall_t __exitcall_##fn __exit_call = fn
 
-/** 20150124    
+/** 20150124
  * fn을 .con_initcall.init 섹션에 넣어준다.
  *
  * 이렇게 지정된 con_initcall 섹션의 함수는 console_init에서 호출된다.
@@ -282,7 +282,7 @@ struct obs_kernel_param {
  * Force the alignment so the compiler doesn't space elements of the
  * obs_kernel_param "array" too far apart in .init.setup.
  */
-/** 20151226    
+/** 20151226
  * __setup_start ~ __setup_end 심볼 사이 .init.setup 섹션에 배치.
  *
  * parse_args
@@ -296,7 +296,7 @@ struct obs_kernel_param {
 		__attribute__((aligned((sizeof(long)))))	\
 		= { __setup_str_##unique_id, fn, early }
 
-/** 20151226    
+/** 20151226
  * argument_str=val
  * argument_str에 해당하는 str이 들어왔을 경우, fn을 호출해 argument 파싱.
  **/

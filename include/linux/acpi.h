@@ -365,7 +365,7 @@ extern int acpi_nvs_for_each_region(int (*func)(__u64, __u64, void *),
 				    void *data);
 
 #else	/* !CONFIG_ACPI */
-/** 20150523    
+/** 20150523
  * CONFIG_ACPI가 정의되지 않음.
  **/
 

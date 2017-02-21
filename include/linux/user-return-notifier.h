@@ -33,7 +33,7 @@ static inline void clear_user_return_notifier(struct task_struct *p)
 
 #else
 
-/** 20160227    
+/** 20160227
  * CONFIG_USER_RETURN_NOTIFIER 설정하지 않았음.
  **/
 struct user_return_notifier {};

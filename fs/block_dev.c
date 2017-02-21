@@ -30,7 +30,7 @@
 #include <asm/uaccess.h>
 #include "internal.h"
 
-/** 20150502    
+/** 20150502
  **/
 struct bdev_inode {
 	struct block_device bdev;
@@ -436,12 +436,12 @@ EXPORT_SYMBOL(blkdev_fsync);
  */
 
 static  __cacheline_aligned_in_smp DEFINE_SPINLOCK(bdev_lock);
-/** 20150502    
+/** 20150502
  * bdev_cache_init에서 kmem_cache를 지정한다.
  **/
 static struct kmem_cache * bdev_cachep __read_mostly;
 
-/** 20150502    
+/** 20150502
  * struct bdev_inode 오브젝트를 할당하고, vfs_inode의 위치를 넘긴다. 
  **/
 static struct inode *bdev_alloc_inode(struct super_block *sb)
@@ -465,7 +465,7 @@ static void bdev_destroy_inode(struct inode *inode)
 	call_rcu(&inode->i_rcu, bdev_i_callback);
 }
 
-/** 20150502    
+/** 20150502
  * "bdev_cache" 슬랩 캐시의 object 생성시마다 호출되는 함수.
  *
  * bdev와 inode를 초기화 한다.
@@ -509,7 +509,7 @@ static void bdev_evict_inode(struct inode *inode)
 	spin_unlock(&bdev_lock);
 }
 
-/** 20150502    
+/** 20150502
  * block device의 superblock operation.
  *
  * block device inode 할당시 bdev_alloc_inode 지정.
@@ -522,7 +522,7 @@ static const struct super_operations bdev_sops = {
 	.evict_inode = bdev_evict_inode,
 };
 
-/** 20150516    
+/** 20150516
  * bdev 파일시스템을 mount 한다.
  **/
 static struct dentry *bd_mount(struct file_system_type *fs_type,
@@ -531,7 +531,7 @@ static struct dentry *bd_mount(struct file_system_type *fs_type,
 	return mount_pseudo(fs_type, "bdev:", &bdev_sops, NULL, BDEVFS_MAGIC);
 }
 
-/** 20150502    
+/** 20150502
  * "bdev" 타입의 pseudo 파일시스템.
  *
  * 블럭 디바이스들을 표현하는 inode를 관리하기 위한 가상 파일시스템.
@@ -542,12 +542,12 @@ static struct file_system_type bd_type = {
 	.kill_sb	= kill_anon_super,
 };
 
-/** 20150502    
+/** 20150502
  * mount된 blockdev superblock 정보.
  **/
 static struct super_block *blockdev_superblock __read_mostly;
 
-/** 20150502    
+/** 20150502
  * "bdev_cache"를 생성하고, 가상 파일시스템인 "bdev"를 등록 및 마운트 한다.
  **/
 void __init bdev_cache_init(void)
@@ -555,7 +555,7 @@ void __init bdev_cache_init(void)
 	int err;
 	static struct vfsmount *bd_mnt;
 
-	/** 20150502    
+	/** 20150502
 	 * "bdev_cache" kmem_cache를 생성한다.
 	 *
 	 * 오브젝트 할당시마다 init_one로 bdev_inode를 초기화 한다.
@@ -564,13 +564,13 @@ void __init bdev_cache_init(void)
 			0, (SLAB_HWCACHE_ALIGN|SLAB_RECLAIM_ACCOUNT|
 				SLAB_MEM_SPREAD|SLAB_PANIC),
 			init_once);
-	/** 20150502    
+	/** 20150502
 	 * "bdev" 가상 파일시스템을 등록한다.
 	 **/
 	err = register_filesystem(&bd_type);
 	if (err)
 		panic("Cannot register bdev pseudo-fs");
-	/** 20150502    
+	/** 20150502
 	 * "bdev" 가상 파일시스템을 마운트 한다.
 	 **/
 	bd_mnt = kern_mount(&bd_type);

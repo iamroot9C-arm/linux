@@ -201,7 +201,7 @@ static int suspend_enter(suspend_state_t state, bool *wakeup)
  * suspend_devices_and_enter - Suspend devices and enter system sleep state.
  * @state: System sleep state to enter.
  */
-/** 20160116    
+/** 20160116
  *
  * suspend_devices_and_enter
  *		dpm_suspend_start

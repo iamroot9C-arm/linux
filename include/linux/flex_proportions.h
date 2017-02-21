@@ -23,7 +23,7 @@
 /*
  * ---- Global proportion definitions ----
  */
-/** 20150502    
+/** 20150502
  *
  **/
 struct fprop_global {
@@ -74,7 +74,7 @@ void fprop_inc_single(struct fprop_global *p, struct fprop_local_single *pl)
 /*
  * ---- PERCPU ----
  */
-/** 20150221    
+/** 20150221
  * fprop의 의미???
  **/
 struct fprop_local_percpu {

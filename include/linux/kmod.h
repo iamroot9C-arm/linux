@@ -34,7 +34,7 @@ extern char modprobe_path[]; /* for sysctl */
  * usually useless though. */
 extern __printf(2, 3)
 int __request_module(bool wait, const char *name, ...);
-/** 20150425    
+/** 20150425
  * 추후 분석 ???
  **/
 #define request_module(mod...) __request_module(true, mod)
@@ -83,7 +83,7 @@ call_usermodehelper(char *path, char **argv, char **envp, int wait)
 
 extern struct ctl_table usermodehelper_table[];
 
-/** 20150912    
+/** 20150912
  * UserModeHelper depth 설정값
  **/
 enum umh_disable_depth {
@@ -102,7 +102,7 @@ static inline int usermodehelper_disable(void)
 	return __usermodehelper_disable(UMH_DISABLED);
 }
 
-/** 20150912    
+/** 20150912
  * usermodehelper 의 설정값을 enable로 변경한다.
  **/
 static inline void usermodehelper_enable(void)

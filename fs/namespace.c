@@ -23,7 +23,7 @@
 #include "pnode.h"
 #include "internal.h"
 
-/** 20150221    
+/** 20150221
  * 한 page 내에 나타낼 수 있는 list_head 크기를 구해 HASH_SIZE로 삼는다.
  **/
 #define HASH_SHIFT ilog2(PAGE_SIZE / sizeof(struct list_head))
@@ -33,27 +33,27 @@ static int event;
 static DEFINE_IDA(mnt_id_ida);
 static DEFINE_IDA(mnt_group_ida);
 static DEFINE_SPINLOCK(mnt_id_lock);
-/** 20150221    
+/** 20150221
  * mnt id의 시작값은 0.
  * ida_get_new_above에서 사용된다.
  **/
 static int mnt_id_start = 0;
 static int mnt_group_start = 1;
 
-/** 20150221    
+/** 20150221
  **/
 static struct list_head *mount_hashtable __read_mostly;
-/** 20150221    
+/** 20150221
  * 전역변수로 mnt kmem_cache를 생성한다.
  **/
 static struct kmem_cache *mnt_cache __read_mostly;
-/** 20150221    
+/** 20150221
  * 전역 namespace_sem을 선언한다.
  **/
 static struct rw_semaphore namespace_sem;
 
 /* /sys/fs */
-/** 20150418    
+/** 20150418
  * /sys/fs에 해당하는 kobject. mnt_init에서 초기화된다.
  **/
 struct kobject *fs_kobj;
@@ -67,7 +67,7 @@ EXPORT_SYMBOL_GPL(fs_kobj);
  * It should be taken for write in all cases where the vfsmount
  * tree or hash is modified or when a vfsmount structure is modified.
  */
-/** 20150221    
+/** 20150221
  * vfsmount lock을 BRLOCK으로 선언.
  **/
 DEFINE_BRLOCK(vfsmount_lock);
@@ -86,7 +86,7 @@ static inline unsigned long hash(struct vfsmount *mnt, struct dentry *dentry)
  * allocation is serialized by namespace_sem, but we need the spinlock to
  * serialize with freeing.
  */
-/** 20150221    
+/** 20150221
  * 새로운 mnt id를 할당 받아 mnt_id에 채운다.
  **/
 static int mnt_alloc_id(struct mount *mnt)
@@ -94,19 +94,19 @@ static int mnt_alloc_id(struct mount *mnt)
 	int res;
 
 retry:
-	/** 20150228    
+	/** 20150228
 	 * mnt_id_ida를 위한 리소스를 할당한다.
 	 **/
 	ida_pre_get(&mnt_id_ida, GFP_KERNEL);
 	spin_lock(&mnt_id_lock);
-	/** 20150228    
+	/** 20150228
 	 * mnt_id_start 이상의 새로운 handler을 받아오고, mnt_id_start를 증가시킨다.
 	 **/
 	res = ida_get_new_above(&mnt_id_ida, mnt_id_start, &mnt->mnt_id);
 	if (!res)
 		mnt_id_start = mnt->mnt_id + 1;
 	spin_unlock(&mnt_id_lock);
-	/** 20150228    
+	/** 20150228
 	 * 메모리가 부족하다면 재시도 한다.
 	 **/
 	if (res == -EAGAIN)
@@ -161,7 +161,7 @@ void mnt_release_group_id(struct mount *mnt)
 /*
  * vfsmount lock must be held for read
  */
-/** 20150425    
+/** 20150425
  * 각 struct mount가 cpu마다 몇 번 mount 되었는지에 대한 count를 증가시킨다.
  **/
 static inline void mnt_add_count(struct mount *mnt, int n)
@@ -194,20 +194,20 @@ unsigned int mnt_get_count(struct mount *mnt)
 #endif
 }
 
-/** 20150228    
+/** 20150228
  * 주어진 이름을 가진 mount 객체를 할당받고 초기화 한다.
  * struct vfsmount가 struct mount 내에 포함되어 있다.
  **/
 static struct mount *alloc_vfsmnt(const char *name)
 {
-	/** 20150221    
+	/** 20150221
 	 * "mnt_cache" kmem_cache 로부터 mount 구조체를 하나 동적 할당 받는다.
 	 **/
 	struct mount *mnt = kmem_cache_zalloc(mnt_cache, GFP_KERNEL);
 	if (mnt) {
 		int err;
 
-		/** 20150228    
+		/** 20150228
 		 * mnt id를 할당 받는다.
 		 **/
 		err = mnt_alloc_id(mnt);
@@ -215,7 +215,7 @@ static struct mount *alloc_vfsmnt(const char *name)
 			goto out_free_cache;
 
 		if (name) {
-			/** 20150228    
+			/** 20150228
 			 * name을 할당받아 저장한다.
 			 **/
 			mnt->mnt_devname = kstrdup(name, GFP_KERNEL);
@@ -224,7 +224,7 @@ static struct mount *alloc_vfsmnt(const char *name)
 		}
 
 #ifdef CONFIG_SMP
-		/** 20150228    
+		/** 20150228
 		 * percpu mnt_pcp를 할당받는다.
 		 * 현재 cpu에 해당하는 mnt_count를 하나 증가 시킨다.
 		 **/
@@ -238,7 +238,7 @@ static struct mount *alloc_vfsmnt(const char *name)
 		mnt->mnt_writers = 0;
 #endif
 
-		/** 20150228    
+		/** 20150228
 		 * list head들을 초기화 한다.
 		 **/
 		INIT_LIST_HEAD(&mnt->mnt_hash);
@@ -285,7 +285,7 @@ out_free_cache:
  * mnt_want/drop_write() will _keep_ the filesystem
  * r/w.
  */
-/** 20151219    
+/** 20151219
  * VFS mount가 readonly인지 검사한다.
  *
  * - mount가 옵션에 의해 readonly로 mount된 경우
@@ -301,7 +301,7 @@ int __mnt_is_readonly(struct vfsmount *mnt)
 }
 EXPORT_SYMBOL_GPL(__mnt_is_readonly);
 
-/** 20151219    
+/** 20151219
  * mount에 대한 writer를 증가시킨다.
  **/
 static inline void mnt_inc_writers(struct mount *mnt)
@@ -313,7 +313,7 @@ static inline void mnt_inc_writers(struct mount *mnt)
 #endif
 }
 
-/** 20151219    
+/** 20151219
  * mount에 대한 writer를 감소시킨다.
  **/
 static inline void mnt_dec_writers(struct mount *mnt)
@@ -366,7 +366,7 @@ static int mnt_is_readonly(struct vfsmount *mnt)
  * frozen. When the write operation is finished, __mnt_drop_write() must be
  * called. This is effectively a refcount.
  */
-/** 20151219    
+/** 20151219
  * mnt가 read-write 가능할 경우 mount에 대한 write access를 획득한다.
  *
  * freeze protection은 수행하지 않는다.
@@ -390,11 +390,11 @@ int __mnt_want_write(struct vfsmount *m)
 	struct mount *mnt = real_mount(m);
 	int ret = 0;
 
-	/** 20151219    
+	/** 20151219
 	 * 선점불가 구간을 둔다.
 	 **/
 	preempt_disable();
-	/** 20151219    
+	/** 20151219
 	 * 마운트에 대한 writer를 증가시킨다.
 	 **/
 	mnt_inc_writers(mnt);
@@ -434,7 +434,7 @@ int mnt_want_write(struct vfsmount *m)
 {
 	int ret;
 
-	/** 20151219    
+	/** 20151219
 	 * superblock의 FREEZE에 대한 lock을 먼저 건다.
 	 **/
 	sb_start_write(m->mnt_sb);
@@ -457,7 +457,7 @@ EXPORT_SYMBOL_GPL(mnt_want_write);
  * After finished, mnt_drop_write must be called as usual to
  * drop the reference.
  */
-/** 20151219    
+/** 20151219
  * mount에 대한 writer access를 획득한다.
  *
  * RO가 아니라면 writer만 증가시킨다.
@@ -466,13 +466,13 @@ EXPORT_SYMBOL_GPL(mnt_want_write);
 int mnt_clone_write(struct vfsmount *mnt)
 {
 	/* superblock may be r/o */
-	/** 20151219    
+	/** 20151219
 	 * superblock이나 mount 옵션이 readonly라면 write 불가능.
 	 **/
 	if (__mnt_is_readonly(mnt))
 		return -EROFS;
 	preempt_disable();
-	/** 20151219    
+	/** 20151219
 	 * mount에 대한 writer를 증가시킨다.
 	 **/
 	mnt_inc_writers(real_mount(mnt));
@@ -488,7 +488,7 @@ EXPORT_SYMBOL_GPL(mnt_clone_write);
  * This is like __mnt_want_write, but it takes a file and can
  * do some optimisations if the file is open for write already
  */
-/** 20151219    
+/** 20151219
  * file이 WRITE로 열린 상태가 아니거나 special file에 대한 write 시도인 경우
  * __mnt_want_write로 write access를 획득한다.
  * 그렇지 않은 경우 이미 WRITE 가능 상태임을 알 수 있으므로 readonly 상태만
@@ -511,7 +511,7 @@ int __mnt_want_write_file(struct file *file)
  * This is like mnt_want_write, but it takes a file and can
  * do some optimisations if the file is open for write already
  */
-/** 20151219    
+/** 20151219
  * file의 mount 정보를 가져와 write access를 시도하고 결과를 리턴한다.
  **/
 int mnt_want_write_file(struct file *file)
@@ -857,7 +857,7 @@ static struct mount *skip_mnt_tree(struct mount *p)
 	return p;
 }
 
-/** 20150411    
+/** 20150411
  * VFS에 파일시스템을 마운트하고, vfsmount 객체에 정보를 채워 리턴한다.
  *
  * 마운트의 내부 동작은
@@ -875,20 +875,20 @@ vfs_kern_mount(struct file_system_type *type, int flags, const char *name, void 
 	if (!type)
 		return ERR_PTR(-ENODEV);
 
-	/** 20150228    
+	/** 20150228
 	 * name으로 mount 객체를 생성하고 초기화 한다.
 	 **/
 	mnt = alloc_vfsmnt(name);
 	if (!mnt)
 		return ERR_PTR(-ENOMEM);
 
-	/** 20150307    
+	/** 20150307
 	 * kern_mount_data()에서는 KERNMOUNT를 지정해 넘겨준다.
 	 **/
 	if (flags & MS_KERNMOUNT)
 		mnt->mnt.mnt_flags = MNT_INTERNAL;
 
-	/** 20150411    
+	/** 20150411
 	 * 'name'이름을 가진 'type' file_system을 마운트해
 	 * superblock을 채우고, superblock의 dentry를 받아온다.
 	 **/
@@ -898,7 +898,7 @@ vfs_kern_mount(struct file_system_type *type, int flags, const char *name, void 
 		return ERR_CAST(root);
 	}
 
-	/** 20150411    
+	/** 20150411
 	 * vfs mount로 받아온 정보를 struct mount에 채운다.
 	 **/
 	mnt->mnt.mnt_root = root;
@@ -906,7 +906,7 @@ vfs_kern_mount(struct file_system_type *type, int flags, const char *name, void 
 	mnt->mnt_mountpoint = mnt->mnt.mnt_root;
 	mnt->mnt_parent = mnt;
 	br_write_lock(&vfsmount_lock);
-	/** 20150411    
+	/** 20150411
 	 * 'struct mount' instance를 superblock의 s_mounts 리스트에 등록한다.
 	 **/
 	list_add_tail(&mnt->mnt_instance, &root->d_sb->s_mounts);
@@ -1035,7 +1035,7 @@ put_again:
 	mntfree(mnt);
 }
 
-/** 20150425    
+/** 20150425
  * 추후 분석???
  **/
 void mntput(struct vfsmount *mnt)
@@ -1050,7 +1050,7 @@ void mntput(struct vfsmount *mnt)
 }
 EXPORT_SYMBOL(mntput);
 
-/** 20150425    
+/** 20150425
  * vfsmount를 받아 struct mount의 mnt_count(percpu 변수)를 증가시킨다.
  **/
 struct vfsmount *mntget(struct vfsmount *mnt)
@@ -1122,7 +1122,7 @@ EXPORT_SYMBOL(generic_show_options);
  * given options, then the displayed options will not reflect reality
  * any more.
  */
-/** 20150418    
+/** 20150418
  * superblock의 option에 options를 복사해 넣는다.
  **/
 void save_mount_options(struct super_block *sb, char *options)
@@ -1985,20 +1985,20 @@ out:
 	return err;
 }
 
-/** 20150425    
+/** 20150425
  * fstype에서 .이후의 문자열을 superblock의 s_subtype에 저장한다.
  **/
 static struct vfsmount *fs_set_subtype(struct vfsmount *mnt, const char *fstype)
 {
 	int err;
-	/** 20150425    
+	/** 20150425
 	 * 전체 fstype에서 '.' 위치부터 subtype.
 	 **/
 	const char *subtype = strchr(fstype, '.');
 	if (subtype) {
 		subtype++;
 		err = -EINVAL;
-		/** 20150425    
+		/** 20150425
 		 * '.' 이후에 NULL인 경우 에러.
 		 **/
 		if (!subtype[0])
@@ -2006,7 +2006,7 @@ static struct vfsmount *fs_set_subtype(struct vfsmount *mnt, const char *fstype)
 	} else
 		subtype = "";
 
-	/** 20150425    
+	/** 20150425
 	 * subtype부분을 복사해 mnt_sb의 s_subtype에 저장한다.
 	 **/
 	mnt->mnt_sb->s_subtype = kstrdup(subtype, GFP_KERNEL);
@@ -2020,20 +2020,20 @@ static struct vfsmount *fs_set_subtype(struct vfsmount *mnt, const char *fstype)
 	return ERR_PTR(err);
 }
 
-/** 20150425    
+/** 20150425
  * "fstype"을 등록된 파일시스템 목록에서 찾아, VFS에 마운트시키고 리턴한다.
  **/
 static struct vfsmount *
 do_kern_mount(const char *fstype, int flags, const char *name, void *data)
 {
-	/** 20150425    
+	/** 20150425
 	 * 등록된 파일시스템 리스트에서 fstype을 찾아 리턴한다.
 	 **/
 	struct file_system_type *type = get_fs_type(fstype);
 	struct vfsmount *mnt;
 	if (!type)
 		return ERR_PTR(-ENODEV);
-	/** 20150425    
+	/** 20150425
 	 * vfsmount 객체에 정보를 채워 리턴한다.
 	 *
 	 * mount에 성공했고, FS_HAS_SUBTYPE이지만 s_subtype이 채워지지 않았다면
@@ -2043,7 +2043,7 @@ do_kern_mount(const char *fstype, int flags, const char *name, void *data)
 	if (!IS_ERR(mnt) && (type->fs_flags & FS_HAS_SUBTYPE) &&
 	    !mnt->mnt_sb->s_subtype)
 		mnt = fs_set_subtype(mnt, fstype);
-	/** 20150425    
+	/** 20150425
 	 * 파일시스템의 참조카운트를 감소시킨다.
 	 **/
 	put_filesystem(type);
@@ -2433,14 +2433,14 @@ dput_out:
 	return retval;
 }
 
-/** 20150425    
+/** 20150425
  * mnt_namespace 할당 및 초기화.
  **/
 static struct mnt_namespace *alloc_mnt_ns(void)
 {
 	struct mnt_namespace *new_ns;
 
-	/** 20150425    
+	/** 20150425
 	 * struct mnt_namespace 할당 후 count 1로 설정.
 	 **/
 	new_ns = kmalloc(sizeof(struct mnt_namespace), GFP_KERNEL);
@@ -2537,25 +2537,25 @@ struct mnt_namespace *copy_mnt_ns(unsigned long flags, struct mnt_namespace *ns,
  * create_mnt_ns - creates a private namespace and adds a root filesystem
  * @mnt: pointer to the new root filesystem mountpoint
  */
-/** 20150425    
+/** 20150425
  * struct mnt_namespace를 생성 및 초기화하고,
  * 매개변수로 받은 struct vfsmount가 속한 struct mount에 등록한다.
  **/
 static struct mnt_namespace *create_mnt_ns(struct vfsmount *m)
 {
-	/** 20150425    
+	/** 20150425
 	 * struct mnt_namespace의 할당 및 초기화.
 	 **/
 	struct mnt_namespace *new_ns = alloc_mnt_ns();
 	if (!IS_ERR(new_ns)) {
-		/** 20150425    
+		/** 20150425
 		 * vfsmount를 포함하는 mount 오브젝트를 찾아와 mnt_ns에
 		 * 새로 생성한 mnt_namespace를 지정한다.
 		 **/
 		struct mount *mnt = real_mount(m);
 		mnt->mnt_ns = new_ns;
 		new_ns->root = mnt;
-		/** 20150425    
+		/** 20150425
 		 * mount의 mnt_list에 새로 생성된 new_ns를 등록한다.
 		 **/
 		list_add(&new_ns->list, &mnt->mnt_list);
@@ -2770,7 +2770,7 @@ out0:
 	return error;
 }
 
-/** 20150502    
+/** 20150502
  * init_rootfs에서 등록한 "rootfs" 파일시스템을 mount하고,
  * 그 정보를 init task의 nxproxy->mnt_ns와 fs_struct->{root,pwd}에 채운다.
  **/
@@ -2780,41 +2780,41 @@ static void __init init_mount_tree(void)
 	struct mnt_namespace *ns;
 	struct path root;
 
-	/** 20150425    
+	/** 20150425
 	 * init_rootfs 에서 등록한 "rootfs" 파일시스템을 mount 한다.
 	 **/
 	mnt = do_kern_mount("rootfs", 0, "rootfs", NULL);
 	if (IS_ERR(mnt))
 		panic("Can't create rootfs");
 
-	/** 20150425    
+	/** 20150425
 	 * struct mnt_namespace를 생성하고 mnt에 등록한다.
 	 **/
 	ns = create_mnt_ns(mnt);
 	if (IS_ERR(ns))
 		panic("Can't allocate initial namespace");
 
-	/** 20150425    
+	/** 20150425
 	 * 생성한 mnt_namespace를 init_task의 nsproxy에 지정하고,
 	 * task의 ns_proxy에 연결되었으므로 reference count를 증가시킨다.
 	 **/
 	init_task.nsproxy->mnt_ns = ns;
 	get_mnt_ns(ns);
 
-	/** 20150425    
+	/** 20150425
 	 * struct path 자료구조를 채운다.
 	 **/
 	root.mnt = mnt;
 	root.dentry = mnt->mnt_root;
 
-	/** 20150502    
+	/** 20150502
 	 * "rootfs"를 mount한 struct path를 현재(init) task의 fs->{pwd/root}로 지정한다.
 	 **/
 	set_fs_pwd(current->fs, &root);
 	set_fs_root(current->fs, &root);
 }
 
-/** 20150502    
+/** 20150502
  * mnt 관련 초기화를 수행한다.
  *
  * 1. struct mount 슬랩캐시를 생성하고, mount_hashtable을 생성한다.
@@ -2827,18 +2827,18 @@ void __init mnt_init(void)
 	unsigned u;
 	int err;
 
-	/** 20150221    
+	/** 20150221
 	 * namespace rw semaphore를 초기화 한다.
 	 **/
 	init_rwsem(&namespace_sem);
 
-	/** 20150221    
+	/** 20150221
 	 * "mnt_cache" kmem_cache를 생성한다.
 	 **/
 	mnt_cache = kmem_cache_create("mnt_cache", sizeof(struct mount),
 			0, SLAB_HWCACHE_ALIGN | SLAB_PANIC, NULL);
 
-	/** 20150221    
+	/** 20150221
 	 * mount_hashtable용으로 page를 하나 할당 받는다.
 	 **/
 	mount_hashtable = (struct list_head *)__get_free_page(GFP_ATOMIC);
@@ -2848,33 +2848,33 @@ void __init mnt_init(void)
 
 	printk(KERN_INFO "Mount-cache hash table entries: %lu\n", HASH_SIZE);
 
-	/** 20150221    
+	/** 20150221
 	 * 할당받은 mount_hashtable의 list head를 초기화 한다.
 	 **/
 	for (u = 0; u < HASH_SIZE; u++)
 		INIT_LIST_HEAD(&mount_hashtable[u]);
 
-	/** 20150221    
+	/** 20150221
 	 * vfsmount lock을 초기화 한다.
 	 *
 	 * 읽기시 local lock, 쓰기시 global lock인 big-reader lock을 사용한다.
 	 **/
 	br_lock_init(&vfsmount_lock);
 
-	/** 20150411    
+	/** 20150411
 	 * CONFIG_SYSFS인 경우 sysfs 관련 초기화를 수행한다.
 	 **/
 	err = sysfs_init();
 	if (err)
 		printk(KERN_WARNING "%s: sysfs_init error: %d\n",
 			__func__, err);
-	/** 20150418    
+	/** 20150418
 	 * fs라는 이름의 kobject를 생성하고 추가한다.
 	 **/
 	fs_kobj = kobject_create_and_add("fs", NULL);
 	if (!fs_kobj)
 		printk(KERN_WARNING "%s: kobj create error\n", __func__);
-	/** 20150425    
+	/** 20150425
 	 * rootfs 파일시스템을 등록(초기화 포함)한다.
 	 **/
 	init_rootfs();
@@ -2896,7 +2896,7 @@ void put_mnt_ns(struct mnt_namespace *ns)
 	kfree(ns);
 }
 
-/** 20150321    
+/** 20150321
  * 파일시스템과 data를 받아 vfs에 mount하고, vfsmount 결과를 리턴한다.
  *
  * kern_mount로 호출된 경우 data는 항상 NULL로 호출.
@@ -2911,7 +2911,7 @@ struct vfsmount *kern_mount_data(struct file_system_type *type, void *data)
 		 * it is a longterm mount, don't release mnt until
 		 * we unmount before file sys is unregistered
 		*/
-		/** 20150411    
+		/** 20150411
 		 * mount namespace에 internal (userspace의 NS가 아닌)로 mount임을 기록한다.
 		 **/
 		real_mount(mnt)->mnt_ns = MNT_NS_INTERNAL;

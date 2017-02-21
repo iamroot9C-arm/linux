@@ -24,7 +24,7 @@ typedef struct cpumask { DECLARE_BITMAP(bits, NR_CPUS); } cpumask_t;
  * You should only assume nr_cpu_ids bits of this mask are valid.  This is
  * a macro so it's const-correct.
  */
-/** 20130518    
+/** 20130518
  * struct cpumask 선언시 bits라는 멤버를 macro로 정의
  **/
 #define cpumask_bits(maskp) ((maskp)->bits)
@@ -40,7 +40,7 @@ extern int nr_cpu_ids;
  * not all bits may be allocated. */
 #define nr_cpumask_bits	nr_cpu_ids
 #else
-/** 20130608    
+/** 20130608
  * nr_cpumask_bits = 4
  **/
 #define nr_cpumask_bits	NR_CPUS
@@ -91,7 +91,7 @@ extern const struct cpumask *const cpu_online_mask;
 extern const struct cpumask *const cpu_present_mask;
 extern const struct cpumask *const cpu_active_mask;
 
-/** 20130608    
+/** 20130608
  * cpumask_weight(...)
  * 각각의 bitmap에 대해 weight (1로 설정된 비트의 수)를 구함
  *
@@ -119,7 +119,7 @@ extern const struct cpumask *const cpu_active_mask;
 #endif
 
 /* verify cpu argument to cpumask_* operators */
-/** 20130518    
+/** 20130518
  * argument cpu에 대한 DEBUG용 함수
  **/
 static inline unsigned int cpumask_check(unsigned int cpu)
@@ -175,7 +175,7 @@ static inline unsigned int cpumask_any_but(const struct cpumask *mask,
  *
  * Returns >= nr_cpu_ids if no cpus set.
  */
-/** 20150815    
+/** 20150815
  * cpumask 내에서 첫번째 cpu의 위치를 리턴한다.
  **/
 static inline unsigned int cpumask_first(const struct cpumask *srcp)
@@ -190,7 +190,7 @@ static inline unsigned int cpumask_first(const struct cpumask *srcp)
  *
  * Returns >= nr_cpu_ids if no further cpus set.
  */
-/** 20130608    
+/** 20130608
  * 제공된 cpu 마스크에서 index n 이후 처음으로 세팅된 bit를 찾아 인덱스를 리턴.
  * 최초 호출시에는 n에 -1을 넣는다.
  *
@@ -201,7 +201,7 @@ static inline unsigned int cpumask_next(int n, const struct cpumask *srcp)
 	/* -1 is a legal arg here. */
 	if (n != -1)
 		cpumask_check(n);
-	/** 20130608    
+	/** 20130608
 	 * _find_next_bit_le : lsb부터 처음 1이 나오는 bit index 리턴.
 	 **/
 	return find_next_bit(cpumask_bits(srcp), nr_cpumask_bits, n+1);
@@ -232,7 +232,7 @@ int cpumask_any_but(const struct cpumask *mask, unsigned int cpu);
  *
  * After the loop, cpu is >= nr_cpu_ids.
  */
-/** 20130608    
+/** 20130608
  * NR_CPUS = 4이므로 이 부분이 수행됨
  * 0, 1, 2, 3 까지 반복
  **/
@@ -288,7 +288,7 @@ int cpumask_any_but(const struct cpumask *mask, unsigned int cpu);
  * @cpu: cpu number (< nr_cpu_ids)
  * @dstp: the cpumask pointer
  */
-/** 20130518    
+/** 20130518
  * unsigned long 배열 dstp 의 cpu 번째 bit를 set 하는 함수.
  **/
 static inline void cpumask_set_cpu(unsigned int cpu, struct cpumask *dstp)
@@ -301,7 +301,7 @@ static inline void cpumask_set_cpu(unsigned int cpu, struct cpumask *dstp)
  * @cpu: cpu number (< nr_cpu_ids)
  * @dstp: the cpumask pointer
  */
-/** 20140426    
+/** 20140426
  * cpumask bits에서 특정 cpu를 제거.
  **/
 static inline void cpumask_clear_cpu(int cpu, struct cpumask *dstp)
@@ -318,7 +318,7 @@ static inline void cpumask_clear_cpu(int cpu, struct cpumask *dstp)
  *
  * No static inline type checking - see Subtlety (1) above.
  */
-/** 20140426    
+/** 20140426
  * cpumask 안에 cpu에 해당하는 bit가 설정되어 있는지 검사하는 매크로
  **/
 #define cpumask_test_cpu(cpu, cpumask) \
@@ -333,12 +333,12 @@ static inline void cpumask_clear_cpu(int cpu, struct cpumask *dstp)
  *
  * test_and_set_bit wrapper for cpumasks.
  */
-/** 20150711    
+/** 20150711
  * cpumask에 현재 cpu가 세팅되어 있는지 리턴하고, 새로 설정한다.
  **/
 static inline int cpumask_test_and_set_cpu(int cpu, struct cpumask *cpumask)
 {
-	/** 20150711    
+	/** 20150711
 	 * cpumask에 cpu의 설정여부를 리턴하고, 새로 setting한다.
 	 **/
 	return test_and_set_bit(cpumask_check(cpu), cpumask_bits(cpumask));
@@ -353,7 +353,7 @@ static inline int cpumask_test_and_set_cpu(int cpu, struct cpumask *cpumask)
  *
  * test_and_clear_bit wrapper for cpumasks.
  */
-/** 20140621    
+/** 20140621
  * cpu가 cpumask에 속했는지 검사해 리턴하고, 설정되어 있다면 clear 한다.
  **/
 static inline int cpumask_test_and_clear_cpu(int cpu, struct cpumask *cpumask)
@@ -365,7 +365,7 @@ static inline int cpumask_test_and_clear_cpu(int cpu, struct cpumask *cpumask)
  * cpumask_setall - set all cpus (< nr_cpu_ids) in a cpumask
  * @dstp: the cpumask pointer
  */
-/** 20140913    
+/** 20140913
  * 전달받은 cpumask를 nr_cpumask_bits (CPU 개수)만큼 1로 채워 설정한다.
  **/
 static inline void cpumask_setall(struct cpumask *dstp)
@@ -377,7 +377,7 @@ static inline void cpumask_setall(struct cpumask *dstp)
  * cpumask_clear - clear all cpus (< nr_cpu_ids) in a cpumask
  * @dstp: the cpumask pointer
  */
-/** 20140419    
+/** 20140419
  * cpumask bitmap을 모두 0으로 초기화
  **/
 static inline void cpumask_clear(struct cpumask *dstp)
@@ -393,7 +393,7 @@ static inline void cpumask_clear(struct cpumask *dstp)
  *
  * If *@dstp is empty, returns 0, else returns 1
  */
-/** 20140621    
+/** 20140621
  * 두 개의 cpumask 에서 공통 비트를 추출해 새로운 cpumask를 만듦.
  * *dstp = *src1p & *src2p.
  **/
@@ -411,7 +411,7 @@ static inline int cpumask_and(struct cpumask *dstp,
  * @src1p: the first input
  * @src2p: the second input
  */
-/** 20141129    
+/** 20141129
  * 두 개의 cpumask를 or해 새로운 cpumask로 만들어 리턴한다.
  **/
 static inline void cpumask_or(struct cpumask *dstp, const struct cpumask *src1p,
@@ -443,7 +443,7 @@ static inline void cpumask_xor(struct cpumask *dstp,
  *
  * If *@dstp is empty, returns 0, else returns 1
  */
-/** 20150808    
+/** 20150808
  * *dstp = *src1p & ~*src2p
  * src1에 포함된 것 중 src2에 포함되지 않은 것으로 cpumask를 생성해 리턴한다.
  **/
@@ -472,7 +472,7 @@ static inline void cpumask_complement(struct cpumask *dstp,
  * @src1p: the first input
  * @src2p: the second input
  */
-/** 20141122    
+/** 20141122
  * 두 cpumask의 비트맵이 동일한 비트들을 표현하는지 검사한다.
  **/
 static inline bool cpumask_equal(const struct cpumask *src1p,
@@ -487,7 +487,7 @@ static inline bool cpumask_equal(const struct cpumask *src1p,
  * @src1p: the first input
  * @src2p: the second input
  */
-/** 20150523    
+/** 20150523
  * 두 cpumask의 비트맵 중 교차되는 비트가 하나라도 있는지 검사한다.
  **/
 static inline bool cpumask_intersects(const struct cpumask *src1p,
@@ -536,7 +536,7 @@ static inline bool cpumask_full(const struct cpumask *srcp)
  * cpumask_weight - Count of bits in *srcp
  * @srcp: the cpumask to count bits (< nr_cpu_ids) in.
  */
-/** 20130608    
+/** 20130608
  * mask영역에 대해 1로 설정된 bit의 수를 구함.
  **/
 static inline unsigned int cpumask_weight(const struct cpumask *srcp)
@@ -575,7 +575,7 @@ static inline void cpumask_shift_left(struct cpumask *dstp,
  * @dstp: the result
  * @srcp: the input cpumask
  */
-/** 20140426    
+/** 20140426
  * srcp -> dstp로 cpumask copy.
  **/
 static inline void cpumask_copy(struct cpumask *dstp,
@@ -599,7 +599,7 @@ static inline void cpumask_copy(struct cpumask *dstp,
  *
  * Returns >= nr_cpu_ids if no cpus set in both.  See also cpumask_next_and().
  */
-/** 20140621    
+/** 20140621
  * 두 개의 cpumask에 모두 포함되는 첫번째 cpu를 찾아 리턴한다.
  **/
 #define cpumask_first_and(src1p, src2p) cpumask_next_and(-1, (src1p), (src2p))
@@ -611,7 +611,7 @@ static inline void cpumask_copy(struct cpumask *dstp,
  *
  * Returns >= nr_cpu_ids if no cpus set.
  */
-/** 20150523    
+/** 20150523
  * 두 cpumask 에 공통으로 포함된 비트를 찾는 방식으로
  * 첫번째 cpu를 선택하는 방식을 취한다.
  **/
@@ -621,7 +621,7 @@ static inline void cpumask_copy(struct cpumask *dstp,
  * cpumask_of - the cpumask containing just a given cpu
  * @cpu: the cpu (<= nr_cpu_ids)
  */
-/** 20130713    
+/** 20130713
  * cpu만 포함되어 있는 cpumask를 가져온다.
  **/
 #define cpumask_of(cpu) (get_cpu_mask(cpu))
@@ -703,7 +703,7 @@ static inline int cpulist_parse(const char *buf, struct cpumask *dstp)
  *
  * This will eventually be a runtime variable, depending on nr_cpu_ids.
  */
-/** 20140426    
+/** 20140426
  * COMPILE시 지정된 CPU의 수만큼을 처리할 수 있는 long 변수의 크기를 구함.
  **/
 static inline size_t cpumask_size(void)
@@ -755,14 +755,14 @@ void free_cpumask_var(cpumask_var_t mask);
 void free_bootmem_cpumask_var(cpumask_var_t mask);
 
 #else
-/** 20151010    
+/** 20151010
  * CPUMASK_OFFSTACK은 정의되어 있지 않다.
  *
  * CPUMASK_OFFSTACK은 CPUMASK를 stack에 저장하지 않고 동적 메모리를 할당해 저장하는 것을 의미.
  **/
 typedef struct cpumask cpumask_var_t[1];
 
-/** 20140419    
+/** 20140419
  * default로 CPUMASK_OFFSTACK가 정의되어 있지 않아 true 리턴.
  **/
 static inline bool alloc_cpumask_var(cpumask_var_t *mask, gfp_t flags)
@@ -770,7 +770,7 @@ static inline bool alloc_cpumask_var(cpumask_var_t *mask, gfp_t flags)
 	return true;
 }
 
-/** 20140426    
+/** 20140426
  * true 리턴
  **/
 static inline bool alloc_cpumask_var_node(cpumask_var_t *mask, gfp_t flags,
@@ -779,7 +779,7 @@ static inline bool alloc_cpumask_var_node(cpumask_var_t *mask, gfp_t flags,
 	return true;
 }
 
-/** 20140419    
+/** 20140419
  * CPUMASK_OFFSTACK이 아니므로 주어진 mask를 0으로 클리어 한다.
  **/
 static inline bool zalloc_cpumask_var(cpumask_var_t *mask, gfp_t flags)
@@ -788,7 +788,7 @@ static inline bool zalloc_cpumask_var(cpumask_var_t *mask, gfp_t flags)
 	return true;
 }
 
-/** 20140906    
+/** 20140906
  * UMA인 경우 일반적인 cpumask clear.
  **/
 static inline bool zalloc_cpumask_var_node(cpumask_var_t *mask, gfp_t flags,
@@ -802,7 +802,7 @@ static inline void alloc_bootmem_cpumask_var(cpumask_var_t *mask)
 {
 }
 
-/** 20150110    
+/** 20150110
  **/
 static inline void free_cpumask_var(cpumask_var_t mask)
 {
@@ -815,12 +815,12 @@ static inline void free_bootmem_cpumask_var(cpumask_var_t mask)
 
 /* It's common to want to use cpu_all_mask in struct member initializers,
  * so it has to refer to an address rather than a pointer. */
-/** 20141122    
+/** 20141122
  * kernel/cpu.c에서 정의된 cpu_all_bits 선언.
  * bitmap mask를 cpumask로 변환해 cpu_all_mask라 선언한다.
  **/
 extern const DECLARE_BITMAP(cpu_all_bits, NR_CPUS);
-/** 20150523    
+/** 20150523
  * SMP에서 존재하는 모든 cpu에서 실행될 수 있도록 설정하는 mask.
  **/
 #define cpu_all_mask to_cpumask(cpu_all_bits)
@@ -828,7 +828,7 @@ extern const DECLARE_BITMAP(cpu_all_bits, NR_CPUS);
 /* First bits of cpu_bit_bitmap are in fact unset. */
 #define cpu_none_mask to_cpumask(cpu_bit_bitmap[0])
 
-/** 20130608    
+/** 20130608
  * cpu_possible_mask에 설정된 각 cpu에 대해 루프 수행
  **/
 #define for_each_possible_cpu(cpu) for_each_cpu((cpu), cpu_possible_mask)
@@ -880,7 +880,7 @@ static inline int __check_is_bitmap(const unsigned long *bitmap)
 extern const unsigned long
 	cpu_bit_bitmap[BITS_PER_LONG+1][BITS_TO_LONGS(NR_CPUS)];
 
-/** 20130713    
+/** 20130713
  * NR_CPUS의 비트맵에서 cpu만 설정되어 있는 cpu_mask를 가져온다.
  *
  * 비트가 설정된 비트맵을 왼쪽으로 리오더링된 테이블에서 p를 조정하여
@@ -895,13 +895,13 @@ static inline const struct cpumask *get_cpu_mask(unsigned int cpu)
 	return to_cpumask(p);
 }
 
-/** 20140809    
+/** 20140809
  * 주어진 cpu가 online mask에 속해있지 않으면 offline.
  **/
 #define cpu_is_offline(cpu)	unlikely(!cpu_online(cpu))
 
 #if NR_CPUS <= BITS_PER_LONG
-/** 20141122    
+/** 20141122
  * 하나의 워드(long 변수)로 표현가능하므로 CPU_BITS_ALL은
  * 비트맵을 NR_CPUS만큼 1로 채워 cpu_mask로 리턴한다.
  **/
@@ -927,7 +927,7 @@ static inline const struct cpumask *get_cpu_mask(unsigned int cpu)
 #ifndef CONFIG_DISABLE_OBSOLETE_CPUMASK_FUNCTIONS
 #define cpumask_of_cpu(cpu) (*get_cpu_mask(cpu))
 
-/** 20141122    
+/** 20141122
  * NR_CPUS 개수만큼 1로 설정된 bitmap의 마지막 word를 취한다.
  **/
 #define CPU_MASK_LAST_WORD BITMAP_LAST_WORD_MASK(NR_CPUS)

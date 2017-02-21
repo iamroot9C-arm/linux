@@ -35,7 +35,7 @@
 /*
  * Our system timer.
  */
-/** 20141227    
+/** 20141227
  * time_init에서 설정.
  **/
 static struct sys_timer *system_timer;
@@ -140,7 +140,7 @@ void read_boot_clock(struct timespec *ts)
 	__read_boot_clock(ts);
 }
 
-/** 20160116    
+/** 20160116
  * 호출 안 되는 함수...
  **/
 int __init register_persistent_clock(clock_access_fn read_boot,
@@ -179,7 +179,7 @@ static void timer_resume(void)
 #define timer_resume NULL
 #endif
 
-/** 20160109    
+/** 20160109
  * timer syscore ops 선언.
  **/
 static struct syscore_ops timer_syscore_ops = {
@@ -187,7 +187,7 @@ static struct syscore_ops timer_syscore_ops = {
 	.resume		= timer_resume,
 };
 
-/** 20160109    
+/** 20160109
  * timer syscore 함수 등록.
  **/
 static int __init timer_init_syscore_ops(void)
@@ -199,7 +199,7 @@ static int __init timer_init_syscore_ops(void)
 
 device_initcall(timer_init_syscore_ops);
 
-/** 20150103    
+/** 20150103
  * machine specific한 timer를 초기화 한다.
  *   - sysctl control에서 timer를 enable 한다.
  *   - clock hierarchy에 clk을 등록한다.
@@ -208,7 +208,7 @@ device_initcall(timer_init_syscore_ops);
  **/
 void __init time_init(void)
 {
-	/** 20140920    
+	/** 20140920
      * vexpress의 경우 v2m.c
      * MACHINE_START(VEXPRESS, "ARM-Versatile Express")
      *     .timer = &v2m_timer,

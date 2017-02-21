@@ -109,7 +109,7 @@
 #define CON_DRIVER_FLAG_INIT   2
 #define CON_DRIVER_FLAG_ATTR   4
 
-/** 20151114    
+/** 20151114
  * 콘솔 드라이버.
  **/
 struct con_driver {
@@ -122,11 +122,11 @@ struct con_driver {
 	int flag;
 };
 
-/** 20150124    
+/** 20150124
  * console driver를 위한 구조체 배열.
  **/
 static struct con_driver registered_con_driver[MAX_NR_CON_DRIVER];
-/** 20150124    
+/** 20150124
  * vexpress의 경우 setup_arch에서 dummy_con이 지정된다.
  **/
 const struct consw *conswitchp;
@@ -196,7 +196,7 @@ static DECLARE_WORK(console_work, console_callback);
  * want_console is the console we want to switch to,
  * saved_* variants are for save/restore around kernel debugger enter/leave
  */
-/** 20150124    
+/** 20150124
  * 현재 virtual console을 가리키는 변수.
  **/
 int fg_console;
@@ -234,7 +234,7 @@ static int scrollback_delta;
  */
 int (*console_blank_hook)(int);
 
-/** 20150124    
+/** 20150124
  * blank_screen_t를 호출하는 타이머 생성.
  **/
 static DEFINE_TIMER(console_timer, blank_screen_t, 0, 0);
@@ -646,7 +646,7 @@ static void set_cursor(struct vc_data *vc)
 		hide_cursor(vc);
 }
 
-/** 20150124    
+/** 20150124
  * vc의 origin의 버퍼를 설정하고, origin 정보로 다른 멤버를 초기화 한다.
  **/
 static void set_origin(struct vc_data *vc)
@@ -662,13 +662,13 @@ static void set_origin(struct vc_data *vc)
 	vc->vc_pos = vc->vc_origin + vc->vc_size_row * vc->vc_y + 2 * vc->vc_x;
 }
 
-/** 20150124    
+/** 20150124
  **/
 static inline void save_screen(struct vc_data *vc)
 {
 	WARN_CONSOLE_UNLOCKED();
 
-	/** 20150124    
+	/** 20150124
 	 * dummy console은 con_save_screen이 지정되어 있지 않다.
 	 **/
 	if (vc->vc_sw->con_save_screen)
@@ -762,7 +762,7 @@ int vc_cons_allocated(unsigned int i)
 	return (i < MAX_NR_CONSOLES && vc_cons[i].d);
 }
 
-/** 20150124    
+/** 20150124
  * visual 관련 설정을 초기화 한다.
  **/
 static void visual_init(struct vc_data *vc, int num, int init)
@@ -1189,7 +1189,7 @@ static inline void del(struct vc_data *vc)
 	/* ignored */
 }
 
-/** 20150124    
+/** 20150124
  * vpar에 따라 clear 동작을 수행한다.
  **/
 static void csi_J(struct vc_data *vc, int vpar)
@@ -2597,7 +2597,7 @@ static struct tty_driver *vt_console_device(struct console *c, int *index)
 	return console_driver;
 }
 
-/** 20150124    
+/** 20150124
  * vt console driver
  **/
 static struct console vt_console_driver = {
@@ -2879,7 +2879,7 @@ static int default_underline_color = 3; // cyan (ASCII)
 module_param_named(italic, default_italic_color, int, S_IRUGO | S_IWUSR);
 module_param_named(underline, default_underline_color, int, S_IRUGO | S_IWUSR);
 
-/** 20150124    
+/** 20150124
  * vc_data 중 기본 정보 초기화.
  **/
 static void vc_init(struct vc_data *vc, unsigned int rows,
@@ -2914,7 +2914,7 @@ static void vc_init(struct vc_data *vc, unsigned int rows,
  * the appropriate escape-sequence.
  */
 
-/** 20150124    
+/** 20150124
  * vt console init 함수.
  *
  * vc_data를 주로 초기화 한다.
@@ -2927,12 +2927,12 @@ static int __init con_init(void)
 
 	console_lock();
 
-	/** 20150124    
+	/** 20150124
 	 * conswitchp이 있다면 con_startup을 호출한다.
 	 **/
 	if (conswitchp)
 		display_desc = conswitchp->con_startup();
-	/** 20150124    
+	/** 20150124
 	 * 콘솔이 지정되지 않았거나 startup이 실패했을 경우
 	 * console 락을 해제하고 돌아간다.
 	 **/
@@ -2942,7 +2942,7 @@ static int __init con_init(void)
 		return 0;
 	}
 
-	/** 20150124    
+	/** 20150124
 	 * 등록된 console driver 중 con이 지정되지 않은 드라이버에
 	 * 초기값을 설정한다.
 	 **/
@@ -2959,13 +2959,13 @@ static int __init con_init(void)
 		}
 	}
 
-	/** 20150124    
+	/** 20150124
 	 * CONSOLE 개수만큼 con_driver_map를 conswitchp로 지정한다.
 	 **/
 	for (i = 0; i < MAX_NR_CONSOLES; i++)
 		con_driver_map[i] = conswitchp;
 
-	/** 20150124    
+	/** 20150124
 	 * blankinterval이 존재하면 blank state를 설정하고,
 	 * 콘솔 타이머를 등록시킨다.
 	 **/
@@ -2974,7 +2974,7 @@ static int __init con_init(void)
 		mod_timer(&console_timer, jiffies + (blankinterval * HZ));
 	}
 
-	/** 20150124    
+	/** 20150124
 	 * 최소 준비되어야 할 console 수만큼 초기화 한다.
 	 **/
 	for (currcons = 0; currcons < MIN_NR_CONSOLES; currcons++) {
@@ -2986,17 +2986,17 @@ static int __init con_init(void)
 		vc_init(vc, vc->vc_rows, vc->vc_cols,
 			currcons || !vc->vc_sw->con_save_screen);
 	}
-	/** 20150124    
+	/** 20150124
 	 * currcons, fg_console을 0으로 설정한다.
 	 **/
 	currcons = fg_console = 0;
-	/** 20150124    
+	/** 20150124
 	 * currcons를 master_display_fg를 지정한다.
 	 **/
 	master_display_fg = vc = vc_cons[currcons].d;
 	set_origin(vc);
 	save_screen(vc);
-	/** 20150124    
+	/** 20150124
 	 * x,y 좌표 변경
 	 **/
 	gotoxy(vc, vc->vc_x, vc->vc_y);
@@ -3010,7 +3010,7 @@ static int __init con_init(void)
 	console_unlock();
 
 #ifdef CONFIG_VT_CONSOLE
-	/** 20150124    
+	/** 20150124
 	 * vt용 console driver를 등록한다.
 	 **/
 	register_console(&vt_console_driver);
@@ -3446,7 +3446,7 @@ static ssize_t show_name(struct device *dev, struct device_attribute *attr,
 
 }
 
-/** 20151114    
+/** 20151114
  * vtconsole인 디바이스에 공통으로 지정되는 속성 정보.
  **/
 static struct device_attribute device_attrs[] = {
@@ -3454,7 +3454,7 @@ static struct device_attribute device_attrs[] = {
 	__ATTR(name, S_IRUGO, show_name, NULL),
 };
 
-/** 20151114    
+/** 20151114
  * vtconsole의 device 관련 초기화를 수행한다.
  * - 속성파일 생성
  **/
@@ -3464,7 +3464,7 @@ static int vtconsole_init_device(struct con_driver *con)
 	int error = 0;
 
 	con->flag |= CON_DRIVER_FLAG_ATTR;
-	/** 20151114    
+	/** 20151114
 	 * con 디바이스의 data로 con을 지정하고,
 	 * device 속성들을 sysfs에 파일로 생성한다.
 	 **/
@@ -3475,7 +3475,7 @@ static int vtconsole_init_device(struct con_driver *con)
 			break;
 	}
 
-	/** 20151114    
+	/** 20151114
 	 * 에러 발생시 이미 만들었던 속성 파일을 제거.
 	 **/
 	if (error) {
@@ -3755,7 +3755,7 @@ void give_up_console(const struct consw *csw)
 	unregister_con_driver(csw);
 }
 
-/** 20151114    
+/** 20151114
  * vtconsole 클래스를 생성하고,
  * device가 생성되지 않은 기존 con 디바이스들에 대해 디바이스를 생성하고 초기화 한다.
  **/
@@ -3763,7 +3763,7 @@ static int __init vtconsole_class_init(void)
 {
 	int i;
 
-	/** 20151114    
+	/** 20151114
 	 * vtconsole class를 생성한다. "/sys/class/vtconsole"
 	 **/
 	vtconsole_class = class_create(THIS_MODULE, "vtconsole");
@@ -3774,7 +3774,7 @@ static int __init vtconsole_class_init(void)
 	}
 
 	/* Add system drivers to sysfs */
-	/** 20151114    
+	/** 20151114
 	 * 등록된 콘솔 드라이버들의 device가 존재하지 않으면
 	 * vtconsole_class인 디바이스를 생성하고 등록한다.
 	 * 디바이스 생성이 성공하면 vtconsole 디바이스 관련 초기화를 수행한다.
@@ -3941,7 +3941,7 @@ void unblank_screen(void)
  * (console operations can still happen at irq time, but only from printk which
  * has the console mutex. Not perfect yet, but better than no locking
  */
-/** 20150124    
+/** 20150124
  * blank_timer가 만료될 때 호출되며, workqueue에 console_work를 실행하도록 한다.
  **/
 static void blank_screen_t(unsigned long dummy)
@@ -3951,7 +3951,7 @@ static void blank_screen_t(unsigned long dummy)
 		return;
 	}
 	blank_timer_expired = 1;
-	/** 20150124    
+	/** 20150124
 	 * workqueue에 console_work를 실행하도록 한다.
 	 **/
 	schedule_work(&console_work);

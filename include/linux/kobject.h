@@ -57,12 +57,12 @@ enum kobject_action {
 	KOBJ_MAX
 };
 
-/** 20150411    
+/** 20150411
  * kobject 자료구조.
  **/
 struct kobject {
 	const char		*name;
-	/** 20150411    
+	/** 20150411
 	 * ex) kset의 list에 추가될 때 사용된다.
 	 **/
 	struct list_head	entry;
@@ -71,7 +71,7 @@ struct kobject {
 	struct kobj_type	*ktype;
 	struct sysfs_dirent	*sd;
 	struct kref		kref;
-	/** 20150411    
+	/** 20150411
 	 * state_initialized : kobject_init_internal에서 1로 설정한다.
 	 * state_in_sysfs    : kobject_add_internal에서 1로 설정한다.
 	 *                     kobject_del에서 0으로 설정한다.
@@ -116,7 +116,7 @@ extern void kobject_put(struct kobject *kobj);
 
 extern char *kobject_get_path(struct kobject *kobj, gfp_t flag);
 
-/** 20150411    
+/** 20150411
  * ktype 구조체
  *
  * .sysfs_ops 콜백 구조체를 저장한다.
@@ -143,7 +143,7 @@ struct kset_uevent_ops {
 		      struct kobj_uevent_env *env);
 };
 
-/** 20151010    
+/** 20151010
  * kobj_attribute 구조체.
  *
  * attribute 자체와 attribute를 설정하고 보기 위한 콜백 함수를 저장한다.
@@ -177,7 +177,7 @@ struct sock;
  * can add new environment variables, or filter out the uevents if so
  * desired.
  */
-/** 20150418    
+/** 20150418
  * 특정 type의 kobject들을 관리하기 위한 kset 자료구조.
  * kset에 속하는 kobject는 list에 등록되며,
  * kset 자신 역시 내부에 kobject를 두고 reference count 등으로 관리된다.
@@ -203,19 +203,19 @@ static inline struct kset *to_kset(struct kobject *kobj)
 	return kobj ? container_of(kobj, struct kset, kobj) : NULL;
 }
 
-/** 20150411    
+/** 20150411
  * kset의 reference (실제로는 kset내에 포함된 kobj의 kref 증가)를 증가시킨다.
  **/
 static inline struct kset *kset_get(struct kset *k)
 {
-	/** 20150411    
+	/** 20150411
 	 * kset을 전달받아 kset 내 kobject의 reference를 증가시키고,
 	 * 해당 kset을 리턴한다.
 	 **/
 	return k ? to_kset(kobject_get(&k->kobj)) : NULL;
 }
 
-/** 20150418    
+/** 20150418
  * kset의 kobject를 받아 reference count를 감소시키고, 그 결과 0이라면 제거한다.
  *
  * kset 자신도 관리를 위해 kobject의 하나이므로, kobject_put을 사용해 관리된다.
@@ -225,7 +225,7 @@ static inline void kset_put(struct kset *k)
 	kobject_put(&k->kobj);
 }
 
-/** 20150418    
+/** 20150418
  * kobj의 ktype을 얻어온다.
  **/
 static inline struct kobj_type *get_ktype(struct kobject *kobj)

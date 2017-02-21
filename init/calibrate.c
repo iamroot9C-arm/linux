@@ -180,7 +180,7 @@ static unsigned long __cpuinit calibrate_delay_direct(void) {return 0;}
  */
 #define LPS_PREC 8
 
-/** 20150131    
+/** 20150131
  * loop per jiffies의 근사치를 구한다.
  *
  * 대역폭을 2배씩 증가하며 누적시켜 한 tick을 넘지 않은 최대치를 구해 base로 삼고,
@@ -195,7 +195,7 @@ static unsigned long __cpuinit calibrate_delay_converge(void)
 	lpj = (1<<12);
 
 	/* wait for "start of" clock tick */
-	/** 20150131    
+	/** 20150131
 	 * jiffies와 시작점을 맞추기 위해 다음 jiffies가 될 때까지 대기한다.
 	 **/
 	ticks = jiffies;
@@ -203,11 +203,11 @@ static unsigned long __cpuinit calibrate_delay_converge(void)
 		; /* nothing */
 	/* Go .. */
 	ticks = jiffies;
-	/** 20150124    
+	/** 20150124
 	 * 한 tick 내에서 수용 가능한 최대 대역폭과 그 대역폭까지의 누적치를 구한다.
 	 **/
 	do {
-		/** 20150207    
+		/** 20150207
 		 * 한 밴드의 trial을 마치면 다음 밴드로 이동한다.
 		 * 다음 밴드로 이동할 때마다 trial 단위는 밴드가 되고,
 		 * trial 수는 두 배씩 늘어난다.
@@ -223,7 +223,7 @@ static unsigned long __cpuinit calibrate_delay_converge(void)
 	 * We overshot, so retreat to a clear underestimate. Then estimate
 	 * the largest likely undershoot. This defines our chop bounds.
 	 */
-	/** 20150131    
+	/** 20150131
 	 * tick이 넘어간 마지막 trial은 trials에서 제외시키고,
 	 * 나머지 부분을 측정하기 위해 현재 값을 base로 삼는다.
 	 **/
@@ -240,7 +240,7 @@ recalibrate:
 	 * equal one clock (up to LPS_PREC bits)
 	 */
 	chop_limit = lpj >> LPS_PREC;
-	/** 20150131    
+	/** 20150131
 	 * 최고 정밀도에 도달할 때까지 다음 작업을 반복 수행한다.
 	 *     전체 lpj에 현재 loopadd를 합산한다.
 	 *     tick 시작 지점을 맞추고, 전체 lpj만큼 delay 후
@@ -251,25 +251,25 @@ recalibrate:
 	 * 지피 내에서 감당할 수 있는 최대값을 찾아낸다.
 	 **/
 	while (loopadd > chop_limit) {
-		/** 20150131    
+		/** 20150131
 		 * lpj에 현재 loopadd를 누적시킨다.
 		 **/
 		lpj += loopadd;
-		/** 20150131    
+		/** 20150131
 		 * jiffies와 시작점을 맞추기 위해 다음 jiffies가 될 때까지 대기한다.
 		 **/
 		ticks = jiffies;
 		while (ticks == jiffies)
 			; /* nothing */
 		ticks = jiffies;
-		/** 20150207    
+		/** 20150207
 		 * 전체 lpj만큼 delay를 준다.
 		 * delay 중 다음 tick으로 넘어갔다면, 그 loopadd는 누적치에서 제외한다.
 		 **/
 		__delay(lpj);
 		if (jiffies != ticks)	/* longer than 1 tick */
 			lpj -= loopadd;
-		/** 20150131    
+		/** 20150131
 		 * 정밀도를 두 배 높인다.
 		 **/
 		loopadd >>= 1;
@@ -279,7 +279,7 @@ recalibrate:
 	 * massively underestimated initially, and retry with a higher
 	 * start, and larger range. (Only seen on x86_64, due to SMIs)
 	 */
-	/** 20150131    
+	/** 20150131
 	 * 초기값과 같다면 보다 높은 band에서부터 다시 시작한다.
 	 **/
 	if (lpj + loopadd * 2 == lpj_base + loopadd_base * 2) {
@@ -288,13 +288,13 @@ recalibrate:
 		goto recalibrate;
 	}
 
-	/** 20150131    
+	/** 20150131
 	 * 합산한 lpj를 리턴한다.
 	 **/
 	return lpj;
 }
 
-/** 20150124    
+/** 20150124
  * per cpu 변수를 정적으로 선언한다.
  **/
 static DEFINE_PER_CPU(unsigned long, cpu_loops_per_jiffy) = { 0 };
@@ -312,7 +312,7 @@ unsigned long __attribute__((weak)) __cpuinit calibrate_delay_is_known(void)
 	return 0;
 }
 
-/** 20150131    
+/** 20150131
  * delay를 기반으로 각 코어의 BogoMIPS를 계산하고, 한 번 출력한다.
  **/
 void __cpuinit calibrate_delay(void)
@@ -342,17 +342,17 @@ void __cpuinit calibrate_delay(void)
 			pr_info("Calibrating delay using timer "
 				"specific routine.. ");
 	} else {
-		/** 20150124    
+		/** 20150124
 		 * 출력됨
 		 **/
 		if (!printed)
 			pr_info("Calibrating delay loop... ");
-		/** 20150131    
+		/** 20150131
 		 * delay 합산으로 lpj를 구한다.
 		 **/
 		lpj = calibrate_delay_converge();
 	}
-	/** 20150131    
+	/** 20150131
 	 * 현재 cpu에서 계산한 lpj를 percpu 변수에 저장한다.
 	 **/
 	per_cpu(cpu_loops_per_jiffy, this_cpu) = lpj;
@@ -361,7 +361,7 @@ void __cpuinit calibrate_delay(void)
 			lpj/(500000/HZ),
 			(lpj/(5000/HZ)) % 100, lpj);
 
-	/** 20150131    
+	/** 20150131
 	 * 마지막 계산된 lpj가 전역변수로 들어간다.
 	 **/
 	loops_per_jiffy = lpj;

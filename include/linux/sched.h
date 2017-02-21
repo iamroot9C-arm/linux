@@ -44,7 +44,7 @@
 
 #ifdef __KERNEL__
 
-/** 20150801    
+/** 20150801
  * sched param.
  **/
 struct sched_param {
@@ -126,7 +126,7 @@ extern void get_avenrun(unsigned long *loads, unsigned long offset, int shift);
 
 #define FSHIFT		11		/* nr of bits of precision */
 #define FIXED_1		(1<<FSHIFT)	/* 1.0 as fixed-point */
-/** 20150530    
+/** 20150530
  * cpu load를 갱신할 주기를 설정한다.
  **/
 #define LOAD_FREQ	(5*HZ+1)	/* 5 sec intervals */
@@ -187,14 +187,14 @@ print_cfs_rq(struct seq_file *m, int cpu, struct cfs_rq *cfs_rq)
  * modifying one set can't modify the other one by
  * mistake.
  */
-/** 20160326    
+/** 20160326
  * linux의 task state diagram에서는
  * TASK_RUNNING (ready) / TASK_RUNNING (running)으로 구분된다.
  *
  * fork나 create process에 의해 새로 생성되면 TASK_RUNNING으로 시작한다.
  **/
 #define TASK_RUNNING		0
-/** 20131214    
+/** 20131214
  * TASK_INTERRUPTIBLE로 suspend(sleeping) 상태인  TASK가 깨어나는 경우의 수
  *   - hardware interrupt
  *   - 프로세스가 기다리는 시스템 리소스의 해제
@@ -216,7 +216,7 @@ print_cfs_rq(struct seq_file *m, int cpu, struct cfs_rq *cfs_rq)
 /* in tsk->state again */
 #define TASK_DEAD		64
 #define TASK_WAKEKILL		128
-/** 20130720    
+/** 20130720
  * try_to_wake_up
  **/
 #define TASK_WAKING		256
@@ -246,7 +246,7 @@ extern char ___assert_task_state[1 - 2*!!(
 #define task_is_dead(task)	((task)->exit_state != 0)
 #define task_is_stopped_or_traced(task)	\
 			((task->state & (__TASK_STOPPED | __TASK_TRACED)) != 0)
-/** 20130720    
+/** 20130720
  * task의 상태가 TASK_UNINTERRUPTIBLE이고, flags가 PF_FROZEN이 아니라면 true
  * PF : process flag
  **/
@@ -254,7 +254,7 @@ extern char ___assert_task_state[1 - 2*!!(
 				((task->state & TASK_UNINTERRUPTIBLE) != 0 && \
 				 (task->flags & PF_FROZEN) == 0)
 
-/** 20130713    
+/** 20130713
  * task의 state를 변경.
  **/
 #define __set_task_state(tsk, state_value)		\
@@ -273,7 +273,7 @@ extern char ___assert_task_state[1 - 2*!!(
  *
  * If the caller does not need such serialisation then use __set_current_state()
  */
-/** 20131102    
+/** 20131102
  * 현재 task의 state에 state_value를 넣어준다.
  *   __set_current_state는 memory barrier를 호출하지 않는 버전.
  *   set_current_state는 schedule 함수에서 current->state를 변경하므로
@@ -285,7 +285,7 @@ extern char ___assert_task_state[1 - 2*!!(
 	set_mb(current->state, (state_value))
 
 /* Task command name length */
-/** 20140426    
+/** 20140426
  * command name 길이
  **/
 #define TASK_COMM_LEN 16
@@ -363,7 +363,7 @@ extern int proc_dowatchdog_thresh(struct ctl_table *table, int write,
 extern unsigned int  softlockup_panic;
 void lockup_detector_init(void);
 #else
-/** 20150613    
+/** 20150613
  * CONFIG_LOCKUP_DETECTOR 설정하지 않음.
  **/
 static inline void touch_softlockup_watchdog(void)
@@ -402,7 +402,7 @@ enum { sysctl_hung_task_timeout_secs = 0 };
 #endif
 
 /* Attach to any functions which should be ignored in wchan output. */
-/** 20130713    
+/** 20130713
  * .sched.text 섹션에 저장
  **/
 #define __sched		__attribute__((__section__(".sched.text")))
@@ -503,12 +503,12 @@ extern int get_dumpable(struct mm_struct *mm);
 #define MMF_VM_HUGEPAGE		17	/* set when VM_HUGEPAGE is set on vma */
 #define MMF_EXE_FILE_CHANGED	18	/* see prctl_set_mm_exe_file() */
 
-/** 20160416    
+/** 20160416
  * mm flags의 초기값으로 설정될 수 있는 flag들 마스크.
  **/
 #define MMF_INIT_MASK		(MMF_DUMPABLE_MASK | MMF_DUMP_FILTER_MASK)
 
-/** 20160409    
+/** 20160409
  * process의 sighand 관련 정보를 표현한 구조체.
  *
  * [참고] http://iakovlev.org/index.html?p=1035
@@ -602,7 +602,7 @@ struct autogroup;
  * sighand_struct is always a proper superset of
  * the locking of signal_struct.
  */
-/** 20160409    
+/** 20160409
  * task마다 존재하는, signal을 관리하기 위한 구조체.
  *
  * thread는 시그널을 공유. task는 부모-자식 간이라도 독자적인 시그널을 사용.
@@ -610,7 +610,7 @@ struct autogroup;
 struct signal_struct {
 	atomic_t		sigcnt;
 	atomic_t		live;
-	/** 20160409    
+	/** 20160409
 	 * 이 시그널 구조체를 공유하는 thread의 수.
 	 **/
 	int			nr_threads;
@@ -618,7 +618,7 @@ struct signal_struct {
 	wait_queue_head_t	wait_chldexit;	/* for wait4() */
 
 	/* current thread group signal load-balancing target: */
-	/** 20160409    
+	/** 20160409
 	 * thread는 signal을 공유하므로 특정 thread에서 작업을 처리한다.
 	 * complete_signal 등에서 다음 thread를 지정함으로써 로드 밸런싱 처리한다.
 	 **/
@@ -749,7 +749,7 @@ struct signal_struct {
 	struct rw_semaphore group_rwsem;
 #endif
 
-	/** 20160409    
+	/** 20160409
 	 * copy_signal()에서 부모 프로세스의 값을 복사해 설정한다.
 	 **/
 	int oom_adj;		/* OOM kill score adjustment (bit shift) */
@@ -792,7 +792,7 @@ static inline int signal_group_exit(const struct signal_struct *sig)
 /*
  * Some day this will be a full-fledged user tracking system..
  */
-/** 20160319    
+/** 20160319
  * user tracking system.
  * 
  * struct task_struct -> struct cred -> struct user_struct
@@ -925,7 +925,7 @@ enum cpu_idle_type {
 # define scale_load(w)		((w) << SCHED_LOAD_RESOLUTION)
 # define scale_load_down(w)	((w) >> SCHED_LOAD_RESOLUTION)
 #else
-/** 20140426    
+/** 20140426
  **/
 # define SCHED_LOAD_RESOLUTION	0
 # define scale_load(w)		(w)
@@ -938,7 +938,7 @@ enum cpu_idle_type {
 /*
  * Increase resolution of cpu_power calculations
  */
-/** 20150606    
+/** 20150606
  * sched power 
  **/
 #define SCHED_POWER_SHIFT	10
@@ -997,7 +997,7 @@ struct sched_group {
 	unsigned long cpumask[0];
 };
 
-/** 20150815    
+/** 20150815
  * sched_group의 cpumask.
  **/
 static inline struct cpumask *sched_group_cpus(struct sched_group *sg)
@@ -1009,7 +1009,7 @@ static inline struct cpumask *sched_group_cpus(struct sched_group *sg)
  * cpumask masking which cpus in the group are allowed to iterate up the domain
  * tree.
  */
-/** 20150815    
+/** 20150815
  * sched_group->sched_group_power의 cpumask.
  **/
 static inline struct cpumask *sched_group_mask(struct sched_group *sg)
@@ -1052,7 +1052,7 @@ struct sched_domain {
 	unsigned int wake_idx;
 	unsigned int forkexec_idx;
 	unsigned int smt_gain;
-	/** 20150822    
+	/** 20150822
 	 * build_sched_domain()로 구성 후 tl->flags를 참조해 초기화 한다.
 	 **/
 	int flags;			/* See SD_* */
@@ -1113,13 +1113,13 @@ struct sched_domain {
 	 * by attaching extra space to the end of the structure,
 	 * depending on how many CPUs the kernel has booted up with)
 	 */
-	/** 20150815    
+	/** 20150815
 	 * build_sched_domain에서 해당 domain에 속하는 모든 cpumask를 저장.
 	 **/
 	unsigned long span[0];
 };
 
-/** 20141108    
+/** 20141108
  * sched_domain에 속하는 모든 cpu에 해당하는 cpumask를 가져온다.
  **/
 static inline struct cpumask *sched_domain_span(struct sched_domain *sd)
@@ -1200,7 +1200,7 @@ struct sched_domain;
 
 #define DEQUEUE_SLEEP		1
 
-/** 20150524    
+/** 20150524
  * sched_class 인터페이스 구조체.
  *
  * sched_init()에서 task의 sched_class를 fair_sched_class로 지정하고,
@@ -1251,7 +1251,7 @@ struct sched_class {
 #endif
 };
 
-/** 20140426    
+/** 20140426
  * load weigth와 inverse weigth 지정
  **/
 struct load_weight {
@@ -1295,7 +1295,7 @@ struct sched_statistics {
 #endif
 
 struct sched_entity {
-	/** 20140426    
+	/** 20140426
 	 * load-balancing을 위한 자료구조.
 	 * set_load_weight로 설정됨.
 	 **/
@@ -1309,7 +1309,7 @@ struct sched_entity {
 	u64			vruntime;
 	u64			prev_sum_exec_runtime;
 
-	/** 20130720    
+	/** 20130720
 	 * set_task_cpu 분석 중 사용
 	 **/
 	u64			nr_migrations;
@@ -1350,7 +1350,7 @@ struct sched_rt_entity {
 
 struct rcu_node;
 
-/** 20140712    
+/** 20140712
  * perf event task context
  **/
 enum perf_event_task_context {
@@ -1360,17 +1360,17 @@ enum perf_event_task_context {
 	perf_nr_task_contexts,
 };
 
-/** 20160227    
+/** 20160227
  * 리눅스 task 자료구조.
  * kmem_cache 를 생성해 두고 할당받아 사용한다.
  **/
 struct task_struct {
 	volatile long state;	/* -1 unrunnable, 0 runnable, >0 stopped */
-	/** 20160227    
+	/** 20160227
 	 * stack은 thread_info를 저장한다.
 	 **/
 	void *stack;
-	/** 20150530    
+	/** 20150530
 	 * task_struct의 usage count.
 	 * get_task_struct, put_task_struct에 의해 증감된다.
 	 **/
@@ -1380,7 +1380,7 @@ struct task_struct {
 
 #ifdef CONFIG_SMP
 	struct llist_node wake_entry;
-	/** 20130706    
+	/** 20130706
 	 * SMP에서 task가 cpu에서 수행 중인지 나타내는 속성.
 	 *
 	 * 0은 task가 다른 cpu로 migrate 될 수 있다는 의미.
@@ -1393,14 +1393,14 @@ struct task_struct {
 	 **/
 	int on_cpu;
 #endif
-	/** 20160402    
+	/** 20160402
 	 * 처음 task를 fork해 0으로 초기화 하고, 초기화를 마친 후 
 	 * wake_up_new_task 시에 1로 설정.
 	 * context_swtich 시에 이전 task는 0, 다음 task는 1로 설정.
 	 **/
 	int on_rq;
 
-	/** 20160326    
+	/** 20160326
 	 * prio : “dynamic priority"
 	 *	      scheduler가 일정시간동안 우선순위를 높여, 높은 priority의 task를
 	 *	      선점할 수 있도록 할 때 변경된다.
@@ -1414,7 +1414,7 @@ struct task_struct {
 	 * 숫자가 낮을수록 높은 priority.
 	 **/
 	int prio, static_prio, normal_prio;
-	/** 20160402    
+	/** 20160402
 	 * 숫자가 높을수록 높은 priority.
 	 **/
 	unsigned int rt_priority;
@@ -1443,7 +1443,7 @@ struct task_struct {
 	unsigned int btrace_seq;
 #endif
 
-	/** 20160326    
+	/** 20160326
 	 * sched_setscheduler()에 의해 변경.
 	 *
 	 * SCHED_NORMAL, SCHED_FIFO, SCHED_RR, SCHED_BATCH, SCHED_IDLE
@@ -1453,7 +1453,7 @@ struct task_struct {
 	cpumask_t cpus_allowed;
 
 #ifdef CONFIG_PREEMPT_RCU
-	/** 20140906    
+	/** 20140906
 	 * rcu read-side critical section의 중첩(선점)된 수를 저장한다.
 	 **/
 	int rcu_read_lock_nesting;
@@ -1461,7 +1461,7 @@ struct task_struct {
 	struct list_head rcu_node_entry;
 #endif /* #ifdef CONFIG_PREEMPT_RCU */
 #ifdef CONFIG_TREE_PREEMPT_RCU
-	/** 20140906    
+	/** 20140906
 	 * rcu read-side 임계구역을 block시키는 rcu_node를 기록한다.
 	 **/
 	struct rcu_node *rcu_blocked_node;
@@ -1507,7 +1507,7 @@ struct task_struct {
 	unsigned did_exec:1;
 	unsigned in_execve:1;	/* Tell the LSMs that the process is doing an
 				 * execve */
-	/** 20131130    
+	/** 20131130
 	 * bitfield 선언. iowait을 대기 중인지 확인하는 용도.
 	 **/
 	unsigned in_iowait:1;
@@ -1520,7 +1520,7 @@ struct task_struct {
 	unsigned sched_contributes_to_load:1;
 
 	pid_t pid;
-	/** 20140628    
+	/** 20140628
 	 * fork    생성-> 부모 자식 간의 tgid는 각각 다르다.
 	 * pthread 생성-> 부모 자식 간의 tgid는 같다.
 	 **/
@@ -1568,7 +1568,7 @@ struct task_struct {
 #ifndef CONFIG_VIRT_CPU_ACCOUNTING
 	cputime_t prev_utime, prev_stime;
 #endif
-	/** 20160416    
+	/** 20160416
 	 * number of voluntary context switches
 	 *   IO를 발생시키거나 동기화가 필요한 시스템 콜을 수행한 경우
 	 *   cat /proc/<PID>/sched | grep nr_voluntary_switches
@@ -1580,7 +1580,7 @@ struct task_struct {
 	struct timespec start_time; 		/* monotonic time */
 	struct timespec real_start_time;	/* boot based time */
 /* mm fault and swap info: this can arguably be seen as either mm-specific or thread-specific */
-	/** 20160416    
+	/** 20160416
 	 * task의 major / minor fault count.
 	 *
 	 * major fault : disk의 io 활동이 필요한 fault. swap out 된 영역에 접근.
@@ -1594,12 +1594,12 @@ struct task_struct {
 /* process credentials */
 	const struct cred __rcu *real_cred; /* objective and real subjective task
 					 * credentials (COW) */
-	/** 20150425    
+	/** 20150425
 	 * current_cred()로 리턴된다.
 	 **/
 	const struct cred __rcu *cred;	/* effective (overridable) subjective task
 					 * credentials (COW) */
-	/** 20150801    
+	/** 20150801
 	 * executable name.
 	 * kthread_create류로 호출할 때 namefmt으로 지정된 이름이 들어간다.
 	 **/
@@ -1611,7 +1611,7 @@ struct task_struct {
 	int link_count, total_link_count;
 #ifdef CONFIG_SYSVIPC
 /* ipc stuff */
-	/** 20160402    
+	/** 20160402
 	 * SYSTEM V IPC인 semaphore를 지원하기 위한 멤버.
 	 *
 	 * undo_list 하나가 존재하는데, 프로세스가 종료시 세마포어를
@@ -1628,14 +1628,14 @@ struct task_struct {
 /* filesystem information */
 	struct fs_struct *fs;
 /* open file information */
-	/** 20160409    
+	/** 20160409
 	 * task에서 오픈한 파일 정보 테이블.
 	 **/
 	struct files_struct *files;
 /* namespaces */
 	struct nsproxy *nsproxy;
 /* signal handlers */
-	/** 20160409    
+	/** 20160409
 	 * sighand : task의 signal handle 관련 자료구조.
 	 *
 	 * http://www.ahlinux.com/start/kernel/20484.html
@@ -1646,7 +1646,7 @@ struct task_struct {
 
 	sigset_t blocked, real_blocked;
 	sigset_t saved_sigmask;	/* restored if set_restore_sigmask() was used */
-	/** 20160206    
+	/** 20160206
 	 * 이 task에 pending된 시그널들을 저장.
 	 **/
 	struct sigpending pending;
@@ -1670,25 +1670,25 @@ struct task_struct {
    	u32 self_exec_id;
 /* Protection of (de-)allocation: mm, files, fs, tty, keyrings, mems_allowed,
  * mempolicy */
-	/** 20160319    
+	/** 20160319
 	 * 몇몇 멤버에 대한 
 	 * task_lock(), task_unlock()으로 lock/unlock을 시킨다.
 	 **/
 	spinlock_t alloc_lock;
 
 	/* Protection of the PI data structures: */
-	/** 20130713    
+	/** 20130713
 	 * Priority Inversion을 해결할 수 있도록 Priority Inheritance가 구현된다.
 	 **/
 	raw_spinlock_t pi_lock;
 
-	/** 20130713    
+	/** 20130713
 	 * CONFIG_RT_MUTEXES defined되어 있음
 	 * priority inheritance 관련 priority list 자료구조.
 	 **/
 #ifdef CONFIG_RT_MUTEXES
 	/* PI waiters blocked on a rt_mutex held by this task */
-	/** 20160312    
+	/** 20160312
 	 * rt_mutex가 잡혀 있는 경우, pi 대기 리스트에 추가하기 위한 entry.
 	 **/
 	struct plist_head pi_waiters;
@@ -1736,7 +1736,7 @@ struct task_struct {
 #endif
 
 /* VM state */
-	/** 20140517    
+	/** 20140517
 	 * __perform_reclaim 등 reclaim 한 page의 수를 기록
 	 **/
 	struct reclaim_state *reclaim_state;
@@ -1754,12 +1754,12 @@ struct task_struct {
 	cputime_t acct_timexpd;	/* stime + utime since last update */
 #endif
 #ifdef CONFIG_CPUSETS
-	/** 20131116    
+	/** 20131116
 	 * 현재 task가 허용된 nodemask 자료구조
 	 **/
 	nodemask_t mems_allowed;	/* Protected by alloc_lock */
 	seqcount_t mems_allowed_seq;	/* Seqence no to catch updates */
-	/** 20160326    
+	/** 20160326
 	 * cpuset을 사용하는 경우 cpuset의 mem과 slab을 rotor에 의해 분산.
 	 **/
 	int cpuset_mem_spread_rotor;
@@ -1873,7 +1873,7 @@ struct task_struct {
  * MAX_RT_PRIO must not be smaller than MAX_USER_RT_PRIO.
  */
 
-/** 20140426    
+/** 20140426
  * MAX_RT_PRIO
  *
  * RT task가 아닌 경우 nice로 -20 ~ 19까지 값을 조절할 수 있다.
@@ -1884,12 +1884,12 @@ struct task_struct {
 #define MAX_PRIO		(MAX_RT_PRIO + 40)
 #define DEFAULT_PRIO		(MAX_RT_PRIO + 20)
 
-/** 20130706    
+/** 20130706
  * rt_prio인지 검사하는 함수
  **/
 static inline int rt_prio(int prio)
 {
-	/** 20130706    
+	/** 20130706
 	 * 매개변수로 전달받은 priority가 MAX_RT_PRIO (100) 보다 작으면 1
 	 * RT task.
 	 **/
@@ -1898,7 +1898,7 @@ static inline int rt_prio(int prio)
 	return 0;
 }
 
-/** 20130706    
+/** 20130706
  * task가 rt priority를 가졌는지 검사해 리턴하는 함수 
  **/
 static inline int rt_task(struct task_struct *p)
@@ -2032,7 +2032,7 @@ static inline int pid_alive(struct task_struct *p)
  *
  * Check if a task structure is the first user space task the kernel created.
  */
-/** 20140628    
+/** 20140628
  * task가 pid 1인 경우.
  **/
 static inline int is_global_init(struct task_struct *tsk)
@@ -2049,19 +2049,19 @@ extern int is_container_init(struct task_struct *tsk);
 extern struct pid *cad_pid;
 
 extern void free_task(struct task_struct *tsk);
-/** 20150530    
+/** 20150530
  * task struct의 usage count를 올린다.
  **/
 #define get_task_struct(tsk) do { atomic_inc(&(tsk)->usage); } while(0)
 
 extern void __put_task_struct(struct task_struct *t);
 
-/** 20140628    
+/** 20140628
  * task_struct 의 사용을 반환한다.
  **/
 static inline void put_task_struct(struct task_struct *t)
 {
-	/** 20150530    
+	/** 20150530
 	 * usage count를 감소시키고 0이 되었다면
 	 * task를 위해 사용 중이던 리소스를 반환한다.
 	 **/
@@ -2088,7 +2088,7 @@ extern void thread_group_times(struct task_struct *p, cputime_t *ut, cputime_t *
 #define PF_NPROC_EXCEEDED 0x00001000	/* set_user noticed that RLIMIT_NPROC was exceeded */
 #define PF_USED_MATH	0x00002000	/* if unset the fpu must be initialized before use */
 #define PF_NOFREEZE	0x00008000	/* this thread should not be frozen */
-/** 20130720    
+/** 20130720
  **/
 #define PF_FROZEN	0x00010000	/* frozen for system suspend */
 #define PF_FSTRANS	0x00020000	/* inside a filesystem transaction */
@@ -2099,7 +2099,7 @@ extern void thread_group_times(struct task_struct *p, cputime_t *ut, cputime_t *
 #define PF_SWAPWRITE	0x00800000	/* Allowed to write to swap */
 #define PF_SPREAD_PAGE	0x01000000	/* Spread page cache over cpuset */
 #define PF_SPREAD_SLAB	0x02000000	/* Spread some slab caches over cpuset */
- /** 20140927    
+ /** 20140927
   * 특정 cpu에서만 실행되도록 지정하는 속성.
   **/
 #define PF_THREAD_BOUND	0x04000000	/* Thread bound to specific cpu */
@@ -2165,17 +2165,17 @@ extern void task_clear_jobctl_pending(struct task_struct *task,
 
 #ifdef CONFIG_PREEMPT_RCU
 
-/** 20140906    
+/** 20140906
  * 선점형 RCU인 경우, RCU read-side에 진입한 뒤로,
  * 마지막 unlock 함수가 호출될 떄까지 UNLOCK이 block 되어야 할 필요가 있다.
  **/
 #define RCU_READ_UNLOCK_BLOCKED (1 << 0) /* blocked while in RCU read-side. */
-/** 20140906    
+/** 20140906
  * RCU read-side unlock시 qs state 상태가 되어야 함을 표시한다.
  **/
 #define RCU_READ_UNLOCK_NEED_QS (1 << 1) /* RCU core needs CPU response. */
 
-/** 20160319    
+/** 20160319
  * copy_process에서 호출시 PREEMPT_RCU인 경우 rcu 관련 멤버를 초기화 한다.
  **/
 static inline void rcu_copy_process(struct task_struct *p)
@@ -2199,7 +2199,7 @@ static inline void rcu_copy_process(struct task_struct *p)
 
 #endif
 
-/** 20140927    
+/** 20140927
  * 새로 설정한 flags를 지우고, 저장한 값과 중첩되는 flags만 설정한다.
  **/
 static inline void tsk_restore_flags(struct task_struct *task,
@@ -2264,7 +2264,7 @@ extern u64 sched_clock_cpu(int cpu);
 extern void sched_clock_init(void);
 
 #ifndef CONFIG_HAVE_UNSTABLE_SCHED_CLOCK
-/** 20150530    
+/** 20150530
  * CONFIG_HAVE_UNSTABLE_SCHED_CLOCK가 정의되지 않음.
  **/
 static inline void sched_clock_tick(void)
@@ -2384,7 +2384,7 @@ extern void proc_sched_autogroup_show_task(struct task_struct *p, struct seq_fil
 extern int proc_sched_autogroup_set_nice(struct task_struct *p, int nice);
 #endif
 #else
-/** 20150530    
+/** 20150530
  * CONFIG_SCHED_AUTOGROUP 설정하지 않아 분석 생략 
  **/
 static inline void sched_autogroup_create_attach(struct task_struct *p) { }
@@ -2398,7 +2398,7 @@ extern unsigned int sysctl_sched_cfs_bandwidth_slice;
 #endif
 
 #ifdef CONFIG_RT_MUTEXES
-/** 20160312    
+/** 20160312
  * CONIFG_RT_MUTEXES 선언된 경우
  **/
 extern int rt_mutex_getprio(struct task_struct *p);
@@ -2436,7 +2436,7 @@ extern struct task_struct *idle_task(int cpu);
  * is_idle_task - is the specified task an idle task?
  * @p: the task in question.
  */
-/** 20140621    
+/** 20140621
  * 현재 task가 idle_task인지 확인한다.
  **/
 static inline bool is_idle_task(const struct task_struct *p)
@@ -2453,7 +2453,7 @@ void yield(void);
  */
 extern struct exec_domain	default_exec_domain;
 
-/** 20130629    
+/** 20130629
  * thread_info와 stack은 union으로 같은 메모리 공간을 공유함.
  **/
 union thread_union {
@@ -2497,7 +2497,7 @@ extern void __set_special_pids(struct pid *pid);
 
 /* per-UID process charging. */
 extern struct user_struct * alloc_uid(kuid_t);
-/** 20160319    
+/** 20160319
  * user_struct의 reference count를 증가시키고 리턴한다.
  **/
 static inline struct user_struct *get_uid(struct user_struct *u)
@@ -2715,7 +2715,7 @@ static inline int has_group_leader_pid(struct task_struct *p)
 	return p->pid == p->tgid;
 }
 
-/** 20140628    
+/** 20140628
  * 두 task가 같은 thread group에 있는지 검사.
  **/
 static inline
@@ -2724,7 +2724,7 @@ int same_thread_group(struct task_struct *p1, struct task_struct *p2)
 	return p1->tgid == p2->tgid;
 }
 
-/** 20160409    
+/** 20160409
  * task와 같은 스레드 그룹의 다음 task를 리턴한다.
  **/
 static inline struct task_struct *next_thread(const struct task_struct *p)
@@ -2837,7 +2837,7 @@ static inline void threadgroup_unlock(struct task_struct *tsk)
 	mutex_unlock(&tsk->signal->cred_guard_mutex);
 }
 #else
-/** 20160326    
+/** 20160326
  * CGROUPS 분석 생략.
  **/
 static inline void threadgroup_change_begin(struct task_struct *tsk) {}
@@ -2848,7 +2848,7 @@ static inline void threadgroup_unlock(struct task_struct *tsk) {}
 
 #ifndef __HAVE_THREAD_FUNCTIONS
 
-/** 20130713    
+/** 20130713
  * task에 해당하는 thread_info.
  *
  * 20150117    
@@ -2858,7 +2858,7 @@ static inline void threadgroup_unlock(struct task_struct *tsk) {}
 #define task_thread_info(task)	((struct thread_info *)(task)->stack)
 #define task_stack_page(task)	((task)->stack)
 
-/** 20150117    
+/** 20150117
  * task의 .stack, 즉 thread_info를 설정한다.
  *
  * org task의 thread_info를 복사하고, task_struct을 가리키는 부분만 p를 가리킨다.
@@ -2869,7 +2869,7 @@ static inline void setup_thread_stack(struct task_struct *p, struct task_struct 
 	task_thread_info(p)->task = p;
 }
 
-/** 20160227    
+/** 20160227
  * stack의 끝은 thread_info가 overlay 된 크기만큼을 제외한 나머지 크기.
  **/
 static inline unsigned long *end_of_stack(struct task_struct *p)
@@ -2904,7 +2904,7 @@ static inline unsigned long stack_not_used(struct task_struct *p)
 /* set thread flags in other task's structures
  * - see asm/thread_info.h for TIF_xxxx flags available
  */
-/** 20130713    
+/** 20130713
  * task의 thread_info 구조체의 flags 중 flag를 켜주는 함수
  **/
 static inline void set_tsk_thread_flag(struct task_struct *tsk, int flag)
@@ -2912,7 +2912,7 @@ static inline void set_tsk_thread_flag(struct task_struct *tsk, int flag)
 	set_ti_thread_flag(task_thread_info(tsk), flag);
 }
 
-/** 20160206    
+/** 20160206
  * task의 thread_info에서 해당 flag를 제거.
  **/
 static inline void clear_tsk_thread_flag(struct task_struct *tsk, int flag)
@@ -2930,7 +2930,7 @@ static inline int test_and_clear_tsk_thread_flag(struct task_struct *tsk, int fl
 	return test_and_clear_ti_thread_flag(task_thread_info(tsk), flag);
 }
 
-/** 20130713    
+/** 20130713
  * task의 thread_info 구조체의 flags 중 flag가 켜져 있는지 검사하는 함수
  **/
 static inline int test_tsk_thread_flag(struct task_struct *tsk, int flag)
@@ -2938,7 +2938,7 @@ static inline int test_tsk_thread_flag(struct task_struct *tsk, int flag)
 	return test_ti_thread_flag(task_thread_info(tsk), flag);
 }
 
-/** 20130713    
+/** 20130713
  * task의 thread_info 구조체의 flags 중 TIF_NEED_RESCHED flags를 켜주는 함수.
  * 이후 해당 flag를 검사하여 reschedule 한다.
  **/
@@ -2947,7 +2947,7 @@ static inline void set_tsk_need_resched(struct task_struct *tsk)
 	set_tsk_thread_flag(tsk,TIF_NEED_RESCHED);
 }
 
-/** 20160227    
+/** 20160227
  * thread_info의 flag에서 NEED_RESCHED를 제거한다.
  **/
 static inline void clear_tsk_need_resched(struct task_struct *tsk)
@@ -2955,12 +2955,12 @@ static inline void clear_tsk_need_resched(struct task_struct *tsk)
 	clear_tsk_thread_flag(tsk,TIF_NEED_RESCHED);
 }
 
-/** 20130713    
+/** 20130713
  * task가 need_resched 상태인지 검사
  **/
 static inline int test_tsk_need_resched(struct task_struct *tsk)
 {
-	/** 20130713    
+	/** 20130713
 	 * task tsk의 thread_info flag 중 TIF_NEED_RESCHED가 설정되어 있는지 검사 
 	 **/
 	return unlikely(test_tsk_thread_flag(tsk,TIF_NEED_RESCHED));
@@ -2979,7 +2979,7 @@ static inline int signal_pending(struct task_struct *p)
 	return unlikely(test_tsk_thread_flag(p,TIF_SIGPENDING));
 }
 
-/** 20130713    
+/** 20130713
  * task에 SIGKILL signal이 pending되어 있는지 여부를 리턴하는 함수
  **/
 static inline int __fatal_signal_pending(struct task_struct *p)
@@ -2995,7 +2995,7 @@ static inline int fatal_signal_pending(struct task_struct *p)
 	return signal_pending(p) && __fatal_signal_pending(p);
 }
 
-/** 20130713    
+/** 20130713
  * state를 검사해 pending에 대한 처리 여부를 리턴.
  *
  * 1. TASK_INTERRUPTIBLE | TASK_WAKEKILL이 아닐 경우 0을 리턴
@@ -3014,7 +3014,7 @@ static inline int signal_pending_state(long state, struct task_struct *p)
 	return (state & TASK_INTERRUPTIBLE) || __fatal_signal_pending(p);
 }
 
-/** 20130706    
+/** 20130706
  * 현재 task의 thread_info flags 중 TIF_NEED_RESCHED를 보고
  * scheduling이 필요한지 판단하는 함수.
  **/
@@ -3080,7 +3080,7 @@ static inline int spin_needbreak(spinlock_t *lock)
 void thread_group_cputime(struct task_struct *tsk, struct task_cputime *times);
 void thread_group_cputimer(struct task_struct *tsk, struct task_cputime *times);
 
-/** 20160409    
+/** 20160409
  * thread group의 cputimer (itimer counter)를 위한 spinlock을 초기화 한다.
  **/
 static inline void thread_group_cputime_init(struct signal_struct *sig)
@@ -3104,7 +3104,7 @@ extern void signal_wake_up(struct task_struct *t, int resume_stopped);
  */
 #ifdef CONFIG_SMP
 
-/** 20130713    
+/** 20130713
  * task로 thread_info 구조체를 찾아 cpu값을 리턴.
  **/
 static inline unsigned int task_cpu(const struct task_struct *p)
@@ -3207,7 +3207,7 @@ static inline void mm_update_next_owner(struct mm_struct *mm)
 {
 }
 
-/** 20160416    
+/** 20160416
  * CONFIG_MM_OWNER 정의되지 않았음.
  **/
 static inline void mm_init_owner(struct mm_struct *mm, struct task_struct *p)

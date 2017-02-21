@@ -64,7 +64,7 @@ static inline void platform_do_lowpower(unsigned int cpu, int *spurious)
 	 * code will have already disabled interrupts
 	 */
 	for (;;) {
-		/** 20141004    
+		/** 20141004
 		 * wfi로 lowpower 상태로 대기한다.
 		 **/
 		wfi();

@@ -3,7 +3,7 @@
 
 #include <linux/rcupdate.h>
 
-/** 20150509    
+/** 20150509
  * PID 타입은 PID, PGID, SID가 있다.
  **/
 enum pid_type
@@ -50,7 +50,7 @@ enum pid_type
  * find_pid_ns() using the int nr and struct pid_namespace *ns.
  */
 
-/** 20150509    
+/** 20150509
  * pid_hash 해시 테이블에 연결되는 구조체로,
  * struct pid가 namespace에 따라 보이는 id를 저장하는 용도로 사용된다.
  *
@@ -72,7 +72,7 @@ struct upid {
 	struct hlist_node pid_chain;
 };
 
-/** 20150207    
+/** 20150207
  * pid 구조체.
  *
  * count   : usage count.
@@ -91,7 +91,7 @@ struct pid
 
 extern struct pid init_struct_pid;
 
-/** 20150509    
+/** 20150509
  * task_struct에 존재하여 task_struct와 pid를 연결하기 위한 구조체.
  *
  * hlist_node는 struct pid의 struct hlist_head에 연결하는 node이다.
@@ -105,7 +105,7 @@ struct pid_link
 	struct pid *pid;
 };
 
-/** 20150509    
+/** 20150509
  * struct pid의 usage count를 증가시킨다.
  **/
 static inline struct pid *get_pid(struct pid *pid)

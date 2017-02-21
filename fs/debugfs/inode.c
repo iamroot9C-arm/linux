@@ -34,7 +34,7 @@ static struct vfsmount *debugfs_mount;
 static int debugfs_mount_count;
 static bool debugfs_registered;
 
-/** 20151024    
+/** 20151024
  * inode를 새로 할당받아 파일 타입에 맞게 debugfs의 정보를 채워 리턴한다.
  * 일반 파일인 경우, 전달받은 fops가 있으면 그것을 지정하고, 없으면 기본 속성을 사용한다.
  **/
@@ -42,19 +42,19 @@ static struct inode *debugfs_get_inode(struct super_block *sb, umode_t mode, dev
 				       void *data, const struct file_operations *fops)
 
 {
-	/** 20151024    
+	/** 20151024
 	 * 새로운 inode를 할당 받는다.
 	 **/
 	struct inode *inode = new_inode(sb);
 
 	if (inode) {
-		/** 20151024    
+		/** 20151024
 		 * inode에 ino, mode, time 정보를 저장한다.
 		 **/
 		inode->i_ino = get_next_ino();
 		inode->i_mode = mode;
 		inode->i_atime = inode->i_mtime = inode->i_ctime = CURRENT_TIME;
-		/** 20151024    
+		/** 20151024
 		 * mode에서 파일 종류 마스크만 비교해 일반 파일, 링크, 디렉토리인 경우
 		 * 구조체를 채운다.
 		 **/
@@ -85,7 +85,7 @@ static struct inode *debugfs_get_inode(struct super_block *sb, umode_t mode, dev
 }
 
 /* SMP-safe */
-/** 20151024    
+/** 20151024
  * debugfs의 새로운 node를 생성한다.
  *
  * 생성된 inode와 전달받은 dentry를 연결한다.
@@ -100,12 +100,12 @@ static int debugfs_mknod(struct inode *dir, struct dentry *dentry,
 	if (dentry->d_inode)
 		return -EEXIST;
 
-	/** 20151024    
+	/** 20151024
 	 * 새로운 inode를 할당 받아 debugfs의 정보를 채워온다.
 	 **/
 	inode = debugfs_get_inode(dir->i_sb, mode, dev, data, fops);
 	if (inode) {
-		/** 20151024    
+		/** 20151024
 		 * 성공적으로 받아왔다면 받아온 inode와 dentry 정보를 서로 연결시킨다.
 		 * dentry의 reference count를 증가시킨다.
 		 **/
@@ -136,7 +136,7 @@ static int debugfs_link(struct inode *dir, struct dentry *dentry, umode_t mode,
 	return debugfs_mknod(dir, dentry, mode, 0, data, NULL);
 }
 
-/** 20151114    
+/** 20151114
  * 지정된 속성을 갖는 debugfs node를 생성해 dir 아래 추가한다.
  * 전달된 dentry는 해당 node의 inode와 연결된다.
  **/
@@ -145,11 +145,11 @@ static int debugfs_create(struct inode *dir, struct dentry *dentry, umode_t mode
 {
 	int res;
 
-	/** 20151114    
+	/** 20151114
 	 * debugfs_create로 생성되는 파일은 일반 파일이므로 파일 속성을 지정한다.
 	 **/
 	mode = (mode & S_IALLUGO) | S_IFREG;
-	/** 20151114    
+	/** 20151114
 	 * debugfs에 새로운 node를 생성한다.
 	 **/
 	res = debugfs_mknod(dir, dentry, mode, 0, data, fops);
@@ -176,7 +176,7 @@ enum {
 	Opt_err
 };
 
-/** 20151010    
+/** 20151010
  * debugfs mount시 처리하는 옵션 토큰 정의.
  **/
 static const match_table_t tokens = {
@@ -186,14 +186,14 @@ static const match_table_t tokens = {
 	{Opt_err, NULL}
 };
 
-/** 20151010    
+/** 20151010
  * debugfs는 mount_single로 mount 하여 하나의 instance를 공유한다.
  **/
 struct debugfs_fs_info {
 	struct debugfs_mount_opts mount_opts;
 };
 
-/** 20151010    
+/** 20151010
  * debugfs mount시 주어진 옵션을 파싱해 구조체에 설정한다.
  **/
 static int debugfs_parse_options(char *data, struct debugfs_mount_opts *opts)
@@ -236,12 +236,12 @@ static int debugfs_parse_options(char *data, struct debugfs_mount_opts *opts)
 	return 0;
 }
 
-/** 20151010    
+/** 20151010
  * debugfs을 위한 옵션을 적용한다.
  **/
 static int debugfs_apply_options(struct super_block *sb)
 {
-	/** 20151010    
+	/** 20151010
 	 * superblock의 root dentry에 s_fs_info에 저장해뒀던 옵션을 적용한다.
 	 **/
 	struct debugfs_fs_info *fsi = sb->s_fs_info;
@@ -293,7 +293,7 @@ static const struct super_operations debugfs_super_operations = {
 	.show_options	= debugfs_show_options,
 };
 
-/** 20151010    
+/** 20151010
  * debugfs의 superblock 정보를 채운다.
  **/
 static int debug_fill_super(struct super_block *sb, void *data, int silent)
@@ -304,7 +304,7 @@ static int debug_fill_super(struct super_block *sb, void *data, int silent)
 
 	save_mount_options(sb, data);
 
-	/** 20151010    
+	/** 20151010
 	 * debugfs_fs용 구조체를 할당해 superblock의 filesystem private으로 저장한다.
 	 **/
 	fsi = kzalloc(sizeof(struct debugfs_fs_info), GFP_KERNEL);
@@ -314,21 +314,21 @@ static int debug_fill_super(struct super_block *sb, void *data, int silent)
 		goto fail;
 	}
 
-	/** 20151010    
+	/** 20151010
 	 * 마운트 옵션을 파싱해 mount_opts에 저장한다.
 	 **/
 	err = debugfs_parse_options(data, &fsi->mount_opts);
 	if (err)
 		goto fail;
 
-	/** 20151010    
+	/** 20151010
 	 * superblock 정보를 채운다.
 	 **/
 	err  =  simple_fill_super(sb, DEBUGFS_MAGIC, debug_files);
 	if (err)
 		goto fail;
 
-	/** 20151010    
+	/** 20151010
 	 * debugfs superblock operation을 채운다.
 	 **/
 	sb->s_op = &debugfs_super_operations;
@@ -343,7 +343,7 @@ fail:
 	return err;
 }
 
-/** 20151010    
+/** 20151010
  * debugfs를 mount한다.
  *
  * mount_single로 mount하여 하나의 instance를 공유한다.
@@ -355,7 +355,7 @@ static struct dentry *debug_mount(struct file_system_type *fs_type,
 	return mount_single(fs_type, flags, data, debug_fill_super);
 }
 
-/** 20151010    
+/** 20151010
  * debugfs 파일시스템 정의.
  **/
 static struct file_system_type debug_fs_type = {
@@ -365,7 +365,7 @@ static struct file_system_type debug_fs_type = {
 	.kill_sb =	kill_litter_super,
 };
 
-/** 20151024    
+/** 20151024
  * debugfs 내에 name을 가지는 새로운 파일을 생성한다.
  **/
 struct dentry *__create_file(const char *name, umode_t mode,
@@ -377,7 +377,7 @@ struct dentry *__create_file(const char *name, umode_t mode,
 
 	pr_debug("debugfs: creating file '%s'\n",name);
 
-	/** 20151017    
+	/** 20151017
 	 * debugfs의 mount가 해제되지 않도록 mount 카운트를 증가시킨다.
 	 **/
 	error = simple_pin_fs(&debug_fs_type, &debugfs_mount,
@@ -390,7 +390,7 @@ struct dentry *__create_file(const char *name, umode_t mode,
 	 * block. A pointer to that is in the struct vfsmount that we
 	 * have around.
 	 */
-	/** 20151017    
+	/** 20151017
 	 * parent가 NULL인 경우 root를 mount 시킨다.
 	 **/
 	if (!parent)
@@ -398,11 +398,11 @@ struct dentry *__create_file(const char *name, umode_t mode,
 
 	dentry = NULL;
 	mutex_lock(&parent->d_inode->i_mutex);
-	/** 20151024    
+	/** 20151024
 	 * name과 parent dentry로 dentry를 찾는다.
 	 **/
 	dentry = lookup_one_len(name, parent, strlen(name));
-	/** 20151024    
+	/** 20151024
 	 * 찾은 결과 error가 없었다면 mode에 따라 debugfs 파일을 만든다.
 	 * 공통으로 inode를 할당 받고, dentry와 연결하는 과정을 거친다.
 	 **/
@@ -460,7 +460,7 @@ exit:
  * If debugfs is not enabled in the kernel, the value -%ENODEV will be
  * returned.
  */
-/** 20151114    
+/** 20151114
  * name이라는 이름의 debugfs 파일을 생성한다.
  **/
 struct dentry *debugfs_create_file(const char *name, umode_t mode,
@@ -497,7 +497,7 @@ EXPORT_SYMBOL_GPL(debugfs_create_file);
  * If debugfs is not enabled in the kernel, the value -%ENODEV will be
  * returned.
  */
-/** 20151024    
+/** 20151024
  * debugfs내에 dir entry를 생성한다.
  **/
 struct dentry *debugfs_create_dir(const char *name, struct dentry *parent)
@@ -764,21 +764,21 @@ EXPORT_SYMBOL_GPL(debugfs_initialized);
 
 static struct kobject *debug_kobj;
 
-/** 20151010    
+/** 20151010
  * debugfs를 사용하기 위해 초기화 한다.
  **/
 static int __init debugfs_init(void)
 {
 	int retval;
 
-	/** 20151010    
+	/** 20151010
 	 * "kernel" kobj 아래 "debug" kobj를 생성해 등록한다.
 	 **/
 	debug_kobj = kobject_create_and_add("debug", kernel_kobj);
 	if (!debug_kobj)
 		return -EINVAL;
 
-	/** 20151010    
+	/** 20151010
 	 * debugfs filesystem 을 등록한다.
 	 **/
 	retval = register_filesystem(&debug_fs_type);

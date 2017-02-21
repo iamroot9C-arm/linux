@@ -120,7 +120,7 @@ struct cpu_cache_fns {
 
 extern struct cpu_cache_fns cpu_cache;
 
-/** 20131026    
+/** 20131026
  * v7 architecture의 경우 cache-v7.S의 v7_XXXXX 가 호출된다.
  *
  * 대응되는 부분은 arch/arm/mm/proc-macros.S의 
@@ -239,7 +239,7 @@ static inline void __flush_icache_all(void)
 	__flush_icache_preferred();
 }
 
-/** 20131026    
+/** 20131026
  * cache flush 인터페이스 함수.
  *
  * 20140308
@@ -307,7 +307,7 @@ extern void flush_cache_page(struct vm_area_struct *vma, unsigned long user_addr
  * Perform necessary cache operations to ensure that the TLB will
  * see data written in the specified area.
  */
-/** 20140329    
+/** 20140329
  * start~size에 해당하는 data cache 영역을 메모리에 적용한다.
  **/
 #define clean_dcache_area(start,size)	cpu_dcache_clean_area(start, size)
@@ -353,7 +353,7 @@ static inline void flush_kernel_dcache_page(struct page *page)
 {
 }
 
-/** 20160430    
+/** 20160430
  *
  **/
 #define flush_dcache_mmap_lock(mapping) \
@@ -377,12 +377,12 @@ static inline void flush_kernel_dcache_page(struct page *page)
  * data, we need to do a full cache flush to ensure that writebacks
  * don't corrupt data placed into these pages via the new mappings.
  */
-/** 20140308    
+/** 20140308
  * vmap을 수행한 이후 cache를 반영시킨다.
  **/
 static inline void flush_cache_vmap(unsigned long start, unsigned long end)
 {
-	/** 20140308    
+	/** 20140308
 	 * vipt nonaliasing이 아닐 경우 전체 cache를 비움
 	 * icache는 invalidate, dcache는 flush.
 	 *
@@ -391,7 +391,7 @@ static inline void flush_cache_vmap(unsigned long start, unsigned long end)
 	 **/
 	if (!cache_is_vipt_nonaliasing())
 		flush_cache_all();
-	/** 20140308    
+	/** 20140308
 	 * 그렇지 않다면 dsb만 호출.
 	 *
 	 * vexpress의 경우 ARMv7으로 vipt nonaliasing.
@@ -406,12 +406,12 @@ static inline void flush_cache_vmap(unsigned long start, unsigned long end)
 		dsb();
 }
 
-/** 20140405    
+/** 20140405
  * vunmap 이후 cache flush.
  **/
 static inline void flush_cache_vunmap(unsigned long start, unsigned long end)
 {
-	/** 20140405    
+	/** 20140405
 	 * vipt nonaliasing이 아니면 cache를 모두 비워준다.
 	 **/
 	if (!cache_is_vipt_nonaliasing())

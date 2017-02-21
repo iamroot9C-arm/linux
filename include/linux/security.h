@@ -1837,7 +1837,7 @@ static inline void security_free_mnt_opts(struct security_mnt_opts *opts)
  * are just stubbed out, but a few must call the proper capable code.
  */
 
-/** 20150214    
+/** 20150214
  * CONFIG_SECURITY가 설정되지 않아 NULL 함수.
  **/
 static inline int security_init(void)
@@ -1906,7 +1906,7 @@ static inline int security_settime(const struct timespec *ts,
 	return cap_settime(ts, tz);
 }
 
-/** 20160416    
+/** 20160416
  **/
 static inline int security_vm_enough_memory_mm(struct mm_struct *mm, long pages)
 {
@@ -1936,7 +1936,7 @@ static inline int security_bprm_secureexec(struct linux_binprm *bprm)
 	return cap_bprm_secureexec(bprm);
 }
 
-/** 20150307    
+/** 20150307
  * CONFIG_SECURITY가 설정되지 않아 0을 리턴.
  **/
 static inline int security_sb_alloc(struct super_block *sb)
@@ -1957,7 +1957,7 @@ static inline int security_sb_remount(struct super_block *sb, void *data)
 	return 0;
 }
 
-/** 20150221    
+/** 20150221
  * CONFIG_SECURITY가 설정되지 않아 0을 리턴.
  **/
 static inline int security_sb_kern_mount(struct super_block *sb, int flags, void *data)
@@ -2246,14 +2246,14 @@ static inline int security_file_open(struct file *file,
 	return 0;
 }
 
-/** 20160312    
+/** 20160312
  **/
 static inline int security_task_create(unsigned long clone_flags)
 {
 	return 0;
 }
 
-/** 20150530    
+/** 20150530
  **/
 static inline void security_task_free(struct task_struct *task)
 { }
@@ -2266,7 +2266,7 @@ static inline int security_cred_alloc_blank(struct cred *cred, gfp_t gfp)
 static inline void security_cred_free(struct cred *cred)
 { }
 
-/** 20160319    
+/** 20160319
  **/
 static inline int security_prepare_creds(struct cred *new,
 					 const struct cred *old,
@@ -2485,7 +2485,7 @@ static inline int security_sem_semop(struct sem_array *sma,
 	return 0;
 }
 
-/** 20150328    
+/** 20150328
  **/
 static inline void security_d_instantiate(struct dentry *dentry, struct inode *inode)
 { }
@@ -2521,7 +2521,7 @@ static inline void security_release_secctx(char *secdata, u32 seclen)
 {
 }
 
-/** 20150328    
+/** 20150328
  * CONFIG_SECURITY를 설정하지 않았으므로 error 를 리턴한다.
  **/
 static inline int security_inode_notifysecctx(struct inode *inode, void *ctx, u32 ctxlen)
@@ -2594,7 +2594,7 @@ static inline int security_unix_may_send(struct socket *sock,
 	return 0;
 }
 
-/** 20151107    
+/** 20151107
  * CONFIG_SECURITY_NETWORK 설정하지 않았음.
  **/
 static inline int security_socket_create(int family, int type,
@@ -2603,7 +2603,7 @@ static inline int security_socket_create(int family, int type,
 	return 0;
 }
 
-/** 20151107    
+/** 20151107
  * CONFIG_SECURITY_NETWORK 설정하지 않았음.
  **/
 static inline int security_socket_post_create(struct socket *sock,
@@ -2695,7 +2695,7 @@ static inline int security_socket_getpeersec_dgram(struct socket *sock, struct s
 	return -ENOPROTOOPT;
 }
 
-/** 20151107    
+/** 20151107
  * CONFIG_SECURITY_NETWORK 설정하지 않았음.
  **/
 static inline int security_sk_alloc(struct sock *sk, int family, gfp_t priority)
@@ -3045,7 +3045,7 @@ static inline void free_secdata(void *secdata)
 
 #else
 
-/** 20150411    
+/** 20150411
  * CONFIG_SECURITY를 사용하지 않았다.
  **/
 static inline char *alloc_secdata(void)

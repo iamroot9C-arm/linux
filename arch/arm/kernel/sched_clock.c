@@ -24,14 +24,14 @@ struct clock_data {
 };
 
 static void sched_clock_poll(unsigned long wrap_ticks);
-/** 20150103    
+/** 20150103
  * sched_clock_timer를 정의한다.
  *
  * 콜백 함수는 sched_clock_poll이다.
  **/
 static DEFINE_TIMER(sched_clock_timer, sched_clock_poll, 0, 0);
 
-/** 20140426    
+/** 20140426
  * clock data.
  *
  * 한 clock tick이 몇 ns인지 환산.
@@ -48,14 +48,14 @@ static u32 __read_mostly sched_clock_mask = 0xffffffff;
 
 static u32 notrace jiffy_sched_clock_read(void)
 {
-	/** 20130518    
+	/** 20130518
 	 * vmlinux.lds에서
 	 * jiffies = jiffies_64
 	 **/
 	return (u32)(jiffies - INITIAL_JIFFIES);
 }
 
-/** 20130518    
+/** 20130518
  * read_sched_clock 콜백함수.
  *
  * versatile_sched_clock_init()에서
@@ -68,7 +68,7 @@ static inline u64 cyc_to_ns(u64 cyc, u32 mult, u32 shift)
 	return (cyc * mult) >> shift;
 }
 
-/** 20140426    
+/** 20140426
  * cyc 값을 sched_clock을 기준으로 한 ns로 변환.
  *
  * epoch_ns가 갱신된 이후 얼마의 ns가 흘렀는지 더해 리턴.
@@ -86,7 +86,7 @@ static unsigned long long cyc_to_sched_clock(u32 cyc, u32 mask)
 	 * the middle of an update, and we should repeat the load.
 	 */
 	do {
-		/** 20140426    
+		/** 20140426
 		 * clock_data로부터 설정된 epoch_cyc, epoch_ns 값을 읽어온다.
 		 **/
 		epoch_cyc = cd.epoch_cyc;
@@ -95,7 +95,7 @@ static unsigned long long cyc_to_sched_clock(u32 cyc, u32 mask)
 		smp_rmb();
 	} while (epoch_cyc != cd.epoch_cyc_copy);
 
-	/** 20140426    
+	/** 20140426
 	 * epoch_ns + cyc값을 ns으로 변환한 값을 더해 sched clock 값을 리턴
 	 **/
 	return epoch_ns + cyc_to_ns((cyc - epoch_cyc) & mask, cd.mult, cd.shift);
@@ -135,18 +135,18 @@ static void notrace update_sched_clock(void)
 	raw_local_irq_restore(flags);
 }
 
-/** 20150103    
+/** 20150103
  * wrap_ticks 이후에 timer가 만료되도록 sched_clock_timer를 설정한다.
  * sched_clock 관련 자료구조를 update한다.
  **/
 static void sched_clock_poll(unsigned long wrap_ticks)
 {
-	/** 20150103    
+	/** 20150103
 	 * sched_clock_timer의 timeout 시간을 변경한다.
 	 * 현재 jiffies에 wrap_ticks를 더한 시간에 만료되도록 한다.
 	 **/
 	mod_timer(&sched_clock_timer, round_jiffies(jiffies + wrap_ticks));
-	/** 20150103    
+	/** 20150103
 	 * sched_clock으로 사용되는 epoch_XX를 갱신한다.
 	 **/
 	update_sched_clock();
@@ -168,20 +168,20 @@ void __init setup_sched_clock(u32 (*read)(void), int bits, unsigned long rate)
 	char r_unit;
 
 	BUG_ON(bits > 32);
-	/** 20130518    
+	/** 20130518
 	 * irq가 disabled 되어 있지 않을 경우 WARN()
 	 **/
 	WARN_ON(!irqs_disabled());
-	/** 20130518    
+	/** 20130518
 	 * 함수 포인터 초기값이 변경되었다면 WARN()
 	 **/
 	WARN_ON(read_sched_clock != jiffy_sched_clock_read);
-	/** 20130518    
+	/** 20130518
 	 * read 함수로 함수 포인터 변경.
 	 *   vexpress의 경우 versatile_read_sched_clock
 	 **/
 	read_sched_clock = read;
-	/** 20130518    
+	/** 20130518
 	 * bits가 32로 넘어온 경우: 0 - 1
 	 **/
 	sched_clock_mask = (1 << bits) - 1;
@@ -234,7 +234,7 @@ void __init setup_sched_clock(u32 (*read)(void), int bits, unsigned long rate)
 	w = wrap;
 
 	/* calculate the ns resolution of this counter */
-	/** 20150103    
+	/** 20150103
 	 * 1 cyc에 소요되는 ns.
 	 **/
 	res = cyc_to_ns(1ULL, cd.mult, cd.shift);
@@ -254,7 +254,7 @@ void __init setup_sched_clock(u32 (*read)(void), int bits, unsigned long rate)
 	 * 보정해주는 값으로 사용???
 	 **/
 	sched_clock_timer.data = msecs_to_jiffies(w - (w / 10));
-	/** 20150103    
+	/** 20150103
 	 * sched_clock 관련 전역변수를 갱신한다.
 	 **/
 	update_sched_clock();
@@ -271,14 +271,14 @@ void __init setup_sched_clock(u32 (*read)(void), int bits, unsigned long rate)
 	pr_debug("Registered %pF as sched_clock source\n", read);
 }
 
-/** 20140426    
+/** 20140426
  * 시스템이 시작된 후, 몇 ns가 지났는지 리턴한다.
  *
  * sched clock 레지스터를 읽어 ns 단위의 값으로 리턴.
  **/
 unsigned long long notrace sched_clock(void)
 {
-	/** 20140426    
+	/** 20140426
 	 * scheduling clock 값을 읽어온다.
 	 * read_sched_clock는 machine에 따라 정의된다.
 	 **/
@@ -286,7 +286,7 @@ unsigned long long notrace sched_clock(void)
 	return cyc_to_sched_clock(cyc, sched_clock_mask);
 }
 
-/** 20150103    
+/** 20150103
  * sched_clock을 새로 읽고, timer를 동록시킨다.
  **/
 void __init sched_clock_postinit(void)
@@ -295,7 +295,7 @@ void __init sched_clock_postinit(void)
 	 * If no sched_clock function has been provided at that point,
 	 * make it the final one one.
 	 */
-	/** 20150103    
+	/** 20150103
 	 * read_sched_clock가 초기값이라면,
 	 * 즉, sched_clock를 읽기 위한 콜백으로 어떠한 함수도 등록되지 않았다면
 	 * jiffy_sched_clock_read를 등록한다.
@@ -303,7 +303,7 @@ void __init sched_clock_postinit(void)
 	if (read_sched_clock == jiffy_sched_clock_read)
 		setup_sched_clock(jiffy_sched_clock_read, 32, HZ);
 
-	/** 20150103    
+	/** 20150103
 	 * setup_sched_clock에서 sched_clock_timer.data를 jiffies로 계산해 넣었다.
 	 *
 	 * sched_clock_timer를 등록시키고 시작시킨다.
@@ -311,7 +311,7 @@ void __init sched_clock_postinit(void)
 	sched_clock_poll(sched_clock_timer.data);
 }
 
-/** 20151003    
+/** 20151003
  * sched_clock이 suspend될 때, sched_clock timer를 재설정해
  * resume 되고 data 시간 후 scheduling이 되도록 한다.
  **/
@@ -321,14 +321,14 @@ static int sched_clock_suspend(void)
 	return 0;
 }
 
-/** 20151003    
+/** 20151003
  * sched clock ops.
  **/
 static struct syscore_ops sched_clock_ops = {
 	.suspend = sched_clock_suspend,
 };
 
-/** 20151003    
+/** 20151003
  * syscore ops에 sched_clock ops를 등록한다.
  **/
 static int __init sched_clock_syscore_init(void)

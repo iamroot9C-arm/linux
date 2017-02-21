@@ -55,7 +55,7 @@ void sort(void *base, size_t num, size_t size,
 	/* pre-scale counters for performance */
 	int i = (num/2 - 1) * size, n = num * size, c, r;
 
-	/** 20130803    
+	/** 20130803
 	 * swap_func이 지정되지 않으면 일반적인 swap 함수를 사용한다.
 	 **/
 	if (!swap_func)

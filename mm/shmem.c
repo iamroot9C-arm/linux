@@ -130,7 +130,7 @@ static inline int shmem_getpage(struct inode *inode, pgoff_t index,
 			mapping_gfp_mask(inode->i_mapping), fault_type);
 }
 
-/** 20150822    
+/** 20150822
  * superblock에 저장해 둔 filesystem specific info를 받아온다.
  **/
 static inline struct shmem_sb_info *SHMEM_SB(struct super_block *sb)
@@ -182,7 +182,7 @@ static const struct inode_operations shmem_dir_inode_operations;
 static const struct inode_operations shmem_special_inode_operations;
 static const struct vm_operations_struct shmem_vm_ops;
 
-/** 20150822    
+/** 20150822
  * shmem용 bdi 구조체.
  * readahead를 사용하지 않고, swap backed.
  *
@@ -2585,17 +2585,17 @@ static int shmem_show_options(struct seq_file *seq, struct dentry *root)
 }
 #endif /* CONFIG_TMPFS */
 
-/** 20150822    
+/** 20150822
  * superblock에서 shmem_sb_info 관련 부분을 제거한다.
  **/
 static void shmem_put_super(struct super_block *sb)
 {
-	/** 20150822    
+	/** 20150822
 	 * superblock에 저장해둔 sbinfo를 찾아온다.
 	 **/
 	struct shmem_sb_info *sbinfo = SHMEM_SB(sb);
 
-	/** 20150822    
+	/** 20150822
 	 * percpu_counter를 제거하고 메모리를 해제한다.
 	 **/
 	percpu_counter_destroy(&sbinfo->used_blocks);
@@ -2603,7 +2603,7 @@ static void shmem_put_super(struct super_block *sb)
 	sb->s_fs_info = NULL;
 }
 
-/** 20150822    
+/** 20150822
  * super_block에서 shmem_sb_info 관련 부분을 초기화 한다.
  **/
 int shmem_fill_super(struct super_block *sb, void *data, int silent)
@@ -2613,7 +2613,7 @@ int shmem_fill_super(struct super_block *sb, void *data, int silent)
 	int err = -ENOMEM;
 
 	/* Round up to L1_CACHE_BYTES to resist false sharing */
-	/** 20150822    
+	/** 20150822
 	 * shmem_sb_info를 할당 받아 구조체 초기화.
 	 **/
 	sbinfo = kzalloc(max((int)sizeof(struct shmem_sb_info),
@@ -2626,7 +2626,7 @@ int shmem_fill_super(struct super_block *sb, void *data, int silent)
 	sbinfo->gid = current_fsgid();
 	sb->s_fs_info = sbinfo;
 
-	/** 20150822    
+	/** 20150822
 	 * CONFIG_TMPFS를 사용하는 경우
 	 **/
 #ifdef CONFIG_TMPFS
@@ -2649,7 +2649,7 @@ int shmem_fill_super(struct super_block *sb, void *data, int silent)
 	sb->s_flags |= MS_NOUSER;
 #endif
 
-	/** 20150822    
+	/** 20150822
 	 * sbinfo 의 나머지 부분을 초기화 한다.
 	 **/
 	spin_lock_init(&sbinfo->stat_lock);
@@ -2657,7 +2657,7 @@ int shmem_fill_super(struct super_block *sb, void *data, int silent)
 		goto failed;
 	sbinfo->free_inodes = sbinfo->max_inodes;
 
-	/** 20150822    
+	/** 20150822
 	 * superblock 정보를 초기화 한다.
 	 **/
 	sb->s_maxbytes = MAX_LFS_FILESIZE;
@@ -2678,7 +2678,7 @@ int shmem_fill_super(struct super_block *sb, void *data, int silent)
 		goto failed;
 	inode->i_uid = sbinfo->uid;
 	inode->i_gid = sbinfo->gid;
-	/** 20150822    
+	/** 20150822
 	 * superblock의 root inode를 받아 dentry 초기화 해 리턴받는다.
 	 **/
 	sb->s_root = d_make_root(inode);
@@ -2687,7 +2687,7 @@ int shmem_fill_super(struct super_block *sb, void *data, int silent)
 	return 0;
 
 failed:
-	/** 20150822    
+	/** 20150822
 	 * super_block에 저장한 shmem_sb_info를 제거한다.
 	 **/
 	shmem_put_super(sb);
@@ -2718,24 +2718,24 @@ static void shmem_destroy_inode(struct inode *inode)
 	call_rcu(&inode->i_rcu, shmem_destroy_callback);
 }
 
-/** 20150822    
+/** 20150822
  * slab object를 할당 받은 후 자료구조 초기화를 위해 호출되는 함수.
  **/
 static void shmem_init_inode(void *foo)
 {
-	/** 20150822    
+	/** 20150822
 	 * 할당 받은 메모리에서 inode 멤버를 초기화 한다.
 	 **/
 	struct shmem_inode_info *info = foo;
 	inode_init_once(&info->vfs_inode);
 }
 
-/** 20150822    
+/** 20150822
  * shmem inode cache용 kmem cache를 생성한다.
  **/
 static int shmem_init_inodecache(void)
 {
-	/** 20150822    
+	/** 20150822
 	 * shmem_inode_cache 용 kmem_cache를 생성한다.
 	 * slab 할당 후 초기화 함수로 shmem_init_inode를 지정한다.
 	 **/
@@ -2842,7 +2842,7 @@ static const struct vm_operations_struct shmem_vm_ops = {
 #endif
 };
 
-/** 20150822    
+/** 20150822
  * shmem용 mount 함수로 nodev 공통 mount 함수를 호출한다.
  **/
 static struct dentry *shmem_mount(struct file_system_type *fs_type,
@@ -2851,7 +2851,7 @@ static struct dentry *shmem_mount(struct file_system_type *fs_type,
 	return mount_nodev(fs_type, flags, data, shmem_fill_super);
 }
 
-/** 20150822    
+/** 20150822
  * "tmpfs" 이라는 이름의 파일시스템.
  *
  * mount 시키기 위한 shmem_mount  
@@ -2863,7 +2863,7 @@ static struct file_system_type shmem_fs_type = {
 	.kill_sb	= kill_litter_super,
 };
 
-/** 20150822    
+/** 20150822
  * shmem을 사용하기 위한 초기화를 수행한다.
  * 
  * backing_dev_info와 kmem cache를 생성하고,
@@ -2873,21 +2873,21 @@ int __init shmem_init(void)
 {
 	int error;
 
-	/** 20150822    
+	/** 20150822
 	 * shmem_backing_dev_info를 초기화 한다.
 	 **/
 	error = bdi_init(&shmem_backing_dev_info);
 	if (error)
 		goto out4;
 
-	/** 20150822    
+	/** 20150822
 	 * shmem inode cache용 kmem cache를 생성한다.
 	 **/
 	error = shmem_init_inodecache();
 	if (error)
 		goto out3;
 
-	/** 20150822    
+	/** 20150822
 	 * "tmpfs"라는 이름의 shmem_fs_type 파일시스템 타입을 등록한다.
 	 **/
 	error = register_filesystem(&shmem_fs_type);
@@ -2896,7 +2896,7 @@ int __init shmem_init(void)
 		goto out2;
 	}
 
-	/** 20150822    
+	/** 20150822
 	 * VFS에 shmem_fs_type 파일시스템을 마운트해 vfsmount 객체를 리턴한다.
 	 **/
 	shm_mnt = vfs_kern_mount(&shmem_fs_type, MS_NOUSER,

@@ -50,7 +50,7 @@
 #include <linux/compiler.h>
 #include <linux/workqueue.h>
 
-/** 20130720    
+/** 20130720
  * vexpress에서 정의 안 되어 있음
  **/
 #if defined(CC_HAVE_ASM_GOTO) && defined(CONFIG_JUMP_LABEL)
@@ -81,7 +81,7 @@ enum jump_label_type {
 
 struct module;
 
-/** 20130720    
+/** 20130720
  * 정의되어 있지 않음
  **/
 #ifdef HAVE_JUMP_LABEL
@@ -151,7 +151,7 @@ struct static_key_deferred {
 	struct static_key  key;
 };
 
-/** 20130720    
+/** 20130720
  * static_key의 key->enabled가
  * false일 경우라 예측될 때는 static_key_false를 호출,
  * true 일 경우라 예측될 때는 static_key_true를 호출.

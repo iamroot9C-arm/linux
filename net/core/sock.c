@@ -139,7 +139,7 @@
 #include <net/tcp.h>
 #endif
 
-/** 20151031    
+/** 20151031
  * 전역 프로토콜 리스트.
  *
  * proto_register로 추가한다.
@@ -1108,7 +1108,7 @@ lenout:
  *
  * (We also register the sk_lock with the lock validator.)
  */
-/** 20151107    
+/** 20151107
  * sock의 lock을 초기화 한다.
  *
  * 결국 spinlock이지만, lockdep 처리를 위해 다양한 key가 사용된다.
@@ -1173,7 +1173,7 @@ void sk_prot_clear_portaddr_nulls(struct sock *sk, int size)
 }
 EXPORT_SYMBOL(sk_prot_clear_portaddr_nulls);
 
-/** 20151107    
+/** 20151107
  * protocol에 따라 sock 구조체를 위한 메모리를 할당 받아온다.
  **/
 static struct sock *sk_prot_alloc(struct proto *prot, gfp_t priority,
@@ -1182,7 +1182,7 @@ static struct sock *sk_prot_alloc(struct proto *prot, gfp_t priority,
 	struct sock *sk;
 	struct kmem_cache *slab;
 
-	/** 20151031    
+	/** 20151031
 	 * 프로토콜이 slab을 사용한 경우 (proto_register),
 	 * struct sock은 해당 프로토콜에서 생성한 슬랩에서 할당 받는다.
 	 *
@@ -1200,7 +1200,7 @@ static struct sock *sk_prot_alloc(struct proto *prot, gfp_t priority,
 				sk_prot_clear_nulls(sk, prot->obj_size);
 		}
 	} else
-		/** 20151107    
+		/** 20151107
 		 * slab이 별도로 지정되지 않으면
 		 * 프로토콜의 obj_size만큼 메모리를 할당 받는다.
 		 * priority에 지정된 옵션에 따른 초기화를 수행한다.
@@ -1218,7 +1218,7 @@ static struct sock *sk_prot_alloc(struct proto *prot, gfp_t priority,
 
 		if (!try_module_get(prot->owner))
 			goto out_free_sec;
-		/** 20151107    
+		/** 20151107
 		 * sock의 tx queue 번호를 초기화 한다.
 		 **/
 		sk_tx_queue_clear(sk);
@@ -1282,7 +1282,7 @@ EXPORT_SYMBOL_GPL(sock_update_netprioidx);
  *	@priority: for allocation (%GFP_KERNEL, %GFP_ATOMIC, etc)
  *	@prot: struct proto associated with this new sock instance
  */
-/** 20151107    
+/** 20151107
  * protocol별 할당 함수를 통해 sock 구조체를 할당 받고
  * 간단한 초기화를 진행한다.
  **/
@@ -1291,14 +1291,14 @@ struct sock *sk_alloc(struct net *net, int family, gfp_t priority,
 {
 	struct sock *sk;
 
-	/** 20151107    
+	/** 20151107
 	 * protocol별 할당 함수를 통해 sock 구조체를 할당 받는다.
 	 *
 	 * 할당시 __GFP_ZERO 플래그를 넘겨줘 sock 메모리를 초기화 한다.
 	 **/
 	sk = sk_prot_alloc(prot, priority | __GFP_ZERO, family);
 	if (sk) {
-		/** 20151107    
+		/** 20151107
 		 * 할당받은 sock에 protocol family와 protocol 정보를 저장한다.
 		 **/
 		sk->sk_family = family;
@@ -1311,7 +1311,7 @@ struct sock *sk_alloc(struct net *net, int family, gfp_t priority,
 		sock_net_set(sk, get_net(net));
 		atomic_set(&sk->sk_wmem_alloc, 1);
 
-		/** 20151107    
+		/** 20151107
 		 * CGROUP 관련 처리를 한다.
 		 **/
 		sock_update_classid(sk);
@@ -1508,7 +1508,7 @@ void sk_setup_caps(struct sock *sk, struct dst_entry *dst)
 }
 EXPORT_SYMBOL_GPL(sk_setup_caps);
 
-/** 20151017    
+/** 20151017
  * sk 초기화.
  *
  * 전체 페이지 수에 따라 sysctl 값을 조정한다.
@@ -2176,7 +2176,7 @@ void sk_stop_timer(struct sock *sk, struct timer_list* timer)
 }
 EXPORT_SYMBOL(sk_stop_timer);
 
-/** 20151107    
+/** 20151107
  * sock 구조체를 초기화 한다.
  *
  * struct socket과 struct sock을 서로 연결한다.
@@ -2475,7 +2475,7 @@ struct prot_inuse {
 	int val[PROTO_INUSE_NR];
 };
 
-/** 20151031    
+/** 20151031
  * 비트맵 선언.
  **/
 static DECLARE_BITMAP(proto_inuse_idx, PROTO_INUSE_NR);
@@ -2546,12 +2546,12 @@ int sock_prot_inuse_get(struct net *net, struct proto *prot)
 EXPORT_SYMBOL_GPL(sock_prot_inuse_get);
 #endif
 
-/** 20151031    
+/** 20151031
  * procfs를 사용한 경우, 프로토콜을 위한 index를 비트맵에서 할당한다.
  **/
 static void assign_proto_idx(struct proto *prot)
 {
-	/** 20151031    
+	/** 20151031
 	 * proto index 비트맵에서 비어있는 가장 작은 숫자를 프로토콜에 저장한다.
 	 **/
 	prot->inuse_idx = find_first_zero_bit(proto_inuse_idx, PROTO_INUSE_NR);
@@ -2561,7 +2561,7 @@ static void assign_proto_idx(struct proto *prot)
 		return;
 	}
 
-	/** 20151031    
+	/** 20151031
 	 * 비트맵에 사용 중임을 표시한다.
 	 **/
 	set_bit(prot->inuse_idx, proto_inuse_idx);
@@ -2582,7 +2582,7 @@ static inline void release_proto_idx(struct proto *prot)
 }
 #endif
 
-/** 20151031    
+/** 20151031
  * 프로토콜을 추가한다.
  *
  * alloc_slab이 주어진 경우 프로토콜의 sock 할당을 위한 자체 슬랩을 생성한다.
@@ -2590,7 +2590,7 @@ static inline void release_proto_idx(struct proto *prot)
  **/
 int proto_register(struct proto *prot, int alloc_slab)
 {
-	/** 20151031    
+	/** 20151031
 	 * alloc_slab을 사용한 경우, struct sock 등을 할당받기 위한
 	 * 프로토콜 자체의 슬랩을 생성한다.
 	 **/
@@ -2639,7 +2639,7 @@ int proto_register(struct proto *prot, int alloc_slab)
 		}
 	}
 
-	/** 20151031    
+	/** 20151031
 	 * 프로토콜 전역 리스트에 등록하고, 프로토콜용 인덱스를 할당한다.
 	 **/
 	mutex_lock(&proto_list_mutex);

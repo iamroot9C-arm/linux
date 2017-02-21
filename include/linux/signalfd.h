@@ -55,12 +55,12 @@ struct signalfd_siginfo {
 /*
  * Deliver the signal to listening signalfd.
  */
-/** 20160409    
+/** 20160409
  * signalfd를 통해 시그널을 대기하며 잠자는 task를 깨워 시그널을 조사하게 한다.
  **/
 static inline void signalfd_notify(struct task_struct *tsk, int sig)
 {
-	/** 20160409    
+	/** 20160409
 	 * task가 시그널을 위해 waitqueue에서 대기 중인채 잠자고 있다면
 	 * 깨워 시그널 도착을 알도록 한다.
 	 **/

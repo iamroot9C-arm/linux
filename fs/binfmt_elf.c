@@ -66,7 +66,7 @@ static int elf_core_dump(struct coredump_params *cprm);
 #define ELF_PAGEOFFSET(_v) ((_v) & (ELF_MIN_ALIGN-1))
 #define ELF_PAGEALIGN(_v) (((_v) + ELF_MIN_ALIGN - 1) & ~(ELF_MIN_ALIGN - 1))
 
-/** 20151010    
+/** 20151010
  * elf binary format을 load하기 위한 함수 구조체 정의.
  **/
 static struct linux_binfmt elf_format = {
@@ -554,7 +554,7 @@ static unsigned long randomize_stack_top(unsigned long stack_top)
 #endif
 }
 
-/** 20160206    
+/** 20160206
  *
  * elf binary를 읽어 usermode에서 thread로 시작시킨다.
  **/
@@ -725,7 +725,7 @@ static int load_elf_binary(struct linux_binprm *bprm, struct pt_regs *regs)
 	if (!(current->personality & ADDR_NO_RANDOMIZE) && randomize_va_space)
 		current->flags |= PF_RANDOMIZE;
 
-	/** 20160206    
+	/** 20160206
 	 *
 	 * brpm의 comm 지정
 	 **/
@@ -985,7 +985,7 @@ static int load_elf_binary(struct linux_binprm *bprm, struct pt_regs *regs)
 	ELF_PLAT_INIT(regs, reloc_func_desc);
 #endif
 
-	/** 20160206    
+	/** 20160206
 	 * 업데이트할 regs, regs의 pc로 수행할 elf_entry, regs의 stack.
 	 **/
 	start_thread(regs, elf_entry, bprm->p);
@@ -2117,7 +2117,7 @@ out:
 
 #endif		/* CONFIG_ELF_CORE */
 
-/** 20151010    
+/** 20151010
  * elf binfmt를 등록한다.
  **/
 static int __init init_elf_binfmt(void)

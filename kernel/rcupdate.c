@@ -76,7 +76,7 @@ EXPORT_SYMBOL_GPL(__rcu_read_lock);
  * invoke rcu_read_unlock_special() to clean up after a context switch
  * in an RCU read-side critical section and other special cases.
  */
-/** 20141015    
+/** 20141015
  * PREEMPT_RCU에서 read-side 임계구역을 벗어나는 함수.
  *
  * 마지막 unlock이 아니면 nesting 카운트만 감소시킨다.
@@ -201,7 +201,7 @@ struct rcu_synchronize {
  * Awaken the corresponding synchronize_rcu() instance now that a
  * grace period has elapsed.
  */
-/** 20141025    
+/** 20141025
  * rcu gp 후 호출되어, wait_rcu_gp 호출되어 대기 중인 task를 완료시킨다.
  **/
 static void wakeme_after_rcu(struct rcu_head  *head)
@@ -212,7 +212,7 @@ static void wakeme_after_rcu(struct rcu_head  *head)
 	complete(&rcu->completion);
 }
 
-/** 20141025    
+/** 20141025
  * RCU의 gp 완료를 대기하는 함수. 
  *
  * call_rcu 함수를 매개변수로 받아, wakeme_after_rcu를 CB으로 등록한다.

@@ -149,7 +149,7 @@ static inline struct llist_node *llist_next(struct llist_node *node)
  *
  * Returns true if the list was empty prior to adding this entry.
  */
-/** 20130720    
+/** 20130720
  * lock-less add.
  * head->first에 new node를 추가.
  *
@@ -159,18 +159,18 @@ static inline bool llist_add(struct llist_node *new, struct llist_head *head)
 {
 	struct llist_node *entry, *old_entry;
 
-	/** 20130720    
+	/** 20130720
 	 * head가 가리키는 첫번째 node를 entry에 저장
 	 **/
 	entry = head->first;
 	for (;;) {
 		old_entry = entry;
 		new->next = entry;
-		/** 20130720    
+		/** 20130720
 		 * &head->first가 old_entry이고 원자적으로 수행될 경우 new로 변경.
 		 **/
 		entry = cmpxchg(&head->first, old_entry, new);
-		/** 20130720    
+		/** 20130720
 		 * cmpxchg의 리턴값 entry는 &head->first에 있던 값.
 		 * 즉, 새로 가져온 값과 이전에 가져왔던 head->first 값과 일치한다면
 		 * 루프를 빠져나감.

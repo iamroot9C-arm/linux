@@ -33,7 +33,7 @@ static void __iomem *twd_base;
 static struct clk *twd_clk;
 static unsigned long twd_timer_rate;
 
-/** 20140913    
+/** 20140913
  * clock event device 선언.
  **/
 static struct clock_event_device __percpu **twd_evt;
@@ -83,7 +83,7 @@ static int twd_set_next_event(unsigned long evt,
  * If a local timer interrupt has occurred, acknowledge and return 1.
  * Otherwise, return 0.
  */
-/** 20140920    
+/** 20140920
  * timer watchdog interrupt가 떴다면 1로 ack를 주고, 1을 리턴한다.
  **/
 static int twd_timer_ack(void)
@@ -148,7 +148,7 @@ core_initcall(twd_cpufreq_init);
 
 #endif
 
-/** 20150606    
+/** 20150606
  * twd를 직접 조작해 twd_timer_rate를 계산한다.
  **/
 static void __cpuinit twd_calibrate_rate(void)
@@ -160,7 +160,7 @@ static void __cpuinit twd_calibrate_rate(void)
 	 * If this is the first time round, we need to work out how fast
 	 * the timer ticks
 	 */
-	/** 20150606    
+	/** 20150606
 	 * local timer를 설정하기 위해 TWD TIMER COUNTER를 최대치로 설정해두고,
 	 * 5개 jiffies 뒤에 읽어 지나간 COUNTER값을 환산해 rate를 계산한다.
 	 **/
@@ -198,18 +198,18 @@ static void __cpuinit twd_calibrate_rate(void)
 	}
 }
 
-/** 20140920    
+/** 20140920
  * twd interrupt handler.
  * clock_event_device에 지정한 event_handler를 호출한다.
  **/
 static irqreturn_t twd_handler(int irq, void *dev_id)
 {
-	/** 20140920    
+	/** 20140920
 	 * clock event device를 받아온다.
 	 **/
 	struct clock_event_device *evt = *(struct clock_event_device **)dev_id;
 
-	/** 20140920    
+	/** 20140920
 	 * twd interrupt 발생시 응답하고, event_handler를 호출해 interrupt를 처리한다.
 	 * periodic이고 broadcast가 아닌 경우 event_handler는
 	 * tick_handle_periodic.
@@ -222,7 +222,7 @@ static irqreturn_t twd_handler(int irq, void *dev_id)
 	return IRQ_NONE;
 }
 
-/** 20150606    
+/** 20150606
  * "smp_twd"를 위한 clock을 준비하고 공급한다.
  **/
 static struct clk *twd_get_clock(void)
@@ -230,7 +230,7 @@ static struct clk *twd_get_clock(void)
 	struct clk *clk;
 	int err;
 
-	/** 20150606    
+	/** 20150606
 	 * "smp_twd"으로 등록된 struct clk을 찾아온다.
 	 **/
 	clk = clk_get_sys("smp_twd", NULL);
@@ -239,7 +239,7 @@ static struct clk *twd_get_clock(void)
 		return clk;
 	}
 
-	/** 20150606    
+	/** 20150606
 	 * clkops의 prepare 함수를 호출한다.
 	 **/
 	err = clk_prepare(clk);
@@ -249,7 +249,7 @@ static struct clk *twd_get_clock(void)
 		return ERR_PTR(err);
 	}
 
-	/** 20150606    
+	/** 20150606
 	 * clkops의 enable 함수를 호출한다.
 	 **/
 	err = clk_enable(clk);
@@ -266,7 +266,7 @@ static struct clk *twd_get_clock(void)
 /*
  * Setup the local clock events for a CPU.
  */
-/** 20150606    
+/** 20150606
  * twd timer를 setup한다.
  *
  * clock_event_device를 설정하고 등록한다.
@@ -275,13 +275,13 @@ static int __cpuinit twd_timer_setup(struct clock_event_device *clk)
 {
 	struct clock_event_device **this_cpu_clk;
 
-	/** 20150606    
+	/** 20150606
 	 * twd_clk이 초기화되지 않았으면 twd_get_clock으로 clock 값을 읽어와 설정한다.
 	 **/
 	if (!twd_clk)
 		twd_clk = twd_get_clock();
 
-	/** 20150606    
+	/** 20150606
 	 * twd에 해당하는 struct clk 구조체를 가져왔다면 get_rate를 호출하고,
 	 * 그렇지 않다면 calibrate rate를 통해 설정한다.
 	 **/
@@ -292,7 +292,7 @@ static int __cpuinit twd_timer_setup(struct clock_event_device *clk)
 
 	__raw_writel(0, twd_base + TWD_TIMER_CONTROL);
 
-	/** 20150606    
+	/** 20150606
 	 * clock_event_device 구조체를 설정한 뒤 percpu 변수 twd_evt에 저장한다.
 	 *
 	 * cat /proc/timer_list로 확인
@@ -303,7 +303,7 @@ static int __cpuinit twd_timer_setup(struct clock_event_device *clk)
 	clk->rating = 350;
 	clk->set_mode = twd_set_mode;
 	clk->set_next_event = twd_set_next_event;
-	/** 20150613    
+	/** 20150613
 	 * twd_local_timer_common_register에서 등록한 percpu irq.
 	 **/
 	clk->irq = twd_ppi;
@@ -311,12 +311,12 @@ static int __cpuinit twd_timer_setup(struct clock_event_device *clk)
 	this_cpu_clk = __this_cpu_ptr(twd_evt);
 	*this_cpu_clk = clk;
 
-	/** 20150606    
+	/** 20150606
 	 * clockevent를 설정하고 등록한다.
 	 **/
 	clockevents_config_and_register(clk, twd_timer_rate,
 					0xf, 0xffffffff);
-	/** 20150606    
+	/** 20150606
 	 * percpu interrupt를 활성화 한다.
 	 **/
 	enable_percpu_irq(clk->irq, 0);
@@ -324,7 +324,7 @@ static int __cpuinit twd_timer_setup(struct clock_event_device *clk)
 	return 0;
 }
 
-/** 20140920    
+/** 20140920
  * timer watchdog local timer operations.
  **/
 static struct local_timer_ops twd_lt_ops __cpuinitdata = {
@@ -332,14 +332,14 @@ static struct local_timer_ops twd_lt_ops __cpuinitdata = {
 	.stop	= twd_timer_stop,
 };
 
-/** 20140920    
+/** 20140920
  * twd를 percpu irq로 등록하고, local timer로 등록한다.
  **/
 static int __init twd_local_timer_common_register(void)
 {
 	int err;
 
-	/** 20140913    
+	/** 20140913
 	 * clock_event_device용 percpu 변수 할당.
 	 **/
 	twd_evt = alloc_percpu(struct clock_event_device *);
@@ -348,7 +348,7 @@ static int __init twd_local_timer_common_register(void)
 		goto out_free;
 	}
 
-	/** 20140920    
+	/** 20140920
 	 * percpu irq로 twd_ppi(IRQ_LOCALTIMER, 29) 등록.
 	 * handler는 twd_handler
 	 * dev_id는 twd_evt
@@ -361,7 +361,7 @@ static int __init twd_local_timer_common_register(void)
 		goto out_free;
 	}
 
-	/** 20140920    
+	/** 20140920
 	 * twd_lt_ops를 local timer operations (lt_ops)로 지정한다.
 	 **/
 	err = local_timer_register(&twd_lt_ops);
@@ -380,7 +380,7 @@ out_free:
 	return err;
 }
 
-/** 20140920    
+/** 20140920
  * twd local timer를 등록한다.
  **/
 int __init twd_local_timer_register(struct twd_local_timer *tlt)
@@ -388,19 +388,19 @@ int __init twd_local_timer_register(struct twd_local_timer *tlt)
 	if (twd_base || twd_evt)
 		return -EBUSY;
 
-	/** 20140913    
+	/** 20140913
 	 * twd irq resource를 가져와 twd_ppi에 저장한다.
 	 **/
 	twd_ppi	= tlt->res[1].start;
 
-	/** 20140913    
+	/** 20140913
 	 * twd mem resource에 지정된 메모리를 page table에 매핑.
 	 **/
 	twd_base = ioremap(tlt->res[0].start, resource_size(&tlt->res[0]));
 	if (!twd_base)
 		return -ENOMEM;
 
-	/** 20140920    
+	/** 20140920
 	 * twd를 local timer로 등록한다.
 	 *   - interrupt 등록(핸들러 지정)
 	 *   - register 설정

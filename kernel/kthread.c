@@ -18,11 +18,11 @@
 #include <linux/freezer.h>
 #include <trace/events/sched.h>
 
-/** 20160213    
+/** 20160213
  * kthread_create_list에 추가/삭제시 사용하는 lock.
  **/
 static DEFINE_SPINLOCK(kthread_create_lock);
-/** 20150801    
+/** 20150801
  * kthread_create 할 구조체를 list로 관리
  *
  * kthreadd_task는 rest_init에서 생성해 저장.
@@ -30,7 +30,7 @@ static DEFINE_SPINLOCK(kthread_create_lock);
 static LIST_HEAD(kthread_create_list);
 struct task_struct *kthreadd_task;
 
-/** 20150801    
+/** 20150801
  * kthreadd가 kthread 생성에 필요한 데이터를 관리하는 구조체.
  *
  * kthreadd로 전달해 주는 부분과 kthreadd로부터 결과를 리턴받는 부분으로 구성.
@@ -49,7 +49,7 @@ struct kthread_create_info
 	struct list_head list;
 };
 
-/** 20150530    
+/** 20150530
  **/
 struct kthread {
 	int should_stop;
@@ -57,7 +57,7 @@ struct kthread {
 	struct completion exited;
 };
 
-/** 20130720    
+/** 20130720
  * task로 kthread 구조체의 포인터를 얻어 온다.
  * 
  * task를 받아서 task의 vfork_done (struct completion *)에 저장된 포인터 주소를
@@ -73,7 +73,7 @@ struct kthread {
  * and this will return true.  You should then return, and your return
  * value will be passed through to kthread_stop().
  */
-/** 20140927    
+/** 20140927
  * kthread_stop() 등에 의해 현재 task와 연결된 kthread가 멈춰야 하는지 검사한다.
  **/
 int kthread_should_stop(void)
@@ -115,18 +115,18 @@ EXPORT_SYMBOL_GPL(kthread_freezable_should_stop);
  * The caller is responsible for ensuring the validity of @task when
  * calling this function.
  */
-/** 20130720    
+/** 20130720
  * task를 받아와 task에 해당하는 kthread의 data를 리턴한다.
  **/
 void *kthread_data(struct task_struct *task)
 {
-	/** 20130720    
+	/** 20130720
 	 * task의 vfork_done이 가리키는 kthread를 가져와 data 포인터를 리턴한다.
 	 **/
 	return to_kthread(task)->data;
 }
 
-/** 20160213    
+/** 20160213
  * kernel thread 형태로 관리하기 위해 kthreadd()에 의해 task로 생성되는 함수.
  *
  * kthread_create 함수에서 전달받은 create 구조체에 저장된 함수를 수행해
@@ -137,7 +137,7 @@ void *kthread_data(struct task_struct *task)
 static int kthread(void *_create)
 {
 	/* Copy data: it's on kthread's stack */
-	/** 20160213    
+	/** 20160213
 	 * kthread_thread() 호출시 arg 위치에 지정된 create를 받아와 데이터를 꺼낸다. 
 	 **/
 	struct kthread_create_info *create = _create;
@@ -149,14 +149,14 @@ static int kthread(void *_create)
 	self.should_stop = 0;
 	self.data = data;
 	init_completion(&self.exited);
-	/** 20160213    
+	/** 20160213
 	 * vfork_done 에서 complete는 self.exited로 지정.
 	 **/
 	current->vfork_done = &self.exited;
 
 	/* OK, tell user we're spawned, wait for stop or wakeup */
 	__set_current_state(TASK_UNINTERRUPTIBLE);
-	/** 20160213    
+	/** 20160213
 	 * kthread_create_on_node()를 호출한 task에 complete를 전달한다.
 	 **/
 	create->result = current;
@@ -164,12 +164,12 @@ static int kthread(void *_create)
 	schedule();
 
 	ret = -EINTR;
-	/** 20160213    
+	/** 20160213
 	 * kthread_stop()이 threadfn 실행 전에 호출되었다면
 	 * 한 번도 수행되지 않고 -EINTR을 리턴.
 	 **/
 	if (!self.should_stop)
-		/** 20160213    
+		/** 20160213
 		 * threadfn은 kthread_create_on_node(run_ksoftirqd)와 같은 함수를 통해
 		 * 전달된 task. 보통 daemon 형태의 함수는 while문으로 계속 실행된다.
 		 **/
@@ -180,7 +180,7 @@ static int kthread(void *_create)
 }
 
 /* called from do_fork() to get node information for about to be created task */
-/** 20160227    
+/** 20160227
  * 새 task에 저장할 node 정보를 리턴한다. 전달받은 tsk는 orig task.
  **/
 int tsk_fork_get_node(struct task_struct *tsk)
@@ -192,7 +192,7 @@ int tsk_fork_get_node(struct task_struct *tsk)
 	return numa_node_id();
 }
 
-/** 20160213    
+/** 20160213
  * kthread를 생성하고 수행한다.
  **/
 static void create_kthread(struct kthread_create_info *create)
@@ -203,7 +203,7 @@ static void create_kthread(struct kthread_create_info *create)
 	current->pref_node_fork = create->node;
 #endif
 	/* We want our own signal handler (we take no signals by default). */
-	/** 20160213    
+	/** 20160213
 	 * kthread를 새로운 스레드로 생성한다.
 	 * FS와 FILES를 공유하고, 자식 task가 종료되었을 때 시그널을 받는다.
 	 * SIGCHLD를 받는 이유는???
@@ -237,7 +237,7 @@ static void create_kthread(struct kthread_create_info *create)
  *
  * Returns a task_struct or ERR_PTR(-ENOMEM).
  */
-/** 20150801    
+/** 20150801
  * kthreadd에게 요청할 정보를 create에 채우고 리스트에 등록시켜
  * kthreadd가 준비된 이후 argument를 받아 새로운 kthread를 생성시킨다.
  *
@@ -254,42 +254,42 @@ struct task_struct *kthread_create_on_node(int (*threadfn)(void *data),
 {
 	struct kthread_create_info create;
 
-	/** 20150801    
+	/** 20150801
 	 * kthread_create_info에서 ktheadd로 전달할 자료구조를 채운다.
 	 **/
 	create.threadfn = threadfn;
 	create.data = data;
 	create.node = node;
-	/** 20150801    
+	/** 20150801
 	 * kthreadd의 complete를 기다릴 completion을 초기화 한다.
 	 **/
 	init_completion(&create.done);
 
 	spin_lock(&kthread_create_lock);
-	/** 20150801    
+	/** 20150801
 	 * 전역 리스트에 kthread_create 요청 자료구조를 등록한다.
 	 * kthread_create_list의 접근은 spinlock으로 보호된다.
 	 **/
 	list_add_tail(&create.list, &kthread_create_list);
 	spin_unlock(&kthread_create_lock);
 
-	/** 20150801    
+	/** 20150801
 	 * kthreadd_task를 깨워 kthread 생성을 진행시킨다.
 	 **/
 	wake_up_process(kthreadd_task);
-	/** 20150801    
+	/** 20150801
 	 * kthreadd로부터 complete()를 기다리며 대기한다.
 	 **/
 	wait_for_completion(&create.done);
 
-	/** 20150801    
+	/** 20150801
 	 * result가 에러가 아니라면
 	 **/
 	if (!IS_ERR(create.result)) {
 		static const struct sched_param param = { .sched_priority = 0 };
 		va_list args;
 
-		/** 20150801    
+		/** 20150801
 		 * kthead_create을 요청한 곳에서 넘어온 이름대로 task의 comm을 지정.
 		 **/
 		va_start(args, namefmt);
@@ -300,11 +300,11 @@ struct task_struct *kthread_create_on_node(int (*threadfn)(void *data),
 		 * root may have changed our (kthreadd's) priority or CPU mask.
 		 * The kernel thread should not inherit these properties.
 		 */
-		/** 20150801    
+		/** 20150801
 		 * kthreadd로부터 생성된 task의 scheduling policy와 RT priority를 지정한다.
 		 **/
 		sched_setscheduler_nocheck(create.result, SCHED_NORMAL, &param);
-		/** 20150801    
+		/** 20150801
 		 * 생성된 task는 모든 cpu에서 수행될 수 있다.
 		 **/
 		set_cpus_allowed_ptr(create.result, cpu_all_mask);
@@ -322,7 +322,7 @@ EXPORT_SYMBOL(kthread_create_on_node);
  * except that @cpu doesn't need to be online, and the thread must be
  * stopped (i.e., just returned from kthread_create()).
  */
-/** 20140927    
+/** 20140927
  * task를 특정 cpu에서 실행하도록 설정한다.
  * kthread를 생성한 뒤에 아직 run 상태가 아닐 때 설정한다.
  * 
@@ -332,7 +332,7 @@ EXPORT_SYMBOL(kthread_create_on_node);
 void kthread_bind(struct task_struct *p, unsigned int cpu)
 {
 	/* Must have done schedule() in kthread() before we set_task_cpu */
-	/** 20160130    
+	/** 20160130
 	 * bind 시킬 task가 inactive, 즉 동작 중이지 않을 때까지 기다린다.
 	 * 생성된 이후 kthread()에서 schedule()이 한 번 호출 되어야 한다.
 	 **/
@@ -342,7 +342,7 @@ void kthread_bind(struct task_struct *p, unsigned int cpu)
 	}
 
 	/* It's safe because the task is inactive. */
-	/** 20160130    
+	/** 20160130
 	 * bind될 cpu로 mask를 생성해 task의 allowed로 지정하고 flags를 bound로 설정.
 	 **/
 	do_set_cpus_allowed(p, cpumask_of(cpu));
@@ -365,7 +365,7 @@ EXPORT_SYMBOL(kthread_bind);
  * Returns the result of threadfn(), or %-EINTR if wake_up_process()
  * was never called.
  */
-/** 20150530    
+/** 20150530
  * kthread_create로 생성된 task를 정지시킨다.
  *
  * should_stop에 표시하고 task를 깨운 뒤, 완료를 기다리다가 완료되면
@@ -377,21 +377,21 @@ int kthread_stop(struct task_struct *k)
 	int ret;
 
 	trace_sched_kthread_stop(k);
-	/** 20150530    
+	/** 20150530
 	 * task_struct의 사용을 시작한다.
 	 **/
 	get_task_struct(k);
 
-	/** 20150530    
+	/** 20150530
 	 * task를 통해 kthread 구조체 위치를 찾아온다.
 	 **/
 	kthread = to_kthread(k);
 	barrier(); /* it might have exited */
-	/** 20150530    
+	/** 20150530
 	 * vfork_done이 채워져 있다면 kthread가 할당되어 있는 경우다.
 	 **/
 	if (k->vfork_done != NULL) {
-		/** 20150530    
+		/** 20150530
 		 * 해당 kthread가 멈춰져야 한다고 기록하고,
 		 * task를 깨운 뒤 complete 될 때까지 기다린다.
 		 *
@@ -403,12 +403,12 @@ int kthread_stop(struct task_struct *k)
 		wake_up_process(k);
 		wait_for_completion(&kthread->exited);
 	}
-	/** 20150530    
+	/** 20150530
 	 * kthread의 종료코드를 가져와 반환한다.
 	 **/
 	ret = k->exit_code;
 
-	/** 20150530    
+	/** 20150530
 	 * task_struct의 사용을 종료한다.
 	 **/
 	put_task_struct(k);
@@ -418,7 +418,7 @@ int kthread_stop(struct task_struct *k)
 }
 EXPORT_SYMBOL(kthread_stop);
 
-/** 20160213    
+/** 20160213
  * kthread 생성 요청을 받아 kthread를 생성하는 kthreadd.
  *
  * kernel_init 이후 생성되어 pid 2번으로 수행된다.
@@ -428,35 +428,35 @@ int kthreadd(void *unused)
 	struct task_struct *tsk = current;
 
 	/* Setup a clean context for our children to inherit. */
-	/** 20160206    
+	/** 20160206
 	 * task의 이름을 kthreadd로 한다.
 	 **/
 	set_task_comm(tsk, "kthreadd");
-	/** 20160213    
+	/** 20160213
 	 * kthreadd는 시그널들을 무시한다.
 	 **/
 	ignore_signals(tsk);
-	/** 20160213    
+	/** 20160213
 	 * kthreadd는 모든 cpu에서 수행될 수 있다.
 	 * 설정하지 않았을 경우 초기값은??? copy_process의 내용을 확인해야 할 듯.
 	 **/
 	set_cpus_allowed_ptr(tsk, cpu_all_mask);
 	set_mems_allowed(node_states[N_HIGH_MEMORY]);
 
-	/** 20160213    
+	/** 20160213
 	 * kthreadd는 FREEZABLE 하지 않다.
 	 *
 	 * freezing_slow_path에서 false로 리턴.
 	 **/
 	current->flags |= PF_NOFREEZE;
 
-	/** 20160213    
+	/** 20160213
 	 * kthreadd는 생성된 후 계속 동작한다.
 	 *
 	 * 생성요청이 들어왔을 경우 kthread를 생성하고, 없을 경우 schedule로 대기.
 	 **/
 	for (;;) {
-		/** 20160213    
+		/** 20160213
 		 * 생성할 kthread가 없다면(리스트 대기열 확인) schedule.
 		 *
 		 * set_current_state()	; current->state 변경 후 barrier
@@ -466,19 +466,19 @@ int kthreadd(void *unused)
 		set_current_state(TASK_INTERRUPTIBLE);
 		if (list_empty(&kthread_create_list))
 			schedule();
-		/** 20160213    
+		/** 20160213
 		 * 상태를 다시 running으로 변경.
 		 **/
 		__set_current_state(TASK_RUNNING);
 
 		spin_lock(&kthread_create_lock);
-		/** 20160213    
+		/** 20160213
 		 * kthread_create_list를 다 비울 때까지 kthread 생성 반복.
 		 **/
 		while (!list_empty(&kthread_create_list)) {
 			struct kthread_create_info *create;
 
-			/** 20160213    
+			/** 20160213
 			 * kthread_create_info를 리스트에서 분리해 create_thread 함수 실행.
 			 **/
 			create = list_entry(kthread_create_list.next,
@@ -486,7 +486,7 @@ int kthreadd(void *unused)
 			list_del_init(&create->list);
 			spin_unlock(&kthread_create_lock);
 
-			/** 20160213    
+			/** 20160213
 			 * create 정보대로 kthread를 생성하고 kthread 내에서 함수로 수행한다.
 			 **/
 			create_kthread(create);

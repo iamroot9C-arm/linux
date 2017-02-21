@@ -35,7 +35,7 @@
 
 
 #ifdef __KERNEL__
-/** 20140412    
+/** 20140412
  * CONFIG_BASE_SMALL 는 0이므로 SHIFT 값은 6.
  **/
 #define RADIX_TREE_MAP_SHIFT	(CONFIG_BASE_SMALL ? 4 : 6)
@@ -43,13 +43,13 @@
 #define RADIX_TREE_MAP_SHIFT	3	/* For more stressful testing */
 #endif
 
-/** 20140412    
+/** 20140412
  * RADIX_TREE_MAP_SIZE는 64
  **/
 #define RADIX_TREE_MAP_SIZE	(1UL << RADIX_TREE_MAP_SHIFT)
 #define RADIX_TREE_MAP_MASK	(RADIX_TREE_MAP_SIZE-1)
 
-/** 20140412    
+/** 20140412
  * RADIX_TREE_MAP_SIZE : 64
  * RADIX_TREE_TAG_LONGS: RADIX_TREE_MAP_SIZE를 DIV_ROUND_UP한 값.
  *		 0~31 : 1
@@ -59,11 +59,11 @@
 	((RADIX_TREE_MAP_SIZE + BITS_PER_LONG - 1) / BITS_PER_LONG)
 
 struct radix_tree_node {
-	/** 20140412    
+	/** 20140412
 	 * 현재 node의 높이
 	 **/
 	unsigned int	height;		/* Height from the bottom */
-	/** 20140412    
+	/** 20140412
 	 * 현재 node의 slot에 할당된 member의 수
 	 **/
 	unsigned int	count;
@@ -71,11 +71,11 @@ struct radix_tree_node {
 		struct radix_tree_node *parent;	/* Used when ascending tree */
 		struct rcu_head	rcu_head;	/* Used when freeing node */
 	};
-	/** 20140412    
+	/** 20140412
 	 * RADIX_TREE_MAP_SIZE 만큼의 slot을 보유한다.
 	 **/
 	void __rcu	*slots[RADIX_TREE_MAP_SIZE];
-	/** 20140412    
+	/** 20140412
 	 * RADIX_TREE_MAX_TAGS : 3
 	 * RADIX_TREE_TAG_LONGS: 2
 	 *
@@ -85,7 +85,7 @@ struct radix_tree_node {
 	unsigned long	tags[RADIX_TREE_MAX_TAGS][RADIX_TREE_TAG_LONGS];
 };
 
-/** 20140412    
+/** 20140412
  * RADIX_TREE_INDEX_BITS: 8 * 4
  * RADIX_TREE_MAX_PATH  : DIV_ROUND_UP(32,6) = 6
  **/
@@ -102,7 +102,7 @@ static unsigned long height_to_maxindex[RADIX_TREE_MAX_PATH + 1] __read_mostly;
 /*
  * Radix tree node cache.
  */
-/** 20140412    
+/** 20140412
  * radix_tree_node는 slub 할당자로 할당 받는다(cache 개념).
  **/
 static struct kmem_cache *radix_tree_node_cachep;
@@ -118,7 +118,7 @@ static struct kmem_cache *radix_tree_node_cachep;
  * of RADIX_TREE_MAX_PATH size to be created, with only the root node shared.
  * Hence:
  */
-/** 20140412    
+/** 20140412
  * RADIX_TREE_MAX_PATH     : 11
  * RADIX_TREE_PRELOAD_SIZE : 21
  **/
@@ -127,7 +127,7 @@ static struct kmem_cache *radix_tree_node_cachep;
 /*
  * Per-cpu pool of preloaded nodes
  */
-/** 20140412    
+/** 20140412
  * radix_tree_preload는 radix_tree_node에 대한 per-cpu pool이며,
  * 할당 요청이 들어올 때마다
  *     nr을 감소시키고, 할당 받아둔 포인터를 리턴한다.
@@ -138,7 +138,7 @@ struct radix_tree_preload {
 };
 static DEFINE_PER_CPU(struct radix_tree_preload, radix_tree_preloads) = { 0, };
 
-/** 20140412    
+/** 20140412
  * ptr에 indirect 비트를 설정한다.
  **/
 static inline void *ptr_to_indirect(void *ptr)
@@ -146,7 +146,7 @@ static inline void *ptr_to_indirect(void *ptr)
 	return (void *)((unsigned long)ptr | RADIX_TREE_INDIRECT_PTR);
 }
 
-/** 20140412    
+/** 20140412
  * ptr에서 indirect 비트를 클리어한다.
  **/
 static inline void *indirect_to_ptr(void *ptr)
@@ -154,7 +154,7 @@ static inline void *indirect_to_ptr(void *ptr)
 	return (void *)((unsigned long)ptr & ~RADIX_TREE_INDIRECT_PTR);
 }
 
-/** 20140412    
+/** 20140412
  * radix_tree_root의 gfp_mask 중에서 실제 GFP 속성값만 추출한다.
  **/
 static inline gfp_t root_gfp_mask(struct radix_tree_root *root)
@@ -254,7 +254,7 @@ radix_tree_find_next_bit(const unsigned long *addr,
  * This assumes that the caller has performed appropriate preallocation, and
  * that the caller has pinned this thread of control to the current CPU.
  */
-/** 20140412    
+/** 20140412
  * radix_tree_node를 하나 (메모리)할당 받는다.
  * radix_tree_root의 속성에 따라 radix_tree_node를 allocation 하는 위치가 달라질 수 있다.
  **/
@@ -262,12 +262,12 @@ static struct radix_tree_node *
 radix_tree_node_alloc(struct radix_tree_root *root)
 {
 	struct radix_tree_node *ret = NULL;
-	/** 20140412    
+	/** 20140412
 	 * radix_tree_root에서 실제 gfp 속성만 추출
 	 **/
 	gfp_t gfp_mask = root_gfp_mask(root);
 
-	/** 20140412    
+	/** 20140412
 	 * 현재 radix tree root의 속성이 wait 할 수 없으면 preload에서 받아온다.
 	 **/
 	if (!(gfp_mask & __GFP_WAIT)) {
@@ -278,12 +278,12 @@ radix_tree_node_alloc(struct radix_tree_root *root)
 		 * succeed in getting a node here (and never reach
 		 * kmem_cache_alloc)
 		 */
-		/** 20140412    
+		/** 20140412
 		 * 현재 cpu의 radix_tree_preloads에 할당 받아진 node에서 하나 받아온다.
 		 **/
 		rtp = &__get_cpu_var(radix_tree_preloads);
 		if (rtp->nr) {
-			/** 20140412    
+			/** 20140412
 			 * radix_tree_preload에서 하나를 받아갔으므로
 			 *     받아간 nodes 위치에 NULL을 대입한다.
 			 *     nr을 줄인다.
@@ -293,14 +293,14 @@ radix_tree_node_alloc(struct radix_tree_root *root)
 			rtp->nr--;
 		}
 	}
-	/** 20140412    
+	/** 20140412
 	 * preload에서 받아오지 못했다면, 또는 WAIT 속성이 있으면
 	 * slub에서 직접 할당받는다.
 	 **/
 	if (ret == NULL)
 		ret = kmem_cache_alloc(radix_tree_node_cachep, gfp_mask);
 
-	/** 20140412    
+	/** 20140412
 	 * radix tree는 indirect ptr일 수 없다.
 	 **/
 	BUG_ON(radix_tree_is_indirect_ptr(ret));
@@ -342,7 +342,7 @@ radix_tree_node_free(struct radix_tree_node *node)
  * To make use of this facility, the radix tree must be initialised without
  * __GFP_WAIT being passed to INIT_RADIX_TREE().
  */
-/** 20140412    
+/** 20140412
  * 현재 cpu의 radix_tree_preload 구조체의 빈공간만큼 할당 받아 채워넣는다.
  * 성공한다면 선점불가 상태로 리턴된다.
  **/
@@ -353,35 +353,35 @@ int radix_tree_preload(gfp_t gfp_mask)
 	int ret = -ENOMEM;
 
 	preempt_disable();
-	/** 20140412    
+	/** 20140412
 	 * 현재 cpu에 해당하는 radix_tree_preloads를 가져온다.
 	 * rtp->nodes의 ARRAY_SIZE를 구하기 위함.
 	 **/
 	rtp = &__get_cpu_var(radix_tree_preloads);
-	/** 20140412    
+	/** 20140412
 	 * 현재 radix_tree_preload의 node 수가 가질 수 있는 node 수보다 작다면
 	 * 슬랩으로부터 메모리를 받아와 채워놓는다.
 	 **/
 	while (rtp->nr < ARRAY_SIZE(rtp->nodes)) {
 		preempt_enable();
-		/** 20140412    
+		/** 20140412
 		 * slub으로부터 radix_tree_node를 저장한 메모리 공간을 받아온다.
 		 **/
 		node = kmem_cache_alloc(radix_tree_node_cachep, gfp_mask);
 		if (node == NULL)
 			goto out;
 		preempt_disable();
-		/** 20140412    
+		/** 20140412
 		 * 현재 cpu의 radix_tree_preloads (pool)를 가져온다.
 		 **/
 		rtp = &__get_cpu_var(radix_tree_preloads);
 		if (rtp->nr < ARRAY_SIZE(rtp->nodes))
-			/** 20140412    
+			/** 20140412
 			 * 할당받은 node로 radix_tree_preload를 하나씩 채운다.
 			 **/
 			rtp->nodes[rtp->nr++] = node;
 		else
-			/** 20140412    
+			/** 20140412
 			 * 필요한 만큼 채웠다면 미리 받아온 radix_tree_node 메모리는 해제한다.
 			 **/
 			kmem_cache_free(radix_tree_node_cachep, node);
@@ -459,7 +459,7 @@ out:
  *
  *	Insert an item into the radix tree at position @index.
  */
-/** 20140412    
+/** 20140412
  * radix_tree_root가 가리키는 radix tree의 index에 해당하는 위치에
  * 새로운 item을 추가한다.
  **/
@@ -471,13 +471,13 @@ int radix_tree_insert(struct radix_tree_root *root,
 	int offset;
 	int error;
 
-	/** 20140412    
+	/** 20140412
 	 * 넘어오는 item은 indirect pointer가 아니어야 한다.
 	 **/
 	BUG_ON(radix_tree_is_indirect_ptr(item));
 
 	/* Make sure the tree is high enough.  */
-	/** 20140412    
+	/** 20140412
 	 * 주어진 index가 현재 radix tree의 maxindex보다 큰 경우 tree를 확장한다.
 	 **/
 	if (index > radix_tree_maxindex(root->height)) {
@@ -486,45 +486,45 @@ int radix_tree_insert(struct radix_tree_root *root,
 			return error;
 	}
 
-	/** 20140412    
+	/** 20140412
 	 * root node의 위치를 slot으로 저장한다.
 	 **/
 	slot = indirect_to_ptr(root->rnode);
 
-	/** 20140412    
+	/** 20140412
 	 * 현재 radix tree의 height를 가져와 shift할 비트수를 구한다.
 	 **/
 	height = root->height;
 	shift = (height-1) * RADIX_TREE_MAP_SHIFT;
 
 	offset = 0;			/* uninitialised var warning */
-	/** 20140412    
+	/** 20140412
 	 * index로 radix tree의 heigth의 끝에 도달할 때까지 찾아간다.
 	 **/
 	while (height > 0) {
-		/** 20140412    
+		/** 20140412
 		 * 현재 slot이 radix tree의 leaf node라면...
 		 **/
 		if (slot == NULL) {
 			/* Have to add a child node.  */
-			/** 20140412    
+			/** 20140412
 			 * radix_tree_node를 할당 받아온다.
 			 **/
 			if (!(slot = radix_tree_node_alloc(root)))
 				return -ENOMEM;
-			/** 20140412    
+			/** 20140412
 			 * 할당받은 slot에 현재 height와 parent node 정보를 저장한다.
 			 **/
 			slot->height = height;
 			slot->parent = node;
 			if (node) {
-				/** 20140412    
+				/** 20140412
 				 * 해당 위치에 할당받은 slot을 추가하고, node의 count를 증가한다.
 				 **/
 				rcu_assign_pointer(node->slots[offset], slot);
 				node->count++;
 			} else
-				/** 20140412    
+				/** 20140412
 				 * radix_tree_root에 첫번째 node로 새로 추가한 slot을 지정한다.
 				 * slot array 각 element는 rcu 를 사용해 동시성을 보장한다.
 				 **/
@@ -532,45 +532,45 @@ int radix_tree_insert(struct radix_tree_root *root,
 		}
 
 		/* Go a level down */
-		/** 20140412    
+		/** 20140412
 		 * index 중에서 현재 radix_tree_node의 slot offset을 구한다.
 		 **/
 		offset = (index >> shift) & RADIX_TREE_MAP_MASK;
 		node = slot;
-		/** 20140412    
+		/** 20140412
 		 * slot은 현재 node가 갖고 있는 slots 중 offset에 해당하는 것 하나.
 		 * 즉, 한 단계 아래
 		 **/
 		slot = node->slots[offset];
-		/** 20140412    
+		/** 20140412
 		 * 다음 순회를 위해 shift와 heigth 감소
 		 **/
 		shift -= RADIX_TREE_MAP_SHIFT;
 		height--;
 	}
 
-	/** 20140412    
+	/** 20140412
 	 * slot을 할당받지 못했을 경우 error.
 	 **/
 	if (slot != NULL)
 		return -EEXIST;
 
-	/** 20140412    
+	/** 20140412
 	 * 위 while loop을 수행한 뒤에 node는 tree의 leaf radix tree node이다.
 	 **/
 	if (node) {
-		/** 20140412    
+		/** 20140412
 		 * node의 count 증가
 		 **/
 		node->count++;
-		/** 20140412    
+		/** 20140412
 		 * item을 해당(offset으로 찾은 위치) slot에 추가.
 		 **/
 		rcu_assign_pointer(node->slots[offset], item);
 		BUG_ON(tag_get(node, 0, offset));
 		BUG_ON(tag_get(node, 1, offset));
 	} else {
-		/** 20140412    
+		/** 20140412
 		 * radix_tree_root에 node를 처음 추가한 경우
 		 **/
 		rcu_assign_pointer(root->rnode, item);
@@ -586,7 +586,7 @@ EXPORT_SYMBOL(radix_tree_insert);
  * is_slot == 1 : search for the slot.
  * is_slot == 0 : search for the node.
  */
-/** 20140412    
+/** 20140412
  * index를 바탕으로 radix tree의 node를 찾는다.
  * is_slot은 slot인지, slot의 array에 해당하는 node인지 구분하는 flag.
  *
@@ -1584,7 +1584,7 @@ static __init unsigned long __maxindex(unsigned int height)
 	return ~0UL >> shift;
 }
 
-/** 20140906    
+/** 20140906
  * 추후분석
  **/
 static __init void radix_tree_init_maxindex(void)
@@ -1615,14 +1615,14 @@ static int radix_tree_callback(struct notifier_block *nfb,
        return NOTIFY_OK;
 }
 
-/** 20140906    
+/** 20140906
  * radix tree 관련 초기화 한다.
  * 
  * kernel에서 page cache를 radix tree로 관리하므로, 빈번한 할당이 필요하다.
  **/
 void __init radix_tree_init(void)
 {
-	/** 20140906    
+	/** 20140906
 	 * radix_tree_node용 kmem cache(SLUB)을 생성한다.
 	 **/
 	radix_tree_node_cachep = kmem_cache_create("radix_tree_node",
@@ -1630,7 +1630,7 @@ void __init radix_tree_init(void)
 			SLAB_PANIC | SLAB_RECLAIM_ACCOUNT,
 			radix_tree_node_ctor);
 	radix_tree_init_maxindex();
-	/** 20140906    
+	/** 20140906
 	 * hotcpu notifier 콜백을 등록한다.
 	 **/
 	hotcpu_notifier(radix_tree_callback, 0);

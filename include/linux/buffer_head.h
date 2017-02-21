@@ -78,7 +78,7 @@ struct buffer_head {
  * macro tricks to expand the set_buffer_foo(), clear_buffer_foo()
  * and buffer_foo() functions.
  */
-/** 20140531    
+/** 20140531
  * set_buffer_dirtya 등
  **/
 #define BUFFER_FNS(bit, name)						\
@@ -113,7 +113,7 @@ static inline int test_clear_buffer_##name(struct buffer_head *bh)	\
  * of the form "mark_buffer_foo()".  These are higher-level functions which
  * do something in addition to setting a b_state bit.
  */
-/** 20140531    
+/** 20140531
  * buffer flags 조작 매크로로 속성 조작함수를 생성한다.
  **/
 BUFFER_FNS(Uptodate, uptodate)
@@ -135,7 +135,7 @@ BUFFER_FNS(Unwritten, unwritten)
 #define touch_buffer(bh)	mark_page_accessed(bh->b_page)
 
 /* If we *know* page->private refers to buffer_heads */
-/** 20140531    
+/** 20140531
  * 디스크 블록에 사용되는 경우,
  * page->private에 buffer_heads 정보를 기록하고 flags에 PG_Private를 설정한다.
  * 

@@ -24,7 +24,7 @@
 #include <linux/stringify.h>
 #include <asm-generic/vmlinux.lds.h>
 
-/** 20160102    
+/** 20160102
  * INITRAMFS_IMAGE가 __irf_start ~ __irf_end 사이에 들어가고,
  * __initramfs_size 는 __irf_end - __irf_start로 계산결과가 된다.
 

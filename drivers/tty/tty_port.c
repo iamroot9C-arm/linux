@@ -18,7 +18,7 @@
 #include <linux/delay.h>
 #include <linux/module.h>
 
-/** 20150124    
+/** 20150124
  * tty port 초기화
  **/
 void tty_port_init(struct tty_port *port)

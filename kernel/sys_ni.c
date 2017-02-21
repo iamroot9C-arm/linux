@@ -11,7 +11,7 @@ asmlinkage long sys_ni_syscall(void);
 /*
  * Non-implemented system calls get redirected here.
  */
-/** 20160305    
+/** 20160305
  * non-implemented system call은 이 함수가 실행된다.
  **/
 asmlinkage long sys_ni_syscall(void)

@@ -29,7 +29,7 @@
 #include <asm/sched_clock.h>
 #include <asm/hardware/arm_timer.h>
 
-/** 20141227    
+/** 20141227
  * name으로 등록된 clk hierarchy에서 clk 정보를 찾아 rate를 반환한다.
  *
  * - prepare
@@ -42,7 +42,7 @@ static long __init sp804_get_clock_rate(const char *name)
 	long rate;
 	int err;
 
-	/** 20141220    
+	/** 20141220
 	 * sp804 device의 name으로 등록된 clk을 받아온다.
 	 *
 	 * dev_id : sp804
@@ -55,7 +55,7 @@ static long __init sp804_get_clock_rate(const char *name)
 		return PTR_ERR(clk);
 	}
 
-	/** 20141227    
+	/** 20141227
 	 * clk에 등록된 clk_ops.prepare 호출.
 	 **/
 	err = clk_prepare(clk);
@@ -65,7 +65,7 @@ static long __init sp804_get_clock_rate(const char *name)
 		return err;
 	}
 
-	/** 20141227    
+	/** 20141227
 	 * clk에 등록된 clk_ops.enable 호출.
 	 **/
 	err = clk_enable(clk);
@@ -76,7 +76,7 @@ static long __init sp804_get_clock_rate(const char *name)
 		return err;
 	}
 
-	/** 20141227    
+	/** 20141227
 	 * clk에 등록된 rate(frequency)를 받아온다.
 	 **/
 	rate = clk_get_rate(clk);
@@ -92,7 +92,7 @@ static long __init sp804_get_clock_rate(const char *name)
 
 static void __iomem *sched_clock_base;
 
-/** 20141227    
+/** 20141227
  * sched_clock_base의 TIMER_VALUE 레지스터에서 값을 읽어온다.
  * 감소되는 cyc 값이므로 읽은 값을 반전시킨다.
  **/
@@ -101,7 +101,7 @@ static u32 sp804_read(void)
 	return ~readl_relaxed(sched_clock_base + TIMER_VALUE);
 }
 
-/** 20141227    
+/** 20141227
  * sp804를 clocksource로 사용하기 위해 레지스터를 설정하고,
  * clocksource 구조체를 생성해 초기화 하고,
  * 마지막 argument 유무에 따라 sched_clock을 초기화한다. (vexpress는 하지 않음)
@@ -110,7 +110,7 @@ void __init __sp804_clocksource_and_sched_clock_init(void __iomem *base,
 						     const char *name,
 						     int use_sched_clock)
 {
-	/** 20141227    
+	/** 20141227
 	 * 이미 등록한 clk hierarchy에서 name으로 clock rate를 가져온다.
 	 * (등록은 v2m_clk_init에서 이뤄졌다)
 	 **/
@@ -120,7 +120,7 @@ void __init __sp804_clocksource_and_sched_clock_init(void __iomem *base,
 		return;
 
 	/* setup timer 0 as free-running clocksource */
-	/** 20141227    
+	/** 20141227
 	 * 레지스터 설정. 자세한 내용은 datasheet DDI0271_SP804 TRM 참조
 	 **/
 	writel(0, base + TIMER_CTRL);
@@ -129,7 +129,7 @@ void __init __sp804_clocksource_and_sched_clock_init(void __iomem *base,
 	writel(TIMER_CTRL_32BIT | TIMER_CTRL_ENABLE | TIMER_CTRL_PERIODIC,
 		base + TIMER_CTRL);
 
-	/** 20141227    
+	/** 20141227
 	 * clock의 rate(주파수), rating 200, bits 32,
 	 * clocksource 값을 읽기 위한 콜백함수를 지정해
 	 * clocksource를 등록한다.
@@ -137,7 +137,7 @@ void __init __sp804_clocksource_and_sched_clock_init(void __iomem *base,
 	clocksource_mmio_init(base + TIMER_VALUE, name,
 		rate, 200, 32, clocksource_mmio_readl_down);
 
-	/** 20141227    
+	/** 20141227
 	 * 주어진 clock source를 sched_clock으로 사용한다면 
 	 * sched_clock_base와 rate를 설정한다.
 	 **/
@@ -156,7 +156,7 @@ static unsigned long clkevt_reload;
  */
 static irqreturn_t sp804_timer_interrupt(int irq, void *dev_id)
 {
-	/** 20141227    
+	/** 20141227
 	 * clock_event_device 를 받아온다.
 	 **/
 	struct clock_event_device *evt = dev_id;
@@ -164,7 +164,7 @@ static irqreturn_t sp804_timer_interrupt(int irq, void *dev_id)
 	/* clear the interrupt */
 	writel(1, clkevt_base + TIMER_INTCLR);
 
-	/** 20140830    
+	/** 20140830
 	 * event_handler 호출.
 	 **/
 	evt->event_handler(evt);
@@ -199,7 +199,7 @@ static void sp804_set_mode(enum clock_event_mode mode,
 	writel(ctrl, clkevt_base + TIMER_CTRL);
 }
 
-/** 20150613    
+/** 20150613
  * 다음 clockevent를 발생시키도록 설정하는 함수.
  **/
 static int sp804_set_next_event(unsigned long next,
@@ -227,7 +227,7 @@ static struct clock_event_device sp804_clockevent = {
 	.cpumask	= cpu_all_mask,
 };
 
-/** 20140830    
+/** 20140830
  * handler는 sp804_timer_interrupt.
  **/
 static struct irqaction sp804_timer_irq = {
@@ -237,14 +237,14 @@ static struct irqaction sp804_timer_irq = {
 	.dev_id		= &sp804_clockevent,
 };
 
-/** 20141220    
+/** 20141220
  * sp804_clockevents_init(base + TIMER_1_BASE, irq, "v2m-timer0");
  *   name == con_id ==> v2m-timer0
  **/
 void __init sp804_clockevents_init(void __iomem *base, unsigned int irq,
 	const char *name)
 {
-	/** 20141227    
+	/** 20141227
 	 * sp804 clockevent 구조체를 가져온다.
 	 * name으로 clock rate를 받아온다.
 	 **/
@@ -254,22 +254,22 @@ void __init sp804_clockevents_init(void __iomem *base, unsigned int irq,
 	if (rate < 0)
 		return;
 
-	/** 20141227    
+	/** 20141227
 	 * clockevent의 base와 reload
 	 **/
 	clkevt_base = base;
 	clkevt_reload = DIV_ROUND_CLOSEST(rate, HZ);
-	/** 20141227    
+	/** 20141227
 	 * clockevent 구조체의 name과 irq를 설정한다.
 	 **/
 	evt->name = name;
 	evt->irq = irq;
 
-	/** 20140830    
+	/** 20140830
 	 * irq action 등록.
 	 **/
 	setup_irq(irq, &sp804_timer_irq);
-	/** 20141122    
+	/** 20141122
 	 * sp804 clock event device를 설정하고 등록한다.
 	 * rate(frequency)
 	 **/

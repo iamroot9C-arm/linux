@@ -79,13 +79,13 @@ static atomic_t call_count = ATOMIC_INIT(1);
 
 /* The maximal length of core_pattern is also specified in sysctl.c */
 
-/** 20151010    
+/** 20151010
  * rwlock으로 보호되는 binary format 구조체 전역 리스트.
  **/
 static LIST_HEAD(formats);
 static DEFINE_RWLOCK(binfmt_lock);
 
-/** 20151010    
+/** 20151010
  * linux_binfmt를 formats 리스트에 등록한다.
  * 
  * insert면 head에, 그렇지 않으면 tail에 추가한다.
@@ -1058,12 +1058,12 @@ char *get_task_comm(char *buf, struct task_struct *tsk)
 }
 EXPORT_SYMBOL_GPL(get_task_comm);
 
-/** 20160206    
+/** 20160206
  * task의 comm(excutable name)을 지정한다.
  **/
 void set_task_comm(struct task_struct *tsk, char *buf)
 {
-	/** 20160206    
+	/** 20160206
 	 * task의 comm을 변경하므로 task lock을 잡는다.
 	 **/
 	task_lock(tsk);
@@ -1142,7 +1142,7 @@ void would_dump(struct linux_binprm *bprm, struct file *file)
 }
 EXPORT_SYMBOL(would_dump);
 
-/** 20160206    
+/** 20160206
  *
  * task의 이름을 bprm의 tcomm으로 삼는다 (path는 포함되지 않음)
  **/
@@ -1393,7 +1393,7 @@ EXPORT_SYMBOL(remove_arg_zero);
 /*
  * cycle the list of binary formats handler, until one recognizes the image
  */
-/** 20160206    
+/** 20160206
  *
  * binary format 핸들러의 fmt->load_binary을 수행(regs 전달)
  *   elf를 기준으로 보면 load_elf_binary가 수행된다.
@@ -1486,7 +1486,7 @@ EXPORT_SYMBOL(search_binary_handler);
 /*
  * sys_execve() executes a new program.
  */
-/** 20160206    
+/** 20160206
  *
  * search_binary_handler에서 binfmt 핸들러의 수행까지 진행된다.
  **/
@@ -1620,7 +1620,7 @@ out_ret:
 	return retval;
 }
 
-/** 20160206    
+/** 20160206
  *
  * filename을 실행시킨다.
  * 문맥교환시 사용될 regs들을 업데이트 시킨다.

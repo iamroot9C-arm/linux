@@ -10,7 +10,7 @@
 extern char * strrchr(const char * s, int c);
 
 #define __HAVE_ARCH_STRCHR
-/** 20150425    
+/** 20150425
  * arch/arm/lib/strchr.S
  **/
 extern char * strchr(const char * s, int c);

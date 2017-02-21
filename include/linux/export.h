@@ -23,7 +23,7 @@ struct kernel_symbol
 };
 
 #ifdef MODULE
-/** 20151121    
+/** 20151121
  * __this_module은 커널 빌드 과정에 생성되는 *.mod.c에 자동 생성된다.
  * 
  * struct module __this_module

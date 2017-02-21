@@ -15,7 +15,7 @@
 
 #ifdef CONFIG_SMP
 
-/** 20150207    
+/** 20150207
  * cpu별 사용량 카운터 구조체.
  *
  * 전체 count 변수와 percpu별 counters를 유지한다.
@@ -24,7 +24,7 @@ struct percpu_counter {
 	raw_spinlock_t lock;
 	s64 count;
 #ifdef CONFIG_HOTPLUG_CPU
-	/** 20150822    
+	/** 20150822
 	 * percpu_counters 전역 리스트에 연결하는 포인트.
 	 **/
 	struct list_head list;	/* All percpu_counters are on a list */
@@ -37,7 +37,7 @@ extern int percpu_counter_batch;
 int __percpu_counter_init(struct percpu_counter *fbc, s64 amount,
 			  struct lock_class_key *key);
 
-/** 20150207    
+/** 20150207
  * percpu counter를 value로 설정한다.
  **/
 #define percpu_counter_init(fbc, value)					\
@@ -53,7 +53,7 @@ void __percpu_counter_add(struct percpu_counter *fbc, s64 amount, s32 batch);
 s64 __percpu_counter_sum(struct percpu_counter *fbc);
 int percpu_counter_compare(struct percpu_counter *fbc, s64 rhs);
 
-/** 20151219    
+/** 20151219
  * percpu_counter에 amount를 반영시킨다.
  **/
 static inline void percpu_counter_add(struct percpu_counter *fbc, s64 amount)
@@ -61,7 +61,7 @@ static inline void percpu_counter_add(struct percpu_counter *fbc, s64 amount)
 	__percpu_counter_add(fbc, amount, percpu_counter_batch);
 }
 
-/** 20150221    
+/** 20150221
  * percpu_counter값을 더해 리턴한다. 항상 0보다 큰 값이 리턴된다.
  **/
 static inline s64 percpu_counter_sum_positive(struct percpu_counter *fbc)
@@ -85,7 +85,7 @@ static inline s64 percpu_counter_read(struct percpu_counter *fbc)
  * number for some counter which should never be negative.
  *
  */
-/** 20150221    
+/** 20150221
  * percpu_counter의 현재 count 값을 리턴한다.
  *
  * percpu별로 가지고 있는 값은 반영되지 않는다. 항상 0 이상이 리턴된다.
@@ -181,7 +181,7 @@ static inline int percpu_counter_initialized(struct percpu_counter *fbc)
 
 #endif	/* CONFIG_SMP */
 
-/** 20151219    
+/** 20151219
  * percpu_counter에 1 증가.
  **/
 static inline void percpu_counter_inc(struct percpu_counter *fbc)
@@ -189,7 +189,7 @@ static inline void percpu_counter_inc(struct percpu_counter *fbc)
 	percpu_counter_add(fbc, 1);
 }
 
-/** 20151219    
+/** 20151219
  * percpu_counter에 1 감소.
  **/
 static inline void percpu_counter_dec(struct percpu_counter *fbc)

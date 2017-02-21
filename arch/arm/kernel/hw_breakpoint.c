@@ -976,7 +976,7 @@ static struct notifier_block __cpuinitdata dbg_reset_nb = {
 	.notifier_call = dbg_reset_notify,
 };
 
-/** 20151121    
+/** 20151121
  * 분석 생략???
  *
  * fsr_info 중 FAULT_CODE_DEBUG에 해당하는 정보를 업데이트 한다.

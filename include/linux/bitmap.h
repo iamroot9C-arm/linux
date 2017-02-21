@@ -147,7 +147,7 @@ extern void bitmap_copy_le(void *dst, const unsigned long *src, int nbits);
 extern int bitmap_ord_to_pos(const unsigned long *bitmap, int n, int bits);
 
 #define BITMAP_FIRST_WORD_MASK(start) (~0UL << ((start) % BITS_PER_LONG))
-/** 20130608    
+/** 20130608
  * nbits만큼의 mask를 취함.
  * nbits가 4일 경우 0b1111
  **/
@@ -157,7 +157,7 @@ extern int bitmap_ord_to_pos(const unsigned long *bitmap, int n, int bits);
 		(1UL<<((nbits) % BITS_PER_LONG))-1 : ~0UL		\
 )
 
-/** 20130608    
+/** 20130608
  * nbits 컴파일시에 연산할 수 있는 값이고, BITS_PER_LONG 보다 작은지 검사
  **/
 #define small_const_nbits(nbits) \
@@ -192,18 +192,18 @@ static inline void bitmap_fill(unsigned long *dst, int nbits)
 	dst[nlongs - 1] = BITMAP_LAST_WORD_MASK(nbits);
 }
 
-/** 20140308    
+/** 20140308
  * bitmap을 복사하는 함수
  **/
 static inline void bitmap_copy(unsigned long *dst, const unsigned long *src,
 			int nbits)
 {
-	/** 20140308    
+	/** 20140308
 	 * long 하나로 끝나는 경우는 한 word를 copy.
 	 **/
 	if (small_const_nbits(nbits))
 		*dst = *src;
-	/** 20140308    
+	/** 20140308
 	 * 그렇지 않은 경우 word 단위로 복사한다.
 	 **/
 	else {
@@ -255,7 +255,7 @@ static inline void bitmap_complement(unsigned long *dst, const unsigned long *sr
 		__bitmap_complement(dst, src, nbits);
 }
 
-/** 20141122    
+/** 20141122
  * 두 비트맵이 동일한 비트맵을 표현하는지 검사한다.
  **/
 static inline int bitmap_equal(const unsigned long *src1,
@@ -306,7 +306,7 @@ static inline int bitmap_full(const unsigned long *src, int nbits)
 		return __bitmap_full(src, nbits);
 }
 
-/** 20130608    
+/** 20130608
  * bitmap에서 1로 설정된 bits의 수를 리턴.
  **/
 static inline int bitmap_weight(const unsigned long *src, int nbits)

@@ -212,7 +212,7 @@ static inline void set_cpu_numa_node(int cpu, int node)
 
 /* Returns the number of the current Node. */
 #ifndef numa_node_id
-/** 20130727    
+/** 20130727
  * 현재 task에 해당하는 cpu에 대응하는 node id를 리턴한다.
  **/
 static inline int numa_node_id(void)

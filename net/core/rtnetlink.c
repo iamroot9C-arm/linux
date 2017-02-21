@@ -60,7 +60,7 @@ struct rtnl_link {
 	rtnl_calcit_func 	calcit;
 };
 
-/** 20151024    
+/** 20151024
  * route table netlink mutex.
  **/
 static DEFINE_MUTEX(rtnl_mutex);
@@ -2402,7 +2402,7 @@ static struct pernet_operations rtnetlink_net_ops = {
 	.exit = rtnetlink_net_exit,
 };
 
-/** 20151031    
+/** 20151031
  * RTNETLINK - routing socket 초기화.
  *
  * attribute 등록

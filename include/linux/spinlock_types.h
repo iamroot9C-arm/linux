@@ -17,7 +17,7 @@
 
 #include <linux/lockdep.h>
 
-/** 20130427    
+/** 20130427
  * spinlock 구조체 중 순수 spinlock의 기능에 해당하는 구조체.
  *
  * raw_lock 외의 다른 구조체 멤버변수는 CONFIG되어 있지 않음
@@ -55,7 +55,7 @@ typedef struct raw_spinlock {
 # define SPIN_DEBUG_INIT(lockname)
 #endif
 
-/** 20130427    
+/** 20130427
  * .raw_lock을 UNLOCKED (0)으로 초기화
  * 나머지 구조체는 DEBUG용 CONFIG 속성에 따라 호출됨.
  **/
@@ -95,7 +95,7 @@ typedef struct spinlock {
 	};
 } spinlock_t;
 
-/** 20150425    
+/** 20150425
  * unlock된 상태의 spin_lock 초기값
  **/
 #define __SPIN_LOCK_INITIALIZER(lockname) \
@@ -104,7 +104,7 @@ typedef struct spinlock {
 #define __SPIN_LOCK_UNLOCKED(lockname) \
 	(spinlock_t ) __SPIN_LOCK_INITIALIZER(lockname)
 
-/** 20150425    
+/** 20150425
  * spinlock의 선언 및 초기화.
  **/
 #define DEFINE_SPINLOCK(x)	spinlock_t x = __SPIN_LOCK_UNLOCKED(x)

@@ -398,7 +398,7 @@ static inline void serial_port_out(struct uart_port *up, int offset, int value)
 /*
  * This is the state information which is persistent across opens.
  */
-/** 20151121    
+/** 20151121
  * uart 상태 정보.
  **/
 struct uart_state {

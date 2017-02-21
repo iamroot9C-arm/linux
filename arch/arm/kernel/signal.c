@@ -646,7 +646,7 @@ static int do_signal(struct pt_regs *regs, int syscall)
 	return restart;
 }
 
-/** 20160220    
+/** 20160220
  * 펜딩된 work을 수행한다.
  * 
  * user mode로 전환하기 전에 커널에서 user mode를 위해 처리해야 할 서비스가 있거나
@@ -656,13 +656,13 @@ asmlinkage int
 do_work_pending(struct pt_regs *regs, unsigned int thread_flags, int syscall)
 {
 	do {
-		/** 20160220    
+		/** 20160220
 		 * thread_flags의 NEED_RESCHED가 펜딩되어 있다면 스케쥴링 함수 호출.
 		 **/
 		if (likely(thread_flags & _TIF_NEED_RESCHED)) {
 			schedule();
 		} else {
-			/** 20160220    
+			/** 20160220
 			 * 그 외 work에 대해서 아래 과정 수행.
 			 *
 			 * 레지스터 정보가 user_mode가 아닐 경우 리턴.
@@ -670,7 +670,7 @@ do_work_pending(struct pt_regs *regs, unsigned int thread_flags, int syscall)
 			if (unlikely(!user_mode(regs)))
 				return 0;
 			local_irq_enable();
-			/** 20160220    
+			/** 20160220
 			 * pending work이 sigpending에 관한 것이라면 do_signal로 처리.
 			 **/
 			if (thread_flags & _TIF_SIGPENDING) {
@@ -691,7 +691,7 @@ do_work_pending(struct pt_regs *regs, unsigned int thread_flags, int syscall)
 		}
 		local_irq_disable();
 		thread_flags = current_thread_info()->flags;
-		/** 20160220    
+		/** 20160220
 		 * 작업 수행 후 다시 thread_info flags를 읽어 수행할 work이 펜딩되었는지
 		 * 검사해 반복해 수행.
 		 **/

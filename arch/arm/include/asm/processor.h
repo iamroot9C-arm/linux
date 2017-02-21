@@ -52,7 +52,7 @@ struct thread_struct {
 #define nommu_start_thread(regs) regs->ARM_r10 = current->mm->start_data
 #endif
 
-/** 20160206    
+/** 20160206
  * 문맥교환시에 사용될 regs 를 pc와 sp를 사용하여 업데이트 한다.
  *
  * 주로 binfmt에서 user mode에서 binary를 실행시키기 위한 작업을 한다.
@@ -87,7 +87,7 @@ unsigned long get_wchan(struct task_struct *p);
 #if __LINUX_ARM_ARCH__ == 6 || defined(CONFIG_ARM_ERRATA_754327)
 #define cpu_relax()			smp_mb()
 #else
-/** 20130706    
+/** 20130706
  *__LINUX_ARM_ARCH__가 7이므로 barrier()가 수행
  *
  * CPU는 새로운 명령을 내리고 있지 않지만, 메모리에 대한 접근을 보장한다.
@@ -116,7 +116,7 @@ extern int kernel_thread(int (*fn)(void *), void *arg, unsigned long flags);
 #define ARCH_HAS_PREFETCH
 static inline void prefetch(const void *ptr)
 {
-	/** 20130803    
+	/** 20130803
 	 * pld : pre-load data address. 
 	 *
 	 * from ARM site.
@@ -130,13 +130,13 @@ static inline void prefetch(const void *ptr)
 }
 
 #define ARCH_HAS_PREFETCHW
-/** 20130803    
+/** 20130803
  * ARM v5 이상에서는 instruction으로 지원.
  * 해당 ptr에 대한 데이터를 pre load 시킨다.
  **/
 #define prefetchw(ptr)	prefetch(ptr)
 
-/** 20150425    
+/** 20150425
  * ARCH_HAS_SPINLOCK_PREFETCH를 정의한다.
  *
  * spin_lock_prefetch는 NULL 함수.

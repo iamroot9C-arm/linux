@@ -452,7 +452,7 @@ int __init of_scan_flat_dt(int (*it)(unsigned long node,
 				     void *data),
 			   void *data)
 {
-	/** 20130518    
+	/** 20130518
 	 * initial_boot_params에 device tree 구조체의 offset 크기를 더해 실제 위치한
 	 * 가상 주소를 p로 가리킴
 	 **/

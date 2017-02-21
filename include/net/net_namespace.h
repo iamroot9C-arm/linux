@@ -164,7 +164,7 @@ extern void net_drop_ns(void *);
 
 #else
 
-/** 20151107    
+/** 20151107
  * CONFIG_NET_NS 정의하지 않았음.
  **/
 static inline struct net *get_net(struct net *net)
@@ -172,7 +172,7 @@ static inline struct net *get_net(struct net *net)
 	return net;
 }
 
-/** 20151107    
+/** 20151107
  * CONFIG_NET_NS 정의하지 않았음.
  **/
 static inline void put_net(struct net *net)
@@ -208,7 +208,7 @@ static inline void release_net(struct net *net)
 		atomic_dec(&net->use_count);
 }
 #else
-/** 20151107    
+/** 20151107
  * NETNS_REFCNT_DEBUG를 정의하지 않았음.
  **/
 static inline struct net *hold_net(struct net *net)
@@ -235,7 +235,7 @@ static inline struct net *read_pnet(struct net * const *pnet)
 
 #else
 
-/** 20151107    
+/** 20151107
  * CONFIG_NET_NS를 정의하지 않았음. pernet 대신 net만 사용함.
  **/
 #define write_pnet(pnet, net)	do { (void)(net);} while (0)
@@ -243,7 +243,7 @@ static inline struct net *read_pnet(struct net * const *pnet)
 
 #endif
 
-/** 20151031    
+/** 20151031
  * net_namespace_list 전체를 순회하며 각 멤버를 VAR이라는 이름으로 가리킨다.
  **/
 #define for_each_net(VAR)				\
@@ -252,7 +252,7 @@ static inline struct net *read_pnet(struct net * const *pnet)
 #define for_each_net_rcu(VAR)				\
 	list_for_each_entry_rcu(VAR, &net_namespace_list, list)
 
-/** 20150509    
+/** 20150509
  * CONIFG_NET_NS가 정의되지 않아 일반 섹션으로 지정한다.
  * 왜 CONFIG가 되어 있다면 section 정보를 날리는 것일까???
  **/
@@ -266,7 +266,7 @@ static inline struct net *read_pnet(struct net * const *pnet)
 #define __net_initdata	__initdata
 #endif
 
-/** 20151024    
+/** 20151024
  * network operations.
  *
  * register_pernet_operations로 등록한다.

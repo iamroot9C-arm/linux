@@ -7,7 +7,7 @@
  * mm_struct 중 context에 해당하는 정보를 담은 구조체.
  **/
 typedef struct {
-	/** 20150801    
+	/** 20150801
 	 * CONFIG_CPU_HAS_ASID가 정의되어 있다.
 	 **/
 #ifdef CONFIG_CPU_HAS_ASID
@@ -17,7 +17,7 @@ typedef struct {
 	unsigned int kvm_seq;
 } mm_context_t;
 
-/** 20160528    
+/** 20160528
  * CPU가 ASID를 가진다면
  * context.id의 8bit를 ASID로 취한다.
  **/

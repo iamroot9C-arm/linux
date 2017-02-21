@@ -5,7 +5,7 @@
 #include <linux/ktime.h>
 
 
-/** 20140419    
+/** 20140419
  * timerqueue_node
  *
  * expires를 기준으로 rb_tree를 구성하기 위한 자료구조.
@@ -15,7 +15,7 @@ struct timerqueue_node {
 	ktime_t expires;
 };
 
-/** 20141108    
+/** 20141108
  * hrtimer_clock_base의 active.
  *
  * head : rb tree의 root
@@ -42,7 +42,7 @@ extern struct timerqueue_node *timerqueue_iterate_next(
  * Returns a pointer to the timer node that has the
  * earliest expiration time.
  */
-/** 20141108    
+/** 20141108
  * 만료시간이 가장 가까운 timer를 리턴한다.
  **/
 static inline
@@ -51,7 +51,7 @@ struct timerqueue_node *timerqueue_getnext(struct timerqueue_head *head)
 	return head->next;
 }
 
-/** 20141108    
+/** 20141108
  * timerqueue_node를 초기화 한다.
  *
  * 초기화할 주요 자료구조는 rb_node.

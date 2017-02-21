@@ -84,7 +84,7 @@ static void __init free_hash(void)
 	}
 }
 
-/** 20160103    
+/** 20160103
  * CWD에서 filename을 찾아 mtime으로 설정된 timespec으로 시간을 수정한다.
  **/
 static long __init do_utime(char *filename, time_t mtime)
@@ -106,7 +106,7 @@ struct dir_entry {
 	time_t mtime;
 };
 
-/** 20160103    
+/** 20160103
  * directory entry를 생성하고 초기화해 파일 전역 리스트에 등록한다.
  **/
 static void __init dir_add(const char *name, time_t mtime)
@@ -120,7 +120,7 @@ static void __init dir_add(const char *name, time_t mtime)
 	list_add(&de->list, &dir_list);
 }
 
-/** 20160103    
+/** 20160103
  * dir_list에 등록된 목록의 시간을 갱신하고, 디렉토리 엔트리는 삭제한다.
  **/
 static void __init dir_utime(void)
@@ -145,7 +145,7 @@ static __initdata uid_t uid;
 static __initdata gid_t gid;
 static __initdata unsigned rdev;
 
-/** 20160103    
+/** 20160103
  * cpio header를 파싱해 각 변수에 저장한다.
  * 저장한 데이터는 파일 트리를 구성할 때 사용된다.
  *
@@ -204,7 +204,7 @@ static __initdata char *collected;
 static __initdata int remains;
 static __initdata char *collect;
 
-/** 20160102    
+/** 20160102
  * size byte씩 읽어 buf에 넣는다.
  * 읽을 크기가 size 이상이면 next state로 계속 복사.
  * 읽을 크기가 size보다 작다면 복사가 끝났으므로 Collect state로 이동.
@@ -225,7 +225,7 @@ static void __init read_into(char *buf, unsigned size, enum state next)
 
 static __initdata char *header_buf, *symlink_buf, *name_buf;
 
-/** 20160102    
+/** 20160102
  * 
  **/
 static int __init do_start(void)
@@ -248,7 +248,7 @@ static int __init do_collect(void)
 	return 0;
 }
 
-/** 20160102    
+/** 20160102
  * 읽은 cpio의 헤더를 파싱해 심볼릭 링크를 읽거나 name_buf에 이름을 읽고 GotName.
  **/
 static int __init do_header(void)
@@ -326,7 +326,7 @@ static void __init clean_path(char *path, umode_t mode)
 
 static __initdata int wfd;
 
-/** 20160102    
+/** 20160102
  * 파싱된 header정보를 바탕으로 파일/디렉토리/디바이스 파일에 따라 rootfs에
  * 파일시스템을 구성한다.
  **/
@@ -357,7 +357,7 @@ static int __init do_name(void)
 			}
 		}
 	} else if (S_ISDIR(mode)) {
-		/** 20160103    
+		/** 20160103
 		 * 파싱한 파일이 디렉토리라면
 		 * - 디렉토리를 생성
 		 * - owner 지정
@@ -410,7 +410,7 @@ static int __init do_symlink(void)
 	return 0;
 }
 
-/** 20160102    
+/** 20160102
  * state machine에 해당하는 action.
  *
  * 각 함수에서 정상 처리될 경우 이전 state에서 다른 state로 전환되고 0을 리턴한다.
@@ -426,7 +426,7 @@ static __initdata int (*actions[])(void) = {
 	[Reset]		= do_reset,
 };
 
-/** 20160102    
+/** 20160102
  * buffer를 len만큼, state machine을 돌려 rootfs에 파일 트리를 구성한다.
  **/
 static int __init write_buffer(char *buf, unsigned len)
@@ -434,7 +434,7 @@ static int __init write_buffer(char *buf, unsigned len)
 	count = len;
 	victim = buf;
 
-	/** 20160102    
+	/** 20160102
 	 * state machine이 돌아가 buf(archive 형태)의 header를 파싱해
 	 * rootfs에 기록한다. (mount는 init_mount_tree에서 진행한다)
 	 **/
@@ -470,7 +470,7 @@ static unsigned my_inptr;   /* index of next byte to be processed in inbuf */
 
 #include <linux/decompress/generic.h>
 
-/** 20160102    
+/** 20160102
  * 입력 버퍼를 해석해 rootfs에 파일 트리를 구성한다.
  * 압축된 데이터라면 먼저 decompress 함수로 해제한다.
  * 
@@ -483,7 +483,7 @@ static char * __init unpack_to_rootfs(char *buf, unsigned len)
 	const char *compress_name;
 	static __initdata char msg_buf[64];
 
-	/** 20160103    
+	/** 20160103
 	 * state machine내에서 파일 트리를 구성할 때 사용할 버퍼 할당.
 	 **/
 	header_buf = kmalloc(110, GFP_KERNEL);
@@ -496,7 +496,7 @@ static char * __init unpack_to_rootfs(char *buf, unsigned len)
 	state = Start;
 	this_header = 0;
 	message = NULL;
-	/** 20160103    
+	/** 20160103
 	 * message(에러 메시지)가 없고 len을 다 처리할 때까지 반복한다.
 	 **/
 	while (!message && len) {
@@ -515,7 +515,7 @@ static char * __init unpack_to_rootfs(char *buf, unsigned len)
 			continue;
 		}
 		this_header = 0;
-		/** 20160109    
+		/** 20160109
 		 * gzip으로 지정된 경우decompress는 "gunzip"
 		 **/
 		decompress = decompress_method(buf, len, &compress_name);
@@ -524,7 +524,7 @@ static char * __init unpack_to_rootfs(char *buf, unsigned len)
 				   &my_inptr, error);
 			if (res)
 				error("decompressor failed");
-		/** 20160109    
+		/** 20160109
 		 * gzip으로 압축한 이미지가 주어진 경우 compress_name은 "gzip"
 		 **/
 		} else if (compress_name) {
@@ -551,7 +551,7 @@ static char * __init unpack_to_rootfs(char *buf, unsigned len)
 
 static int __initdata do_retain_initrd;
 
-/** 20160103    
+/** 20160103
  * retain_initrd 옵션이 지정된 경우, free하지 않고 리턴하기 위해 플래그 변수 설정
  **/
 static int __init retain_initrd_param(char *str)
@@ -568,7 +568,7 @@ extern unsigned long __initramfs_size;
 #include <linux/initrd.h>
 #include <linux/kexec.h>
 
-/** 20160103    
+/** 20160103
  * initrd 버퍼용으로 사용한 메모리를 해제한다.
  **/
 static void __init free_initrd(void)
@@ -577,7 +577,7 @@ static void __init free_initrd(void)
 	unsigned long crashk_start = (unsigned long)__va(crashk_res.start);
 	unsigned long crashk_end   = (unsigned long)__va(crashk_res.end);
 #endif
-	/** 20160103    
+	/** 20160103
 	 * retain_initrd 옵션이 지정된 경우 initrd 사용 메모리를 해제하지 않고 리턴.
 	 **/
 	if (do_retain_initrd)
@@ -600,7 +600,7 @@ static void __init free_initrd(void)
 			free_initrd_mem(crashk_end, initrd_end);
 	} else
 #endif
-		/** 20160103    
+		/** 20160103
 		 * initrd_start ~ initrd_end 사이의 메모리를 해제한다.
 		 **/
 		free_initrd_mem(initrd_start, initrd_end);
@@ -658,14 +658,14 @@ static void __init clean_rootfs(void)
 }
 #endif
 
-/** 20160103    
+/** 20160103
  * 마운트 되어 있는 rootfs에 initramfs 이미지 또는 initrd 이미지를 풀어 구성한다.
  *
  * CONFIG_BLK_DEV_INITRD가 지정되지 않았다면 populate_rootfs 대신 default_rootfs가 호출.
  **/
 static int __init populate_rootfs(void)
 {
-	/** 20160102    
+	/** 20160102
 	 * CONFIG_BLK_DEV_INITRD가 지정되었다면 __initramfs_start는 항상 포함된다.
 	 * CONFIG_INITRAMFS_SOURCE을 지정하지 않은 경우에는 스크립트로 기본 정보가
 	 * 생성된다 (gen_init_cpio, gen_initramfs_list.sh)
@@ -673,7 +673,7 @@ static int __init populate_rootfs(void)
 	char *err = unpack_to_rootfs(__initramfs_start, __initramfs_size);
 	if (err)
 		panic(err);	/* Failed to decompress INTERNAL initramfs */
-	/** 20160103    
+	/** 20160103
 	 * initrd_start는 arch_memblock_init에서 __phys_to_virt(phys_initrd_start)로 지정된다.
 	 *	(phys_initrd_start는 atags나 param으로 설정된다)
 	 *
@@ -683,7 +683,7 @@ static int __init populate_rootfs(void)
 #ifdef CONFIG_BLK_DEV_RAM
 		int fd;
 		printk(KERN_INFO "Trying to unpack rootfs image as initramfs...\n");
-		/** 20160103    
+		/** 20160103
 		 * initrd_start ~ initrd_end까지 unpack을 시도하고, 성공했다면 리턴.
 		 * 에러가 발생했다면 initrd라 판단하여
 		 * __initramfs_start ~ __initramfs_end 영역을 다시 unpack시키고, 
@@ -700,7 +700,7 @@ static int __init populate_rootfs(void)
 		}
 		printk(KERN_INFO "rootfs image is not initramfs (%s)"
 				"; looks like an initrd\n", err);
-		/** 20160109    
+		/** 20160109
 		 * unpack이 실패한 initrd data를 initrd.image에 저장한다.
 		 * 이 이미지는 추후 mount_initrd 옵션이 주어졌을 경우 initrd_load에서
 		 * 사용한다.

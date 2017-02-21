@@ -89,7 +89,7 @@ struct cpuidle_state_kobj {
 	struct kobject kobj;
 };
 
-/** 20160220    
+/** 20160220
  * cpuidle device.
  **/
 struct cpuidle_device {
@@ -167,7 +167,7 @@ extern int cpuidle_wrap_enter(struct cpuidle_device *dev,
 extern int cpuidle_play_dead(void);
 
 #else
-/** 20160220    
+/** 20160220
  * CONFIG_CPU_IDLE 선언하지 않았음.
  **/
 static inline void disable_cpuidle(void) { }

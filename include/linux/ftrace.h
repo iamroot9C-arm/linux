@@ -505,7 +505,7 @@ static inline void __ftrace_enabled_restore(int enabled)
 #ifdef CONFIG_FTRACE_MCOUNT_RECORD
 extern void ftrace_init(void);
 #else
-/** 20150523    
+/** 20150523
  * CONFIG_FTRACE_MCOUNT_RECORD 정의되지 않음.
  **/
 static inline void ftrace_init(void) { }
@@ -618,11 +618,11 @@ static inline void unpause_graph_tracing(void)
 #define __irq_entry
 #define INIT_FTRACE_GRAPH
 
-/** 20150530    
+/** 20150530
  **/
 static inline void ftrace_graph_init_task(struct task_struct *t) { }
 static inline void ftrace_graph_exit_task(struct task_struct *t) { }
-/** 20140426    
+/** 20140426
  * CONFIG_FUNCTION_GRAPH_TRACER가 정의되어 있지 않아 NULL 함수.
  **/
 static inline void ftrace_graph_init_idle_task(struct task_struct *t, int cpu) { }

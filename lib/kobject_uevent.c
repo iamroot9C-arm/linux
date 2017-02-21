@@ -31,7 +31,7 @@
 u64 uevent_seqnum;
 char uevent_helper[UEVENT_HELPER_PATH_LEN] = CONFIG_UEVENT_HELPER_PATH;
 #ifdef CONFIG_NET
-/** 20151107    
+/** 20151107
  * uevent sock list
  **/
 struct uevent_sock {
@@ -331,7 +331,7 @@ EXPORT_SYMBOL_GPL(kobject_uevent_env);
  * Returns 0 if kobject_uevent() is completed with success or the
  * corresponding error when it fails.
  */
-/** 20150418    
+/** 20150418
  * 추후 분석???
  *
  * 20150829
@@ -379,7 +379,7 @@ int add_uevent_var(struct kobj_uevent_env *env, const char *format, ...)
 EXPORT_SYMBOL_GPL(add_uevent_var);
 
 #if defined(CONFIG_NET)
-/** 20151107    
+/** 20151107
  * NETLINK_KOBJECT_UEVENT 프로토콜의 netlink 커널 소켓을 만들고,
  * uevent socket 리스트에 등록한다.
  *
@@ -392,14 +392,14 @@ static int uevent_net_init(struct net *net)
 		.groups	= 1,
 	};
 
-	/** 20151031    
+	/** 20151031
 	 * uevent_sock 메모리 할당.
 	 **/
 	ue_sk = kzalloc(sizeof(*ue_sk), GFP_KERNEL);
 	if (!ue_sk)
 		return -ENOMEM;
 
-	/** 20151107    
+	/** 20151107
 	 * NETLINK_KOBJECT_UEVENT 프로토콜의 netlink 커널 소켓을 만들어 저장한다.
 	 **/
 	ue_sk->sk = netlink_kernel_create(net, NETLINK_KOBJECT_UEVENT,
@@ -411,7 +411,7 @@ static int uevent_net_init(struct net *net)
 		return -ENODEV;
 	}
 	mutex_lock(&uevent_sock_mutex);
-	/** 20151107    
+	/** 20151107
 	 * 생성한 socket을  uevent_sock_list 에 등록한다.
 	 **/
 	list_add_tail(&ue_sk->list, &uevent_sock_list);
@@ -439,7 +439,7 @@ found:
 	kfree(ue_sk);
 }
 
-/** 20151024    
+/** 20151024
  * uevent pernet operations.
  **/
 static struct pernet_operations uevent_net_ops = {
@@ -447,14 +447,14 @@ static struct pernet_operations uevent_net_ops = {
 	.exit	= uevent_net_exit,
 };
 
-/** 20151107    
+/** 20151107
  * uevent를 초기화 하기 위해 pernet subsys operation을 등록한다.
  * 등록 과정에서 uevent_net_ops의 init 함수가 호출되어
  * NETLINK_KOBJECT_UEVENT의 netlink kernel socket을 생성한다.
  **/
 static int __init kobject_uevent_init(void)
 {
-	/** 20151024    
+	/** 20151024
 	 * netlink table 중 NETLINK_KOBJECT_UEVENT에 해당하는 nonroot 정보를 저장한다.
 	 **/
 	netlink_set_nonroot(NETLINK_KOBJECT_UEVENT, NL_NONROOT_RECV);

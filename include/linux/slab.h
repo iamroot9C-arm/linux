@@ -16,7 +16,7 @@
  * Flags to pass to kmem_cache_create().
  * The ones marked DEBUG are only valid if CONFIG_SLAB_DEBUG is set.
  */
-/** 20150502    
+/** 20150502
  * SLAB_HWCACHE_ALIGN : object를 hw cache line에 정렬시킨다.
  * SLAB_PANIC         : error가 발견되어 object 할당 실패시 panic을 발생시킨다.
  * SLAB_RECLAIM_ACCOUNT : slab의 object들이 reclaim 가능하다.
@@ -56,7 +56,7 @@
  *
  * See also the comment on struct slab_rcu in mm/slab.c.
  */
-/** 20150502    
+/** 20150502
  * SLAB_MEM_SPREAD
  **/
 #define SLAB_DESTROY_BY_RCU	0x00080000UL	/* Defer freeing slabs to RCU */
@@ -95,7 +95,7 @@
  * ZERO_SIZE_PTR can be passed to kfree though in the same way that NULL can.
  * Both make kfree a no-op.
  */
-/** 20140510    
+/** 20140510
  * ZERO_SIZE_PTR는 kmalloc시 0으로 요청한 경우 리턴된다.
  * 따라서 추후 이 포인터로 접근요청이 들어온 경우, fault와 구분해 처리할 수 있다.
  *
@@ -153,7 +153,7 @@ unsigned int kmem_cache_size(struct kmem_cache *);
  * f.e. add ____cacheline_aligned_in_smp to the struct declaration
  * then the objects will be properly aligned in SMP configurations.
  */
-/** 20150131    
+/** 20150131
  * type과 같은 이름으로 "kmem_cache"를 생성하는 kmem_cache_create 래핑 매크로.
  * ctor는 NULL이다.
  **/
@@ -283,7 +283,7 @@ size_t ksize(const void *);
  * for general use, and so are not documented here. For a full list of
  * potential flags, always refer to linux/gfp.h.
  */
-/** 20151031    
+/** 20151031
  * array를 위한 메모리를 할당 받는다.
  * n    : 멤버 개수
  * size : 멤버 하나의 크기
@@ -301,7 +301,7 @@ static inline void *kmalloc_array(size_t n, size_t size, gfp_t flags)
  * @size: element size.
  * @flags: the type of memory to allocate (see kmalloc).
  */
-/** 20151031    
+/** 20151031
  * calloc 인터페이스로 메모리를 할당 받는다.
  * 할당 받은 뒤 0으로 초기화 하기 위해 kmalloc_alloc에 __GFP_ZERO를 추가한다.
  **/
@@ -354,7 +354,7 @@ static inline void *kmem_cache_alloc_node(struct kmem_cache *cachep,
 #if defined(CONFIG_DEBUG_SLAB) || defined(CONFIG_SLUB) || \
 	(defined(CONFIG_SLAB) && defined(CONFIG_TRACING))
 extern void *__kmalloc_track_caller(size_t, gfp_t, unsigned long);
-/** 20140510    
+/** 20140510
  * kmalloc 동작에 caller를 추적하는 trace를 과정을 추가한다.
  **/
 #define kmalloc_track_caller(size, flags) \
@@ -394,7 +394,7 @@ extern void *__kmalloc_node_track_caller(size_t, gfp_t, int, unsigned long);
 /*
  * Shortcuts
  */
-/** 20140517    
+/** 20140517
  * kmem_cache로부터 0으로 초기화된 object를 할당 받는다.
  **/
 static inline void *kmem_cache_zalloc(struct kmem_cache *k, gfp_t flags)
@@ -407,7 +407,7 @@ static inline void *kmem_cache_zalloc(struct kmem_cache *k, gfp_t flags)
  * @size: how many bytes of memory are required.
  * @flags: the type of memory to allocate (see kmalloc).
  */
-/** 20141220    
+/** 20141220
  * kmalloc으로 할당받은 메모리를 0으로 초기화 한다.
  **/
 static inline void *kzalloc(size_t size, gfp_t flags)

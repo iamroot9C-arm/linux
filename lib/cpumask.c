@@ -34,13 +34,13 @@ EXPORT_SYMBOL(__next_cpu_nr);
  *
  * Returns >= nr_cpu_ids if no further cpus set in both.
  */
-/** 20140621    
+/** 20140621
  * 두 개의 cpu mask에서 인덱스 n 이후 처음 교차되는 인덱스를 찾아 리턴한다.
  **/
 int cpumask_next_and(int n, const struct cpumask *src1p,
 		     const struct cpumask *src2p)
 {
-	/** 20140621    
+	/** 20140621
 	 * cpu 매크스 src1p에서 n번째 이후 cpu를 찾아
 	 * src2p에서 교차 검색한다.
 	 **/

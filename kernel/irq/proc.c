@@ -15,7 +15,7 @@
 
 #include "internals.h"
 
-/** 20150912    
+/** 20150912
  * init_irq_proc()에서 생성.
  *
  * "/proc/irq" 
@@ -220,7 +220,7 @@ static int default_affinity_open(struct inode *inode, struct file *file)
 	return single_open(file, default_affinity_show, PDE(inode)->data);
 }
 
-/** 20150912    
+/** 20150912
  * "/proc/irq/default_smp_affinity"에 대한 file operation.
  **/
 static const struct file_operations default_affinity_proc_fops = {
@@ -315,7 +315,7 @@ void register_handler_proc(unsigned int irq, struct irqaction *action)
 
 #define MAX_NAMELEN 10
 
-/** 20150912    
+/** 20150912
  * irq 번호에 해당하는 proc 디렉토리와 속성 파일을 생성하고 desc에 채운다.
  **/
 void register_irq_proc(unsigned int irq, struct irq_desc *desc)
@@ -329,7 +329,7 @@ void register_irq_proc(unsigned int irq, struct irq_desc *desc)
 	sprintf(name, "%d", irq);
 
 	/* create /proc/irq/1234 */
-	/** 20150912    
+	/** 20150912
 	 * 지정된 번호의 irq 디렉토리를 생성한다.
 	 * "/proc/irq/NNN"
 	 **/
@@ -338,7 +338,7 @@ void register_irq_proc(unsigned int irq, struct irq_desc *desc)
 		return;
 
 #ifdef CONFIG_SMP
-	/** 20150912    
+	/** 20150912
 	 * irq 디렉토리 안에 attribute 파일을 생성한다.
 	 **/
 	/* create /proc/irq/<irq>/smp_affinity */
@@ -357,7 +357,7 @@ void register_irq_proc(unsigned int irq, struct irq_desc *desc)
 			 &irq_node_proc_fops, (void *)(long)irq);
 #endif
 
-	/** 20150912    
+	/** 20150912
 	 * interrupt 발생 정보를 조회할 수 있는 파일 생성
 	 **/
 	proc_create_data("spurious", 0444, desc->dir,
@@ -394,7 +394,7 @@ void unregister_handler_proc(unsigned int irq, struct irqaction *action)
 	}
 }
 
-/** 20150912    
+/** 20150912
  * proc 아래 "irq/default_smp_affinity" 파일을 추가하고, 사용할 fops를 지정한다.
  **/
 static void register_default_affinity_proc(void)
@@ -405,7 +405,7 @@ static void register_default_affinity_proc(void)
 #endif
 }
 
-/** 20150912    
+/** 20150912
  * "/proc/irq/" 아래 irq에 해당하는 디렉토리와 속성 파일을 생성한다.
  *
  * init_IRQ()에서 아키텍쳐의 irq 초기화 함수에서 사용하는 irq에 대해 초기화된 상태
@@ -416,14 +416,14 @@ void init_irq_proc(void)
 	struct irq_desc *desc;
 
 	/* create /proc/irq */
-	/** 20150912    
+	/** 20150912
 	 * "/proc/irq" 디렉토리를 생성한다.
 	 **/
 	root_irq_dir = proc_mkdir("irq", NULL);
 	if (!root_irq_dir)
 		return;
 
-	/** 20150912    
+	/** 20150912
 	 * "/procirq/default_smp_affinity" 파일을 추가하고, 사용할 fops를 지정한다.
 	 **/
 	register_default_affinity_proc();
@@ -431,7 +431,7 @@ void init_irq_proc(void)
 	/*
 	 * Create entries for all existing IRQs.
 	 */
-	/** 20150912    
+	/** 20150912
 	 * irq_desc를 가진 irq 번호에 대한 proc 엔트리를 생성한다.
 	 **/
 	for_each_irq_desc(irq, desc) {

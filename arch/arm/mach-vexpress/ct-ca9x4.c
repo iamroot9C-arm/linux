@@ -39,7 +39,7 @@ static struct map_desc ct_ca9x4_io_desc[] __initdata = {
 	},
 };
 
-/** 20130330    
+/** 20130330
  * ct_ca9x4의 io_desc 항목에 대해 page table에 등록하고 vmlist에 추가
  **/
 static void __init ct_ca9x4_map_io(void)
@@ -48,14 +48,14 @@ static void __init ct_ca9x4_map_io(void)
 }
 
 #ifdef CONFIG_HAVE_ARM_TWD
-/** 20140913    
+/** 20140913
  * TWD local timer 정의.
  * resource mem : A9_MPCORE_TWD
  * resource irq : IRQ_LOCALTIMER(29)
  **/
 static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, A9_MPCORE_TWD, IRQ_LOCALTIMER);
 
-/** 20140920    
+/** 20140920
  * twd_local_timer를 local timer(percpu)로 등록한다.
  **/
 static void __init ca9x4_twd_init(void)
@@ -68,14 +68,14 @@ static void __init ca9x4_twd_init(void)
 #define ca9x4_twd_init()	do {} while(0)
 #endif
 
-/** 20140920    
+/** 20140920
  * CoreTile ca9x4의 irq를 초기화 한다.
  *   - gic 초기화
  *   - twd를 local timer로 지정(irq 29)
  **/
 static void __init ct_ca9x4_init_irq(void)
 {
-	/** 20140906    
+	/** 20140906
 	 * A9_MPCORE_GIC_DIST, A9_MPCORE_GIC_CPU는 Physical address.
 	 * virtual address로 mapping 시켜 주소를 전달한다.
 	 **/
@@ -124,7 +124,7 @@ static AMBA_APB_DEVICE(dmc, "ct:dmc", 0, CT_CA9X4_DMC, IRQ_CT_CA9X4_DMC, NULL);
 static AMBA_APB_DEVICE(smc, "ct:smc", 0, CT_CA9X4_SMC, IRQ_CT_CA9X4_SMC, NULL);
 static AMBA_APB_DEVICE(gpio, "ct:gpio", 0, CT_CA9X4_GPIO, IRQ_CT_CA9X4_GPIO, NULL);
 
-/** 20151121    
+/** 20151121
  * AMBA_AHB_DEVICE, AMBA_APB_DEVICE 매크로로 선언한 cortex-a9 quad board 디바이스
  **/
 static struct amba_device *ct_ca9x4_amba_devs[] __initdata = {
@@ -165,7 +165,7 @@ static struct resource pmu_resources[] = {
 	},
 };
 
-/** 20151121    
+/** 20151121
  * ARM Performance Monitor Unit 디바이스 선언 
  **/
 static struct platform_device pmu_device = {
@@ -175,7 +175,7 @@ static struct platform_device pmu_device = {
 	.resource	= pmu_resources,
 };
 
-/** 20151121    
+/** 20151121
  * CoreTile cortex-a9x4 관련 초기화를 수행한다.
  *
  * - L2 cache register를 페이지 테이블에 매핑하고 초기화.
@@ -189,7 +189,7 @@ static void __init ct_ca9x4_init(void)
 	struct clk *clk;
 
 #ifdef CONFIG_CACHE_L2X0
-	/** 20140920    
+	/** 20140920
 	 * L2C register를 page table에 mapping 한다.
 	 **/
 	void __iomem *l2x0_base = ioremap(CT_CA9X4_L2CC, SZ_4K);
@@ -208,7 +208,7 @@ static void __init ct_ca9x4_init(void)
 	for (i = 0; i < ARRAY_SIZE(ct_ca9x4_amba_devs); i++)
 		amba_device_register(ct_ca9x4_amba_devs[i], &iomem_resource);
 
-	/** 20151121    
+	/** 20151121
 	 * arm pmu를 플랫폼 버스에 추가.
 	 **/
 	platform_device_register(&pmu_device);
@@ -217,7 +217,7 @@ static void __init ct_ca9x4_init(void)
 #ifdef CONFIG_SMP
 static void *ct_ca9x4_scu_base __initdata;
 
-/** 20130518    
+/** 20130518
  * SMP core 관련 초기화
  *     vexpress의 경우 CPU board가 Cortex-A9 MPcore로 존재. 관련 내용은 Cortex-A9 MPcore TRM 참고.
  * 
@@ -229,7 +229,7 @@ static void __init ct_ca9x4_init_cpu_map(void)
 {
 	int i, ncores;
 
-	/** 20130518    
+	/** 20130518
 	 * ioremap으로 가상 주소를 리턴. vm_area_add_early에서 vmlist에 등록했음.
 	 *   NULL인 경우 WARN을 출력하고 리턴.
 	 **/
@@ -237,13 +237,13 @@ static void __init ct_ca9x4_init_cpu_map(void)
 	if (WARN_ON(!ct_ca9x4_scu_base))
 		return;
 
-	/** 20130518    
+	/** 20130518
 	 * ncores는 SCU CONFIG register에서 읽어온 값 + 1
 	 * (Number of CPUs present in the Cortex-A9 MPCore processor)
 	 **/
 	ncores = scu_get_core_count(ct_ca9x4_scu_base);
 
-	/** 20130518    
+	/** 20130518
 	 * 커널 설정값보다 ncores가 크면 최대값을 커널 설정값인 nr_cpu_ids로 잡아줌.
 	 **/
 	if (ncores > nr_cpu_ids) {
@@ -252,19 +252,19 @@ static void __init ct_ca9x4_init_cpu_map(void)
 		ncores = nr_cpu_ids;
 	}
 
-	/** 20130518    
+	/** 20130518
 	 * ncores 개수를 순회하며 cpu에 해당하는 비트를 possible로 설정.
 	 **/
 	for (i = 0; i < ncores; ++i)
 		set_cpu_possible(i, true);
 
-	/** 20130518    
+	/** 20130518
 	 * gic_raise_softirq 를 smp_cross_call로 등록
 	 **/
 	set_smp_cross_call(gic_raise_softirq);
 }
 
-/** 20150118    
+/** 20150118
  * SCU enable.
  **/
 static void __init ct_ca9x4_smp_enable(unsigned int max_cpus)
@@ -273,7 +273,7 @@ static void __init ct_ca9x4_smp_enable(unsigned int max_cpus)
 }
 #endif
 
-/** 20140906    
+/** 20140906
  * coretile cortex-a9 quad용 descriptor.
  **/
 struct ct_desc ct_ca9x4_desc __initdata = {
@@ -283,7 +283,7 @@ struct ct_desc ct_ca9x4_desc __initdata = {
 	.init_irq	= ct_ca9x4_init_irq,
 	.init_tile	= ct_ca9x4_init,
 #ifdef CONFIG_SMP
-	/** 20130518    
+	/** 20130518
 	 * init_cpu_map : smp_init_cpus 에서 호출
 	 * 20150118
 	 * smp_enable : platform_smp_prepare_cpus 에서 호출

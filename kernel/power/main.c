@@ -24,12 +24,12 @@ DEFINE_MUTEX(pm_mutex);
 
 /* Routines for PM-transition notifications */
 
-/** 20151010    
+/** 20151010
  * PM 관련 변경을 통보하기 위한 blocking notifier head 선언.
  **/
 static BLOCKING_NOTIFIER_HEAD(pm_chain_head);
 
-/** 20151010    
+/** 20151010
  * PM notifier에 nb를 등록하는 함수.
  * PM notifier는 blocking_notifier_chain 타입이다.
  **/
@@ -280,7 +280,7 @@ static inline void pm_print_times_init(void)
 	pm_print_times_enabled = !!initcall_debug;
 }
 #else /* !CONFIG_PP_SLEEP_DEBUG */
-/** 20151010    
+/** 20151010
  * CONFIG_PP_SLEEP_DEBUG 를 선언하지 않아 NULL 함수.
  **/
 static inline void pm_print_times_init(void) {}
@@ -563,7 +563,7 @@ power_attr(pm_trace_dev_match);
 
 #endif /* CONFIG_PM_TRACE */
 
-/** 20151010    
+/** 20151010
  * power group에 생성될 attribute 배열 정의.
  *
  * 각 attribute는 power_attr() 매크로로 이름이 만들어진다.
@@ -594,14 +594,14 @@ static struct attribute * g[] = {
 	NULL,
 };
 
-/** 20151010    
+/** 20151010
  * "power" kobject에 등록할 attribute 그룹 정의.
  **/
 static struct attribute_group attr_group = {
 	.attrs = g,
 };
 
-/** 20151010    
+/** 20151010
  * RUNTIME시에 특정 시간동안 inactivity 상태일 때 IO device를 power save 상태로
  * 진입시킨다.
  *
@@ -621,7 +621,7 @@ static int __init pm_start_workqueue(void)
 static inline int pm_start_workqueue(void) { return 0; }
 #endif
 
-/** 20151010    
+/** 20151010
  * power management 관련 초기화를 수행한다.
  *
  * suspend - system state를 ram에 저장한다.
@@ -629,7 +629,7 @@ static inline int pm_start_workqueue(void) { return 0; }
  **/
 static int __init pm_init(void)
 {
-	/** 20151010    
+	/** 20151010
 	 * CONFIG_HIBERNATION을 위한 초기화를 진행한다.
 	 * HIBERNATION은 시스템 상태를 swap 영역에 저장하는 기능이다.
 	 **/
@@ -638,7 +638,7 @@ static int __init pm_init(void)
 		return error;
 	hibernate_image_size_init();
 	hibernate_reserved_size_init();
-	/** 20151010    
+	/** 20151010
 	 * "power" kobject를 생성하고 sysfs에 등록한다.
 	 * 선언된 attribute group을 "power" 에 추가한다.
 	 **/

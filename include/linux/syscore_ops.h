@@ -11,7 +11,7 @@
 
 #include <linux/list.h>
 
-/** 20151010    
+/** 20151010
  * syscore의 pm 관련 ops.
  **/
 struct syscore_ops {

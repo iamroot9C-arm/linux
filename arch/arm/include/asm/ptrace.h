@@ -110,7 +110,7 @@ struct pt_regs {
 };
 #endif /* __KERNEL__ */
 
-/** 20160305    
+/** 20160305
  * stack frame size
  * r0~r15(pc) cpsr, orig_r0 (4 * 18)
  **/
@@ -141,7 +141,7 @@ struct pt_regs {
 
 #ifdef __KERNEL__
 
-/** 20151003    
+/** 20151003
  * pt_regs의 ARM_cpsr을 조회해 user mode인지 검사한다.
  **/
 #define user_mode(regs)	\
@@ -158,7 +158,7 @@ struct pt_regs {
 	((((regs)->ARM_cpsr & PSR_J_BIT) >> 23) | \
 	 (((regs)->ARM_cpsr & PSR_T_BIT) >> 5))
 
-/** 20151003    
+/** 20151003
  * pt_regs의 ARM_cpsr에서 MODE 부분을 추출
  **/
 #define processor_mode(regs) \
@@ -207,7 +207,7 @@ static inline long regs_return_value(struct pt_regs *regs)
 	return regs->ARM_r0;
 }
 
-/** 20151003    
+/** 20151003
  * pt_regs에서 ARM_pc 레지스터의 위치.
  **/
 #define instruction_pointer(regs)	(regs)->ARM_pc

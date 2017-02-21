@@ -25,7 +25,7 @@ unsigned int real_root_dev;	/* do_proc_dointvec cannot handle kdev_t */
 static int __initdata old_fd, root_fd;
 static int __initdata mount_initrd = 1;
 
-/** 20160109    
+/** 20160109
  * mount_initrd는 default 값이 1이고, noinitrd가 주어지면 0을 리턴한다.
  **/
 static int __init no_initrd(char *str)
@@ -117,7 +117,7 @@ static void __init handle_initrd(void)
 	}
 }
 
-/** 20160123    
+/** 20160123
  * initrd가 mount된 상태에서
  *	- "/dev/ram"을 생성한다.
  *	- "/initrd.image"를 로딩한다.
@@ -132,7 +132,7 @@ int __init initrd_load(void)
 		 * in that case the ram disk is just set up here, and gets
 		 * mounted in the normal path.
 		 */
-		/** 20160123    
+		/** 20160123
 		 * "/initrd.image"가 존재한다면 /dev/ram0에 풀고, 
 		 * ROOT_DEV가 Root_RAM0가 아닐 경우 파일을 제거하고 initrd 핸들을 진행한다.
 		 **/

@@ -15,7 +15,7 @@ extern int print_fatal_signals;
  * Real Time signals may be queued.
  */
 
-/** 20150502    
+/** 20150502
  * sigqueue에 큐잉되는 각각의 시그널 정보를 나타내는 자료구조.
  **/
 struct sigqueue {
@@ -28,7 +28,7 @@ struct sigqueue {
 /* flags values. */
 #define SIGQUEUE_PREALLOC	1
 
-/** 20160206    
+/** 20160206
  * pending된 시그널들을 표현하는 비트맵,
  * 그리고 각 펜딩된 시그널을 큐잉시키는 리스트(struct sigqueue)로 구성된다.
  **/
@@ -64,19 +64,19 @@ static inline void sigdelset(sigset_t *set, int _sig)
 		set->sig[sig / _NSIG_BPW] &= ~(1UL << (sig % _NSIG_BPW));
 }
 
-/** 20130713    
+/** 20130713
  * _sig라는 시그널이 set 중에 포함되어 있는지 검사
  **/
 static inline int sigismember(sigset_t *set, int _sig)
 {
-	/** 20130713    
+	/** 20130713
 	 * signal 변호를 배열 index로 변환
 	 **/
 	unsigned long sig = _sig - 1;
 	if (_NSIG_WORDS == 1)
 		return 1 & (set->sig[0] >> sig);
 	else
-		/** 20130713    
+		/** 20130713
 		 * sigset_t에서 해당 bit의 위치를 찾아 1인지 검사
 		 **/
 		return 1 & (set->sig[sig / _NSIG_BPW] >> (sig % _NSIG_BPW));
@@ -238,7 +238,7 @@ static inline void siginitsetinv(sigset_t *set, unsigned long mask)
 
 #endif /* __HAVE_ARCH_SIG_SETOPS */
 
-/** 20160326    
+/** 20160326
  * sigpending 구조체 초기화
  **/
 static inline void init_sigpending(struct sigpending *sig)

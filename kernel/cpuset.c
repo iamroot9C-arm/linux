@@ -2222,7 +2222,7 @@ static int cpuset_track_online_nodes(struct notifier_block *self,
  * Description: Finish top cpuset after cpu, node maps are initialized
  **/
 
-/** 20150822    
+/** 20150822
  * cpuset_init, cpuset_init_smp 추후분석???
  **/
 void __init cpuset_init_smp(void)
@@ -2285,12 +2285,12 @@ void cpuset_cpus_allowed_fallback(struct task_struct *tsk)
 	 */
 }
 
-/** 20130629    
+/** 20130629
  * 현재 task의 mems_allowed bitmap을 node의 수만큼 설정한다.
  **/
 void cpuset_init_current_mems_allowed(void)
 {
-	/** 20130629    
+	/** 20130629
 	 * 현재 task (init_task)의 mems_allowed 변수를 node 개수만큼 1로 설정한다.
 	 **/
 	nodes_setall(current->mems_allowed);
@@ -2464,18 +2464,18 @@ int __cpuset_node_allowed_softwall(int node, gfp_t gfp_mask)
  * cpuset hierarchy for the nearest enclosing mem_exclusive cpuset.
  * It never sleeps.
  */
-/** 20131116    
+/** 20131116
  * node에서 메모리 할당 받는 것이 허용되지는 조사하는 함수
  **/
 int __cpuset_node_allowed_hardwall(int node, gfp_t gfp_mask)
 {
-	/** 20131116    
+	/** 20131116
 	 * interrupt 중에 있거나 __GFP_THISNODE가 속성으로 요청되어 있다면 참을 리턴
 	 * interrupt 중에 있다면 왜 허용이 되는 것인가???
 	 **/
 	if (in_interrupt() || (gfp_mask & __GFP_THISNODE))
 		return 1;
-	/** 20131116    
+	/** 20131116
 	 * node가 현재 task의 mems_allowed 에 속해있다면 참을 리턴
 	 **/
 	if (node_isset(node, current->mems_allowed))
@@ -2484,7 +2484,7 @@ int __cpuset_node_allowed_hardwall(int node, gfp_t gfp_mask)
 	 * Allow tasks that have access to memory reserves because they have
 	 * been OOM killed to get memory anywhere.
 	 */
-	/** 20131116    
+	/** 20131116
 	 * thread_info() flags에 TIF_MEMDIE가 있다면 참을 리턴
 	 **/
 	if (unlikely(test_thread_flag(TIF_MEMDIE)))

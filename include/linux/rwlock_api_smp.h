@@ -143,7 +143,7 @@ static inline int __raw_write_trylock(rwlock_t *lock)
  */
 #if !defined(CONFIG_GENERIC_LOCKBREAK) || defined(CONFIG_DEBUG_LOCK_ALLOC)
 
-/** 20141022    
+/** 20141022
  * rwlock - raw read lock.
  **/
 static inline void __raw_read_lock(rwlock_t *lock)
@@ -204,7 +204,7 @@ static inline unsigned long __raw_write_lock_irqsave(rwlock_t *lock)
 	return flags;
 }
 
-/** 20151031    
+/** 20151031
  * 인터럽트를 막고, 선점 불가 상태로 do_raw_write_lock을 사용해 lock을 건다.
  **/
 static inline void __raw_write_lock_irq(rwlock_t *lock)
@@ -226,11 +226,11 @@ static inline void __raw_write_lock_bh(rwlock_t *lock)
 static inline void __raw_write_lock(rwlock_t *lock)
 {
 	preempt_disable();
-	/** 20130518    
+	/** 20130518
 	 * DEBUG OPTION에 따라 NULL 함수
 	 **/
 	rwlock_acquire(&lock->dep_map, 0, 0, _RET_IP_);
-	/** 20140329    
+	/** 20140329
 	 * do_raw_write_lock (do_raw_write_trylock)
 	 **/
 	LOCK_CONTENDED(lock, do_raw_write_trylock, do_raw_write_lock);

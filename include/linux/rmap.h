@@ -24,7 +24,7 @@
  * the anon_vma object itself: we're guaranteed no page can be
  * pointing to this anon_vma once its vma list is empty.
  */
-/** 20160423    
+/** 20160423
  * 
  * list_head는 avc 리스트를 가리키는 head.
  *
@@ -57,7 +57,7 @@ struct anon_vma {
 	 * is serialized by a system wide lock only visible to
 	 * mm_take_all_locks() (mm_all_locks_mutex).
 	 */
-	/** 20140531    
+	/** 20140531
 	 * struct anon_vma_chain 정보를 가져온다.
 	 **/
 	struct list_head head;	/* Chain of private "related" vmas */
@@ -76,7 +76,7 @@ struct anon_vma {
  * The "same_anon_vma" list contains the anon_vma_chains
  * which link all the VMAs associated with this anon_vma.
  */
-/** 20160416    
+/** 20160416
  *
  * 이 구조체는 어떤 VMA에 연관된 anon_vma들 또는 반대로
  * 어떤 anon_vma에 연관된 VMA들을 찾을 수 있게 해준다.
@@ -89,7 +89,7 @@ struct anon_vma_chain {
 };
 
 #ifdef CONFIG_MMU
-/** 20160423    
+/** 20160423
  * anon_vma를 받아온다. 레퍼런스 카운트 증가.
  **/
 static inline void get_anon_vma(struct anon_vma *anon_vma)
@@ -99,7 +99,7 @@ static inline void get_anon_vma(struct anon_vma *anon_vma)
 
 void __put_anon_vma(struct anon_vma *anon_vma);
 
-/** 20140524    
+/** 20140524
  * refcount를 atomic하게 감소시키고,
  * 결과 refcount가 0이 되었다면 anon_vma 를 해제한다.
  **/
@@ -131,7 +131,7 @@ static inline void vma_unlock_anon_vma(struct vm_area_struct *vma)
 		mutex_unlock(&anon_vma->root->mutex);
 }
 
-/** 20140524    
+/** 20140524
  * root에 mutex lock을 건다.
  **/
 static inline void anon_vma_lock(struct anon_vma *anon_vma)
@@ -139,7 +139,7 @@ static inline void anon_vma_lock(struct anon_vma *anon_vma)
 	mutex_lock(&anon_vma->root->mutex);
 }
 
-/** 20140524    
+/** 20140524
  * root에 mutex lock을 해제한다.
  **/
 static inline void anon_vma_unlock(struct anon_vma *anon_vma)
@@ -205,7 +205,7 @@ enum ttu_flags {
 	TTU_IGNORE_ACCESS = (1 << 9),	/* don't age */
 	TTU_IGNORE_HWPOISON = (1 << 10),/* corrupted page is recoverable */
 };
-/** 20140531    
+/** 20140531
  * flags에서 TTU_ACTION에 해당하는 비트만 추출한다.
  **/
 #define TTU_ACTION(x) ((x) & TTU_ACTION_MASK)

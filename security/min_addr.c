@@ -4,7 +4,7 @@
 #include <linux/sysctl.h>
 
 /* amount of vm to protect from userspace access by both DAC and the LSM*/
-/** 20150912    
+/** 20150912
  * userspace의 접근으로부터 보호하기 위해 DAC와 LSM에서 사용할 최소 mmap 크기.
  **/
 unsigned long mmap_min_addr;
@@ -15,7 +15,7 @@ unsigned long dac_mmap_min_addr = CONFIG_DEFAULT_MMAP_MIN_ADDR;
 /*
  * Update mmap_min_addr = max(dac_mmap_min_addr, CONFIG_LSM_MMAP_MIN_ADDR)
  */
-/** 20150912    
+/** 20150912
  * mmap의 최소 주소 크기를 LSM 또는 DAC에 따라 사용할 크기를 업데이트 한다.
  *
  * LSM : Linux Security Model
@@ -55,7 +55,7 @@ int mmap_min_addr_handler(struct ctl_table *table, int write,
 	return ret;
 }
 
-/** 20151024    
+/** 20151024
  **/
 static int __init init_mmap_min_addr(void)
 {

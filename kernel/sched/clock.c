@@ -79,7 +79,7 @@ unsigned long long __attribute__((weak)) sched_clock(void)
 }
 EXPORT_SYMBOL_GPL(sched_clock);
 
-/** 20150124    
+/** 20150124
  * sched_clock이 동작 중임을 표시한다.
  **/
 __read_mostly int sched_clock_running;
@@ -93,12 +93,12 @@ struct sched_clock_data {
 	u64			clock;
 };
 
-/** 20150530    
+/** 20150530
  * percpu 변수 sched_clock_data 선언.
  **/
 static DEFINE_PER_CPU_SHARED_ALIGNED(struct sched_clock_data, sched_clock_data);
 
-/** 20150530    
+/** 20150530
  * 현재 cpu에 해당하는 sched_clock_data 값을 가져온다.
  **/
 static inline struct sched_clock_data *this_scd(void)
@@ -330,7 +330,7 @@ u64 local_clock(void)
 
 #else /* CONFIG_HAVE_UNSTABLE_SCHED_CLOCK */
 
-/** 20150124    
+/** 20150124
  * CONFIG_HAVE_UNSTABLE_SCHED_CLOCK이 아니므로
  * 단순히 sched_clock_running을 설정한다.
  **/
@@ -339,7 +339,7 @@ void sched_clock_init(void)
 	sched_clock_running = 1;
 }
 
-/** 20150524    
+/** 20150524
  * sched_clock이 동작 중이면 sched_clock을 읽어 ns 단위로 리턴한다.
  **/
 u64 sched_clock_cpu(int cpu)

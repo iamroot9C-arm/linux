@@ -989,7 +989,7 @@ static inline void __skb_queue_head_init(struct sk_buff_head *list)
  * network layer or drivers should need annotation to consolidate the
  * main types of usage into 3 classes.
  */
-/** 20151107    
+/** 20151107
  * 추후분석???
  **/
 static inline void skb_queue_head_init(struct sk_buff_head *list)

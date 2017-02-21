@@ -47,7 +47,7 @@ extern void __raw_readsb(const void __iomem *addr, void *data, int bytelen);
 extern void __raw_readsw(const void __iomem *addr, void *data, int wordlen);
 extern void __raw_readsl(const void __iomem *addr, void *data, int longlen);
 
-/** 20140913    
+/** 20140913
  * lowlevel io read/write 함수.
  **/
 #define __raw_writeb(v,a)	((void)(__chk_io_ptr(a), *(volatile unsigned char __force  *)(a) = (v)))
@@ -226,7 +226,7 @@ extern void _memset_io(volatile void __iomem *, int, size_t);
  * IO port primitives for more information.
  */
 #ifndef readl
-/** 20141227    
+/** 20141227
  * address에 매핑된 레지스터 등에서 값을 little endian으로 읽어 cpu의 endian으로 변환한다.
  **/
 #define readb_relaxed(c) ({ u8  __r = __raw_readb(c); __r; })
@@ -235,7 +235,7 @@ extern void _memset_io(volatile void __iomem *, int, size_t);
 #define readl_relaxed(c) ({ u32 __r = le32_to_cpu((__force __le32) \
 					__raw_readl(c)); __r; })
 
-/** 20140913    
+/** 20140913
  * io read/write macro.
  *
  * register 등에 값을 쓰거나 읽을 때 주로 사용된다.
@@ -273,7 +273,7 @@ extern void _memset_io(volatile void __iomem *, int, size_t);
  * Documentation/io-mapping.txt.
  *
  */
-/** 20140419    
+/** 20140419
  * ioremap 함수.
  * prot로 MT_DEVICE 지정
  **/

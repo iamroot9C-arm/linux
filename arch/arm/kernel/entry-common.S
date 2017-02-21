@@ -12,7 +12,7 @@
 #include <asm/ftrace.h>
 #include <asm/unwind.h>
 
-/** 20160305    
+/** 20160305
  * CONFIG_NEED_RET_TO_USER가 선언되지 않아 아무 동작도 수행하지 않는다.
  **/
 #ifdef CONFIG_NEED_RET_TO_USER
@@ -34,7 +34,7 @@
 ret_fast_syscall:
  UNWIND(.fnstart	)
  UNWIND(.cantunwind	)
-	/** 20160305    
+	/** 20160305
 	 * interrupt를 막는다.
 	 * TI_FLAGS를 가져와 _TIF_WORK_MASK가 존재하는지 검사해 존재하면(tst, XXXne)
 	 * fast ret을 못하고 fast_work_pending으로 이동해 해당 작업을 수행한다.
@@ -48,12 +48,12 @@ ret_fast_syscall:
 #endif
 
 	/* perform architecture specific actions before user return */
-	/** 20160305    
+	/** 20160305
 	 * ret_to_user 전 arch에서 별도로 지정한 코드를 호출한다.
 	 **/
 	arch_ret_to_user r1, lr
 
-	/** 20160305    
+	/** 20160305
 	 * ret_fast_syscall인 경우,
 	 * fast는 1, syscall parameter가 저장된 r4,r5를 위한 offset을 보정값으로 전달.
 	 * 결국 sp로부터 pt_regs를 얻어오기 위한 설정.
@@ -64,7 +64,7 @@ ret_fast_syscall:
 /*
  * Ok, we need to do extra processing, enter the slow path.
  */
-/** 20160220    
+/** 20160220
  * user mode로 전환하기 전에 kernel에서 추가로 수행해야 할 work이 펜딩되었다면
  * 그것들을 처리하고 온다.
  *
@@ -95,7 +95,7 @@ work_pending:
 /*
  * "slow" syscall return path.  "why" tells us if this was a real syscall.
  */
-/** 20160206    
+/** 20160206
  * 20160312
  * user mode로 돌아가기 전에 인터럽트를 막고 pending 처리를 진행한다.
  * user mode로 진입하기 전 TIF에 work 관련 플래그가 검출되면 work_pending 수행.
@@ -130,7 +130,7 @@ ENTRY(ret_from_fork)
 	b	ret_slow_syscall
 ENDPROC(ret_from_fork)
 
-	/** 20160305    
+	/** 20160305
 	 * calls.S를 counting 해서 전체 개수+1를 NR_syscalls에 설정.
 	 * 설정 후 CALL macro를 .long으로 변경해 심볼 주소를 저장한다.
 	 **/
@@ -368,24 +368,24 @@ ENDPROC(ftrace_stub)
  *-----------------------------------------------------------------------------
  */
 
-	/** 20160305    
+	/** 20160305
 	 * 2 ** 5 (cache line 단위) align.
 	 **/
 	.align	5
 ENTRY(vector_swi)
-	/** 20160305    
+	/** 20160305
 	 * struct pt_regs를 스택에 선언.
 	 * sp을 stack frame (18 * 4)만큼 빼서 공간 확보.
 	 **/
 	sub	sp, sp, #S_FRAME_SIZE
-	/** 20160305    
+	/** 20160305
 	 * r0 ~ r12 레지스터를 stack에 쌓는다.
 	 * 현재 커널의 context를 저장.
 	 *
 	 * 단 sp!가 없어 sp의 위치는 연산 후 업데이트 되지 않아 S_FRAME의 시작 주소.
 	 **/
 	stmia	sp, {r0 - r12}			@ Calling r0 - r12
-	/** 20160305    
+	/** 20160305
 	 * svc mode는 user mode와 R0~R12는 공유하고, sp, lr, SPSR_svc를 보유한다.
 	 *
 	 * r8 = sp + #60;
@@ -428,7 +428,7 @@ ENTRY(vector_swi)
 	movne	r10, #0				@ no thumb OABI emulation
 	ldreq	r10, [lr, #-4]			@ get SWI instruction
 #else
-	/** 20160305    
+	/** 20160305
 	 * SWI는 return address가 lr (SWI 다음 명령). entry-armv.S 정리 참고.
 	 *
 	 * swi 명령을 디코딩해서 argument로 지정된 system call number를 추출하기 위한
@@ -456,7 +456,7 @@ ENTRY(vector_swi)
 	ldr	scno, [lr, #-4]			@ get SWI instruction
 #endif
 
-	/** 20160305    
+	/** 20160305
 	 * ALIGNMENT_TRAP 설정시 __cr_alignment에 저장해둔 설정값을 SCR에 저장.
 	 **/
 #ifdef CONFIG_ALIGNMENT_TRAP
@@ -464,17 +464,17 @@ ENTRY(vector_swi)
 	ldr	ip, [ip]
 	mcr	p15, 0, ip, c1, c0		@ update control register
 #endif
-	/** 20160305    
+	/** 20160305
 	 * exception mode 진입시 ARM core에 의해 disable된 interrupt를
 	 * 여기서 풀어준다.
 	 **/
 	enable_irq
 
-	/** 20160305    
+	/** 20160305
 	 * 현재 task의 struct thread_info를 tsk 변수로 받아온다.
 	 **/
 	get_thread_info tsk
-	/** 20160305    
+	/** 20160305
 	 * tbl = &sys_call_table;
 	 * (calls.S)
 	 **/
@@ -487,7 +487,7 @@ ENTRY(vector_swi)
 	 * If this is an old ABI call, get the syscall number into scno and
 	 * get the old ABI syscall table address.
 	 */
-	 /** 20160305    
+	 /** 20160305
 	  * swi 명령의 argument를 추출한다.
 	  * OABI의 BASE를 제외한 순수 system call number만 받아온다.
 	  *
@@ -506,11 +506,11 @@ ENTRY(vector_swi)
 #endif
 
 local_restart:
-	/** 20160305    
+	/** 20160305
 	 * r10 = tsk->TI_FLAGS;
 	 **/
 	ldr	r10, [tsk, #TI_FLAGS]		@ check for syscall tracing
-	/** 20160305    
+	/** 20160305
 	 * r4, r5를 stack에 저장.
 	 *
 	 *  +------------------------+ high address
@@ -525,7 +525,7 @@ local_restart:
 	 **/
 	stmdb	sp!, {r4, r5}			@ push fifth and sixth args
 
-	/** 20160305    
+	/** 20160305
 	 * CONFIG_SECCOMP 선언하지 안함.
 	 **/
 #ifdef CONFIG_SECCOMP
@@ -538,13 +538,13 @@ local_restart:
 1:
 #endif
 
-	/** 20160305    
+	/** 20160305
 	 * task가 syscall trace/audit 중인지 검사해 branch.
 	 **/
 	tst	r10, #_TIF_SYSCALL_WORK		@ are we tracing syscalls?
 	bne	__sys_trace
 
-	/** 20160305    
+	/** 20160305
 	 * 시스템 콜 table의 핸들러 코드를 호출한 뒤 복귀할 주소로
 	 * ret_fast_syscall을 지정한다.
 	 *
@@ -559,7 +559,7 @@ local_restart:
 	adr	lr, BSYM(ret_fast_syscall)	@ return address
 	ldrcc	pc, [tbl, scno, lsl #2]		@ call sys_* routine
 
-	/** 20160305    
+	/** 20160305
 	 * r1 = sp + #S_OFF;	@ struct pt_regs
 	 * why = #0;
 	 *
@@ -619,7 +619,7 @@ __cr_alignment:
 #define OBSOLETE(syscall) syscall
 #endif
 
-	/** 20160305    
+	/** 20160305
 	 * syscall table.
 	 *
 	 * NR_syscalls 호출후 define에서 CALL을 .long으로 변경해 심볼 주소.

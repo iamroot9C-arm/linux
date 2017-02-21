@@ -308,7 +308,7 @@ EXPORT_SYMBOL(truncate_inode_pages_range);
  * mapping->nrpages can be non-zero when this function returns even after
  * truncation of the whole mapping.
  */
-/** 20150404    
+/** 20150404
  * 추후 분석???
  **/
 void truncate_inode_pages(struct address_space *mapping, loff_t lstart)

@@ -130,7 +130,7 @@ static inline void
 uprobe_unregister(struct inode *inode, loff_t offset, struct uprobe_consumer *uc)
 {
 }
-/** 20160528    
+/** 20160528
  * CONFIG_UPROBES 정의하지 않음.
  **/
 static inline int uprobe_mmap(struct vm_area_struct *vma)
@@ -161,7 +161,7 @@ static inline void uprobe_copy_process(struct task_struct *t)
 static inline void uprobe_clear_state(struct mm_struct *mm)
 {
 }
-/** 20160416    
+/** 20160416
  **/
 static inline void uprobe_reset_state(struct mm_struct *mm)
 {

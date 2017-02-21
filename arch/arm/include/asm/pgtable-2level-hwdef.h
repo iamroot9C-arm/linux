@@ -18,12 +18,12 @@
  */
 #define PMD_TYPE_MASK		(_AT(pmdval_t, 3) << 0)
 #define PMD_TYPE_FAULT		(_AT(pmdval_t, 0) << 0)
-/** 20130330    
+/** 20130330
  * 2nd level page table
  **/
 #define PMD_TYPE_TABLE		(_AT(pmdval_t, 1) << 0)
 #define PMD_TYPE_SECT		(_AT(pmdval_t, 2) << 0)
-/** 20130330    
+/** 20130330
  * SBZ에 해당하는데???
  **/
 #define PMD_BIT4		(_AT(pmdval_t, 1) << 4)
@@ -97,7 +97,7 @@
 #define PTE_SMALL_AP_URO_SRW	(_AT(pteval_t, 0xaa) << 4)
 #define PTE_SMALL_AP_URW_SRW	(_AT(pteval_t, 0xff) << 4)
 
-/** 20140531    
+/** 20140531
  **/
 #define PHYS_MASK		(~0UL)
 

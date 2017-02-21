@@ -47,7 +47,7 @@
  * runtime initialization.
  */
 
-/** 20140628    
+/** 20140628
  **/
 struct notifier_block {
 	int (*notifier_call)(struct notifier_block *, unsigned long, void *);
@@ -60,7 +60,7 @@ struct atomic_notifier_head {
 	struct notifier_block __rcu *head;
 };
 
-/** 20140628    
+/** 20140628
  * rwsem으로 보호되는 notifier_block head 구조체.
  * rcu 함수로 access 해야한다.
  **/
@@ -100,7 +100,7 @@ extern void srcu_init_notifier_head(struct srcu_notifier_head *nh);
 #define srcu_cleanup_notifier_head(name)	\
 		cleanup_srcu_struct(&(name)->srcu);
 
-/** 20140823    
+/** 20140823
  * 각 type의 notifier block head의 초기화값.
  **/
 #define ATOMIC_NOTIFIER_INIT(name) {				\
@@ -113,7 +113,7 @@ extern void srcu_init_notifier_head(struct srcu_notifier_head *nh);
 		.head = NULL }
 /* srcu_notifier_heads cannot be initialized statically */
 
-/** 20140823    
+/** 20140823
  * 각 type의 notifier block head를 선언과 동시에 초기화.
  *
  * ATOMIC_NOTIFIER 선언 및 초기화.
@@ -122,7 +122,7 @@ extern void srcu_init_notifier_head(struct srcu_notifier_head *nh);
 #define ATOMIC_NOTIFIER_HEAD(name)				\
 	struct atomic_notifier_head name =			\
 		ATOMIC_NOTIFIER_INIT(name)
-/** 20140628    
+/** 20140628
  * BLOCKING_NOTIFIER 선언 및 초기화
  **/
 #define BLOCKING_NOTIFIER_HEAD(name)				\
@@ -176,7 +176,7 @@ extern int srcu_notifier_call_chain(struct srcu_notifier_head *nh,
 extern int __srcu_notifier_call_chain(struct srcu_notifier_head *nh,
 	unsigned long val, void *v, int nr_to_call, int *nr_calls);
 
-/** 20140823    
+/** 20140823
  * notifier_call의 리턴값.
  **/
 #define NOTIFY_DONE		0x0000		/* Don't care */
@@ -199,7 +199,7 @@ static inline int notifier_from_errno(int err)
 }
 
 /* Restore (negative) errno value from notify return value. */
-/** 20150801    
+/** 20150801
  * notifier의 ret을 정상인 경우 0, 에러인 경우 errno로 반환한다.
  **/
 static inline int notifier_to_errno(int ret)

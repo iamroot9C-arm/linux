@@ -41,7 +41,7 @@ ENTRY(__loop_const_udelay)			@ 0 <= r0 <= 0x7fffff06
  * loops = r0 * HZ * loops_per_jiffy / 1000000
  */
 
-/** 20150124    
+/** 20150124
  * 지정된 횟수만큼 1을 빼는 loop로 delay를 구현한다.
  **/
 @ Delay routine

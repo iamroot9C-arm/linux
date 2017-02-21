@@ -30,26 +30,26 @@
 #endif
 
 
-/** 20150328    
+/** 20150328
  * hlist 'bit lock' head
  **/
 struct hlist_bl_head {
 	struct hlist_bl_node *first;
 };
 
-/** 20150328    
+/** 20150328
  * hlist node
  **/
 struct hlist_bl_node {
 	struct hlist_bl_node *next, **pprev;
 };
-/** 20130803    
+/** 20130803
  * hlist의 first를 NULL로 초기화 한다.
  **/
 #define INIT_HLIST_BL_HEAD(ptr) \
 	((ptr)->first = NULL)
 
-/** 20150328    
+/** 20150328
  * hlist_bl_node 초기화 함수.
  **/
 static inline void INIT_HLIST_BL_NODE(struct hlist_bl_node *h)
@@ -58,12 +58,12 @@ static inline void INIT_HLIST_BL_NODE(struct hlist_bl_node *h)
 	h->pprev = NULL;
 }
 
-/** 20150328    
+/** 20150328
  * ptr를 member로 포함하고 있는 type인 struct가 지칭된다.
  **/
 #define hlist_bl_entry(ptr, type, member) container_of(ptr,type,member)
 
-/** 20150404    
+/** 20150404
  * hlist node의 pprev가 NULL이라면 현재 hashlist에 등록되지 않는 노드이다.
  * 따라서 unhashed이다.
  **/
@@ -112,7 +112,7 @@ static inline void __hlist_bl_del(struct hlist_bl_node *n)
 	LIST_BL_BUG_ON((unsigned long)n & LIST_BL_LOCKMASK);
 
 	/* pprev may be `first`, so be careful not to lose the lock bit */
-	/** 20130803    
+	/** 20130803
 	 * next의 LIST_BL_LOCKMASK 비트는 pprev의 LIST_BL_LOCKMASK의 속성을 계승받는다.
 	 * LIST_BL_LOCKMASK는 first 노드에 표시한다.
 	 * 만약 삭제할 노드가 first의 다음 노드라면, first의 *pprev를 갱신할 때
@@ -125,7 +125,7 @@ static inline void __hlist_bl_del(struct hlist_bl_node *n)
 		next->pprev = pprev;
 }
 
-/** 20130803    
+/** 20130803
  * hlist에서 노드를 삭제하고, 기존 노드의 n->next와 pprev를 POISON 처리한다.
  **/
 static inline void hlist_bl_del(struct hlist_bl_node *n)

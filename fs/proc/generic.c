@@ -26,12 +26,12 @@
 
 #include "internal.h"
 
-/** 20150509    
+/** 20150509
  * proc subdir 조작을 위한 spinlock.
  **/
 DEFINE_SPINLOCK(proc_subdir_lock);
 
-/** 20150509    
+/** 20150509
  * proc_dir_entry의 name과 길이, 문자열을 순서대로 비교해
  * 일치하면 0이 아닌 값을 리턴한다.
  **/
@@ -252,7 +252,7 @@ proc_file_lseek(struct file *file, loff_t offset, int orig)
 	return retval;
 }
 
-/** 20150509    
+/** 20150509
  * proc의 regular file에 대한 file ops.
  **/
 static const struct file_operations proc_file_operations = {
@@ -299,7 +299,7 @@ static int proc_getattr(struct vfsmount *mnt, struct dentry *dentry,
 	return 0;
 }
 
-/** 20150509    
+/** 20150509
  * proc의 regular file에 대한 inode ops.
  **/
 static const struct inode_operations proc_file_inode_operations = {
@@ -311,7 +311,7 @@ static const struct inode_operations proc_file_inode_operations = {
  * returns the struct proc_dir_entry for "/proc/tty/driver", and
  * returns "serial" in residual.
  */
-/** 20150509    
+/** 20150509
  * name을 받아 proc entry를 찾아 리턴한다.
  *
  * "tty/driver/serial"를 예로 들면
@@ -325,7 +325,7 @@ static int __xlate_proc_name(const char *name, struct proc_dir_entry **ret,
 	struct proc_dir_entry	*de;
 	unsigned int		len;
 
-	/** 20150509    
+	/** 20150509
 	 * ret에 지정된 proc_dir_entry를 가져온다.
 	 * 만약 NULL이 넘어왔다면 proc_root를 가져온다.
 	 **/
@@ -333,7 +333,7 @@ static int __xlate_proc_name(const char *name, struct proc_dir_entry **ret,
 	if (!de)
 		de = &proc_root;
 
-	/** 20150509    
+	/** 20150509
 	 * '/'를 기준으로 파싱해서 '/'가 없을 때까지 반복한다.
 	 **/
 	while (1) {
@@ -342,7 +342,7 @@ static int __xlate_proc_name(const char *name, struct proc_dir_entry **ret,
 			break;
 
 		len = next - cp;
-		/** 20150509    
+		/** 20150509
 		 * de의 subdir들을 순회하며 len 길이에 일치하는 문자열을 찾는다.
 		 **/
 		for (de = de->subdir; de ; de = de->next) {
@@ -353,12 +353,12 @@ static int __xlate_proc_name(const char *name, struct proc_dir_entry **ret,
 			WARN(1, "name '%s'\n", name);
 			return -ENOENT;
 		}
-		/** 20150509    
+		/** 20150509
 		 * 다음 반복문을 위해 '/' 이후로 이동한다.
 		 **/
 		cp += len + 1;
 	}
-	/** 20150509    
+	/** 20150509
 	 * '/' 이후 부분을 *residual에 저장한다.
 	 * 마지막 찾은 proc_dir_entry를 *ret에 저장한다.
 	 **/
@@ -367,7 +367,7 @@ static int __xlate_proc_name(const char *name, struct proc_dir_entry **ret,
 	return 0;
 }
 
-/** 20150509    
+/** 20150509
  * name을 받아 마지막 dir proc entry와 나머지 문자열로 변환해 리턴한다.
  **/
 static int xlate_proc_name(const char *name, struct proc_dir_entry **ret,
@@ -375,7 +375,7 @@ static int xlate_proc_name(const char *name, struct proc_dir_entry **ret,
 {
 	int rv;
 
-	/** 20150509    
+	/** 20150509
 	 * proc_dir_entry의 subdir 조작은 spinlock으로 보호된다.
 	 **/
 	spin_lock(&proc_subdir_lock);
@@ -384,14 +384,14 @@ static int xlate_proc_name(const char *name, struct proc_dir_entry **ret,
 	return rv;
 }
 
-/** 20150509    
+/** 20150509
  * proc용 inode number 할당을 위한 IDA를 정의한다.
  * 해당 ida는 proc_inum_lock으로 보호한다.
  **/
 static DEFINE_IDA(proc_inum_ida);
 static DEFINE_SPINLOCK(proc_inum_lock); /* protects the above */
 
-/** 20150509    
+/** 20150509
  * proc에서 동적으로 할당해줄 inode number의 시작값.
  **/
 #define PROC_DYNAMIC_FIRST 0xF0000000U
@@ -400,7 +400,7 @@ static DEFINE_SPINLOCK(proc_inum_lock); /* protects the above */
  * Return an inode number between PROC_DYNAMIC_FIRST and
  * 0xffffffff, or zero on failure.
  */
-/** 20150509    
+/** 20150509
  * ida를 통해 inode number를 할당 받는다.
  * 동적할당된 값은 PROC_DYNAMIC_FIRST + 1 ~ UINT_MAX 사이값이다.
  **/
@@ -410,14 +410,14 @@ static unsigned int get_inode_number(void)
 	int error;
 
 retry:
-	/** 20150509    
+	/** 20150509
 	 * proc_inum_ida 용으로 자원을 할당 받는다.
 	 **/
 	if (ida_pre_get(&proc_inum_ida, GFP_KERNEL) == 0)
 		return 0;
 
 	spin_lock(&proc_inum_lock);
-	/** 20150509    
+	/** 20150509
 	 * ida로부터 id를 할당 받아 i에 저장한다.
 	 * proc_inum_ida는 spinlock으로 보호된다.
 	 **/
@@ -428,7 +428,7 @@ retry:
 	else if (error)
 		return 0;
 
-	/** 20150509    
+	/** 20150509
 	 * 받아온 id가 proc의 동적 할당용 id보다 크다면 
 	 * 해당 id를 반환하고 0을 리턴한다.
 	 **/
@@ -438,18 +438,18 @@ retry:
 		spin_unlock(&proc_inum_lock);
 		return 0;
 	}
-	/** 20150509    
+	/** 20150509
 	 * 받아온 id에 동적 할당의 시작값을 더해 리턴한다.
 	 **/
 	return PROC_DYNAMIC_FIRST + i;
 }
 
-/** 20150509    
+/** 20150509
  * proc용 inode number를 해제한다.
  **/
 static void release_inode_number(unsigned int inum)
 {
-	/** 20150509    
+	/** 20150509
 	 * proc용 inode number에서 해당 inum을 제거한다.
 	 **/
 	spin_lock(&proc_inum_lock);
@@ -463,7 +463,7 @@ static void *proc_follow_link(struct dentry *dentry, struct nameidata *nd)
 	return NULL;
 }
 
-/** 20150509    
+/** 20150509
  * proc의 심볼릭 링크에 대한 inode ops.
  **/
 static const struct inode_operations proc_link_inode_operations = {
@@ -623,7 +623,7 @@ static const struct file_operations proc_dir_operations = {
 /*
  * proc directories can do almost nothing..
  */
-/** 20150509    
+/** 20150509
  * proc의 dir에 대한 inode ops.
  **/
 static const struct inode_operations proc_dir_inode_operations = {
@@ -632,7 +632,7 @@ static const struct inode_operations proc_dir_inode_operations = {
 	.setattr	= proc_notify_change,
 };
 
-/** 20150509    
+/** 20150509
  * 새로운 proc_dir_entry를 dir에 추가한다.
  **/
 static int proc_register(struct proc_dir_entry * dir, struct proc_dir_entry * dp)
@@ -640,7 +640,7 @@ static int proc_register(struct proc_dir_entry * dir, struct proc_dir_entry * dp
 	unsigned int i;
 	struct proc_dir_entry *tmp;
 	
-	/** 20150509    
+	/** 20150509
 	 * inode 번호를 하나 받아 proc_dir_entry에 저장한다.
 	 **/
 	i = get_inode_number();
@@ -648,7 +648,7 @@ static int proc_register(struct proc_dir_entry * dir, struct proc_dir_entry * dp
 		return -EAGAIN;
 	dp->low_ino = i;
 
-	/** 20150509    
+	/** 20150509
 	 * mode를 검사해 파일 타입에 따라 proc_iops 비어 있을 경우
 	 * proc_fops와 proc_iops를 지정한다.
 	 * 타입은 디렉토리, 심볼릭링크, 파일이 존재한다.
@@ -669,16 +669,16 @@ static int proc_register(struct proc_dir_entry * dir, struct proc_dir_entry * dp
 			dp->proc_iops = &proc_file_inode_operations;
 	}
 
-	/** 20150509    
+	/** 20150509
 	 * proc_dir_entry의 subdir은 spinlock으로 보호된다.
 	 **/
 	spin_lock(&proc_subdir_lock);
 
-	/** 20150509    
+	/** 20150509
 	 * 전달받은 상위 dir의 subdir을 순회하며
 	 **/
 	for (tmp = dir->subdir; tmp; tmp = tmp->next)
-		/** 20150509    
+		/** 20150509
 		 * 이미 존재하는 subdir 중 추가할 entry와 일치하는 이름이 있다면
 		 * 경고를 출력한다.
 		 **/
@@ -688,7 +688,7 @@ static int proc_register(struct proc_dir_entry * dir, struct proc_dir_entry * dp
 			break;
 		}
 
-	/** 20150509    
+	/** 20150509
 	 * 새로운 entry를  현재 dir->subdir의 처음에 추가한다.
 	 **/
 	dp->next = dir->subdir;
@@ -699,7 +699,7 @@ static int proc_register(struct proc_dir_entry * dir, struct proc_dir_entry * dp
 	return 0;
 }
 
-/** 20150509    
+/** 20150509
  * name을 파싱해 parent에 proc_dir_entry를 찾아 저장하고,
  * 나머지 문자열을 위한 proc_dir_entry로 생성해 리턴한다.
  *
@@ -717,7 +717,7 @@ static struct proc_dir_entry *__proc_create(struct proc_dir_entry **parent,
 	/* make sure name is valid */
 	if (!name || !strlen(name)) goto out;
 
-	/** 20150509    
+	/** 20150509
 	 * name을 받아 proc_dir_entry와 나머지 문자열로 변환해 받아온다.
 	 *
 	 * parent에 호출시에는 parent entry가 넘어가고,
@@ -726,31 +726,31 @@ static struct proc_dir_entry *__proc_create(struct proc_dir_entry **parent,
 	if (xlate_proc_name(name, parent, &fn) != 0)
 		goto out;
 
-	/** 20150509    
+	/** 20150509
 	 * 변환 결과 fn는 마지막 '/' 이후의 문자열이 저장된다.
 	 **/
 	/* At this point there must not be any '/' characters beyond *fn */
 	if (strchr(fn, '/'))
 		goto out;
 
-	/** 20150509    
+	/** 20150509
 	 * 남은 문자열 길이를 구한다.
 	 **/
 	len = strlen(fn);
 
-	/** 20150509    
+	/** 20150509
 	 * proc_dir_entry와 나머지 문자열을 저장할 길이를 할당 받는다.
 	 **/
 	ent = kmalloc(sizeof(struct proc_dir_entry) + len + 1, GFP_KERNEL);
 	if (!ent) goto out;
 
 	memset(ent, 0, sizeof(struct proc_dir_entry));
-	/** 20150509    
+	/** 20150509
 	 * 나머지 문자열을 ent->name에 복사하고 길이를 저장한다.
 	 **/
 	memcpy(ent->name, fn, len + 1);
 	ent->namelen = len;
-	/** 20150509    
+	/** 20150509
 	 * proc_dir_entry에 매개변수로 넘어온 값을 저장하고,
 	 * 나머지 멤버를 초기값을 설정한다.
 	 **/
@@ -765,7 +765,7 @@ static struct proc_dir_entry *__proc_create(struct proc_dir_entry **parent,
 	return ent;
 }
 
-/** 20150509    
+/** 20150509
  * parent 아래 dest를 대상 파일로 하는 심볼릭 링크를 생성한다.
  **/
 struct proc_dir_entry *proc_symlink(const char *name,
@@ -773,7 +773,7 @@ struct proc_dir_entry *proc_symlink(const char *name,
 {
 	struct proc_dir_entry *ent;
 
-	/** 20150509    
+	/** 20150509
 	 * name을 파싱해 parent에 마지막 '/' 전에 해당하는 proc_dir_entry를
 	 * 저장하고, 나머지 문자열로 새로운 proc_dir_entry를 생성해 한다.
 	 * 생성할 entry의 mode는 symbolic link이고 hard link는 1개이다.
@@ -782,13 +782,13 @@ struct proc_dir_entry *proc_symlink(const char *name,
 			  (S_IFLNK | S_IRUGO | S_IWUGO | S_IXUGO),1);
 
 	if (ent) {
-		/** 20150509    
+		/** 20150509
 		 * 새로 생성한 entry의 data에 symlink의 대상 파일명을 저장한다.
 		 **/
 		ent->data = kmalloc((ent->size=strlen(dest))+1, GFP_KERNEL);
 		if (ent->data) {
 			strcpy((char*)ent->data,dest);
-			/** 20150509    
+			/** 20150509
 			 * 생성한 entry를 parent 의 subdir로 추가한다.
 			 **/
 			if (proc_register(parent, ent) < 0) {
@@ -805,7 +805,7 @@ struct proc_dir_entry *proc_symlink(const char *name,
 }
 EXPORT_SYMBOL(proc_symlink);
 
-/** 20150509    
+/** 20150509
  * parent 아래에 디렉토리로 새로운 proc_dir_entry를 생성하고,
  * 생성한 entry를 parent 아래에 등록한다.
  **/
@@ -842,7 +842,7 @@ struct proc_dir_entry *proc_net_mkdir(struct net *net, const char *name,
 }
 EXPORT_SYMBOL_GPL(proc_net_mkdir);
 
-/** 20150510    
+/** 20150510
  * 디렉토리 타입의 새로운 proc entry를 생성해 parent 아래에 등록한다.
  **/
 struct proc_dir_entry *proc_mkdir(const char *name,
@@ -881,7 +881,7 @@ struct proc_dir_entry *create_proc_entry(const char *name, umode_t mode,
 }
 EXPORT_SYMBOL(create_proc_entry);
 
-/** 20150510    
+/** 20150510
  * proc entry를 새로 생성하고 주어진 argument로 설정하고 parent에 추가한다.
  **/
 struct proc_dir_entry *proc_create_data(const char *name, umode_t mode,
@@ -892,7 +892,7 @@ struct proc_dir_entry *proc_create_data(const char *name, umode_t mode,
 	struct proc_dir_entry *pde;
 	nlink_t nlink;
 
-	/** 20150510    
+	/** 20150510
 	 * 생성할 entry의 기본 모드를 설정한다.
 	 **/
 	if (S_ISDIR(mode)) {
@@ -907,7 +907,7 @@ struct proc_dir_entry *proc_create_data(const char *name, umode_t mode,
 		nlink = 1;
 	}
 
-	/** 20150510    
+	/** 20150510
 	 * proc 엔트리를 생성하고, 매개변수로 넘어온 proc_fops와 data를 저장한다.
 	 **/
 	pde = __proc_create(&parent, name, mode, nlink);
@@ -915,7 +915,7 @@ struct proc_dir_entry *proc_create_data(const char *name, umode_t mode,
 		goto out;
 	pde->proc_fops = proc_fops;
 	pde->data = data;
-	/** 20150510    
+	/** 20150510
 	 * parent 아래 생성한 proc 엔트리를 추가한다.
 	 **/
 	if (proc_register(parent, pde) < 0)
@@ -928,17 +928,17 @@ out:
 }
 EXPORT_SYMBOL(proc_create_data);
 
-/** 20150509    
+/** 20150509
  * 전달받은 proc_dir_entry를 해제한다.
  **/
 static void free_proc_entry(struct proc_dir_entry *de)
 {
-	/** 20150509    
+	/** 20150509
 	 * proc용 inode number를 해제한다.
 	 **/
 	release_inode_number(de->low_ino);
 
-	/** 20150509    
+	/** 20150509
 	 * 해당 entry가 심볼릭 링크라면 entry의 data까지 같이 해제한다.
 	 *
 	 * entry를 해제한다.
@@ -948,7 +948,7 @@ static void free_proc_entry(struct proc_dir_entry *de)
 	kfree(de);
 }
 
-/** 20150509    
+/** 20150509
  * proc_dir_entry를 받아 usage count를 감소시키고,
  * 결과 0이 되었다면 entry를 제거한다.
  **/

@@ -28,7 +28,7 @@
 
 #define to_clk_fixed_rate(_hw) container_of(_hw, struct clk_fixed_rate, hw)
 
-/** 20141220    
+/** 20141220
  * clk_hw 구조체를 받아 struct clk_fixed_rate가 가지고 있는 
  * fixed_rate를 리턴한다.
  **/
@@ -38,7 +38,7 @@ static unsigned long clk_fixed_rate_recalc_rate(struct clk_hw *hw,
 	return to_clk_fixed_rate(hw)->fixed_rate;
 }
 
-/** 20141220    
+/** 20141220
  * clk_ops.
  *
  * fixed rate ops.
@@ -83,7 +83,7 @@ struct clk *clk_register_fixed_rate(struct device *dev, const char *name,
 	struct clk_init_data init;
 
 	/* allocate fixed-rate clock */
-	/** 20141220    
+	/** 20141220
 	 * clk_fixed_rate 구조체 할당
 	 **/
 	fixed = kzalloc(sizeof(struct clk_fixed_rate), GFP_KERNEL);
@@ -94,7 +94,7 @@ struct clk *clk_register_fixed_rate(struct device *dev, const char *name,
 
 	init.name = name;
 	init.ops = &clk_fixed_rate_ops;
-	/** 20141220    
+	/** 20141220
 	 * CLK flags에 BASIC 속성을 부여한다.
 	 **/
 	init.flags = flags | CLK_IS_BASIC;
@@ -106,7 +106,7 @@ struct clk *clk_register_fixed_rate(struct device *dev, const char *name,
 	fixed->hw.init = &init;
 
 	/* register the clock */
-	/** 20141220    
+	/** 20141220
 	 * fixed->hw 정보로 clk을 초기화하고 등록한다.
 	 **/
 	clk = clk_register(dev, &fixed->hw);

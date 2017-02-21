@@ -115,7 +115,7 @@
 #define SLAB_DEBUG_FLAGS (SLAB_RED_ZONE | SLAB_POISON | SLAB_STORE_USER | \
 		SLAB_TRACE | SLAB_DEBUG_FREE)
 
-/** 20140510    
+/** 20140510
  * kmem_cache의 flags 중 DEBUG FLAGS를 추출해 리턴한다.
  * DEBUG를 사용하지 않는다면 0.
  **/
@@ -183,7 +183,7 @@ static inline int kmem_cache_debug(struct kmem_cache *s)
 #define __OBJECT_POISON		0x80000000UL /* Poison object */
 #define __CMPXCHG_DOUBLE	0x40000000UL /* Use cmpxchg_double */
 
-/** 20140510    
+/** 20140510
  * 구조체 kmem_cache의 크기. kmem_cache_init에서 정렬된 크기로 초기화 한다.
  **/
 static int kmem_size = sizeof(struct kmem_cache);
@@ -238,7 +238,7 @@ static inline void stat(const struct kmem_cache *s, enum stat_item si)
  * 			Core slab cache functions
  *******************************************************************/
 
-/** 20140510    
+/** 20140510
  * kmem_cache 구조체에서 node 에 해당하는 kmem_cache_node 구조체를 가져온다.
  **/
 static inline struct kmem_cache_node *get_node(struct kmem_cache *s, int node)
@@ -345,7 +345,7 @@ static inline size_t slab_ksize(const struct kmem_cache *s)
 	return s->size;
 }
 
-/** 20140208    
+/** 20140208
  * slub의 order (buddy의 order와 같은 의미)를 가져와 전체 크기를 구한 뒤
  * reserved를 제외한 나머지 영역으로 표현가능한 object의 개수를 구한다.
  **/
@@ -1036,7 +1036,7 @@ static inline unsigned long slabs_node(struct kmem_cache *s, int node)
 {
 	struct kmem_cache_node *n = get_node(s, node);
 
-	/** 20140510    
+	/** 20140510
 	 * node에 대한 kmem_cache_node 구조체로부터
 	 * long type 변수인 nr_slabs를 atomic 하게 읽어온다.
 	 **/
@@ -1067,12 +1067,12 @@ static inline void inc_slabs_node(struct kmem_cache *s, int node, int objects)
 		atomic_long_add(objects, &n->total_objects);
 	}
 }
-/** 20140510    
+/** 20140510
  * kmem_cache의 해당 object의 objects 수를 감소시킨다.
  **/
 static inline void dec_slabs_node(struct kmem_cache *s, int node, int objects)
 {
-	/** 20140510    
+	/** 20140510
 	 * 해당 노드의 kmem_cache_node 구조체를 받아온다.
 	 *
 	 * slab의 수 감소. 전체 objects의 수에서 objects만큼 감소.
@@ -1284,7 +1284,7 @@ static inline int check_object(struct kmem_cache *s, struct page *page,
 static inline void add_full(struct kmem_cache *s, struct kmem_cache_node *n,
 					struct page *page) {}
 static inline void remove_full(struct kmem_cache *s, struct page *page) {}
-/** 20140208    
+/** 20140208
  * CONFIG_SLUB_DEBUG가 정의되어 있지 않으면 flags를 바로 리턴
  **/
 static inline unsigned long kmem_cache_flags(unsigned long object_size,
@@ -1524,18 +1524,18 @@ out:
 	return page;
 }
 
-/** 20140510    
+/** 20140510
  * kmem_cache의 slab용도로 사용 중이던 page들을 해제한다.
  **/
 static void __free_slab(struct kmem_cache *s, struct page *page)
 {
-	/** 20140510    
+	/** 20140510
 	 * page로 대표되는 page들의 수를 구한다.
 	 **/
 	int order = compound_order(page);
 	int pages = 1 << order;
 
-	/** 20140510    
+	/** 20140510
 	 * debug 관련은 분석 생략 ???
 	 **/
 	if (kmem_cache_debug(s)) {
@@ -1549,7 +1549,7 @@ static void __free_slab(struct kmem_cache *s, struct page *page)
 
 	kmemcheck_free_shadow(page, compound_order(page));
 
-	/** 20140510    
+	/** 20140510
 	 * page가 포함된 zone의 flag가 SLAB_RECLAIM_ACCOUNT속성이 있으면 
 	 * NR_SLAB_RECLAIMABLE을 갱신시키고 그렇지 않으면 NR_SLAB_UNRECLAIMABLE을
 	 * 갱신 (pages 감소)시킨다.
@@ -1559,7 +1559,7 @@ static void __free_slab(struct kmem_cache *s, struct page *page)
 		NR_SLAB_RECLAIMABLE : NR_SLAB_UNRECLAIMABLE,
 		-pages);
 
-	/** 20140510    
+	/** 20140510
 	 * page의
 	 *	slab을 위한 속성을 제거한다.
 	 *  _mapcount를 초기화(-1) 한다.
@@ -1571,13 +1571,13 @@ static void __free_slab(struct kmem_cache *s, struct page *page)
 	reset_page_mapcount(page);
 	if (current->reclaim_state)
 		current->reclaim_state->reclaimed_slab += pages;
-	/** 20140510    
+	/** 20140510
 	 * page 사용을 끝낸다.
 	 **/
 	__free_pages(page, order);
 }
 
-/** 20140208    
+/** 20140208
  *	struct page의 lru의 크기가 rcu_head 보다 작다면 reserve가 필요하다.
  **/
 #define need_reserve_slab_rcu						\
@@ -1600,20 +1600,20 @@ static void rcu_free_slab(struct rcu_head *h)
  **/
 static void free_slab(struct kmem_cache *s, struct page *page)
 {
-	/** 20140510    
+	/** 20140510
 	 * SLAB_DESTROY_BY_RCU를 검사해 RCU로 삭제해야 한다면 rcu_free_slab로 해제하고,
 	 * 그렇지 않다면 __free_slab으로 page를 해제한다.
 	 **/
 	if (unlikely(s->flags & SLAB_DESTROY_BY_RCU)) {
 		struct rcu_head *head;
 
-		/** 20140510    
+		/** 20140510
 		 * rcu로 slab을 제거하기 위해 reserved가 필요한지 검사.
 		 * reserved가 필요하면 page로부터 
 		 * reserved가 필요없다면 lru를 head로 바로 저장
 		 **/
 		if (need_reserve_slab_rcu) {
-			/** 20140510    
+			/** 20140510
 			 * page의 order를 구해와 reserved의 시작지점을 head에 저장한다.
 			 *
 			 * [page 0][page 1][page 2]...[page n]
@@ -1633,7 +1633,7 @@ static void free_slab(struct kmem_cache *s, struct page *page)
 			head = (void *)&page->lru;
 		}
 
-		/** 20140510    
+		/** 20140510
 		 * 추후 분석???
 		 **/
 		call_rcu(head, rcu_free_slab);
@@ -1641,12 +1641,12 @@ static void free_slab(struct kmem_cache *s, struct page *page)
 		__free_slab(s, page);
 }
 
-/** 20140510    
+/** 20140510
  * slab으로 사용 중이던 page를 해제한다.
  **/
 static void discard_slab(struct kmem_cache *s, struct page *page)
 {
-	/** 20140510    
+	/** 20140510
 	 * kmem_cache의 page가 포함된 node의 object 수를 page의 objects 수만큼 줄인다.
 	 * kmem_cache의 page를 해제한다.
 	 **/
@@ -1682,13 +1682,13 @@ static inline void add_partial(struct kmem_cache_node *n,
 /*
  * list_lock must be held.
  */
-/** 20140510    
+/** 20140510
  * kmem_cache_node의 관리 대상에서 page를 제거한다.
  **/
 static inline void remove_partial(struct kmem_cache_node *n,
 					struct page *page)
 {
-	/** 20140510    
+	/** 20140510
 	 * page를 list에서 제거하고 관리 페이지수 감소
 	 **/
 	list_del(&page->lru);
@@ -1873,7 +1873,7 @@ static void *get_partial(struct kmem_cache *s, gfp_t flags, int node,
  * during cmpxchg. The transactions start with the cpu number and are then
  * incremented by CONFIG_NR_CPUS.
  */
-/** 20140322    
+/** 20140322
  * PREEMPT 사용 중일 때는 cpu의 개수를 2의 제곱승으로 올려 TID_STEP로 삼는다.
  **/
 #define TID_STEP  roundup_pow_of_two(CONFIG_NR_CPUS)
@@ -1882,13 +1882,13 @@ static void *get_partial(struct kmem_cache *s, gfp_t flags, int node,
  * No preemption supported therefore also no need to check for
  * different cpus.
  */
-/** 20140322    
+/** 20140322
  * vexpress default compile option에서는 CONFIG_PREEMPT가 빠져 있으므로 1
  **/
 #define TID_STEP 1
 #endif
 
-/** 20140322    
+/** 20140322
  * tid를 TID_STEP만큼 증가시킨다.
  **/
 static inline unsigned long next_tid(unsigned long tid)
@@ -2207,21 +2207,21 @@ int put_cpu_partial(struct kmem_cache *s, struct page *page, int drain)
 	return pobjects;
 }
 
-/** 20140322    
+/** 20140322
  * keme_cache_cpu가 가리키던 slab을 deactivate 시키고 연결을 해제.
  **/
 static inline void flush_slab(struct kmem_cache *s, struct kmem_cache_cpu *c)
 {
-	/** 20140322    
+	/** 20140322
 	 * CPUSLAB_FLUSH 항목의 statistics를 갱신
 	 **/
 	stat(s, CPUSLAB_FLUSH);
-	/** 20140322    
+	/** 20140322
 	 * deactivate_slab는 slab생성 하는 내용과 함께 추후 분석하기로 함 ???
 	 **/
 	deactivate_slab(s, c->page, c->freelist);
 
-	/** 20140322    
+	/** 20140322
 	 * cpu가 가리키고 있던 slab을 deactivate한 뒤 kmem_cache_cpu 자료구조를 변경
 	 **/
 	c->tid = next_tid(c->tid);
@@ -2234,18 +2234,18 @@ static inline void flush_slab(struct kmem_cache *s, struct kmem_cache_cpu *c)
  *
  * Called from IPI handler with interrupts disabled.
  */
-/** 20140510    
+/** 20140510
  * kmem_cache s에 대해 cpu cache로 사용하던 slab을 deactivate 하고 연결을 끊는다.
  **/
 static inline void __flush_cpu_slab(struct kmem_cache *s, int cpu)
 {
-	/** 20140322    
+	/** 20140322
 	 * kmem_cache의 percpu 포인터인 cpu_slab 중 cpu에 해당하는
 	 * kmem_cache_cpu 구조체의 위치를 받아온다.
 	 **/
 	struct kmem_cache_cpu *c = per_cpu_ptr(s->cpu_slab, cpu);
 
-	/** 20140510    
+	/** 20140510
 	 * 존재할 때,
 	 * 가리키는 page가 있다면 해당 slab을 cpu_slab으로부터 deactivate 시키고 연결을 해제한다.
 	 * 
@@ -2258,7 +2258,7 @@ static inline void __flush_cpu_slab(struct kmem_cache *s, int cpu)
 	}
 }
 
-/** 20140510    
+/** 20140510
  * 인자로 전달받은 kmem_cache slab에서
  * task가 실행 중인 cpu용으로 할당된 slab을 해제한다.
 **/
@@ -2269,19 +2269,19 @@ static void flush_cpu_slab(void *d)
 	__flush_cpu_slab(s, smp_processor_id());
 }
 
-/** 20140510    
+/** 20140510
  * info라는 kmem_cache에 대해 cpu가 kmem_cache_cpu 변수용 페이지가 할당되어 있는지 여부를 리턴한다.
  **/
 static bool has_cpu_slab(int cpu, void *info)
 {
 	struct kmem_cache *s = info;
-	/** 20140510    
+	/** 20140510
 	 * kmem_cache의 cpu_slab이 percpu 변수로 지정되어 있다.
 	 * cpu에 해당하는 값을 가져온다.
 	 **/
 	struct kmem_cache_cpu *c = per_cpu_ptr(s->cpu_slab, cpu);
 
-	/** 20140510    
+	/** 20140510
 	 * page나 partial로 할당된 page가 존재한다면 참이 리턴된다.
 	 **/
 	return c->page || c->partial;
@@ -2289,7 +2289,7 @@ static bool has_cpu_slab(int cpu, void *info)
 
 static void flush_all(struct kmem_cache *s)
 {
-	/** 20140510    
+	/** 20140510
 	 * kmem_cache s가 cpu_slab용 page(partial 포함)을 가지고 있다면
 	 * flush_cpu_slab 을 호출해 해당 cpu용으로 연결된 slab과의 연결을 해제한다.
 	 * 이 때 context는 atomic 하게 보호된다.
@@ -3004,7 +3004,7 @@ static int slub_nomerge;
  * requested a higher mininum order then we start with that one instead of
  * the smallest order which will fit the object.
  */
-/** 20140208    
+/** 20140208
  * slab 객체 하나의 크기를 할당받기 위해 필요한 order를 구한다.
  *
  *# name            <active_objs> <num_objs> <object_size> <objperslab> <pagesperslab>
@@ -3069,21 +3069,21 @@ static inline int calculate_order(int size, int reserved)
 	 * First we reduce the acceptable waste in a slab. Then
 	 * we reduce the minimum objects required in a slab.
 	 */
-	/** 20140208    
+	/** 20140208
 	 * slub_min_objects 을 받아와 min_objects에 저장.
 	 * slub_min_objects가 초기화 되어 있지 않다면
 	 **/
 	min_objects = slub_min_objects;
-	/** 20140208    
+	/** 20140208
 	 * 퍼포먼스를 위해 하나의 슬랩에 최소 몇 개의 objects 수가 있어야 하는지 구한다.
 	 **/
 	if (!min_objects)
 		min_objects = 4 * (fls(nr_cpu_ids) + 1);
-	/** 20140208    
+	/** 20140208
 	 * slub_max_order로 슬랩을 할당하였을 경우 최대 저장 가능한 objects의 수를 구한다.
 	 **/
 	max_objects = order_objects(slub_max_order, size, reserved);
-	/** 20140208    
+	/** 20140208
 	 * 작은 값을 취한다.
 	 * 만약 min_objects가 max_objects보다 크다면 max_objects가 min_objects가 된다.
 	 **/
@@ -3121,7 +3121,7 @@ static inline int calculate_order(int size, int reserved)
 /*
  * Figure out what the alignment of the objects will be.
  */
-/** 20140510    
+/** 20140510
  * HWCACHE 등을 고려해 align 을 재계산해 리턴.
  **/
 static unsigned long calculate_alignment(unsigned long flags,
@@ -3134,11 +3134,11 @@ static unsigned long calculate_alignment(unsigned long flags,
 	 * The hardware cache alignment cannot override the specified
 	 * alignment though. If that is greater then use it.
 	 */
-	/** 20140208    
+	/** 20140208
 	 * flags에 hw cache 단위로 정렬이 필요하다고 지정되어 있으면
 	 **/
 	if (flags & SLAB_HWCACHE_ALIGN) {
-		/** 20140208    
+		/** 20140208
 		 * hw cache line 크기를 구해와 오브젝트 크기와 비교해 align을 결정한다.
 		 * cache line에 가까운 (1/2의 배수)와 align 요청 받은 크기 중 큰 값을 취한다.
 		 **/
@@ -3148,13 +3148,13 @@ static unsigned long calculate_alignment(unsigned long flags,
 		align = max(align, ralign);
 	}
 
-	/** 20140208    
+	/** 20140208
 	 * align의 최소값은 ARCH_SLAB_MINALIGN
 	 **/
 	if (align < ARCH_SLAB_MINALIGN)
 		align = ARCH_SLAB_MINALIGN;
 
-	/** 20140208    
+	/** 20140208
 	 * align을 void * 단위로 재정렬 시켜 리턴
 	 **/
 	return ALIGN(align, sizeof(void *));
@@ -3364,7 +3364,7 @@ static void set_min_partial(struct kmem_cache *s, unsigned long min)
 static int calculate_sizes(struct kmem_cache *s, int forced_order)
 {
 	unsigned long flags = s->flags;
-	/** 20140208    
+	/** 20140208
 	 * metadata를 제외한 object 하나의 크기
 	 **/
 	unsigned long size = s->object_size;
@@ -3376,7 +3376,7 @@ static int calculate_sizes(struct kmem_cache *s, int forced_order)
 	 * place the free pointer at word boundaries and this determines
 	 * the possible location of the free pointer.
 	 */
-	/** 20140208    
+	/** 20140208
 	 * object의 size를 void * 단위로 정렬.
 	 *		kmem_cache_open을 통해 들어왔을 때 size는 kmem_size (struct kmem_cache)
 	 **/
@@ -3408,12 +3408,12 @@ static int calculate_sizes(struct kmem_cache *s, int forced_order)
 	 * With that we have determined the number of bytes in actual use
 	 * by the object. This is the potential offset to the free pointer.
 	 */
-	/** 20140208    
+	/** 20140208
 	 * object 의 크기를 inuse에 저장. 
 	 **/
 	s->inuse = size;
 
-	/** 20140208    
+	/** 20140208
 	 * flags에 SLAB_DESTROY_BY_RCU 또는 SLAB_POISON 지정되어 있거나
 	 * constructor가 지정되어 있다면
 	 *     현재까지의 크기(free pointer에 대한 offset)를 offset에 저장하고
@@ -3457,7 +3457,7 @@ static int calculate_sizes(struct kmem_cache *s, int forced_order)
 	 * user specified and the dynamic determination of cache line size
 	 * on bootup.
 	 */
-	/** 20140208    
+	/** 20140208
 	 * object의 align을 구해 kmem_cache의 align에 저장한다.
 	 **/
 	align = calculate_alignment(flags, align, s->object_size);
@@ -3468,16 +3468,16 @@ static int calculate_sizes(struct kmem_cache *s, int forced_order)
 	 * offset 0. In order to align the objects we have to simply size
 	 * each object to conform to the alignment.
 	 */
-	/** 20140208    
+	/** 20140208
 	 * 추가된 정보에 의해 size가 변경되었을 수 있으므로
 	 *  size를 다시align 단위로 정렬한다.
 	 **/
 	size = ALIGN(size, align);
-	/** 20140208    
+	/** 20140208
 	 * debug 정보 등 metadata를 포함한 크기를 kmem_cache에 저장
 	 **/
 	s->size = size;
-	/** 20140208    
+	/** 20140208
 	 * forced_order가 지정되어 있다면 forced_order를 order로 삼는다.
 	 **/
 	if (forced_order >= 0)
@@ -3506,7 +3506,7 @@ static int calculate_sizes(struct kmem_cache *s, int forced_order)
 	if (s->flags & SLAB_CACHE_DMA)
 		s->allocflags |= SLUB_DMA;
 
-	/** 20150214    
+	/** 20150214
 	 * __GFP_RECLAIMABLE 속성이 필요한지 검사해 페이지 회수 가능 옵션을 추가한다.
 	 **/
 	if (s->flags & SLAB_RECLAIM_ACCOUNT)
@@ -3553,24 +3553,24 @@ static int kmem_cache_open(struct kmem_cache *s,
 		size_t align, unsigned long flags,
 		void (*ctor)(void *))
 {
-	/** 20140208    
+	/** 20140208
 	 * 구조체의 데이터를 채운다.
 	 **/
 	memset(s, 0, kmem_size);
 	s->name = name;
 	s->ctor = ctor;
-	/** 20140208    
+	/** 20140208
 	 * metadata를 제외한 크기를 object_size에 저장
 	 **/
 	s->object_size = size;
 	s->align = align;
-	/** 20140208    
+	/** 20140208
 	 * debug 모드가 아니므로 flags를 그대로 반환
 	 **/
 	s->flags = kmem_cache_flags(size, flags, name, ctor);
 	s->reserved = 0;
 
-	/** 20140208    
+	/** 20140208
 	 * need_reserve_slab_rcu 가 false일 경우 reserved를 하지 않는다.
 	 *
 	 * 20140510
@@ -3678,7 +3678,7 @@ static int kmem_cache_open(struct kmem_cache *s,
 	 **/
 	free_kmem_cache_nodes(s);
 error:
-	/** 20150207    
+	/** 20150207
 	 * flags에 SLAB_PANIC 옵션이 있다면 실패시 panic을 발생시킨다.
 	 **/
 	if (flags & SLAB_PANIC)
@@ -3698,7 +3698,7 @@ unsigned int kmem_cache_size(struct kmem_cache *s)
 }
 EXPORT_SYMBOL(kmem_cache_size);
 
-/** 20140510    
+/** 20140510
  * debug용 함수 분석 생략 ???
  **/
 static void list_slab_objects(struct kmem_cache *s, struct page *page,
@@ -3733,7 +3733,7 @@ static void list_slab_objects(struct kmem_cache *s, struct page *page,
  * This is called from kmem_cache_close(). We must be the last thread
  * using the cache and therefore we do not need to lock anymore.
  */
-/** 20140510    
+/** 20140510
  * node의 partial list에 등록된 page들을 순회하며
  * 사용 중인 object가 없는 page를 해제한다.
  **/
@@ -3742,7 +3742,7 @@ static void free_partial(struct kmem_cache *s, struct kmem_cache_node *n)
 	struct page *page, *h;
 
 	list_for_each_entry_safe(page, h, &n->partial, lru) {
-		/** 20140510    
+		/** 20140510
 		 * page의 사용 중인 slab object가 없다면
 		 *   page를 partial list에서 제거하게 slab으로 사용 중이던 page들을 버린다.
 		 **/
@@ -3759,29 +3759,29 @@ static void free_partial(struct kmem_cache *s, struct kmem_cache_node *n)
 /*
  * Release all resources used by a slab cache.
  */
-/** 20140510    
+/** 20140510
  * kmem_cache s에서 사용 중이던 kmem_cache_cpu와 kmem_cache_node를 해제한다.
  **/
 static inline int kmem_cache_close(struct kmem_cache *s)
 {
 	int node;
 
-	/** 20140510    
+	/** 20140510
 	 * kmem_cache 중 cpu cache용으로 사용하던 slab을 flush 한다.
 	 **/
 	flush_all(s);
-	/** 20140510    
+	/** 20140510
 	 * percpu 변수를 해제한다.
 	 **/
 	free_percpu(s->cpu_slab);
 	/* Attempt to free all objects */
-	/** 20140510    
+	/** 20140510
 	 * N_NORMAL_MEMORY 상태인 node들을 순회하며(UMA일 때는 1회만 수행)
 	 **/
 	for_each_node_state(node, N_NORMAL_MEMORY) {
 		struct kmem_cache_node *n = get_node(s, node);
 
-		/** 20140510    
+		/** 20140510
 		 * 사용이 끝난 partial slab(page)을 해제한다.
 		 * partial slab이 존재하면 1을 바로 리턴.
 		 **/
@@ -3789,7 +3789,7 @@ static inline int kmem_cache_close(struct kmem_cache *s)
 		if (n->nr_partial || slabs_node(s, node))
 			return 1;
 	}
-	/** 20140510    
+	/** 20140510
 	 * 위에서 kmem_cache_node에 등록되었던 partial list를 모두 제거했으므로
 	 * (nr_partial == 0)
 	 * kmem_cache s에서 사용 중인 kmem_cache_node object들을 해제한다. 
@@ -3826,7 +3826,7 @@ EXPORT_SYMBOL(kmem_cache_destroy);
  *		Kmalloc subsystem
  *******************************************************************/
 
-/** 20140322    
+/** 20140322
  * kmalloc 용 kmem_cache 포인터 배열
  * 비어 있는 index는 사용되지 않음
  **/
@@ -3875,7 +3875,7 @@ static int __init setup_slub_nomerge(char *str)
 
 __setup("slub_nomerge", setup_slub_nomerge);
 
-/** 20140322    
+/** 20140322
  * kmalloc용 kmem_cache를 생성하는 함수.
  *
  * kmem_cache_open을 공통으로 사용한다.
@@ -3886,7 +3886,7 @@ static struct kmem_cache *__init create_kmalloc_cache(const char *name,
 {
 	struct kmem_cache *s;
 
-	/** 20140322    
+	/** 20140322
 	 * kmem_cache 구조체 object를 하나 받아온다.
 	 **/
 	s = kmem_cache_alloc(kmem_cache, GFP_NOWAIT);
@@ -3895,7 +3895,7 @@ static struct kmem_cache *__init create_kmalloc_cache(const char *name,
 	 * This function is called with IRQs disabled during early-boot on
 	 * single CPU so there's no need to take slab_mutex here.
 	 */
-	/** 20140322    
+	/** 20140322
 	 * 받아온 메모리에 kmem_cache 구조체를 설정한다.
 	 * align이 L1 cache line size로 들어간다.
 	 **/
@@ -3903,7 +3903,7 @@ static struct kmem_cache *__init create_kmalloc_cache(const char *name,
 								flags, NULL))
 		goto panic;
 
-	/** 20140322    
+	/** 20140322
 	 * 새로운 kmem_cache가 설정된 뒤에 slab_caches에 등록한다.
 	 **/
 	list_add(&s->list, &slab_caches);
@@ -3920,7 +3920,7 @@ panic:
  * of two cache sizes there. The size of larger slabs can be determined using
  * fls.
  */
-/** 20140322    
+/** 20140322
  * kmem_cache_init 과정에서 element의 값이 cache line size에 따라 변경됨
  *
  * 변경된 후
@@ -3955,7 +3955,7 @@ static s8 size_index[24] = {
 	2	/* 192 */
 };
 
-/** 20140322    
+/** 20140322
  * bytes를 받아 index로 변환
  **/
 static inline int size_index_elem(size_t bytes)
@@ -3963,19 +3963,19 @@ static inline int size_index_elem(size_t bytes)
 	return (bytes - 1) / 8;
 }
 
-/** 20140510    
+/** 20140510
  * size를 바탕으로 kmalloc_caches 배열에서 kmem_cache를 찾아 리턴한다.
  **/
 static struct kmem_cache *get_slab(size_t size, gfp_t flags)
 {
 	int index;
 
-	/** 20140510    
+	/** 20140510
 	 * size가 192 이하라면 small slab 변환 테이블에서 index를 찾고,
 	 * 그렇지 않다면 크기의 지수값을 구해 index로 삼는다.
 	 **/
 	if (size <= 192) {
-		/** 20141220    
+		/** 20141220
 		 * 요청된 크기가 0이라면, ZERO_SIZE_PTR를 리턴해 fault와 구분한다.
 		 **/
 		if (!size)
@@ -4008,7 +4008,7 @@ void *__kmalloc(size_t size, gfp_t flags)
 
 	s = get_slab(size, flags);
 
-	/** 20141220    
+	/** 20141220
 	 * get_slab에 의해 리턴된 주소가 ZERO_SIZE_PTR인 경우
 	 * ZERO_SIZE_PTR를 그대로 리턴한다.
 	 **/
@@ -4342,7 +4342,7 @@ static int slab_memory_callback(struct notifier_block *self,
  * the page allocator
  */
 
-/** 20140322    
+/** 20140322
  * slab_caches에 등록,  partial slab 초기화 등
  * bootstrap으로 처리하면서 생기는 부분을 별도처리
  **/
@@ -4350,32 +4350,32 @@ static void __init kmem_cache_bootstrap_fixup(struct kmem_cache *s)
 {
 	int node;
 
-	/** 20140322    
+	/** 20140322
 	 * slab_caches에 등록
 	 **/
 	list_add(&s->list, &slab_caches);
-	/** 20140322    
+	/** 20140322
 	 * slab_cache_destroy시 제거 가능 여부를 검사할 때 사용하는 변수. 초기값 -1
 	 **/
 	s->refcount = -1;
 
-	/** 20140322    
+	/** 20140322
 	 * 시스템의 전체 node 중 N_NORMAL_MEMORY인 node들을 순회하며
 	 **/
 	for_each_node_state(node, N_NORMAL_MEMORY) {
-		/** 20140322    
+		/** 20140322
 		 * kmem_cache의 각 node 정보를 가져온다.
 		 **/
 		struct kmem_cache_node *n = get_node(s, node);
 		struct page *p;
 
 		if (n) {
-			/** 20140322    
+			/** 20140322
 			 * n->partial의 각 entry를 순회하며 (struct page의 lru를 통해 연결)
 			 * page를 가져온다. (실제로 이 페이지가 slab 정보)
 			 **/
 			list_for_each_entry(p, &n->partial, lru)
-				/** 20140322    
+				/** 20140322
 				 * 상호 참조를 위해 struct page에 kmem_cache 구조체를 연결.
 				 **/
 				p->slab = s;
@@ -4388,7 +4388,7 @@ static void __init kmem_cache_bootstrap_fixup(struct kmem_cache *s)
 	}
 }
 
-/** 20140322    
+/** 20140322
  * SLUB allocator를 초기화 한다.
  *
  * struct kmem_cache와 kmem_cache_node를 직접 생성하고 구조체의 각 변수를 초기화 한다.
@@ -4405,7 +4405,7 @@ void __init kmem_cache_init(void)
 	if (debug_guardpage_minorder())
 		slub_max_order = 0;
 
-	/** 20130907    
+	/** 20130907
 	 * kmem_cache의 마지막 멤버인 node는
 	 * MAX_NUMNODES 개수만큼의 struct kmem_cache_node *로 이뤄진 array.
 	 * node의 시작 주소에 nr_node_ids수만큼의 *를 건너뛰면 kmem_cache의 끝주소이다.
@@ -4415,11 +4415,11 @@ void __init kmem_cache_init(void)
 				nr_node_ids * sizeof(struct kmem_cache_node *);
 
 	/* Allocate two kmem_caches from the page allocator */
-	/** 20130907    
+	/** 20130907
 	 * kmem_size를 cacheline 크기로 정렬시킨다.
 	 **/
 	kmalloc_size = ALIGN(kmem_size, cache_line_size());
-	/** 20140208    
+	/** 20140208
 	 * struct kmem_cache 자료구조 2개 크기만큼의 메모리를 할당받는다.
 	 **/
 	order = get_order(2 * kmalloc_size);
@@ -4430,7 +4430,7 @@ void __init kmem_cache_init(void)
 	 * struct kmem_cache_node's. There is special bootstrap code in
 	 * kmem_cache_open for slab_state == DOWN.
 	 */
-	/** 20140208    
+	/** 20140208
 	 * 할당받은 메모리에서 하나의 kmem_cache를 건너뛴 위치를
 	 * kmem_cache_node로 가리킨다.
 	 **/
@@ -4484,7 +4484,7 @@ void __init kmem_cache_init(void)
 	 **/
 	kmem_cache_bootstrap_fixup(kmem_cache_node);
 
-	/** 20140322    
+	/** 20140322
 	 * log로 보여주기 위해 caches 증가
 	 **/
 	caches++;
@@ -4494,7 +4494,7 @@ void __init kmem_cache_init(void)
 	kmem_cache_bootstrap_fixup(kmem_cache);
 	caches++;
 	/* Free temporary boot structure */
-	/** 20140322    
+	/** 20140322
 	 * buddy로부터 받아온 메모리를 해제 (받아올 때 struct kmem_cache * 2 크기 할당)
 	 **/
 	free_pages((unsigned long)temp_kmem_cache, order);
@@ -4515,13 +4515,13 @@ void __init kmem_cache_init(void)
 	BUILD_BUG_ON(KMALLOC_MIN_SIZE > 256 ||
 		(KMALLOC_MIN_SIZE & (KMALLOC_MIN_SIZE - 1)));
 
-	/** 20140322    
+	/** 20140322
 	 * KMALLOC_MIN_SIZE : vexpress의 경우 L1_CACHE_SIZE에 따라 64 bytes
 	 * L1 cache line 크기보다 작은 size에 대한 요청은 동일한 크기로 설정
 	 **/
 	for (i = 8; i < KMALLOC_MIN_SIZE; i += 8) {
 		int elem = size_index_elem(i);
-		/** 20140322    
+		/** 20140322
 		 * 현재 elem index가 size_index의 배열 개수 이상이면 break
 		 **/
 		if (elem >= ARRAY_SIZE(size_index))
@@ -4534,7 +4534,7 @@ void __init kmem_cache_init(void)
 		 * The 96 byte size cache is not used if the alignment
 		 * is 64 byte.
 		 */
-		/** 20140322    
+		/** 20140322
 		 * L1 cache size가 64 byte인 경우 96까지의 size_index를 7로 설정
 		 **/
 		for (i = 64 + 8; i <= 96; i += 8)
@@ -4555,7 +4555,7 @@ void __init kmem_cache_init(void)
 		caches++;
 	}
 
-	/** 20140322    
+	/** 20140322
 	 * kmalloc min size에 따라 정렬되지 않은 사이즈의 cache를 생성한다.
 	 **/
 	if (KMALLOC_MIN_SIZE <= 64) {
@@ -4563,7 +4563,7 @@ void __init kmem_cache_init(void)
 		caches++;
 	}
 
-	/** 20140322    
+	/** 20140322
 	 * 아래 범위 사이의 kmalloc kmem_cache를 생성
 	 * 2 ** 6 <= x < 2 ** 14
 	 **/
@@ -4585,7 +4585,7 @@ void __init kmem_cache_init(void)
 		BUG_ON(!kmalloc_caches[2]->name);
 	}
 
-	/** 20140322    
+	/** 20140322
 	 * L1 cache line size 이상의 kmalloc kmem_cache 생성
 	 * 2 ** 6 ~ 2 ** 13
 	 *
@@ -4599,7 +4599,7 @@ void __init kmem_cache_init(void)
 	}
 
 #ifdef CONFIG_SMP
-	/** 20140322    
+	/** 20140322
 	 * slab_notifier를 cpu notifier로 등록.
 	 **/
 	register_cpu_notifier(&slab_notifier);
@@ -4619,7 +4619,7 @@ void __init kmem_cache_init(void)
 		}
 	}
 #endif
-	/** 20140322    
+	/** 20140322
 	 * SLUB 관련 log 출력
 	 *
 	 * qemu
@@ -4633,7 +4633,7 @@ void __init kmem_cache_init(void)
 		nr_cpu_ids, nr_node_ids);
 }
 
-/** 20150124    
+/** 20150124
  **/
 void __init kmem_cache_init_late(void)
 {
@@ -4642,7 +4642,7 @@ void __init kmem_cache_init_late(void)
 /*
  * Find a mergeable slab cache
  */
-/** 20140510    
+/** 20140510
  * kmem_cache 구조체가 unmergeable인지 검사하는 함수
  *
  * 아래 경우에는 unmergeable이다.
@@ -4667,7 +4667,7 @@ static int slab_unmergeable(struct kmem_cache *s)
 	return 0;
 }
 
-/** 20140510    
+/** 20140510
  * slab_caches로 등록된 kmem_cache 중에서 merge 가능한 kmem_cache를 찾는다.
  **/
 static struct kmem_cache *find_mergeable(size_t size,
@@ -4676,49 +4676,49 @@ static struct kmem_cache *find_mergeable(size_t size,
 {
 	struct kmem_cache *s;
 
-	/** 20140510    
+	/** 20140510
 	 * slub_nomerge이거나 flasgs에서 명시적으로 NEVER_MERGE 속성이 지정되어 있을 경우 바로 리턴
 	 **/
 	if (slub_nomerge || (flags & SLUB_NEVER_MERGE))
 		return NULL;
 
-	/** 20140510    
+	/** 20140510
 	 * 별도의 constructor가 지정되어 있다면 바로 리턴.
 	 **/
 	if (ctor)
 		return NULL;
 
-	/** 20140510    
+	/** 20140510
 	 * size를 void * 단위로 정렬시킴
 	 **/
 	size = ALIGN(size, sizeof(void *));
-	/** 20140510    
+	/** 20140510
 	 * align을 재계산함
 	 **/
 	align = calculate_alignment(flags, align, size);
-	/** 20140510    
+	/** 20140510
 	 * 재계산된 align을 바탕으로 size를 ALIGN 시켜 리턴
 	 **/
 	size = ALIGN(size, align);
 	flags = kmem_cache_flags(size, flags, name, NULL);
 
-	/** 20140510    
+	/** 20140510
 	 * slab_caches로 등록된 kmem_cache 구조체를 순회하며
 	 **/
 	list_for_each_entry(s, &slab_caches, list) {
-		/** 20140510    
+		/** 20140510
 		 * kmem_cache slab이 unmergeable이라면 다음 slab_caches의 entry로 이동
 		 **/
 		if (slab_unmergeable(s))
 			continue;
 
-		/** 20140510    
+		/** 20140510
 		 * 생성할 kmem_cache의 size가 slab_caches 보다 크다면 다음 entry로 이동
 		 **/
 		if (size > s->size)
 			continue;
 
-		/** 20140510    
+		/** 20140510
 		 * MERGE_SAME 속성이 일치할 때만 merge 가능
 		 **/
 		if ((flags & SLUB_MERGE_SAME) != (s->flags & SLUB_MERGE_SAME))
@@ -4727,19 +4727,19 @@ static struct kmem_cache *find_mergeable(size_t size,
 		 * Check if alignment is compatible.
 		 * Courtesy of Adrian Drzewiecki
 		 */
-		/** 20140510    
+		/** 20140510
 		 * 넘겨준 align을 적용했을 때 kmem_cache의 크기가 동일해야 merge 가능
 		 **/
 		if ((s->size & ~(align - 1)) != s->size)
 			continue;
 
-		/** 20140510    
+		/** 20140510
 		 * slab_caches에 등록된 size와 요구된 size의 차가 void * 이상이면 merge 불가. 
 		 **/
 		if (s->size - size >= sizeof(void *))
 			continue;
 
-		/** 20140510    
+		/** 20140510
 		 * 위 조건들을 통과한 경우 merge 가능
 		 **/
 		return s;
@@ -4747,7 +4747,7 @@ static struct kmem_cache *find_mergeable(size_t size,
 	return NULL;
 }
 
-/** 20140510    
+/** 20140510
  * 주어진 name으로 size크기의 object를 관리하는
  * 새로운 kmem_cache 를 할당 및 관련 자료 초기화.
  *
@@ -4759,14 +4759,14 @@ struct kmem_cache *__kmem_cache_create(const char *name, size_t size,
 	struct kmem_cache *s;
 	char *n;
 
-	/** 20140510    
+	/** 20140510
 	 * 이미 생성된 struct kmem_cache 중 merge 가능한 kmem_cache가 있는지 검사한다.
 	 *
 	 * 존재한다면 kmem_cache 구조체 정보를 갱신하고 찾은 kmem_cache 구조체를 리턴한다.
 	 **/
 	s = find_mergeable(size, align, flags, name, ctor);
 	if (s) {
-		/** 20140510    
+		/** 20140510
 		 * 가져온 struct kmem_cache의 refcount를 증가시켜 destroy를 방지한다.
 		 **/
 		s->refcount++;
@@ -4774,7 +4774,7 @@ struct kmem_cache *__kmem_cache_create(const char *name, size_t size,
 		 * Adjust the object sizes so that we clear
 		 * the complete object on kzalloc.
 		 */
-		/** 20140510    
+		/** 20140510
 		 * 찾은 kmem_cache의 metadata를 제외한 object size보다
 		 * 새로 요청된 size가 크다면 object_size가 갱신된다.
 		 *
@@ -4783,7 +4783,7 @@ struct kmem_cache *__kmem_cache_create(const char *name, size_t size,
 		s->object_size = max(s->object_size, (int)size);
 		s->inuse = max_t(int, s->inuse, ALIGN(size, sizeof(void *)));
 
-		/** 20140510    
+		/** 20140510
 		 * name이라는 이름으로 sysfs에 slab alias를 생성한다.
 		 * 실패시 NULL 리턴.
 		 **/
@@ -4794,7 +4794,7 @@ struct kmem_cache *__kmem_cache_create(const char *name, size_t size,
 		return s;
 	}
 
-	/** 20140510    
+	/** 20140510
 	 * 적합한 mergeable kmem_cache가 없을 때의 루틴.
 	 *
 	 * name을 복사해 새로운 문자열을 만든다.
@@ -4804,13 +4804,13 @@ struct kmem_cache *__kmem_cache_create(const char *name, size_t size,
 	if (!n)
 		return NULL;
 
-	/** 20140510    
+	/** 20140510
 	 * kmem_cache 구조체의 크기만큼 메모리를 할당 받는다.
 	 * kmem_cache slab이 생성된 상태이므로 slab으로부터 할당 받을 것이다.
 	 **/
 	s = kmalloc(kmem_size, GFP_KERNEL);
 	if (s) {
-		/** 20140510    
+		/** 20140510
 		 * kmem_cache 구조체를 초기화 한다.
 		 * 성공한다면 slab_caches에 새로 객체를 추가하고, sysfs에 slab을 등록한다.
 		 * 등록까지 성공한다면 할당받은 kmem_cache 구조체를 리턴한다.
@@ -4827,7 +4827,7 @@ struct kmem_cache *__kmem_cache_create(const char *name, size_t size,
 			if (!r)
 				return s;
 
-			/** 20140510    
+			/** 20140510
 			 * sysfs 등록에 실패하면 리스트에서 제거하고 open한 kmem_cache를 닫는다(제거)한다.
 			 **/
 			list_del(&s->list);
@@ -4844,7 +4844,7 @@ struct kmem_cache *__kmem_cache_create(const char *name, size_t size,
  * Use the cpu notifier to insure that the cpu slabs are flushed when
  * necessary.
  */
-/** 20140322    
+/** 20140322
  * notifier_block callback 함수.
  **/
 static int __cpuinit slab_cpuup_callback(struct notifier_block *nfb,
@@ -4859,7 +4859,7 @@ static int __cpuinit slab_cpuup_callback(struct notifier_block *nfb,
 	case CPU_UP_CANCELED_FROZEN:
 	case CPU_DEAD:
 	case CPU_DEAD_FROZEN:
-		/** 20140322    
+		/** 20140322
 		 * slab을 위한 mutex lock이 걸린 상태에서
 		 * irq disable로 context를 보호한 뒤 해당 cpu가 가리키는 slab과의 연결을 끊는다.
 		 **/
@@ -4877,7 +4877,7 @@ static int __cpuinit slab_cpuup_callback(struct notifier_block *nfb,
 	return NOTIFY_OK;
 }
 
-/** 20140322    
+/** 20140322
  * slab notifier 선언.
  * notifier_chain_register를 호출해 등록한다.
  **/
@@ -4887,7 +4887,7 @@ static struct notifier_block __cpuinitdata slab_notifier = {
 
 #endif
 
-/** 20140510    
+/** 20140510
  * 생성해둔 kmalloc kmem_cache로부터 slab object를 할당 받아 리턴한다.
  * 이 때 전달받은 caller로 trace를 등록한다.
  **/
@@ -4899,24 +4899,24 @@ void *__kmalloc_track_caller(size_t size, gfp_t gfpflags, unsigned long caller)
 	if (unlikely(size > SLUB_MAX_SIZE))
 		return kmalloc_large(size, gfpflags);
 
-	/** 20140510    
+	/** 20140510
 	 * 생성된 kmem_cache 배열에서 size를 index화하여 kmem_cache를 찾아온다.
 	 **/
 	s = get_slab(size, gfpflags);
 
-	/** 20140510    
+	/** 20140510
 	 * 잘못된 크기 요청인 경우에 대한 처리
 	 **/
 	if (unlikely(ZERO_OR_NULL_PTR(s)))
 		return s;
 
-	/** 20140510    
+	/** 20140510
 	 * object를 받아온다.
 	 **/
 	ret = slab_alloc(s, gfpflags, NUMA_NO_NODE, caller);
 
 	/* Honor the call site pointer we received. */
-	/** 20140510    
+	/** 20140510
 	 * kmalloc에대한 trace 등록. 전달받은 caller 정보가 제공된다.
 	 **/
 	trace_kmalloc(caller, ret, size, s->size, gfpflags);
@@ -6237,14 +6237,14 @@ struct saved_alias {
 
 static struct saved_alias *alias_list;
 
-/** 20140510    
+/** 20140510
  * name으로 kmem_cache에 대한 alias를 생성한다.
  **/
 static int sysfs_slab_alias(struct kmem_cache *s, const char *name)
 {
 	struct saved_alias *al;
 
-	/** 20140510    
+	/** 20140510
 	 * slab 초기화가 완료되어 sysfs이 동작 중인 경우
 	 * 이전 link를 삭제하고 새로운 alias 등록
 	 **/
@@ -6256,7 +6256,7 @@ static int sysfs_slab_alias(struct kmem_cache *s, const char *name)
 		return sysfs_create_link(&slab_kset->kobj, &s->kobj, name);
 	}
 
-	/** 20140510    
+	/** 20140510
 	 * slab 관련 sysfs가 초기화 되기 전에 임시로 entry를 생성해 list에 등록.
 	 * slab_sysfs_init 과정에서 이 list의 entry로 항목을 만든다.
 	 **/

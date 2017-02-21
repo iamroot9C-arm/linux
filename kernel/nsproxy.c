@@ -274,7 +274,7 @@ out:
 	return err;
 }
 
-/** 20150207    
+/** 20150207
  * nsproxy 관련 cache 초기화를 한다.
  *
  * nsproxy kmem_cache를 생성한다.

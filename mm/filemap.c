@@ -172,7 +172,7 @@ void delete_from_page_cache(struct page *page)
 }
 EXPORT_SYMBOL(delete_from_page_cache);
 
-/** 20150314    
+/** 20150314
  * 페이지를 기다리는 함수.
  *
  * sleep_on_page_bit 에서는 특정 비트가 설정 중일 때 호출되어 schedule을 호출한다.
@@ -527,14 +527,14 @@ EXPORT_SYMBOL(__page_cache_alloc);
  * at a cost of "thundering herd" phenomena during rare hash
  * collisions.
  */
-/** 20140607    
+/** 20140607
  * page에 해당하는 wait queue를 wait_table에서 찾아 리턴한다.
  **/
 static wait_queue_head_t *page_waitqueue(struct page *page)
 {
 	const struct zone *zone = page_zone(page);
 
-	/** 20140607    
+	/** 20140607
 	 * page 주소로 hash 값을 구해 index 삼아 zone의 wait_table에서
 	 * wait queue를 찾아 리턴한다.
 	 *
@@ -543,7 +543,7 @@ static wait_queue_head_t *page_waitqueue(struct page *page)
 	return &zone->wait_table[hash_ptr(page, zone->wait_table_bits)];
 }
 
-/** 20140607    
+/** 20140607
  * page에 대한 wait queue에서 task 하나를 깨운다.
  **/
 static inline void wake_up_page(struct page *page, int bit)
@@ -551,17 +551,17 @@ static inline void wake_up_page(struct page *page, int bit)
 	__wake_up_bit(page_waitqueue(page), &page->flags, bit);
 }
 
-/** 20140524    
+/** 20140524
  * 특정 page의 bit_nr이 풀릴 때까지 대기하는 함수.
  **/
 void wait_on_page_bit(struct page *page, int bit_nr)
 {
-	/** 20150314    
+	/** 20150314
 	 * page->flags의 bit_nr번째 비트를 기다리는 wait bit queue를 정의한다.
 	 **/
 	DEFINE_WAIT_BIT(wait, &page->flags, bit_nr);
 
-	/** 20150314    
+	/** 20150314
 	 * 현재 풀리기 기다리는 비트가 설정되어 있다면,
 	 *   특정 비트가 풀릴 때까지 TASK_UNINTERRUPTIBLE 상태로 sleep_on_page를 호출해 대기한다.
 	 **/
@@ -612,13 +612,13 @@ EXPORT_SYMBOL_GPL(add_page_wait_queue);
  * The mb is necessary to enforce ordering between the clear_bit and the read
  * of the waitqueue (to avoid SMP races with a parallel wait_on_page_locked()).
  */
-/** 20140607    
+/** 20140607
  * page를 unlock 시키고, wait_on_page_locked로 sleep 중인 task가 있다면 깨운다.
  **/
 void unlock_page(struct page *page)
 {
 	VM_BUG_ON(!PageLocked(page));
-	/** 20140607    
+	/** 20140607
 	 * PG_locked 비트를 atomic하게 clear시킨다 (smp_mb 동작 포함).
 	 * clear 이후에도 smp_mb를 호출한다.
 	 * unlock 후 page를 대기하던 wait queue에서 task를 하나 깨운다.
@@ -2603,7 +2603,7 @@ EXPORT_SYMBOL(generic_file_aio_write);
  * this page (__GFP_IO), and whether the call may block (__GFP_WAIT & __GFP_FS).
  *
  */
-/** 20140607    
+/** 20140607
  * fs-specific한 속성이 있다면 콜백을 호출해 정보를 제거하고,
  * 없다면 page cache이므로 해제한다.
  * 성공시 1을 리턴, 실패시 0을 리턴.
@@ -2615,14 +2615,14 @@ int try_to_release_page(struct page *page, gfp_t gfp_mask)
 	struct address_space * const mapping = page->mapping;
 
 	BUG_ON(!PageLocked(page));
-	/** 20140607    
+	/** 20140607
 	 * page가 writeback인 경우 write_page 중이므로 리턴.
 	 * ex) ext4_bio_write_page 에서 호출하는 set_page_writeback를 통해 설정됨.
 	 **/
 	if (PageWriteback(page))
 		return 0;
 
-	/** 20140607    
+	/** 20140607
 	 * mapping이 존재하고 releasepage callback이 존재하면 호출하고,
 	 * 그렇지 않다면 try_to_free_buffers를 호출한다.
 	 *

@@ -256,7 +256,7 @@ static unsigned long global_dirtyable_memory(void)
  * The dirty limits will be lifted by 1/4 for PF_LESS_THROTTLE (ie. nfsd) and
  * real-time tasks.
  */
-/** 20140118    
+/** 20140118
  * 추후 분석???
  *
  * background-writeback 임계치와 dirty-throttling 임계치를 계산하는 함수.
@@ -1654,7 +1654,7 @@ void laptop_sync_completion(void)
  * thresholds.
  */
 
-/** 20150502    
+/** 20150502
  * dirty page를 writeback 할 때 사용할 ratelimit 값을 계산한다.
  *
  * 이 값이 너무 크다면 동시에 많은 dirty-data가 몰려 오버로드가 높아질 수 있고,
@@ -1665,13 +1665,13 @@ void writeback_set_ratelimit(void)
 {
 	unsigned long background_thresh;
 	unsigned long dirty_thresh;
-	/** 20150502    
+	/** 20150502
 	 * background_thresh, dirty_thresh를 계산하고, 
 	 * global_dirty_limit에 dirty_thresh를 저장한다. 
 	 **/
 	global_dirty_limits(&background_thresh, &dirty_thresh);
 	global_dirty_limit = dirty_thresh;
-	/** 20150502    
+	/** 20150502
 	 * dirty memory threshold를 모든 cpu에서 동시에 수행할 때를 기준으로
 	 * ratelimit_pages를 계산하고, 최저값은 16으로 정한다.
 	 **/
@@ -1680,7 +1680,7 @@ void writeback_set_ratelimit(void)
 		ratelimit_pages = 16;
 }
 
-/** 20150502    
+/** 20150502
  * ratelimit을 다시 계산하는 핸들러 함수.
  **/
 static int __cpuinit
@@ -1690,7 +1690,7 @@ ratelimit_handler(struct notifier_block *self, unsigned long u, void *v)
 	return NOTIFY_DONE;
 }
 
-/** 20150502    
+/** 20150502
  * ratelimit notifier_block 선언.
  *
  * cpu_notify가 호출되면 여기 등록된 핸들러 함수가 호출된다.
@@ -1718,12 +1718,12 @@ static struct notifier_block __cpuinitdata ratelimit_nb = {
  * But we might still want to scale the dirty_ratio by how
  * much memory the box has..
  */
-/** 20150502    
+/** 20150502
  * 추후 분석???
  **/
 void __init page_writeback_init(void)
 {
-	/** 20150502    
+	/** 20150502
 	 * writeback시 사용될 ratelimit을 계산하고,
 	 * cpu on/off 이벤트시 호출되도록 notifier를 등록한다.
 	 **/
@@ -2052,12 +2052,12 @@ int __set_page_dirty_no_writeback(struct page *page)
  * Helper function for set_page_dirty family.
  * NOTE: This relies on being atomic wrt interrupts.
  */
-/** 20140531    
+/** 20140531
  * page dirty에 대한 account가 가능하다면 관련된 함수들을 호출한다.
  **/
 void account_page_dirtied(struct page *page, struct address_space *mapping)
 {
-	/** 20140531    
+	/** 20140531
 	 * account dirty가 가능한 bdi라면 관련된 accounting 함수를 호출한다.
 	 **/
 	if (mapping_cap_account_dirty(mapping)) {
@@ -2169,24 +2169,24 @@ EXPORT_SYMBOL(redirty_page_for_writepage);
  * If the mapping doesn't provide a set_page_dirty a_op, then
  * just fall through and assume that it wants buffer_heads.
  */
-/** 20140531    
+/** 20140531
  * page의 내용이 변경되어 block device에 있던 데이터와 일치 하지 않음을 나타낸다.
  * mapping (address_space)가 존재한다면 address space ops를 호출하고,
  * 그렇지 않다면 page flags에만 dirty를 설정한다.
  **/
 int set_page_dirty(struct page *page)
 {
-	/** 20140531    
+	/** 20140531
 	 * page의 mapping 정보를 가져온다.
 	 **/
 	struct address_space *mapping = page_mapping(page);
 
-	/** 20140531    
+	/** 20140531
 	 * mapping이 존재하면
 	 * set page dirty 함수를 호출한다.
 	 **/
 	if (likely(mapping)) {
-		/** 20140531    
+		/** 20140531
 		 * address space operation 중 set_page_dirty을 가져온다.
 		 * 예를 들어 swapper_space의 경우, swap_set_page_dirty가 저장된다.
 		 **/
@@ -2203,7 +2203,7 @@ int set_page_dirty(struct page *page)
 		 */
 		ClearPageReclaim(page);
 #ifdef CONFIG_BLOCK
-		/** 20140531    
+		/** 20140531
 		 * BLOCK 디바이스를 사용할 때, spd가 NULL인 경우
 		 * __set_page_dirty_buffers 를 지정한다.
 		 **/
@@ -2212,7 +2212,7 @@ int set_page_dirty(struct page *page)
 #endif
 		return (*spd)(page);
 	}
-	/** 20140531    
+	/** 20140531
 	 * page에 mapping 정보가 없고 (anon일 경우도 포함),
 	 * page flag에만 dirty bit을 설정하고 1을 리턴한다.
 	 **/
@@ -2220,7 +2220,7 @@ int set_page_dirty(struct page *page)
 		if (!TestSetPageDirty(page))
 			return 1;
 	}
-	/** 20140531    
+	/** 20140531
 	 * 위 경우 해당하지 않는 경우라면
 	 * 즉, mapping 정보가 존재하지 않고, 기존의 상태가 dirty였다면 0을 리턴한다.
 	 **/

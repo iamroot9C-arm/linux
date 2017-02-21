@@ -20,7 +20,7 @@
 #include "slab.h"
 
 enum slab_state slab_state;
-/** 20140322    
+/** 20140322
  * 전역 slab caches 리스트.
  *
  * 20140510
@@ -54,7 +54,7 @@ DEFINE_MUTEX(slab_mutex);
  * as davem.
  */
 
-/** 20140510    
+/** 20140510
  * kmem_cache를 생성한다.
  *
  * name  : /proc/slabinfo에 출력되는 kmem_cache 이름
@@ -77,7 +77,7 @@ struct kmem_cache *kmem_cache_create(const char *name, size_t size, size_t align
 	}
 #endif
 
-	/** 20140510    
+	/** 20140510
 	 * cpu hotplug가 동작하지 않도록 refcount를 증가시킨다.
 	 **/
 	get_online_cpus();
@@ -114,7 +114,7 @@ struct kmem_cache *kmem_cache_create(const char *name, size_t size, size_t align
 	WARN_ON(strchr(name, ' '));	/* It confuses parsers */
 #endif
 
-	/** 20140510    
+	/** 20140510
 	 * size 크기의 object를 관리하는 name이라는 이름의 kmem_cache를 생성한다.
 	 **/
 	s = __kmem_cache_create(name, size, align, flags, ctor);

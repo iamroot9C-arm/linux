@@ -9,17 +9,17 @@
 
 static int do_sched_rt_period_timer(struct rt_bandwidth *rt_b, int overrun);
 
-/** 20140419    
+/** 20140419
  * rt task bandwidth
  **/
 struct rt_bandwidth def_rt_bandwidth;
 
-/** 20140419    
+/** 20140419
  * rt period timer의 expires 값을 rt_period 만큼 증가시킨다.
  **/
 static enum hrtimer_restart sched_rt_period_timer(struct hrtimer *timer)
 {
-	/** 20140419    
+	/** 20140419
 	 * timer를 포함하고 있는 rt_bandwidth 자료구조를 가져온다.
 	 **/
 	struct rt_bandwidth *rt_b =
@@ -29,43 +29,43 @@ static enum hrtimer_restart sched_rt_period_timer(struct hrtimer *timer)
 	int idle = 0;
 
 	for (;;) {
-		/** 20140419    
+		/** 20140419
 		 * timer의 clock시간을 가져오는 callback 함수를 사용해 시간을 가져온다.
 		 * high resolution 값을 사용하지 않는 경우 timer->base->softirq_time을 반환한다.
 		 **/
 		now = hrtimer_cb_get_time(timer);
-		/** 20140419    
+		/** 20140419
 		 * now 값에 rt_period (interval)를 더해 timer의 expires에 저장.
 		 * 리턴값은 overrun으로 re_period가 몇 회 지난 값인지 나타낸다.
 		 **/
 		overrun = hrtimer_forward(timer, now, rt_b->rt_period);
 
-		/** 20140419    
+		/** 20140419
 		 * overrun이 없었다면 필요한 동작을 마쳤으므로 break.
 		 **/
 		if (!overrun)
 			break;
 
-		/** 20140419    
+		/** 20140419
 		 * overrun이 있었다면 rt task에 대한 interval이 보장되지 못하므로 별도의 동작을 수행한다.
 		 **/
 		idle = do_sched_rt_period_timer(rt_b, overrun);
 	}
 
-	/** 20140419    
+	/** 20140419
 	 * overrun이 없었다면 idle은 0 -> HRTIMER_RESTART 리턴
 	 **/
 	return idle ? HRTIMER_NORESTART : HRTIMER_RESTART;
 }
 
-/** 20140419    
+/** 20140419
  * rt_bandwidth 구조체를 초기화 한다.
  * 
  * sched_init에서 호출될 때는 global_rt_period, global_rt_runtime이 전달된다.
  **/
 void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime)
 {
-	/** 20140419    
+	/** 20140419
 	 * rt task의 period를 ktime으로 변환.
 	 * period는 ktime 값을 저장하고, runtime은 ns 값을 그대로 유지한다.
 	 *
@@ -73,19 +73,19 @@ void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime)
 	rt_b->rt_period = ns_to_ktime(period);
 	rt_b->rt_runtime = runtime;
 
-	/** 20140419    
+	/** 20140419
 	 * spinlock 초기화
 	 **/
 	raw_spin_lock_init(&rt_b->rt_runtime_lock);
 
-	/** 20140419    
+	/** 20140419
 	 * rt_period_timer는 high resolution을 사용하고,
 	 * monotonic clock(realtime에 상대되는 개념)을 소스로 하고, 
 	 * 현재시간을 기준으로 하는 mode를 갖는다.
 	 **/
 	hrtimer_init(&rt_b->rt_period_timer,
 			CLOCK_MONOTONIC, HRTIMER_MODE_REL);
-	/** 20140419    
+	/** 20140419
 	 * rt_period_timer의 callback 함수를 sched_rt_period_timer로 지정한다.
 	 **/
 	rt_b->rt_period_timer.function = sched_rt_period_timer;
@@ -104,7 +104,7 @@ static void start_rt_bandwidth(struct rt_bandwidth *rt_b)
 	raw_spin_unlock(&rt_b->rt_runtime_lock);
 }
 
-/** 20140426    
+/** 20140426
  * rt_rq 자료구조를 초기화 한다.
  **/
 void init_rt_rq(struct rt_rq *rt_rq, struct rq *rq)
@@ -113,7 +113,7 @@ void init_rt_rq(struct rt_rq *rt_rq, struct rq *rq)
 	int i;
 
 	array = &rt_rq->active;
-	/** 20140426    
+	/** 20140426
 	 * rt_prio_array 비트맵과 queue를 초기화 한다.
 	 **/
 	for (i = 0; i < MAX_RT_PRIO; i++) {
@@ -257,7 +257,7 @@ static inline struct task_struct *rt_task_of(struct sched_rt_entity *rt_se)
 	return container_of(rt_se, struct task_struct, rt);
 }
 
-/** 20140419    
+/** 20140419
  * RT_GROUP_SCHED를 사용하지 않는 경우
  * rt_rq를 포함하고 있는 rq 구조체를 가져온다.
  **/
@@ -598,7 +598,7 @@ static inline int rt_rq_throttled(struct rt_rq *rt_rq)
 	return rt_rq->rt_throttled;
 }
 
-/** 20140419    
+/** 20140419
  * CONFIG_RT_GROUP_SCHED이 정의되어 있지 않아 cpu_online_mask 그대로 리턴
  **/
 static inline const struct cpumask *sched_rt_period_mask(void)
@@ -606,7 +606,7 @@ static inline const struct cpumask *sched_rt_period_mask(void)
 	return cpu_online_mask;
 }
 
-/** 20140419    
+/** 20140419
  * 현재 cpu runqueue의 rt 리턴
  **/
 static inline
@@ -845,7 +845,7 @@ static inline int balance_runtime(struct rt_rq *rt_rq)
 }
 #endif /* CONFIG_SMP */
 
-/** 20140419    
+/** 20140419
  * 추후 분석 ???
  **/
 static int do_sched_rt_period_timer(struct rt_bandwidth *rt_b, int overrun)
@@ -853,36 +853,36 @@ static int do_sched_rt_period_timer(struct rt_bandwidth *rt_b, int overrun)
 	int i, idle = 1, throttled = 0;
 	const struct cpumask *span;
 
-	/** 20140419    
+	/** 20140419
 	 * rt period mask값을 가져와 mask에 속한 각 cpu를 순회한다.
 	 **/
 	span = sched_rt_period_mask();
 	for_each_cpu(i, span) {
 		int enqueue = 0;
-		/** 20140419    
+		/** 20140419
 		 * 현재 cpu의 rq의 rt_rq를 가져와 rt_rq의 rq를 가져온다.
 		 **/
 		struct rt_rq *rt_rq = sched_rt_period_rt_rq(rt_b, i);
 		struct rq *rq = rq_of_rt_rq(rt_rq);
 
-		/** 20140419    
+		/** 20140419
 		 * runqueue에 lock을 건다.
 		 **/
 		raw_spin_lock(&rq->lock);
-		/** 20140419    
+		/** 20140419
 		 * rt_rq의 rt_time이 있으면
 		 **/
 		if (rt_rq->rt_time) {
 			u64 runtime;
 
 			raw_spin_lock(&rt_rq->rt_runtime_lock);
-			/** 20140419    
+			/** 20140419
 			 * rt_throttled이 있다면 
 			 * balance_runtime.
 			 **/
 			if (rt_rq->rt_throttled)
 				balance_runtime(rt_rq);
-			/** 20140419    
+			/** 20140419
 			 * 현재 rt_rq의 runtime을 가져온다.
 			 **/
 			runtime = rt_rq->rt_runtime;
@@ -1542,7 +1542,7 @@ next_idx:
 	return next;
 }
 
-/** 20150822    
+/** 20150822
  * percpu 변수 local_cpu_mask
  **/
 static DEFINE_PER_CPU(cpumask_var_t, local_cpu_mask);
@@ -1972,14 +1972,14 @@ static void switched_from_rt(struct rq *rq, struct task_struct *p)
 		pull_rt_task(rq);
 }
 
-/** 20150822    
+/** 20150822
  * sched_rt class 관련 초기화를 수행한다.
  **/
 void init_sched_rt_class(void)
 {
 	unsigned int i;
 
-	/** 20150822    
+	/** 20150822
 	 * 각 possible cpu들에 대해 percpu 변수인 local_cpu_mask를 초기화 한다.
 	 **/
 	for_each_possible_cpu(i) {

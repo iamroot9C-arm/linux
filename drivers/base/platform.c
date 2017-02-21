@@ -26,7 +26,7 @@
 #define to_platform_driver(drv)	(container_of((drv), struct platform_driver, \
 				 driver))
 
-/** 20150829    
+/** 20150829
  * device hierarchy 구성용 platform device.
  * "/sys/devices/platform/" 생성
  **/
@@ -50,7 +50,7 @@ EXPORT_SYMBOL_GPL(platform_bus);
  * And if they don't care they can just call platform_device_register() and
  * everything will just work out.
  */
-/** 20151114    
+/** 20151114
  * architecture에서 platform device를 추가하기 전에 platform device의 architecture data를 설정할 수 있도록 함수 자리를 마련한다.
  **/
 void __weak arch_setup_pdev_archdata(struct platform_device *pdev)
@@ -268,7 +268,7 @@ EXPORT_SYMBOL_GPL(platform_device_add_data);
  * This is part 2 of platform_device_register(), though may be called
  * separately _iff_ pdev was allocated by platform_device_alloc().
  */
-/** 20151114    
+/** 20151114
  * 플랫폼 디바이스를 플랫폼 버스에 추가하고,
  * platform device를 디바이스 hierarchy에 추가한다.
  *
@@ -279,24 +279,24 @@ int platform_device_add(struct platform_device *pdev)
 {
 	int i, ret = 0;
 
-	/** 20151114    
+	/** 20151114
 	 * platform_device 구조체는 메모리 할당이 되어 있어야 한다.
 	 **/
 	if (!pdev)
 		return -EINVAL;
 
-	/** 20151114    
+	/** 20151114
 	 * device의 parent가 지정되지 않았다면 platform_bus 아래 바로 추가한다.
 	 **/
 	if (!pdev->dev.parent)
 		pdev->dev.parent = &platform_bus;
 
-	/** 20151114    
+	/** 20151114
 	 * device의 bus는 platform bus로 지정한다.
 	 **/
 	pdev->dev.bus = &platform_bus_type;
 
-	/** 20151114    
+	/** 20151114
 	 * 플랫폼 디바이스의 id가 -1이면 하나의 디바이스만 존재한다.
 	 * 디바이스의 이름을 설정할 때 id를 이름에 추가한다.
 	 **/
@@ -305,19 +305,19 @@ int platform_device_add(struct platform_device *pdev)
 	else
 		dev_set_name(&pdev->dev, "%s", pdev->name);
 
-	/** 20151114    
+	/** 20151114
 	 * 지정된 resource의 갯수만큼 resource를 등록한다.
 	 **/
 	for (i = 0; i < pdev->num_resources; i++) {
 		struct resource *p, *r = &pdev->resource[i];
 
-		/** 20151121    
+		/** 20151121
 		 * resource의 이름이 지정되지 않았으면 device의 이름을 사용한다.
 		 **/
 		if (r->name == NULL)
 			r->name = dev_name(&pdev->dev);
 
-		/** 20151121    
+		/** 20151121
 		 * resource의 parent가 지정되지 않았으면 type을 검사해
 		 * MEM과 IO일 경우 전역 리소스를 parent로 지정한다.
 		 **/
@@ -329,7 +329,7 @@ int platform_device_add(struct platform_device *pdev)
 				p = &ioport_resource;
 		}
 
-		/** 20151121    
+		/** 20151121
 		 * parent가 존재해 새로운 리소스를 추가하지만 실패한 경우 failed.
 		 **/
 		if (p && insert_resource(p, r)) {
@@ -341,13 +341,13 @@ int platform_device_add(struct platform_device *pdev)
 		}
 	}
 
-	/** 20151121    
+	/** 20151121
 	 * 리소스를 성공적으로 등록한 경우 platform device를 추가한다.
 	 **/
 	pr_debug("Registering platform device '%s'. Parent at %s\n",
 		 dev_name(&pdev->dev), dev_name(pdev->dev.parent));
 
-	/** 20151121    
+	/** 20151121
 	 * 플랫폼 디바이스 내의 디바이스 구조체를 전체 device hierarchy에 추가한다.
 	 **/
 	ret = device_add(&pdev->dev);
@@ -399,7 +399,7 @@ EXPORT_SYMBOL_GPL(platform_device_del);
  */
 int platform_device_register(struct platform_device *pdev)
 {
-	/** 20151114    
+	/** 20151114
 	 * platform 디바이스의 device 구조체를 초기화 한다.
 	 **/
 	device_initialize(&pdev->dev);
@@ -874,7 +874,7 @@ static const struct dev_pm_ops platform_dev_pm_ops = {
 	USE_PLATFORM_PM_SLEEP_OPS
 };
 
-/** 20150905    
+/** 20150905
  * "platform"이라는 bus type을 정의한다.
  *
  * platform_bus_init()에서 bus로 등록한다.
@@ -890,7 +890,7 @@ struct bus_type platform_bus_type = {
 };
 EXPORT_SYMBOL_GPL(platform_bus_type);
 
-/** 20150912    
+/** 20150912
  * "platform" device와 "platform" bus를 등록한다.
  **/
 int __init platform_bus_init(void)
@@ -899,13 +899,13 @@ int __init platform_bus_init(void)
 
 	early_platform_cleanup();
 
-	/** 20150912    
+	/** 20150912
 	 * "platform" 디바이스를 생성하고 등록한다.
 	 **/
 	error = device_register(&platform_bus);
 	if (error)
 		return error;
-	/** 20150912    
+	/** 20150912
 	 * "platform" 버스를 등록한다.
 	 **/
 	error =  bus_register(&platform_bus_type);

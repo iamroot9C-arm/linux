@@ -116,7 +116,7 @@ __initcall(ipc_init);
  *	below IPCMNI) then initialise the ids idr.
  */
  
-/** 20150912    
+/** 20150912
  * IPC 식별자를 초기화 한다.
  *
  * ns 변환을 거친 ipc_ids가 넘어온다.
@@ -135,7 +135,7 @@ void ipc_init_ids(struct ipc_ids *ids)
 		 	ids->seq_max = seq_limit;
 	}
 
-	/** 20150912    
+	/** 20150912
 	 * ipcs용으로 사용할 idr를 초기화 한다.
 	 **/
 	idr_init(&ids->ipcs_idr);

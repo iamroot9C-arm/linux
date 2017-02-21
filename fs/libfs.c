@@ -210,7 +210,7 @@ const struct inode_operations simple_dir_inode_operations = {
 	.lookup		= simple_lookup,
 };
 
-/** 20150502    
+/** 20150502
  **/
 static const struct super_operations simple_super_operations = {
 	.statfs		= simple_statfs,
@@ -220,7 +220,7 @@ static const struct super_operations simple_super_operations = {
  * Common helper for pseudo-filesystems (sockfs, pipefs, bdev - stuff that
  * will never be mountable)
  */
-/** 20150502    
+/** 20150502
  * pseudo 파일시스템 마운트 함수.
  *
  * superblock ops와 dentry ops는 매개변수에 따라 지정한다.
@@ -237,7 +237,7 @@ struct dentry *mount_pseudo(struct file_system_type *fs_type, char *name,
 	struct inode *root;
 	struct qstr d_name = QSTR_INIT(name, strlen(name));
 
-	/** 20150502    
+	/** 20150502
 	 * fs_type에 대한 superblock을 생성한다.
 	 * pseudo-fs이므로 userspace에서 마운트 할 수 없도록 한다.
 	 **/
@@ -245,23 +245,23 @@ struct dentry *mount_pseudo(struct file_system_type *fs_type, char *name,
 	if (IS_ERR(s))
 		return ERR_CAST(s);
 
-	/** 20150502    
+	/** 20150502
 	 * superblock의 속성을 채운다.
 	 **/
 	s->s_maxbytes = MAX_LFS_FILESIZE;
 	s->s_blocksize = PAGE_SIZE;
 	s->s_blocksize_bits = PAGE_SHIFT;
-	/** 20150502    
+	/** 20150502
 	 * superblock에 magic number를 채운다.
 	 **/
 	s->s_magic = magic;
-	/** 20150502    
+	/** 20150502
 	 * ops가 넘어왔다면 넘어온 ops를 사용하고,
 	 * 그렇지 않다면 simple_super_operations를 지정한다.
 	 **/
 	s->s_op = ops ? ops : &simple_super_operations;
 	s->s_time_gran = 1;
-	/** 20150502    
+	/** 20150502
 	 * superblock에 대한 inode를 하나 할당받아 온다.
 	 **/
 	root = new_inode(s);
@@ -272,13 +272,13 @@ struct dentry *mount_pseudo(struct file_system_type *fs_type, char *name,
 	 * after this must take care not to collide with it (by passing
 	 * max_reserved of 1 to iunique).
 	 */
-	/** 20150502    
+	/** 20150502
 	 * 생성한 inode의 멤버를 설정한다.
 	 **/
 	root->i_ino = 1;
 	root->i_mode = S_IFDIR | S_IRUSR | S_IWUSR;
 	root->i_atime = root->i_mtime = root->i_ctime = CURRENT_TIME;
-	/** 20150502    
+	/** 20150502
 	 * dentry를 할당하고 초기화하여 리턴한다.
 	 **/
 	dentry = __d_alloc(s, &d_name);
@@ -286,7 +286,7 @@ struct dentry *mount_pseudo(struct file_system_type *fs_type, char *name,
 		iput(root);
 		goto Enomem;
 	}
-	/** 20150502    
+	/** 20150502
 	 * dentry의 inode 정보를 채워 인스턴스화 시킨다.
 	 **/
 	d_instantiate(dentry, root);
@@ -521,7 +521,7 @@ int simple_fill_super(struct super_block *s, unsigned long magic,
 	s->s_op = &simple_super_operations;
 	s->s_time_gran = 1;
 
-	/** 20151010    
+	/** 20151010
 	 * superblock을 위한 새로운 inode를 할당 받아 등록한다.
 	 **/
 	inode = new_inode(s);
@@ -531,7 +531,7 @@ int simple_fill_super(struct super_block *s, unsigned long magic,
 	 * because the root inode is 1, the files array must not contain an
 	 * entry at index 1
 	 */
-	/** 20151010    
+	/** 20151010
 	 * root inode 값으로 inode를 설정한다.
 	 **/
 	inode->i_ino = 1;
@@ -540,7 +540,7 @@ int simple_fill_super(struct super_block *s, unsigned long magic,
 	inode->i_op = &simple_dir_inode_operations;
 	inode->i_fop = &simple_dir_operations;
 	set_nlink(inode, 2);
-	/** 20151010    
+	/** 20151010
 	 * root inode를 위한 dentry를 할당 받고 초기화 한다.
 	 **/
 	root = d_make_root(inode);
@@ -581,14 +581,14 @@ out:
 
 static DEFINE_SPINLOCK(pin_fs_lock);
 
-/** 20151017    
+/** 20151017
  * 파일시스템의 마운트 카운트를 증가시켜 마운트를 고정시킨다.
  **/
 int simple_pin_fs(struct file_system_type *type, struct vfsmount **mount, int *count)
 {
 	struct vfsmount *mnt = NULL;
 	spin_lock(&pin_fs_lock);
-	/** 20151017    
+	/** 20151017
 	 * 아직 vfs mount되지 않은 파일시스템인 경우 mount해서 정보를 채운다.
 	 **/
 	if (unlikely(!*mount)) {
@@ -600,7 +600,7 @@ int simple_pin_fs(struct file_system_type *type, struct vfsmount **mount, int *c
 		if (!*mount)
 			*mount = mnt;
 	}
-	/** 20151017    
+	/** 20151017
 	 * mount의 참조 카운트를 확보한 상태에서 mount count를 증가시킨다.
 	 **/
 	mntget(*mount);

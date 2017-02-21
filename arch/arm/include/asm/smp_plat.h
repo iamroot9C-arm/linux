@@ -10,7 +10,7 @@
 /*
  * Return true if we are running on a SMP platform
  */
-/** 20130518    
+/** 20130518
  * smp 사용 여부를 리턴하는 함수
  **/
 static inline bool is_smp(void)
@@ -29,18 +29,18 @@ static inline bool is_smp(void)
 }
 
 /* all SMP configurations have the extended CPUID registers */
-/** 20131026    
+/** 20131026
  * tlb operation이 broadcast되어야 하는 경우인지 조회해 리턴.
  **/
 static inline int tlb_ops_need_broadcast(void)
 {
-	/** 20131026    
+	/** 20131026
 	 * smp가 아닐 경우 바로 return.
 	 **/
 	if (!is_smp())
 		return 0;
 
-	/** 20131026    
+	/** 20131026
 	 * ARM B4.1.92
 	 * ID_MMFR3, Memory Model Feature Register 3, VMSA
 	 *
@@ -72,7 +72,7 @@ static inline int cache_ops_need_broadcast(void)
 /*
  * Logical CPU mapping.
  */
-/** 20140621    
+/** 20140621
  * cpu 번호로 logical map에서 physical 번호를 가져온다.
  **/
 extern int __cpu_logical_map[];

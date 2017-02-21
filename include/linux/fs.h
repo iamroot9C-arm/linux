@@ -56,7 +56,7 @@ struct inodes_stat_t {
 };
 
 
-/** 20150214    
+/** 20150214
  **/
 #define NR_FILE  8192	/* this can well be larger on a larger system */
 
@@ -193,7 +193,7 @@ struct inodes_stat_t {
 /* public flags for file_system_type */
 #define FS_REQUIRES_DEV 1 
 #define FS_BINARY_MOUNTDATA 2
-/** 20150425    
+/** 20150425
  * SUBTYPE
  **/
 #define FS_HAS_SUBTYPE 4
@@ -231,14 +231,14 @@ struct inodes_stat_t {
 #define MS_I_VERSION	(1<<23) /* Update inode I_version field */
 #define MS_STRICTATIME	(1<<24) /* Always perform atime updates */
 #define MS_NOSEC	(1<<28)
-/** 20150307    
+/** 20150307
  * mount_fs에서 superblock의 flags에 추가한다.
  *
  * MS_ACTION : mount된 superblock이 활성상태이다.
  **/
 #define MS_BORN		(1<<29)
 #define MS_ACTIVE	(1<<30)
-/** 20150425    
+/** 20150425
  * userspace에서 mount 될 수 없는 속성.
  **/
 #define MS_NOUSER	(1<<31)
@@ -299,7 +299,7 @@ struct inodes_stat_t {
 #define IS_IMMUTABLE(inode)	((inode)->i_flags & S_IMMUTABLE)
 #define IS_POSIXACL(inode)	__IS_FLG(inode, MS_POSIXACL)
 
-/** 20151024    
+/** 20151024
  * inode flags에 
  **/
 #define IS_DEADDIR(inode)	((inode)->i_flags & S_DEAD)
@@ -498,7 +498,7 @@ typedef void (dio_iodone_t)(struct kiocb *iocb, loff_t offset,
  *
  * Derek Atkins <warlord@MIT.EDU> 94-10-20
  */
-/** 20150411    
+/** 20150411
  **/
 struct iattr {
 	unsigned int	ia_valid;
@@ -506,7 +506,7 @@ struct iattr {
 	kuid_t		ia_uid;
 	kgid_t		ia_gid;
 	loff_t		ia_size;
-	/** 20150411    
+	/** 20150411
 	 * ia_atime : time of last access
 	 * ia_mtime : time of last data modification
 	 * ia_ctime : time of last status change
@@ -626,7 +626,7 @@ typedef struct {
 typedef int (*read_actor_t)(read_descriptor_t *, struct page *,
 		unsigned long, unsigned long);
 
-/** 20140531    
+/** 20140531
  * address space ops.
  *
  * cached object에 대한 page I/O 연산을 정의한 구조체.
@@ -692,7 +692,7 @@ int pagecache_write_end(struct file *, struct address_space *mapping,
 				struct page *page, void *fsdata);
 
 struct backing_dev_info;
-/** 20160430    
+/** 20160430
  *
  * 페이지가 페이지 캐시로 사용되었을 때, 페이지들을 관리하기 위한 구조체이다.
  * 대표적으로 find_get_page() 함수는 address_space에 포함된 page를
@@ -711,14 +711,14 @@ struct backing_dev_info;
 struct address_space {
 	struct inode		*host;		/* owner: inode, block_device */
 	struct radix_tree_root	page_tree;	/* radix tree of all pages */
-	/** 20160430    
+	/** 20160430
 	 * radix tree에 대한 lock.
 	 **/
 	spinlock_t		tree_lock;	/* and lock protecting it */
 	unsigned int		i_mmap_writable;/* count VM_SHARED mappings */
 	struct prio_tree_root	i_mmap;		/* tree of private and shared mappings */
 	struct list_head	i_mmap_nonlinear;/*list VM_NONLINEAR mappings */
-	/** 20160430    
+	/** 20160430
 	 * tree, count, list를 보호하기 위한 mutex.
 	 **/
 	struct mutex		i_mmap_mutex;	/* protect tree, count, list */
@@ -739,7 +739,7 @@ struct address_space {
 	 */
 struct request_queue;
 
-/** 20150502    
+/** 20150502
  * block device 자료구조
  **/
 struct block_device {
@@ -844,7 +844,7 @@ struct inode {
 	struct posix_acl	*i_default_acl;
 #endif
 
-	/** 20150425    
+	/** 20150425
 	 * i_op : inode의 inode 핸들링 함수.
 	 * i_sb : inode가 속한 superblock 정보.
 	 * i_mapping : address_space 정보.
@@ -866,7 +866,7 @@ struct inode {
 	 *    (set|clear|inc|drop)_nlink
 	 *    inode_(inc|dec)_link_count
 	 */
-	/** 20150328    
+	/** 20150328
 	 * hard link의 수.
 	 *
 	 * fs에서 i_nlink는 읽기 전용으로 쓰고, __i_nlink는 쓰기 가능으로 사용하도록
@@ -876,7 +876,7 @@ struct inode {
 		const unsigned int i_nlink;
 		unsigned int __i_nlink;
 	};
-	/** 20150425    
+	/** 20150425
 	 * i_rdev	: real device node
 	 **/
 	dev_t			i_rdev;
@@ -894,7 +894,7 @@ struct inode {
 #endif
 
 	/* Misc */
-	/** 20150321    
+	/** 20150321
 	 * inode의 i_state는 i_lock으로 보호된 상태에서 변경시킨다.
 	 **/
 	unsigned long		i_state;
@@ -907,14 +907,14 @@ struct inode {
 	struct list_head	i_lru;		/* inode LRU list */
 	struct list_head	i_sb_list;
 	union {
-		/** 20150328    
+		/** 20150328
 		 * 이 inode에 해당하는 dentry의 리스트 헤드.
 		 **/
 		struct hlist_head	i_dentry;
 		struct rcu_head		i_rcu;
 	};
 	u64			i_version;
-	/** 20150314    
+	/** 20150314
 	 * reference count.
 	 * __iget / iput 로 변경된다.
 	 **/
@@ -923,7 +923,7 @@ struct inode {
 	atomic_t		i_writecount;
 	const struct file_operations	*i_fop;	/* former ->i_op->default_file_ops */
 	struct file_lock	*i_flock;
-	/** 20150321    
+	/** 20150321
 	 * address_space는 inode 구조체에 포함된다.
 	 **/
 	struct address_space	i_data;
@@ -1099,7 +1099,7 @@ static inline int ra_has_index(struct file_ra_state *ra, pgoff_t index)
 #define FILE_MNT_WRITE_TAKEN	1
 #define FILE_MNT_WRITE_RELEASED	2
 
-/** 20150221    
+/** 20150221
  * file 구조체.
  *
  *   private_data : 여러가지 용도로 사용된다.
@@ -1160,7 +1160,7 @@ struct file_handle {
 	unsigned char f_handle[0];
 };
 
-/** 20160409    
+/** 20160409
  * file 참조 카운트를 증가.
  **/
 #define get_file(x)	atomic_long_inc(&(x)->f_count)
@@ -1200,7 +1200,7 @@ static inline int file_check_writeable(struct file *f)
 	return -EINVAL;
 }
 #else /* !CONFIG_DEBUG_WRITECOUNT */
-/** 20151219    
+/** 20151219
  * CONFIG_DEBUG_WRITECOUNT 설정하지 않음.
  **/
 static inline void file_take_write(struct file *filp) {}
@@ -1556,7 +1556,7 @@ extern struct list_head super_blocks;
 extern spinlock_t sb_lock;
 
 /* Possible states of 'frozen' field */
-/** 20150307    
+/** 20150307
  * sb_writers의 frozen 필드에 저장되는 상태 값.
  *
  * fs에 대한 동작이 금지되어 있는 상태를 의미하는 듯???
@@ -1572,7 +1572,7 @@ enum {
 
 #define SB_FREEZE_LEVELS (SB_FREEZE_COMPLETE - 1)
 
-/** 20151219    
+/** 20151219
  * superblock의 writer를 관리하기 위한 자료구조.
  *
  * freeze level별 writer counter와 thaw를 대기하기 위한 wait queue 등이 있다.
@@ -1590,7 +1590,7 @@ struct sb_writers {
 #endif
 };
 
-/** 20150307    
+/** 20150307
  * super_block 자료구조.
  *
  * superblock은 파일시스템의 metadata로 종류, 크기, 상태 정보 등을 가진다.
@@ -1603,7 +1603,7 @@ struct super_block {
 	unsigned char		s_blocksize_bits;
 	unsigned long		s_blocksize;
 	loff_t			s_maxbytes;	/* Max file size */
-	/** 20150307    
+	/** 20150307
 	 * super_block이 연결된 filesystem type에 대한 포인터.
 	 **/
 	struct file_system_type	*s_type;
@@ -1613,13 +1613,13 @@ struct super_block {
 	const struct export_operations *s_export_op;
 	unsigned long		s_flags;
 	unsigned long		s_magic;
-	/** 20150404    
+	/** 20150404
 	 * superblock의 root dentry는 별도로 저장한다.
 	 **/
 	struct dentry		*s_root;
 	struct rw_semaphore	s_umount;
 	struct mutex		s_lock;
-	/** 20150307    
+	/** 20150307
 	 * superblock의 reference count.
 	 **/
 	int			s_count;
@@ -1636,12 +1636,12 @@ struct super_block {
 #else
 	struct list_head	s_files;
 #endif
-	/** 20150411    
+	/** 20150411
 	 * mount instance를 superblock의 리스트에 등록된다.
 	 **/
 	struct list_head	s_mounts;	/* list of mounts; _not_ for fs use */
 	/* s_dentry_lru, s_nr_dentry_unused protected by dcache.c lru locks */
-	/** 20151024    
+	/** 20151024
 	 * 사용이 끝난 unused dentry 들이 등록될 lru 리스트.
 	 **/
 	struct list_head	s_dentry_lru;	/* unused dentry lru */
@@ -1653,12 +1653,12 @@ struct super_block {
 	int			s_nr_inodes_unused;	/* # of inodes on lru */
 
 	struct block_device	*s_bdev;
-	/** 20150418    
+	/** 20150418
 	 * superblock에 해당하는 backing_dev_info.
 	 **/
 	struct backing_dev_info *s_bdi;
 	struct mtd_info		*s_mtd;
-	/** 20150314    
+	/** 20150314
 	 * 파일시스템 구조체의 fs_supers 리스트에 연결하는 포인트.
 	 **/
 	struct hlist_node	s_instances;
@@ -1669,7 +1669,7 @@ struct super_block {
 	char s_id[32];				/* Informational name */
 	u8 s_uuid[16];				/* UUID */
 
-	/** 20150307    
+	/** 20150307
 	 * filesystem private 포인터.
 	 **/
 	void 			*s_fs_info;	/* Filesystem private info */
@@ -1697,7 +1697,7 @@ struct super_block {
 	 * generic_show_options()
 	 */
 	char __rcu *s_options;
-	/** 20150502    
+	/** 20150502
 	 * dentry operations.
 	 **/
 	const struct dentry_operations *s_d_op; /* default d_op for dentries */
@@ -1710,7 +1710,7 @@ struct super_block {
 	struct shrinker s_shrink;	/* per-sb shrinker handle */
 
 	/* Number of inodes with nlink == 0 but still referenced */
-	/** 20150328    
+	/** 20150328
 	 * 아직 참조되고 있는, nlink가 0인 inodes들의 수.
 	 **/
 	atomic_long_t s_remove_count;
@@ -1990,7 +1990,7 @@ extern ssize_t vfs_readv(struct file *, const struct iovec __user *,
 extern ssize_t vfs_writev(struct file *, const struct iovec __user *,
 		unsigned long, loff_t *);
 
-/** 20150314    
+/** 20150314
  * superblock ops.
  **/
 struct super_operations {
@@ -2076,7 +2076,7 @@ struct super_operations {
  *
  * Q: What is the difference between I_WILL_FREE and I_FREEING?
  */
-/** 20150328    
+/** 20150328
  * I_NEW는 mutex와 completion notification용으로 사용된다.
  *
  * inode object가 할당되었지만, disk의 inode로부터 데이터가 아직 읽히지 않았을 때
@@ -2158,7 +2158,7 @@ static inline void file_accessed(struct file *file)
 int sync_inode(struct inode *inode, struct writeback_control *wbc);
 int sync_inode_metadata(struct inode *inode, int wait);
 
-/** 20150221    
+/** 20150221
  * file_system_type에 대한 descriptor.
  **/
 struct file_system_type {
@@ -2169,7 +2169,7 @@ struct file_system_type {
 	void (*kill_sb) (struct super_block *);
 	struct module *owner;
 	struct file_system_type * next;
-	/** 20150314    
+	/** 20150314
 	 * fs의 superblock들이 연결되는 리스트.
 	 * sget에서 지정된다.
 	 **/
@@ -2224,7 +2224,7 @@ extern struct dentry *mount_pseudo(struct file_system_type *, char *,
 extern int register_filesystem(struct file_system_type *);
 extern int unregister_filesystem(struct file_system_type *);
 extern struct vfsmount *kern_mount_data(struct file_system_type *, void *data);
-/** 20150221    
+/** 20150221
  **/
 #define kern_mount(type) kern_mount_data(type, NULL)
 extern void kern_unmount(struct vfsmount *mnt);
@@ -2379,14 +2379,14 @@ extern void __init vfs_caches_init(unsigned long);
 
 extern struct kmem_cache *names_cachep;
 
-/** 20150502    
+/** 20150502
  * __getname()시 커널에서 사용할 메모리를 names_cachep로부터 할당 받는다.
  **/
 #define __getname_gfp(gfp)	kmem_cache_alloc(names_cachep, (gfp))
 #define __getname()		__getname_gfp(GFP_KERNEL)
 #define __putname(name)		kmem_cache_free(names_cachep, (void *)(name))
 #ifndef CONFIG_AUDITSYSCALL
-/** 20160123    
+/** 20160123
  * AUDITSYSCALL을 사용하지 않음.
  * name으로 사용했던 메모리를 해제한다.
  **/
@@ -2620,7 +2620,7 @@ static inline void i_readcount_inc(struct inode *inode)
 	atomic_inc(&inode->i_readcount);
 }
 #else
-/** 20151219    
+/** 20151219
  * CONFIG_IMA가 설정되지 않았다.
  **/
 static inline void i_readcount_dec(struct inode *inode)
@@ -2658,7 +2658,7 @@ extern struct inode * igrab(struct inode *);
 extern ino_t iunique(struct super_block *, ino_t);
 extern int inode_needs_sync(struct inode *inode);
 extern int generic_delete_inode(struct inode *inode);
-/** 20150404    
+/** 20150404
  * inode의 hard link의 수가 0이거나 inode가 unhashed 상태라면 drop된 것이다.
  **/
 static inline int generic_drop_inode(struct inode *inode)
@@ -2812,7 +2812,7 @@ void inode_dio_done(struct inode *inode);
 
 extern const struct file_operations generic_ro_fops;
 
-/** 20151219    
+/** 20151219
  * CHAR/BLOCK Device 파일이나 FIFO, 소켓인 경우 special 파일이다.
  **/
 #define special_file(m) (S_ISCHR(m)||S_ISBLK(m)||S_ISFIFO(m)||S_ISSOCK(m))

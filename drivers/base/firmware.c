@@ -15,13 +15,13 @@
 
 #include "base.h"
 
-/** 20150829    
+/** 20150829
  * firmware_init()에서 kobject를 할당받아 저장한다.
  **/
 struct kobject *firmware_kobj;
 EXPORT_SYMBOL_GPL(firmware_kobj);
 
-/** 20150829    
+/** 20150829
  * firmware kobject를 생성하고 구조에 추가한다.
  * "/sys/firmware" 생성
  **/

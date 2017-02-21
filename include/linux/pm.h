@@ -503,7 +503,7 @@ struct pm_subsys_data {
 #endif
 };
 
-/** 20150905    
+/** 20150905
  * Device PM 관련 자료구조.
  **/
 struct dev_pm_info {

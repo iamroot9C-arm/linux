@@ -30,7 +30,7 @@ static inline void pagefault_disable(void)
 	 * make sure to have issued the store before a pagefault
 	 * can hit.
 	 */
-	/** 20131026    
+	/** 20131026
 	 * pagefault 가 먼저 발생하지 않도록 barrier를 세운다.
 	 **/
 	barrier();

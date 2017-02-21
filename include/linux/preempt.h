@@ -22,14 +22,14 @@
 # define sub_preempt_count(val)	do { preempt_count() -= (val); } while (0)
 #endif
 
-/** 20130713    
+/** 20130713
  * preempt_count++;
  * preempt_count--;
  **/
 #define inc_preempt_count() add_preempt_count(1)
 #define dec_preempt_count() sub_preempt_count(1)
 
-/** 20131005    
+/** 20131005
  * 현재 task의 thread_info에서 preempt_count를 리턴한다.
  **/
 #define preempt_count()	(current_thread_info()->preempt_count)
@@ -38,7 +38,7 @@
 
 asmlinkage void preempt_schedule(void);
 
-/** 20140622    
+/** 20140622
  * preempt_enable에서 호출되어,
  * current thread의 thread_info에 resched flag가 설정되어 있다면
  * preempt_schedule 을 호출한다.
@@ -70,7 +70,7 @@ do { \
 	barrier(); \
 } while (0)
 
-/** 20130713    
+/** 20130713
  * preempt_count를 감소시키되, resched 검사/호출은 하지 않는 매크로.
  * 
  * barrier를 preempt_count 변경 전에 둠.
@@ -84,7 +84,7 @@ do { \
 
 #define preempt_enable_no_resched()	sched_preempt_enable_no_resched()
 
-/** 20140622    
+/** 20140622
  * 선점 count를 감소시켜 선점가능 상태로 만들고, barrier를 둔다.
  * 선점 가능 상태에서 선점이 필요한지 체크해 필요하다면 preempt_schedule 함수를 호출한다.
  **/
@@ -96,7 +96,7 @@ do { \
 } while (0)
 
 /* For debugging and tracer internals only! */
-/** 20140622    
+/** 20140622
  * 선점 카운트에 val 을 더하거나 뺀다.
  **/
 #define add_preempt_count_notrace(val)			\
@@ -128,7 +128,7 @@ do { \
 
 #else /* !CONFIG_PREEMPT_COUNT */
 
-/** 20130706    
+/** 20130706
  * CONFIG_PREEMPT_COUNT가 정의되어 있지 않아 관련 함수들은 NULL.
  **/
 #define preempt_disable()		do { } while (0)

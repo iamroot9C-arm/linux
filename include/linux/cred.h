@@ -46,7 +46,7 @@ struct group_info {
  * If the caller is accessing a task's credentials, they must hold the RCU read
  * lock when reading.
  */
-/** 20160319    
+/** 20160319
  * group_info의 reference count를 증가시키고 받아온다.
  **/
 static inline struct group_info *get_group_info(struct group_info *gi)
@@ -117,7 +117,7 @@ struct thread_group_cred {
  * temporarily to point to another security context, but normally points to the
  * same context as task->real_cred.
  */
-/** 20160109    
+/** 20160109
  * task의 security 관련 정보들을 설명하는 구조체.
  *
  * credentials에 대한 설명.
@@ -224,7 +224,7 @@ extern void validate_creds_for_do_exit(struct task_struct *);
 static inline void validate_creds(const struct cred *cred)
 {
 }
-/** 20160213    
+/** 20160213
  **/
 static inline void validate_creds_for_do_exit(struct task_struct *tsk)
 {
@@ -241,7 +241,7 @@ static inline void validate_process_creds(void)
  * Get a reference on the specified set of new credentials.  The caller must
  * release the reference.
  */
-/** 20160319    
+/** 20160319
  * cred의 reference count를 증가시켜 리턴한다.
  **/
 static inline struct cred *get_new_cred(struct cred *cred)
@@ -263,7 +263,7 @@ static inline struct cred *get_new_cred(struct cred *cred)
  * accidental alteration of a set of credentials that should be considered
  * immutable.
  */
-/** 20160319    
+/** 20160319
  * credentails의 reference를 받아온다.
  *
  * immutable로 가정되는 credential의 속성이 실수에 의해 변경되는 것을 
@@ -303,7 +303,7 @@ static inline void put_cred(const struct cred *_cred)
  * Access the subjective credentials of the current task.  RCU-safe,
  * since nobody else can modify it.
  */
-/** 20150425    
+/** 20150425
  * current task의 cred pointer.
  **/
 #define current_cred() \
@@ -374,7 +374,7 @@ static inline void put_cred(const struct cred *_cred)
 #define task_uid(task)		(task_cred_xxx((task), uid))
 #define task_euid(task)		(task_cred_xxx((task), euid))
 
-/** 20150425    
+/** 20150425
  * current->cred->xxx
  **/
 #define current_cred_xxx(xxx)			\
@@ -388,7 +388,7 @@ static inline void put_cred(const struct cred *_cred)
 #define current_egid()		(current_cred_xxx(egid))
 #define current_suid()		(current_cred_xxx(suid))
 #define current_sgid()		(current_cred_xxx(sgid))
-/** 20150425    
+/** 20150425
  * current task의 cred->fsuid.
  * VFS ops를 위한 uid/gid
  **/

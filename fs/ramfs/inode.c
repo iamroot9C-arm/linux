@@ -38,7 +38,7 @@
 #include <asm/uaccess.h>
 #include "internal.h"
 
-/** 20150425    
+/** 20150425
  * RAMFS의 기본 옵션 user rwx, group rx, other rx
  **/
 #define RAMFS_DEFAULT_MODE	0755
@@ -46,7 +46,7 @@
 static const struct super_operations ramfs_ops;
 static const struct inode_operations ramfs_dir_inode_operations;
 
-/** 20150418    
+/** 20150418
  * ramfs을 위한 backing device info.
  **/
 static struct backing_dev_info ramfs_backing_dev_info = {
@@ -57,7 +57,7 @@ static struct backing_dev_info ramfs_backing_dev_info = {
 			  BDI_CAP_READ_MAP | BDI_CAP_WRITE_MAP | BDI_CAP_EXEC_MAP,
 };
 
-/** 20150425    
+/** 20150425
  * ramfs의 inode 할당용 콜백함수.
  *
  * superblock에 대해 inode를 하나 할당받고, 속성과 콜백함수 등을 설정한다.
@@ -65,13 +65,13 @@ static struct backing_dev_info ramfs_backing_dev_info = {
 struct inode *ramfs_get_inode(struct super_block *sb,
 				const struct inode *dir, umode_t mode, dev_t dev)
 {
-	/** 20150425    
+	/** 20150425
 	 * superblock에 대한 새로운 inode를 받아온다.
 	 **/
 	struct inode * inode = new_inode(sb);
 
 	if (inode) {
-		/** 20150425    
+		/** 20150425
 		 * - 시스템 전체에서 unique한 i_ino를 받아온다.
 		 * - uid, gid, mode를 설정한다.
 		 * - ramfs를 위한 address space ops와 bdi를 지정한다.
@@ -80,35 +80,35 @@ struct inode *ramfs_get_inode(struct super_block *sb,
 		inode_init_owner(inode, dir, mode);
 		inode->i_mapping->a_ops = &ramfs_aops;
 		inode->i_mapping->backing_dev_info = &ramfs_backing_dev_info;
-		/** 20150425    
+		/** 20150425
 		 * inode의 address_space의 flags를
 		 *   GFP_HIGHUSER로 설정한다.
 		 *   unevictable로 설정한다.
 		 **/
 		mapping_set_gfp_mask(inode->i_mapping, GFP_HIGHUSER);
 		mapping_set_unevictable(inode->i_mapping);
-		/** 20150425    
+		/** 20150425
 		 * inode의 접근/수정/변경 시간을 현재 시간으로 설정한다.
 		 **/
 		inode->i_atime = inode->i_mtime = inode->i_ctime = CURRENT_TIME;
-		/** 20150425    
+		/** 20150425
 		 * mode에 따라 사용할 inode ops, file ops를 지정한다.
 		 **/
 		switch (mode & S_IFMT) {
-		/** 20150425    
+		/** 20150425
 		 * 그 외 특별한 파일인 경우(디바이스, 소켓, FIFO 등)
 		 **/
 		default:
 			init_special_inode(inode, mode, dev);
 			break;
-		/** 20150425    
+		/** 20150425
 		 * 일반 파일인 경우
 		 **/
 		case S_IFREG:
 			inode->i_op = &ramfs_file_inode_operations;
 			inode->i_fop = &ramfs_file_operations;
 			break;
-		/** 20150425    
+		/** 20150425
 		 * 디렉토리인 경우
 		 **/
 		case S_IFDIR:
@@ -118,7 +118,7 @@ struct inode *ramfs_get_inode(struct super_block *sb,
 			/* directory inodes start off with i_nlink == 2 (for "." entry) */
 			inc_nlink(inode);
 			break;
-		/** 20150425    
+		/** 20150425
 		 * 심볼릭 링크인 경우
 		 **/
 		case S_IFLNK:
@@ -192,7 +192,7 @@ static const struct inode_operations ramfs_dir_inode_operations = {
 	.rename		= simple_rename,
 };
 
-/** 20150425    
+/** 20150425
  * ramfs에 정의된 superblock ops.
  **/
 static const struct super_operations ramfs_ops = {
@@ -201,7 +201,7 @@ static const struct super_operations ramfs_ops = {
 	.show_options	= generic_show_options,
 };
 
-/** 20150418    
+/** 20150418
  **/
 struct ramfs_mount_opts {
 	umode_t mode;
@@ -212,7 +212,7 @@ enum {
 	Opt_err
 };
 
-/** 20150418    
+/** 20150418
  * match table 'tokens'
  **/
 static const match_table_t tokens = {
@@ -220,13 +220,13 @@ static const match_table_t tokens = {
 	{Opt_err, NULL}
 };
 
-/** 20150418    
+/** 20150418
  **/
 struct ramfs_fs_info {
 	struct ramfs_mount_opts mount_opts;
 };
 
-/** 20150425    
+/** 20150425
  * ramfs의 mount option 처리 함수.
  **/
 static int ramfs_parse_options(char *data, struct ramfs_mount_opts *opts)
@@ -238,7 +238,7 @@ static int ramfs_parse_options(char *data, struct ramfs_mount_opts *opts)
 
 	opts->mode = RAMFS_DEFAULT_MODE;
 
-	/** 20150425    
+	/** 20150425
 	 * data에 저장된 옵션을 ","를 기준으로 파싱해 토큰으로 처리한다.
 	 *
 	 * ramfs는 mode 옵션만 처리한다.
@@ -247,19 +247,19 @@ static int ramfs_parse_options(char *data, struct ramfs_mount_opts *opts)
 		if (!*p)
 			continue;
 
-		/** 20150418    
+		/** 20150418
 		 * match table에서 p에 해당하는 token들을 찾아 token을 리턴하고,
 		 * argument를 파싱해 args에 채워온다.
 		 **/
 		token = match_token(p, tokens, args);
 		switch (token) {
 		case Opt_mode:
-			/** 20150418    
+			/** 20150418
 			 * args[0]에 해당하는 값을 octal로 option에 받아온다.
 			 **/
 			if (match_octal(&args[0], &option))
 				return -EINVAL;
-			/** 20150418    
+			/** 20150418
 			 * option 중에서 S_IALLUGO에 해당하는 부분만 추출해 mode에 채운다.
 			 **/
 			opts->mode = option & S_IALLUGO;
@@ -276,7 +276,7 @@ static int ramfs_parse_options(char *data, struct ramfs_mount_opts *opts)
 	return 0;
 }
 
-/** 20150418    
+/** 20150418
  * ramfs, rootfs 용 fill_super함수.
  * mount_node에서 file_system_type에 특징적인 콜백함수로 지정된다.
  *
@@ -287,12 +287,12 @@ int ramfs_fill_super(struct super_block *sb, void *data, int silent)
 	struct inode *inode;
 	int err;
 
-	/** 20150418    
+	/** 20150418
 	 * superblock에 data 옵션을 저장한다.
 	 **/
 	save_mount_options(sb, data);
 
-	/** 20150418    
+	/** 20150418
 	 * struct ramfs_fs_info를 할당 받아 fs private으로 저장한다.
 	 **/
 	fsi = kzalloc(sizeof(struct ramfs_fs_info), GFP_KERNEL);
@@ -300,14 +300,14 @@ int ramfs_fill_super(struct super_block *sb, void *data, int silent)
 	if (!fsi)
 		return -ENOMEM;
 
-	/** 20150425    
+	/** 20150425
 	 * data에서 옵션을 추출해 mount_opts에 저장한다.
 	 **/
 	err = ramfs_parse_options(data, &fsi->mount_opts);
 	if (err)
 		return err;
 
-	/** 20150425    
+	/** 20150425
 	 * superblock의 크기, magic 정보 등을 채운다.
 	 * 메모리상에 존재하는 파일시스템이므로 블록단위는 PAGE_CACHE_SIZE이다.
 	 **/
@@ -315,7 +315,7 @@ int ramfs_fill_super(struct super_block *sb, void *data, int silent)
 	sb->s_blocksize		= PAGE_CACHE_SIZE;
 	sb->s_blocksize_bits	= PAGE_CACHE_SHIFT;
 	sb->s_magic		= RAMFS_MAGIC;
-	/** 20150425    
+	/** 20150425
 	 * superblock의 operations를 ramfs_ops로 지정
 	 **/
 	sb->s_op		= &ramfs_ops;
@@ -329,7 +329,7 @@ int ramfs_fill_super(struct super_block *sb, void *data, int silent)
 	return 0;
 }
 
-/** 20150502    
+/** 20150502
  * ramfs용 mount 함수. mount_nodev를 사용한다.
  **/
 struct dentry *ramfs_mount(struct file_system_type *fs_type,
@@ -338,13 +338,13 @@ struct dentry *ramfs_mount(struct file_system_type *fs_type,
 	return mount_nodev(fs_type, flags, data, ramfs_fill_super);
 }
 
-/** 20150509    
+/** 20150509
  * rootfs용 mount 함수. mount_nodev를 사용한다.
  **/
 static struct dentry *rootfs_mount(struct file_system_type *fs_type,
 	int flags, const char *dev_name, void *data)
 {
-	/** 20150425    
+	/** 20150425
 	 * rootfs를 nodev용 mount 함수로 mount 한다.
 	 * MS_NOUSER 플래그가 추가되어 userspace에서 mount 될 수 없다.
 	 **/
@@ -362,7 +362,7 @@ static struct file_system_type ramfs_fs_type = {
 	.mount		= ramfs_mount,
 	.kill_sb	= ramfs_kill_sb,
 };
-/** 20150418    
+/** 20150418
  * rootfs file system type 정의.
  **/
 static struct file_system_type rootfs_fs_type = {
@@ -377,21 +377,21 @@ static int __init init_ramfs_fs(void)
 }
 module_init(init_ramfs_fs)
 
-/** 20150425    
+/** 20150425
  * rootfs 파일시스템을 등록한다.
  **/
 int __init init_rootfs(void)
 {
 	int err;
 
-	/** 20150418    
+	/** 20150418
 	 * ramfs_backing_dev_info의 속성을 초기화 한다.
 	 **/
 	err = bdi_init(&ramfs_backing_dev_info);
 	if (err)
 		return err;
 
-	/** 20150418    
+	/** 20150418
 	 * rootfs_fs_type을 새로운 filesystem으로 등록한다.
 	 *
 	 * rootfs의 mount는 init_mount_tree에서 이뤄진다.

@@ -19,7 +19,7 @@
 struct rw_semaphore;
 
 #ifdef CONFIG_RWSEM_GENERIC_SPINLOCK
-/** 20150530    
+/** 20150530
  **/
 #include <linux/rwsem-spinlock.h> /* use a generic implementation */
 #else
@@ -66,14 +66,14 @@ static inline int rwsem_is_locked(struct rw_semaphore *sem)
 #define DECLARE_RWSEM(name) \
 	struct rw_semaphore name = __RWSEM_INITIALIZER(name)
 
-/** 20150221    
+/** 20150221
  * default인 CONFIG_RWSEM_GENERIC_SPINLOCK가 설정되어 있어 rwsem-spinlock.c의
  * __init_rwsem이 호출된다.
  **/
 extern void __init_rwsem(struct rw_semaphore *sem, const char *name,
 			 struct lock_class_key *key);
 
-/** 20150221    
+/** 20150221
  * 주어진 rwsem를 초기화 한다.
  **/
 #define init_rwsem(sem)						\

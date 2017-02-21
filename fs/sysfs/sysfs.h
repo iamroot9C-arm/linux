@@ -16,7 +16,7 @@
 struct sysfs_open_dirent;
 
 /* type-specific structures for sysfs_dirent->s_* union members */
-/** 20150411    
+/** 20150411
  * sysfs_dirent가 directory인 경우에 해당하는 union 멤버.
  **/
 struct sysfs_elem_dir {
@@ -24,13 +24,13 @@ struct sysfs_elem_dir {
 
 	unsigned long		subdirs;
 	/* children rbtree starts here and goes through sd->s_rb */
-	/** 20150411    
+	/** 20150411
 	 * children rbtree
 	 **/
 	struct rb_root		children;
 };
 
-/** 20150905    
+/** 20150905
  * 심볼릭 링크의 타겟 sysfs_dirent를 가리킨다.
  **/
 struct sysfs_elem_symlink {
@@ -47,7 +47,7 @@ struct sysfs_elem_bin_attr {
 	struct hlist_head	buffers;
 };
 
-/** 20150404    
+/** 20150404
  * sysfs의 inode attributes
  **/
 struct sysfs_inode_attrs {
@@ -64,7 +64,7 @@ struct sysfs_inode_attrs {
  * accessible.  Dereferencing s_elem or any other outer entity
  * requires s_active reference.
  */
-/** 20150314    
+/** 20150314
  * sysfs 계층 구조에서 각 sysfs 노드의 블럭 정보.
  *
  * s_parent : parent인 sysfs_dirent를 지정한다.
@@ -89,7 +89,7 @@ struct sysfs_dirent {
 
 	const void		*s_ns; /* namespace tag */
 	unsigned int		s_hash; /* ns + name hash */
-	/** 20150418    
+	/** 20150418
 	 * sysfs dirent의 type에 따라 union에서 각각 다른 구조체를 참조한다.
 	 **/
 	union {
@@ -122,7 +122,7 @@ struct sysfs_dirent {
 #define SYSFS_FLAG_MASK			~(SYSFS_NS_TYPE_MASK|SYSFS_TYPE_MASK)
 #define SYSFS_FLAG_REMOVED		0x02000
 
-/** 20150404    
+/** 20150404
  * sysfs_direct의 s_flags 중 TYPE 부분을 마스킹 해온다.
  **/
 static inline unsigned int sysfs_type(struct sysfs_dirent *sd)
@@ -134,7 +134,7 @@ static inline unsigned int sysfs_type(struct sysfs_dirent *sd)
  * Return any namespace tags on this dirent.
  * enum kobj_ns_type is defined in linux/kobject.h
  */
-/** 20150411    
+/** 20150411
  * sysfs_dirent의 s_flags에 포함된 NS TYPE을 추출한다.
  **/
 static inline enum kobj_ns_type sysfs_ns_type(struct sysfs_dirent *sd)
@@ -159,7 +159,7 @@ do {								\
 /*
  * Context structure to be used while adding/removing nodes.
  */
-/** 20150411    
+/** 20150411
  * sysfs에 add/rm시 사용되는 context.
  * parent와 removed sysfs_dirent가 저장된다.
  **/
@@ -177,13 +177,13 @@ struct sysfs_addrm_cxt {
  * the network namespace of the task which mounted this sysfs
  * instance).
  */
-/** 20150307    
+/** 20150307
  * kobjs의 namespace 타입별 정보를 저장하는 구조체.
  **/
 struct sysfs_super_info {
 	void *ns[KOBJ_NS_TYPES];
 };
-/** 20150307    
+/** 20150307
  * sb의 fs private 정보를 추출한다.
  **/
 #define sysfs_info(SB) ((struct sysfs_super_info *)(SB->s_fs_info))
@@ -227,7 +227,7 @@ void sysfs_remove_subdir(struct sysfs_dirent *sd);
 int sysfs_rename(struct sysfs_dirent *sd,
 	struct sysfs_dirent *new_parent_sd, const void *ns, const char *new_name);
 
-/** 20150321    
+/** 20150321
  * sysfs_dirent의 s_count를 증가시키고 sysfs_dirent를 리턴한다.
  **/
 static inline struct sysfs_dirent *__sysfs_get(struct sysfs_dirent *sd)
@@ -240,7 +240,7 @@ static inline struct sysfs_dirent *__sysfs_get(struct sysfs_dirent *sd)
 }
 #define sysfs_get(sd) __sysfs_get(sd)
 
-/** 20150404    
+/** 20150404
  * sysfs_dirent의 s_count를 감소시키고, 0이 되었다면 해당 dirent를 제거한다.
  *
  * sd를 제거함으로써 parent의 reference count도 0이 된다면 반복해 호출한다.

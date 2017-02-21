@@ -28,7 +28,7 @@
 /*
  * Per cpu nohz control structure
  */
-/** 20141108    
+/** 20141108
  * percpu 변수로 tick_sched 구조체 정의.
  **/
 static DEFINE_PER_CPU(struct tick_sched, tick_cpu_sched);
@@ -36,7 +36,7 @@ static DEFINE_PER_CPU(struct tick_sched, tick_cpu_sched);
 /*
  * The time, when the last jiffy update happened. Protected by xtime_lock.
  */
-/** 20141108    
+/** 20141108
  * 마지막으로 jiffies가 갱신된 시간을 저장한다.
  **/
 static ktime_t last_jiffies_update;
@@ -49,7 +49,7 @@ struct tick_sched *tick_get_tick_sched(int cpu)
 /*
  * Must be called with interrupts disabled !
  */
-/** 20141101    
+/** 20141101
  * jiffies64 값을 갱신한다.
  *
  * periodic tick, NOHZ에 해당하는 dynticks에 모두 사용할 수 있는 함수.
@@ -62,7 +62,7 @@ static void tick_do_update_jiffies64(ktime_t now)
 	/*
 	 * Do a quick check without holding xtime_lock:
 	 */
-	/** 20141101    
+	/** 20141101
 	 * 현재 ktime과 마지막 jiffies에서 업데이트한 값의 차가
 	 * 주기보다 작다면 바로 리턴.
 	 **/
@@ -71,19 +71,19 @@ static void tick_do_update_jiffies64(ktime_t now)
 		return;
 
 	/* Reevalute with xtime_lock held */
-	/** 20141101    
+	/** 20141101
 	 * xtime_lock을 갱신하기 위한 lock을 잡는다.
 	 **/
 	write_seqlock(&xtime_lock);
 
-	/** 20141101    
+	/** 20141101
 	 * 현재 ktime이 마지막 jiffies에서 업데이트한 ktime의 차가 주기 이상이라면
 	 * 아래 동작을 수행한다.
 	 **/
 	delta = ktime_sub(now, last_jiffies_update);
 	if (delta.tv64 >= tick_period.tv64) {
 
-		/** 20141101    
+		/** 20141101
 		 * 주기 이상의 delta값을 구한다.
 		 * last_jiffies_update는 일단 주기만큼만 더해 놓는다.
 		 **/
@@ -92,7 +92,7 @@ static void tick_do_update_jiffies64(ktime_t now)
 						tick_period);
 
 		/* Slow path for long timeouts */
-		/** 20141101    
+		/** 20141101
 		 * 주기만큼 빼준 delta가 주기값 이상이라면,
 		 * ticks 단위로 증분값을 환산해 last_jiffies_update를 갱신한다.
 		 **/
@@ -104,14 +104,14 @@ static void tick_do_update_jiffies64(ktime_t now)
 			last_jiffies_update = ktime_add_ns(last_jiffies_update,
 							   incr * ticks);
 		}
-		/** 20141101    
+		/** 20141101
 		 * long timeouts와 periodic의 경우 모두 해당하도록 ticks를 더해
 		 * do_timer를 호출한다.
 		 **/
 		do_timer(++ticks);
 
 		/* Keep the tick_next_period variable up to date */
-		/** 20141101    
+		/** 20141101
 		 * 다음 주기가 발생할 시간을 새로 계산해둔다.
 		 **/
 		tick_next_period = ktime_add(last_jiffies_update, tick_period);
@@ -122,7 +122,7 @@ static void tick_do_update_jiffies64(ktime_t now)
 /*
  * Initialize and return retrieve the jiffies update.
  */
-/** 20141108    
+/** 20141108
  * tick emulation을 하기 위해 jiffies update 값을 리턴한다.
  * jiffies가 아직 update되지 않았다면 다음 period를 더한 값으로 초기화 한다.
  *
@@ -148,7 +148,7 @@ static ktime_t tick_init_jiffy_update(void)
 /*
  * NO HZ enabled ?
  */
-/** 20141115    
+/** 20141115
  * dynticks인 경우 default로 nohz enabled이다.
  **/
 int tick_nohz_enabled __read_mostly  = 1;
@@ -327,7 +327,7 @@ static ktime_t tick_nohz_stop_sched_tick(struct tick_sched *ts,
 	u64 time_delta;
 
 	/* Read jiffies and the time when jiffies were updated last */
-	/** 20141025    
+	/** 20141025
 	 * 마지막으로 jiffies가 업데이트 되었을 때의 jiffies값과 시간을 저장한다.
 	 **/
 	do {
@@ -337,7 +337,7 @@ static ktime_t tick_nohz_stop_sched_tick(struct tick_sched *ts,
 		time_delta = timekeeping_max_deferment();
 	} while (read_seqretry(&xtime_lock, seq));
 
-	/** 20141018    
+	/** 20141018
 	 * rcu가 cpu 작업을 필요로 하거나, printk가 pending되어 있거나, 
 	 * architecture에서 필요로 하다면 next_jiffies는 다음 jiffies가 된다.
 	 **/
@@ -346,7 +346,7 @@ static ktime_t tick_nohz_stop_sched_tick(struct tick_sched *ts,
 		next_jiffies = last_jiffies + 1;
 		delta_jiffies = 1;
 	} else {
-	/** 20141025    
+	/** 20141025
 	 **/
 		/* Get the next timer wheel timer */
 		next_jiffies = get_next_timer_interrupt(last_jiffies);
@@ -477,7 +477,7 @@ static bool can_stop_idle_tick(int cpu, struct tick_sched *ts)
 	 * this here the jiffies might be stale and do_timer() never
 	 * invoked.
 	 */
-	/** 20160227    
+	/** 20160227
 	 * cpu가 offline이고, do_timer를 수행(jiffies 업데이트)하는 cpu라면
 	 * tick_do_timer_cpu를 비워둔다.
 	 * 나중에 nohz handler를 실행하는 cpu가 자신의 cpu번호를 채운다.
@@ -519,7 +519,7 @@ static void __tick_nohz_idle_enter(struct tick_sched *ts)
 
 		ts->idle_calls++;
 
-		/** 20141018    
+		/** 20141018
 		 **/
 		expires = tick_nohz_stop_sched_tick(ts, now, cpu);
 		if (expires.tv64 > 0LL) {
@@ -544,7 +544,7 @@ static void __tick_nohz_idle_enter(struct tick_sched *ts)
  *  to sleep.
  * - rcu_idle_exit() before the first use of RCU after the CPU is woken up.
  */
-/** 20160220    
+/** 20160220
  * 자세한 내용은 추후분석???
  * 
  * NOHZ로 config 변경 후 빌드해 ddd로 분석.
@@ -577,7 +577,7 @@ void tick_nohz_idle_enter(void)
 	 * update of the idle time accounting in tick_nohz_start_idle().
 	 */
 	ts->inidle = 1;
-	/** 20141018    
+	/** 20141018
 	 **/
 	__tick_nohz_idle_enter(ts);
 
@@ -682,7 +682,7 @@ static void tick_nohz_account_idle_ticks(struct tick_sched *ts)
  * This also exit the RCU extended quiescent state. The CPU
  * can use RCU again after this function is called.
  */
-/** 20160227    
+/** 20160227
  * tick_nohz_idle_enter와 함께 추후분석???
  **/
 void tick_nohz_idle_exit(void)
@@ -720,7 +720,7 @@ static int tick_nohz_reprogram(struct tick_sched *ts, ktime_t now)
 /*
  * The nohz low res interrupt handler
  */
-/** 20141206    
+/** 20141206
  * nohz timer interrupt handler for low res.
  *
  * high res를 위한 handler는 hrtimer_interrupt이다.
@@ -742,7 +742,7 @@ static void tick_nohz_handler(struct clock_event_device *dev)
 	 * this duty, then the jiffies update is still serialized by
 	 * xtime_lock.
 	 */
-	/** 20160227    
+	/** 20160227
 	 * can_stop_idle_tick 에서 do_timer를 수행하던 cpu가 offline이 되었다면
 	 * nohz_handler 함수가 자신의 cpu 번호를 넣는다.
 	 * 두 cpu 이상에서 동시에 이 부분이 실행된다고 해도, jiffies update는
@@ -780,7 +780,7 @@ static void tick_nohz_handler(struct clock_event_device *dev)
 /**
  * tick_nohz_switch_to_nohz - switch to nohz mode
  */
-/** 20141206    
+/** 20141206
  * tick NOHZ로 설정되어 있을 때, sched_timer를 no_hz로 동작시킨다.
  *
  * oneshot notify가 왔을 때 hres config가 되어 있지 않을 때 실행된다.
@@ -790,14 +790,14 @@ static void tick_nohz_switch_to_nohz(void)
 	struct tick_sched *ts = &__get_cpu_var(tick_cpu_sched);
 	ktime_t next;
 
-	/** 20141206    
+	/** 20141206
 	 * CONFIG_NO_HZ인 경우 tick_nohz_enabled의 default가 1이므로 if는 거짓이 된다.
 	 **/
 	if (!tick_nohz_enabled)
 		return;
 
 	local_irq_disable();
-	/** 20141206    
+	/** 20141206
 	 * tick을 oneshot mode로 동작시킨다.
 	 * event handler함수를 tick_nohz_handler로 지정한다.
 	 *
@@ -808,7 +808,7 @@ static void tick_nohz_switch_to_nohz(void)
 		return;
 	}
 
-	/** 20141206    
+	/** 20141206
 	 * hres는 설정되어 있지 않아 tick_sched의 nohz_mode는 NOHZ_MODE_LOWRES이다.
 	 **/
 	ts->nohz_mode = NOHZ_MODE_LOWRES;
@@ -817,18 +817,18 @@ static void tick_nohz_switch_to_nohz(void)
 	 * Recycle the hrtimer in ts, so we can share the
 	 * hrtimer_forward with the highres code.
 	 */
-	/** 20141206    
+	/** 20141206
 	 * sched tick으로 사용할 hrtimer를 초기화 한다.
 	 **/
 	hrtimer_init(&ts->sched_timer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS);
 	/* Get the next period */
-	/** 20141206    
+	/** 20141206
 	 * nohz로 동작시킬 때 아직 jiffy가 update되지 않았다면,
 	 * next period 값이 리턴될 것이다.
 	 **/
 	next = tick_init_jiffy_update();
 
-	/** 20141206    
+	/** 20141206
 	 * sched_timer의 expire 시간을 next로 설정하고, program 시킨다.
 	 * program이 실패하면, next는 tick_period만큼 증가되어 다시 시도한다.
 	 **/
@@ -933,7 +933,7 @@ static enum hrtimer_restart tick_sched_timer(struct hrtimer *timer)
 #endif
 
 	/* Check, if the jiffies need an update */
-	/** 20141115    
+	/** 20141115
 	 * 현재 cpu가 do_timer를 동작시키는 cpu인 경우,
 	 *   jiffies64를 update 시킨다.
 	 **/
@@ -969,7 +969,7 @@ static enum hrtimer_restart tick_sched_timer(struct hrtimer *timer)
 
 static int sched_skew_tick;
 
-/** 20141108    
+/** 20141108
  * early param을 받아 sched_skew_tick 값으로 설정한다.
  **/
 static int __init skew_tick(char *str)
@@ -983,13 +983,13 @@ early_param("skew_tick", skew_tick);
 /**
  * tick_setup_sched_timer - setup the tick emulation timer
  */
-/** 20141115    
+/** 20141115
  * tick emulation layer를 설정한다.
  * - percpu로 동작하는 hrtimer를 하나 설정한다. CB function은 tick_sched_timer.
  **/
 void tick_setup_sched_timer(void)
 {
-	/** 20141108    
+	/** 20141108
 	 * 현재 cpu에 해당하는 tick_sched 구조체 정보를 가져온다.
 	 **/
 	struct tick_sched *ts = &__get_cpu_var(tick_cpu_sched);
@@ -998,7 +998,7 @@ void tick_setup_sched_timer(void)
 	/*
 	 * Emulate tick processing via per-CPU hrtimers:
 	 */
-	/** 20141108    
+	/** 20141108
 	 * sched tick으로 사용할 hrtimer를 초기화 한다.
 	 * clock은 CLOCK_MONOTONIC으로 단조 증가하고,
 	 * mode는 절대값이다.
@@ -1010,14 +1010,14 @@ void tick_setup_sched_timer(void)
 	ts->sched_timer.function = tick_sched_timer;
 
 	/* Get the next period (per cpu) */
-	/** 20141108    
+	/** 20141108
 	 * sched_timer의 exprires를 jiffies update 시점,
 	 * 즉 tick이 마지막으로 발생한, 현재 tick으로 초기화한다.
 	 **/
 	hrtimer_set_expires(&ts->sched_timer, tick_init_jiffy_update());
 
 	/* Offset the tick to avert xtime_lock contention. */
-	/** 20141115    
+	/** 20141115
 	 * sched 보정치가 주어져 있다면 expires를 보정한다.
 	 **/
 	if (sched_skew_tick) {
@@ -1028,17 +1028,17 @@ void tick_setup_sched_timer(void)
 	}
 
 	for (;;) {
-		/** 20141108    
+		/** 20141108
 		 * sched_timer의 expires를 현재값에 tick_period를 더한 값으로 설정한다.
 		 **/
 		hrtimer_forward(&ts->sched_timer, now, tick_period);
-		/** 20141129    
+		/** 20141129
 		 * 설정한 sched_timer를 현재 CPU에서 절대시간으로 만료되도록 등록시킨다.
 		 **/
 		hrtimer_start_expires(&ts->sched_timer,
 				      HRTIMER_MODE_ABS_PINNED);
 		/* Check, if the timer was already in the past */
-		/** 20141129    
+		/** 20141129
 		 * sched_timer가 active 되었다면 벗어나고,
 		 * 그렇지 않다면 새로 시간을 받아와 다음 주기에 동작하도록 등록한다.
 		 **/
@@ -1048,7 +1048,7 @@ void tick_setup_sched_timer(void)
 	}
 
 #ifdef CONFIG_NO_HZ
-	/** 20141129    
+	/** 20141129
 	 * dynticks 등 nohz 활성상태인 경우,
 	 * 이제 nohz는 HIGHRES로 동작한다.
 	 **/
@@ -1086,7 +1086,7 @@ void tick_clock_notify(void)
 /*
  * Async notification about clock event changes
  */
-/** 20141115    
+/** 20141115
  * tick_sched의 check_clocks의 0번 비트를 설정해 비동기적으로
  * clock event 변경을 통지한다.
  *
@@ -1107,21 +1107,21 @@ void tick_oneshot_notify(void)
  * mode, because high resolution timers are disabled (either compile
  * or runtime).
  */
-/** 20141115    
+/** 20141115
  * oneshot change가 필요한지 검사한다.
  **/
 int tick_check_oneshot_change(int allow_nohz)
 {
 	struct tick_sched *ts = &__get_cpu_var(tick_cpu_sched);
 
-	/** 20141115    
+	/** 20141115
 	 * tick_oneshot_notify()이 호출되면 clock event가 변경되고,
 	 * test가 참이 되어 리턴되지 않고 아래가 실행된다.
 	 **/
 	if (!test_and_clear_bit(0, &ts->check_clocks))
 		return 0;
 
-	/** 20141115    
+	/** 20141115
 	 * 현재 nohz_mode가 INACTIVE가 아니면 NOHZ로 동작 중이다.
 	 **/
 	if (ts->nohz_mode != NOHZ_MODE_INACTIVE)
@@ -1130,14 +1130,14 @@ int tick_check_oneshot_change(int allow_nohz)
 	if (!timekeeping_valid_for_hres() || !tick_is_oneshot_available())
 		return 0;
 
-	/** 20141115    
+	/** 20141115
 	 * !hrtimer_is_hres_enabled()가 allow_nohz로 넘어온다.
 	 * 따라서 hres enabled라면 1이 리턴된다.
 	 **/
 	if (!allow_nohz)
 		return 1;
 
-	/** 20141115    
+	/** 20141115
 	 * CONFIG_HIGH_RES_TIMERS이 설정되어 있다면
 	 * hrtimer_run_pending에서 allow_nohz는 false이므로 위에서 리턴된다.
 	 * 그렇지 않다면 nohz low res로 등작한다.

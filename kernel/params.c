@@ -81,7 +81,7 @@ bool parameqn(const char *a, const char *b, size_t n)
 	return true;
 }
 
-/** 20130727    
+/** 20130727
  * param 비교
  **/
 bool parameq(const char *a, const char *b)
@@ -127,7 +127,7 @@ static int parse_one(char *param,
 	 * parse_early에서는 num_params가 0이기 때문에 아래 코드는 분석하지 않음. 추후 분석.
 	 * */
 	/* Find parameter */
-	/** 20130727    
+	/** 20130727
 	 * num_params만큼 loop를 돌면서 __start___param ~ __stop___param 사이에
 	 * 저장된 parameter의 이름과 비교.
 	 *
@@ -135,7 +135,7 @@ static int parse_one(char *param,
 	 **/
 	for (i = 0; i < num_params; i++) {
 		if (parameq(param, params[i].name)) {
-			/** 20130727    
+			/** 20130727
 			 * range check
 			 **/
 			if (params[i].level < min_level
@@ -147,12 +147,12 @@ static int parse_one(char *param,
 				return -EINVAL;
 			pr_debug("handling %s with %p\n", param,
 				params[i].ops->set);
-			/** 20130727    
+			/** 20130727
 			 * param_lock으로 보호한 상태에서
 			 * param에 저장된 
 			 **/
 			mutex_lock(&param_lock);
-			/** 20130727    
+			/** 20130727
 			 * ops는 STANDARD_PARAM_DEF 매크로를 통해 선언.
 			 * ops->set 함수를 호출해 params의 val을 채운다.
 			 **/
@@ -162,7 +162,7 @@ static int parse_one(char *param,
 		}
 	}
 
-	/** 20130727    
+	/** 20130727
 	 * __param에 해당하는 이름이 없을 경우 이곳까지 도착.
 	 * handle_unknown이 지정되어 있다면 함수 호출
 	 **/
@@ -282,7 +282,7 @@ int parse_args(const char *doing,
 
 		args = next_arg(args, &param, &val);
 		irq_was_disabled = irqs_disabled();
-		/** 20151226    
+		/** 20151226
 		 *
 		 * unknown은 parsing 후 핸들되지 못한 argument를 처리.
 		 **/
@@ -339,7 +339,7 @@ int parse_args(const char *doing,
 	EXPORT_SYMBOL(param_ops_##name)
 
 
-/** 20151226    
+/** 20151226
  * standard type은 macro로 일괄적으로 param_ops를 선언.
  * byte, short, ...
  *
@@ -817,7 +817,7 @@ void destroy_params(const struct kernel_param *params, unsigned num)
 			params[i].ops->free(params[i].arg);
 }
 
-/** 20151128    
+/** 20151128
  * module kset에서 name이라는 module을 찾고,
  * 있으면 module_kobject로 바로 리턴, 없으면 module_kobject를 생성해 등록해 리턴.
  **/
@@ -890,7 +890,7 @@ static void __init kernel_add_sysfs_param(const char *name,
  * extract the "module" name for all built-in kernel_param-eters,
  * and for all who have the same, call kernel_add_sysfs_param.
  */
-/** 20151128    
+/** 20151128
  * module_param(name, type, perm)을 호출한 builtin 모듈들에 대해 
  * /sys/module/<MODULE NAME>/parameters 파일을 생성한다.
  **/
@@ -931,7 +931,7 @@ ssize_t __modver_version_show(struct module_attribute *mattr,
 extern const struct module_version_attribute *__start___modver[];
 extern const struct module_version_attribute *__stop___modver[];
 
-/** 20151128    
+/** 20151128
  * MODULE_VERSION("...")을 호출한 builtin 모듈들에 대해 
  * /sys/module/<MODULE NAME>/version 파일을 생성한다.
  **/
@@ -941,7 +941,7 @@ static void __init version_sysfs_builtin(void)
 	struct module_kobject *mk;
 	int err;
 
-	/** 20151128    
+	/** 20151128
 	 * __start___modver ~ __stop___modver 의 각 module들을 순회하며
 	 * module version attribute를 등록하고 uevent를 등록한다.
 	 **/
@@ -1025,12 +1025,12 @@ struct kobj_type module_ktype = {
 /*
  * param_sysfs_init - wrapper for built-in params support
  */
-/** 20151128    
+/** 20151128
  * builtin module에 대한 sysfs 파일을 생성한다.
  **/
 static int __init param_sysfs_init(void)
 {
-	/** 20151128    
+	/** 20151128
 	 * sysfs에 "module" kset을 생성한다.
 	 **/
 	module_kset = kset_create_and_add("module", &module_uevent_ops, NULL);
@@ -1041,7 +1041,7 @@ static int __init param_sysfs_init(void)
 	}
 	module_sysfs_initialized = 1;
 
-	/** 20151128    
+	/** 20151128
 	 * builtin 모듈들에 대한 version 파일과 parameters를 sysfs에 추가한다.
 	 **/
 	version_sysfs_builtin();

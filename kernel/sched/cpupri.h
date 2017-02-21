@@ -3,7 +3,7 @@
 
 #include <linux/sched.h>
 
-/** 20140419    
+/** 20140419
  * MAX_RT_PRIO <- MAX_USER_RT_PRIO <- 100
  * +2는 무엇인지???
  **/
@@ -19,7 +19,7 @@ struct cpupri_vec {
 	cpumask_var_t	mask;
 };
 
-/** 20140419    
+/** 20140419
  * cpupri_init에서 초기화.
  **/
 struct cpupri {

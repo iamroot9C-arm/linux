@@ -17,7 +17,7 @@
  * the last step cherry picks the 2nd arg, we get a zero.
  */
 #define __ARG_PLACEHOLDER_1 0,
-/** 20131005    
+/** 20131005
  * argument 확장을 이용하여 선언.
  * CONIFG_XXX가 정의되어 있다면 (0, 1, 0)에서 두 번째 argument인 1이,
  * 정의되어 있지 않다면 (... 1, 0)에서 두 번째 argument인 0이 선택된다.
@@ -32,7 +32,7 @@
  * 0 otherwise.
  *
  */
-/** 20131005    
+/** 20131005
  * CONIFG_XXX 또는 CONFIG_XXX_MODULE이 선언되어 있는지 검사
  **/
 #define IS_ENABLED(option) \

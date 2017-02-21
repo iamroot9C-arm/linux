@@ -3,7 +3,7 @@
 
 #include <linux/thread_info.h>
 
-/** 20140621    
+/** 20140621
  * thread_info를 받아와 task struct를 찾아온다.
  *
  * thread_info는 stack 영역에 overlay 되고, sp를 참조해 가져오므로

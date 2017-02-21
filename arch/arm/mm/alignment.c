@@ -81,7 +81,7 @@ static unsigned long ai_dword;
 static unsigned long ai_multi;
 static int ai_usermode;
 
-/** 20151128    
+/** 20151128
  * alignment param으로 ai_usermode를 등록.
  **/
 core_param(alignment, ai_usermode, int, 0600);
@@ -91,7 +91,7 @@ core_param(alignment, ai_usermode, int, 0600);
 #define UM_SIGNAL	(1 << 2)
 
 /* Return true if and only if the ARMv6 unaligned access model is in use. */
-/** 20151128    
+/** 20151128
  * 현재 cpu가 ARMv6의 unalignment 를 따르는지 검사한다.
  *
  * ARM Table A3-1 Alignment requirements of load/store instructions 에서
@@ -99,14 +99,14 @@ core_param(alignment, ai_usermode, int, 0600);
  **/
 static bool cpu_is_v6_unaligned(void)
 {
-	/** 20151128    
+	/** 20151128
 	 * vexpress는 CPU_ARCH_ARMv7이므로 참.
 	 * ARMv7에서 CR_U [22]비트는 RAO/SBOP로 읽으면 항상 1이고, 1로만 쓸 수 있어 참
 	 **/
 	return cpu_architecture() >= CPU_ARCH_ARMv6 && (cr_alignment & CR_U);
 }
 
-/** 20151128    
+/** 20151128
  * usermode의 alignment fault에 대한 설정을 리턴.
  **/
 static int safe_usermode(int new_usermode, bool warn)
@@ -120,7 +120,7 @@ static int safe_usermode(int new_usermode, bool warn)
 	 * CPUs since we spin re-faulting the instruction without
 	 * making any progress.
 	 */
-	/** 20151128    
+	/** 20151128
 	 * ARMv6와 그 이후의 CPU들에 대해서 alignment fault를 무시하는 것은 허용되지 않는다. 이유는 re-faulting이 계속 반복되기 때문이다.
 	 *
 	 * 따라서 new_usermode가 UM_FIXUP 값으로 변경된다.
@@ -146,7 +146,7 @@ static const char *usermode_action[] = {
 	"signal+warn"
 };
 
-/** 20151128    
+/** 20151128
  * alignment 정보 출력.
  **/
 static int alignment_proc_show(struct seq_file *m, void *v)
@@ -170,7 +170,7 @@ static int alignment_proc_open(struct inode *inode, struct file *file)
 	return single_open(file, alignment_proc_show, NULL);
 }
 
-/** 20151128    
+/** 20151128
  * "/proc/cpu/alignment"에 값을 쓰는 경우.
  * 0 ~ 5 사이 값에 대한 처리.
  **/
@@ -980,7 +980,7 @@ do_alignment(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
  * it isn't a sysctl, and it doesn't contain sysctl information.
  * We now locate it in /proc/cpu/alignment instead.
  */
-/** 20151128    
+/** 20151128
  * alignment 관련된 초기화
  *
  *  - "/proc/cpu/alignment" 생성
@@ -992,7 +992,7 @@ static int __init alignment_init(void)
 #ifdef CONFIG_PROC_FS
 	struct proc_dir_entry *res;
 
-	/** 20151128    
+	/** 20151128
 	 * "/proc/cpu/alignment" 생성
 	 **/
 	res = proc_create("cpu/alignment", S_IWUSR | S_IRUGO, NULL,
@@ -1001,11 +1001,11 @@ static int __init alignment_init(void)
 		return -ENOMEM;
 #endif
 
-	/** 20151128    
+	/** 20151128
 	 * ARMv7이고, v6의 unalignment를 따른다.
 	 **/
 	if (cpu_is_v6_unaligned()) {
-		/** 20151128    
+		/** 20151128
 		 * cr_alignment, cr_no_alignment에서
 		 * CR_A [1]을 제거해서 alignment fault check를 끄고,
 		 * 설정된 cr_alignment 값으로 레지스터를 다시 설정한다.
@@ -1017,7 +1017,7 @@ static int __init alignment_init(void)
 		ai_usermode = safe_usermode(ai_usermode, false);
 	}
 
-	/** 20151128    
+	/** 20151128
 	 * fsr_info의 테이블의 alignment에 해당하는 핸들러를 do_alignment로 업데이트.
 	 **/
 	hook_fault_code(FAULT_CODE_ALIGNMENT, do_alignment, SIGBUS, BUS_ADRALN,

@@ -30,7 +30,7 @@
  **/
 void *kmap(struct page *page)
 {
-	/** 20131026    
+	/** 20131026
 	 * vexpress의 경우 default로 CONFIG_PREEMPT_VOLUNTARY 선언되어 있지 않음.
 	 * might_sleep()은 NULL 함수.
 	 *
@@ -38,12 +38,12 @@ void *kmap(struct page *page)
 	 * 따라서 kmap은 interrupt context에서 호출할 수 없다.
 	 **/
 	might_sleep();
-	/** 20131026    
+	/** 20131026
 	 * page가 highmem이 아니라면 page_address로 VA를 바로 리턴.
 	 **/
 	if (!PageHighMem(page))
 		return page_address(page);
-	/** 20131026    
+	/** 20131026
 	 * highmem이라면 page에 대한 virtual address를 리턴한다.
 	 **/
 	return kmap_high(page);
@@ -67,7 +67,7 @@ void kunmap(struct page *page)
 }
 EXPORT_SYMBOL(kunmap);
 
-/** 20131026    
+/** 20131026
  * page가 가리키는 페이지 프레임을 매핑하고 VA를 리턴한다.
  *
  * 1) highmem 영역이 아닌 page에 대한 요청일 경우
@@ -113,13 +113,13 @@ void *kmap_atomic(struct page *page)
 		kmap = NULL;
 	else
 #endif
-		/** 20131026    
+		/** 20131026
 		 * page에 대해 mapping 된 VA가 있다면 해당 vaddr을,
 		 * 없다면 NULL을 리턴한다.
 		 * 즉, kmap_high를 통해 이미 mapping된 페이지라면 매핑된 VA를 받아온다.
 		 **/
 		kmap = kmap_high_get(page);
-	/** 20131026    
+	/** 20131026
 	 * kmap이 NULL이 아니라면 이미 매핑된 가상주소를 얻어왔으므로 리턴
 	 **/
 	if (kmap)
@@ -183,49 +183,49 @@ EXPORT_SYMBOL(kmap_atomic);
 
 void __kunmap_atomic(void *kvaddr)
 {
-	/** 20131026    
+	/** 20131026
 	 * kvaddr를 PAGE 단위로 정렬시킨다.
 	 **/
 	unsigned long vaddr = (unsigned long) kvaddr & PAGE_MASK;
 	int idx, type;
 
-	/** 20131026    
+	/** 20131026
 	 * kvaddr >= (void *)FIXADDR_START 라면 
 	 *   kmap_atomic으로 매핑된 경우
 	 **/
 	if (kvaddr >= (void *)FIXADDR_START) {
-		/** 20131026    
+		/** 20131026
 		 * percpu변수에서 마지막으로 mapping된 값을 type으로 가져온다.
 		 **/
 		type = kmap_atomic_idx();
-		/** 20131026    
+		/** 20131026
 		 * fixmap에서의 idx를 계산한다.
 		 **/
 		idx = type + KM_TYPE_NR * smp_processor_id();
 
-		/** 20131026    
+		/** 20131026
 		 * vexpress 의 경우 CACHEID_VIVT가 __CACHEID_NEVER 에 속해 false.
 		 **/
 		if (cache_is_vivt())
-			/** 20131026    
+			/** 20131026
 			 * vaddr에 대해 하나의 PAGE만큼 data cache를 flush한다.
 			 * cache가 vipt인 경우에는 flush 하지 않아도 되나???
 			 **/
 			__cpuc_flush_dcache_area((void *)vaddr, PAGE_SIZE);
 #ifdef CONFIG_DEBUG_HIGHMEM
 		BUG_ON(vaddr != __fix_to_virt(FIX_KMAP_BEGIN + idx));
-		/** 20131026    
+		/** 20131026
 		 * top_pte에 0 번지 값을 넣어준다.
 		 **/
 		set_top_pte(vaddr, __pte(0));
 #else
-		/** 20131026    
+		/** 20131026
 		 * idx가 사용되지 않으면 compiler가 warning을 발생시키므로
 		 * debug가 아닐 경우에도 사용해 준다.
 		 **/
 		(void) idx;  /* to kill a warning */
 #endif
-		/** 20131026    
+		/** 20131026
 		 * fixmap 용으로 사용하는 index를 감소시킨다.
 		 * 즉, 직접적으로 unmap하는 부분은 존재 않는다.
 		 *
@@ -233,7 +233,7 @@ void __kunmap_atomic(void *kvaddr)
 		 * kunmap한 이후에 다시 접근해도 BUG가 출력되지는 않을 듯???
 		 **/
 		kmap_atomic_idx_pop();
-	/** 20131026    
+	/** 20131026
 	 * PKMAP_ADDR(0) <= vaddr < PKMAP_ADDR(LAST_PKMAP) 라면
 	 *   kmap으로 매핑된 경우
 	 **/

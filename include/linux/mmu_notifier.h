@@ -234,7 +234,7 @@ static inline void mmu_notifier_invalidate_range_end(struct mm_struct *mm,
 		__mmu_notifier_invalidate_range_end(mm, start, end);
 }
 
-/** 20160416    
+/** 20160416
  * mmu_notifier를 사용하지 않음.
  **/
 static inline void mmu_notifier_mm_init(struct mm_struct *mm)
@@ -352,7 +352,7 @@ static inline void mmu_notifier_invalidate_page(struct mm_struct *mm,
 {
 }
 
-/** 20160514    
+/** 20160514
  * CONFIG_MMU_NOTIFIER 정의되지 않음.
  **/
 static inline void mmu_notifier_invalidate_range_start(struct mm_struct *mm,
@@ -373,7 +373,7 @@ static inline void mmu_notifier_mm_destroy(struct mm_struct *mm)
 {
 }
 
-/** 20140531    
+/** 20140531
  * CONFIG_MMU_NOTIFIER 가 정의되어 있지 않아 다음 부분이 호출됨.
  **/
 #define ptep_clear_flush_young_notify ptep_clear_flush_young

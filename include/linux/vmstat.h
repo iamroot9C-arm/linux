@@ -27,7 +27,7 @@ struct vm_event_state {
 
 DECLARE_PER_CPU(struct vm_event_state, vm_event_states);
 
-/** 20140104    
+/** 20140104
  * percpu vm event states를 증가시킨다.
  **/
 static inline void __count_vm_event(enum vm_event_item item)
@@ -43,7 +43,7 @@ static inline void count_vm_event(enum vm_event_item item)
 	this_cpu_inc(vm_event_states.event[item]);
 }
 
-/** 20130831    
+/** 20130831
  * percpu 변수인 vm_event_states 의 event 중 item에 해당하는 값에 delta 만큼을 더한다.
  * __count_vm_events : non-atomic 버전
  * count_vm_events : atomic 버전
@@ -91,7 +91,7 @@ static inline void vm_events_fold_cpu(int cpu)
 
 #endif /* CONFIG_VM_EVENT_COUNTERS */
 
-/** 20131005    
+/** 20131005
  * item##_NORMAL - ZONE_NORMAL + zone_idx(zone)의 의미는 ???
  **/
 /** 20140111
@@ -106,13 +106,13 @@ static inline void vm_events_fold_cpu(int cpu)
  */
 extern atomic_long_t vm_stat[NR_VM_ZONE_STAT_ITEMS];
 
-/** 20130831    
+/** 20130831
  * item에 해당하는 vm_stat의 값을 x만큼 증가
  **/
 static inline void zone_page_state_add(long x, struct zone *zone,
 				 enum zone_stat_item item)
 {
-	/** 20130831    
+	/** 20130831
 	 * zone->vm_stat[item], vm_stat[item] 각각에 atomic연산으로 x를 더한다.
 	 **/
 	atomic_long_add(x, &zone->vm_stat[item]);
@@ -153,26 +153,26 @@ static inline unsigned long zone_page_state(struct zone *zone,
  * deltas. There is no synchronization so the result cannot be
  * exactly accurate either.
  */
-/** 20131116    
+/** 20131116
  * item에 해당하는 현재의 zone_page_state 값에 percpu 값을 반영시켜 계산한다.
  **/
 static inline unsigned long zone_page_state_snapshot(struct zone *zone,
 					enum zone_stat_item item)
 {
-	/** 20131116    
+	/** 20131116
 	 * vm_stat에서 item에 해당하는 값을 읽어 x에 저장한다
 	 **/
 	long x = atomic_long_read(&zone->vm_stat[item]);
 
 #ifdef CONFIG_SMP
 	int cpu;
-	/** 20131116    
+	/** 20131116
 	 * 각 cpu들을 순회하면서 zone->pageset의 vm_stat_diff[item] 값을 x에 반영시킨다.
 	 **/
 	for_each_online_cpu(cpu)
 		x += per_cpu_ptr(zone->pageset, cpu)->vm_stat_diff[item];
 
-	/** 20131116    
+	/** 20131116
 	 * 최하값은 0.
 	 **/
 	if (x < 0)
@@ -214,7 +214,7 @@ extern void zone_statistics(struct zone *, struct zone *, gfp_t gfp);
 #else
 
 #define node_page_state(node, item) global_page_state(item)
-/** 20131005    
+/** 20131005
  * NUMA가 아닐 때는 NULL.
  **/
 #define zone_statistics(_zl, _z, gfp) do { } while (0)

@@ -44,7 +44,7 @@ struct bus_attribute {
 	ssize_t (*store)(struct bus_type *bus, const char *buf, size_t count);
 };
 
-/** 20150905    
+/** 20150905
  * bus_attr_#NAME으로 bus_attribute를 초기화 하는 매크로.
  **/
 #define BUS_ATTR(_name, _mode, _show, _store)	\
@@ -91,7 +91,7 @@ extern void bus_remove_file(struct bus_type *, struct bus_attribute *);
  * default attributes, the bus' methods, PM operations, and the driver core's
  * private data.
  */
-/** 20150905    
+/** 20150905
  * 디바이스의 버스 타입 정의 구조체.
  *
  * name  :
@@ -129,7 +129,7 @@ struct bus_type {
 
 /* This is a #define to keep the compiler from merging different
  * instances of the __key variable */
-/** 20150905    
+/** 20150905
  * 새로운 버스를 등록한다.
  **/
 #define bus_register(subsys)			\
@@ -231,7 +231,7 @@ extern struct klist *bus_get_device_klist(struct bus_type *bus);
  * can export information and configuration variables that are independent
  * of any specific device.
  */
-/** 20151121    
+/** 20151121
  * 드라이버 구조체.
  *
  * .p : 이 드라이버 관리를 위해 사용되는 구조체를 가리킨다. 상호 연결.
@@ -352,7 +352,7 @@ int subsys_system_register(struct bus_type *subsys,
  * to work with devices based on what they do, rather than how they are
  * connected or how they work.
  */
-/** 20151114    
+/** 20151114
  * class 자료구조.
  *
  * class_attrs : 클래스 자체의 항목과 속성 정보
@@ -460,7 +460,7 @@ struct class_attribute_string {
 extern ssize_t show_class_attr_string(struct class *class, struct class_attribute *attr,
                         char *buf);
 
-/** 20160116    
+/** 20160116
  * class의 interface 구조체.
  **/
 struct class_interface {
@@ -481,7 +481,7 @@ extern void class_destroy(struct class *cls);
 
 /* This is a #define to keep the compiler from merging different
  * instances of the __key variable */
-/** 20151017    
+/** 20151017
  * class 생성
  **/
 #define class_create(owner, name)		\
@@ -510,7 +510,7 @@ struct device_type {
 };
 
 /* interface for exporting device attributes */
-/** 20150829    
+/** 20150829
  * device의 attribute 구조체.
  *
  * vfs에서 사용할 attritube 구조체를 포함하고 있고,
@@ -540,7 +540,7 @@ ssize_t device_show_int(struct device *dev, struct device_attribute *attr,
 ssize_t device_store_int(struct device *dev, struct device_attribute *attr,
 			 const char *buf, size_t count);
 
-/** 20140927    
+/** 20140927
  * sys devices 아래 _name 이름을 _mode로 생성, _show, _store 함수 지정
  **/
 #define DEVICE_ATTR(_name, _mode, _show, _store) \
@@ -695,7 +695,7 @@ struct device {
 					   device */
 	void		*platform_data;	/* Platform specific data, device
 					   core doesn't touch it */
-	/** 20150905    
+	/** 20150905
 	 * PM 관련 구조체.
 	 **/
 	struct dev_pm_info	power;
@@ -740,7 +740,7 @@ struct device {
 	struct iommu_group	*iommu_group;
 };
 
-/** 20150829    
+/** 20150829
  * struct device내의 kobj로부터 device 구조체를 찾아온다.
  **/
 static inline struct device *kobj_to_dev(struct kobject *kobj)
@@ -751,7 +751,7 @@ static inline struct device *kobj_to_dev(struct kobject *kobj)
 /* Get the wakeup routines, which depend on struct device */
 #include <linux/pm_wakeup.h>
 
-/** 20150829    
+/** 20150829
  * device의 init_name이 있다면 가져오고, 없다면 kobject의 name을 가져온다.
  **/
 static inline const char *dev_name(const struct device *dev)
@@ -776,7 +776,7 @@ static inline void set_dev_node(struct device *dev, int node)
 	dev->numa_node = node;
 }
 #else
-/** 20150829    
+/** 20150829
  * NUMA가 config되지 않아 device <-> node 함수는 의미가 없다.
  **/
 static inline int dev_to_node(struct device *dev)
@@ -803,7 +803,7 @@ static inline void dev_set_uevent_suppress(struct device *dev, int val)
 	dev->kobj.uevent_suppress = val;
 }
 
-/** 20150905    
+/** 20150905
  * device가 이미 sysfs에 추가되어 있다면 등록된 디바이스이다.
  **/
 static inline int device_is_registered(struct device *dev)
@@ -833,7 +833,7 @@ static inline void pm_suspend_ignore_children(struct device *dev, bool enable)
 	dev->power.ignore_children = enable;
 }
 
-/** 20150905    
+/** 20150905
  * device mutex lock.
  **/
 static inline void device_lock(struct device *dev)

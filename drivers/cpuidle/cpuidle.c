@@ -22,7 +22,7 @@
 
 #include "cpuidle.h"
 
-/** 20160220    
+/** 20160220
  * percpu cpuidle_device.
  **/
 DEFINE_PER_CPU(struct cpuidle_device *, cpuidle_devices);

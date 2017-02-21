@@ -80,7 +80,7 @@ void mlock_vma_page(struct page *page)
 {
 	BUG_ON(!PageLocked(page));
 
-	/** 20140531    
+	/** 20140531
 	 * page에 mlock을 설정한다.
 	 * 이전에 걸려 있지 않았다면 state, event를 갱신한다.
 	 **/

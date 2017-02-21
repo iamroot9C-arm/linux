@@ -53,12 +53,12 @@ static void proc_evict_inode(struct inode *inode)
 		ns_ops->put(PROC_I(inode)->ns);
 }
 
-/** 20150502    
+/** 20150502
  * proc_init_inodecache에서 초기화 한다.
  **/
 static struct kmem_cache * proc_inode_cachep;
 
-/** 20150509    
+/** 20150509
  * proc의 inode 할당 함수.
  * struct super_operations의 .alloc_inode에 해당.
  *
@@ -103,7 +103,7 @@ static void init_once(void *foo)
 	inode_init_once(&ei->vfs_inode);
 }
 
-/** 20150502    
+/** 20150502
  * "proc_inode_cache" kmem_cache를 생성한다.
  **/
 void __init proc_init_inodecache(void)
@@ -128,7 +128,7 @@ static int proc_show_options(struct seq_file *seq, struct dentry *root)
 	return 0;
 }
 
-/** 20150509    
+/** 20150509
  * 'proc' superblock operation.
  *
  * inode 할당, 삭제 등 파일시스템에 대해 호출하는 함수 목록을 정의.
@@ -431,7 +431,7 @@ static int proc_reg_release(struct inode *inode, struct file *file)
 	return rv;
 }
 
-/** 20150509    
+/** 20150509
  * proc file operation.
  **/
 static const struct file_operations proc_reg_file_ops = {
@@ -461,20 +461,20 @@ static const struct file_operations proc_reg_file_ops_no_compat = {
 };
 #endif
 
-/** 20150509    
+/** 20150509
  * proc_dir_entry에 저장된 inode 번호로 inode를 찾아(없으면 inode 생성) 리턴한다.
  **/
 struct inode *proc_get_inode(struct super_block *sb, struct proc_dir_entry *de)
 {
 	struct inode * inode;
 
-	/** 20150509    
+	/** 20150509
 	 * proc_dir_entry에 저장해둔 inode 번호로 inode object를 찾아 리턴한다.
 	 **/
 	inode = iget_locked(sb, de->low_ino);
 	if (!inode)
 		return NULL;
-	/** 20150509    
+	/** 20150509
 	 * inode가 I_NEW 상태일 때 proc_dir_entry의 정보로 inode 구조체를 채운다.
 	 **/
 	if (inode->i_state & I_NEW) {
@@ -506,7 +506,7 @@ struct inode *proc_get_inode(struct super_block *sb, struct proc_dir_entry *de)
 				inode->i_fop = de->proc_fops;
 			}
 		}
-		/** 20150509    
+		/** 20150509
 		 * I_NEW 상태를 해제하고 대기 중인 task를 깨운다.
 		 **/
 		unlock_new_inode(inode);
@@ -515,7 +515,7 @@ struct inode *proc_get_inode(struct super_block *sb, struct proc_dir_entry *de)
 	return inode;
 }			
 
-/** 20150509    
+/** 20150509
  * 'procfs'의 의존적인 정보를 superblock에 채운다. (proc_mount에서 필요하다)
  *
  * superblock operations와 root inode의 dentry 등을 채운다.
@@ -529,11 +529,11 @@ int proc_fill_super(struct super_block *s)
 	s->s_op = &proc_sops;
 	s->s_time_gran = 1;
 	
-	/** 20150509    
+	/** 20150509
 	 * proc_root를 사용하는 동안 usage count를 증가시켜 해제되지 않도록 한다.
 	 **/
 	pde_get(&proc_root);
-	/** 20150509    
+	/** 20150509
 	 * root inode의 dentry를 생성해 superblock의 root dentry에 저장한다.
 	 * 
 	 * proc_root에 저장된 inode 번호로 inode를 받아와 dentry를 생성한다.
@@ -542,7 +542,7 @@ int proc_fill_super(struct super_block *s)
 	if (s->s_root)
 		return 0;
 
-	/** 20150509    
+	/** 20150509
 	 * dentry 생성에 실패한 경우 처리.
 	 **/
 	printk("proc_read_super: get root inode failed\n");

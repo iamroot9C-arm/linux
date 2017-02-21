@@ -58,7 +58,7 @@ static cycle_t jiffies_read(struct clocksource *cs)
 	return (cycle_t) jiffies;
 }
 
-/** 20141227    
+/** 20141227
  * clocksource jiffies.
  *
  * jiffies를 사용한 클럭소스는 모든 시스템에서 항상 제공하고 있다.
@@ -93,7 +93,7 @@ EXPORT_SYMBOL(get_jiffies_64);
 
 EXPORT_SYMBOL(jiffies);
 
-/** 20151010    
+/** 20151010
  * 시스템 공통으로 제공되는 jiffies를 기준으로 한 클럭소스를 등록한다.
  **/
 static int __init init_jiffies_clocksource(void)
@@ -103,7 +103,7 @@ static int __init init_jiffies_clocksource(void)
 
 core_initcall(init_jiffies_clocksource);
 
-/** 20150103    
+/** 20150103
  * clocksource default clock은 clocksource_jiffies이다.
  **/
 struct clocksource * __init __weak clocksource_default_clock(void)

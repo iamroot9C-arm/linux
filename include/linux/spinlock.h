@@ -100,14 +100,14 @@ do {								\
 } while (0)
 
 #else
-/** 20130427    
+/** 20130427
  * raw spinlock을 unlocked 상태로 초기화.
  **/
 # define raw_spin_lock_init(lock)				\
 	do { *(lock) = __RAW_SPIN_LOCK_UNLOCKED(lock); } while (0)
 #endif
 
-/** 20130713    
+/** 20130713
  **/
 #define raw_spin_is_locked(lock)	arch_spin_is_locked(&(lock)->raw_lock)
 
@@ -139,7 +139,7 @@ static inline void smp_mb__after_lock(void) { smp_mb(); }
  extern int do_raw_spin_trylock(raw_spinlock_t *lock);
  extern void do_raw_spin_unlock(raw_spinlock_t *lock) __releases(lock);
 #else
- /** 20130706    
+ /** 20130706
   * 실제 lock을 획득하는 함수.
   **/
 static inline void do_raw_spin_lock(raw_spinlock_t *lock) __acquires(lock)
@@ -158,7 +158,7 @@ do_raw_spin_lock_flags(raw_spinlock_t *lock, unsigned long *flags) __acquires(lo
 	arch_spin_lock_flags(&lock->raw_lock, *flags);
 }
 
-/** 20140809    
+/** 20140809
  **/
 static inline int do_raw_spin_trylock(raw_spinlock_t *lock)
 {
@@ -181,11 +181,11 @@ static inline void do_raw_spin_unlock(raw_spinlock_t *lock) __releases(lock)
  * various methods are defined as nops in the case they are not
  * required.
  */
-/** 20140809    
+/** 20140809
  **/
 #define raw_spin_trylock(lock)	__cond_lock(lock, _raw_spin_trylock(lock))
 
-/** 20130706    
+/** 20130706
  * _raw_spin_lock 호출
  **/
 #define raw_spin_lock(lock)	_raw_spin_lock(lock)
@@ -200,7 +200,7 @@ static inline void do_raw_spin_unlock(raw_spinlock_t *lock) __releases(lock)
 		 _raw_spin_lock_nest_lock(lock, &(nest_lock)->dep_map);	\
 	 } while (0)
 #else
-/** 20160430    
+/** 20160430
  * CONFIG_DEBUG_LOCK_ALLOC이 설정되지 않아 단순 _raw_spin_lock() 호출.
  **/
 # define raw_spin_lock_nested(lock, subclass)		_raw_spin_lock(lock)
@@ -209,7 +209,7 @@ static inline void do_raw_spin_unlock(raw_spinlock_t *lock) __releases(lock)
 
 #if defined(CONFIG_SMP) || defined(CONFIG_DEBUG_SPINLOCK)
 
-/** 20130713    
+/** 20130713
  * flags의 type을 check하고,
  * lock을 걸고, 이전 cpsr을 flags에 저장한다.
  **/
@@ -246,12 +246,12 @@ static inline void do_raw_spin_unlock(raw_spinlock_t *lock) __releases(lock)
 
 #endif
 
-/** 20131026    
+/** 20131026
  * irq 또는 bh를 금지시킨 상태에서 spinlock을 건다.
  **/
 #define raw_spin_lock_irq(lock)		_raw_spin_lock_irq(lock)
 #define raw_spin_lock_bh(lock)		_raw_spin_lock_bh(lock)
-/** 20130713    
+/** 20130713
  **/
 #define raw_spin_unlock(lock)		_raw_spin_unlock(lock)
 /** 20131109
@@ -332,7 +332,7 @@ raw_spin_lock_init(&(_lock)->rlock);
  (_lock)->rlock = (raw_spinlock_t) { .raw_lock = __ARCH_SPIN_LOCK_UNLOCKED;}
  (_lock)->rlock = (raw_spinlock_t) { .raw_lock = { { 0 } };}
  */
-/** 20130706    
+/** 20130706
  * spin_lock 실행 함수
  *   - 선점불가 preempt_disable()
  *   - spin_lock 자체는 인터럽트를 금지하지 않음
@@ -343,7 +343,7 @@ static inline void spin_lock(spinlock_t *lock)
 	raw_spin_lock(&lock->rlock);
 }
 
-/** 20150214    
+/** 20150214
  * bottom-half를 막고, 선점을 금지시킨 상태로 spinlock을 건다.
  **/
 static inline void spin_lock_bh(spinlock_t *lock)
@@ -356,7 +356,7 @@ static inline int spin_trylock(spinlock_t *lock)
 	return raw_spin_trylock(&lock->rlock);
 }
 
-/** 20160430    
+/** 20160430
  * CONFIG_DEBUG_LOCK_ALLOC 설정하지 않아 _raw_spin_lock.
  **/
 #define spin_lock_nested(lock, subclass)			\
@@ -369,7 +369,7 @@ do {									\
 	raw_spin_lock_nest_lock(spinlock_check(lock), nest_lock);	\
 } while (0)
 
-/** 20131026    
+/** 20131026
  * irq disable 시킨 뒤, spinlock을 거는 함수.
  * irq 상태는 저장하지 않는다.
  *
@@ -382,7 +382,7 @@ static inline void spin_lock_irq(spinlock_t *lock)
 	raw_spin_lock_irq(&lock->rlock);
 }
 
-/** 20131005    
+/** 20131005
  * irq를 disable 시킨 뒤 spinlock을 건다.
  **/
 #define spin_lock_irqsave(lock, flags)				\
@@ -395,7 +395,7 @@ do {									\
 	raw_spin_lock_irqsave_nested(spinlock_check(lock), flags, subclass); \
 } while (0)
 
-/** 20130713    
+/** 20130713
  * raw_spin_unlock 호출
  **/
 static inline void spin_unlock(spinlock_t *lock)
@@ -455,7 +455,7 @@ static inline int spin_can_lock(spinlock_t *lock)
 	return raw_spin_can_lock(&lock->rlock);
 }
 
-/** 20150328    
+/** 20150328
  * spinlock이 잠겨있지 않다면 ASSERT.
  **/
 #define assert_spin_locked(lock)	assert_raw_spin_locked(&(lock)->rlock)
@@ -474,7 +474,7 @@ static inline int spin_can_lock(spinlock_t *lock)
  * @lock.  Returns false for all other cases.
  */
 extern int _atomic_dec_and_lock(atomic_t *atomic, spinlock_t *lock);
-/** 20150328    
+/** 20150328
  * atomic을 감소시키고, 그 결과 0이라면 spinlock을 건 상태로 만든다.
  **/
 #define atomic_dec_and_lock(atomic, lock) \

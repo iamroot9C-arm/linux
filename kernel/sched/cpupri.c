@@ -203,7 +203,7 @@ void cpupri_set(struct cpupri *cp, int cpu, int newpri)
  *
  * Returns: -ENOMEM if memory fails.
  */
-/** 20140419    
+/** 20140419
  * cpupri 자료구조의 초기화.
  *
  * CPUMASK_OFFSET을 사용하지 않는 경우 특별한 초기화 과정은 없다.
@@ -215,23 +215,23 @@ int cpupri_init(struct cpupri *cp)
 	memset(cp, 0, sizeof(*cp));
 
 	for (i = 0; i < CPUPRI_NR_PRIORITIES; i++) {
-		/** 20140419    
+		/** 20140419
 		 * cpupri에서 cpupri_vec을 하나씩 받아온다.
 		 **/
 		struct cpupri_vec *vec = &cp->pri_to_cpu[i];
 
-		/** 20140419    
+		/** 20140419
 		 * cpupri_vec의 count를 0으로 초기화
 		 **/
 		atomic_set(&vec->count, 0);
-		/** 20140419    
+		/** 20140419
 		 * cpupri_vec의 mask는 zero로 클리어
 		 **/
 		if (!zalloc_cpumask_var(&vec->mask, GFP_KERNEL))
 			goto cleanup;
 	}
 
-	/** 20140419    
+	/** 20140419
 	 * cpupri에 각 CPU마다 pri를 CPUPRI_INVALID로 초기화.
 	 **/
 	for_each_possible_cpu(i)
@@ -248,7 +248,7 @@ cleanup:
  * cpupri_cleanup - clean up the cpupri structure
  * @cp: The cpupri context
  */
-/** 20150815    
+/** 20150815
  * cpupri 구조체를 정리한다.
  *
  * CPUMASK_OFFSTACK이 아닌 경우 동적할당 하지 않았으므로 해제할 메모리도 없다.

@@ -56,7 +56,7 @@ static struct map_desc v2m_io_desc[] __initdata = {
 	},
 };
 
-/** 20150103    
+/** 20150103
  * V2M_SYSREGS의 가상 주소.
  **/
 static void __iomem *v2m_sysreg_base;
@@ -78,7 +78,7 @@ static void __init v2m_sysctl_init(void __iomem *base)
 	writel(scctrl, base + SCCTRL);
 }
 
-/** 20150103    
+/** 20150103
  * sp804의 레지스터를 설정하고,
  * clocksource와 clockevent로 등록한다.
  **/
@@ -87,14 +87,14 @@ static void __init v2m_sp804_init(void __iomem *base, unsigned int irq)
 	if (WARN_ON(!base || irq == NO_IRQ))
 		return;
 
-	/** 20141227    
+	/** 20141227
 	 * TIMER1, TIMER2의 TIMER_CTRL 레지스터에 값을 쓴다.
 	 * 자세한 내용은 datasheet (DDI0271 sp804 trm) 참조.
 	 **/
 	writel(0, base + TIMER_1_BASE + TIMER_CTRL);
 	writel(0, base + TIMER_2_BASE + TIMER_CTRL);
 
-	/** 20141227    
+	/** 20141227
 	 * "v2m-timer1"라는 이름으로 common clock framework에서 clk을 받아오고,
 	 * clocksource로 사용하기 위해 register를 설정하고 clocksource 구조체를 설정해 등록한다.
 	 * HW는 TIMER2와 연결한다.
@@ -102,7 +102,7 @@ static void __init v2m_sp804_init(void __iomem *base, unsigned int irq)
 	 * "/sys/devices/system/clocksource/current_clocksource"
 	 **/
 	sp804_clocksource_init(base + TIMER_2_BASE, "v2m-timer1");
-	/** 20140830    
+	/** 20140830
 	 * periodic tick발생용 timer.
 	 **/
 	sp804_clockevents_init(base + TIMER_1_BASE, irq, "v2m-timer0");
@@ -158,7 +158,7 @@ int v2m_cfg_read(u32 devfn, u32 *data)
 	return !!(val & SYS_CFG_ERR);
 }
 
-/** 20150613    
+/** 20150613
  * sysreg_base register에 data를 저장한다.
  *	 versatile_secondary_startup의 물리주소.
  **/
@@ -338,7 +338,7 @@ static AMBA_APB_DEVICE(uart3, "mb:uart3", 0, V2M_UART3, IRQ_V2M_UART3, NULL);
 static AMBA_APB_DEVICE(wdt,   "mb:wdt",   0, V2M_WDT, IRQ_V2M_WDT, NULL);
 static AMBA_APB_DEVICE(rtc,   "mb:rtc",   0, V2M_RTC, IRQ_V2M_RTC, NULL);
 
-/** 20151121    
+/** 20151121
  * v2m에서 사용하는 amba 디바이스. amba bus에 등록된다.
  **/
 static struct amba_device *v2m_amba_devs[] __initdata = {
@@ -388,7 +388,7 @@ static int v2m_osc_set_rate(struct clk_hw *hw, unsigned long rate,
 	return 0;
 }
 
-/** 20141227    
+/** 20141227
  * v2m OSC를 위한 callback operations.
  * common clock framework에서 호출되어 hardware에 의존적인 동작을 수행한다.
  **/
@@ -398,12 +398,12 @@ static struct clk_ops v2m_osc_ops = {
 	.set_rate = v2m_osc_set_rate,
 };
 
-/** 20141227    
+/** 20141227
  * OSC clock을 clk hierarchy에 추가한다.
  **/
 struct clk * __init v2m_osc_register(const char *name, struct v2m_osc *osc)
 {
-	/** 20141227    
+	/** 20141227
 	 * clock framework와 clk_hw 사이에 약속된 구조체를 채운다.
 	 * 설정된 clk
 	 **/
@@ -453,7 +453,7 @@ static const char *v2m_osc2_periphs[] __initconst = {
  * v2m의 clock device를 clk구조체를 clock framework에 등록한다. 
  **/
 
-/** 20141227    
+/** 20141227
  * v2m machine을 위한 clk 초기화 작업.
  *
  * clk 구조체를 생성해 clock hierarchy에 등록한다.
@@ -488,7 +488,7 @@ static void __init v2m_clk_init(void)
 		WARN_ON(clk_register_clkdev(clk, NULL, v2m_osc2_periphs[i]));
 }
 
-/** 20150103    
+/** 20150103
  * v2m timer 초기화.
  *	- sysctl control에서 timer0, timer1의 TIMCLK을 선택한다.
  *	- clock hierarchy에 clk을 등록한다.
@@ -497,24 +497,24 @@ static void __init v2m_clk_init(void)
 static void __init v2m_timer_init(void)
 {
 
-	/** 20141227    
+	/** 20141227
 	 * V2M_SYSCTL 레지스터 영역을 4KB만큼 page table에 매핑시키고,
 	 * 레지스터를 초기화 한다.
 	 **/
 	v2m_sysctl_init(ioremap(V2M_SYSCTL, SZ_4K));
-	/** 20150103    
+	/** 20150103
 	 * clk을 구조체를 생성해 clock hierarchy에 등록하고,
 	 * lookup용 자료구조에 추가한다.
 	 **/
 	v2m_clk_init();
-	/** 20141227    
+	/** 20141227
 	 * V2M TIMER0,1와 관련된 물리주소를 4KB만큼 페이지 테이블에 매핑시킨 뒤,
 	 * 가상주소와 irq 번호를 매개변수로 sp804 init 함수를 호출한다.
 	 **/
 	v2m_sp804_init(ioremap(V2M_TIMER01, SZ_4K), IRQ_V2M_TIMER0);
 }
 
-/** 20140830    
+/** 20140830
  * timer init 콜백함수 지정.
  **/
 static struct sys_timer v2m_timer = {
@@ -526,7 +526,7 @@ static struct sys_timer v2m_timer = {
  **/
 static void __init v2m_init_early(void)
 {
-	/** 20130518    
+	/** 20130518
 	 * vexpress의 경우 ct_desc에 해당하는 ct_ca9x4_desc.
 	 *   init_early 함수는 지정되어 있지 않음. 
 	 **/
@@ -538,7 +538,7 @@ static void __init v2m_init_early(void)
 	versatile_sched_clock_init(v2m_sysreg_base + V2M_SYS_24MHZ, 24000000);
 }
 
-/** 20151121    
+/** 20151121
  **/
 static void v2m_power_off(void)
 {
@@ -554,7 +554,7 @@ static void v2m_restart(char str, const char *cmd)
 
 struct ct_desc *ct_desc;
 
-/** 20150613    
+/** 20150613
  **/
 static struct ct_desc *ct_descs[] __initdata = {
 #ifdef CONFIG_ARCH_VEXPRESS_CA9X4
@@ -606,7 +606,7 @@ static void __init v2m_map_io(void)
 	ct_desc->map_io();
 }
 
-/** 20140906    
+/** 20140906
  * vexpress는 cpu daughter board의 init_irq를 호출한다.
  *  => ct_ca9x4_init_irq
  **/
@@ -615,7 +615,7 @@ static void __init v2m_init_irq(void)
 	ct_desc->init_irq();
 }
 
-/** 20151121    
+/** 20151121
  * v2m machine에 대한 초기화.
  *
  * - platform bus와 amba bus가 초기화된 상태이므로, 플랫폼 디바이스들을 등록한다.
@@ -625,13 +625,13 @@ static void __init v2m_init(void)
 {
 	int i;
 
-	/** 20151114    
+	/** 20151114
 	 * ethernet supplies를 등록한다.
 	 **/
 	regulator_register_fixed(0, v2m_eth_supplies,
 			ARRAY_SIZE(v2m_eth_supplies));
 
-	/** 20151121    
+	/** 20151121
 	 * 정적 구조체로 설정한 플랫폼 디바이스들을 추가한다.
 	 *
 	 * 플랫폼 디바이스 구조체를 동적 생성할 때는
@@ -644,7 +644,7 @@ static void __init v2m_init(void)
 	platform_device_register(&v2m_eth_device);
 	platform_device_register(&v2m_usb_device);
 
-	/** 20151121    
+	/** 20151121
 	 * v2m의 amba 디바이스들을 등록한다.
 	 *
 	 * 리소스는 (버스이므로) iomem_resource 아래에 추가된다.
@@ -654,13 +654,13 @@ static void __init v2m_init(void)
 
 	pm_power_off = v2m_power_off;
 
-	/** 20140920    
+	/** 20140920
 	 * ct_ca9x4_init 호출.
 	 **/
 	ct_desc->init_tile();
 }
 
-/** 20140830    
+/** 20140830
  * vexpress용 MACHINE 정의.
  *
  * timer :      v2m_timer

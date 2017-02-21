@@ -2,7 +2,7 @@
 #include <linux/seq_file.h>
 #include <linux/poll.h>
 
-/** 20150425    
+/** 20150425
  * mnt_namespace 구조체.
  *
  * count : reference count. (alloc_mnt_ns에서 1로 시작)
@@ -16,7 +16,7 @@ struct mnt_namespace {
 	int event;
 };
 
-/** 20150425    
+/** 20150425
  * struct mount 내의 percpu 자료구조 
  * alloc_vfsmnt에서 alloc_percpu로 할당해 초기화 한다.
  *
@@ -27,7 +27,7 @@ struct mnt_pcp {
 	int mnt_writers;
 };
 
-/** 20150411    
+/** 20150411
  * mount 구조체.
  *
  * vfsmount를 내부에 포함하고 있다.
@@ -36,12 +36,12 @@ struct mount {
 	struct list_head mnt_hash;
 	struct mount *mnt_parent;
 	struct dentry *mnt_mountpoint;
-	/** 20150411    
+	/** 20150411
 	 * vfs에서 mount 될 때 사용되는 object 정보의 구조체.
 	 **/
 	struct vfsmount mnt;
 #ifdef CONFIG_SMP
-	/** 20150425    
+	/** 20150425
 	 * SMP인 경우 percpu로 관리한다.
 	 **/
 	struct mnt_pcp __percpu *mnt_pcp;
@@ -51,12 +51,12 @@ struct mount {
 #endif
 	struct list_head mnt_mounts;	/* list of children, anchored here */
 	struct list_head mnt_child;	/* and going through their mnt_child */
-	/** 20150411    
+	/** 20150411
 	 * struct super_block에 달리는 포인트.
 	 **/
 	struct list_head mnt_instance;	/* mount instance on sb->s_mounts */
 	const char *mnt_devname;	/* Name of device e.g. /dev/dsk/hda1 */
-	/** 20150425    
+	/** 20150425
 	 * struct mnt_namespace가 등록되는 포인트.
 	 **/
 	struct list_head mnt_list;
@@ -77,12 +77,12 @@ struct mount {
 	int mnt_ghosts;
 };
 
-/** 20150411    
+/** 20150411
  * unique한 mnt_namespace값.
  **/
 #define MNT_NS_INTERNAL ERR_PTR(-EINVAL) /* distinct from any mnt_namespace */
 
-/** 20150411    
+/** 20150411
  * vfsmount를 포함하고 있는 mount 구조체를 추출한다.
  **/
 static inline struct mount *real_mount(struct vfsmount *mnt)
@@ -103,7 +103,7 @@ static inline int is_mounted(struct vfsmount *mnt)
 
 extern struct mount *__lookup_mnt(struct vfsmount *, struct dentry *, int);
 
-/** 20150425    
+/** 20150425
  * mnt_namespace의 reference count 증가.
  **/
 static inline void get_mnt_ns(struct mnt_namespace *ns)

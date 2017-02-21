@@ -148,7 +148,7 @@ struct net;
  *	This is the minimal network layer representation of sockets, the header
  *	for struct sock and struct inet_timewait_sock.
  */
-/** 20151107    
+/** 20151107
  * socket의 네트워크 레이어 관련 자료구조. 
  *
  * skc_tx_queue_mapping: 이 연결과 매핑되는 tx queue 번호.
@@ -273,7 +273,7 @@ struct sock {
 	 * don't add nothing before this first member (__sk_common) --acme
 	 */
 	struct sock_common	__sk_common;
-/** 20151107    
+/** 20151107
  * __sk_common을 외부에 노출시키지 않기 위해 define으로 선언하였다.
  **/
 #define sk_node			__sk_common.skc_node
@@ -554,7 +554,7 @@ static inline bool sk_nulls_del_node_init_rcu(struct sock *sk)
 	return rc;
 }
 
-/** 20151107    
+/** 20151107
  * hash list에 sock 구조체를 등록한다.
  **/
 static inline void __sk_add_node(struct sock *sk, struct hlist_head *list)
@@ -596,7 +596,7 @@ static inline void sk_add_bind_node(struct sock *sk,
 	hlist_add_head(&sk->sk_bind_node, list);
 }
 
-/** 20151107    
+/** 20151107
  * hash list의 각 entry를 순회.
  **/
 #define sk_for_each(__sk, node, list) \
@@ -853,7 +853,7 @@ struct module;
  * socket layer -> transport layer interface
  * transport -> network interface is defined by struct inet_proto
  */
-/** 20151107    
+/** 20151107
  * 프로토콜 자료구조.
  *
  * .obj_size : sk_alloc에서 struct sock 구조체를 위한 메모리를 할당 받을 때
@@ -1305,7 +1305,7 @@ static inline struct kiocb *siocb_to_kiocb(struct sock_iocb *si)
 	return si->kiocb;
 }
 
-/** 20151017    
+/** 20151017
  * socket은 VFS상에서 파일이므로 vfs_inode를 갖는다.
  *
  * sock_inode_cachep는 이 구조체를 위한 kmem_cache이다.
@@ -1315,7 +1315,7 @@ struct socket_alloc {
 	struct inode vfs_inode;
 };
 
-/** 20151107    
+/** 20151107
  * inode가 포함되어 있는 socket_alloc의 socket 멤버를 가리킨다.
  **/
 static inline struct socket *SOCKET_I(struct inode *inode)
@@ -1323,7 +1323,7 @@ static inline struct socket *SOCKET_I(struct inode *inode)
 	return &container_of(inode, struct socket_alloc, vfs_inode)->socket;
 }
 
-/** 20151107    
+/** 20151107
  * socket이 포함되어 있는 socket_alloc의 vfs_inode 멤버를 가리킨다.
  **/
 static inline struct inode *SOCK_INODE(struct socket *socket)
@@ -1431,7 +1431,7 @@ static inline void sk_wmem_free_skb(struct sock *sk, struct sk_buff *skb)
  * Mark both the sk_lock and the sk_lock.slock as a
  * per-address-family lock class.
  */
-/** 20151107    
+/** 20151107
  * sock의 lock은 결국 spinlock이다.
  **/
 #define sock_lock_init_class_and_name(sk, sname, skey, name, key)	\
@@ -1520,7 +1520,7 @@ extern void sock_kfree_s(struct sock *sk, void *mem, int size);
 extern void sk_send_sigurg(struct sock *sk);
 
 #ifdef CONFIG_CGROUPS
-/** 20151107    
+/** 20151107
  * sock의 classid를 업데이트.
  **/
 extern void sock_update_classid(struct sock *sk);
@@ -1659,7 +1659,7 @@ static inline void sk_tx_queue_set(struct sock *sk, int tx_queue)
 	sk->sk_tx_queue_mapping = tx_queue;
 }
 
-/** 20151107    
+/** 20151107
  * sock의 sk_tx_queue_mapping를 -1로 초기화.
  **/
 static inline void sk_tx_queue_clear(struct sock *sk)
@@ -1672,12 +1672,12 @@ static inline int sk_tx_queue_get(const struct sock *sk)
 	return sk ? sk->sk_tx_queue_mapping : -1;
 }
 
-/** 20151107    
+/** 20151107
  * struct sock이 struct socket을 가리키도록 지정.
  **/
 static inline void sk_set_socket(struct sock *sk, struct socket *sock)
 {
-	/** 20151107    
+	/** 20151107
 	 * sock의 tx_queue를 초기화.
 	 **/
 	sk_tx_queue_clear(sk);
@@ -2209,7 +2209,7 @@ static inline void sk_eat_skb(struct sock *sk, struct sk_buff *skb, bool copied_
 }
 #endif
 
-/** 20151107    
+/** 20151107
  * sock 구조체에 지정된 net을 가져온다.
  **/
 static inline
@@ -2218,7 +2218,7 @@ struct net *sock_net(const struct sock *sk)
 	return read_pnet(&sk->sk_net);
 }
 
-/** 20151107    
+/** 20151107
  * sock의 pnet을 net으로 설정한다.
  **/
 static inline
@@ -2233,12 +2233,12 @@ void sock_net_set(struct sock *sk, struct net *net)
  * to stop it.
  * Sockets after sk_change_net should be released using sk_release_kernel
  */
-/** 20151107    
+/** 20151107
  * sock 구조체의 현재 net을 해제하고, 새로 전달받은 net으로 설정한다.
  **/
 static inline void sk_change_net(struct sock *sk, struct net *net)
 {
-	/** 20151107    
+	/** 20151107
 	 * pernet을 사용한 경우 sock 구조체로부터 net 자료구조를 받아와 해제한다.
 	 **/
 	put_net(sock_net(sk));

@@ -2,7 +2,7 @@
  * Internal header to deal with irq_desc->status which will be renamed
  * to irq_desc->settings.
  */
-/** 20140913    
+/** 20140913
  * include/linux/irq.h 참고
  **/
 enum {
@@ -20,7 +20,7 @@ enum {
 	_IRQF_MODIFY_MASK	= IRQF_MODIFY_MASK,
 };
 
-/** 20140906    
+/** 20140906
  * internal 버전 설정 이후 재정의되어
  * 이후 IRQ_PER_CPU와 같은 매크로는 사용할 수 없다.
  **/
@@ -46,7 +46,7 @@ irq_settings_clr_and_set(struct irq_desc *desc, u32 clr, u32 set)
 	desc->status_use_accessors |= (set & _IRQF_MODIFY_MASK);
 }
 
-/** 20140906    
+/** 20140906
  * irq_desc의 status를 보고 현재 상태를 파악한다.
  * 각 속성은 include/linux/irq.h의 'IRQ line status' 참고.
  **/
@@ -57,7 +57,7 @@ static inline bool irq_settings_is_per_cpu(struct irq_desc *desc)
 	return desc->status_use_accessors & _IRQ_PER_CPU;
 }
 
-/** 20140906    
+/** 20140906
  * irq_desc의 status를 보고 dev_id가 percpu 변수인지 판단한다.
  **/
 static inline bool irq_settings_is_per_cpu_devid(struct irq_desc *desc)
@@ -107,7 +107,7 @@ static inline void irq_settings_set_level(struct irq_desc *desc)
 	desc->status_use_accessors |= _IRQ_LEVEL;
 }
 
-/** 20140913    
+/** 20140913
  * irq_desc를 조회해 request가 가능한지 검사한다.
  **/
 static inline bool irq_settings_can_request(struct irq_desc *desc)
@@ -165,7 +165,7 @@ static inline bool irq_settings_can_autoenable(struct irq_desc *desc)
 	return !(desc->status_use_accessors & _IRQ_NOAUTOEN);
 }
 
-/** 20140913    
+/** 20140913
  * 이 desc에 해당하는 인터럽트가 다른 인터럽트 쓰레드를 중첩할 수 있는지 검사한다.
  **/
 static inline bool irq_settings_is_nested_thread(struct irq_desc *desc)

@@ -83,7 +83,7 @@ static void (*orig_fp_enter)(void);
 /* forward declarations */
 extern void nwfpe_enter(void);
 
-/** 20151003    
+/** 20151003
  * floating pointer를 처리하기 위한 방법 중 sw emulator 초기화.
  *
  * nwfpe (NetWinder Floating Point Emulator)를 사용하기 위해 fp_enter에

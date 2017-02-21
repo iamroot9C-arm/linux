@@ -651,7 +651,7 @@ static int vfp_hotplug(struct notifier_block *b, unsigned long action,
 /*
  * VFP support code initialisation.
  */
-/** 20151003    
+/** 20151003
  * vfp를 사용하기 위해 각 코어별로 vfp enable을 해준다.
  * 정상적으로 vfp 처리가 가능하다면 vfp_vector에 vfp_support_entry를 저장한다.
  *

@@ -69,7 +69,7 @@ extern void do_trace_rcu_torture_read(char *rcutorturename,
 #endif
 #endif
 
-/** 20140726    
+/** 20140726
  * UINT와 ULONG의 비교 매크로.
  * GE : a >= b
  * LT : a <  b
@@ -98,7 +98,7 @@ extern void do_trace_rcu_torture_read(char *rcutorturename,
  * sections are delimited by rcu_read_lock() and rcu_read_unlock(),
  * and may be nested.
  */
-/** 20140830    
+/** 20140830
  * CONFIG_PREEMPT_RCU인 경우 extern 선언.
  * rcutree_plugin.h
  **/
@@ -108,7 +108,7 @@ extern void call_rcu(struct rcu_head *head,
 #else /* #ifdef CONFIG_PREEMPT_RCU */
 
 /* In classic RCU, call_rcu() is just call_rcu_sched(). */
-/** 20140830    
+/** 20140830
  * CONFIG_PREEMPT_RCU가 아닌 경우 call_rcu_sched 호출.
  **/
 #define	call_rcu	call_rcu_sched
@@ -170,14 +170,14 @@ void synchronize_rcu(void);
  * nesting depth, but makes sense only if CONFIG_PREEMPT_RCU -- in other
  * types of kernel builds, the rcu_read_lock() nesting depth is unknowable.
  */
-/** 20140906    
+/** 20140906
  * preempt rcu인 경우, read-side critical section이 중첩된 depth를 저장한다.
  **/
 #define rcu_preempt_depth() (current->rcu_read_lock_nesting)
 
 #else /* #ifdef CONFIG_PREEMPT_RCU */
 
-/** 20140412    
+/** 20140412
  * CONFIG_PREEMPT_RCU 가 정의되지 않은 경우.
  *
  * lock   : 선점 불가
@@ -193,7 +193,7 @@ static inline void __rcu_read_unlock(void)
 	preempt_enable();
 }
 
-/** 20141025    
+/** 20141025
  * 이미 존재하는 rcu reader가 완료될 때까지 대기한다.
  *
  * CONFIG_PREEMPT_RCU 가 정의되지 않은 경우.
@@ -259,7 +259,7 @@ typedef void call_rcu_func_t(struct rcu_head *head,
 			     void (*func)(struct rcu_head *head));
 void wait_rcu_gp(call_rcu_func_t crf);
 
-/** 20140426    
+/** 20140426
  * CONFIG_TREE_RCU가 정의되어 있어 rcutree.h 가 포함된다.
  **/
 #if defined(CONFIG_TREE_RCU) || defined(CONFIG_TREE_PREEMPT_RCU)
@@ -276,7 +276,7 @@ void wait_rcu_gp(call_rcu_func_t crf);
  * allocated dynamically in the heap or defined statically don't need any
  * initialization.
  */
-/** 20141025    
+/** 20141025
  * RCU list 디버깅용 매커니즘.
  * rcu_head가 동적할당으로 heap에 위치되거나 정적할당하여 사용한다면 필요치 않다.
  **/
@@ -415,7 +415,7 @@ static inline int rcu_read_lock_sched_held(void)
 
 #else /* #ifdef CONFIG_DEBUG_LOCK_ALLOC */
 
-/** 20140412    
+/** 20140412
  * debug용
  **/
 # define rcu_lock_acquire(a)		do { } while (0)
@@ -506,7 +506,7 @@ static inline void rcu_preempt_sleep_check(void)
 #define rcu_dereference_sparse(p, space) \
 	((void)(((typeof(*p) space *)p) == p))
 #else /* #ifdef __CHECKER__ */
-/** 20150425    
+/** 20150425
  * __CHECKER__를 정의하지 않아 NULL.
  **/
 #define rcu_dereference_sparse(p, space)
@@ -532,7 +532,7 @@ static inline void rcu_preempt_sleep_check(void)
 		smp_read_barrier_depends(); \
 		((typeof(*p) __force __kernel *)(_________p1)); \
 	})
-/** 20150425    
+/** 20150425
  * rcu pointer의 값을 읽어온다.
  **/
 #define __rcu_dereference_protected(p, c, space) \
@@ -627,7 +627,7 @@ static inline void rcu_preempt_sleep_check(void)
  * which pointers are protected by RCU and checks that the pointer is
  * annotated as __rcu.
  */
-/** 20160409    
+/** 20160409
  * __rcu_dereference_check를 래핑해 구현한 매크로.
  * rcu 포인터 변수에 대한 역참조를 할 때 condition을 함께 검사한다.
  *
@@ -717,7 +717,7 @@ static inline void rcu_preempt_sleep_check(void)
  * when protected only by rcu_read_lock() will result in infrequent
  * but very ugly failures.
  */
-/** 20150425    
+/** 20150425
  * RCU
  **/
 #define rcu_dereference_protected(p, c) \
@@ -800,7 +800,7 @@ static inline void rcu_preempt_sleep_check(void)
  * block, but only when acquiring spinlocks that are subject to priority
  * inheritance.
  */
-/** 20140412    
+/** 20140412
  * rcu read lock
  *
  *   Preempt     : nesting count 증가 후 barrier.
@@ -816,11 +816,11 @@ static inline void rcu_preempt_sleep_check(void)
  **/
 static inline void rcu_read_lock(void)
 {
-	/** 20140412    
+	/** 20140412
 	 * CONFIG_PREEMPT_RCU에 따른 lock
 	 **/
 	__rcu_read_lock();
-	/** 20140412    
+	/** 20140412
 	 * __CHECKER__를 사용하지 않음
 	 **/
 	__acquire(RCU);
@@ -838,7 +838,7 @@ static inline void rcu_read_lock(void)
  * used as well.  RCU does not care how the writers keep out of each
  * others' way, as long as they do so.
  */
-/** 20140412    
+/** 20140412
  * rcu의 개념상 rcu_write_lock은 존재하지 않는다.
  * rcu가 빠른 성능을 보여주는 이유이다.
  **/
@@ -848,7 +848,7 @@ static inline void rcu_read_lock(void)
  *
  * See rcu_read_lock() for more information.
  */
-/** 20140412    
+/** 20140412
  * rcu_read_unlock.
  * 선점불가로 critical section이 설정되었다면, 선점 가능하도록 한다.
  **/
@@ -974,7 +974,7 @@ static inline notrace void rcu_read_unlock_sched_notrace(void)
  * impossible-to-diagnose memory corruption.  So please be careful.
  * See the RCU_INIT_POINTER() comment header for details.
  */
-/** 20140329    
+/** 20140329
  * RCU로 보호받는 pointer에 새로운 값을 할당한다.
  * Publish-Subscribe Mechanism의 Publish에 해당.
  * [참고] http://lwn.net/Articles/262464/

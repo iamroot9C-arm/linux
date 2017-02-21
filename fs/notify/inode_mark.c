@@ -84,7 +84,7 @@ void fsnotify_destroy_inode_mark(struct fsnotify_mark *mark)
 /*
  * Given an inode, destroy all of the marks associated with that inode.
  */
-/** 20150321    
+/** 20150321
  * 추후분석 ???
  **/
 void fsnotify_clear_marks_by_inode(struct inode *inode)

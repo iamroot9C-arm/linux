@@ -10,7 +10,7 @@ struct task_struct *kthread_create_on_node(int (*threadfn)(void *data),
 					   int node,
 					   const char namefmt[], ...);
 
-/** 20160130    
+/** 20160130
  * kthreadd를 통해 kthread를 생성하는 함수.
  * wake up 명령을 받은 뒤 동작한다.
  **/
@@ -27,7 +27,7 @@ struct task_struct *kthread_create_on_node(int (*threadfn)(void *data),
  * Description: Convenient wrapper for kthread_create() followed by
  * wake_up_process().  Returns the kthread or ERR_PTR(-ENOMEM).
  */
-/** 20160130    
+/** 20160130
  * kthreadd를 통해 kthread에서 threadfn을 수행하고, task를 바로 실행시킨다.
  **/
 #define kthread_run(threadfn, data, namefmt, ...)			   \

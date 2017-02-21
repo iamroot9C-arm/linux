@@ -46,7 +46,7 @@ unsigned long arch_scale_freq_power(struct sched_domain *sd, int cpu)
 	return per_cpu(cpu_scale, cpu);
 }
 
-/** 20150606    
+/** 20150606
  * 지정된 cpu의 cpu_scale을 power로 설정한다.
  **/
 static void set_power_scale(unsigned int cpu, unsigned long power)
@@ -195,7 +195,7 @@ void update_cpu_power(unsigned int cpu, unsigned long hwid)
 }
 
 #else
-/** 20150606    
+/** 20150606
  * CONFIG_OF 정의하지 않음.
  **/
 static inline void parse_dt_topology(void) {}
@@ -207,7 +207,7 @@ static inline void update_cpu_power(unsigned int cpuid, unsigned int mpidr) {}
  * cpu topology management
  */
 
-/** 20150606    
+/** 20150606
  * Cortex-A9 TRM
  *
  * Table 4.3. MPIDR bit assignments
@@ -253,7 +253,7 @@ static inline void update_cpu_power(unsigned int cpuid, unsigned int mpidr) {}
 /*
  * cpu topology table
  */
-/** 20150606    
+/** 20150606
  * arm용 cpu topology table.
  **/
 struct cputopo_arm cpu_topology[NR_CPUS];
@@ -263,13 +263,13 @@ const struct cpumask *cpu_coregroup_mask(int cpu)
 	return &cpu_topology[cpu].core_sibling;
 }
 
-/** 20150606    
+/** 20150606
  * cpuid에 대한 cputopo_arm이 업데이트된 이후,
  * 자신과 possible cpu 중인 sibling mask들의 정보를 갱신한다.
  **/
 void update_siblings_masks(unsigned int cpuid)
 {
-	/** 20150606    
+	/** 20150606
 	 * cpu_topo   : loop 순회 중인 cputopo_arm
 	 * cpuid_topo : 업데이트된 cpu의 cputopo_arm
 	 **/
@@ -280,13 +280,13 @@ void update_siblings_masks(unsigned int cpuid)
 	for_each_possible_cpu(cpu) {
 		cpu_topo = &cpu_topology[cpu];
 
-		/** 20150606    
+		/** 20150606
 		 * 같은 소켓이 아니면 pass.
 		 **/
 		if (cpuid_topo->socket_id != cpu_topo->socket_id)
 			continue;
 
-		/** 20150606    
+		/** 20150606
 		 * 이미 부팅된 cpu의 core_sibling에 자신의 cpuid를 기록하고,
 		 * 자신의 core_sibling에 이미 부팅된 cpuid를 기록한다.
 		 **/
@@ -294,13 +294,13 @@ void update_siblings_masks(unsigned int cpuid)
 		if (cpu != cpuid)
 			cpumask_set_cpu(cpu, &cpuid_topo->core_sibling);
 
-		/** 20150606    
+		/** 20150606
 		 * 같은 core가 아니라면 pass.
 		 **/
 		if (cpuid_topo->core_id != cpu_topo->core_id)
 			continue;
 
-		/** 20150606    
+		/** 20150606
 		 * 이미 부팅된 cpu의 thread_sibling에 자신의 cpuid를 기록하고,
 		 * 자신의 thread_sibling에 이미 부팅된 cpuid를 기록한다.
 		 **/
@@ -316,7 +316,7 @@ void update_siblings_masks(unsigned int cpuid)
  * and with the mutex cpu_hotplug.lock locked, when several cpus have booted,
  * which prevents simultaneous write access to cpu_topology array
  */
-/** 20150606    
+/** 20150606
  * mpidr을 읽어 cpu의 topology를 저장하고 다른 cpu가 가진 정보도 갱신한다.
  **/
 void store_cpu_topology(unsigned int cpuid)
@@ -325,19 +325,19 @@ void store_cpu_topology(unsigned int cpuid)
 	unsigned int mpidr;
 
 	/* If the cpu topology has been already set, just return */
-	/** 20150606    
+	/** 20150606
 	 * cpu topology는 한 번만 초기화 되도록 한다.
 	 **/
 	if (cpuid_topo->core_id != -1)
 		return;
 
-	/** 20150606    
+	/** 20150606
 	 * mpidr을 읽어온다.
 	 **/
 	mpidr = read_cpuid_mpidr();
 
 	/* create cpu topology mapping */
-	/** 20150606    
+	/** 20150606
 	 * mpidr이 SMP format일 경우
 	 **/
 	if ((mpidr & MPIDR_SMP_BITMASK) == MPIDR_SMP_VALUE) {
@@ -346,7 +346,7 @@ void store_cpu_topology(unsigned int cpuid)
 		 * multiprocessor format & multiprocessor mode field are set
 		 */
 
-		/** 20150606    
+		/** 20150606
 		 * MPIDR_MT_BITMASK은 cortex-a15부터 포맷에 추가되었다.
 		 **/
 		if (mpidr & MPIDR_MT_BITMASK) {
@@ -359,7 +359,7 @@ void store_cpu_topology(unsigned int cpuid)
 				& MPIDR_LEVEL2_MASK;
 		} else {
 			/* largely independent cores */
-			/** 20150606    
+			/** 20150606
 			 * core id와 socket id를 저장한다.
 			 **/
 			cpuid_topo->thread_id = -1;
@@ -383,7 +383,7 @@ void store_cpu_topology(unsigned int cpuid)
 
 	update_cpu_power(cpuid, mpidr & MPIDR_HWID_BITMASK);
 
-	/** 20150606    
+	/** 20150606
 	 * CPU0: thread -1, cpu 0, socket 0, mpidr 80000000
 	 * CPU1: thread -1, cpu 1, socket 0, mpidr 80000001
 	 * CPU2: thread -1, cpu 2, socket 0, mpidr 80000002
@@ -399,7 +399,7 @@ void store_cpu_topology(unsigned int cpuid)
  * init_cpu_topology is called at boot when only one cpu is running
  * which prevent simultaneous write access to cpu_topology array
  */
-/** 20150606    
+/** 20150606
  * cpu topology 관련 초기화를 수행한다. - 구조체 초기화.
  **/
 void init_cpu_topology(void)
@@ -407,7 +407,7 @@ void init_cpu_topology(void)
 	unsigned int cpu;
 
 	/* init core mask and power*/
-	/** 20150606    
+	/** 20150606
 	 * possible cpu들의 각 구조체를 초기화 한다.
 	 **/
 	for_each_possible_cpu(cpu) {

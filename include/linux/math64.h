@@ -99,7 +99,7 @@ static inline s64 div_s64(s64 dividend, s32 divisor)
 
 u32 iter_div_u64_rem(u64 dividend, u32 divisor, u64 *remainder);
 
-/** 20151212    
+/** 20151212
  * 아래와 같은 계산을 뺄셈으로 계산한다.
  *
  * ret = dividend / divisor;

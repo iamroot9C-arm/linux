@@ -28,7 +28,7 @@
 /*
  * Default to the loop-based delay implementation.
  */
-/** 20150124    
+/** 20150124
  * loop로 arm의 delay ops를 구현한다.
  **/
 struct arm_delay_ops arm_delay_ops = {

@@ -26,7 +26,7 @@
 /*
  * Get the number of CPU cores from the SCU configuration
  */
-/** 20130518    
+/** 20130518
  * SCU_CONFIG 레지스터의 값을 읽어와 하위 2비트의 값에 1을 더해 리턴한다.
  * SCU_CONFIG의 내용은 TRM 을 참조.
  **/
@@ -39,7 +39,7 @@ unsigned int __init scu_get_core_count(void __iomem *scu_base)
 /*
  * Enable the SCU
  */
-/** 20150118    
+/** 20150118
  * SCU 레지스터에 값을 써 SCU enable 시키고 cache를 flush 한다.
  **/
 void scu_enable(void __iomem *scu_base)

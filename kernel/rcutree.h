@@ -35,7 +35,7 @@
  * In practice, this did work well going from three levels to four.
  * Of course, your mileage may vary.
  */
-/** 20140726    
+/** 20140726
  * vexpress config로
  * CONFIG_RCU_FANOUT_LEAF			16
  * CONFIG_RCU_FANOUT				32
@@ -46,7 +46,7 @@
 #define RCU_FANOUT_3	      (RCU_FANOUT_2 * CONFIG_RCU_FANOUT)
 #define RCU_FANOUT_4	      (RCU_FANOUT_3 * CONFIG_RCU_FANOUT)
 
-/** 20140726    
+/** 20140726
  * CPU 개수에 따라 LEVEL의 수와 각 레벨에 속하는 노드의 개수를 결정한다.
  * 사용하는 마지막 레벨의 노드의 개수는 CPU의 수 (???)
  *
@@ -85,7 +85,7 @@
 # error "CONFIG_RCU_FANOUT insufficient for NR_CPUS"
 #endif /* #if (NR_CPUS) <= RCU_FANOUT_1 */
 
-/** 20140726    
+/** 20140726
  * 각 레벨이 가지는 RCU의 합을 계산.
  *
  * 현재 설정에서
@@ -95,7 +95,7 @@
 #define RCU_SUM (NUM_RCU_LVL_0 + NUM_RCU_LVL_1 + NUM_RCU_LVL_2 + NUM_RCU_LVL_3 + NUM_RCU_LVL_4)
 #define NUM_RCU_NODES (RCU_SUM - NR_CPUS)
 
-/** 20140809    
+/** 20140809
  * rcu_init_geometry 에서 level의 수와 node의 수를 설정.
  **/
 extern int rcu_num_lvls;
@@ -105,7 +105,7 @@ extern int rcu_num_nodes;
  * Dynticks per-CPU state.
  */
 struct rcu_dynticks {
-	/** 20140823    
+	/** 20140823
 	 * dynticks_nesting : NEST_MASK에 해당하는 부분
 	 * 0  : IDLE
 	 * !0 : NOT IDLE, Nesting Level
@@ -113,7 +113,7 @@ struct rcu_dynticks {
 	long long dynticks_nesting; /* Track irq/process nesting level. */
 				    /* Process level is worth LLONG_MAX/2. */
 	int dynticks_nmi_nesting;   /* Track NMI nesting level. */
-	/** 20140809    
+	/** 20140809
 	 * 짝수: idle일 때 사용, 홀수: 그 외.
 	 **/
 	atomic_t dynticks;	    /* Even value for idle, else odd. */
@@ -154,7 +154,7 @@ struct rcu_node {
 	unsigned long completed; /* Last GP completed for this node. */
 				/*  This will either be equal to or one */
 				/*  behind the root rcu_node's gpnum. */
-	/** 20140809    
+	/** 20140809
 	 * 현재의 grace period 를 진행할 cpu/group에 대한 mask.
 	 * dyntick에서 결과를 확인하기 위한 대상이 속해 있는지 표시.
 	 *
@@ -183,7 +183,7 @@ struct rcu_node {
 	u8	grpnum;		/* CPU/group number for next level up. */
 	u8	level;		/* root is at level 0. */
 	struct rcu_node *parent;
-	/** 20140906    
+	/** 20140906
 	 * RCU read-side critical section에서 block된 task들의 list.
 	 * 먼저 들어오면 task에 tail 방향에 위치한다.
 	 **/
@@ -191,7 +191,7 @@ struct rcu_node {
 				/* Tasks blocked in RCU read-side critical */
 				/*  section.  Tasks are placed at the head */
 				/*  of this list and age towards the tail. */
-	/** 20140823    
+	/** 20140823
 	 * 현재 gp를 block 시키는 task들의 리스트.
 	 **/
 	struct list_head *gp_tasks;
@@ -252,7 +252,7 @@ struct rcu_node {
  * Do a full breadth-first scan of the rcu_node structures for the
  * specified rcu_state structure.
  */
-/** 20140809    
+/** 20140809
  * rcu의 각 node를 너비 우선 순회한다.
  **/
 #define rcu_for_each_node_breadth_first(rsp, rnp) \
@@ -274,7 +274,7 @@ struct rcu_node {
  * one rcu_node structure, this loop -will- visit the rcu_node structure.
  * It is still a leaf node, even if it is also the root node.
  */
-/** 20140809    
+/** 20140809
  * leaf node들을 순회한다.
  **/
 #define rcu_for_each_leaf_node(rsp, rnp) \
@@ -282,7 +282,7 @@ struct rcu_node {
 	     (rnp) < &(rsp)->node[rcu_num_nodes]; (rnp)++)
 
 /* Index values for nxttail array in struct rcu_data. */
-/** 20140726    
+/** 20140726
  * rcu_data의 nxttail의 TYPE. SIZE는 4개.
  * 각 type별로 list가 구성된다.
  **/
@@ -299,7 +299,7 @@ struct rcu_data {
 					/*  in order to detect GP end. */
 	unsigned long	gpnum;		/* Highest gp number that this CPU */
 					/*  is aware of having started. */
-	/** 20140823    
+	/** 20140823
 	 * passed_quiesce_gpnum
 	 *   quiescent state가 될 때의 gpnum.
 	 *   초기화시 rnp->gnum - 1을 대입함.
@@ -309,21 +309,21 @@ struct rcu_data {
 	 **/
 	unsigned long	passed_quiesce_gpnum;
 					/* gpnum at time of quiescent state. */
-	/** 20140823    
+	/** 20140823
 	 * gp 시작 이후 quiescent state를 한 번이라도 거쳤는지 기록.
 	 **/
 	bool		passed_quiesce;	/* User-mode/idle loop etc. */
-	/** 20140906    
+	/** 20140906
 	 * qs state를 기다리는 중이다.
 	 **/
 	bool		qs_pending;	/* Core waits for quiesc state. */
 	bool		beenonline;	/* CPU online at least once. */
 	bool		preemptible;	/* Preemptible RCU? */
-	/** 20140809    
+	/** 20140809
 	 * 현재 cpu가 속해 있는 leaf node.
 	 **/
 	struct rcu_node *mynode;	/* This CPU's leaf of hierarchy */
-	/** 20140823    
+	/** 20140823
 	 * leaf node의 qsmask에 적용하기 위한 mask.
 	 * rdp에 해당하는 cpu가 rcu_node에서 몇 번째에 해당하는지에 대한 정보.
 	 **/
@@ -358,7 +358,7 @@ struct rcu_data {
 	 *	Note that the value of *nxttail[RCU_NEXT_TAIL] will
 	 *	always be NULL, as this is the end of the list.
 	 */
-	/** 20140726    
+	/** 20140726
 	 * nxttail은 type 별로 nxtlist의 위치를 저장한다.
 	 **/
 	/** 20140816
@@ -374,7 +374,7 @@ struct rcu_data {
 	struct rcu_head **nxttail[RCU_NEXT_SIZE];
 	long		qlen_lazy;	/* # of lazy queued callbacks */
 	long		qlen;		/* # of queued callbacks, incl lazy */
-	/** 20140823    
+	/** 20140823
 	 * force QS를 위해 마지막 check했을 때의 queue되어 있는 CB의 수.
 	 **/
 	long		qlen_last_fqs_check;
@@ -382,7 +382,7 @@ struct rcu_data {
 	unsigned long	n_cbs_invoked;	/* count of RCU cbs invoked. */
 	unsigned long   n_cbs_orphaned; /* RCU cbs orphaned by dying CPU */
 	unsigned long   n_cbs_adopted;  /* RCU cbs adopted from dying CPU */
-	/** 20140823    
+	/** 20140823
 	 * 최근에 force QS가 몇 개의 cpu에서 있었는지 저장.
 	 * rcu_data init 시점에 rsp->n_force_qs를 가져온다.
 	 **/
@@ -395,7 +395,7 @@ struct rcu_data {
 	int dynticks_snap;		/* Per-GP tracking for dynticks. */
 
 	/* 4) reasons this CPU needed to be kicked by force_quiescent_state */
-	/** 20140809    
+	/** 20140809
 	 * dynticks, offline 같은 상태에 의해서 force qs 상태가 되었음을 표시.
 	 **/
 	unsigned long dynticks_fqs;	/* Kicked due to dynticks idle. */
@@ -420,7 +420,7 @@ struct rcu_data {
 };
 
 /* Values for fqs_state field in struct rcu_state. */
-/** 20140809    
+/** 20140809
  * fqs_state의 설정값들.
  * gp의 상태에 따라 달라진다.
  **/
@@ -430,12 +430,12 @@ struct rcu_data {
 #define RCU_FORCE_QS		3	/* Need to force quiescent state. */
 #define RCU_SIGNAL_INIT		RCU_SAVE_DYNTICK
 
-/** 20140809    
+/** 20140809
  * force_qs까지 몇 개의 jiffies를 허용할 것인가.
  **/
 #define RCU_JIFFIES_TILL_FORCE_QS	 3	/* for rsp->jiffies_force_qs */
 
-/** 20140809    
+/** 20140809
  * CONFIG_PROVE_RCU이므로 DELAY_DELTA는 0.
  **/
 #ifdef CONFIG_PROVE_RCU
@@ -470,7 +470,7 @@ do {									\
  * consisting of a single rcu_node.
  */
 struct rcu_state {
-	/** 20140823    
+	/** 20140823
 	 * rcu_node는 cpu의 개수에 따라 hierarchy로 구성되고, 
 	 * root node는 rcu_get_root로 가져올 수 있다.
 	 **/
@@ -486,12 +486,12 @@ struct rcu_state {
 
 	u8	fqs_state ____cacheline_internodealigned_in_smp;
 						/* Force QS state. */
-	/** 20140809    
+	/** 20140809
 	 * force qs가 동작 중임을 표시.
 	 **/
 	u8	fqs_active;			/* force_quiescent_state() */
 						/*  is running. */
-	/** 20140809    
+	/** 20140809
 	 * rcu_start_gp에서, force qs 동작 중이어서 gp를 시작하지 못한 경우 기록.
 	 **/
 	u8	fqs_need_gp;			/* A CPU was prevented from */
@@ -500,7 +500,7 @@ struct rcu_state {
 						/*  force_quiescent_state() */
 						/*  was running. */
 	u8	boost;				/* Subject to priority boost. */
-	/** 20140809    
+	/** 20140809
 	 * gpnum : 현재 gp number
 	 * completed: 마지막 완료된 gp number
 	 **/
@@ -509,7 +509,7 @@ struct rcu_state {
 
 	/* End of fields guarded by root rcu_node's lock. */
 
-	/** 20140823    
+	/** 20140823
 	 * cpu online, offline시 원자성을 보호하기 위한 lock.
 	 * 새로운 gp를 시작할 때에도 사용.
 	 **/
@@ -531,32 +531,32 @@ struct rcu_state {
 	struct completion barrier_completion;	/* Wake at barrier end. */
 	unsigned long n_barrier_done;		/* ++ at start and end of */
 						/*  _rcu_barrier(). */
-	/** 20140809    
+	/** 20140809
 	 * force quiescent_state lock
 	 **/
 	raw_spinlock_t fqslock;			/* Only one task forcing */
 						/*  quiescent states. */
 	unsigned long jiffies_force_qs;		/* Time at which to invoke */
 						/*  force_quiescent_state(). */
-	/** 20140809    
+	/** 20140809
 	 * force qs를 진행한 횟수.
 	 **/
 	unsigned long n_force_qs;		/* Number of calls to */
 						/*  force_quiescent_state(). */
 	unsigned long n_force_qs_lh;		/* ~Number of calls leaving */
 						/*  due to lock unavailable. */
-	/** 20140809    
+	/** 20140809
 	 **/
 	unsigned long n_force_qs_ngp;		/* Number of calls leaving */
 						/*  due to no GP active. */
 	unsigned long gp_start;			/* Time at which GP started, */
 						/*  but in jiffies. */
-	/** 20140906    
+	/** 20140906
 	 * CPU stall이라 판단할 jiffies.
 	 **/
 	unsigned long jiffies_stall;		/* Time at which to check */
 						/*  for CPU stalls. */
-	/** 20140809    
+	/** 20140809
 	 * gp 중 가장 큰 duration을 가졌던 값을 기록한다.
 	 **/
 	unsigned long gp_max;			/* Maximum GP duration in */
@@ -565,7 +565,7 @@ struct rcu_state {
 	struct list_head flavors;		/* List of RCU flavors. */
 };
 
-/** 20140726    
+/** 20140726
  * rcu_struct_flavors 리스트를 순회한다.
  *
  * 20140823    

@@ -21,7 +21,7 @@
 #include "tick-internal.h"
 
 /* The registered clock event devices */
-/** 20141122    
+/** 20141122
  * clockevent_devices 리스트.
  *
  * clockevents_released는 clockevents_exchange_device에서
@@ -31,7 +31,7 @@ static LIST_HEAD(clockevent_devices);
 static LIST_HEAD(clockevents_released);
 
 /* Notification for clock events */
-/** 20140426    
+/** 20140426
  * clockevents_chain이라는 이름으로 clockevent notifier head를 선언한다.
  *
  * => tick_init만 등록.
@@ -51,7 +51,7 @@ static DEFINE_RAW_SPINLOCK(clockevents_lock);
  *
  * Math helper, returns latch value converted to nanoseconds (bound checked)
  */
-/** 20141227    
+/** 20141227
  * latch value (device ticks)를 ns로 변환한다.
  **/
 u64 clockevent_delta2ns(unsigned long latch, struct clock_event_device *evt)
@@ -231,7 +231,7 @@ static int clockevents_program_min_delta(struct clock_event_device *dev)
  *
  * Returns 0 on success, -ETIME when the event is in the past.
  */
-/** 20141129    
+/** 20141129
  * clock_event_device에 expires를 next_event로 설정한다.
  * 자세한 분석은 생략???
  **/
@@ -298,7 +298,7 @@ int clockevents_register_notifier(struct notifier_block *nb)
  * Notify about a clock event change. Called with clockevents_lock
  * held.
  */
-/** 20140920    
+/** 20140920
  * clockevents_chain 리스트에 clockevents change를 통보한다.
  **/
 static void clockevents_do_notify(unsigned long reason, void *dev)
@@ -310,7 +310,7 @@ static void clockevents_do_notify(unsigned long reason, void *dev)
  * Called after a notify add to make devices available which were
  * released from the notifier call.
  */
-/** 20150613    
+/** 20150613
  * 새로운 notify를 등록한 뒤,
  * notifier call로부터 릴리즈된 디바이스를 사용가능하도록 한다.
  **/
@@ -318,7 +318,7 @@ static void clockevents_notify_released(void)
 {
 	struct clock_event_device *dev;
 
-	/** 20150606    
+	/** 20150606
 	 * notify add 이후 notifier call로부터 release된 clock event device를
 	 * 활성화 시키기 위해 clockevent devices에 추가한다.
 	 *
@@ -339,7 +339,7 @@ static void clockevents_notify_released(void)
  * clockevents_register_device - register a clock event device
  * @dev:	device to register
  */
-/** 20150613    
+/** 20150613
  * 새로운 clock event device를 등록한다.
  *
  * 1. time_init -> v2m_timer_init -> sp804_clockevent 1번 호출.
@@ -350,7 +350,7 @@ void clockevents_register_device(struct clock_event_device *dev)
 	unsigned long flags;
 
 	BUG_ON(dev->mode != CLOCK_EVT_MODE_UNUSED);
-	/** 20160116    
+	/** 20160116
 	 * percpu_timer_setup에서 호출되었을 경우는 cpumask가 지정되어 있다.
 	 **/
 	if (!dev->cpumask) {
@@ -358,12 +358,12 @@ void clockevents_register_device(struct clock_event_device *dev)
 		dev->cpumask = cpumask_of(smp_processor_id());
 	}
 
-	/** 20150606    
+	/** 20150606
 	 * irq를 막고 spinlock으로 clockevent 변경을 보호한다.
 	 **/
 	raw_spin_lock_irqsave(&clockevents_lock, flags);
 
-	/** 20141122    
+	/** 20141122
 	 * clock_event_device를 전역 리스트에 등록한다.
 	 * 
 	 * 즉, 전역 리스트에 새로운 clock event device를 등록하고,
@@ -381,7 +381,7 @@ void clockevents_config(struct clock_event_device *dev, u32 freq)
 {
 	u64 sec;
 
-	/** 20141227    
+	/** 20141227
 	 * clock event device에 CLOCK_EVT_FEAT_ONESHOT가 있어야 한다.
 	 **/
 	if (!(dev->features & CLOCK_EVT_FEAT_ONESHOT))
@@ -392,7 +392,7 @@ void clockevents_config(struct clock_event_device *dev, u32 freq)
 	 * to 10 minutes for hardware which can program more than
 	 * 32bit ticks so we still get reasonable conversion values.
 	 */
-	/** 20141227    
+	/** 20141227
 	 **/
 	sec = dev->max_delta_ticks;
 	do_div(sec, freq);
@@ -415,7 +415,7 @@ void clockevents_config(struct clock_event_device *dev, u32 freq)
  *
  * min/max_delta can be 0 for devices which do not support oneshot mode.
  */
-/** 20140920    
+/** 20140920
  * clock event device를 설정하고 등록한다.
  * twd_timer_setup에서는 "local_timer"를 지정해 호출한다.
  **/
@@ -477,7 +477,7 @@ void clockevents_exchange_device(struct clock_event_device *old,
 	 * released list and do a notify add later.
 	 */
 	if (old) {
-		/** 20150606    
+		/** 20150606
 		 * release된 clock event device는 clockevents_released에 등록한다.
 		 * 추후 notify add로 통지한다.
 		 **/
@@ -497,7 +497,7 @@ void clockevents_exchange_device(struct clock_event_device *old,
 /**
  * clockevents_notify - notification about relevant events
  */
-/** 20160116    
+/** 20160116
  * clockevents 발생을 통보한다.
  **/
 void clockevents_notify(unsigned long reason, void *arg)
@@ -507,12 +507,12 @@ void clockevents_notify(unsigned long reason, void *arg)
 	int cpu;
 
 	raw_spin_lock_irqsave(&clockevents_lock, flags);
-	/** 20150613    
+	/** 20150613
 	 * clockevents chain에 notify 통보.
 	 **/
 	clockevents_do_notify(reason, arg);
 
-	/** 20150613    
+	/** 20150613
 	 * reason이 CPU DEAD일 때 별도로 처리
 	 **/
 	switch (reason) {

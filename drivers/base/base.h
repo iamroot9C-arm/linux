@@ -25,7 +25,7 @@
  * bus_type/class to be statically allocated safely.  Nothing outside of the
  * driver core should ever touch these fields.
  */
-/** 20150905    
+/** 20150905
  * driver core에 대한 private data를 저장하는 자료구조.
  *	bus 구조체와 class 구조체 등은 공통으로 subsys_private 구조체를 가지고 있다.
  *
@@ -52,7 +52,7 @@ struct subsys_private {
 };
 #define to_subsys_private(obj) container_of(obj, struct subsys_private, subsys.kobj)
 
-/** 20151121    
+/** 20151121
  * driver_private 구조체에 kobject가 존재한다.
  *
  * .klist_devices : 이 드라이버와 연결된 디바이스 klist.
@@ -66,7 +66,7 @@ struct driver_private {
 	struct module_kobject *mkobj;
 	struct device_driver *driver;
 };
-/** 20151121    
+/** 20151121
  * kobject를 포함하는 driver_private 구조체를 리턴한다.
  **/
 #define to_driver(obj) container_of(obj, struct driver_private, kobj)
@@ -89,7 +89,7 @@ struct driver_private {
  *
  * Nothing outside of the driver core should ever touch these fields.
  */
-/** 20150829    
+/** 20150829
  * device 구조체에서 driver에 관련된 private 자료구조를 저장하는 구조체.
  *
  * klist_node는 각 리스트에 연결하기 위한 entry point.
@@ -105,7 +105,7 @@ struct device_private {
 	void *driver_data;
 	struct device *device;
 };
-/** 20150912    
+/** 20150912
  * klist에 연결하기 위한 각 knode를 받아 device_private 자료구조를 찾아오는 매크로
  **/
 #define to_device_private_parent(obj)	\
@@ -125,7 +125,7 @@ extern int firmware_init(void);
 #ifdef CONFIG_SYS_HYPERVISOR
 extern int hypervisor_init(void);
 #else
-/** 20150829    
+/** 20150829
  * CONFIG_SYS_HYPERVISOR가 정의되지 않음.
  **/
 static inline int hypervisor_init(void) { return 0; }
@@ -143,7 +143,7 @@ extern void bus_remove_driver(struct device_driver *drv);
 extern void driver_detach(struct device_driver *drv);
 extern int driver_probe_device(struct device_driver *drv, struct device *dev);
 extern void driver_deferred_probe_del(struct device *dev);
-/** 20150905    
+/** 20150905
  * 드라이버와 디바이스가 매치되는지 검사해 match한다면 
  *
  * driver 버스에 match 함수가 존재하면 호출해 결과 리턴. 그렇지 않다면 1 리턴.
@@ -174,7 +174,7 @@ static inline void module_remove_driver(struct device_driver *drv) { }
 #ifdef CONFIG_DEVTMPFS
 extern int devtmpfs_init(void);
 #else
-/** 20150822    
+/** 20150822
  * CONIFG_DEVTMPFS가 정의되어 있지 않다.
  **/
 static inline int devtmpfs_init(void) { return 0; }

@@ -119,7 +119,7 @@ enum sock_shutdown_cmd {
 	SHUT_RDWR	= 2,
 };
 
-/** 20151017    
+/** 20151017
  * socket wait queue.
  **/
 struct socket_wq {

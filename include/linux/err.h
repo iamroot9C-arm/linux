@@ -17,7 +17,7 @@
 
 #ifndef __ASSEMBLY__
 
-/** 20140412    
+/** 20140412
  * MAX_ERRNO -4095를 unsigned로 type casting.
  * IS_ERR_VALUE에 넘겨준 x 역시 unsigned로 type casting.
  * 음수는 0에 가까운 값일수록 절대값이 큰 값을 가진다는 원리를 이용해 error를 판별
@@ -27,7 +27,7 @@
  **/
 #define IS_ERR_VALUE(x) unlikely((x) >= (unsigned long)-MAX_ERRNO)
 
-/** 20150411    
+/** 20150411
  * error를 pointer로 casting 해 리턴.
  **/
 static inline void * __must_check ERR_PTR(long error)
@@ -35,7 +35,7 @@ static inline void * __must_check ERR_PTR(long error)
 	return (void *) error;
 }
 
-/** 20160416    
+/** 20160416
  * ptr 값을 반환.
  **/
 static inline long __must_check PTR_ERR(const void *ptr)
@@ -43,7 +43,7 @@ static inline long __must_check PTR_ERR(const void *ptr)
 	return (long) ptr;
 }
 
-/** 20140412    
+/** 20140412
  * 이전에 수행한 값이 ERR인지 판단하는 함수.
  **/
 static inline long __must_check IS_ERR(const void *ptr)
@@ -63,7 +63,7 @@ static inline long __must_check IS_ERR_OR_NULL(const void *ptr)
  * Explicitly cast an error-valued pointer to another pointer type in such a
  * way as to make it clear that's what's going on.
  */
-/** 20150314    
+/** 20150314
  * ERR값에서 const 속성을 제거.
  **/
 static inline void * __must_check ERR_CAST(const void *ptr)

@@ -31,7 +31,7 @@
  * - does not permit private mmap in NOMMU mode (can't do COW)
  * - no readahead or I/O queue unplugging required
  */
-/** 20150502    
+/** 20150502
  * /dev/mem, /dev/kmem과 같이 직접 매핑 가능한 character 장치를 위한 bdi.
  **/
 struct backing_dev_info directly_mappable_cdev_bdi = {
@@ -50,7 +50,7 @@ struct backing_dev_info directly_mappable_cdev_bdi = {
 
 static struct kobj_map *cdev_map;
 
-/** 20150502    
+/** 20150502
  * chrdevs 뮤텍스 선언.
  **/
 static DEFINE_MUTEX(chrdevs_lock);
@@ -553,7 +553,7 @@ void cdev_init(struct cdev *cdev, const struct file_operations *fops)
 	cdev->ops = fops;
 }
 
-/** 20150502    
+/** 20150502
  * chrdev_init시 kobj_probe_t로 지정되는 함수.
  **/
 static struct kobject *base_probe(dev_t dev, int *part, void *data)
@@ -564,16 +564,16 @@ static struct kobject *base_probe(dev_t dev, int *part, void *data)
 	return NULL;
 }
 
-/** 20150502    
+/** 20150502
  * kobj_map을 초기화 하고, directly_mappable_cdev_bdi 속성을 초기화 한다.
  **/
 void __init chrdev_init(void)
 {
-	/** 20150502    
+	/** 20150502
 	 * kobj_map을 할당받아 초기화 하고, cdev_map을 리턴한다.
 	 **/
 	cdev_map = kobj_map_init(base_probe, &chrdevs_lock);
-	/** 20150502    
+	/** 20150502
 	 * directly_mappable_cdev_bdi 의 속성을 초기화 한다.
 	 **/
 	bdi_init(&directly_mappable_cdev_bdi);

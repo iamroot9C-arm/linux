@@ -19,7 +19,7 @@
 #endif
 
 
-/** 20130406    
+/** 20130406
  * 호출된 파일명과 라인 번호, INSTR (0xe7f001f2)와 함께 호출
  **/
 #define BUG() _BUG(__FILE__, __LINE__, BUG_INSTR_VALUE)
@@ -34,7 +34,7 @@
  * avoid multiple copies of the string appearing in the kernel image.
  */
 
-	/** 20130406    
+	/** 20130406
 	 * .pushsection name, "flags", @type, flag_specific_arguments
 	 *
 	 * flags

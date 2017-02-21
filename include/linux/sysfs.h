@@ -23,7 +23,7 @@ struct kobject;
 struct module;
 enum kobj_ns_type;
 
-/** 20150905    
+/** 20150905
  * sysfs 속성 파일.
  *
  * 이름과 VFS의 모드를 포함한다.
@@ -59,7 +59,7 @@ do {							\
 #define sysfs_attr_init(attr) do {} while(0)
 #endif
 
-/** 20150905    
+/** 20150905
  * attribute 집합 구조체.
  **/
 struct attribute_group {
@@ -76,7 +76,7 @@ struct attribute_group {
  * for examples..
  */
 
-/** 20150905    
+/** 20150905
  * attribute 구조체 오브젝트를 구성한다.
  * ex) device_attribute, kobj_attribute
  **/
@@ -86,7 +86,7 @@ struct attribute_group {
 	.store	= _store,					\
 }
 
-/** 20151010    
+/** 20151010
  * read-only attribute 구조체 오브젝트를 구성한다.
  * .store 콜백을 지정하지 않고, .show 콜백은 name에 _show를 붙인 함수를 사용한다.
  **/
@@ -113,7 +113,7 @@ struct attribute_group {
 struct file;
 struct vm_area_struct;
 
-/** 20150905    
+/** 20150905
  * sysfs의 binary 속성 파일.
  * read, write, mmap 콜백 지정이 가능하다.
  **/

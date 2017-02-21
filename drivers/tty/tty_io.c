@@ -3049,14 +3049,14 @@ void tty_unregister_device(struct tty_driver *driver, unsigned index)
 }
 EXPORT_SYMBOL(tty_unregister_device);
 
-/** 20151121    
+/** 20151121
  * tty_driver를 위한 메모리를 할당하고 멤버를 초기화 한다.
  **/
 struct tty_driver *__alloc_tty_driver(int lines, struct module *owner)
 {
 	struct tty_driver *driver;
 
-	/** 20151121    
+	/** 20151121
 	 * tty_driver를 위한 메모리 할당하고 멤버 초기화.
 	 * num은 매개변수로 넘어온 lines가 지정된다.
 	 **/
@@ -3110,7 +3110,7 @@ void tty_driver_kref_put(struct tty_driver *driver)
 }
 EXPORT_SYMBOL(tty_driver_kref_put);
 
-/** 20151121    
+/** 20151121
  * tty_driver의 ops 지정.
  **/
 void tty_set_operations(struct tty_driver *driver,
@@ -3129,7 +3129,7 @@ EXPORT_SYMBOL(put_tty_driver);
 /*
  * Called by a tty driver to register itself.
  */
-/** 20151121    
+/** 20151121
  * tty 드라이버 등록.
  * 분석 생략???
  **/
@@ -3306,7 +3306,7 @@ void tty_default_fops(struct file_operations *fops)
  * Just do some early initializations, and do the complex setup
  * later.
  */
-/** 20150124    
+/** 20150124
  * console device를 사용하기 전 init 과정을 수행한다.
  *
  * TTY를 등록시키고, console_initcall로 등록한 함수들을 수행한다.
@@ -3316,7 +3316,7 @@ void __init console_init(void)
 	initcall_t *call;
 
 	/* Setup the default TTY line discipline. */
-	/** 20150124    
+	/** 20150124
 	 * default TTY를 ldisc 등록한다.
 	 **/
 	tty_ldisc_begin();
@@ -3325,7 +3325,7 @@ void __init console_init(void)
 	 * set up the console device so that later boot sequences can
 	 * inform about problems etc..
 	 */
-	/** 20150124    
+	/** 20150124
 	 * console_initcall로 등록된 fn을 순서대로 호출한다.
 	 * (.con_initcall.init 섹션)
 	 *
@@ -3340,7 +3340,7 @@ void __init console_init(void)
 	}
 }
 
-/** 20151114    
+/** 20151114
  * tty device node 중 TTYAUX_MAJOR, 지정된 minor인 경우 mode를 설정한다.
  **/
 static char *tty_devnode(struct device *dev, umode_t *mode)
@@ -3353,12 +3353,12 @@ static char *tty_devnode(struct device *dev, umode_t *mode)
 	return NULL;
 }
 
-/** 20151114    
+/** 20151114
  * class "tty"를 추가한다.
  **/
 static int __init tty_class_init(void)
 {
-	/** 20151114    
+	/** 20151114
 	 * tty class를 생성한다. /sys/class/tty
 	 * devtmpfs로 device node를 추가할 때 호출할 콜백을 지정한다.
 	 **/

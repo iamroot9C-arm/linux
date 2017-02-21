@@ -18,7 +18,7 @@
 #include <linux/rcupdate.h>
 
 #if BITS_PER_LONG == 32
-/** 20140517    
+/** 20140517
  **/
 # define IDR_BITS 5
 # define IDR_FULL 0xfffffffful
@@ -40,7 +40,7 @@
 #define IDR_SIZE (1 << IDR_BITS)
 #define IDR_MASK ((1 << IDR_BITS)-1)
 
-/** 20140517    
+/** 20140517
  * MAX_ID_SHIFT : 31
  * MAX_ID_BIT   : 1U << 31
  * MAX_ID_MASK  : (1U << 31 - 1)
@@ -50,7 +50,7 @@
 #define MAX_ID_MASK (MAX_ID_BIT - 1)
 
 /* Leave the possibility of an incomplete final layer */
-/** 20140517    
+/** 20140517
  * MAX_LEVEL :  31 + 5 - 1 / 5 = 7
  **/
 #define MAX_LEVEL (MAX_ID_SHIFT + IDR_BITS - 1) / IDR_BITS
@@ -58,7 +58,7 @@
 /* Number of id_layer structs to leave in free list */
 #define IDR_FREE_MAX MAX_LEVEL + MAX_LEVEL
 
-/** 20140712    
+/** 20140712
  * integer ID와 pointer를 저장하는 자료구조 (tree의 node에 해당)
  *
  *		bitmap		현재 layer에서 비어있는 곳은 0, 채워진 곳은 1.
@@ -83,7 +83,7 @@ struct idr_layer {
 	struct rcu_head		 rcu_head;
 };
 
-/** 20140517    
+/** 20140517
  * object에 integer ID를 할당하고, id로 objects를 찾을 때 사용한다.
  *
  * idr_init으로 초기화.
@@ -103,7 +103,7 @@ struct idr {
 	spinlock_t	  lock;
 };
 
-/** 20150221    
+/** 20150221
  * name이라는 IDR의 생성 및 초기화.
  **/
 #define IDR_INIT(name)						\
@@ -120,7 +120,7 @@ struct idr {
 #define IDR_NEED_TO_GROW -2
 #define IDR_NOMORE_SPACE -3
 
-/** 20140712    
+/** 20140712
  * idr code를 errno 로 변환.
  * 위의 error code는 _idr_sub_alloc가 리턴하는 경우.
  **/
@@ -168,7 +168,7 @@ void idr_init(struct idr *idp);
  * IDA_BITMAP_LONGS is calculated to be one less to accommodate
  * ida_bitmap->nr_busy so that the whole struct fits in 128 bytes.
  */
-/** 20150228    
+/** 20150228
  * IDA chunk 크기는 128 바이트.
  * IDA 비트맵을 LONGS로 31개.
  * IDA 비트맵 LONGS를 BITS 크기로 계산. (31 * 4 * 8)
@@ -177,7 +177,7 @@ void idr_init(struct idr *idp);
 #define IDA_BITMAP_LONGS	(IDA_CHUNK_SIZE / sizeof(long) - 1)
 #define IDA_BITMAP_BITS 	(IDA_BITMAP_LONGS * sizeof(long) * 8)
 
-/** 20150228    
+/** 20150228
  * nr_busy는 정수값을 하나 할당 받을 때마다 증가시킨다.
  **/
 struct ida_bitmap {
@@ -185,7 +185,7 @@ struct ida_bitmap {
 	unsigned long		bitmap[IDA_BITMAP_LONGS];
 };
 
-/** 20150221    
+/** 20150221
  * IDR의 구조를 이용하는 ID 할당자.
  * id에 따른 pointer를 저장하지 않고 ID만을 할당한다.
  *
@@ -196,7 +196,7 @@ struct ida {
 	struct ida_bitmap	*free_bitmap;
 };
 
-/** 20150221    
+/** 20150221
  * name이라는 IDA를 생성 및 초기화.
  **/
 #define IDA_INIT(name)		{ .idr = IDR_INIT(name), .free_bitmap = NULL, }

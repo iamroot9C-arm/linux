@@ -58,7 +58,7 @@ extern int hibernation_platform_enter(void);
 
 #else /* !CONFIG_HIBERNATION */
 
-/** 20151010    
+/** 20151010
  * CONFIG_HIBERNATION 분석 생략.
  **/
 static inline void hibernate_reserved_size_init(void) {}
@@ -67,7 +67,7 @@ static inline void hibernate_image_size_init(void) {}
 
 extern int pfn_is_nosave(unsigned long);
 
-/** 20151010    
+/** 20151010
  * power attribute 정의 매크로.
  *
  **/
@@ -286,7 +286,7 @@ extern int pm_autosleep_set_state(suspend_state_t state);
 
 #else /* !CONFIG_PM_AUTOSLEEP */
 
-/** 20151010    
+/** 20151010
  * CONFIG_PM_AUTOSLEEP 선언하지 않아 특별한 동작을 하지 않음.
  **/
 static inline int pm_autosleep_init(void) { return 0; }

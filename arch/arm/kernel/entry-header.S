@@ -20,7 +20,7 @@
 @ the addition of 8 bytes for storing syscall args 5 and 6.
 @ This _must_ remain a multiple of 8 for EABI.
 @
-/** 20160206    
+/** 20160206
  * stack format = struct pt_regs + (args 5, args 6 )
 
  * EABI 프로토콜에 의해 8의 배수를 유지시켜야 한다.
@@ -35,7 +35,7 @@
 #error "Please fix"
 #endif
 
-/** 20160305    
+/** 20160305
  * CONFIG_FRAME_POINTER 정의시 fp 위치에 0을 넣어준다.
  * 분석 config에는 CONFIG_FRAME_POINTER를 선언하지 않았음.
  **/
@@ -83,11 +83,11 @@
 	.endm
 
 #ifndef CONFIG_THUMB2_KERNEL
-	/** 20140824    
+	/** 20140824
 	 * supervisor mode에서 복귀하여 exception code로 진입하는 매크로.
 	 **/
 	.macro	svc_exit, rpsr
-	/** 20150919    
+	/** 20150919
 	 * 매개변수로 받은 rpsr을 spsr_cxsf에 복사한다.
 	 **/
 	msr	spsr_cxsf, \rpsr
@@ -109,7 +109,7 @@
 #endif
 	.endm
 
-	/** 20160305    
+	/** 20160305
 	 * user mode context를 복원하고 user mode로 돌아간다.
 	 *
 	 * fast ret인지 구분하는 정보와 stack 보정값 offset을 argument로 받는다.
@@ -118,7 +118,7 @@
 	 * syscall에서 돌아가는 경우는 fast가 1.
 	 **/
 	.macro	restore_user_regs, fast = 0, offset = 0
-	/** 20160305    
+	/** 20160305
 	 * pt_regs에서 user context를 꺼내온다.
 	 * offset은 r4, r5 등 저장 여부에 따라 호출시 주어진다.
 	 *
@@ -132,13 +132,13 @@
 #if defined(CONFIG_CPU_V6)
 	strex	r1, r2, [sp]			@ clear the exclusive monitor
 #elif defined(CONFIG_CPU_32v6K)
-	/** 20160305    
+	/** 20160305
 	 * exclusive monitor clear.
 	 * 문맥전환 전에 exclusive monitor를 클리어한다.
 	 **/
 	clrex					@ clear the exclusive monitor
 #endif
-	/** 20160305    
+	/** 20160305
 	 * LDM{IA|IB|DA|DB} Rn, <reglist-PC>^
 	 *   [Rn]에서 사용자 모드 레지스터 목록 로드. 권한 모드 전용.
 	 *
@@ -152,13 +152,13 @@
 	.else
 	ldmdb	sp, {r0 - lr}^			@ get calling r0 - lr
 	.endif
-	/** 20160305    
+	/** 20160305
 	 * 주석에 의하면 ldm {}^ 명령을 사용한 경우,
 	 * ARMv5T 이전 architecture를 위해 nop이 필요하다.
 	 **/
 	mov	r0, r0				@ ARMv5T and earlier require a nop
 						@ after ldm {}^
-	/** 20160305    
+	/** 20160305
 	 * sp의 현재 위치: ARM_pc.
 	 * sp를 증가시켜 ARM_cpsr, ARM_ORIG_r0 위의 시작 위치로 변경시킨다.
 	 *
@@ -169,7 +169,7 @@
 	movs	pc, lr				@ return & move spsr_svc into cpsr
 	.endm
 
-	/** 20140816    
+	/** 20140816
 	 * thread_info는 stack에 overlay된다.
 	 * sp를 8KB로 내림해 thread_info의 위치를 rd에 받아온다.
 	 **/
@@ -181,7 +181,7 @@
 	@
 	@ 32-bit wide "mov pc, reg"
 	@
-	/** 20151003    
+	/** 20151003
 	 * mov 명령으로 reg값을 pc에 넣어 이동한다.
 	 **/
 	.macro	movw_pc, reg
@@ -241,7 +241,7 @@
  *
  * We must set at least "tsk" and "why" when calling ret_with_reschedule.
  */
-/** 20160305    
+/** 20160305
  *  syscall number          r7
  *  syscall table pointer   r8
  *  linux syscall에 의한 경우이면 syscall table pointer로 설정되었으므로 != 0

@@ -218,7 +218,7 @@ int sysctl_legacy_va_layout;
 
 /* The default sysctl tables: */
 
-/** 20150510    
+/** 20150510
  * struct ctl_table의 배열인 sysctl base table.
  * "/proc/sys"에 생성.
  **/

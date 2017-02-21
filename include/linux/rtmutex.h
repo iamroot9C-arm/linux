@@ -59,7 +59,7 @@ struct hrtimer_sleeper;
 # define rt_mutex_init(mutex)			__rt_mutex_init(mutex, __func__)
  extern void rt_mutex_debug_task_free(struct task_struct *tsk);
 #else
-/** 20150530    
+/** 20150530
  **/
 # define __DEBUG_RT_MUTEX_INITIALIZER(mutexname)
 # define rt_mutex_init(mutex)			__rt_mutex_init(mutex, NULL)

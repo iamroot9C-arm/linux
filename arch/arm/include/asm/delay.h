@@ -21,7 +21,7 @@ extern struct arm_delay_ops {
 	void (*udelay)(unsigned long);
 } arm_delay_ops;
 
-/** 20150124    
+/** 20150124
  * arch/arm/lib/delay.c의 __loop_delay가 연결된다.
  **/
 #define __delay(n)		arm_delay_ops.delay(n)

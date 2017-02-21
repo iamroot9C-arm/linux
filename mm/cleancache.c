@@ -192,7 +192,7 @@ EXPORT_SYMBOL(__cleancache_invalidate_inode);
  * note that pool_id is surrendered and may be reutrned by a subsequent
  * cleancache_init_fs or cleancache_init_shared_fs
  */
-/** 20150307    
+/** 20150307
  * 추후분석???
  **/
 void __cleancache_invalidate_fs(struct super_block *sb)

@@ -38,14 +38,14 @@ do {								\
  extern int do_raw_write_trylock(rwlock_t *lock);
  extern void do_raw_write_unlock(rwlock_t *lock) __releases(lock);
 #else
- /** 20141022    
+ /** 20141022
   **/
 # define do_raw_read_lock(rwlock)	do {__acquire(lock); arch_read_lock(&(rwlock)->raw_lock); } while (0)
 # define do_raw_read_lock_flags(lock, flags) \
 		do {__acquire(lock); arch_read_lock_flags(&(lock)->raw_lock, *(flags)); } while (0)
 # define do_raw_read_trylock(rwlock)	arch_read_trylock(&(rwlock)->raw_lock)
 # define do_raw_read_unlock(rwlock)	do {arch_read_unlock(&(rwlock)->raw_lock); __release(lock); } while (0)
-/** 20130518    
+/** 20130518
  * __CHECK__를 사용하지 않을 경우 __acquire는 수행 안 됨.
  * arch_write_lock() 함수 호출
  **/
@@ -67,7 +67,7 @@ do {								\
 #define read_trylock(lock)	__cond_lock(lock, _raw_read_trylock(lock))
 #define write_trylock(lock)	__cond_lock(lock, _raw_write_trylock(lock))
 
-/** 20130518    
+/** 20130518
  **/
 #define write_lock(lock)	_raw_write_lock(lock)
 #define read_lock(lock)		_raw_read_lock(lock)
@@ -100,7 +100,7 @@ do {								\
 
 #endif
 
-/** 20151031    
+/** 20151031
  * read/write lock을 건다.
  **/
 #define read_lock_irq(lock)		_raw_read_lock_irq(lock)

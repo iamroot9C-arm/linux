@@ -76,7 +76,7 @@ void synchronize_irq(unsigned int irq)
 EXPORT_SYMBOL(synchronize_irq);
 
 #ifdef CONFIG_SMP
-/** 20140906    
+/** 20140906
  * irq default affinity용 cpumask 선언.
  **/
 cpumask_var_t irq_default_affinity;
@@ -86,7 +86,7 @@ cpumask_var_t irq_default_affinity;
  *	@irq:		Interrupt to check
  *
  */
-/** 20141123    
+/** 20141123
  * 주어진 irq가 irq_set_affinity 가능한지 검사한다.
  *
  * 자세한 내용은 추후분석???
@@ -638,7 +638,7 @@ static irqreturn_t irq_default_primary_handler(int irq, void *dev_id)
  * Primary handler for nested threaded interrupts. Should never be
  * called.
  */
-/** 20140913    
+/** 20140913
  * 중첩된 threaded interrupt에 대한 primary handler.
  **/
 static irqreturn_t irq_nested_primary_handler(int irq, void *dev_id)
@@ -1659,7 +1659,7 @@ int request_percpu_irq(unsigned int irq, irq_handler_t handler,
 	if (!dev_id)
 		return -EINVAL;
 
-	/** 20140913    
+	/** 20140913
 	 * irq_desc를 가져와 request 가능하고, per_cpu devid인지 판단한다.
 	 **/
 	desc = irq_to_desc(irq);
@@ -1667,14 +1667,14 @@ int request_percpu_irq(unsigned int irq, irq_handler_t handler,
 	    !irq_settings_is_per_cpu_devid(desc))
 		return -EINVAL;
 
-	/** 20140913    
+	/** 20140913
 	 * action을 위한 공간 할당.
 	 **/
 	action = kzalloc(sizeof(struct irqaction), GFP_KERNEL);
 	if (!action)
 		return -ENOMEM;
 
-	/** 20140913    
+	/** 20140913
 	 * irqaction 구조체를 채운다.
 	 * flag에 IRQF_PERCPU가 주어진다.
 	 **/

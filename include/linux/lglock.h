@@ -26,7 +26,7 @@
 #include <linux/notifier.h>
 
 /* can make br locks by using local lock for read side, global lock for write */
-/** 20150221    
+/** 20150221
  * big-reader lock을 lg lock (local global lock)으로 구현한다.
  *   read side는 local lock을, write side는 global lock을 사용한다.
  **/
@@ -47,7 +47,7 @@
  EXPORT_SYMBOL(name##_lock_dep_map)
 
 #else
-/** 20150214    
+/** 20150214
  * CONFIG_DEBUG_LOCK_ALLOC를 설정하지 않았음.
  **/
 #define LOCKDEP_INIT_MAP(a, b, c, d)
@@ -55,7 +55,7 @@
 #define DEFINE_LGLOCK_LOCKDEP(name)
 #endif
 
-/** 20150221    
+/** 20150221
  * 각 core마다 spinlock을 걸어 전체 global lock을 건다.
  **/
 struct lglock {
@@ -66,7 +66,7 @@ struct lglock {
 #endif
 };
 
-/** 20150214    
+/** 20150214
  * lglock (local/global lock)을 정의한다.
  *
  * percpu lock과 percpu lock을 가리키는 global lock을 선언한다.

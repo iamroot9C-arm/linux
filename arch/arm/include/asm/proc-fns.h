@@ -113,7 +113,7 @@ extern void cpu_resume(void);
 
 #ifdef CONFIG_MMU
 
-/** 20150801    
+/** 20150801
  * cpu_v7의 경우 cpu_v7_switch_mm 가 지정된다.
  **/
 #define cpu_switch_mm(pgd,mm) cpu_do_switch_mm(virt_to_phys(pgd),mm)

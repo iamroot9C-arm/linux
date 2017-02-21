@@ -11,7 +11,7 @@
 
 #ifndef _STRUCT_TIMESPEC
 #define _STRUCT_TIMESPEC
-/** 20160326    
+/** 20160326
  * timespec 구조체. ktime에서 사용.
  *
  * 초와 나노초 형태로 저장
@@ -37,7 +37,7 @@ struct timezone {
 extern struct timezone sys_tz;
 
 /* Parameters used to convert the timespec values: */
-/** 20140419    
+/** 20140419
  * 1 초 == 1000 밀리초 == 1000000 마이크로초
  **/
 #define MSEC_PER_SEC	1000L
@@ -135,7 +135,7 @@ void get_xtime_and_monotonic_and_sleep_offset(struct timespec *xtim,
 				struct timespec *wtom, struct timespec *sleep);
 void timekeeping_inject_sleeptime(struct timespec *delta);
 
-/** 20150411    
+/** 20150411
  * 현재 kernel 시간을 timespec 형태로 얻어온다.
  **/
 #define CURRENT_TIME		(current_kernel_time())
@@ -153,7 +153,7 @@ void timekeeping_inject_sleeptime(struct timespec *delta);
 #ifdef CONFIG_ARCH_USES_GETTIMEOFFSET
 extern u32 arch_gettimeoffset(void);
 #else
-/** 20151212    
+/** 20151212
  **/
 static inline u32 arch_gettimeoffset(void) { return 0; }
 #endif
@@ -162,7 +162,7 @@ extern void do_gettimeofday(struct timeval *tv);
 extern int do_settimeofday(const struct timespec *tv);
 extern int do_sys_settimeofday(const struct timespec *tv,
 			       const struct timezone *tz);
-/** 20160326    
+/** 20160326
  * monotonic clock을 얻어와 ts에 저장.
  **/
 #define do_posix_clock_monotonic_gettime(ts) ktime_get_ts(ts)
@@ -265,7 +265,7 @@ extern struct timeval ns_to_timeval(const s64 nsec);
  * This must always be inlined because its used from the x86-64 vdso,
  * which cannot call other kernel functions.
  */
-/** 20151212    
+/** 20151212
  * timespec에 ns를 더한다. 더해진 nsec 값은 sec에 반영시킨다.
  **/
 static __always_inline void timespec_add_ns(struct timespec *a, u64 ns)
@@ -289,7 +289,7 @@ struct itimerspec {
 	struct timespec it_value;	/* timer expiration */
 };
 
-/** 20160409    
+/** 20160409
  * interval timer. 주기적으로 시그널을 발생시키는 timer.
  * timeval이므로 us까지의 값을 저장한다.
  *
@@ -304,7 +304,7 @@ struct itimerval {
 /*
  * The IDs of the various system clocks (for POSIX.1b interval timers):
  */
-/** 20140419    
+/** 20140419
  * 커널이 가질 수 있는 clock은 크게 realtime과 monotonic으로 나뉜다.
  *
  * REALTIME 방식은 현재 시간(시스템시간)을 기준으로 시간을 계산한다.

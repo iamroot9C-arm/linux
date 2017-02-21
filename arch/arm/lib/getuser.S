@@ -53,7 +53,7 @@ ENTRY(__get_user_2)
 	mov	pc, lr
 ENDPROC(__get_user_2)
 
-/** 20151003    
+/** 20151003
  * r0가 가리키는 주소에서 값을 꺼내와 r2에 저장하고, r0에 0을 저장한 뒤 리턴.
  **/
 ENTRY(__get_user_4)

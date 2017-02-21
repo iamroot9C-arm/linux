@@ -48,7 +48,7 @@ typedef	int (read_proc_t)(char *page, char **start, off_t off,
 typedef	int (write_proc_t)(struct file *file, const char __user *buffer,
 			   unsigned long count, void *data);
 
-/** 20150509    
+/** 20150509
  * proc directory entry.
  *
  * proc 자체를 위한 자료구조와 VFS의 inode에 필요한 정보를 포함하는 구조체.
@@ -159,7 +159,7 @@ extern struct proc_dir_entry *proc_mkdir(const char *,struct proc_dir_entry *);
 extern struct proc_dir_entry *proc_mkdir_mode(const char *name, umode_t mode,
 			struct proc_dir_entry *parent);
 
-/** 20150510    
+/** 20150510
  * proc entry를 새로 생성하고 주어진 argument로 설정하고 parent에 추가한다.
  * data에 NULL을 지정한다.
  **/
@@ -277,7 +277,7 @@ union proc_op {
 struct ctl_table_header;
 struct ctl_table;
 
-/** 20150509    
+/** 20150509
  * 'procfs'에서 inode를 관리하기 위해 사용한다.
  *
  * 구조체 내에 struct inode가 포함되어 있다.
@@ -294,7 +294,7 @@ struct proc_inode {
 	struct inode vfs_inode;
 };
 
-/** 20150509    
+/** 20150509
  * 주어진 inode를 멤버로 갖고 있는 struct proc_inode 위치를 리턴한다.
  **/
 static inline struct proc_inode *PROC_I(const struct inode *inode)

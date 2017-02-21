@@ -95,7 +95,7 @@
 #include <linux/bitmap.h>
 #include <linux/numa.h>
 
-/** 20130629    
+/** 20130629
  * nodemask_t은 bits라는 bitmap만을 멤버로 갖는다.
  **/
 typedef struct { DECLARE_BITMAP(bits, MAX_NUMNODES); } nodemask_t;
@@ -113,13 +113,13 @@ static inline void __node_clear(int node, volatile nodemask_t *dstp)
 	clear_bit(node, dstp->bits);
 }
 
-/** 20130629    
+/** 20130629
  * dst의 bitmap element를 MAX_NUMNODES개 만큼 1로 설정한다.
  **/
 #define nodes_setall(dst) __nodes_setall(&(dst), MAX_NUMNODES)
 static inline void __nodes_setall(nodemask_t *dstp, int nbits)
 {
-	/** 20130629    
+	/** 20130629
 	 * dstp의 bitmap을 nbits만큼 1로 설정한다.
 	 **/
 	bitmap_fill(dstp->bits, nbits);
@@ -132,7 +132,7 @@ static inline void __nodes_clear(nodemask_t *dstp, int nbits)
 }
 
 /* No static inline type checking - see Subtlety (1) above. */
-/** 20130727    
+/** 20130727
  * test_bit 함수로 nodemask.bits에 node에 해당하는 bit가 설정되어 있는지 검사하는 함수
  **/
 #define node_isset(node, nodemask) test_bit((node), (nodemask).bits)
@@ -445,7 +445,7 @@ static inline void node_set_offline(int nid)
 	nr_online_nodes = num_node_state(N_ONLINE);
 }
 
-/** 20130330    
+/** 20130330
  * vexpress 에서는 MAX_NUMNODES 가 1이므로 null.
  **/
 #else
@@ -468,13 +468,13 @@ static inline int num_node_state(enum node_states state)
 	return 1;
 }
 
-/** 20130629    
+/** 20130629
  * node 0번일 때 한 번만 수행됨
  **/
 #define for_each_node_state(node, __state) \
 	for ( (node) = 0; (node) == 0; (node) = 1)
 
-/** 20140906    
+/** 20140906
  * UMA에서 항상 0번 node.
  **/
 #define first_online_node	0
@@ -490,7 +490,7 @@ static inline int num_node_state(enum node_states state)
 #if defined(CONFIG_NUMA) && (MAX_NUMNODES > 1)
 extern int node_random(const nodemask_t *maskp);
 #else
-/** 20160326    
+/** 20160326
  * NUMA가 아닐 경우 node는 항상 0.
  **/
 static inline int node_random(const nodemask_t *mask)
@@ -508,7 +508,7 @@ static inline int node_random(const nodemask_t *mask)
 #define node_possible(node)	node_state((node), N_POSSIBLE)
 
 #define for_each_node(node)	   for_each_node_state(node, N_POSSIBLE)
-/** 20130629    
+/** 20130629
  * node 중 state가 ONLINE인 노드들에 대해 loop를 수행함
  * NUMA의 경우 상태에 상관 없이 NODE 0번만 수행
  **/

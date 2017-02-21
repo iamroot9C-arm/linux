@@ -16,7 +16,7 @@
 #include <linux/kobject.h>
 #include <linux/kobj_map.h>
 
-/** 20150502    
+/** 20150502
  * struct kobj_map은 struct probe *를 배열로 가지고 있다.
  **/
 struct kobj_map {
@@ -136,12 +136,12 @@ retry:
 	return NULL;
 }
 
-/** 20150502    
+/** 20150502
  * kobj_map을 할당받고 주어진 매개변수로 초기화 한다.
  **/
 struct kobj_map *kobj_map_init(kobj_probe_t *base_probe, struct mutex *lock)
 {
-	/** 20150502    
+	/** 20150502
 	 * kobj_map과 base 할당.
 	 **/
 	struct kobj_map *p = kmalloc(sizeof(struct kobj_map), GFP_KERNEL);
@@ -154,13 +154,13 @@ struct kobj_map *kobj_map_init(kobj_probe_t *base_probe, struct mutex *lock)
 		return NULL;
 	}
 
-	/** 20150502    
+	/** 20150502
 	 * 초기값 지정.
 	 **/
 	base->dev = 1;
 	base->range = ~0;
 	base->get = base_probe;
-	/** 20150502    
+	/** 20150502
 	 * 하나 할당받은 struct probe 객체를 probes의 각 포인터에서 가리킨다.
 	 **/
 	for (i = 0; i < 255; i++)

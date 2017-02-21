@@ -26,7 +26,7 @@
 /*
  * Tick devices
  */
-/** 20141115    
+/** 20141115
  * cpu별로 tick_device 자료구조를 갖는다.
  **/
 DEFINE_PER_CPU(struct tick_device, tick_cpu_device);
@@ -34,11 +34,11 @@ DEFINE_PER_CPU(struct tick_device, tick_cpu_device);
  * Tick next event: keeps track of the tick time
  */
 ktime_t tick_next_period;
-/** 20141115    
+/** 20141115
  * tick_setup_device() 에서 HZ주기로 동작하도록 설정한다.
  **/
 ktime_t tick_period;
-/** 20141129    
+/** 20141129
  * do_timer를 수행하는 cpu를 저장하는 전역변수.
  **/
 int tick_do_timer_cpu __read_mostly = TICK_DO_TIMER_BOOT;
@@ -47,7 +47,7 @@ static DEFINE_RAW_SPINLOCK(tick_device_lock);
 /*
  * Debugging: see timer_list.c
  */
-/** 20160116    
+/** 20160116
  * 특정 cpu에 대한 tick device에 접근한다.
  **/
 struct tick_device *tick_get_device(int cpu)
@@ -74,7 +74,7 @@ int tick_is_oneshot_available(void)
  */
 static void tick_periodic(int cpu)
 {
-	/** 20140913    
+	/** 20140913
 	 * do_timer를 호출하도록 지정된 cpu만 jiffies를 증가시킨다.
 	 **/
 	if (tick_do_timer_cpu == cpu) {
@@ -87,7 +87,7 @@ static void tick_periodic(int cpu)
 		write_sequnlock(&xtime_lock);
 	}
 
-	/** 20141115    
+	/** 20141115
 	 * 모든 cpu가 tick을 주기적으로 처리하는 작업을 수행한다.
 	 **/
 	update_process_times(user_mode(get_irq_regs()));
@@ -102,7 +102,7 @@ void tick_handle_periodic(struct clock_event_device *dev)
 	int cpu = smp_processor_id();
 	ktime_t next;
 
-	/** 20140920    
+	/** 20140920
 	 * 현재 cpu에 대해 tick_periodic 실행
 	 **/
 	tick_periodic(cpu);
@@ -135,7 +135,7 @@ void tick_handle_periodic(struct clock_event_device *dev)
 /*
  * Setup the device for a periodic tick
  */
-/** 20141129    
+/** 20141129
  *
  * vexpress의 경우 sp804, twd 모두 broadcast 0으로 호출된다.
  **/
@@ -185,7 +185,7 @@ void tick_setup_periodic(struct clock_event_device *dev, int broadcast)
 /*
  * Setup the tick device
  */
-/** 20141122    
+/** 20141122
  * tick device에 새로운 clock event device를 등록한다.
  **/
 static void tick_setup_device(struct tick_device *td,
@@ -260,7 +260,7 @@ static void tick_setup_device(struct tick_device *td,
 	 * This allows us to handle this x86 misfeature in a generic
 	 * way.
 	 */
-    /** 20141122    
+    /** 20141122
 	 * newdev가 dummy라면 cpu를 broadcast에 의한 handle 대상으로 등록하고,
 	 * 그렇지 않다면 broadcast mask에서 제거한다.
      **/
@@ -280,7 +280,7 @@ static void tick_setup_device(struct tick_device *td,
 /*
  * Check, if the new registered device should be used.
  */
-/** 20141122    
+/** 20141122
  * 전역리스트에 새로운 clock event device를 등록하고,
  * CLOCK_EVT_NOTIFY_ADD notify를 날리면 이 notify handler가 호출된다.
  *
@@ -309,7 +309,7 @@ static int tick_check_new_device(struct clock_event_device *newdev)
 	curdev = td->evtdev;
 
 	/* cpu local device ? */
-	/** 20141122    
+	/** 20141122
 	 * 디바이스가 동작할 cpumask가 현재 cpu의 cpumask와 동일하면
 	 * 현재 cpu만의 local device이다. 그렇지 않다면
 	 **/
@@ -319,7 +319,7 @@ static int tick_check_new_device(struct clock_event_device *newdev)
 		 * If the cpu affinity of the device interrupt can not
 		 * be set, ignore it.
 		 */
-        /** 20141122    
+        /** 20141122
          * device interrupt에 대해 cpu affinity를 설정이 불가능하면
          * out_bc로 이동.
          **/
@@ -330,7 +330,7 @@ static int tick_check_new_device(struct clock_event_device *newdev)
 		 * If we have a cpu local device already, do not replace it
 		 * by a non cpu local device
 		 */
-        /** 20141122    
+        /** 20141122
          * 현재 cpu에 local device가 등록되어 있다면
          * 새로 지정되는 디바이스는 local device가 아니므로 교체하지 않는다.
          **/
@@ -353,7 +353,7 @@ static int tick_check_new_device(struct clock_event_device *newdev)
 		/*
 		 * Prefer one shot capable devices !
 		 */
-		/** 20150606    
+		/** 20150606
 		 * 현재 등록된 디바이스가 ONESHOT이고, 새 디바이스는 ONESHOT이 아니면
 		 * 교체하지 않는다.
 		 **/
@@ -363,7 +363,7 @@ static int tick_check_new_device(struct clock_event_device *newdev)
 		/*
 		 * Check the rating
 		 */
-		/** 20150103    
+		/** 20150103
 		 * 새로 추가하는 device의 rating이 더 높을 때만 교체한다
 		 **/
 		if (curdev->rating >= newdev->rating)
@@ -383,11 +383,11 @@ static int tick_check_new_device(struct clock_event_device *newdev)
 		clockevents_shutdown(curdev);
 		curdev = NULL;
 	}
-	/** 20141115    
+	/** 20141115
 	 * 이전 device를 해제하고, 새로운 device를 등록한다.
 	 **/
 	clockevents_exchange_device(curdev, newdev);
-    /** 20141122    
+    /** 20141122
      * tick device에 새로운 clock_event_device를 등록한다.
      * 새 clock_event_device에 ONESHOT 속성이 있으면 oneshot notify를 준다.
      **/
@@ -396,7 +396,7 @@ static int tick_check_new_device(struct clock_event_device *newdev)
 		tick_oneshot_notify();
 
 	raw_spin_unlock_irqrestore(&tick_device_lock, flags);
-	/** 20141129    
+	/** 20141129
 	 * 정상적으로 tick device에 새로운 clock_event_device를 등록했다면 벗어난다.
 	 **/
 	return NOTIFY_STOP;
@@ -455,7 +455,7 @@ static void tick_shutdown(unsigned int *cpup)
 	raw_spin_unlock_irqrestore(&tick_device_lock, flags);
 }
 
-/** 20160116    
+/** 20160116
  * 현재 cpu의 tick_cpu_device를 읽어와 clockevents가 발생하지 않도록 한다.
  **/
 static void tick_suspend(void)
@@ -489,7 +489,7 @@ static void tick_resume(void)
 /*
  * Notification about clock event devices
  */
-/** 20140913    
+/** 20140913
  * tick_notify event handler로 clock event에 대한 통보를 받아 처리한다.
  *
  * tick_init에서 clockevents_register_notifier 로 등록한 notify handler.
@@ -499,7 +499,7 @@ static int tick_notify(struct notifier_block *nb, unsigned long reason,
 {
 	switch (reason) {
 
-	/** 20141115    
+	/** 20141115
 	 * clockevent_devices 리스트에 새로운 clock event device를 추가한 뒤 보낸다.
 	 * clockevents_register_device, clockevents_notify_released 에서 호출.
 	 **/
@@ -555,7 +555,7 @@ static struct notifier_block tick_notifier = {
  *
  * Register the notifier with the clockevents framework
  */
-/** 20140825    
+/** 20140825
  * clockevents framework에 이벤트 발생시 통보받을 tick notifier 등록.
  *
  * clockevents_notify 할 때 등록된 chain이 호출되며,

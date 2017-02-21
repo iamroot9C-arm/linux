@@ -159,7 +159,7 @@ static inline int Page##uname(const struct page *page)			\
 /** 20130504
 	page struct의 flags 중에 PG_##lname번째 비트를 셋한다.
 **/
-/** 20131116    
+/** 20131116
  * __가 없는 버전이 ATOMIC, 있는 버전이 NON ATOMIC한 함수이다.
  **/
 #define SETPAGEFLAG(uname, lname)					\
@@ -174,7 +174,7 @@ static inline void ClearPage##uname(struct page *page)			\
 static inline void __SetPage##uname(struct page *page)			\
 			{ __set_bit(PG_##lname, &page->flags); }
 
-/** 20150110    
+/** 20150110
  *  __ClearPage##uname
  **/
 #define __CLEARPAGEFLAG(uname, lname)					\
@@ -185,7 +185,7 @@ static inline void __ClearPage##uname(struct page *page)		\
 static inline int TestSetPage##uname(struct page *page)			\
 		{ return test_and_set_bit(PG_##lname, &page->flags); }
 
-/** 20140524    
+/** 20140524
  * page flags의 특정 flags를 검사해 결과를 리턴하고, 해당 비트를 clear한다.
  **/
 #define TESTCLEARFLAG(uname, lname)					\
@@ -209,7 +209,7 @@ static inline int __TestClearPage##uname(struct page *page)		\
 static inline int Page##uname(const struct page *page)			\
 			{ return 0; }
 
-/** 20140607    
+/** 20140607
  * flags 조작 함수 생성 macro.
  *
  * TestSetPage[uname]
@@ -239,7 +239,7 @@ TESTPAGEFLAG(Locked, locked)
 PAGEFLAG(Error, error) TESTCLEARFLAG(Error, error)
 PAGEFLAG(Referenced, referenced) TESTCLEARFLAG(Referenced, referenced)
 PAGEFLAG(Dirty, dirty) TESTSCFLAG(Dirty, dirty) __CLEARPAGEFLAG(Dirty, dirty)
-/** 20140524    
+/** 20140524
  * page의 flags에 lru 속성을 설정, 해제하는 함수 선언.
  **/
 PAGEFLAG(LRU, lru) __CLEARPAGEFLAG(LRU, lru)
@@ -282,7 +282,7 @@ PAGEFLAG(SavePinned, savepinned);			/* Xen */
 
 **/
 PAGEFLAG(Reserved, reserved) __CLEARPAGEFLAG(Reserved, reserved)
-/** 20140524    
+/** 20140524
  * anonymous page인 경우 swapbacked이다.
  *   - memory를 부족시 file cache와 anon은 다른 정책에 의해 처리된다.
  *
@@ -309,7 +309,7 @@ PAGEFLAG(OwnerPriv1, owner_priv_1) TESTCLEARFLAG(OwnerPriv1, owner_priv_1)
  * Only test-and-set exist for PG_writeback.  The unconditional operators are
  * risky: they bypass page accounting.
  */
-/** 20140524    
+/** 20140524
  * writeback flag.
  *
  * PageWriteback
@@ -322,7 +322,7 @@ TESTPAGEFLAG(Writeback, writeback) TESTSCFLAG(Writeback, writeback)
 PAGEFLAG(MappedToDisk, mappedtodisk)
 
 /* PG_readahead is only used for file reads; PG_reclaim is only for writes */
-/** 20140524    
+/** 20140524
  * reclaim flag 관련 함수.
  * readahead flag는 file reads, reclaim flag는 file writes에만 사용된다.
  **/
@@ -343,7 +343,7 @@ PAGEFLAG_FALSE(HighMem)
 #endif
 
 #ifdef CONFIG_SWAP
-/** 20140524    
+/** 20140524
  * swapcache
  **/
 PAGEFLAG(SwapCache, swapcache)
@@ -352,14 +352,14 @@ PAGEFLAG_FALSE(SwapCache)
 	SETPAGEFLAG_NOOP(SwapCache) CLEARPAGEFLAG_NOOP(SwapCache)
 #endif
 
-/** 20140607    
+/** 20140607
  * Unevictable 관련 flags 조작함수 생성 매크로.
  **/
 PAGEFLAG(Unevictable, unevictable) __CLEARPAGEFLAG(Unevictable, unevictable)
 	TESTCLEARFLAG(Unevictable, unevictable)
 
 #ifdef CONFIG_MMU
-/** 20130803    
+/** 20130803
  *#define TESTSCFLAG(uname, lname)					\
 	TESTSETFLAG(uname, lname) TESTCLEARFLAG(uname, lname)
 
@@ -468,7 +468,7 @@ PAGEFLAG(HWPoison, hwpoison)
 TESTSCFLAG(HWPoison, hwpoison)
 #define __PG_HWPOISON (1UL << PG_hwpoison)
 #else
-/** 20140531    
+/** 20140531
  * HWPoison은 항상 0을 리턴한다.
  **/
 PAGEFLAG_FALSE(HWPoison)
@@ -539,7 +539,7 @@ static inline void set_page_writeback(struct page *page)
  * tests can be used in performance sensitive paths. PageCompound is
  * generally not used in hot code paths.
  */
-/** 20131116    
+/** 20131116
  * CONFIG_PAGEFLAGS_EXTENDED  정의되어 있다.
 #ifdef CONFIG_PAGEFLAGS_EXTENDED
 	PG_head,		* A head page *
@@ -555,7 +555,7 @@ static inline void set_page_writeback(struct page *page)
 __PAGEFLAG(Head, head) CLEARPAGEFLAG(Head, head)
 __PAGEFLAG(Tail, tail)
 
-/** 20130907    
+/** 20130907
  * Compound page를 검사하는 함수
  **/
 static inline int PageCompound(struct page *page)
@@ -590,15 +590,15 @@ __PAGEFLAG(Head, compound)
  * PG_compound & PG_reclaim	=> Tail page
  * PG_compound & ~PG_reclaim	=> Head page
  */
-/** 20131116    
+/** 20131116
  * CONFIG_PAGEFLAGS_EXTENDED가 정의되어 있으므로 아래 부분은 포함되지 않는다.
  **/
-/** 20130803    
+/** 20130803
  * PG_compound와 PG_reclaim 비트로 PG_head_tail_mask 속성을 만들어 준다.
  **/
 #define PG_head_tail_mask ((1L << PG_compound) | (1L << PG_reclaim))
 
-/** 20130803    
+/** 20130803
  * page flags를 보고 page tail인지 확인한다.
  *
  * PG_head_tail_mask가 설정되어 있다면 page tail이다.
@@ -707,7 +707,7 @@ static inline void SetPageSlabPfmemalloc(struct page *page)
 	SetPageActive(page);
 }
 
-/** 20140510    
+/** 20140510
  * page의 flags 중 active 속성을 제거한다.
  **/
 static inline void __ClearPageSlabPfmemalloc(struct page *page)
@@ -751,7 +751,7 @@ static inline void ClearPageSlabPfmemalloc(struct page *page)
  * Pages being prepped should not have any flags set.  It they are set,
  * there has been a kernel bug or struct page corruption.
  */
-/** 20131005    
+/** 20131005
  * FLAGS의 모든 비트. PREP 단계에서 FLAGS를 체크하기 위해 사용됨.
  **/
 #define PAGE_FLAGS_CHECK_AT_PREP	((1 << NR_PAGEFLAGS) - 1)

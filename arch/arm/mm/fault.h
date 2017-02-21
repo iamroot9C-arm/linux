@@ -22,7 +22,7 @@ static inline int fsr_fs(unsigned int fsr)
 	return fsr & FSR_FS5_0;
 }
 #else
-/** 20151121    
+/** 20151121
  * FSR에서 fault status를 추출.
  *
  * encoding의 의미는 데이터시트의 표 참고.

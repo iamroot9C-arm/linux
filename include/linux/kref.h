@@ -19,7 +19,7 @@
 #include <linux/atomic.h>
 #include <linux/kernel.h>
 
-/** 20150912    
+/** 20150912
  * 참조카운터용 구조체.
  **/
 struct kref {
@@ -30,7 +30,7 @@ struct kref {
  * kref_init - initialize object.
  * @kref: object in question.
  */
-/** 20150124    
+/** 20150124
  * (주로 object 내에 선언된) kref 구조체를 초기화 한다.
  *
  * refcount 를 1로 설정한다.
@@ -44,7 +44,7 @@ static inline void kref_init(struct kref *kref)
  * kref_get - increment refcount for object.
  * @kref: object.
  */
-/** 20150912    
+/** 20150912
  * 오브젝트의 kref를 받아 참조 카운터를 증가시킨다.
  **/
 static inline void kref_get(struct kref *kref)
@@ -76,7 +76,7 @@ static inline int kref_sub(struct kref *kref, unsigned int count,
 {
 	WARN_ON(release == NULL);
 
-	/** 20150418    
+	/** 20150418
 	 * kref의 reference count를 count만큼 감소시키고, 그 결과가 0이면 
 	 * 전달받은 release 함수를 호출하여 해제한다.
 	 **/

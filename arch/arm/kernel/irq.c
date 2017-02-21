@@ -78,7 +78,7 @@ void handle_IRQ(unsigned int irq, struct pt_regs *regs)
 		generic_handle_irq(irq);
 	}
 
-	/** 20140927    
+	/** 20140927
 	 **/
 	irq_exit();
 	set_irq_regs(old_regs);
@@ -93,7 +93,7 @@ asm_do_IRQ(unsigned int irq, struct pt_regs *regs)
 	handle_IRQ(irq, regs);
 }
 
-/** 20140913    
+/** 20140913
  * irq_desc의 status에 지정된 flags 값에 따라 속성을 설정한다. 
  **/
 void set_irq_flags(unsigned int irq, unsigned int iflags)
@@ -115,12 +115,12 @@ void set_irq_flags(unsigned int irq, unsigned int iflags)
 	irq_modify_status(irq, clr, set & ~clr);
 }
 
-/** 20140906    
+/** 20140906
  * machine의 IRQ 초기화 함수
  **/
 void __init init_IRQ(void)
 {
-	/** 20140906    
+	/** 20140906
 	 * MACHINE specific init_irq handle 함수를 호출한다.
 	 *
 	 * vexpress의 경우 v2m_init_irq

@@ -27,7 +27,7 @@ void proc_sys_poll_notify(struct ctl_table_poll *poll)
 	wake_up_interruptible(&poll->wait);
 }
 
-/** 20150516    
+/** 20150516
  * sysctl_table_root용 sysctl table.
  **/
 static struct ctl_table root_table[] = {
@@ -37,7 +37,7 @@ static struct ctl_table root_table[] = {
 	},
 	{ }
 };
-/** 20150516    
+/** 20150516
  * sysctl table hierarchy의 root.
  **/
 static struct ctl_table_root sysctl_table_root = {
@@ -1201,7 +1201,7 @@ out:
  * This routine returns %NULL on a failure to register, and a pointer
  * to the table header on success.
  */
-/** 20151010    
+/** 20151010
  * sysctl table을 ctl_table_set에 추가한다.
  *
  * path : ctl_table이 등록될 path.
@@ -1220,14 +1220,14 @@ struct ctl_table_header *__register_sysctl_table(
 	struct ctl_node *node;
 	int nr_entries = 0;
 
-	/** 20151010    
+	/** 20151010
 	 * ctl_table array의 각 entry가 procname을 존재할 때까지 순회하여
 	 * entry의 수를 계산한다.
 	 **/
 	for (entry = table; entry->procname; entry++)
 		nr_entries++;
 
-	/** 20151010    
+	/** 20151010
 	 * 동적 관리를 위한 ctl_table_header와 카운팅한 entry 수만큼 메모리를 할당받는다.
 	 **/
 	header = kzalloc(sizeof(struct ctl_table_header) +
@@ -1235,7 +1235,7 @@ struct ctl_table_header *__register_sysctl_table(
 	if (!header)
 		return NULL;
 
-	/** 20151010    
+	/** 20151010
 	 * ctl_node를 위한 공간은 header 다음에 이어서 위치한다.
 	 **/
 	node = (struct ctl_node *)(header + 1);
@@ -1295,12 +1295,12 @@ fail:
  *
  * See __register_sysctl_table for more details.
  */
-/** 20151010    
+/** 20151010
  * sysctl table을 등록한다.
  **/
 struct ctl_table_header *register_sysctl(const char *path, struct ctl_table *table)
 {
-	/** 20151010    
+	/** 20151010
 	 * sysctl_table_root의 default_set에 ctl_table을 등록한다.
 	 * 등록된 table은 proc에 path로 나타난다. 
 	 **/
@@ -1426,7 +1426,7 @@ out:
  *
  * See __register_sysctl_table for more details.
  */
-/** 20150516    
+/** 20150516
  * sysctl table hierarchy를 등록한다.
  **/
 struct ctl_table_header *__register_sysctl_paths(
@@ -1500,7 +1500,7 @@ err_register_leaves:
  *
  * See __register_sysctl_paths for more details.
  */
-/** 20150516    
+/** 20150516
  * sysctl table hierarchy(table)를 path라는 경로로 등록한다.
  **/
 struct ctl_table_header *register_sysctl_paths(const struct ctl_path *path,
@@ -1520,7 +1520,7 @@ EXPORT_SYMBOL(register_sysctl_paths);
  *
  * See register_sysctl_paths for more details.
  */
-/** 20150516    
+/** 20150516
  * sysctl table hierarchy를 추가한다.
  **/
 struct ctl_table_header *register_sysctl_table(struct ctl_table *table)
@@ -1632,14 +1632,14 @@ void retire_sysctl_set(struct ctl_table_set *set)
 	WARN_ON(!RB_EMPTY_ROOT(&set->dir.root));
 }
 
-/** 20150516    
+/** 20150516
  * "/proc/sys" 디렉토리 entry를 생성하고, sysctl 초기화를 진행한다.
  **/
 int __init proc_sys_init(void)
 {
 	struct proc_dir_entry *proc_sys_root;
 
-	/** 20150509    
+	/** 20150509
 	 * "/proc/sys" 디렉토리 entry를 생성하고, sys를 위한
 	 * proc_iops, proc_fops를 지정한다. 
 	 **/
@@ -1648,7 +1648,7 @@ int __init proc_sys_init(void)
 	proc_sys_root->proc_fops = &proc_sys_dir_file_operations;
 	proc_sys_root->nlink = 0;
 
-	/** 20150509    
+	/** 20150509
 	 * 추후분석???
 	 **/
 	return sysctl_init();

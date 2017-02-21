@@ -45,7 +45,7 @@
 #include <asm/mach/irq.h>
 #include <asm/hardware/gic.h>
 
-/** 20140906    
+/** 20140906
  * CONFIG_GIC_NON_BANKED인 경우 percpu_base,
  * 그렇지 않은 경우 common_base를 사용.
  **/
@@ -77,7 +77,7 @@ static DEFINE_RAW_SPINLOCK(irq_controller_lock);
  * Supported arch specific GIC irq extension.
  * Default make them NULL.
  */
-/** 20140913    
+/** 20140913
  * arch specific한 GIC chip 정보 구조체.
  **/
 struct irq_chip gic_arch_extn = {
@@ -93,7 +93,7 @@ struct irq_chip gic_arch_extn = {
 #define MAX_GIC_NR	1
 #endif
 
-/** 20140906    
+/** 20140906
  * GIC 개수만큼 gic_data를 선언.
  *
  * gic_init_bases에서 dist, cpu의 base address를 설정한다.
@@ -127,7 +127,7 @@ static inline void gic_set_base_accessor(struct gic_chip_data *data,
 	data->get_base = f;
 }
 #else
-/** 20140906    
+/** 20140906
  * CONFIG_GIC_NON_BANKED가 설정되지 않았다.
  * distributor, cpu base address는 common_base를 사용한다.
  * base_accessor 함수는 지정되지 않는다.
@@ -307,7 +307,7 @@ static int gic_set_wake(struct irq_data *d, unsigned int on)
 #define gic_set_wake	NULL
 #endif
 
-/** 20140927    
+/** 20140927
  **/
 asmlinkage void __exception_irq_entry gic_handle_irq(struct pt_regs *regs)
 {
@@ -365,7 +365,7 @@ static void gic_handle_cascade_irq(unsigned int irq, struct irq_desc *desc)
 	chained_irq_exit(chip, desc);
 }
 
-/** 20140913    
+/** 20140913
  * GIC의 irq_chip 추상화 자료구조.
  **/
 static struct irq_chip gic_chip = {
@@ -390,7 +390,7 @@ void __init gic_cascade_irq(unsigned int gic_nr, unsigned int irq)
 	irq_set_chained_handler(irq, gic_handle_cascade_irq);
 }
 
-/** 20140913    
+/** 20140913
  * gic distribute를 설정한다.
  * 자세한 내용은 DataSheet 참조.
  **/
@@ -400,7 +400,7 @@ static void __init gic_dist_init(struct gic_chip_data *gic)
 	u32 cpumask;
 	unsigned int gic_irqs = gic->gic_irqs;
 	void __iomem *base = gic_data_dist_base(gic);
-	/** 20140927    
+	/** 20140927
 	 * smp_processor_id : 현재 task가 실행 중인 processor id.
 	 * cpu_logical_map  : logical cpu id로 physical cpu id를 찾아온다.
 	 **/
@@ -440,7 +440,7 @@ static void __init gic_dist_init(struct gic_chip_data *gic)
 	writel_relaxed(1, base + GIC_DIST_CTRL);
 }
 
-/** 20140913    
+/** 20140913
  * gic cpu 관련 레지스터를 설정한다.
  * 자세한 내용은 DataSheet 참조.
  **/
@@ -545,7 +545,7 @@ static void gic_dist_restore(unsigned int gic_nr)
 	writel_relaxed(1, dist_base + GIC_DIST_CTRL);
 }
 
-/** 20140913    
+/** 20140913
  * PM ENTER 진입시, notifier에 의해 동작하는 함수.
  * SLEEP 상태로 진입하기 전 cpu 관련 정보를 준비해둔 percpu 변수에 저장한다.
  **/
@@ -575,7 +575,7 @@ static void gic_cpu_save(unsigned int gic_nr)
 
 }
 
-/** 20140913    
+/** 20140913
  * PM EXIT 호출시, notifier에 의해 동작하는 함수.
  * SUSPEND에서 깨어나 RESUME 과정에서 저장해둔 percpu 변수의 정보를 꺼내 gic register에 설정한다.
  **/
@@ -610,7 +610,7 @@ static void gic_cpu_restore(unsigned int gic_nr)
 	writel_relaxed(1, cpu_base + GIC_CPU_CTRL);
 }
 
-/** 20140913    
+/** 20140913
  * gic notifier.
  *
  * CPU_CLUSTER PM 관련 message일 때 dist 레지스터를 저장/복원하고,
@@ -650,19 +650,19 @@ static int gic_notifier(struct notifier_block *self, unsigned long cmd,	void *v)
 	return NOTIFY_OK;
 }
 
-/** 20140913    
+/** 20140913
  * gic notifier block 구조체.
  **/
 static struct notifier_block gic_notifier_block = {
 	.notifier_call = gic_notifier,
 };
 
-/** 20140913    
+/** 20140913
  * gic의 PM 관련 init 함수.
  **/
 static void __init gic_pm_init(struct gic_chip_data *gic)
 {
-	/** 20140913    
+	/** 20140913
 	 * ppi enable, conf 용 변수를 percpu로 할당한다.
 	 **/
 	gic->saved_ppi_enable = __alloc_percpu(DIV_ROUND_UP(32, 32) * 4,
@@ -673,7 +673,7 @@ static void __init gic_pm_init(struct gic_chip_data *gic)
 		sizeof(u32));
 	BUG_ON(!gic->saved_ppi_conf);
 
-	/** 20140913    
+	/** 20140913
 	 * gic_notifier_block을 cpu_pm_notifier에 등록한다.
 	 **/
 	if (gic == &gic_data[0])
@@ -691,12 +691,12 @@ static void __init gic_pm_init(struct gic_chip_data *gic)
 static int gic_irq_domain_map(struct irq_domain *d, unsigned int irq,
 				irq_hw_number_t hw)
 {
-	/** 20140913    
+	/** 20140913
 	 * hw번호 32부터는 SPI이고, 그 이전은 PPI에 해당한다.
 	 * 각각 다른 속성으로 설정한다.
 	 **/
 	if (hw < 32) {
-		/** 20140906    
+		/** 20140906
 		 * 해당 irq가 per_cpu devid를 갖도록 한다.
 		 **/
 		irq_set_percpu_devid(irq);
@@ -708,7 +708,7 @@ static int gic_irq_domain_map(struct irq_domain *d, unsigned int irq,
 					 handle_fasteoi_irq);
 		set_irq_flags(irq, IRQF_VALID | IRQF_PROBE);
 	}
-	/** 20140913    
+	/** 20140913
 	 * chip_data에 gic_chip_data를 저장한다.
 	 **/
 	irq_set_chip_data(irq, d->host_data);
@@ -736,7 +736,7 @@ static int gic_irq_domain_xlate(struct irq_domain *d,
 	return 0;
 }
 
-/** 20140906    
+/** 20140906
  * gic의 irq_domain용 CBs 함수.
  *
  *  mapping과 translate만 지정한다.
@@ -746,7 +746,7 @@ const struct irq_domain_ops gic_irq_domain_ops = {
 	.xlate = gic_irq_domain_xlate,
 };
 
-/** 20140913    
+/** 20140913
  * gic init 함수. dist, cpu의 base address를 전달받아 초기화 한다.
  *
  * gic register 설정과 kernel irq domain 설정을 진행한다.
@@ -761,12 +761,12 @@ void __init gic_init_bases(unsigned int gic_nr, int irq_start,
 
 	BUG_ON(gic_nr >= MAX_GIC_NR);
 
-	/** 20140906    
+	/** 20140906
 	 * gic_nr에 해당하는 gic_data 변수를 가져온다.
 	 * vexpress의 경우 1개만 사용.
 	 **/
 	gic = &gic_data[gic_nr];
-	/** 20140906    
+	/** 20140906
 	 * 설정 안 되어 있음.
 	 **/
 #ifdef CONFIG_GIC_NON_BANKED
@@ -792,13 +792,13 @@ void __init gic_init_bases(unsigned int gic_nr, int irq_start,
 	} else
 #endif
 	{			/* Normal, sane GIC... */
-		/** 20140913    
+		/** 20140913
 		 * percpu_offset은 GIC_NON_BANKED일 때 항상 0이어야 함.
 		 **/
 		WARN(percpu_offset,
 		     "GIC_NON_BANKED not enabled, ignoring %08x offset!",
 		     percpu_offset);
-		/** 20140906    
+		/** 20140906
 		 * distributor, cpu의 common_base address와 base address 접근자 설정.
 		 **/
 		gic->dist_base.common_base = dist_base;
@@ -810,7 +810,7 @@ void __init gic_init_bases(unsigned int gic_nr, int irq_start,
 	 * For primary GICs, skip over SGIs.
 	 * For secondary GICs, skip over PPIs, too.
 	 */
-	/** 20140906    
+	/** 20140906
 	 * GIC irq number는 type에 따라 다른 range의 ID를 사용한다.
 	 *   ID0  - ID15   : SGI
 	 *   ID16 - ID31   : PPI
@@ -832,7 +832,7 @@ void __init gic_init_bases(unsigned int gic_nr, int irq_start,
 	 * Find out how many interrupts are supported.
 	 * The GIC only supports up to 1020 interrupt sources.
 	 */
-	/** 20140906    
+	/** 20140906
 	 * GICD_TYPER register에서 ITLinesNumber값을 읽어와 irq 개수를 구한다.
 	 * 최대 1020개까지 사용 가능하다.
 	 *
@@ -849,7 +849,7 @@ void __init gic_init_bases(unsigned int gic_nr, int irq_start,
 	gic->gic_irqs = gic_irqs;
 
 	gic_irqs -= hwirq_base; /* calculate # of irqs to allocate */
-	/** 20140906    
+	/** 20140906
 	 * irq_start부터 gic_irqs 수만큼 irq descriptor를 할당하고 초기화 한다.
 	 * 16은 PPI 시작 번호이고, 이 번호부터 검색을 시작한다.
 	 *
@@ -861,7 +861,7 @@ void __init gic_init_bases(unsigned int gic_nr, int irq_start,
 		     irq_start);
 		irq_base = irq_start;
 	}
-	/** 20140913    
+	/** 20140913
 	 * irq_domain을 할당하고, LEGACY 로 추가한다.
 	 * 생성된 domain을 gic에 기록한다.
 	 **/
@@ -870,7 +870,7 @@ void __init gic_init_bases(unsigned int gic_nr, int irq_start,
 	if (WARN_ON(!gic->domain))
 		return;
 
-	/** 20140913    
+	/** 20140913
 	 * architecture specific한 flags를 gic_chip에 적용한다.
 	 **/
 	gic_chip.flags |= gic_arch_extn.flags;
@@ -879,21 +879,21 @@ void __init gic_init_bases(unsigned int gic_nr, int irq_start,
 	gic_pm_init(gic);
 }
 
-/** 20150808    
+/** 20150808
  * gic_nr에 해당하는 gic_data로 gic의 cpu관련 레지스터를 설정한다.
  **/
 void __cpuinit gic_secondary_init(unsigned int gic_nr)
 {
 	BUG_ON(gic_nr >= MAX_GIC_NR);
 
-	/** 20150808    
+	/** 20150808
 	 * gic_nr에 해당하는 gic_data 구조체를 전달해 gic cpu 설정을 업데이트 한다.
 	 **/
 	gic_cpu_init(&gic_data[gic_nr]);
 }
 
 #ifdef CONFIG_SMP
-/** 20130713    
+/** 20130713
  * smp_cross_call 로 등록된 cb으로 호출
  *
  * 20140913    
@@ -907,7 +907,7 @@ void gic_raise_softirq(const struct cpumask *mask, unsigned int irq)
 	unsigned long map = 0;
 
 	/* Convert our logical CPU mask into a physical one. */
-	/** 20140621    
+	/** 20140621
 	 * cpumask에 표시된 각 논리 cpu에 대해 물리 cpu 번호로 변환해 기록한다.
 	 * 각 cpu에서 전송하기 위해 map을 채운다.
 	 **/
@@ -918,7 +918,7 @@ void gic_raise_softirq(const struct cpumask *mask, unsigned int irq)
 	 * Ensure that stores to Normal memory are visible to the
 	 * other CPUs before issuing the IPI.
 	 */
-	/** 20140621    
+	/** 20140621
 	 * IPI를 날리기 전에 sync memory barrir를 둔다.
 	 **/
 	dsb();

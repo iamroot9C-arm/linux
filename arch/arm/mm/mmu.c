@@ -38,7 +38,7 @@
  * empty_zero_page is a special page that is used for
  * zero-initialized data and COW.
  */
-/** 20151010    
+/** 20151010
  * paging_init()에서 early_alloc(memblock)으로 할당한 page의 정보.
  *
  * 0으로 초기화된 데이터와 COW시에 사용된다.
@@ -64,7 +64,7 @@ pmd_t *top_pmd;
 
 static unsigned int cachepolicy __initdata = CPOLICY_WRITEBACK;
 static unsigned int ecc_mask __initdata = 0;
-/** 20151017    
+/** 20151017
  * user, kernel에 대한 page protection 속성 정의
  **/
 pgprot_t pgprot_user;
@@ -702,7 +702,7 @@ static void __init *early_alloc(unsigned long sz)
 	return early_alloc_aligned(sz, sz);
 }
 
-/** 20130309    
+/** 20130309
  * pte table을 위한 공간을 생성하고, 해당 pmd entry 위치에 속성을 합쳐 entry를 만들어 저장.
  * 할당한 pte 중 addr에 해당하는 index의 주소를 리턴.
  **/
@@ -739,11 +739,11 @@ static pte_t * __init early_pte_alloc(pmd_t *pmd, unsigned long addr, unsigned l
 		 **/
 		__pmd_populate(pmd, __pa(pte), prot);
 	}
-	/** 20130309    
+	/** 20130309
 	 * 방금 채운 pmd의 값이 정상인지 검사하는 함수
 	 **/
 	BUG_ON(pmd_bad(*pmd));
-	/** 20130309    
+	/** 20130309
 	 * alloc한 pte에서 addr에 해당하는 pte entry의 주소를 리턴
 	 **/
     /** 20131019
@@ -753,18 +753,18 @@ static pte_t * __init early_pte_alloc(pmd_t *pmd, unsigned long addr, unsigned l
 	return pte_offset_kernel(pmd, addr);
 }
 
-/** 20130309    
+/** 20130309
  * pte table을 할당하고 초기화
  **/
 static void __init alloc_init_pte(pmd_t *pmd, unsigned long addr,
 				  unsigned long end, unsigned long pfn,
 				  const struct mem_type *type)
 {
-	/** 20130309    
+	/** 20130309
 	 * pte를 alloc 하고, addr에 해당하는 pte entry의 주소가 리턴됨
 	 **/
 	pte_t *pte = early_pte_alloc(pmd, addr, type->prot_l1);
-	/** 20130309    
+	/** 20130309
 	 * PAGE_SIZE 단위로 pte table의 각 entry (pte 속성이 적용)를 채움.
 	 *   early_pte_alloc이 리턴한 주소부터 end까지 순회하며 값을 채운다.
 	 **/
@@ -774,7 +774,7 @@ static void __init alloc_init_pte(pmd_t *pmd, unsigned long addr,
 	} while (pte++, addr += PAGE_SIZE, addr != end);
 }
 
-/** 20130309    
+/** 20130309
  * section 단위로 pmd entry를 채운다.
  * 정렬되지 않은 영역에 대해 pmd에 l2 table을 저장하고, pte entry를 생성하고 채움
  **/
@@ -782,7 +782,7 @@ static void __init alloc_init_section(pud_t *pud, unsigned long addr,
 				      unsigned long end, phys_addr_t phys,
 				      const struct mem_type *type)
 {
-	/** 20130223    
+	/** 20130223
 	 * pgtable-2level에서는 pud이 그대로 나옴
 	 **/
 	pmd_t *pmd = pmd_offset(pud, addr);
@@ -793,7 +793,7 @@ static void __init alloc_init_section(pud_t *pud, unsigned long addr,
 	 * L1 entries, whereas PGDs refer to a group of L1 entries making
 	 * up one logical pointer to an L2 table.
 	 */
-	/** 20130223    
+	/** 20130223
 	 * prot_sect 가 0이 아니고, addr, end, phys 모두 SECTION 단위로 정렬되어 있으면 true
 	 *
 	 * 20130824
@@ -804,7 +804,7 @@ static void __init alloc_init_section(pud_t *pud, unsigned long addr,
 		pmd_t *p = pmd;
 
 #ifndef CONFIG_ARM_LPAE
-		/** 20130223    
+		/** 20130223
 		 * addr이 1MB보다 크고 2MB보다 작을 경우 다음 pmd부터 page table에 entry를 생성하기 위해
 		 * 경계를 검사하는 부분. (pgd = pud 는 2MB 단위의 주소. pgd_t는 2개의 pmd_t로 이루어짐)
 		 **/
@@ -812,7 +812,7 @@ static void __init alloc_init_section(pud_t *pud, unsigned long addr,
 			pmd++;
 #endif
 
-		/** 20130223    
+		/** 20130223
 		 * addr부터 end까지 pmd entry를 채운다.
 		 **/
 		do {
@@ -820,7 +820,7 @@ static void __init alloc_init_section(pud_t *pud, unsigned long addr,
 			phys += SECTION_SIZE;
 		} while (pmd++, addr += SECTION_SIZE, addr != end);
 
-		/** 20130223    
+		/** 20130223
 		 * 최초 pmd 값을 기준으로 flush 수행
 		 **/
 		flush_pmd_entry(p);
@@ -829,34 +829,34 @@ static void __init alloc_init_section(pud_t *pud, unsigned long addr,
 		 * No need to loop; pte's aren't interested in the
 		 * individual L1 entries.
 		 */
-		/** 20130223    
+		/** 20130223
 		 * type->prot_sect가 0이거나, prot_sect여도 정렬되어 있지 않다면 수행
 		 **/
 		alloc_init_pte(pmd, addr, end, __phys_to_pfn(phys), type);
 	}
 }
 
-/** 20130309    
+/** 20130309
  * addr에서 end까지 pud entry를 초기화
  **/
 static void __init alloc_init_pud(pgd_t *pgd, unsigned long addr,
 	unsigned long end, unsigned long phys, const struct mem_type *type)
 {
-	/** 20130223    
+	/** 20130223
 	 * pgtable-nopud에서는 pgd이 그대로 나옴
 	 **/
 	pud_t *pud = pud_offset(pgd, addr);
 	unsigned long next;
 
 	do {
-		/** 20130223    
+		/** 20130223
 		 * pgtable-nopud에서는 end가 그대로 나옴
 		 **/
-		 /** 20130309    
+		 /** 20130309
 		  * addr과 end 사이에 작은 값을 취해 next로 삼는다.
 		  **/
 		next = pud_addr_end(addr, end);
-		/** 20130309    
+		/** 20130309
 		 * section 단위로 pud(pmd)를 채운다.
 		 *   (section 크기보다 작은 단위는 pte를 생성)
 		 **/
@@ -934,7 +934,7 @@ static void __init create_36bit_mapping(struct map_desc *md,
  * offsets, and we take full advantage of sections and
  * supersections.
  */
-/** 20130309    
+/** 20130309
  * map_desc 영역에 대한 page table을 채우는 함수
  **/
 static void __init create_mapping(struct map_desc *md)
@@ -957,7 +957,7 @@ static void __init create_mapping(struct map_desc *md)
 		return;
 	}
 
-	/** 20130223    
+	/** 20130223
 	 * map_lowmem에서 넘어온 경우는 MT_MEMORY로 들어와 false
 	 **/
 	if ((md->type == MT_DEVICE || md->type == MT_ROM) &&
@@ -974,7 +974,7 @@ static void __init create_mapping(struct map_desc *md)
 	/*
 	 * Catch 36-bit addresses
 	 */
-	/** 20130223    
+	/** 20130223
 	 * LPAE가 아닌 경우 pfn은 0x100000 보다 작음 (4G / 4K)
 	 **/
 	if (md->pfn >= 0x100000) {
@@ -1007,19 +1007,19 @@ static void __init create_mapping(struct map_desc *md)
 		return;
 	}
 
-	/** 20130223    
+	/** 20130223
 	 * 가상주소 addr를 포함하는 영역에 대한 page table entry의 주소
 	 **/
 	pgd = pgd_offset_k(addr);
 	end = addr + length;
 	do {
-		/** 20130223    
+		/** 20130223
 		 * addr을 PGDIR_SIZE로 round-up 한 값과 end 값 중에 작은 값을 next에 저장
 		 * 즉 next는 2MB 단위
 		 **/
 		unsigned long next = pgd_addr_end(addr, end);
 
-		/** 20130309    
+		/** 20130309
 		 * addr, next 영역에 대한 pud entry를 채움
 		 **/
 		alloc_init_pud(pgd, addr, next, phys, type);
@@ -1046,11 +1046,11 @@ void __init iotable_init(struct map_desc *io_desc, int nr)
 	vm = early_alloc_aligned(sizeof(*vm) * nr, __alignof__(*vm));
 
 	for (md = io_desc; nr; md++, nr--) {
-		/** 20130330    
+		/** 20130330
 		 * md 영역에 대한 page table entry를 등록
 		 **/
 		create_mapping(md);
-		/** 20130330    
+		/** 20130330
 		 * 정렬되지 않은 경우 addr은 PAGE_MASK로 정렬시키고(round down),
 		 * 그 크기를 length에 더해 size에 저장
 		 **/
@@ -1060,7 +1060,7 @@ void __init iotable_init(struct map_desc *io_desc, int nr)
 		vm->flags = VM_IOREMAP | VM_ARM_STATIC_MAPPING; 
 		vm->flags |= VM_ARM_MTYPE(md->type);
 		vm->caller = iotable_init;
-		/** 20130330    
+		/** 20130330
 		 * vm_area를 추가하고, 여러 개일 경우 vm++로 다음 entry를 가리킴
 		 **/
 		vm_area_add_early(vm++);
@@ -1082,7 +1082,7 @@ void __init iotable_init(struct map_desc *io_desc, int nr)
  * PMD halves once the static mappings are in place.
  */
 
-/** 20130330    
+/** 20130330
  * 홀수 section인 경우 create_mapping 없이 vmlist에 추가
  *
  * 20140322
@@ -1100,7 +1100,7 @@ static void __init pmd_empty_section_gap(unsigned long addr)
 	vm_area_add_early(vm);
 }
 
-/** 20130330    
+/** 20130330
  * vmlist를 순회하며 각 node에서 odd section 단위로 할당되어 있고,
  * pmd가 free인 경우 ioremap()이나 vmalloc()에서 사용하지 못하게 vmlist에 추가
  **/
@@ -1115,7 +1115,7 @@ static void __init fill_pmd_gaps(void)
 		if (!(vm->flags & VM_ARM_STATIC_MAPPING))
 			continue;
 		addr = (unsigned long)vm->addr;
-		/** 20130330    
+		/** 20130330
 		 * addr이 이전에 구한 pmd 단위 내에 속하면 continue
 		 **/
 		if (addr < next)
@@ -1126,15 +1126,15 @@ static void __init fill_pmd_gaps(void)
 		 * If so and the first section entry for this PMD is free
 		 * then we block the corresponding virtual address.
 		 */
-		/** 20130330    
+		/** 20130330
 		 * 하위 21비트를 추출해 SECTION_SIZE인지 검사 (홀수번째 섹션)
 		 **/
 		if ((addr & ~PMD_MASK) == SECTION_SIZE) {
-			/** 20130330    
+			/** 20130330
 			 * addr에 해당하는 pmd entry를 구함
 			 **/
 			pmd = pmd_off_k(addr);
-			/** 20130330    
+			/** 20130330
 			 * pmd가 NULL일 때.
 			 * 즉 create_mapping이 안 되어 있을 경우 vm_list에 추가.
 			 * vm_list에 추가하는 것이 block의 의미를 가지는지???
@@ -1156,7 +1156,7 @@ static void __init fill_pmd_gaps(void)
 		}
 
 		/* no need to look at any vm entry until we hit the next PMD */
-		/** 20130330    
+		/** 20130330
 		 * next는 'addr += vm->size'의 다음 PMD 단위의 주소
 		 * (PMD_SIZE - 1을 더해 MASK로 상위 주소만 추출)
 		 **/
@@ -1202,7 +1202,7 @@ static int __init early_vmalloc(char *arg)
 }
 early_param("vmalloc", early_vmalloc);
 
-/** 20130126    
+/** 20130126
  * arm_lowmem_limit은 ZONE_NORMAL에서의 physical memory 마지막 주소
  **/
 phys_addr_t arm_lowmem_limit __initdata = 0;
@@ -1404,7 +1404,7 @@ ZONE_NORMAL에서 물리메모리의 마지막 주소를 가리킨다.
 	}
 #endif
 	meminfo.nr_banks = j;
-	/** 20140329    
+	/** 20140329
 	 * PA arm_lowmem_limit-1을 VA로 변환해 +1을 더해 high_memory로 삼는다.
 	 **/
 	high_memory = __va(arm_lowmem_limit - 1) + 1;
@@ -1478,7 +1478,7 @@ static inline void prepare_page_table(void)
 		pmd_clear(pmd_off_k(addr));
 }
 
-/** 20130126    
+/** 20130126
  * vexpress는 LPAE 사용 안 함
  **/
 #ifdef CONFIG_ARM_LPAE
@@ -1492,7 +1492,7 @@ static inline void prepare_page_table(void)
 /*
  * Reserve the special regions of memory
  */
-/** 20130126    
+/** 20130126
  * memory management 관련된 영역을 memblock.reserved에 등록
  **/
 void __init arm_mm_memblock_reserve(void)
@@ -1501,7 +1501,7 @@ void __init arm_mm_memblock_reserve(void)
 	 * Reserve the page tables.  These are already in use,
 	 * and can only be in node 0.
 	 */
-	/** 20130126    
+	/** 20130126
 	 * swapper_pg_dir 이름의 의미는???
 	 * swapper_pg_dir 메모리 공간을 memblock.reserved에 등록
 	 **/
@@ -1523,7 +1523,7 @@ void __init arm_mm_memblock_reserve(void)
  * called function.  This means you can't use any function or debugging
  * method which may touch any device, otherwise the kernel _will_ crash.
  */
-/** 20130330    
+/** 20130330
  * vector table, mdesc->map_io (peripheral) 영역 등에 대한 mapping 생성 후,
  * tlb와 cache를 flush 함.
  *
@@ -1538,7 +1538,7 @@ static void __init devicemaps_init(struct machine_desc *mdesc)
 	/*
 	 * Allocate the vector page early.
 	 */
-	/** 20130309    
+	/** 20130309
 	 * PAGE_SIZE만큼 메모리 공간을 할당 받아 vectors에 저장
 	 **/
 	vectors = early_alloc(PAGE_SIZE);
@@ -1621,13 +1621,13 @@ static void __init devicemaps_init(struct machine_desc *mdesc)
 	 * back.  After this point, we can start to touch devices again.
 	 */
 	local_flush_tlb_all();
-	/** 20130330    
+	/** 20130330
 	 * cpu_cache.flush_kern_all => v7_flush_kern_cache_all
 	 **/
 	flush_cache_all();
 }
 
-/** 20130330    
+/** 20130330
  * PKMAP_BASE 영역(2MB)을 매핑하기 위한 pte table을 할당하고, 해당 pmd entry에 위치를 저장하고,
  * 전역변수에 pte table의 주소를 저장한다.
  *
@@ -1636,11 +1636,11 @@ static void __init devicemaps_init(struct machine_desc *mdesc)
 static void __init kmap_init(void)
 {
 #ifdef CONFIG_HIGHMEM
-	/** 20130330    
+	/** 20130330
 	 * pmd_off_k(PKMAP_BASE)
 	 *	-> PAGE_OFFSET - PMD_SIZE (0x80000000 - 0x200000)에 대한 pmd entry의 주소
 	 **/
-	/** 20131026    
+	/** 20131026
 	 * PKMAP_BASE 영역에 해당하는 pmd entry에, pte table을 할당받은 주소와 속성을 함께 저장한다.
 	 **/
 	pkmap_page_table = early_pte_alloc(pmd_off_k(PKMAP_BASE),
@@ -1648,7 +1648,7 @@ static void __init kmap_init(void)
 #endif
 }
 
-/** 20130309    
+/** 20130309
  * lowmem 영역에 대해 mapping table (page table)을 생성하는 함수
  *   (lowmem : 물리적으로 존재하는 메모리의 끝주소)
  **/
@@ -1657,7 +1657,7 @@ static void __init map_lowmem(void)
 	struct memblock_region *reg;
 
 	/* Map all the lowmem memory banks. */
-	/** 20130223    
+	/** 20130223
 	 * for_each_memblock은 memblock의 memory type의 region의 개수만큼 순회하는 매크로
 	 * #define for_each_memblock(memblock_type, region)					\
 			for (region = memblock.memblock_type.regions;				\
@@ -1674,7 +1674,7 @@ static void __init map_lowmem(void)
 		 **/
 		if (end > arm_lowmem_limit)
 			end = arm_lowmem_limit;
-		/** 20130223    
+		/** 20130223
 		 * 비정상인 경우 for 종료
 		 **/
 		if (start >= end)
@@ -1685,7 +1685,7 @@ static void __init map_lowmem(void)
 		map.length = end - start;
 		map.type = MT_MEMORY;
 
-		/** 20130309    
+		/** 20130309
 		 * 해당 memblock 영역에 대한 page table을 채운다.
 		 **/
 		create_mapping(&map);
@@ -1696,7 +1696,7 @@ static void __init map_lowmem(void)
  * paging_init() sets up the page tables, initialises the zone memory
  * maps, and sets up the zero page, bad page and bad page tables.
  */
-/** 20130518    
+/** 20130518
  * 1. page table을 생성 (물리메모리, vector table, device io 등)하고,
  * 2. 부팅시 사용할 메모리 할당자 (bootmem bitmap)를 생성하고 초기화.
  * 3. zero page 생성 및 cache flush
@@ -1714,13 +1714,13 @@ void __init paging_init(struct machine_desc *mdesc)
 	devicemaps_init(mdesc);
 	kmap_init();
 
-	/** 20130330    
+	/** 20130330
 	 * high vector 영역에 대한 pmd entry의 주소
 	 **/
 	top_pmd = pmd_off_k(0xffff0000);
 
 	/* allocate the zero page. */
-	/** 20130330    
+	/** 20130330
 	 * 한 페이지를 할당 받아 zero_page에 저장
 	 **/
 	zero_page = early_alloc(PAGE_SIZE);
@@ -1733,7 +1733,7 @@ void __init paging_init(struct machine_desc *mdesc)
 	 * 위에서 할당한 zero_page를 관리하는 struct page의 위치를 전역변수에 저장한다.
 	 **/	
 	empty_zero_page = virt_to_page(zero_page);
-	/** 20130518    
+	/** 20130518
 	 * empty_zero_page 영역에 대해 flush를 수행한다.
 	 **/
 	__flush_dcache_page(NULL, empty_zero_page);

@@ -52,7 +52,7 @@ struct vm_area_struct;
 #define __GFP_HIGHMEM	((__force gfp_t)___GFP_HIGHMEM)
 #define __GFP_DMA32	((__force gfp_t)___GFP_DMA32)
 #define __GFP_MOVABLE	((__force gfp_t)___GFP_MOVABLE)  /* Page is movable */
-/** 20130629    
+/** 20130629
  * ZONE에 대한 GFP MASK 속성을 정의
  **/
 #define GFP_ZONEMASK	(__GFP_DMA|__GFP_HIGHMEM|__GFP_DMA32|__GFP_MOVABLE)
@@ -103,14 +103,14 @@ struct vm_area_struct;
  */
 #define __GFP_NOTRACK_FALSE_POSITIVE (__GFP_NOTRACK)
 
-/** 20150523    
+/** 20150523
  * __GFP_BITS 들을 위한 SHIFT 값과 MASK 값 설정.
  **/
 #define __GFP_BITS_SHIFT 25	/* Room for N __GFP_FOO bits */
 #define __GFP_BITS_MASK ((__force gfp_t)((1 << __GFP_BITS_SHIFT) - 1))
 
 /* This equals 0, but use constants in case they ever change */
-/** 20140426    
+/** 20140426
  * __GFP_HIGH : The kernel is allowed to access the pool of reserved page frames.
  * GFP_NOWAIT : GFP_ATOMIC이며, __GFP_HIGH를 사용하지는 않는다.
  *				Like GFP_ATOMIC, except that the call will not fallback on emer- gency memory pools. This increases the liklihood of the memory
@@ -158,7 +158,7 @@ struct vm_area_struct;
 			 __GFP_NOMEMALLOC | __GFP_NORETRY | __GFP_NOWARN | \
 			 __GFP_NO_KSWAPD)
 
-/** 20140628    
+/** 20140628
  * GFP_THISNODE 는 NUMA인 경우에만 해당.
  **/
 #ifdef CONFIG_NUMA
@@ -176,7 +176,7 @@ struct vm_area_struct;
 			__GFP_NORETRY|__GFP_MEMALLOC|__GFP_NOMEMALLOC)
 
 /* Control slab gfp mask during early boot */
-/** 20130907    
+/** 20130907
  * __GFP_BITS_MASK : GFP가 사용하는 BIT MASK의 범위
  * & ~(__GFP_WAIT|__GFP_IO|__GFP_FS) : 사용할 수 없는 속성을 지워준다.
  **/
@@ -197,7 +197,7 @@ struct vm_area_struct;
 #define GFP_DMA32	__GFP_DMA32
 
 /* Convert GFP flags to their corresponding migrate type */
-/** 20140517    
+/** 20140517
  * gfp_flags로부터 migrate type 추출.
  * 리턴값의 1번비트 __GFP_MOVABLE 여부
  *          0번비트 __GFP_RECLAIMABLE 여부
@@ -206,7 +206,7 @@ static inline int allocflags_to_migratetype(gfp_t gfp_flags)
 {
 	WARN_ON((gfp_flags & GFP_MOVABLE_MASK) == GFP_MOVABLE_MASK);
 
-	/** 20140517    
+	/** 20140517
 	 * 전역변수 page_group_by_mobility_disabled에서 page group 단위
 	 * 이동이 제한된 경우 migrate 불가 리턴.
 	 **/
@@ -301,7 +301,7 @@ static inline int allocflags_to_migratetype(gfp_t gfp_flags)
 	| 1 << (___GFP_MOVABLE | ___GFP_DMA32 | ___GFP_DMA | ___GFP_HIGHMEM)  \
 )
 
-/** 20130629    
+/** 20130629
  * nr_free_pagecache_pages 에서 호출된 경우 flags는 다음과 같다.
  * #define GFP_HIGHUSER_MOVABLE	(__GFP_WAIT | __GFP_IO | __GFP_FS | \
  *						__GFP_HARDWALL | __GFP_HIGHMEM | \
@@ -315,7 +315,7 @@ static inline int allocflags_to_migratetype(gfp_t gfp_flags)
 static inline enum zone_type gfp_zone(gfp_t flags)
 {
 	enum zone_type z;
-	/** 20130629    
+	/** 20130629
 	 * 위 경우에서  bit는 __GFP_HIGHMEM, __GFP_MOVABLE
 	 *
 	 * 20130727
@@ -323,7 +323,7 @@ static inline enum zone_type gfp_zone(gfp_t flags)
 	 **/
 	int bit = (__force int) (flags & GFP_ZONEMASK);
 
-	/** 20130629    
+	/** 20130629
 	 * ZONES_SHIFT는 1.
 	 *
 #define GFP_ZONE_TABLE ( \
@@ -353,7 +353,7 @@ static inline enum zone_type gfp_zone(gfp_t flags)
  * virtual kernel addresses to the allocated page(s).
  */
 
-/** 20130727    
+/** 20130727
  * UMA에서 NUMA_BUILD가 0이므로 0을 리턴
  **/
 static inline int gfp_zonelist(gfp_t flags)
@@ -373,12 +373,12 @@ static inline int gfp_zonelist(gfp_t flags)
  * For the normal case of non-DISCONTIGMEM systems the NODE_DATA() gets
  * optimized to &contig_page_data at compile-time.
  */
-/** 20130727    
+/** 20130727
  * node id에 해당하는 zonelists 중에 flags에 따른 특정 zonelist를 리턴
  **/
 static inline struct zonelist *node_zonelist(int nid, gfp_t flags)
 {
-	/** 20130727    
+	/** 20130727
 	 * UMA이므로 contig_page_data의 node_zonelists를 가져오고,
 	 * flags에 따라 zonelist에 대한 offset (0)으로 특정 zonelists를 리턴.
 	 **/
@@ -386,13 +386,13 @@ static inline struct zonelist *node_zonelist(int nid, gfp_t flags)
 }
 
 #ifndef HAVE_ARCH_FREE_PAGE
-/** 20130824    
+/** 20130824
  * HAVE_ARCH_FREE_PAGE가 정의되어 있지 않으므로 NULL 함수
  **/
 static inline void arch_free_page(struct page *page, int order) { }
 #endif
 #ifndef HAVE_ARCH_ALLOC_PAGE
-/** 20131005    
+/** 20131005
  * HAVE_ARCH_ALLOC_PAGE가 정의되어 있지 않으므로 NULL 함수
  **/
 static inline void arch_alloc_page(struct page *page, int order) { }
@@ -412,7 +412,7 @@ __alloc_pages(gfp_t gfp_mask, unsigned int order,
 	return __alloc_pages_nodemask(gfp_mask, order, zonelist, NULL);
 }
 
-/** 20140125    
+/** 20140125
  * 특정 노드에서 페이지 프레임을 할당받아 첫번째 프레임에 대한 page 디스크립터 포인터를 리턴한다.
  **/
 static inline struct page *alloc_pages_node(int nid, gfp_t gfp_mask,
@@ -422,7 +422,7 @@ static inline struct page *alloc_pages_node(int nid, gfp_t gfp_mask,
 	if (nid < 0)
 		nid = numa_node_id();
 
-	/** 20130907    
+	/** 20130907
 	 * nid 에 해당하는 node에서 gfp_mask와 일치하는 zonelist를 가져와 __alloc_pages에 전달.
 	 **/
 	/** 20140705 
@@ -454,7 +454,7 @@ extern struct page *alloc_pages_vma(gfp_t gfp_mask, int order,
 			struct vm_area_struct *vma, unsigned long addr,
 			int node);
 #else
-/** 20130907    
+/** 20130907
  * NUMA가 아니므로 이 함수가 실행됨.
  * numa_node_id()는 0을 반환.
  **/
@@ -480,7 +480,7 @@ void free_pages_exact(void *virt, size_t size);
 /* This is different from alloc_pages_exact_node !!! */
 void *alloc_pages_exact_nid(int nid, size_t size, gfp_t gfp_mask);
 
-/** 20140329    
+/** 20140329
  * gfp_mask 속성에 해당하는 한 페이지만 할당받는다.
  **/
 #define __get_free_page(gfp_mask) \
@@ -494,7 +494,7 @@ extern void free_pages(unsigned long addr, unsigned int order);
 extern void free_hot_cold_page(struct page *page, int cold);
 extern void free_hot_cold_page_list(struct list_head *list, int cold);
 
-/** 20130907    
+/** 20130907
  * 하나의 page는 order를 0으로 해서 __free_pages 호출
  * 
  * __가 붙은 버전은 struct page *를 받고, 안 붙은 버전은 va를 받는다.

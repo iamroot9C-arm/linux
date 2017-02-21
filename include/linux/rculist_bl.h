@@ -17,7 +17,7 @@ static inline void hlist_bl_set_first_rcu(struct hlist_bl_head *h,
 		(struct hlist_bl_node *)((unsigned long)n | LIST_BL_LOCKMASK));
 }
 
-/** 20150328    
+/** 20150328
  * hlist_bl_head에서 첫번째 hlist_bl_node를 가져온다.
  * 'Bit Lock' mask는 제거한 상태로 리턴한다.
  **/
@@ -123,7 +123,7 @@ static inline void hlist_bl_add_head_rcu(struct hlist_bl_node *n,
  * @member:	the name of the hlist_bl_node within the struct.
  *
  */
-/** 20150328    
+/** 20150328
  * list의 head에서부터 node 각각 순회하는데, node를 member로 포함하고 있는
  * 실제 객체의 위치가 tpos에 저장된다.
  **/

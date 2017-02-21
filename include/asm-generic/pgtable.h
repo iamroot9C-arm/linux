@@ -74,7 +74,7 @@ int pmdp_clear_flush_young(struct vm_area_struct *vma,
 #endif
 
 #ifndef __HAVE_ARCH_PTEP_GET_AND_CLEAR
-/** 20140531    
+/** 20140531
  * pte 값을 가져오고, pte entry를 clear 시킨다.
  **/
 static inline pte_t ptep_get_and_clear(struct mm_struct *mm,

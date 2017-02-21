@@ -119,12 +119,12 @@ unsigned int sysctl_sched_cfs_bandwidth_slice = 5000UL;
  *
  * This idea comes from the SD scheduler of Con Kolivas:
  */
-/** 20150822    
+/** 20150822
  * sysctl_sched_tunable_scaling 에 따라 factor 설정
  **/
 static int get_update_sysctl_factor(void)
 {
-	/** 20150822    
+	/** 20150822
 	 * cpus의 값은 최소 8.
 	 **/
 	unsigned int cpus = min_t(int, num_online_cpus(), 8);
@@ -146,7 +146,7 @@ static int get_update_sysctl_factor(void)
 	return factor;
 }
 
-/** 20150822    
+/** 20150822
  * sysctl에서 사용할 factor를 받아와 다른 sysctl 값을 초기화 한다.
  **/
 static void update_sysctl(void)
@@ -161,7 +161,7 @@ static void update_sysctl(void)
 #undef SET_SYSCTL
 }
 
-/** 20150822    
+/** 20150822
  * sched에서 granularity를 초기화 한다.
  *
  * sysctl default 값으로 설정한다.
@@ -2237,7 +2237,7 @@ static void set_next_buddy(struct sched_entity *se);
  * decreased. We remove the task from the rbtree and
  * update the fair scheduling stats:
  */
-/** 20150523    
+/** 20150523
  * 추후 분석 ???
  **/
 static void dequeue_task_fair(struct rq *rq, struct task_struct *p, int flags)
@@ -4359,7 +4359,7 @@ more_balance:
 		if ((env.flags & LBF_SOME_PINNED) && env.imbalance > 0 &&
 				lb_iterations++ < max_lb_iterations) {
 
-			/** 20150117    
+			/** 20150117
 			 * runqueue 포인터가 새로운 dst_cpu의 run queue로 변경된다.
 			 * 즉, 다른 runqueue로 변경된다.
 			 *
@@ -4507,7 +4507,7 @@ void idle_balance(int this_cpu, struct rq *this_rq)
 
 		if (sd->flags & SD_BALANCE_NEWIDLE) {
 			/* If we've pulled tasks over stop searching: */
-			/** 20150117    
+			/** 20150117
 			 * runqueues 중 현재 cpu의 run queue의 위치가 넘어간다.
 			 **/
 			pulled_task = load_balance(this_cpu, this_rq,
@@ -4610,7 +4610,7 @@ out_unlock:
  *   needed, they will kick the idle load balancer, which then does idle
  *   load balancing for all the idle CPUs.
  */
-/** 20140426    
+/** 20140426
  * cfs의 nohz 자료구조.
  **/
 static struct {
@@ -5126,7 +5126,7 @@ static void set_curr_task_fair(struct rq *rq)
 	}
 }
 
-/** 20140426    
+/** 20140426
  * cfs_rq 자료구조 초기화
  **/
 void init_cfs_rq(struct cfs_rq *cfs_rq)
@@ -5349,7 +5349,7 @@ static unsigned int get_rr_interval_fair(struct rq *rq, struct task_struct *task
 /*
  * All the scheduling class methods:
  */
-/** 20150523    
+/** 20150523
  * cfs 스케쥴러의 sched_class 인스턴스.
  **/
 const struct sched_class fair_sched_class = {
@@ -5400,35 +5400,35 @@ void print_cfs_stats(struct seq_file *m, int cpu)
 }
 #endif
 
-/** 20140426    
+/** 20140426
  * cfs scheduler init 함수.
  **/
 __init void init_sched_fair_class(void)
 {
-	/** 20140426    
+	/** 20140426
 	 * SMP가 아닌 경우 어떤 초기화 코드도 실행하지 않는다.
 	 **/
 #ifdef CONFIG_SMP
-	/** 20140426    
+	/** 20140426
 	 * SCHED_SOFTIRQ의 action으로 run_rebalance_domains 지정.
 	 **/
 	open_softirq(SCHED_SOFTIRQ, run_rebalance_domains);
 
-	/** 20140426    
+	/** 20140426
 	 * vexpress의 경우 NO_HZ가 정의되어 있지 않음.
 	 * 하지만 대부분의 kernel config가 NO_HZ를 정의하고 있음.
 	 **/
 #ifdef CONFIG_NO_HZ
-	/** 20140426    
+	/** 20140426
 	 * nohz의 자료구조 초기화
 	 **/
 	nohz.next_balance = jiffies;
-	/** 20140426    
+	/** 20140426
 	 * nohz.idle_cpus_mask를 저장하기 위한 cpumask 변수를 할당
 	 *	-> OFFSTACK 옵션을 사용하지 않아 null 함수. 전역변수의 멤버를 그대로 사용.
 	 **/
 	zalloc_cpumask_var(&nohz.idle_cpus_mask, GFP_NOWAIT);
-	/** 20140426    
+	/** 20140426
 	 * cpu notifier block으로 지정
 	 *	fn: sched_ilb_notifier
 	 *	pri: 0

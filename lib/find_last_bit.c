@@ -17,7 +17,7 @@
 
 #ifndef find_last_bit
 
-/** 20130608    
+/** 20130608
  * addr에서 가장 첫번째 1이 나오는 bit의 위치를 리턴
  **/
 unsigned long find_last_bit(const unsigned long *addr, unsigned long size)
@@ -26,14 +26,14 @@ unsigned long find_last_bit(const unsigned long *addr, unsigned long size)
 	unsigned long tmp;
 
 	/* Start at final word. */
-	/** 20130608    
+	/** 20130608
 	 * unsigned long 단위의 개수를 words에 저장
 	 **/
 	words = size / BITS_PER_LONG;
 
 	/* Partial final word? */
 	if (size & (BITS_PER_LONG-1)) {
-		/** 20130608    
+		/** 20130608
 		 * 해당 word
 		 * e.g. size : 4, BITS_PER_LONG : 32
 		 * addr[words] & (0xffffffff >> (32 - (4 & (32-1))))
@@ -48,7 +48,7 @@ unsigned long find_last_bit(const unsigned long *addr, unsigned long size)
 		tmp = addr[--words];
 		if (tmp) {
 found:
-			/** 20130608    
+			/** 20130608
 			 * 첫번째(낮은 메모리 주소) 워드에서 msb의 위치를 리턴
 			 **/
 			return words * BITS_PER_LONG + __fls(tmp);

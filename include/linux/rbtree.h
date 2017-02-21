@@ -107,7 +107,7 @@ struct rb_node
 } __attribute__((aligned(sizeof(long))));
     /* The alignment might seem pointless, but allegedly CRIS needs it */
 
-/** 20150411    
+/** 20150411
  * red-block tree의 root node를 가리키는 구조체.
  **/
 struct rb_root
@@ -133,7 +133,7 @@ static inline void rb_set_color(struct rb_node *rb, int color)
 }
 
 #define RB_ROOT	(struct rb_root) { NULL, }
-/** 20140329    
+/** 20140329
  * rb_node를 포함하는 자료구조 entry 지정
  **/
 #define	rb_entry(ptr, type, member) container_of(ptr, type, member)
@@ -171,7 +171,7 @@ extern struct rb_node *rb_last(const struct rb_root *);
 extern void rb_replace_node(struct rb_node *victim, struct rb_node *new, 
 			    struct rb_root *root);
 
-/** 20140329    
+/** 20140329
  * rb_node를 rb_link에 추가시켜 rbtree에 달아준다.
  **/
 static inline void rb_link_node(struct rb_node * node, struct rb_node * parent,

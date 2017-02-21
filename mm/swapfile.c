@@ -182,7 +182,7 @@ static int wait_for_discard(void *word)
 #define SWAPFILE_CLUSTER	256
 #define LATENCY_LIMIT		256
 
-/** 20140531    
+/** 20140531
  * 추후 분석 ???
  **/
 static unsigned long scan_swap_map(struct swap_info_struct *si,
@@ -414,7 +414,7 @@ no_page:
 	return 0;
 }
 
-/** 20140531    
+/** 20140531
  * active swap area를 검색해 free page slot을 찾아 swap entry를 리턴한다.
  *
  * how page slots are reserved in swap areas.
@@ -428,7 +428,7 @@ swp_entry_t get_swap_page(void)
 	int wrapped = 0;
 
 	spin_lock(&swap_lock);
-	/** 20140524    
+	/** 20140524
 	 * swap으로 사용할 페이지가 없다면 noswap으로 이동.
 	 * 성공하면 swap pages 수를 하나 감소시킨다.
 	 **/
@@ -439,7 +439,7 @@ swp_entry_t get_swap_page(void)
 	for (type = swap_list.next; type >= 0 && wrapped < 2; type = next) {
 		si = swap_info[type];
 		next = si->next;
-		/** 20140524    
+		/** 20140524
 		 * swap info의 type 순회가 끝날 때마다 wrapped를 하나 증가시킨다.
 		 **/
 		if (next < 0 ||
@@ -453,7 +453,7 @@ swp_entry_t get_swap_page(void)
 		if (!(si->flags & SWP_WRITEOK))
 			continue;
 
-		/** 20140531    
+		/** 20140531
 		 * index update.
 		 **/
 		swap_list.next = next;
@@ -461,7 +461,7 @@ swp_entry_t get_swap_page(void)
 		offset = scan_swap_map(si, SWAP_HAS_CACHE);
 		if (offset) {
 			spin_unlock(&swap_lock);
-			/** 20140531    
+			/** 20140531
 			 * 성공적으로 swap entry를 리턴하는 부분.
 			 **/
 			return swp_entry(type, offset);
@@ -672,7 +672,7 @@ int reuse_swap_page(struct page *page)
  * If swap is getting full, or if there are no more mappings of this page,
  * then try_to_free_swap is called to free its swap space.
  */
-/** 20140607    
+/** 20140607
  * swap space를 free 하는 함수.
  * 추후 분석 ???
  **/
@@ -2152,7 +2152,7 @@ void si_swapinfo(struct sysinfo *val)
  * - swap-cache reference is requested but the entry is not used. -> ENOENT
  * - swap-mapped reference requested but needs continued swap count. -> ENOMEM
  */
-/** 20140531    
+/** 20140531
  * swap entry를 검증하고, 정상인 경우 swap map count를 증가시킨다.
  * 자세한 내용은 추후 분석 ???
  **/
@@ -2233,7 +2233,7 @@ void swap_shmem_alloc(swp_entry_t entry)
  * if __swap_duplicate() fails for another reason (-EINVAL or -ENOENT), which
  * might occur if a page table entry has got corrupted.
  */
-/** 20140531    
+/** 20140531
  * swap entry의 reference count (map)를 1 증가시킨다.
  * 자세한 내용은 추후 분석???
  **/

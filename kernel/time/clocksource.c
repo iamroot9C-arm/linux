@@ -176,7 +176,7 @@ clocks_calc_mult_shift(u32 *mult, u32 *shift, u32 from, u32 to, u32 maxsec)
  * override_name:
  *	Name of the user-specified clocksource.
  */
-/** 20141227    
+/** 20141227
  * curr_clocksource:
  *   clocksource_select()에 의해 선택된 clocksource 포인터.
  *
@@ -454,7 +454,7 @@ static int clocksource_watchdog_kthread(void *data)
 
 #else /* CONFIG_CLOCKSOURCE_WATCHDOG */
 
-/** 20141227    
+/** 20141227
  * 새로운 clocksource를 watchdog에 등록한다.
  *
  * vexpress config의 경우 CONFIG_CLOCKSOURCE_WATCHDOG가 정의되지 않아
@@ -468,7 +468,7 @@ static void clocksource_enqueue_watchdog(struct clocksource *cs)
 
 static inline void clocksource_dequeue_watchdog(struct clocksource *cs) { }
 static inline void clocksource_resume_watchdog(void) { }
-/** 20151212    
+/** 20151212
  **/
 static inline int clocksource_watchdog_kthread(void *data) { return 0; }
 
@@ -477,7 +477,7 @@ static inline int clocksource_watchdog_kthread(void *data) { return 0; }
 /**
  * clocksource_suspend - suspend the clocksource(s)
  */
-/** 20160116    
+/** 20160116
  * clocksource를 순회하며 등록된 clocksource에 대해 suspend 콜백을 호출한다.
  **/
 void clocksource_suspend(void)
@@ -520,7 +520,7 @@ void clocksource_touch_watchdog(void)
  * @cs:         Pointer to clocksource
  *
  */
-/** 20141227    
+/** 20141227
  * clocksource mult의 11%를 보정값으로 취한다.
  **/
 static u32 clocksource_max_adjustment(struct clocksource *cs)
@@ -539,7 +539,7 @@ static u32 clocksource_max_adjustment(struct clocksource *cs)
  * @cs:         Pointer to clocksource
  *
  */
-/** 20141227    
+/** 20141227
  * 이 클럭소스가 지연될 수 있는 최대값을 리턴한다.
  **/
 static u64 clocksource_max_deferment(struct clocksource *cs)
@@ -560,7 +560,7 @@ static u64 clocksource_max_deferment(struct clocksource *cs)
 	 * any rounding errors, ensure the above inequality is satisfied and
 	 * no overflow will occur.
 	 */
-	/** 20151010    
+	/** 20151010
 	 * clocksource의 mult와 maxadj로 최대 사이클을 계산한다.
 	 **/
 	max_cycles = 1ULL << (63 - (ilog2(cs->mult + cs->maxadj) + 1));
@@ -571,7 +571,7 @@ static u64 clocksource_max_deferment(struct clocksource *cs)
 	 * Note: Here we subtract the maxadj to make sure we don't sleep for
 	 * too long if there's a large negative adjustment.
 	 */
-	/** 20151010    
+	/** 20151010
 	 * max_cycles와 mask값 중에 작은 값을 취한다.
 	 * 계산된 max_cycles 값으로 max_nsecs를 구한다.
 	 **/
@@ -598,7 +598,7 @@ static u64 clocksource_max_deferment(struct clocksource *cs)
  * Select the clocksource with the best rating, or the clocksource,
  * which is selected by userspace override.
  */
-/** 20141227    
+/** 20141227
  * best rating값 또는 userspace에 의해 선택된 clocksource를
  * curr_clocksource로 선택한다.
  **/
@@ -606,19 +606,19 @@ static void clocksource_select(void)
 {
 	struct clocksource *best, *cs;
 
-	/** 20151212    
+	/** 20151212
 	 * 부팅이 되는 중에는 default를 사용한다.
 	 **/
 	if (!finished_booting || list_empty(&clocksource_list))
 		return;
 	/* First clocksource on the list has the best rating. */
-	/** 20151128    
+	/** 20151128
 	 * clocksource_list의 첫번째 entry가 best clocksource.
 	 **/
 	best = list_first_entry(&clocksource_list, struct clocksource, list);
 	/* Check for the override clocksource. */
 	list_for_each_entry(cs, &clocksource_list, list) {
-		/** 20151212    
+		/** 20151212
 		 * 등록된 클럭소스 중 override_name인 clocksource를 찾는다.
 		 **/
 		if (strcmp(cs->name, override_name) != 0)
@@ -628,7 +628,7 @@ static void clocksource_select(void)
 		 * capable clocksource if the tick code is in oneshot
 		 * mode (highres or nohz)
 		 */
-		/** 20151128    
+		/** 20151128
 		 * clocksource가 HRES에서 사용 불가능한데 현재 oneshot 모드라면
 		 * override 된 clocksource를 사용할 수 없다.
 		 **/
@@ -644,7 +644,7 @@ static void clocksource_select(void)
 			best = cs;
 		break;
 	}
-	/** 20151128    
+	/** 20151128
 	 * best가 현재 clocksource가 아니면 curr_clocksource를 바꾼다.
 	 *
 	 * qemu 실행시 "Swtiching to clocksource v2m-timer1"
@@ -669,20 +669,20 @@ static inline void clocksource_select(void) { }
  * We use fs_initcall because we want this to start before
  * device_initcall but after subsys_initcall.
  */
-/** 20151212    
+/** 20151212
  * 부팅이 완료되어 부팅 중 등록한 clocksource 중 rating이 높은 clocksource가
  * 동작하도록 선택한다.
  **/
 static int __init clocksource_done_booting(void)
 {
 	mutex_lock(&clocksource_mutex);
-	/** 20151128    
+	/** 20151128
 	 * 현재 clocksource 정보를 default clock으로 설정한다.
 	 **/
 	curr_clocksource = clocksource_default_clock();
 	mutex_unlock(&clocksource_mutex);
 
-	/** 20151212    
+	/** 20151212
 	 * finished_booting을 설정해 clocksource_select()가 즉시 리턴 없이 진행된다.
 	 **/
 	finished_booting = 1;
@@ -693,7 +693,7 @@ static int __init clocksource_done_booting(void)
 	clocksource_watchdog_kthread(NULL);
 
 	mutex_lock(&clocksource_mutex);
-	/** 20151212    
+	/** 20151212
 	 * 등록된 clocksource 중 높은 우선순위 clocksource로 timekeeper를 동작시킨다.
 	 **/
 	clocksource_select();
@@ -705,7 +705,7 @@ fs_initcall(clocksource_done_booting);
 /*
  * Enqueue the clocksource sorted by rating
  */
-/** 20141227    
+/** 20141227
  * 새로운 clocksource를 rating 값을 기준으로 내림차순으로 등록한다.
  *
  * vexpress 환경에서 "v2m-timer1", "jiffies" 가 호출된다.
@@ -733,7 +733,7 @@ static void clocksource_enqueue(struct clocksource *cs)
  * This *SHOULD NOT* be called directly! Please use the
  * clocksource_updatefreq_hz() or clocksource_updatefreq_khz helper functions.
  */
-/** 20141227    
+/** 20141227
  * clocksource의 scale과 freq 값을 받아 mult와 shift 등 값을 update한다.
  **/
 void __clocksource_updatefreq_scale(struct clocksource *cs, u32 scale, u32 freq)
@@ -749,7 +749,7 @@ void __clocksource_updatefreq_scale(struct clocksource *cs, u32 scale, u32 freq)
 	 * ~ 0.06ppm granularity for NTP. We apply the same 12.5%
 	 * margin as we do in clocksource_max_deferment()
 	 */
-	/** 20141227    
+	/** 20141227
 	 * cs->mask에서 상위 3비트를 제외한 부분을 0으로 만든다. 
 	 * 이는 wrapping around 전에 적당한 여유값을 두기 위함이다.
 	 *
@@ -765,7 +765,7 @@ void __clocksource_updatefreq_scale(struct clocksource *cs, u32 scale, u32 freq)
 	sec = (cs->mask - (cs->mask >> 3));
 	do_div(sec, freq);
 	do_div(sec, scale);
-	/** 20141227    
+	/** 20141227
 	 * sec을 보정한다.
 	 **/
 	if (!sec)
@@ -773,7 +773,7 @@ void __clocksource_updatefreq_scale(struct clocksource *cs, u32 scale, u32 freq)
 	else if (sec > 600 && cs->mask > UINT_MAX)
 		sec = 600;
 
-	/** 20141227    
+	/** 20141227
 	 * freq와 계산한 sec으로부터 clocksource의 mult와 shift 값을 계산한다.
 	 **/
 	clocks_calc_mult_shift(&cs->mult, &cs->shift, freq,
@@ -784,7 +784,7 @@ void __clocksource_updatefreq_scale(struct clocksource *cs, u32 scale, u32 freq)
 	 * Since mult may be adjusted by ntp, add an safety extra margin
 	 *
 	 */
-	/** 20141227    
+	/** 20141227
 	 * clocksource의 mult를 위한 보정값을 구한 뒤, 범위 내의 값을 계산한다.
 	 **/
 	cs->maxadj = clocksource_max_adjustment(cs);
@@ -810,7 +810,7 @@ EXPORT_SYMBOL_GPL(__clocksource_updatefreq_scale);
  * This *SHOULD NOT* be called directly! Please use the
  * clocksource_register_hz() or clocksource_register_khz helper functions.
  */
-/** 20141227    
+/** 20141227
  * 새로운 clocksource를 rating이 높은 순서로 queue에 추가하고,
  * 가장 높은 rating 값을 가진 clocksource를 선택한다.
  *
@@ -839,7 +839,7 @@ EXPORT_SYMBOL_GPL(__clocksource_register_scale);
  *
  * Returns -EBUSY if registration fails, zero otherwise.
  */
-/** 20151010    
+/** 20151010
  * 새로운 클럭소스를 등록한다.
  *
  * 최대치에 대한 몇 가지 항목을 계산해 채우고, 전역 리스트에 등록한 뒤
@@ -848,7 +848,7 @@ EXPORT_SYMBOL_GPL(__clocksource_register_scale);
 int clocksource_register(struct clocksource *cs)
 {
 	/* calculate max adjustment for given mult/shift */
-	/** 20151010    
+	/** 20151010
 	 * 주어진 mult/shift를 위한 max adjustment를 구한다.
 	 **/
 	cs->maxadj = clocksource_max_adjustment(cs);
@@ -857,12 +857,12 @@ int clocksource_register(struct clocksource *cs)
 		cs->name);
 
 	/* calculate max idle time permitted for this clocksource */
-	/** 20151010    
+	/** 20151010
 	 * 이 클럭소스가 지연될 수 있는 최대 idle 시간을 계산한다.
 	 **/
 	cs->max_idle_ns = clocksource_max_deferment(cs);
 
-	/** 20151010    
+	/** 20151010
 	 * clocksource를 rating 기준 내림차순으로 등록하고, 새로 best 클럭소스를 선택한다.
 	 **/
 	mutex_lock(&clocksource_mutex);
@@ -918,7 +918,7 @@ EXPORT_SYMBOL(clocksource_unregister);
  *
  * Provides sysfs interface for listing current clocksource.
  */
-/** 20151128    
+/** 20151128
  * "/sys/devices/clocksource/clocksource0/current_clocksource"
  **/
 static ssize_t
@@ -1015,7 +1015,7 @@ static DEVICE_ATTR(current_clocksource, 0644, sysfs_show_current_clocksources,
 static DEVICE_ATTR(available_clocksource, 0444,
 		   sysfs_show_available_clocksources, NULL);
 
-/** 20160116    
+/** 20160116
  * clocksource 
  **/
 static struct bus_type clocksource_subsys = {
@@ -1023,7 +1023,7 @@ static struct bus_type clocksource_subsys = {
 	.dev_name = "clocksource",
 };
 
-/** 20160116    
+/** 20160116
  * device clocksource
  **/
 static struct device device_clocksource = {
@@ -1031,12 +1031,12 @@ static struct device device_clocksource = {
 	.bus	= &clocksource_subsys,
 };
 
-/** 20160116    
+/** 20160116
  * sysfs에 clocksource 관련 파일을 생성한다.
  **/
 static int __init init_clocksource_sysfs(void)
 {
-	/** 20160116    
+	/** 20160116
 	 * "/sys/bus/clocksource"
 	 * "/sys/devices/system/clocksource"
 	 *     clocksource0/available_clocksource
@@ -1046,7 +1046,7 @@ static int __init init_clocksource_sysfs(void)
 	 **/
 	int error = subsys_system_register(&clocksource_subsys, NULL);
 
-	/** 20160116    
+	/** 20160116
 	 * clocksource를 장치로 등록한다.
 	 **/
 	if (!error)

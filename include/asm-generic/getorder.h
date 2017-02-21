@@ -9,7 +9,7 @@
 /*
  * Runtime evaluation of get_order()
  */
-/** 20130907    
+/** 20130907
  * get_order()의 runtime 계산 버전.
  **/
 static inline __attribute_const__
@@ -49,7 +49,7 @@ int __get_order(unsigned long size)
  * This function may be used to initialise variables with compile time
  * evaluations of constants.
  */
-/** 20130907    
+/** 20130907
  * n이라는 크기가 필요할 때
  * PAGE_SIZE * (2 ** x) 로 표현할 수 있는 x의 최소 크기가 order로 리턴된다.
  * 

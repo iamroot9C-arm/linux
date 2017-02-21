@@ -116,7 +116,7 @@ armpmu_map_raw_event(u32 raw_event_mask, u64 config)
 	return (int)(config & raw_event_mask);
 }
 
-/** 20150613    
+/** 20150613
  **/
 static int map_cpu_event(struct perf_event *event,
 			 const unsigned (*event_map)[PERF_COUNT_HW_MAX],
@@ -615,7 +615,7 @@ int __init armpmu_register(struct arm_pmu *armpmu, char *name, int type)
  * Ensure the PMU has sane values out of reset.
  * This requires SMP to be available, so exists as a separate initcall.
  */
-/** 20151121    
+/** 20151121
  * 분석 생략???
  **/
 static int __init
@@ -652,7 +652,7 @@ static int __devinit armpmu_device_probe(struct platform_device *pdev)
 	return 0;
 }
 
-/** 20160109    
+/** 20160109
  * arm-pmu 드라이버
  **/
 static struct platform_driver armpmu_driver = {
@@ -664,7 +664,7 @@ static struct platform_driver armpmu_driver = {
 	.id_table	= armpmu_plat_device_ids,
 };
 
-/** 20160109    
+/** 20160109
  * arm pmu 드라이버를 등록한다.
  **/
 static int __init register_pmu_driver(void)
@@ -716,7 +716,7 @@ static struct notifier_block __cpuinitdata pmu_cpu_notifier = {
 /*
  * CPU PMU identification and registration.
  */
-/** 20150613    
+/** 20150613
  * 각 cpu별 cpu PMU를 초기화 하고 등록한다.
  **/
 static int __init
@@ -740,7 +740,7 @@ init_hw_perf_events(void)
 		case 0xC080:	/* Cortex-A8 */
 			cpu_pmu = armv7_a8_pmu_init();
 			break;
-		/** 20150613    
+		/** 20150613
 		 * Cortex-A9 pmu init
 		 **/
 		case 0xC090:	/* Cortex-A9 */

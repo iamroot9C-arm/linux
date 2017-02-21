@@ -26,7 +26,7 @@ static void remove_files(struct sysfs_dirent *dir_sd, struct kobject *kobj,
 		sysfs_hash_and_remove(dir_sd, NULL, (*attr)->name);
 }
 
-/** 20150905    
+/** 20150905
  * 디렉토리 sysfs dirent에 attribute group을 파일로 각각 추가한다.
  **/
 static int create_files(struct sysfs_dirent *dir_sd, struct kobject *kobj,
@@ -35,7 +35,7 @@ static int create_files(struct sysfs_dirent *dir_sd, struct kobject *kobj,
 	struct attribute *const* attr;
 	int error = 0, i;
 
-	/** 20150905    
+	/** 20150905
 	 * attribute group의 attribute를 각각 파일로 생성한다.
 	 **/
 	for (i = 0, attr = grp->attrs; *attr && !error; i++, attr++) {
@@ -44,7 +44,7 @@ static int create_files(struct sysfs_dirent *dir_sd, struct kobject *kobj,
 		/* in update mode, we're changing the permissions or
 		 * visibility.  Do this by first removing then
 		 * re-adding (if required) the file */
-		/** 20150905    
+		/** 20150905
 		 * update라면 기존 name을 가지는 sysfs dirent를 찾아 제거한다.
 		 * is_visible이 정의되어 있다면 콜백을 호출해 결정된 mode를 사용한다.
 		 **/
@@ -55,7 +55,7 @@ static int create_files(struct sysfs_dirent *dir_sd, struct kobject *kobj,
 			if (!mode)
 				continue;
 		}
-		/** 20150905    
+		/** 20150905
 		 * 디렉토리 sysfs dirent에 파일을 지정한 mode로 추가한다.
 		 **/
 		error = sysfs_add_file_mode(dir_sd, *attr, SYSFS_KOBJ_ATTR,
@@ -69,7 +69,7 @@ static int create_files(struct sysfs_dirent *dir_sd, struct kobject *kobj,
 }
 
 
-/** 20150905    
+/** 20150905
  * kobject 에 attribute 그룹을 sysfs dirent 파일로 생성한다.
  **/
 static int internal_create_group(struct kobject *kobj, int update,
@@ -88,7 +88,7 @@ static int internal_create_group(struct kobject *kobj, int update,
 			kobj->name, grp->name ? "" : grp->name);
 		return -EINVAL;
 	}
-	/** 20150905    
+	/** 20150905
 	 * attribute 그룹에 이름이 존재하면 하위디렉토리를 생성하고,
 	 * 생성된 sysfs dirent가 sd에 저장되어 리턴된다.
 	 **/
@@ -98,7 +98,7 @@ static int internal_create_group(struct kobject *kobj, int update,
 			return error;
 	} else
 		sd = kobj->sd;
-	/** 20150905    
+	/** 20150905
 	 * sysfs dirent의 권한을 획득하고,
 	 * 디렉토리 아래 attribute 그룹 속성 파일을 생성한다.
 	 **/
@@ -122,7 +122,7 @@ static int internal_create_group(struct kobject *kobj, int update,
  *
  * Returns 0 on success or error.
  */
-/** 20150905    
+/** 20150905
  * 디렉토리 kobject에 attribute 그룹을 생성한다.
  **/
 int sysfs_create_group(struct kobject *kobj,
@@ -188,7 +188,7 @@ void sysfs_remove_group(struct kobject * kobj,
  * files already exist in that group, in which case none of the new files
  * are created.
  */
-/** 20150905    
+/** 20150905
  * 이미 attribute 그룹을 보유 중인 kobj에 새로운 attribute 그룹을 추가한다.
  **/
 int sysfs_merge_group(struct kobject *kobj,
@@ -199,7 +199,7 @@ int sysfs_merge_group(struct kobject *kobj,
 	struct attribute *const *attr;
 	int i;
 
-	/** 20150905    
+	/** 20150905
 	 * kobj->sd 아래에서 group name을 갖는 sysfs dirent를 받아온다.
 	 * merge는 이미 그룹이 존재해야 하기 때문에 존재하지 않는 경우 에러.
 	 **/
@@ -207,7 +207,7 @@ int sysfs_merge_group(struct kobject *kobj,
 	if (!dir_sd)
 		return -ENOENT;
 
-	/** 20150905    
+	/** 20150905
 	 * merge시킬 group의 attribute를 sysfs에 추가한다.
 	 **/
 	for ((i = 0, attr = grp->attrs); *attr && !error; (++i, ++attr))
@@ -216,7 +216,7 @@ int sysfs_merge_group(struct kobject *kobj,
 		while (--i >= 0)
 			sysfs_hash_and_remove(dir_sd, NULL, (*--attr)->name);
 	}
-	/** 20150905    
+	/** 20150905
 	 * 획득했던 접근을 해제한다.
 	 **/
 	sysfs_put(dir_sd);

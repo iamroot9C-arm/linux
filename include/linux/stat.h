@@ -9,7 +9,7 @@
 
 #if defined(__KERNEL__) || !defined(__GLIBC__) || (__GLIBC__ < 2)
 
-/** 20150425    
+/** 20150425
  * S_IFMT     0170000   bit mask for the file type bit fields (파일종류 마스크)
  * S_IFSOCK   0140000   socket
  * S_IFLNK    0120000   symbolic link
@@ -80,7 +80,7 @@
 #endif
 
 #ifdef __KERNEL__
-/** 20150425    
+/** 20150425
  * 위 비트의 조합값.
  * S_IRWXUGO : user/group/owner 권한
  * S_IALLUGO : S_IRWXUGO + set-user-id, set-group-id, sticky bit 포함

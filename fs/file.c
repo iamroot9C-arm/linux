@@ -22,7 +22,7 @@
 #include <linux/rcupdate.h>
 #include <linux/workqueue.h>
 
-/** 20150214    
+/** 20150214
  * free가 지연된 fdtables 등록 리스트.
  **/
 struct fdtable_defer {
@@ -31,7 +31,7 @@ struct fdtable_defer {
 	struct fdtable *next;
 };
 
-/** 20150214    
+/** 20150214
  **/
 int sysctl_nr_open __read_mostly = 1024*1024;
 int sysctl_nr_open_min = BITS_PER_LONG;
@@ -43,7 +43,7 @@ int sysctl_nr_open_max = 1024 * 1024; /* raised later */
  * the work_struct in fdtable itself which avoids a 64 byte (i386) increase in
  * this per-task structure.
  */
-/** 20150214    
+/** 20150214
  * percpu 변수 fdtable_defer_list의 선언.
  * 
  * vmalloc으로 생성된, free를 연기한 fdtables를 등록하는 리스트.
@@ -76,7 +76,7 @@ static void __free_fdtable(struct fdtable *fdt)
 	kfree(fdt);
 }
 
-/** 20150214    
+/** 20150214
  * fdtables free용 work.
  * 추후 분석.
  **/
@@ -284,7 +284,7 @@ int expand_files(struct files_struct *files, int nr)
 	return expand_fdtable(files, nr);
 }
 
-/** 20160409    
+/** 20160409
  * fdtable의 열린 파일을 개수를 fdtable 단위(BITS_PER_LONG)로 리턴한다.
  *
  * 예를 들어, fdt가 현재 34개의 파일을 열어 놓았다면 max_fds는 64이고,
@@ -298,7 +298,7 @@ static int count_open_files(struct fdtable *fdt)
 
 	/* Find the last open fd */
 	for (i = size / BITS_PER_LONG; i > 0; ) {
-		/** 20160409    
+		/** 20160409
 		 **/
 		if (fdt->open_fds[--i])
 			break;
@@ -312,7 +312,7 @@ static int count_open_files(struct fdtable *fdt)
  * passed in files structure.
  * errorp will be valid only when the returned files_struct is NULL.
  */
-/** 20160409    
+/** 20160409
  * 부모 프로세스의 파일 디스크립터 테이블을 복사한다.
  *
  * files_struct 외부에 있어 직접 복사되지 않은 영역을 복사한다.
@@ -326,14 +326,14 @@ struct files_struct *dup_fd(struct files_struct *oldf, int *errorp)
 	struct fdtable *old_fdt, *new_fdt;
 
 	*errorp = -ENOMEM;
-	/** 20160409    
+	/** 20160409
 	 * files_cachep로부터 파일기술자 테이블 인스턴스를 할당받는다.
 	 **/
 	newf = kmem_cache_alloc(files_cachep, GFP_KERNEL);
 	if (!newf)
 		goto out;
 
-	/** 20160409    
+	/** 20160409
 	 * 최초 참조 카운트는 1.
 	 **/
 	atomic_set(&newf->count, 1);
@@ -347,7 +347,7 @@ struct files_struct *dup_fd(struct files_struct *oldf, int *errorp)
 	new_fdt->fd = &newf->fd_array[0];
 	new_fdt->next = NULL;
 
-	/** 20160409    
+	/** 20160409
 	 * file lock을 잡은 상태에서 부모 프로세스의 파일 디스크립터 테이블을 읽는다.
 	 **/
 	spin_lock(&oldf->file_lock);
@@ -357,7 +357,7 @@ struct files_struct *dup_fd(struct files_struct *oldf, int *errorp)
 	/*
 	 * Check whether we need to allocate a larger fd array and fd set.
 	 */
-	/** 20160409    
+	/** 20160409
 	 * 부모가 열어놓은 파일들이 files_struct 내부의 fdtable 하나를 초과한다면
 	 * 새로운 fdtable을 할당받아 복사한다.
 	 **/
@@ -393,13 +393,13 @@ struct files_struct *dup_fd(struct files_struct *oldf, int *errorp)
 	old_fds = old_fdt->fd;
 	new_fds = new_fdt->fd;
 
-	/** 20160409    
+	/** 20160409
 	 * open_fds와 close_on_exec를 복사.
 	 **/
 	memcpy(new_fdt->open_fds, old_fdt->open_fds, open_files / 8);
 	memcpy(new_fdt->close_on_exec, old_fdt->close_on_exec, open_files / 8);
 
-	/** 20160409    
+	/** 20160409
 	 * 각각의 open_files에 대한 내용 복사.
 	 **/
 	for (i = open_files; i != 0; i--) {
@@ -433,7 +433,7 @@ struct files_struct *dup_fd(struct files_struct *oldf, int *errorp)
 		memset(&new_fdt->close_on_exec[start], 0, left);
 	}
 
-	/** 20160409    
+	/** 20160409
 	 * 새 프로세스의 files_struct의 fdt로 new_fdt를 지정한다.
 	 **/
 	rcu_assign_pointer(newf->fdt, new_fdt);
@@ -446,7 +446,7 @@ out:
 	return NULL;
 }
 
-/** 20150214    
+/** 20150214
  * cpu에 해당하는 fdtable_defer_list를 초기화 한다.
  *
  * fdtable_defer_list는 vmalloc된 fdtable을 free시키기 위해 사용하는 리스트이다.
@@ -454,7 +454,7 @@ out:
  **/
 static void __devinit fdtable_defer_list_init(int cpu)
 {
-	/** 20150214    
+	/** 20150214
 	 * 현재 cpu에 해당하는 fdtable_defer_list 포인터를 가져와 초기화 한다.
 	 **/
 	struct fdtable_defer *fddef = &per_cpu(fdtable_defer_list, cpu);
@@ -463,19 +463,19 @@ static void __devinit fdtable_defer_list_init(int cpu)
 	fddef->next = NULL;
 }
 
-/** 20150214    
+/** 20150214
  * fdtable defer list 초기화.
  * sysctl_nr_open_max 설정.
  **/
 void __init files_defer_init(void)
 {
 	int i;
-	/** 20150214    
+	/** 20150214
 	 * possible cpu를 순회하며 fdtable_defer_list를 초기화 한다.
 	 **/
 	for_each_possible_cpu(i)
 		fdtable_defer_list_init(i);
-	/** 20150214    
+	/** 20150214
 	 * open할 수 있는 최대치를 설정한다.
 	 **/
 	sysctl_nr_open_max = min((size_t)INT_MAX, ~(size_t)0/sizeof(void *)) &

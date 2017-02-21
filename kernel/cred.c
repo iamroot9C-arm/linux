@@ -43,7 +43,7 @@ static struct thread_group_cred init_tgcred = {
 /*
  * The initial credentials for the initial task
  */
-/** 20150425    
+/** 20150425
  * init task를 위한 init_cred.
  **/
 struct cred init_cred = {
@@ -73,7 +73,7 @@ struct cred init_cred = {
 #endif
 };
 
-/** 20160319    
+/** 20160319
  * cred의 debug용 변수 subscribers를 설정한다.
  **/
 static inline void set_cred_subscribers(struct cred *cred, int n)
@@ -92,7 +92,7 @@ static inline int read_cred_subscribers(const struct cred *cred)
 #endif
 }
 
-/** 20160319    
+/** 20160319
  * cred의 subscriber 변경시 DEBUG용 변경만 변경된다.
  **/
 static inline void alter_cred_subscribers(const struct cred *_cred, int n)
@@ -293,7 +293,7 @@ error:
  *
  * Call commit_creds() or abort_creds() to clean up.
  */
-/** 20160319    
+/** 20160319
  * credential을 변경하기 위해 새 credential을 준비한다.
  *
  * 이후 commit_creds로 current task에 적용시키거나 abort_creds로 clean up 시킨다.
@@ -306,7 +306,7 @@ struct cred *prepare_creds(void)
 
 	validate_process_creds();
 
-	/** 20160319    
+	/** 20160319
 	 * init시 만들어 둔 kmem_cache로부터 object를 하나 받아온다.
 	 **/
 	new = kmem_cache_alloc(cred_jar, GFP_KERNEL);
@@ -315,19 +315,19 @@ struct cred *prepare_creds(void)
 
 	kdebug("prepare_creds() alloc %p", new);
 
-	/** 20160319    
+	/** 20160319
 	 * 현재 task의 cred를 받아와 할당받은 cred에 복사한다.
 	 **/
 	old = task->cred;
 	memcpy(new, old, sizeof(struct cred));
 
-	/** 20160319    
+	/** 20160319
 	 * 새 cred의 usage count는 생성시 1.
 	 * 감소되어 0으로 떨어지면 cred를 해제한다.
 	 **/
 	atomic_set(&new->usage, 1);
 	set_cred_subscribers(new, 0);
-	/** 20160319    
+	/** 20160319
 	 * old cred를 복사할 때 포인터만 얕은 복사로 복사한다.
 	 * reference count를 증가시킨다.
 	 **/
@@ -409,7 +409,7 @@ struct cred *prepare_exec_creds(void)
  * The new process gets the current process's subjective credentials as its
  * objective and subjective credentials
  */
-/** 20160319    
+/** 20160319
  * fork로 생성된 새 process를 위해 credentials를 복사한다.
  *
  * 가능하다면 cred를 공유해 사용하지만, 특정 조건에서는 새 cred를 생성한다.
@@ -425,7 +425,7 @@ int copy_creds(struct task_struct *p, unsigned long clone_flags)
 	struct cred *new;
 	int ret;
 
-	/** 20160319    
+	/** 20160319
 	 * thread 생성시 credential을 공유하고 reference count만 증가시킨다.
 	 **/
 	if (
@@ -444,14 +444,14 @@ int copy_creds(struct task_struct *p, unsigned long clone_flags)
 		return 0;
 	}
 
-	/** 20160319    
+	/** 20160319
 	 * 새 cred를 준비한다.
 	 **/
 	new = prepare_creds();
 	if (!new)
 		return -ENOMEM;
 
-	/** 20160319    
+	/** 20160319
 	 * CLONE_NEWUSER 플래그가 제공되면 user의 ns을 추가한다.
 	 **/
 	if (clone_flags & CLONE_NEWUSER) {
@@ -489,13 +489,13 @@ int copy_creds(struct task_struct *p, unsigned long clone_flags)
 	}
 #endif
 
-	/** 20160319    
+	/** 20160319
 	 * cred의 user_struct에서 processes를 증가시킨다.
 	 * 이 user가 몇 개의 process를 소유하고 있는가.
 	 * 
 	 **/
 	atomic_inc(&new->user->processes);
-	/** 20160319    
+	/** 20160319
 	 * real_cred에 넣어주기 때문에 reference를 하나 더 증가시킨다.
 	 **/
 	p->cred = p->real_cred = get_cred(new);
@@ -669,7 +669,7 @@ EXPORT_SYMBOL(revert_creds);
 /*
  * initialise the credentials stuff
  */
-/** 20150207    
+/** 20150207
  * credentials (자격, 인증서) 관련 초기화로
  * "cred_jar"라는 kmem_cache를 생성한다.
  **/

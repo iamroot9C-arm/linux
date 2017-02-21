@@ -1173,7 +1173,7 @@ SYSCALL_ALIAS(sys_semctl, SyS_semctl);
  *
  * This can block, so callers must hold no locks.
  */
-/** 20160409    
+/** 20160409
  * 현재 task의 undo_list를 받아온다.
  *
  * 할당되지 않았다면 새로 할당받아 초기화한 뒤 받아온다.
@@ -1182,11 +1182,11 @@ static inline int get_undo_list(struct sem_undo_list **undo_listp)
 {
 	struct sem_undo_list *undo_list;
 
-	/** 20160402    
+	/** 20160402
 	 * 복사할 task의 undo_list를 가져온다.
 	 **/
 	undo_list = current->sysvsem.undo_list;
-	/** 20160402    
+	/** 20160402
 	 * undo_list가 없었다면 생성해 초기화 해 복사할 task에 붙여준다.
 	 **/
 	if (!undo_list) {
@@ -1194,7 +1194,7 @@ static inline int get_undo_list(struct sem_undo_list **undo_listp)
 		if (undo_list == NULL)
 			return -ENOMEM;
 		spin_lock_init(&undo_list->lock);
-		/** 20160409    
+		/** 20160409
 		 * refcnt는 1로 초기화.
 		 **/
 		atomic_set(&undo_list->refcnt, 1);
@@ -1569,7 +1569,7 @@ SYSCALL_DEFINE3(semop, int, semid, struct sembuf __user *, tsops,
  * parent and child tasks.
  */
 
-/** 20160402    
+/** 20160402
  * task 복사시 semaphore undo_list 공유 여부를 플래그에 따라 결정한다.
  *
  * clone_flags에 CLONE_SYSVSEM 플래그가 있다면 SEM_UNDO 상태를 공유한다.
@@ -1579,18 +1579,18 @@ int copy_semundo(unsigned long clone_flags, struct task_struct *tsk)
 	struct sem_undo_list *undo_list;
 	int error;
 
-	/** 20160402    
+	/** 20160402
 	 * CLONE_SYSVSEM 플래그가 주어져 있다면 undo_list를 부모와 공유한다.
 	 * reference count 증가.
 	 **/
 	if (clone_flags & CLONE_SYSVSEM) {
-		/** 20160409    
+		/** 20160409
 		 * copy할 task의 undo_list를 받아온다.
 		 **/
 		error = get_undo_list(&undo_list);
 		if (error)
 			return error;
-		/** 20160409    
+		/** 20160409
 		 * undo_list를 공유하므로 reference count를 1 증가.
 		 **/
 		atomic_inc(&undo_list->refcnt);

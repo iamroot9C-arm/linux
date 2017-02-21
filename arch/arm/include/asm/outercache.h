@@ -39,7 +39,7 @@ struct outer_cache_fns {
 
 #ifdef CONFIG_OUTER_CACHE
 
-/** 20150118    
+/** 20150118
  * Cortex-A9는 L2 cache가 OUTER CACHE이다. l2x0_init 에서 초기화.
  **/
 extern struct outer_cache_fns outer_cache;
@@ -49,7 +49,7 @@ static inline void outer_inv_range(phys_addr_t start, phys_addr_t end)
 	if (outer_cache.inv_range)
 		outer_cache.inv_range(start, end);
 }
-/** 20150118    
+/** 20150118
  * outer_cache의 clean_range 기능을 이용해
  * start ~ end사이에 해당하는 영역을 clean 시킨다.
  **/
@@ -103,7 +103,7 @@ static inline void outer_disable(void) { }
 #endif
 
 #ifdef CONFIG_OUTER_CACHE_SYNC
-/** 20140920    
+/** 20140920
  * 외부 cache가 존재하는 경우 sync 명령을 내린다.
  * vexpress는 l2x0_cache_sync가 호출됨.
  **/

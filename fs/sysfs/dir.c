@@ -28,7 +28,7 @@
 DEFINE_MUTEX(sysfs_mutex);
 DEFINE_SPINLOCK(sysfs_assoc_lock);
 
-/** 20150411    
+/** 20150411
  * rb_node를 포함하는 sysfs_dirent를 가져온다.
  **/
 #define to_sysfs_dirent(X) rb_entry((X), struct sysfs_dirent, s_rb);
@@ -43,7 +43,7 @@ static DEFINE_IDA(sysfs_ino_ida);
  *
  *	Returns 31 bit hash of ns + name (so it fits in an off_t )
  */
-/** 20150411    
+/** 20150411
  * ns와 name을 바탕으로 hash값을 뽑아낸다.
  *
  * 자세한 분석 생략???
@@ -64,7 +64,7 @@ static unsigned int sysfs_name_hash(const void *ns, const char *name)
 	return hash;
 }
 
-/** 20150411    
+/** 20150411
  * sysfs_dirent 비교시 평가순서
  *   hash -> ns -> s_name
  **/
@@ -78,7 +78,7 @@ static int sysfs_name_compare(unsigned int hash, const void *ns,
 	return strcmp(name, sd->s_name);
 }
 
-/** 20150411    
+/** 20150411
  * sysfs_dirent 비교함수.
  * hash -> ns -> name 순으로 비교한다.
  **/
@@ -102,7 +102,7 @@ static int sysfs_sd_compare(const struct sysfs_dirent *left,
  *	RETURNS:
  *	0 on susccess -EEXIST on failure.
  */
-/** 20150411    
+/** 20150411
  * 새로운 sysfs_dirent를 parent 아래 sibling rbtree에 연결한다.
  **/
 static int sysfs_link_sibling(struct sysfs_dirent *sd)
@@ -110,28 +110,28 @@ static int sysfs_link_sibling(struct sysfs_dirent *sd)
 	struct rb_node **node = &sd->s_parent->s_dir.children.rb_node;
 	struct rb_node *parent = NULL;
 
-	/** 20150411    
+	/** 20150411
 	 * 추가할 sysfs_dirent가 디렉토리라면 parent의 subdirs 개수를 증가시킨다.
 	 **/
 	if (sysfs_type(sd) == SYSFS_DIR)
 		sd->s_parent->s_dir.subdirs++;
 
-	/** 20150411    
+	/** 20150411
 	 * node가 NULL이 될 때까지 rb_tree를 탐색해 추가할 위치를 찾는다.
 	 **/
 	while (*node) {
 		struct sysfs_dirent *pos;
 		int result;
 
-		/** 20150411    
+		/** 20150411
 		 * node를 포함하는 sysfs_dirent를 가져온다.
 		 **/
 		pos = to_sysfs_dirent(*node);
-		/** 20150411    
+		/** 20150411
 		 * parent는 탐색이 이뤄질 때마다 갱신된다.
 		 **/
 		parent = *node;
-		/** 20150411    
+		/** 20150411
 		 * 추가할 sd와 node에 해당하는 sysfs_dirent를 비교해
 		 * 다음 traverse할 위치를 판단한다.
 		 **/
@@ -143,7 +143,7 @@ static int sysfs_link_sibling(struct sysfs_dirent *sd)
 		else
 			return -EEXIST;
 	}
-	/** 20150411    
+	/** 20150411
 	 * rb_tree에 새로운 node를 추가하고,
 	 * rb_tree의 규칙을 지키기 위해 rebalance 시킨다.
 	 **/
@@ -163,18 +163,18 @@ static int sysfs_link_sibling(struct sysfs_dirent *sd)
  *	Locking:
  *	mutex_lock(sysfs_mutex)
  */
-/** 20150418    
+/** 20150418
  * 넘겨진 sysfs_dirent를 sibling rbtree에서 제거한다.
  **/
 static void sysfs_unlink_sibling(struct sysfs_dirent *sd)
 {
-	/** 20150418    
+	/** 20150418
 	 * sd가 directory라면 parent의 subdirs수를 감소시킨다.
 	 **/
 	if (sysfs_type(sd) == SYSFS_DIR)
 		sd->s_parent->s_dir.subdirs--;
 
-	/** 20150418    
+	/** 20150418
 	 * parent의 children에서 sd에 해당하는 rb_node를 제거한다.
 	 **/
 	rb_erase(&sd->s_rb, &sd->s_parent->s_dir.children);
@@ -266,30 +266,30 @@ void sysfs_put_active(struct sysfs_dirent *sd)
  *
  *	Deny new active references and drain existing ones.
  */
-/** 20150418    
+/** 20150418
  * SYSFS_KOBJ_ATTR | SYSFS_KOBJ_BIN_ATTR인 sysfs_dirent를 deactivate시킨다.
  * active시켜 사용 중인 곳이 있다면 wait_for_complete로 기다린다.
  **/
 static void sysfs_deactivate(struct sysfs_dirent *sd)
 {
-	/** 20150418    
+	/** 20150418
 	 * struct completion wait을 스택(함수 안이므로)에 선언하고 초기화 한다.
 	 **/
 	DECLARE_COMPLETION_ONSTACK(wait);
 	int v;
 
-	/** 20150418    
+	/** 20150418
 	 * SYSFS_FLAG_REMOVED에 대해서만 deactivate가 호출되어야 한다.
 	 **/
 	BUG_ON(!(sd->s_flags & SYSFS_FLAG_REMOVED));
 
-	/** 20150418    
+	/** 20150418
 	 * active reference(SYSFS_KOBJ_ATTR | SYSFS_KOBJ_BIN_ATTR)에 해당한다.
 	 **/
 	if (!(sysfs_type(sd) & SYSFS_ACTIVE_REF))
 		return;
 
-	/** 20150418    
+	/** 20150418
 	 * deactivate 시킬 sd의 주소에 wait을 넣는다.
 	 **/
 	sd->u.completion = (void *)&wait;
@@ -298,12 +298,12 @@ static void sysfs_deactivate(struct sysfs_dirent *sd)
 	/* atomic_add_return() is a mb(), put_active() will always see
 	 * the updated sd->u.completion.
 	 */
-	/** 20150418    
+	/** 20150418
 	 * s_active에 SD_DEACTIVATED_BIAS를 주고 결과값을 받아온다.
 	 **/
 	v = atomic_add_return(SD_DEACTIVATED_BIAS, &sd->s_active);
 
-	/** 20150418    
+	/** 20150418
 	 * s_active가 사용 중이라면, 사용 중인 곳에서 해제하고 complete()을
 	 * 줄 때까지 대기한다.
 	 *   get active 함수 : sysfs_get_active
@@ -318,7 +318,7 @@ static void sysfs_deactivate(struct sysfs_dirent *sd)
 	rwsem_release(&sd->dep_map, 1, _RET_IP_);
 }
 
-/** 20150404    
+/** 20150404
  * sysfs를 위한 ida에서 inode로 사용한 정수값을 할당 받는다.
  **/
 static int sysfs_alloc_ino(unsigned int *pino)
@@ -327,7 +327,7 @@ static int sysfs_alloc_ino(unsigned int *pino)
 
  retry:
 	spin_lock(&sysfs_ino_lock);
-	/** 20150404    
+	/** 20150404
 	 * sysfs_ino_ida로부터 새로운 ino를 받아온다.
 	 *
 	 * sysfs_root의 ino가 1번으로 고정되어 있고,
@@ -336,7 +336,7 @@ static int sysfs_alloc_ino(unsigned int *pino)
 	rc = ida_get_new_above(&sysfs_ino_ida, 2, &ino);
 	spin_unlock(&sysfs_ino_lock);
 
-	/** 20150404    
+	/** 20150404
 	 * 미리 받아둔 ida가 부족하면 추가로 할당받아 채운 뒤 재시도 한다.
 	 **/
 	if (rc == -EAGAIN) {
@@ -345,14 +345,14 @@ static int sysfs_alloc_ino(unsigned int *pino)
 		rc = -ENOMEM;
 	}
 
-	/** 20150404    
+	/** 20150404
 	 * 받아온 ino를 매개변수로 넘어온 곳에 저장한다.
 	 **/
 	*pino = ino;
 	return rc;
 }
 
-/** 20150404    
+/** 20150404
  * sysfs_ino_ida에서 ino를 제거한다.
  **/
 static void sysfs_free_ino(unsigned int ino)
@@ -362,7 +362,7 @@ static void sysfs_free_ino(unsigned int ino)
 	spin_unlock(&sysfs_ino_lock);
 }
 
-/** 20150404    
+/** 20150404
  * sysfs_direct를 받아와 사용한 메모리를 해제하고 관련 자료구조를 정리한다.
  * 해당 sd를 제거하고, 부모 layer로 올라가 반복해 호출한다.
  *
@@ -378,17 +378,17 @@ void release_sysfs_dirent(struct sysfs_dirent * sd)
 	/* Moving/renaming is always done while holding reference.
 	 * sd->s_parent won't change beneath us.
 	 */
-	/** 20150404    
+	/** 20150404
 	 * sysfs_dirent의 parent를 받아둔다.
 	 **/
 	parent_sd = sd->s_parent;
 
-	/** 20150404    
+	/** 20150404
 	 * sd의 sysfs_type이 kobj link라면 target_sd의 reference count를 감소시킨다.
 	 **/
 	if (sysfs_type(sd) == SYSFS_KOBJ_LINK)
 		sysfs_put(sd->s_symlink.target_sd);
-	/** 20150404    
+	/** 20150404
 	 * sd의 sysfs_type에 SYSFS_COPY_NAME 속성이 있다면
 	 * s_name을 위해 할당한 메모리를 해제한다.
 	 **/
@@ -397,20 +397,20 @@ void release_sysfs_dirent(struct sysfs_dirent * sd)
 	if (sd->s_iattr && sd->s_iattr->ia_secdata)
 		security_release_secctx(sd->s_iattr->ia_secdata,
 					sd->s_iattr->ia_secdata_len);
-	/** 20150404    
+	/** 20150404
 	 * sd의 s_iaddtr를 해제한다.
 	 **/
 	kfree(sd->s_iattr);
-	/** 20150404    
+	/** 20150404
 	 * sysfs ida에서 받은 s_ino를 제거한다.
 	 **/
 	sysfs_free_ino(sd->s_ino);
-	/** 20150404    
+	/** 20150404
 	 * sd용 slub object를 해제한다.
 	 **/
 	kmem_cache_free(sysfs_dir_cachep, sd);
 
-	/** 20150404    
+	/** 20150404
 	 * 백업 받아둔 parent_sd가 존재한다면 reference count를 감소시키고,
 	 * 반복해 호출한다.
 	 **/
@@ -419,12 +419,12 @@ void release_sysfs_dirent(struct sysfs_dirent * sd)
 		goto repeat;
 }
 
-/** 20150404    
+/** 20150404
  * sysfs_dirent의 removed 속성을 검사해 결과를 리턴한다.
  **/
 static int sysfs_dentry_delete(const struct dentry *dentry)
 {
-	/** 20150404    
+	/** 20150404
 	 * dentry의 fsdata에 저장해둔 sysfs_dirent를 찾아와
 	 * SYSFS_FLAG_REMOVED가 아니라면 false의 의미로 0이 리턴된다.
 	 **/
@@ -499,7 +499,7 @@ static void sysfs_dentry_release(struct dentry *dentry)
 	sysfs_put(dentry->d_fsdata);
 }
 
-/** 20150404    
+/** 20150404
  * dentry operations.
  **/
 const struct dentry_operations sysfs_dentry_ops = {
@@ -508,7 +508,7 @@ const struct dentry_operations sysfs_dentry_ops = {
 	.d_release	= sysfs_dentry_release,
 };
 
-/** 20150418    
+/** 20150418
  * 새로운 sysfs_dirent를 할당받고, name과 mode, type을 설정한다.
  **/
 struct sysfs_dirent *sysfs_new_dirent(const char *name, umode_t mode, int type)
@@ -516,7 +516,7 @@ struct sysfs_dirent *sysfs_new_dirent(const char *name, umode_t mode, int type)
 	char *dup_name = NULL;
 	struct sysfs_dirent *sd;
 
-	/** 20150418    
+	/** 20150418
 	 * type이 SYSFS_COPY_NAME 속성 중 하나에 해당하면 name을 복사한다.
 	 * (SYSFS_DIR | SYSFS_KOBJ_LINK)
 	 **/
@@ -526,26 +526,26 @@ struct sysfs_dirent *sysfs_new_dirent(const char *name, umode_t mode, int type)
 			return NULL;
 	}
 
-	/** 20150418    
+	/** 20150418
 	 * sysfs_dir_cachep의 object(struct sysfs_dirent)를 kmem_cache에서 할당받는다.
 	 **/
 	sd = kmem_cache_zalloc(sysfs_dir_cachep, GFP_KERNEL);
 	if (!sd)
 		goto err_out1;
 
-	/** 20150418    
+	/** 20150418
 	 * sysfs를 위한 ida로부터 ino를 하나 할당받는다.
 	 **/
 	if (sysfs_alloc_ino(&sd->s_ino))
 		goto err_out2;
 
-	/** 20150418    
+	/** 20150418
 	 * 할당받은 sd의 reference count와 active 정보를 초기화 한다.
 	 **/
 	atomic_set(&sd->s_count, 1);
 	atomic_set(&sd->s_active, 0);
 
-	/** 20150418    
+	/** 20150418
 	 * name, mode, flag를 할당한다.
 	 **/
 	sd->s_name = name;
@@ -575,7 +575,7 @@ struct sysfs_dirent *sysfs_new_dirent(const char *name, umode_t mode, int type)
  *	Kernel thread context (may sleep).  sysfs_mutex is locked on
  *	return.
  */
-/** 20150411    
+/** 20150411
  * parent_sd 아래에 sysfs_dirent를 추가/삭제할 때 호출한다.
  * 
  * sysfs_mutex lock을 걸고 리턴한다.
@@ -583,7 +583,7 @@ struct sysfs_dirent *sysfs_new_dirent(const char *name, umode_t mode, int type)
 void sysfs_addrm_start(struct sysfs_addrm_cxt *acxt,
 		       struct sysfs_dirent *parent_sd)
 {
-	/** 20150411    
+	/** 20150411
 	 * sysfs에 add/rm시 사용할 context를 초기화 하고, parent_sd를 지정한다.
 	 **/
 	memset(acxt, 0, sizeof(*acxt));
@@ -612,7 +612,7 @@ void sysfs_addrm_start(struct sysfs_addrm_cxt *acxt,
  *	0 on success, -EEXIST if entry with the given name already
  *	exists.
  */
-/** 20150411    
+/** 20150411
  * 새로운 sysfs_dirent를 addrm_cxt에 저장된 parent에 추가한다.
  *
  * s_hash와 parent를 연결하고, sibling link를 연결한다.
@@ -622,7 +622,7 @@ int __sysfs_add_one(struct sysfs_addrm_cxt *acxt, struct sysfs_dirent *sd)
 	struct sysfs_inode_attrs *ps_iattr;
 	int ret;
 
-	/** 20150411    
+	/** 20150411
 	 * parent의 sysfs_dirent의 ns_type과 sd의 ns_type의 유무를 비교해
 	 * 같지 않으면 에러.
 	 **/
@@ -633,17 +633,17 @@ int __sysfs_add_one(struct sysfs_addrm_cxt *acxt, struct sysfs_dirent *sd)
 		return -EINVAL;
 	}
 
-	/** 20150411    
+	/** 20150411
 	 * ns와 name을 바탕으로 hash값을 생성한다.
 	 **/
 	sd->s_hash = sysfs_name_hash(sd->s_ns, sd->s_name);
-	/** 20150411    
+	/** 20150411
 	 * context에서 가리키는 parent의 sysfs_dirent를 가져와(reference 증가)
 	 * sd의 parent로 지정한다.
 	 **/
 	sd->s_parent = sysfs_get(acxt->parent_sd);
 
-	/** 20150411    
+	/** 20150411
 	 * sysfs_dirent를 sibling rb-tree에 추가한다.
 	 **/
 	ret = sysfs_link_sibling(sd);
@@ -651,7 +651,7 @@ int __sysfs_add_one(struct sysfs_addrm_cxt *acxt, struct sysfs_dirent *sd)
 		return ret;
 
 	/* Update timestamps on the parent */
-	/** 20150411    
+	/** 20150411
 	 * parent의 timestamps를 수정한다.
 	 *
 	 * data modification과 status change 시간을 현재 시간으로 갱신한다.
@@ -705,7 +705,7 @@ static char *sysfs_pathname(struct sysfs_dirent *sd, char *path)
  *	0 on success, -EEXIST if entry with the given name already
  *	exists.
  */
-/** 20150418    
+/** 20150418
  * addrm context에서 acxt의 parent에 sd를 새로 추가한다.
  *
  * s_hash와 parent를 연결하고, sibling link를 연결한다.
@@ -714,7 +714,7 @@ int sysfs_add_one(struct sysfs_addrm_cxt *acxt, struct sysfs_dirent *sd)
 {
 	int ret;
 
-	/** 20150418    
+	/** 20150418
 	 * acxt의 저장된 parent 아래에 sd를 추가한다.
 	 * 이미 존재한다면 추가하지 못한다.
 	 **/
@@ -747,7 +747,7 @@ int sysfs_add_one(struct sysfs_addrm_cxt *acxt, struct sysfs_dirent *sd)
  *	LOCKING:
  *	Determined by sysfs_addrm_start().
  */
-/** 20150418    
+/** 20150418
  * acxt에 기록된 parent에서 sd를 제거한다.
  *
  * sibling link에서 sd를 제거하고, add/rm context의 removed에 추가한다.
@@ -756,18 +756,18 @@ void sysfs_remove_one(struct sysfs_addrm_cxt *acxt, struct sysfs_dirent *sd)
 {
 	struct sysfs_inode_attrs *ps_iattr;
 
-	/** 20150418    
+	/** 20150418
 	 * s_flags에 SYSFS_FLAG_REMOVED는 존재할 수 없다.
 	 **/
 	BUG_ON(sd->s_flags & SYSFS_FLAG_REMOVED);
 
-	/** 20150418    
+	/** 20150418
 	 * 제거할 sysfs_dirent를 sibling link에서 제거한다.
 	 **/
 	sysfs_unlink_sibling(sd);
 
 	/* Update timestamps on the parent */
-	/** 20150418    
+	/** 20150418
 	 * parent의 inode attribute의 ctime과 mtime을 현재시간으로 갱신한다.
 	 **/
 	ps_iattr = acxt->parent_sd->s_iattr;
@@ -776,7 +776,7 @@ void sysfs_remove_one(struct sysfs_addrm_cxt *acxt, struct sysfs_dirent *sd)
 		ps_iattrs->ia_ctime = ps_iattrs->ia_mtime = CURRENT_TIME;
 	}
 
-	/** 20150418    
+	/** 20150418
 	 * s_flags에 SYSFS_FLAG_REMOVED 속성을 추가한다.
 	 * add/rm context의 removed 리스트에 sd를 추가한다.
 	 **/
@@ -796,7 +796,7 @@ void sysfs_remove_one(struct sysfs_addrm_cxt *acxt, struct sysfs_dirent *sd)
  *	LOCKING:
  *	sysfs_mutex is released.
  */
-/** 20150418    
+/** 20150418
  * add/rm context를 종료한다.
  *
  * mutex lock을 해제하고, removed인 경우 sysfs에서 deactivate 시킨다.
@@ -810,20 +810,20 @@ void sysfs_addrm_finish(struct sysfs_addrm_cxt *acxt)
 	while (acxt->removed) {
 		struct sysfs_dirent *sd = acxt->removed;
 
-		/** 20150418    
+		/** 20150418
 		 * sd를 제거할 것이므로 acxt->removed가 다음 노드를 가리키게 한다.
 		 **/
 		acxt->removed = sd->u.removed_list;
 
-		/** 20150418    
+		/** 20150418
 		 * sysfs_dirent를 deactivate 한다.
 		 **/
 		sysfs_deactivate(sd);
-		/** 20150418    
+		/** 20150418
 		 * SYSFS_KOBJ_BIN_ATTR라면 unmap 시킨다.
 		 **/
 		unmap_bin_file(sd);
-		/** 20150418    
+		/** 20150418
 		 * sysfs_dirent의 reference를 감소시키고, 0이 되었다면 해제한다.
 		 **/
 		sysfs_put(sd);
@@ -843,7 +843,7 @@ void sysfs_addrm_finish(struct sysfs_addrm_cxt *acxt)
  *	RETURNS:
  *	Pointer to sysfs_dirent if found, NULL if not.
  */
-/** 20150905    
+/** 20150905
  * parent_sd 아래로 ns, name이 동일한 sysfs dirent를 찾아 리턴한다.
  **/
 struct sysfs_dirent *sysfs_find_dirent(struct sysfs_dirent *parent_sd,
@@ -860,7 +860,7 @@ struct sysfs_dirent *sysfs_find_dirent(struct sysfs_dirent *parent_sd,
 		return NULL;
 	}
 
-	/** 20150905    
+	/** 20150905
 	 * ns와 name으로 hash를 생성해
 	 * RBtree를 node에서부터 순회하여 동일한 name을 가진 sysfs dirent를 찾는다.
 	 **/
@@ -869,7 +869,7 @@ struct sysfs_dirent *sysfs_find_dirent(struct sysfs_dirent *parent_sd,
 		struct sysfs_dirent *sd;
 		int result;
 
-		/** 20150905    
+		/** 20150905
 		 * node에 해당하는 sysfs dirent를 가져와 동일한 이름을 가지고 있는지
 		 * 비교한다.  효율성을 높이기 위해 생성해둔 hash를 먼저 비교한다.
 		 **/
@@ -899,7 +899,7 @@ struct sysfs_dirent *sysfs_find_dirent(struct sysfs_dirent *parent_sd,
  *	RETURNS:
  *	Pointer to sysfs_dirent if found, NULL if not.
  */
-/** 20150905    
+/** 20150905
  * parent sysfs dirent 아래에서 name을 가지는 sysfs dirent를 찾아 접근을 획득해
  * 리턴한다.
  **/
@@ -918,7 +918,7 @@ struct sysfs_dirent *sysfs_get_dirent(struct sysfs_dirent *parent_sd,
 }
 EXPORT_SYMBOL_GPL(sysfs_get_dirent);
 
-/** 20150418    
+/** 20150418
  * kobj에 새로운 sd를 생성해 parent_sd 아래에 추가한다.
  **/
 static int create_dir(struct kobject *kobj, struct sysfs_dirent *parent_sd,
@@ -931,14 +931,14 @@ static int create_dir(struct kobject *kobj, struct sysfs_dirent *parent_sd,
 	int rc;
 
 	/* allocate */
-	/** 20150418    
+	/** 20150418
 	 * 새로운 sysfs_dirent를 할당받고 name, mode, SYSFS_DIR로 초기화 한다.
 	 **/
 	sd = sysfs_new_dirent(name, mode, SYSFS_DIR);
 	if (!sd)
 		return -ENOMEM;
 
-	/** 20150418    
+	/** 20150418
 	 * s_flags, s_ns, s_dir를 채운다.
 	 * DIR를 생성하므로 union은 s_dir으로 접근한다.
 	 **/
@@ -947,7 +947,7 @@ static int create_dir(struct kobject *kobj, struct sysfs_dirent *parent_sd,
 	sd->s_dir.kobj = kobj;
 
 	/* link in */
-	/** 20150411    
+	/** 20150411
 	 * sysfs에 sd를 add 또는 rm를 할 때 mutex lock을 건다.
 	 * sysfs addrm context에 parent_sd를 지정하고,
 	 * context를 넘겨 sd를 parent_sd에 추가한다.
@@ -956,7 +956,7 @@ static int create_dir(struct kobject *kobj, struct sysfs_dirent *parent_sd,
 	rc = sysfs_add_one(&acxt, sd);
 	sysfs_addrm_finish(&acxt);
 
-	/** 20150418    
+	/** 20150418
 	 * 성공적으로 추가되었다면 매개변수로 받은 포인터에 저장하고,
 	 * 그렇지 않다면 새로 생성한 sd를 삭제하기 위해 sysfs_put을 호출한다.
 	 **/
@@ -968,7 +968,7 @@ static int create_dir(struct kobject *kobj, struct sysfs_dirent *parent_sd,
 	return rc;
 }
 
-/** 20150905    
+/** 20150905
  * kobject에 name이라는 이름의 하위 디렉토리를 생성해 kobj->sd아래에 추가한다.
  * 생성된 디렉토리 sysfs dirent는 p_sd에 저장된다.
  **/
@@ -987,7 +987,7 @@ int sysfs_create_subdir(struct kobject *kobj, const char *name,
  *	(i.e. network or user).  Return the ns_type associated with
  *	this object if any
  */
-/** 20150411    
+/** 20150411
  * kobj의 ktype 의 속성 중 kobj_ns_type_operations에 포함된 정보인
  * ns_type을 추출해 리턴한다.
  **/
@@ -996,7 +996,7 @@ static enum kobj_ns_type sysfs_read_ns_type(struct kobject *kobj)
 	const struct kobj_ns_type_operations *ops;
 	enum kobj_ns_type type;
 
-	/** 20150411    
+	/** 20150411
 	 * kobj의 ktype의 child_ns ops를 받아온다.
 	 * ops자체가 NULL이라면 type이 없으므로 KOBJ_NS_TYPE_NONE 를 리턴.
 	 **/
@@ -1004,7 +1004,7 @@ static enum kobj_ns_type sysfs_read_ns_type(struct kobject *kobj)
 	if (!ops)
 		return KOBJ_NS_TYPE_NONE;
 
-	/** 20150411    
+	/** 20150411
 	 * ops의 type을 가져와 검사하고 리턴.
 	 **/
 	type = ops->type;
@@ -1019,7 +1019,7 @@ static enum kobj_ns_type sysfs_read_ns_type(struct kobject *kobj)
  *	sysfs_create_dir - create a directory for an object.
  *	@kobj:		object we're creating directory for. 
  */
-/** 20150418    
+/** 20150418
  * kobj를 위한 directory를 생성한다.
  **/
 int sysfs_create_dir(struct kobject * kobj)
@@ -1031,7 +1031,7 @@ int sysfs_create_dir(struct kobject * kobj)
 
 	BUG_ON(!kobj);
 
-	/** 20150411    
+	/** 20150411
 	 * kobj에 parent가 있으면 parent의 정보를 가져오고,
 	 * 없으면 root의 정보를 가져온다.
 	 *
@@ -1045,13 +1045,13 @@ int sysfs_create_dir(struct kobject * kobj)
 	if (!parent_sd)
 		return -ENOENT;
 
-	/** 20150411    
+	/** 20150411
 	 * parent_sd의 ns type이 존재하면 (NONE이 아니라면)
 	 * kobj의 ns를 가져온다.
 	 **/
 	if (sysfs_ns_type(parent_sd))
 		ns = kobj->ktype->namespace(kobj);
-	/** 20150411    
+	/** 20150411
 	 * kobj의 ns_type을 가져온다.
 	 **/
 	type = sysfs_read_ns_type(kobj);
@@ -1109,7 +1109,7 @@ const struct inode_operations sysfs_dir_inode_operations = {
 	.setxattr	= sysfs_setxattr,
 };
 
-/** 20150418    
+/** 20150418
  * sysfs directory를 제거한다.
  **/
 static void remove_dir(struct sysfs_dirent *sd)
@@ -1127,7 +1127,7 @@ void sysfs_remove_subdir(struct sysfs_dirent *sd)
 }
 
 
-/** 20150418    
+/** 20150418
  * directory type의 sysfs_dirent를 받아 하위 sysfs_dirent와 s_dir 자신을 제거한다.
  **/
 static void __sysfs_remove_dir(struct sysfs_dirent *dir_sd)
@@ -1139,12 +1139,12 @@ static void __sysfs_remove_dir(struct sysfs_dirent *dir_sd)
 		return;
 
 	pr_debug("sysfs %s: removing dir\n", dir_sd->s_name);
-	/** 20150418    
+	/** 20150418
 	 * 제거할 dir_sd를 parent sysfs_dirent로 하는
 	 * sysfs add/rm context를 생성한다.
 	 **/
 	sysfs_addrm_start(&acxt, dir_sd);
-	/** 20150418    
+	/** 20150418
 	 * rbtree에서 children hierarchy를 찾아 하나씩 제거한다.
 	 **/
 	pos = rb_first(&dir_sd->s_dir.children);
@@ -1156,7 +1156,7 @@ static void __sysfs_remove_dir(struct sysfs_dirent *dir_sd)
 	}
 	sysfs_addrm_finish(&acxt);
 
-	/** 20150418    
+	/** 20150418
 	 * 마지막으로 dir_sd 자신을 sysfs 상에서 제거한다.
 	 **/
 	remove_dir(dir_sd);
@@ -1171,24 +1171,24 @@ static void __sysfs_remove_dir(struct sysfs_dirent *dir_sd)
  *	what used to be sysfs_rmdir() below, instead of calling separately.
  */
 
-/** 20150418    
+/** 20150418
  * kobj에 해당하는 sysfs 디렉토리를 제거한다.
  **/
 void sysfs_remove_dir(struct kobject * kobj)
 {
-	/** 20150418    
+	/** 20150418
 	 * kobject의 sysfs_dirent를 가져온다.
 	 **/
 	struct sysfs_dirent *sd = kobj->sd;
 
-	/** 20150418    
+	/** 20150418
 	 * kobj에서 sd를 분리한다.
 	 **/
 	spin_lock(&sysfs_assoc_lock);
 	kobj->sd = NULL;
 	spin_unlock(&sysfs_assoc_lock);
 
-	/** 20150418    
+	/** 20150418
 	 * kob는 sysfs_dirent에서 디렉토리이므로,
 	 * sysfs 디렉토리 제거 함수에 sysfs_dirent를 전달해 제거한다.
 	 **/

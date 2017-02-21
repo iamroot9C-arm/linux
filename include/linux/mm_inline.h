@@ -16,7 +16,7 @@
  * needs to survive until the page is last deleted from the LRU, which
  * could be as far down as __page_cache_release.
  */
-/** 20140104    
+/** 20140104
  * page가 file cache인지 아닌지 여부를 리턴.
  *
  * page가 regular filesystem에 근거한 page cache page라면 1,
@@ -60,22 +60,22 @@ static __always_inline void add_page_to_lru_list(struct page *page,
 	__mod_zone_page_state(lruvec_zone(lruvec), NR_LRU_BASE + lru, nr_pages);
 }
 
-/** 20140104    
+/** 20140104
  * page를 lru list에서 제거하고 state를 update한다.
  **/
 static __always_inline void del_page_from_lru_list(struct page *page,
 				struct lruvec *lruvec, enum lru_list lru)
 {
-	/** 20140104    
+	/** 20140104
 	 * page로 대표되는 page들의 수를 가져온다.
 	 **/
 	int nr_pages = hpage_nr_pages(page);
 	mem_cgroup_update_lru_size(lruvec, lru, -nr_pages);
-	/** 20140104    
+	/** 20140104
 	 * lru list에서 page를 제거.
 	 **/
 	list_del(&page->lru);
-	/** 20140104    
+	/** 20140104
 	 * zone의 page state에서 해당 lru에 속해 있는 page들의 수를 감소.
 	 **/
 	__mod_zone_page_state(lruvec_zone(lruvec), NR_LRU_BASE + lru, -nr_pages);
@@ -89,7 +89,7 @@ static __always_inline void del_page_from_lru_list(struct page *page,
  *
  * Returns the base LRU type - file or anon - @page should be on.
  */
-/** 20140104    
+/** 20140104
  * page의 lru base 속성을 리턴한다.
  *
  * page가 file cache라면 LRU_INACTIVE_FILE, 아니라면 LRU_INACTIVE_ANON이다.
@@ -133,20 +133,20 @@ static __always_inline enum lru_list page_off_lru(struct page *page)
  * Returns the LRU list a page should be on, as an index
  * into the array of LRU lists.
  */
-/** 20140607    
+/** 20140607
  * page의 flag을 보고 page가 속해야 할 lru type을 리턴.
  **/
 static __always_inline enum lru_list page_lru(struct page *page)
 {
 	enum lru_list lru;
 
-	/** 20140607    
+	/** 20140607
 	 * unevictable인 경우 LRU_UNEVICTABLE 리턴.
 	 **/
 	if (PageUnevictable(page))
 		lru = LRU_UNEVICTABLE;
 	else {
-		/** 20140607    
+		/** 20140607
 		 * file, anon 속성을 가져와 active 여부를 추가한다.
 		 **/
 		lru = page_lru_base_type(page);

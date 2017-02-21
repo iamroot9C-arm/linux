@@ -13,7 +13,7 @@
 #include <asm/cacheflush.h>
 #include <asm/pgtable.h>
 
-/** 20140419    
+/** 20140419
  * 세부사항 분석 생략
  * 
  * addr ~ end 사이 VA 영역에 대해 pte entry의 주소를 받아와
@@ -38,7 +38,7 @@ static int ioremap_pte_range(pmd_t *pmd, unsigned long addr,
 	return 0;
 }
 
-/** 20140419    
+/** 20140419
  * 세부사항 분석 생략.
  * addr ~ end까지 pmd table을 할당받아 pte entry를 채운다.
  **/
@@ -60,7 +60,7 @@ static inline int ioremap_pmd_range(pud_t *pud, unsigned long addr,
 	return 0;
 }
 
-/** 20140419    
+/** 20140419
  * 세부사항 분석 생략
  **/
 static inline int ioremap_pud_range(pgd_t *pgd, unsigned long addr,
@@ -81,7 +81,7 @@ static inline int ioremap_pud_range(pgd_t *pgd, unsigned long addr,
 	return 0;
 }
 
-/** 20140419    
+/** 20140419
  * ioremap용 addr(VA)와 phys_addr(PA)를 받아 page table에 mapping 하는 함수.
  * 속성은 prot로 전달 받는다.
  *
@@ -109,7 +109,7 @@ int ioremap_page_range(unsigned long addr,
 			break;
 	} while (pgd++, addr = next, addr != end);
 
-	/** 20140419    
+	/** 20140419
 	 * start ~ end까지 cache를 flush 해 memory에 반영한다.
 	 **/
 	flush_cache_vmap(start, end);

@@ -1,20 +1,20 @@
 #ifndef _LINUX_KDEV_T_H
 #define _LINUX_KDEV_T_H
 #ifdef __KERNEL__
-/** 20150418    
+/** 20150418
  * dev의 minor number로 사용할 bit 수와 mask.
  **/
 #define MINORBITS	20
 #define MINORMASK	((1U << MINORBITS) - 1)
 
-/** 20150418    
+/** 20150418
  * MKDEV : major, minor 번호를 받아 dev number를 만든다.
  **/
 #define MAJOR(dev)	((unsigned int) ((dev) >> MINORBITS))
 #define MINOR(dev)	((unsigned int) ((dev) & MINORMASK))
 #define MKDEV(ma,mi)	(((ma) << MINORBITS) | (mi))
 
-/** 20150829    
+/** 20150829
  * buffer에 MAJOR:MINOR 번호를 저장한다.
  **/
 #define print_dev_t(buffer, dev)					\

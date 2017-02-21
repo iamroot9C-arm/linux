@@ -18,7 +18,7 @@
 
 #ifdef CONFIG_CPU_V7
 
-/** 20150613    
+/** 20150613
  * pmu init 함수에서 객체를 설정.
  * v7에서는 armv7_a9_pmu_init
  **/
@@ -246,7 +246,7 @@ static const unsigned armv7_a8_perf_cache_map[PERF_COUNT_HW_CACHE_MAX]
 /*
  * Cortex-A9 HW events mapping
  */
-/** 20150613    
+/** 20150613
  * hw events로 관찰할 항목을 설정한 map table.
  **/
 static const unsigned armv7_a9_perf_map[PERF_COUNT_HW_MAX] = {
@@ -1215,7 +1215,7 @@ static int armv7_a8_map_event(struct perf_event *event)
 				&armv7_a8_perf_cache_map, 0xFF);
 }
 
-/** 20150613    
+/** 20150613
  **/
 static int armv7_a9_map_event(struct perf_event *event)
 {
@@ -1254,7 +1254,7 @@ static struct arm_pmu armv7pmu = {
 	.max_period		= (1LLU << 32) - 1,
 };
 
-/** 20150613    
+/** 20150613
  **/
 static u32 __init armv7_read_num_pmnc_events(void)
 {
@@ -1275,7 +1275,7 @@ static struct arm_pmu *__init armv7_a8_pmu_init(void)
 	return &armv7pmu;
 }
 
-/** 20150613    
+/** 20150613
  *
  **/
 static struct arm_pmu *__init armv7_a9_pmu_init(void)

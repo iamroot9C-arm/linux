@@ -24,7 +24,7 @@ struct bio;
 #define SWAP_FLAGS_VALID	(SWAP_FLAG_PRIO_MASK | SWAP_FLAG_PREFER | \
 				 SWAP_FLAG_DISCARD)
 
-/** 20131214    
+/** 20131214
  * 현재 task struct의 flags에 PF_KSWAPD를 검사해 kswapd 여부를 판단.
  **/
 static inline int current_is_kswapd(void)
@@ -69,7 +69,7 @@ static inline int current_is_kswapd(void)
 #define SWP_HWPOISON_NUM 0
 #endif
 
-/** 20140524    
+/** 20140524
  * MAX_SWAPFILES       : (1 << 5) - 0 - 0
  * MAX_SWAPFILES_SHIFT : 5
  **/
@@ -217,7 +217,7 @@ struct swap_list_t {
 };
 
 /* Swap 50% full? Release swapcache more aggressively.. */
-/** 20140607    
+/** 20140607
  * 전체 swap page 중에 현재 swap pages가 50% 이상 사용 중이면 full이라 판단한다.
  **/
 #define vm_swap_full() (nr_swap_pages*2 < total_swap_pages)
@@ -230,7 +230,7 @@ extern unsigned int nr_free_buffer_pages(void);
 extern unsigned int nr_free_pagecache_pages(void);
 
 /* Definition of global_page_state not available yet */
-/** 20150214    
+/** 20150214
  * 시스템 전체의 NR_FREE_PAGES 항목 조회.
  **/
 #define nr_free_pages() global_page_state(NR_FREE_PAGES)
@@ -287,11 +287,11 @@ extern int sysctl_min_unmapped_ratio;
 extern int sysctl_min_slab_ratio;
 extern int zone_reclaim(struct zone *, gfp_t, unsigned int);
 #else
-/** 20130928    
+/** 20130928
  * NUMA가 아닐 경우 zone_reclaim_mode는 0
  **/
 #define zone_reclaim_mode 0
-/** 20130928    
+/** 20130928
  * NUMA가 아닐 경우 zone_reclaim 함수는 zone reclaim 을 하지 않는다.
  **/
 static inline int zone_reclaim(struct zone *z, gfp_t mask, unsigned int order)

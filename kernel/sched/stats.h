@@ -42,7 +42,7 @@ rq_sched_info_dequeued(struct rq *rq, unsigned long long delta)
 static inline void
 rq_sched_info_depart(struct rq *rq, unsigned long long delta)
 {}
-/** 20130713    
+/** 20130713
  * NULL 함수
  **/
 # define schedstat_inc(rq, field)	do { } while (0)
@@ -152,7 +152,7 @@ sched_info_switch(struct task_struct *prev, struct task_struct *next)
 		__sched_info_switch(prev, next);
 }
 #else
-/** 20150524    
+/** 20150524
  * CONFIG_SCHEDSTATS나 CONFIG_TASK_DELAY_ACCT가 정의되지 않다.
  **/
 #define sched_info_queued(t)			do { } while (0)

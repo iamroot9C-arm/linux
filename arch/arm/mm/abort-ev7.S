@@ -17,12 +17,12 @@ ENTRY(v7_early_abort)
 	 * The effect of data aborts on on the exclusive access monitor are
 	 * UNPREDICTABLE. Do a CLREX to clear the state
 	 */
-	/** 20151121    
+	/** 20151121
 	 * exclusive access monitor의 상태를 초기화 한다.
 	 **/
 	clrex
 
-	/** 20151121    
+	/** 20151121
 	 * Data Fault Status Register, Data Fault Address Register 를 읽는다.
 	 **/
 	mrc	p15, 0, r1, c5, c0, 0		@ get FSR
@@ -33,7 +33,7 @@ ENTRY(v7_early_abort)
 	 * New designs should not need to patch up faults.
 	 */
 
-	/** 20151121    
+	/** 20151121
 	 * CONFIG 되지 않았음.
 	 **/
 #if defined(CONFIG_VERIFY_PERMISSION_FAULT)

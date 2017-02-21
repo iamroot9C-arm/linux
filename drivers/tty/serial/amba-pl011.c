@@ -1859,7 +1859,7 @@ static struct console amba_console = {
 #define AMBA_CONSOLE	NULL
 #endif
 
-/** 20151121    
+/** 20151121
  * AMBA uart.
  **/
 static struct uart_driver amba_reg = {
@@ -2004,7 +2004,7 @@ static int pl011_resume(struct amba_device *dev)
 }
 #endif
 
-/** 20151121    
+/** 20151121
  * pl011의 id 목록.
  **/
 static struct amba_id pl011_ids[] = {
@@ -2023,7 +2023,7 @@ static struct amba_id pl011_ids[] = {
 
 MODULE_DEVICE_TABLE(amba, pl011_ids);
 
-/** 20151121    
+/** 20151121
  * uart-pl011 amba 드라이버
  **/
 static struct amba_driver pl011_driver = {
@@ -2039,7 +2039,7 @@ static struct amba_driver pl011_driver = {
 #endif
 };
 
-/** 20151121    
+/** 20151121
  * uart pl011을 초기화 한다.
  *
  * uart 드라이버를 등록하고, 등록이 성공하면 amba 드라이버로 등록한다.

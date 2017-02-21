@@ -110,7 +110,7 @@ static inline void kmemcheck_slab_free(struct kmem_cache *s, void *object,
 {
 }
 
-/** 20140628    
+/** 20140628
  * CONFIG_KMEMCHECK 선언되지 않음.
  **/
 static inline void kmemcheck_pagealloc_alloc(struct page *p,
@@ -159,7 +159,7 @@ static inline bool kmemcheck_is_obj_initialized(unsigned long addr, size_t size)
 	return true;
 }
 
-/** 20151107    
+/** 20151107
  * CONFIG_KMEMCHECK 선언되지 않음.
  **/
 #define kmemcheck_bitfield_begin(name)

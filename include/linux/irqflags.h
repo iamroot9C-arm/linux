@@ -29,7 +29,7 @@
 # define lockdep_softirq_exit()	do { current->softirq_context--; } while (0)
 # define INIT_TRACE_IRQFLAGS	.softirqs_enabled = 1,
 #else
-/** 20130720    
+/** 20130720
  * CONFIG_TRACE_IRQFLAGS 가 정의되어 있지 않음
  **/
 # define trace_hardirqs_on()		do { } while (0)
@@ -52,7 +52,7 @@
  extern void stop_critical_timings(void);
  extern void start_critical_timings(void);
 #else
- /** 20160220    
+ /** 20160220
   **/
 # define stop_critical_timings() do { } while (0)
 # define start_critical_timings() do { } while (0)
@@ -61,7 +61,7 @@
 /*
  * Wrap the arch provided IRQ routines to provide appropriate checks.
  */
-/** 20131026    
+/** 20131026
  * local irq를 disable. 이전 상태는 리턴하지 않음.
  **/
 #define raw_local_irq_disable()		arch_local_irq_disable()
@@ -81,7 +81,7 @@
 		typecheck(unsigned long, flags);	\
 		flags = arch_local_irq_save();		\
 	} while (0)
-/** 20130720    
+/** 20130720
  * flags에 저장된 값을 cpsr_c에 저장
  **/
 #define raw_local_irq_restore(flags)			\
@@ -89,7 +89,7 @@
 		typecheck(unsigned long, flags);	\
 		arch_local_irq_restore(flags);		\
 	} while (0)
-/** 20130518    
+/** 20130518
  * flags에 cpsr 레지스터의 값을 저장해 리턴
  **/
 #define raw_local_save_flags(flags)			\
@@ -97,7 +97,7 @@
 		typecheck(unsigned long, flags);	\
 		flags = arch_local_save_flags();	\
 	} while (0)
-/** 20130518    
+/** 20130518
  * flags에 irq가 disabled 되어 있는지 검사하는 함수
  **/
 #define raw_irqs_disabled_flags(flags)			\
@@ -113,7 +113,7 @@
  * if !TRACE_IRQFLAGS.
  */
 #ifdef CONFIG_TRACE_IRQFLAGS_SUPPORT
-/** 20131026    
+/** 20131026
  * local irq 정의되어 있음
  **/
 #define local_irq_enable() \
@@ -152,7 +152,7 @@
 		raw_local_save_flags(flags);		\
 	} while (0)
 
-/** 20140831    
+/** 20140831
  * flags에 irq가 disabled인지 검사한다.
  **/
 #define irqs_disabled_flags(flags)			\

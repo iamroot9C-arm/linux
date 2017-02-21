@@ -43,7 +43,7 @@
 #error HARDIRQ_BITS too high!
 #endif
 
-/** 20131123    
+/** 20131123
  * PREEMPT_SHIFT : 0
  * SOFTIRQ_SHIFT : 8
  * HARDIRQ_SHIFT : 16
@@ -81,7 +81,7 @@
 #define HARDIRQ_OFFSET	(1UL << HARDIRQ_SHIFT)
 #define NMI_OFFSET	(1UL << NMI_SHIFT)
 
-/** 20140628    
+/** 20140628
  * softirq disable을 위한 상수.
  **/
 #define SOFTIRQ_DISABLE_OFFSET	(2 * SOFTIRQ_OFFSET)
@@ -96,15 +96,15 @@
 #error PREEMPT_ACTIVE is too low!
 #endif
 
-/** 20131123    
+/** 20131123
  * preempt_count에서 HARDIRQ_MASK를 씌워 hardirq_count를 리턴한다.
  **/
 #define hardirq_count()	(preempt_count() & HARDIRQ_MASK)
-/** 20131123    
+/** 20131123
  * preempt_count에서 SOFTIRQ_MASK를 씌워 softirq_count를 리턴한다.
  **/
 #define softirq_count()	(preempt_count() & SOFTIRQ_MASK)
-/** 20131005    
+/** 20131005
  * preempt_count()에서 interrupt 관련 비트를 추출한다.
  **/
 #define irq_count()	(preempt_count() & (HARDIRQ_MASK | SOFTIRQ_MASK \
@@ -116,17 +116,17 @@
  * in_softirq - Are we currently processing softirq or have bh disabled?
  * in_serving_softirq - Are we currently processing softirq?
  */
-/** 20160117    
+/** 20160117
  * hardware irq / softirq 중이라면 참을 리턴한다.
  **/
 #define in_irq()		(hardirq_count())
 #define in_softirq()		(softirq_count())
-/** 20131005    
+/** 20131005
  * preempt_count 중 interrupt 관련 비트를 추출해 interrupt context인지 판단한다.
  * HARDIRQ, SOFTIRQ 포함
  **/
 #define in_interrupt()		(irq_count())
-/** 20131123    
+/** 20131123
  * softirq_count()에서 SOFTIRQ_OFFSET 비트를 (1<<8) 검사해
  * 현재 softirq 중인지 판단한다.
  **/
@@ -162,7 +162,7 @@
 #define in_atomic_preempt_off() \
 		((preempt_count() & ~PREEMPT_ACTIVE) != PREEMPT_CHECK_OFFSET)
 
-/** 20140927    
+/** 20140927
  * CONFIG_PREEMPT_COUNT가 설정되어 있는 경우
  * IRQ_EXIT_OFFSET을 HARDIRQ_OFFSET 보다 하나 작은 값으로 설정한다.
  *

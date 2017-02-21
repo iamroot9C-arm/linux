@@ -58,7 +58,7 @@ static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
 	return &init_user_ns;
 }
 
-/** 20160319    
+/** 20160319
  **/
 static inline int create_user_ns(struct cred *new)
 {

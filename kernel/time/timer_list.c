@@ -22,7 +22,7 @@
 
 typedef void (*print_fn_t)(struct seq_file *m, unsigned int *classes);
 
-/** 20141129    
+/** 20141129
  * cpu별로 hrtimer를 위한 cpu_base를 설정한다.
  **/
 DECLARE_PER_CPU(struct hrtimer_cpu_base, hrtimer_bases);
@@ -235,7 +235,7 @@ print_tickdevice(struct seq_file *m, struct tick_device *td, int cpu)
 	SEQ_printf(m, " retries:        %lu\n", dev->retries);
 }
 
-/** 20160116    
+/** 20160116
  * timer list에서 tick device 목록을 출력.
  **/
 static void timer_list_show_tickdevices(struct seq_file *m)
@@ -260,7 +260,7 @@ static void timer_list_show_tickdevices(struct seq_file *m)
 static void timer_list_show_tickdevices(struct seq_file *m) { }
 #endif
 
-/** 20160116    
+/** 20160116
  * /proc/timer_list 출력함수.
  **/
 static int timer_list_show(struct seq_file *m, void *v)
@@ -291,7 +291,7 @@ static int timer_list_open(struct inode *inode, struct file *filp)
 	return single_open(filp, timer_list_show, NULL);
 }
 
-/** 20160116    
+/** 20160116
  **/
 static const struct file_operations timer_list_fops = {
 	.open		= timer_list_open,
@@ -300,7 +300,7 @@ static const struct file_operations timer_list_fops = {
 	.release	= single_release,
 };
 
-/** 20160116    
+/** 20160116
  * "/proc/timer_list"를 생성하고, fops를 등록한다.
  **/
 static int __init init_timer_list_procfs(void)

@@ -66,7 +66,7 @@ extern struct nsproxy init_nsproxy;
 
 extern struct group_info init_groups;
 
-/** 20150801    
+/** 20150801
  * struct pid (include/linux/pid.h)의 초기값.
  **/
 #define INIT_STRUCT_PID {						\
@@ -144,7 +144,7 @@ extern struct task_group root_task_group;
 # define INIT_PERF_EVENTS(tsk)
 #endif
 
-/** 20140426    
+/** 20140426
  * init task의 이름 : swapper
  **/
 #define INIT_TASK_COMM "swapper"
@@ -153,7 +153,7 @@ extern struct task_group root_task_group;
  *  INIT_TASK is used to set up the first task table, touch at
  * your own risk!. Base=0, limit=0x1fffff (=2MB)
  */
-/** 20140426    
+/** 20140426
  * init_task에 대한 default 설정.
  *
  * MAX_PRIO : 100 + 40

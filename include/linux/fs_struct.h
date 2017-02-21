@@ -5,7 +5,7 @@
 #include <linux/spinlock.h>
 #include <linux/seqlock.h>
 
-/** 20150425    
+/** 20150425
  * 각 task와 연관된 자료구조로 특정 파일시스템에 대한 정보를 나타낸다.
  *
  * root, pwd 지정시 set_fs_{root,pwd}가 사용된다.

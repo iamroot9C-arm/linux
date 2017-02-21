@@ -1102,7 +1102,7 @@ static void fuse_kill_sb_blk(struct super_block *sb)
 	kill_block_super(sb);
 }
 
-/** 20150425    
+/** 20150425
  * fuse 파일시스템 타입은 flags에 SUBTYPE 보유를 표시한다.
  **/
 static struct file_system_type fuseblk_fs_type = {

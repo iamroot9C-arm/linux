@@ -11,7 +11,7 @@
 #define __ASM_PARAM_H
 
 #ifdef __KERNEL__
-/** 20140426    
+/** 20140426
  * CONFIG_HZ는 100으로 설정됨.
  **/
 # define HZ		CONFIG_HZ	/* Internal kernel timer frequency */

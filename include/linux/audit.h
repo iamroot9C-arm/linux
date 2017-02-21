@@ -623,7 +623,7 @@ static inline void audit_mmap_fd(int fd, int flags)
 extern int audit_n_rules;
 extern int audit_signals;
 #else /* CONFIG_AUDITSYSCALL */
-/** 20151114    
+/** 20151114
  * AUDITSYSCALL을 사용하지 않는다.
  **/
 #define audit_alloc(t) ({ 0; })

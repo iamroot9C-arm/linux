@@ -103,7 +103,7 @@ static inline u64 get_jiffies_64(void)
  * good compiler would generate better code (and a really good compiler
  * wouldn't care). Gcc is currently neither.
  */
-/** 20130824    
+/** 20130824
  * jiffies 값 비교 매크로.
  *
  * time_after(a,b)    : a가 b보다 큰 경우 참

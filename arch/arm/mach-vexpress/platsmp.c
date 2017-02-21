@@ -60,11 +60,11 @@ static int __init vexpress_dt_find_scu(unsigned long node,
 		vexpress_dt_scu = CORTEX_A9_SCU;
 
 		vexpress_dt_cortex_a9_scu_map.pfn = __phys_to_pfn(phys_addr);
-		/** 20130518    
+		/** 20130518
 		 * iotable에 등록
 		 **/
 		iotable_init(&vexpress_dt_cortex_a9_scu_map, 1);
-		/** 20130518    
+		/** 20130518
 		 * vexpress_dt_cortex_a9_scu_base 를 ioremap한 주소로 설정
 		 **/
 		vexpress_dt_cortex_a9_scu_base = ioremap(phys_addr, SZ_256);
@@ -94,13 +94,13 @@ static int __init vexpress_dt_cpus_num(unsigned long node, const char *uname,
 		nr_cpus = 0;
 
 	if (nr_cpus >= 0) {
-		/** 20130518    
+		/** 20130518
 		 * device tree에서 device_types에 해당하는 property 값을 가져옴
 		 **/
 		const char *device_type = of_get_flat_dt_prop(node,
 				"device_type", NULL);
 
-		/** 20130518    
+		/** 20130518
 		 * device_type이 cpu인 property counting
 		 **/
 		if (device_type && strcmp(device_type, "cpu") == 0)
@@ -112,14 +112,14 @@ static int __init vexpress_dt_cpus_num(unsigned long node, const char *uname,
 	return 0;
 }
 
-/** 20130518    
+/** 20130518
  * Open Firmware 지원시 (vexpress는 사용하지 않음)
  **/
 static void __init vexpress_dt_smp_init_cpus(void)
 {
 	int ncores = 0, i;
 
-	/** 20130518    
+	/** 20130518
 	 * vexpress_dt_scu에 따른 함수 호출. 초기값은 GENERIC_SCU.
 	 * CORTEX_A9_SCU일 경우 init_cpu_map()과 동일한 함수가 호출됨.
 	 **/
@@ -186,12 +186,12 @@ void __init vexpress_dt_smp_prepare_cpus(unsigned int max_cpus)
  * Initialise the CPU possible map early - this describes the CPUs
  * which may be present or become present in the system.
  */
-/** 20130518    
+/** 20130518
  * SMP cpu인 경우 system에서 사용가능한 cpu 개수를 구하고 bitmap 설정.
  **/
 void __init smp_init_cpus(void)
 {
-	/** 20130518    
+	/** 20130518
 	 * arch/arm/mach-vexpress/v2m.c 에서 ct_desc에 넣어주었으므로 true.
 	 *   ct_ca9x4_init_cpu_map 호출
 	 **/
@@ -202,7 +202,7 @@ void __init smp_init_cpus(void)
 
 }
 
-/** 20150613    
+/** 20150613
  * smp를 준비하는 vexpress의 platform specific한 코드.
  *
  * 현재 cpu을 smp enable로 만들고, secondary CPU가 부팅 후 이동할 함수의
@@ -215,7 +215,7 @@ void __init platform_smp_prepare_cpus(unsigned int max_cpus)
 	 * Initialise the present map, which describes the set of CPUs
 	 * actually populated at the present time.
 	 */
-	/** 20150613    
+	/** 20150613
 	 * ct_desc가 정의되어 있다면 등록된 api가 호출.
 	 *   ct_ca9x4의 경우 ct_ca9x4_smp_enable.
 	 **/
@@ -230,7 +230,7 @@ void __init platform_smp_prepare_cpus(unsigned int max_cpus)
 	 * until it receives a soft interrupt, and then the
 	 * secondary CPU branches to this address.
 	 */
-	/** 20150613    
+	/** 20150613
 	 * v2m register에 secondary CPU를 위한 entry 함수를 기록한다.
 	 **/
 	v2m_flags_set(virt_to_phys(versatile_secondary_startup));

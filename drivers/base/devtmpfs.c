@@ -54,7 +54,7 @@ __setup("devtmpfs.mount=", mount_param);
 static struct dentry *dev_mount(struct file_system_type *fs_type, int flags,
 		      const char *dev_name, void *data)
 {
-/** 20160102    
+/** 20160102
  * RAMFS와 파생된 TMPFS 중 TMPFS가 사용 가능하면 TMPFS로 mount.
  **/
 #ifdef CONFIG_TMPFS
@@ -64,7 +64,7 @@ static struct dentry *dev_mount(struct file_system_type *fs_type, int flags,
 #endif
 }
 
-/** 20150822    
+/** 20150822
  * "devtmpfs" 파일시스템 타입.
  *
  * .mount시 dev_mount
@@ -345,7 +345,7 @@ static int handle_remove(const char *nodename, struct device *dev)
  * If configured, or requested by the commandline, devtmpfs will be
  * auto-mounted after the kernel mounted the root filesystem.
  */
-/** 20160123    
+/** 20160123
  * devtpfs를 mount dir에 mount 한다.
  *
  * 자세한 분석은 생략???
@@ -360,7 +360,7 @@ int devtmpfs_mount(const char *mntdir)
 	if (!thread)
 		return 0;
 
-	/** 20160123    
+	/** 20160123
 	 * "/devtmpfs"를 mntdir에 mount 한다.
 	 **/
 	err = sys_mount("devtmpfs", (char *)mntdir, "devtmpfs", MS_SILENT, NULL);

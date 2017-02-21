@@ -18,7 +18,7 @@
  * This provides a "holding pen" into which all secondary cores are held
  * until we're ready for them to initialise.
  */
-/** 20150118    
+/** 20150118
  * MPDIR에서 현재 실행 중인 core번호를 읽어낸다.
  * pen_release 변수의 값을 읽어
  * 현재 cpu 번호와 같을 때까지 loop로 대기하고,
@@ -41,7 +41,7 @@ pen:	ldr	r7, [r6]
 	 * we've been released from the holding pen: secondary_stack
 	 * should now contain the SVC stack for this core
 	 */
-	/** 20150124    
+	/** 20150124
 	 * pen release 되었고, secondary_startup으로 이동한다.
 	 * secondary_stack은 이미 SVC stack 정보를 갖고 있어야 한다.
 	 **/

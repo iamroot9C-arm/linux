@@ -14,7 +14,7 @@
 
 static atomic_long_t bdi_seq = ATOMIC_LONG_INIT(0);
 
-/** 20150307    
+/** 20150307
  * default bdi 선언.
  **/
 struct backing_dev_info default_backing_dev_info = {
@@ -25,7 +25,7 @@ struct backing_dev_info default_backing_dev_info = {
 };
 EXPORT_SYMBOL_GPL(default_backing_dev_info);
 
-/** 20150418    
+/** 20150418
  **/
 struct backing_dev_info noop_backing_dev_info = {
 	.name		= "noop",
@@ -33,7 +33,7 @@ struct backing_dev_info noop_backing_dev_info = {
 };
 EXPORT_SYMBOL_GPL(noop_backing_dev_info);
 
-/** 20151017    
+/** 20151017
  * bdi_class_init에서 생성하고 등록.
  **/
 static struct class *bdi_class;
@@ -70,12 +70,12 @@ void bdi_lock_two(struct bdi_writeback *wb1, struct bdi_writeback *wb2)
 
 static struct dentry *bdi_debug_root;
 
-/** 20151024    
+/** 20151024
  * "bdi"라는 debugfs 디렉토리를 생성한다.
  **/
 static void bdi_debug_init(void)
 {
-	/** 20151024    
+	/** 20151024
 	 * debugfs의 root 아래에 "bdi" 디렉토리를 생성한다.
 	 **/
 	bdi_debug_root = debugfs_create_dir("bdi", NULL);
@@ -248,23 +248,23 @@ static struct device_attribute bdi_dev_attrs[] = {
 	__ATTR_NULL,
 };
 
-/** 20151024    
+/** 20151024
  * bdi를 위한 class를 생성하고, debugfs에 "bdi" 디렉토리를 생성한다.
  **/
 static __init int bdi_class_init(void)
 {
-	/** 20151017    
+	/** 20151017
 	 * bdi_class를 "bdi"라는 이름으로 생성하고 등록한다.
 	 **/
 	bdi_class = class_create(THIS_MODULE, "bdi");
 	if (IS_ERR(bdi_class))
 		return PTR_ERR(bdi_class);
 
-	/** 20151017    
+	/** 20151017
 	 * bid_class의 device attribute 지정.
 	 **/
 	bdi_class->dev_attrs = bdi_dev_attrs;
-	/** 20151024    
+	/** 20151024
 	 * debugfs에 "bdi"를 생성한다.
 	 **/
 	bdi_debug_init();
@@ -677,7 +677,7 @@ void bdi_unregister(struct backing_dev_info *bdi)
 }
 EXPORT_SYMBOL(bdi_unregister);
 
-/** 20150221    
+/** 20150221
  * bdi의 bdi_writeback 구조체를 초기화 한다.
  **/
 static void bdi_wb_init(struct bdi_writeback *wb, struct backing_dev_info *bdi)
@@ -690,7 +690,7 @@ static void bdi_wb_init(struct bdi_writeback *wb, struct backing_dev_info *bdi)
 	INIT_LIST_HEAD(&wb->b_io);
 	INIT_LIST_HEAD(&wb->b_more_io);
 	spin_lock_init(&wb->list_lock);
-	/** 20150221    
+	/** 20150221
 	 * writeback용 wakeup_timer를 설정한다.
 	 * timer 만료시 wakeup_timer_fn가 호출되고, bdi가 fn에 전달된다.
 	 **/
@@ -700,12 +700,12 @@ static void bdi_wb_init(struct bdi_writeback *wb, struct backing_dev_info *bdi)
 /*
  * Initial write bandwidth: 100 MB/s
  */
-/** 20150221    
+/** 20150221
  * write bandwidth
  **/
 #define INIT_BW		(100 << (20 - PAGE_SHIFT))
 
-/** 20150221    
+/** 20150221
  * backing_dev_info 를 받아 name, ra_pages, capabilities 외 속성을 초기화 한다.
  **/
 int bdi_init(struct backing_dev_info *bdi)
@@ -721,12 +721,12 @@ int bdi_init(struct backing_dev_info *bdi)
 	INIT_LIST_HEAD(&bdi->bdi_list);
 	INIT_LIST_HEAD(&bdi->work_list);
 
-	/** 20150221    
+	/** 20150221
 	 * bdi에 연결된 bdi_writeback 구조체를 초기화 한다.
 	 **/
 	bdi_wb_init(&bdi->wb, bdi);
 
-	/** 20150221    
+	/** 20150221
 	 * percpu counter 'bdi_stat'을 각 item별로 초기화 한다.
 	 **/
 	for (i = 0; i < NR_BDI_STAT_ITEMS; i++) {
@@ -740,7 +740,7 @@ int bdi_init(struct backing_dev_info *bdi)
 	bdi->bw_time_stamp = jiffies;
 	bdi->written_stamp = 0;
 
-	/** 20150221    
+	/** 20150221
 	 * ratelimit와 write backwidth 초기값을 설정한다.
 	 **/
 	bdi->balanced_dirty_ratelimit = INIT_BW;
@@ -823,14 +823,14 @@ int bdi_setup_and_register(struct backing_dev_info *bdi, char *name,
 }
 EXPORT_SYMBOL(bdi_setup_and_register);
 
-/** 20131123    
+/** 20131123
  * sync, async용 waitqueue head를 2개를 배열로 선언.
  **/
 static wait_queue_head_t congestion_wqh[2] = {
 		__WAIT_QUEUE_HEAD_INITIALIZER(congestion_wqh[0]),
 		__WAIT_QUEUE_HEAD_INITIALIZER(congestion_wqh[1])
 	};
-/** 20131123    
+/** 20131123
  * bdi : backing device information.
  * waitqueue에 등록된 entry의 개수를 저장하는 atomic 변수.
  **/
@@ -869,7 +869,7 @@ EXPORT_SYMBOL(set_bdi_congested);
  * write congestion.  If no backing_devs are congested then just wait for the
  * next write to be completed.
  */
-/** 20140524    
+/** 20140524
  * sync/async io가 끝날 때까지 최대 timeout 시간만큼 기다린다.
  **/
 long congestion_wait(int sync, long timeout)
@@ -877,12 +877,12 @@ long congestion_wait(int sync, long timeout)
 	long ret;
 	unsigned long start = jiffies;
 	DEFINE_WAIT(wait);
-	/** 20140524    
+	/** 20140524
 	 * congestion wait queue에서 sync/async에 따라 해당 wait queue를 가져온다.
 	 **/
 	wait_queue_head_t *wqh = &congestion_wqh[sync];
 
-	/** 20140524    
+	/** 20140524
 	 * wait을 TASK_UNINTERRUPTIBLE로 설정해 wqh에 등록하고,
 	 * 최대 timeout까지 flush가 수행되기를 기다린다.
 	 **/
@@ -915,7 +915,7 @@ EXPORT_SYMBOL(congestion_wait);
  * it is the number of jiffies that were still remaining when the function
  * returned. return_value == timeout implies the function did not sleep.
  */
-/** 20131130    
+/** 20131130
  * congested인 상황에서 timeout만큼 sleep 하며 io 완료를 대기하는  함수.
  *
  * sync가 BLK_RW_ASYNC 인 경우 호출.
@@ -926,12 +926,12 @@ EXPORT_SYMBOL(congestion_wait);
 long wait_iff_congested(struct zone *zone, int sync, long timeout)
 {
 	long ret;
-	/** 20131123    
+	/** 20131123
 	 * 현재 jiffies를 start로 저장한다.
 	 **/
 	unsigned long start = jiffies;
 	DEFINE_WAIT(wait);
-	/** 20131123    
+	/** 20131123
 	 * sync에 따른 waitqueue head를 받아온다.
 	 *
 	 *  __alloc_pages_high_priority 에서 호출되었을 경우 BLK_RW_ASYNC.
@@ -943,19 +943,19 @@ long wait_iff_congested(struct zone *zone, int sync, long timeout)
 	 * encountered in the current zone, yield if necessary instead
 	 * of sleeping on the congestion queue
 	 */
-	/** 20131123    
+	/** 20131123
 	 * sync에 해당하는 congested waitqueue에 등록된 entry가 없거나
 	 * 해당 zone에 reclaim이 congested되어 있지 않다면
 	 **/
 	if (atomic_read(&nr_bdi_congested[sync]) == 0 ||
 			!zone_is_reclaim_congested(zone)) {
-		/** 20131130    
+		/** 20131130
 		 * scheduling이 필요하면 스케쥴러를 호출한다.
 		 **/
 		cond_resched();
 
 		/* In case we scheduled, work out time remaining */
-		/** 20131130    
+		/** 20131130
 		 * 다시 스케쥴러에 의해 돌아왔다면 소비된 시간만큼 timeout을 감소시킨다.
 		 * 남은 시간을 return.
 		 **/
@@ -967,23 +967,23 @@ long wait_iff_congested(struct zone *zone, int sync, long timeout)
 	}
 
 	/* Sleep until uncongested or a write happens */
-	/** 20131130    
+	/** 20131130
 	 * waitqueue에 등록한다.
 	 * 이 때 대기하는 task의 상태는 TASK_UNINTERRUPTIBLE이다.
 	 **/
 	prepare_to_wait(wqh, &wait, TASK_UNINTERRUPTIBLE);
-	/** 20131130    
+	/** 20131130
 	 * timeout 시간동안 iowait.
 	 **/
 	ret = io_schedule_timeout(timeout);
-	/** 20131130    
+	/** 20131130
 	 * iowait 이 완료되고 task 상태 변경,
 	 * waitqueue에 여전히 등록되어 있다면 삭제한다.
 	 **/
 	finish_wait(wqh, &wait);
 
 out:
-	/** 20131130    
+	/** 20131130
 	 * trace 관련 함수는 생략.
 	 **/
 	trace_writeback_wait_iff_congested(jiffies_to_usecs(timeout),

@@ -223,7 +223,7 @@ static inline void __pmd_free_tlb(struct mmu_gather *tlb, pmd_t *pmdp,
 #define pmd_free_tlb(tlb, pmdp, addr)	__pmd_free_tlb(tlb, pmdp, addr)
 #define pud_free_tlb(tlb, pudp, addr)	pud_free((tlb)->mm, pudp)
 
-/** 20150524    
+/** 20150524
  **/
 #define tlb_migrate_finish(mm)		do { } while (0)
 

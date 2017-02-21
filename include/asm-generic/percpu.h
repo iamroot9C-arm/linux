@@ -17,7 +17,7 @@
 #ifndef __per_cpu_offset
 extern unsigned long __per_cpu_offset[NR_CPUS];
 
-/** 20130629    
+/** 20130629
  * __per_cpu_offset 배열에서 값을 리턴하는 macro 함수
  **/
 #define per_cpu_offset(x) (__per_cpu_offset[x])
@@ -29,7 +29,7 @@ extern unsigned long __per_cpu_offset[NR_CPUS];
  * means of obtaining the offset to the per cpu variables of the
  * current processor.
  */
-/** 20130831    
+/** 20130831
  * 현재 명령을 수행한 cpu id를 받아와 __per_cpu_offset에서 offset 값을 찾아온다.
  **/
 #ifndef __my_cpu_offset
@@ -48,7 +48,7 @@ extern unsigned long __per_cpu_offset[NR_CPUS];
  */
 #ifndef SHIFT_PERCPU_PTR
 /* Weird cast keeps both GCC and sparse happy. */
-/** 20130629    
+/** 20130629
  * 1. __p에 대한 type check. sparse를 사용했을 때 검출된다.
  * 2. __p에서 __offset만큼 떨어진 위치를 가져온다.
  **/
@@ -63,14 +63,14 @@ extern unsigned long __per_cpu_offset[NR_CPUS];
  * established ways to produce a usable pointer from the percpu variable
  * offset.
  */
-/** 20130629    
+/** 20130629
  * cpu에 해당하는 percpu 데이터를 참조하기 위한 macro
  *     per_cpu_offset는 각 cpu 당 offset값을 가져오는 함수.
  **/
 #define per_cpu(var, cpu) \
 	(*SHIFT_PERCPU_PTR(&(var), per_cpu_offset(cpu)))
 
-/** 20130831    
+/** 20130831
  * pcpu 변수 포인터 ptr에서 현재 명령을 수행한 cpu에 해당하는 메모리의 위치를 가져온다.
  **/
 #ifndef __this_cpu_ptr
@@ -79,7 +79,7 @@ extern unsigned long __per_cpu_offset[NR_CPUS];
 #ifdef CONFIG_DEBUG_PREEMPT
 #define this_cpu_ptr(ptr) SHIFT_PERCPU_PTR(ptr, my_cpu_offset)
 #else
-/** 20130831    
+/** 20130831
  **/
 #define this_cpu_ptr(ptr) __this_cpu_ptr(ptr)
 #endif
@@ -87,7 +87,7 @@ extern unsigned long __per_cpu_offset[NR_CPUS];
  * percpu 변수에서 현재 cpu에 해당하는 값.
  **/
 #define __get_cpu_var(var) (*this_cpu_ptr(&(var)))
-/** 20131130    
+/** 20131130
  * percpu 변수에서 현재 cpu에 해당하는 변수의 위치에서 값을 가져온다.
  **/
 #define __raw_get_cpu_var(var) (*__this_cpu_ptr(&(var)))
@@ -125,7 +125,7 @@ extern void setup_per_cpu_areas(void);
 #define PER_CPU_SHARED_ALIGNED_SECTION ""
 #define PER_CPU_ALIGNED_SECTION ""
 #else
-/** 20140621    
+/** 20140621
  * percpu shared aligned section 이름
  **/
 #define PER_CPU_SHARED_ALIGNED_SECTION "..shared_aligned"

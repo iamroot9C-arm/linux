@@ -154,7 +154,7 @@ ENDPROC(v7_flush_dcache_all)
  *  unification in a single instruction.
  *
  */
-/** 20130330    
+/** 20130330
  *  data cache를 flush 시키고, i-cache를 invalidate 시킴
  **/
 ENTRY(v7_flush_kern_cache_all)
@@ -374,7 +374,7 @@ ENDPROC(v7_dma_clean_range)
  *	- start   - virtual start address of region
  *	- end     - virtual end address of region
  */
-/** 20151017    
+/** 20151017
  * start ~ end 사이의 data cache와 unified cache를 clean & invalid 시킨다.
  **/
 ENTRY(v7_dma_flush_range)

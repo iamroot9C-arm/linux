@@ -19,16 +19,16 @@
  * The default fd array needs to be at least BITS_PER_LONG,
  * as this is the granularity returned by copy_fdset().
  */
-/** 20160409    
+/** 20160409
  **/
 #define NR_OPEN_DEFAULT BITS_PER_LONG
 
-/** 20160409    
+/** 20160409
  * fdtable 구조체는 오픈된 여러 파일에 대한 정보를 관리한다.
  **/
 struct fdtable {
 	unsigned int max_fds;
-	/** 20160409    
+	/** 20160409
 	 * fd는 상위 구조체인 files_struct의 fd_array 배열의 특정 멤버를 
 	 **/
 	struct file __rcu **fd;      /* current fd array */
@@ -71,7 +71,7 @@ static inline bool fd_is_open(int fd, const struct fdtable *fdt)
 /*
  * Open file table structure
  */
-/** 20160409    
+/** 20160409
  * task에서 오픈한 파일 테이블
  **/
 struct files_struct {
@@ -79,7 +79,7 @@ struct files_struct {
    * read mostly part
    */
 	atomic_t count;
-	/** 20160409    
+	/** 20160409
 	 * fdtab은 프로세스가 오픈한 파일 테이블.
 	 * fdt는 마지막 fdtab을 참조하는듯???
 	 *
@@ -99,7 +99,7 @@ struct files_struct {
 	struct file __rcu * fd_array[NR_OPEN_DEFAULT];
 };
 
-/** 20160409    
+/** 20160409
  * rcu 포인터 변수인 fdt를 참조하는 매크로.
  * 정확한 위치(lock/unlock 사이)에서 참조가 이뤄졌는지 검사하는 매크로.
  * 여러 조건 중 하나만 만족하면 된다.
@@ -110,7 +110,7 @@ struct files_struct {
 			       atomic_read(&(files)->count) == 1 || \
 			       rcu_my_thread_group_empty()))
 
-/** 20160409    
+/** 20160409
  * struct files_struct에서 struct fdtable *인 fdt를 리턴하는 매크로.
  **/
 #define files_fdtable(files) \

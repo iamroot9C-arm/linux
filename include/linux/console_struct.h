@@ -134,7 +134,7 @@ extern void vc_SAK(struct work_struct *work);
 
 #define CUR_DEFAULT CUR_UNDERLINE
 
-/** 20150124    
+/** 20150124
  * 특정 console이 fg로 설정되어 있는지 검사한다.
  **/
 #define CON_IS_VISIBLE(conp) (*conp->vc_display_fg == conp)

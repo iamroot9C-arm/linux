@@ -24,7 +24,7 @@ struct kobject;
  * Namespace types which are used to tag kobjects and sysfs entries.
  * Network namespace will likely be the first.
  */
-/** 20150221    
+/** 20150221
  **/
 enum kobj_ns_type {
 	KOBJ_NS_TYPE_NONE = 0,
@@ -39,7 +39,7 @@ enum kobj_ns_type {
  *   @initial_ns: return the initial namespace (i.e. init_net_ns)
  *   @drop_ns: drops a reference to namespace
  */
-/** 20150411    
+/** 20150411
  * kobj ns type과 operations 들을 포함하는 구조체.
  **/
 struct kobj_ns_type_operations {

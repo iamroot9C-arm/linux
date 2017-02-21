@@ -59,7 +59,7 @@ static const void *class_attr_namespace(struct kobject *kobj,
 	return ns;
 }
 
-/** 20151017    
+/** 20151017
  * class_ktype에 지정하는 class release 함수.
  *
  * class에 class_releaes 콜백이 존재하는 호출한다.
@@ -77,13 +77,13 @@ static void class_release(struct kobject *kobj)
 		pr_debug("class '%s' does not have a release() function, "
 			 "be careful\n", class->name);
 
-	/** 20151017    
+	/** 20151017
 	 * subsys_private는 동적할당 받았으므로 해제한다.
 	 **/
 	kfree(cp);
 }
 
-/** 20151017    
+/** 20151017
  * kobj의 class_chlid_ns를 리턴하는 함수.
  **/
 static const struct kobj_ns_type_operations *class_child_ns_type(struct kobject *kobj)
@@ -94,7 +94,7 @@ static const struct kobj_ns_type_operations *class_child_ns_type(struct kobject 
 	return class->ns_type;
 }
 
-/** 20151017    
+/** 20151017
  * class_ktype에 저장하는 sysfs ops.
  **/
 static const struct sysfs_ops class_sysfs_ops = {
@@ -103,7 +103,7 @@ static const struct sysfs_ops class_sysfs_ops = {
 	.namespace = class_attr_namespace,
 };
 
-/** 20151017    
+/** 20151017
  * class_ktype.
  *
  * class_sysfs_ops와 child_ns_type 정의
@@ -115,13 +115,13 @@ static struct kobj_type class_ktype = {
 };
 
 /* Hotplug events for classes go to the class subsys */
-/** 20150829    
+/** 20150829
  * classes_init()에서 생성해 저장한다.
  **/
 static struct kset *class_kset;
 
 
-/** 20151017    
+/** 20151017
  * sysfs에 class에 해당하는 attribute를 받아 파일을 생성한다.
  **/
 int class_create_file(struct class *cls, const struct class_attribute *attr)
@@ -141,7 +141,7 @@ void class_remove_file(struct class *cls, const struct class_attribute *attr)
 		sysfs_remove_file(&cls->p->subsys.kobj, &attr->attr);
 }
 
-/** 20151017    
+/** 20151017
  * class의 reference를 증가한다.
  **/
 static struct class *class_get(struct class *cls)
@@ -151,7 +151,7 @@ static struct class *class_get(struct class *cls)
 	return cls;
 }
 
-/** 20151017    
+/** 20151017
  * class의 reference를 감소한다.
  **/
 static void class_put(struct class *cls)
@@ -160,7 +160,7 @@ static void class_put(struct class *cls)
 		kset_put(&cls->p->subsys);
 }
 
-/** 20151017    
+/** 20151017
  * class에 지정된 각 attribute를 파일로 생성한다.
  **/
 static int add_class_attrs(struct class *cls)
@@ -207,7 +207,7 @@ static void klist_class_dev_put(struct klist_node *n)
 	put_device(dev);
 }
 
-/** 20151017    
+/** 20151017
  * class 관련 자료구조를 kobject/kset/ktype에 설정하고 hierarchy에 등록한다.
  **/
 int __class_register(struct class *cls, struct lock_class_key *key)
@@ -217,7 +217,7 @@ int __class_register(struct class *cls, struct lock_class_key *key)
 
 	pr_debug("device class '%s': registering\n", cls->name);
 
-	/** 20151017    
+	/** 20151017
 	 * subsys_private 자료구조를 할당하고 멤버를 초기화 한다.
 	 **/
 	cp = kzalloc(sizeof(*cp), GFP_KERNEL);
@@ -239,7 +239,7 @@ int __class_register(struct class *cls, struct lock_class_key *key)
 
 #if defined(CONFIG_BLOCK)
 	/* let the block class directory show up in the root of sysfs */
-	/** 20151017    
+	/** 20151017
 	 * BLOCK 장치를 사용하고 sysfs가 deprecated되지 않았으므로 
 	 * class_kset을 사용한다.
 	 **/
@@ -248,17 +248,17 @@ int __class_register(struct class *cls, struct lock_class_key *key)
 #else
 	cp->subsys.kobj.kset = class_kset;
 #endif
-	/** 20151017    
+	/** 20151017
 	 * class의 subsys_private ktype을 class_ktype으로 설정한다.
 	 **/
 	cp->subsys.kobj.ktype = &class_ktype;
-	/** 20151017    
+	/** 20151017
 	 * subsys_private과 class를 서로 연결한다.
 	 **/
 	cp->class = cls;
 	cls->p = cp;
 
-	/** 20151017    
+	/** 20151017
 	 * class kset을 hierarchy에 등록한다.
 	 **/
 	error = kset_register(&cp->subsys);
@@ -266,7 +266,7 @@ int __class_register(struct class *cls, struct lock_class_key *key)
 		kfree(cp);
 		return error;
 	}
-	/** 20151017    
+	/** 20151017
 	 * class의 attributes를 sysfs에 파일로 생성한다.
 	 **/
 	error = add_class_attrs(class_get(cls));
@@ -302,7 +302,7 @@ static void class_create_release(struct class *cls)
  * Note, the pointer created here is to be destroyed when finished by
  * making a call to class_destroy().
  */
-/** 20151017    
+/** 20151017
  * class 자료구조를 생성하고, 내부 자료구조를 초기화 해 등록한다.
  *
  * device_create()시 사용한다.
@@ -313,7 +313,7 @@ struct class *__class_create(struct module *owner, const char *name,
 	struct class *cls;
 	int retval;
 
-	/** 20151017    
+	/** 20151017
 	 * struct class 메모리 할당.
 	 **/
 	cls = kzalloc(sizeof(*cls), GFP_KERNEL);
@@ -322,14 +322,14 @@ struct class *__class_create(struct module *owner, const char *name,
 		goto error;
 	}
 
-	/** 20151017    
+	/** 20151017
 	 * class 정보를 채운다. class_release시 사용할 콜백 함수를 지정한다.
 	 **/
 	cls->name = name;
 	cls->owner = owner;
 	cls->class_release = class_create_release;
 
-	/** 20151017    
+	/** 20151017
 	 * class에 대한 ktype/kset/kobject 자료구조를 설정한다.
 	 **/
 	retval = __class_register(cls, key);
@@ -662,7 +662,7 @@ void class_compat_remove_link(struct class_compat *cls, struct device *dev,
 }
 EXPORT_SYMBOL_GPL(class_compat_remove_link);
 
-/** 20150829    
+/** 20150829
  * "class" kset을 생성하고 등록한다.
  * uevent_ops는 지정하지 않는다.
  *

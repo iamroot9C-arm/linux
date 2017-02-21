@@ -9,7 +9,7 @@
 #define _LINUX_PAGEVEC_H
 
 /* 14 pointers + two long's align the pagevec structure to a power of two */
-/** 20140104    
+/** 20140104
  * struct pagevec의 크기를 2의 n 제곱으로 맞춰주기 위한 값.
  *
  * 4 + 4 + (4 * 14) = 64
@@ -19,7 +19,7 @@
 struct page;
 struct address_space;
 
-/** 20140104    
+/** 20140104
  * pagevec은 page를 vector(덩어리)로 관리하기 위한 자료구조.
  *   cold는 lruvec에서만 사용하는 필드이다.
  *
@@ -39,7 +39,7 @@ unsigned pagevec_lookup_tag(struct pagevec *pvec,
 		struct address_space *mapping, pgoff_t *index, int tag,
 		unsigned nr_pages);
 
-/** 20140104    
+/** 20140104
  * pagevec 구조체를 초기화 한다.
  **/
 static inline void pagevec_init(struct pagevec *pvec, int cold)
@@ -48,7 +48,7 @@ static inline void pagevec_init(struct pagevec *pvec, int cold)
 	pvec->cold = cold;
 }
 
-/** 20140104    
+/** 20140104
  * pagevec 구조체를 초기화 한다.
  * 왜 cold는 해주지 않은 것일까???
  **/
@@ -64,7 +64,7 @@ static inline unsigned pagevec_count(struct pagevec *pvec)
 	return pvec->nr;
 }
 
-/** 20150111    
+/** 20150111
  * 하나의 pagevec에서 가리킬 수 있는 page가 몇 개인지 리턴한다.
  **/
 static inline unsigned pagevec_space(struct pagevec *pvec)

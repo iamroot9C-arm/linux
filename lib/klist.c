@@ -51,7 +51,7 @@ static struct klist *knode_klist(struct klist_node *knode)
 		((unsigned long)knode->n_klist & KNODE_KLIST_MASK);
 }
 
-/** 20150912    
+/** 20150912
  * 해당 knode가 지워진 노드로 마킹되었는지 판단한다.
  **/
 static bool knode_dead(struct klist_node *knode)
@@ -59,7 +59,7 @@ static bool knode_dead(struct klist_node *knode)
 	return (unsigned long)knode->n_klist & KNODE_DEAD;
 }
 
-/** 20150905    
+/** 20150905
  * klist_node에 klist를 지정한다.
  **/
 static void knode_set_klist(struct klist_node *knode, struct klist *klist)
@@ -88,7 +88,7 @@ static void knode_kill(struct klist_node *knode)
  * functions that take and release references on the embedding
  * objects.
  */
-/** 20150829    
+/** 20150829
  * struct klist를 초기화 한다.
  * 매개변수로 넘어온 콜백을 .get, .put으로 지정한다.
  **/
@@ -109,7 +109,7 @@ static void add_head(struct klist *k, struct klist_node *n)
 	spin_unlock(&k->k_lock);
 }
 
-/** 20150905    
+/** 20150905
  * klist에 klist_node를 리스트의 마지막에 추가한다.
  **/
 static void add_tail(struct klist *k, struct klist_node *n)
@@ -119,12 +119,12 @@ static void add_tail(struct klist *k, struct klist_node *n)
 	spin_unlock(&k->k_lock);
 }
 
-/** 20150905    
+/** 20150905
  * klist에 속할 klist_node를 초기화 한다.
  **/
 static void klist_node_init(struct klist *k, struct klist_node *n)
 {
-	/** 20150905    
+	/** 20150905
 	 * klist_node의 멤버를 초기화 한다.
 	 * klist의 get 콜백함수가 지정되어 있다면 호출한다.
 	 **/
@@ -152,7 +152,7 @@ EXPORT_SYMBOL_GPL(klist_add_head);
  * @n: node we're adding.
  * @k: klist it's going on.
  */
-/** 20150905    
+/** 20150905
  * klist_node를 초기화 하고, klist에 추가한다.
  **/
 void klist_add_tail(struct klist_node *n, struct klist *k)
@@ -286,7 +286,7 @@ EXPORT_SYMBOL_GPL(klist_remove);
  * klist_node_attached - Say whether a node is bound to a list or not.
  * @n: Node that we're testing.
  */
-/** 20150905    
+/** 20150905
  * klist_node가 klist에 연결되어 있는지 여부를 리턴.
  **/
 int klist_node_attached(struct klist_node *n)
@@ -304,7 +304,7 @@ EXPORT_SYMBOL_GPL(klist_node_attached);
  * Similar to klist_iter_init(), but starts the action off with @n,
  * instead of with the list head.
  */
-/** 20150905    
+/** 20150905
  * klist를 iterate하기 위해 klist_iter 구조체를 채워 넣는다.
  **/
 void klist_iter_init_node(struct klist *k, struct klist_iter *i,
@@ -338,7 +338,7 @@ EXPORT_SYMBOL_GPL(klist_iter_init);
  * refcount of the current node. Necessary in case iteration exited before
  * the end of the list was reached, and always good form.
  */
-/** 20150905    
+/** 20150905
  * klist iterate를 종료한다.
  **/
 void klist_iter_exit(struct klist_iter *i)
@@ -350,7 +350,7 @@ void klist_iter_exit(struct klist_iter *i)
 }
 EXPORT_SYMBOL_GPL(klist_iter_exit);
 
-/** 20150912    
+/** 20150912
  * klist는 내부에 list_head를 가지고 있다.
  * 이 함수는 list_head를 전달받아 이를 포함하는 klist_node를 리턴한다.
  **/
@@ -367,7 +367,7 @@ static struct klist_node *to_klist_node(struct list_head *n)
  * node, if there was one. Grab the next node, increment its reference
  * count, drop the lock, and return that next node.
  */
-/** 20150912    
+/** 20150912
  * klist iterator를 전달받아 다음 노드를 찾아 리턴한다.
  **/
 struct klist_node *klist_next(struct klist_iter *i)
@@ -376,12 +376,12 @@ struct klist_node *klist_next(struct klist_iter *i)
 	struct klist_node *last = i->i_cur;
 	struct klist_node *next;
 
-	/** 20150912    
+	/** 20150912
 	 * klist의 노드에 접근하는 spinlock을 잡는 구간.
 	 **/
 	spin_lock(&i->i_klist->k_lock);
 
-	/** 20150912    
+	/** 20150912
 	 * klist_iter가 마지막으로 가리키고 있던 노드가 있다면 그 다음 노드를,
 	 * 그렇지 않다면 리스트의 첫 노드를 가리킨다.
 	 **/
@@ -392,15 +392,15 @@ struct klist_node *klist_next(struct klist_iter *i)
 	} else
 		next = to_klist_node(i->i_klist->k_list.next);
 
-	/** 20150912    
+	/** 20150912
 	 * 다음 노드 선택의 실패를 대비해 일단 현재 노드를 비운다.
 	 **/
 	i->i_cur = NULL;
-	/** 20150912    
+	/** 20150912
 	 * klist를 한 바퀴 돌 때까지 반복한다.
 	 **/
 	while (next != to_klist_node(&i->i_klist->k_list)) {
-		/** 20150912    
+		/** 20150912
 		 * 다음 노드가 지워진 노드가 아니라면
 		 * 노드의 참조카운터를 증가시키고, iterator를 업데이트 시키고 벗어난다.
 		 **/
@@ -409,7 +409,7 @@ struct klist_node *klist_next(struct klist_iter *i)
 			i->i_cur = next;
 			break;
 		}
-		/** 20150912    
+		/** 20150912
 		 * 다음 노드를 순회한다.
 		 **/
 		next = to_klist_node(next->n_node.next);
@@ -417,7 +417,7 @@ struct klist_node *klist_next(struct klist_iter *i)
 
 	spin_unlock(&i->i_klist->k_lock);
 
-	/** 20150912    
+	/** 20150912
 	 * klist의 노드 참조 해제함수가 존재하고,
 	 * iterator가 순회 전 마지막으로 가리키던 노드가 존재하면 해제한다.
 	 *

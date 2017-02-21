@@ -57,7 +57,7 @@ struct of_device_id;
  * whatever internal data structures management is required. It also needs
  * to setup the irq_desc when returning from map().
  */
-/** 20140906    
+/** 20140906
  * irq_domain용 operation 정의 구조체.
  *   map   : linux의 virtual irq number와 hw irq number 사이의 mapping 함수.
  **/
@@ -87,7 +87,7 @@ struct irq_domain_ops {
  * @of_node: (optional) Pointer to device tree nodes associated with the
  *           irq_domain.  Used when decoding device tree interrupt specifiers.
  */
-/** 20140906    
+/** 20140906
  * Hardware interrupt 번호 변환용 구조체.
  *
  * [참고] https://www.kernel.org/doc/Documentation/IRQ-domain.txt

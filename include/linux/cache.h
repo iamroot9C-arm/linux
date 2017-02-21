@@ -8,7 +8,7 @@
 #define L1_CACHE_ALIGN(x) ALIGN(x, L1_CACHE_BYTES)
 #endif
 
-/** 20130518    
+/** 20130518
  * SMP cache 크기는 L1_CACHE_BYTES
  **/
 #ifndef SMP_CACHE_BYTES
@@ -19,7 +19,7 @@
 #define __read_mostly
 #endif
 
-/** 20140920    
+/** 20140920
  * SMP cache bytes로 align시켜 데이터가 하나의 cacheline에 들어올 수 있도록 한다.
  **/
 #ifndef ____cacheline_aligned
@@ -27,7 +27,7 @@
 #endif
 
 #ifndef ____cacheline_aligned_in_smp
-/** 20150207    
+/** 20150207
  * SMP 설정여부에 따라 SMP관련 cachealign이 결정된다.
  **/
 #ifdef CONFIG_SMP
@@ -37,7 +37,7 @@
 #endif /* CONFIG_SMP */
 #endif
 
-/** 20140426    
+/** 20140426
  * ".data..cacheline_aligned" section이 저장된다.
  * 이 섹션의 데이터는 SMP_CACHE_BYTES (1<<6)으로 저장된다.
  **/
@@ -49,7 +49,7 @@
 
 #ifndef __cacheline_aligned_in_smp
 #ifdef CONFIG_SMP
-/** 20140426    
+/** 20140426
  **/
 #define __cacheline_aligned_in_smp __cacheline_aligned
 #else
@@ -75,7 +75,7 @@
 #endif
 #endif
 
-/** 20130907    
+/** 20130907
  * cache line 크기는 L1 캐시 크기
  **/
 #ifndef CONFIG_ARCH_HAS_CACHE_LINE_SIZE

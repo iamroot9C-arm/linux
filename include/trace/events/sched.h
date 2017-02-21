@@ -80,7 +80,7 @@ DECLARE_EVENT_CLASS(sched_wakeup_template,
 		  __entry->success, __entry->target_cpu)
 );
 
-/** 20130713    
+/** 20130713
  * trace_sched_wakeup 생성
  **/
 DEFINE_EVENT(sched_wakeup_template, sched_wakeup,
@@ -155,7 +155,7 @@ TRACE_EVENT(sched_switch,
 /*
  * Tracepoint for a task being migrated:
  */
-/** 20130720    
+/** 20130720
  * sched_migrate_task EVENT에 대한 TRACE 생성
  **/
 TRACE_EVENT(sched_migrate_task,

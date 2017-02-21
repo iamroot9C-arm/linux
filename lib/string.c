@@ -384,7 +384,7 @@ EXPORT_SYMBOL(strim);
  * strlen - Find the length of a string
  * @s: The string to be sized
  */
-/** 20150425    
+/** 20150425
  * 문자열 길이 리턴 라이브러리 함수.
  **/
 size_t strlen(const char *s)
@@ -526,7 +526,7 @@ EXPORT_SYMBOL(strsep);
  * geared for use with sysfs input strings, which generally terminate
  * with newlines but are compared against values without newlines.
  */
-/** 20150912    
+/** 20150912
  * sysfs용 문자열 비교 함수.
  * NUL과 '\n'NULL은 동일한 것으로 간주한다.
  **/

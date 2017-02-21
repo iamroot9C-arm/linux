@@ -22,7 +22,7 @@
 
 #ifdef CONFIG_CPU_CACHE_VIPT
 
-/** 20130518    
+/** 20130518
  * 캐시가 VIPT ALIAS 정책을 사용하는 경우 flush 해주는 함수.
  * 그러나 이것이 어떤 의미를 갖는지 모르겠음???
  **/
@@ -40,7 +40,7 @@ static void flush_pfn_alias(unsigned long pfn, unsigned long vaddr)
 	**/
 	set_top_pte(to, pfn_pte(pfn, PAGE_KERNEL));
 
-	/** 20130518    
+	/** 20130518
 	 * r0 : to
 	 * r1 : to + PAGE_SIZE - L1_CACHE_BYTES
 	 * r2 : zero
@@ -68,12 +68,12 @@ static void flush_icache_alias(unsigned long pfn, unsigned long vaddr, unsigned 
 	flush_icache_range(to, to + len);
 }
 
-/** 20160416    
+/** 20160416
  * cache type에 따라 cache를 flush 한다.
  **/
 void flush_cache_mm(struct mm_struct *mm)
 {
-	/** 20160416    
+	/** 20160416
 	 * cache가 vivt라면 vivt cache flush.
 	 **/
 	if (cache_is_vivt()) {
@@ -81,7 +81,7 @@ void flush_cache_mm(struct mm_struct *mm)
 		return;
 	}
 
-	/** 20160416    
+	/** 20160416
 	 * cache가 vipt_aliasing 인 경우 cache flush.
 	 **/
 	if (cache_is_vipt_aliasing()) {
@@ -112,12 +112,12 @@ void flush_cache_range(struct vm_area_struct *vma, unsigned long start, unsigned
 		__flush_icache_all();
 }
 
-/** 20140531    
+/** 20140531
  * cache type에 따라 적합한 함수를 호출해 HW cache를 flush한다.
  **/
 void flush_cache_page(struct vm_area_struct *vma, unsigned long user_addr, unsigned long pfn)
 {
-	/** 20140531    
+	/** 20140531
 	 * vexpress는 CACHEID_VIPT_NONALIASING.
 	 **/
 	if (cache_is_vivt()) {
@@ -130,7 +130,7 @@ void flush_cache_page(struct vm_area_struct *vma, unsigned long user_addr, unsig
 		__flush_icache_all();
 	}
 
-	/** 20140531    
+	/** 20140531
 	 * vma가 VM_EXEC일 때 icache를 flush한다.
 	 **/
 	if (vma->vm_flags & VM_EXEC && icache_is_vivt_asid_tagged())
@@ -201,7 +201,7 @@ void copy_to_user_page(struct vm_area_struct *vma, struct page *page,
 /** 20130511 
 **/
 
-/** 20130518    
+/** 20130518
  * page를 받아 해당 페이지가 가리키는 메모리 영역에 대해 flush를 수행하는 함수
  **/
 void __flush_dcache_page(struct address_space *mapping, struct page *page)
@@ -276,7 +276,7 @@ static void __flush_dcache_aliases(struct address_space *mapping, struct page *p
 	flush_dcache_mmap_unlock(mapping);
 }
 
-/** 20131102    
+/** 20131102
  * __LINUX_ARM_ARCH__ 가 7이므로 이 함수 호출.
  **/
 /** 20131109
@@ -289,34 +289,34 @@ void __sync_icache_dcache(pte_t pteval)
 	struct page *page;
 	struct address_space *mapping;
 
-	/** 20131102    
+	/** 20131102
 	 * L_PTE_PRESENT와 L_PTE_USER 속성이 모두 지정되어 있는 않은 경우
 	 * 바로 리턴.
 	 **/
 	if (!pte_present_user(pteval))
 		return;
-	/** 20131102    
+	/** 20131102
 	 * vipt_nonaliasing이면서 실행할 수 없는 address range인 경우 바로 리턴.
 	 * (실행할 수 없는 instruction인 경우) 왜 ???
 	 **/
 	if (cache_is_vipt_nonaliasing() && !pte_exec(pteval))
 		/* only flush non-aliasing VIPT caches for exec mappings */
 		return;
-	/** 20131102    
+	/** 20131102
 	 * pteval에서 주소에 해당하는 부분을 추출해 pfn을 구한다.
 	 **/
 	pfn = pte_pfn(pteval);
-	/** 20131102    
+	/** 20131102
 	 * 물리 메모리 내에 속하지 않는 pfn인 경우 바로 리턴.
 	 **/
 	if (!pfn_valid(pfn))
 		return;
 
-	/** 20131102    
+	/** 20131102
 	 * pfn에 해당하는 page 구조체를 구해온다.
 	 **/
 	page = pfn_to_page(pfn);
-	/** 20131102    
+	/** 20131102
 	 * cache_is_vipt_aliasing인 경우 mapping 주소를 받아온다.
 	 * 그렇지 않은 경우 mapping은 NULL.
 	 *

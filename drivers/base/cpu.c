@@ -16,7 +16,7 @@
 
 #include "base.h"
 
-/** 20150912    
+/** 20150912
  * "/sys/bus/cpu"
  *
  * "/sys/devices/cpu" - 이 디바이스를 생성해 주는 부분???
@@ -39,20 +39,20 @@ static ssize_t show_online(struct device *dev,
 	return sprintf(buf, "%u\n", !!cpu_online(cpu->dev.id));
 }
 
-/** 20140927    
+/** 20140927
  **/
 static ssize_t __ref store_online(struct device *dev,
 				  struct device_attribute *attr,
 				  const char *buf, size_t count)
 {
-	/** 20140927    
+	/** 20140927
 	 * dev 항목을 포함하는 cpu 구조체를 가져온다.
 	 **/
 	struct cpu *cpu = container_of(dev, struct cpu, dev);
 	ssize_t ret;
 
 	cpu_hotplug_driver_lock();
-	/** 20140927    
+	/** 20140927
 	 * echo '0', '1' 항목에 따라 cpu_down, cpu_up 호출
 	 *
 	 * cpu->dev.id는 down/up 시킬 cpu 번호가 넘어온다.
@@ -78,7 +78,7 @@ static ssize_t __ref store_online(struct device *dev,
 	return ret;
 }
 
-/** 20140927    
+/** 20140927
  * /sys/devices/system/cpu
  **/
 static DEVICE_ATTR(online, 0644, show_online, store_online);
@@ -178,7 +178,7 @@ static ssize_t show_cpus_attr(struct device *dev,
 	{ __ATTR(name, 0444, show_cpus_attr, NULL), map }
 
 /* Keep in sync with cpu_subsys_attrs */
-/** 20150912    
+/** 20150912
  * bus "cpu" 의 cpu attribute.
  *
  * "/sys/devices/system/cpu" 아래 생성되는 attribute.
@@ -336,12 +336,12 @@ EXPORT_SYMBOL_GPL(cpu_is_hotpluggable);
 static DEFINE_PER_CPU(struct cpu, cpu_devices);
 #endif
 
-/** 20150912    
+/** 20150912
  * cpu device를 GENERIC으로 등록
  **/
 static void __init cpu_dev_register_generic(void)
 {
-	/** 20150912    
+	/** 20150912
 	 * CONFIG_GENERIC_CPU_DEVICES가 정의되지 않았다.
 	 **/
 #ifdef CONFIG_GENERIC_CPU_DEVICES
@@ -354,7 +354,7 @@ static void __init cpu_dev_register_generic(void)
 #endif
 }
 
-/** 20150912    
+/** 20150912
  * cpu_subsys 버스를 등록하고 "/sys/bus/cpu", "/sys/devices/system" 아래 디바이스로 추가한다.
  **/
 void __init cpu_dev_init(void)

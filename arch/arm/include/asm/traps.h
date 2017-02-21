@@ -6,7 +6,7 @@
 struct pt_regs;
 struct task_struct;
 
-/** 20151003    
+/** 20151003
  **/
 struct undef_hook {
 	struct list_head node;

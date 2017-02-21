@@ -458,7 +458,7 @@ const struct file_operations bin_fops = {
 };
 
 
-/** 20150418    
+/** 20150418
  * sysfs_dirent 중 bin 속성의 파일을 unmap 한다.
  **/
 void unmap_bin_file(struct sysfs_dirent *attr_sd)
@@ -466,18 +466,18 @@ void unmap_bin_file(struct sysfs_dirent *attr_sd)
 	struct bin_buffer *bb;
 	struct hlist_node *tmp;
 
-	/** 20150418    
+	/** 20150418
 	 * sysfs_dirent 타입이 SYSFS_KOBJ_BIN_ATTR가 아니면 리턴.
 	 **/
 	if (sysfs_type(attr_sd) != SYSFS_KOBJ_BIN_ATTR)
 		return;
 
-	/** 20150418    
+	/** 20150418
 	 * sysfs mutex lock을 둔다.
 	 **/
 	mutex_lock(&sysfs_bin_lock);
 
-	/** 20150418    
+	/** 20150418
 	 * s_bin_attr.buffers 리스트를 순회하며
 	 *   bin_buffer의 dentry로 inode를 찾아
 	 *   해당 파일이 mapping 되어 있는 address_space에서 unmap한다.
@@ -497,7 +497,7 @@ void unmap_bin_file(struct sysfs_dirent *attr_sd)
  *	@attr:	attribute descriptor.
  */
 
-/** 20150905    
+/** 20150905
  * sysfs의 kobj에 bin 속성의 파일을 생성한다.
  **/
 int sysfs_create_bin_file(struct kobject *kobj,
@@ -505,7 +505,7 @@ int sysfs_create_bin_file(struct kobject *kobj,
 {
 	BUG_ON(!kobj || !kobj->sd || !attr);
 
-	/** 20150905    
+	/** 20150905
 	 * sysfs에 BIN 타입의 attribute 파일을 생성한다.
 	 **/
 	return sysfs_add_file(kobj->sd, &attr->attr, SYSFS_KOBJ_BIN_ATTR);

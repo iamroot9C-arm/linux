@@ -45,12 +45,12 @@ struct mnt_namespace;
 #define MNT_PROPAGATION_MASK	(MNT_SHARED | MNT_UNBINDABLE)
 
 
-/** 20150307    
+/** 20150307
  * vfs_kern_mount에서 지정
  **/
 #define MNT_INTERNAL	0x4000
 
-/** 20150411    
+/** 20150411
  * vfs에서 사용된 mount 관련 description.
  **/
 struct vfsmount {

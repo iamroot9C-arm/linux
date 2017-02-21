@@ -65,7 +65,7 @@ extern struct tvec_base boot_tvec_bases;
  * the timer will be serviced when the CPU eventually wakes up with a
  * subsequent non-deferrable timer.
  */
-/** 20150627    
+/** 20150627
  * tvec_bases는 2바이트 정렬되어 있고, timer_list 내의 base의 lower bit는 0임이 보장된다.
  * 이 LSB는 timer가 deferrable 가능 여부를 나타낸다.
  **/
@@ -82,7 +82,7 @@ extern struct tvec_base boot_tvec_bases;
 			__FILE__ ":" __stringify(__LINE__))	\
 	}
 
-/** 20150704    
+/** 20150704
  * tvec_base 포인터의 LSB 한 비트를 켜 지연가능한 tbase로 만든다.
  **/
 #define TBASE_MAKE_DEFERRED(ptr) ((struct tvec_base *)		\
@@ -98,7 +98,7 @@ extern struct tvec_base boot_tvec_bases;
 			__FILE__ ":" __stringify(__LINE__))	\
 	}
 
-/** 20150103    
+/** 20150103
  * timer_list 하나를 정의한다.
  *
  * timer_list 이름, 콜백함수, 만료시간, data를 전달 받는다.
@@ -153,7 +153,7 @@ void init_timer_deferrable_key(struct timer_list *timer,
 						    (data));		\
 	} while (0)
 #else
-/** 20150221    
+/** 20150221
  * LOCKDEP이 설정되어 있지 않음.
  **/
 #define init_timer(timer)\
@@ -162,12 +162,12 @@ void init_timer_deferrable_key(struct timer_list *timer,
 	init_timer_deferrable_key((timer), NULL, NULL)
 #define init_timer_on_stack(timer)\
 	init_timer_on_stack_key((timer), NULL, NULL)
-/** 20150221    
+/** 20150221
  * timer를 주어진 fn과 data로 설정한다.
  **/
 #define setup_timer(timer, fn, data)\
 	setup_timer_key((timer), NULL, NULL, (fn), (data))
-/** 20140628    
+/** 20140628
  * timer를 주어진 fn과 data로 설정한다. key는 stack 변수를 사용한다.
  **/
 #define setup_timer_on_stack(timer, fn, data)\
@@ -182,7 +182,7 @@ extern void init_timer_on_stack_key(struct timer_list *timer,
 				    struct lock_class_key *key);
 extern void destroy_timer_on_stack(struct timer_list *timer);
 #else
-/** 20140628    
+/** 20140628
  * CONFIG_DEBUG_OBJECTS_TIMERS 선언되지 않아 NULL 함수.
  **/
 static inline void destroy_timer_on_stack(struct timer_list *timer) { }
@@ -194,7 +194,7 @@ static inline void init_timer_on_stack_key(struct timer_list *timer,
 }
 #endif
 
-/** 20150221    
+/** 20150221
  * timer를 주어진 argument로 설정한다.
  **/
 static inline void setup_timer_key(struct timer_list * timer,
@@ -208,7 +208,7 @@ static inline void setup_timer_key(struct timer_list * timer,
 	init_timer_key(timer, name, key);
 }
 
-/** 20140628    
+/** 20140628
  * timer를 주어진 function과 data로 설정한다.
  **/
 static inline void setup_timer_on_stack_key(struct timer_list *timer,
@@ -238,7 +238,7 @@ extern void setup_deferrable_timer_on_stack_key(struct timer_list *timer,
  *
  * return value: 1 if the timer is pending, 0 if not.
  */
-/** 20150704    
+/** 20150704
  * timer의 list entry가 존재한다면 timer가 이미 어딘가에 등록되어 있다.
  **/
 static inline int timer_pending(const struct timer_list * timer)
@@ -299,14 +299,14 @@ static inline void timer_stats_timer_clear_start_info(struct timer_list *timer)
 	timer->start_site = NULL;
 }
 #else
-/** 20140920    
+/** 20140920
  * CONFIG_TIMER_STATS 가 선언되지 않아 NULL 함수.
  **/
 static inline void init_timer_stats(void)
 {
 }
 
-/** 20140628    
+/** 20140628
  * CONFIG_TIMER_STATS 가 선언되지 않아 NULL 함수.
  **/
 static inline void timer_stats_timer_set_start_info(struct timer_list *timer)

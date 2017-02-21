@@ -37,13 +37,13 @@
 #include <linux/init_task.h>
 #include <linux/syscalls.h>
 
-/** 20150509    
+/** 20150509
  * pid용 hash 함수.
  * 특정 ns의 nr을 바탕으로 hash table의 index를 계산한다.
  **/
 #define pid_hashfn(nr, ns)	\
 	hash_long((unsigned long)nr + (unsigned long)ns, pidhash_shift)
-/** 20150509    
+/** 20150509
  * pid_hash는 pid hash table.
  * pidhash_init()에서 생성한다.
  **/
@@ -54,14 +54,14 @@ static unsigned int pidhash_shift = 4;
  **/
 struct pid init_struct_pid = INIT_STRUCT_PID;
 
-/** 20150131    
+/** 20150131
  * 전역 pid_max를 DEFAULT 값으로 설정한다.
  **/
 int pid_max = PID_MAX_DEFAULT;
 
 #define RESERVED_PIDS		300
 
-/** 20150131    
+/** 20150131
  * pid_max의 최대, 최소값
  * pid_max_mx: 32768
  * pid_max_min: 301 
@@ -87,7 +87,7 @@ static inline int mk_pid(struct pid_namespace *pid_ns,
  * value does not cause lots of bitmaps to be allocated, but
  * the scheme scales to up to 4 million PIDs, runtime.
  */
-/** 20150131    
+/** 20150131
  * init_pid_ns는 init을 위한 pid_namespace로 level 0이다.
  **/
 struct pid_namespace init_pid_ns = {
@@ -349,7 +349,7 @@ out_free:
 	goto out;
 }
 
-/** 20150509    
+/** 20150509
  * pid 번호와 당시의 namespace를 통해 struct pid를 리턴하는 함수.
  **/
 struct pid *find_pid_ns(int nr, struct pid_namespace *ns)
@@ -357,7 +357,7 @@ struct pid *find_pid_ns(int nr, struct pid_namespace *ns)
 	struct hlist_node *elem;
 	struct upid *pnr;
 
-	/** 20150509    
+	/** 20150509
 	 * 1. pid_hashfn을 이용해 hash table의 index를 가져온다.
 	 * 2. 해당 index의 hash list를 순회하며 hash node를 탐색한다.
 	 *    이 때 hlist_node를 멤버로 보유하는 struct upid도 찾아온다.
@@ -383,7 +383,7 @@ EXPORT_SYMBOL_GPL(find_vpid);
 /*
  * attach_pid() must be called with the tasklist_lock write-held.
  */
-/** 20150509    
+/** 20150509
  * task의 pid_link를 통해 pid 구조체와 연결한다.
  **/
 void attach_pid(struct task_struct *task, enum pid_type type,
@@ -436,7 +436,7 @@ void transfer_pid(struct task_struct *old, struct task_struct *new,
 	hlist_replace_rcu(&old->pids[type].node, &new->pids[type].node);
 }
 
-/** 20150509    
+/** 20150509
  * 특정 struct pid의 pid_type에 연결된 첫번째 task_struct를 반환.
  **/
 struct task_struct *pid_task(struct pid *pid, enum pid_type type)
@@ -444,7 +444,7 @@ struct task_struct *pid_task(struct pid *pid, enum pid_type type)
 	struct task_struct *result = NULL;
 	if (pid) {
 		struct hlist_node *first;
-		/** 20150509    
+		/** 20150509
 		 * struct pid의 tasks[PIDTYPE_MAX] 에서 type에 해당하는 hlist_head를 찾고
 		 * 그 첫번째 hlist_node를 가져온다.
 		 * 첫번째 hlist_node가 존재하면 그 hlist_node가 속한 task_struct을 리턴한다.
@@ -584,41 +584,41 @@ struct pid *find_ge_pid(int nr, struct pid_namespace *ns)
  * machine.  From a minimum of 16 slots up to 4096 slots at one gigabyte or
  * more.
  */
-/** 20130727    
+/** 20130727
  * pid hash table을 생성하고, hlist head를 초기화 한다.
  **/
 void __init pidhash_init(void)
 {
 	unsigned int i, pidhash_size;
 
-	/** 20130727    
+	/** 20130727
 	 * PID hash table을 생성한다. 
 	 **/
 	pid_hash = alloc_large_system_hash("PID", sizeof(*pid_hash), 0, 18,
 					   HASH_EARLY | HASH_SMALL,
 					   &pidhash_shift, NULL,
 					   0, 4096);
-	/** 20130727    
+	/** 20130727
 	 * alloc_large_system_hash에서 table을 생성할 때 결정된
 	 * pidhash_size를 저장한다.
 	 **/
 	pidhash_size = 1U << pidhash_shift;
 
-	/** 20130727    
+	/** 20130727
 	 * pidhash_size만큼 hashlist의 head를 초기화 한다.
 	 **/
 	for (i = 0; i < pidhash_size; i++)
 		INIT_HLIST_HEAD(&pid_hash[i]);
 }
 
-/** 20150131    
+/** 20150131
  * pid_max값과 pid_max_min값을 구한다.
  * init_pid_ns의 pidmap을 설정하고, pid를 할당하기 위한 kmem_cache를 생성한다.
  **/
 void __init pidmap_init(void)
 {
 	/* bump default and minimum pid_max based on number of cpus */
-	/** 20150131    
+	/** 20150131
 	 * pid_max값과 pid_max_min 값을 cpu의 숫자를 기준으로 찾아낸다.
 	 **/
 	pid_max = min(pid_max_max, max_t(int, pid_max,
@@ -627,7 +627,7 @@ void __init pidmap_init(void)
 				PIDS_PER_CPU_MIN * num_possible_cpus());
 	pr_info("pid_max: default: %u minimum: %u\n", pid_max, pid_max_min);
 
-	/** 20150131    
+	/** 20150131
 	 * pidmap[0]의 page를 할당받아 설정한다.
 	 * pidmap[0]의 page 0번을 사용 중이라 표시하고, 가용량를 하나 감소시킨다.
 	 **/
@@ -636,7 +636,7 @@ void __init pidmap_init(void)
 	set_bit(0, init_pid_ns.pidmap[0].page);
 	atomic_dec(&init_pid_ns.pidmap[0].nr_free);
 
-	/** 20150131    
+	/** 20150131
 	 * pid 구조체를 할당받기 위한 kmem_cache를 생성한다.
 	 * init_pid_ns를 제외한 pid_ns는 create_pid_namespace에서
 	 * create_pid_cachep로 할당 받는다.

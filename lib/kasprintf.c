@@ -11,7 +11,7 @@
 #include <linux/string.h>
 
 /* Simplified asprintf. */
-/** 20150411    
+/** 20150411
  * kernel 에서 사용되는 asprintf 용 함수.
  **/
 char *kvasprintf(gfp_t gfp, const char *fmt, va_list ap)

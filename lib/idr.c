@@ -36,7 +36,7 @@
 #include <linux/idr.h>
 #include <linux/spinlock.h>
 
-/** 20140517    
+/** 20140517
  * idr_init_cache 에서 slab cache 생성
  **/
 static struct kmem_cache *idr_layer_cache;
@@ -60,7 +60,7 @@ static struct idr_layer *get_from_free_list(struct idr *idp)
 	return(p);
 }
 
-/** 20140712    
+/** 20140712
  * 제거할 rcu_head를 포함한 idr_layer를 가져와 kmem_cache_free로 해제한다.
  **/
 static void idr_layer_rcu_free(struct rcu_head *head)
@@ -71,7 +71,7 @@ static void idr_layer_rcu_free(struct rcu_head *head)
 	kmem_cache_free(idr_layer_cache, layer);
 }
 
-/** 20140712    
+/** 20140712
  * idr_layer를 해제하기 위한 rcu callback으로 idr_layer_rcu_free를 지정.
  * (reclamation phase에 해당)
  **/
@@ -187,12 +187,12 @@ static int sub_alloc(struct idr *idp, int *starting_id, struct idr_layer **pa)
 	int l, id, oid;
 	unsigned long bm;
 
-	/** 20140712    
+	/** 20140712
 	 * id는 starting_id부터 시작.
 	 **/
 	id = *starting_id;
  restart:
-	/** 20140712    
+	/** 20140712
 	 * top에서 id를 mapping할 leaf 까지 순회한다.
 	 * pa	top에서 leaf까지 각 level의 idr_layer를 저장.
 	 *		[layer 0][layer 1]...[layer Top-1][TOP][NULL]
@@ -211,7 +211,7 @@ static int sub_alloc(struct idr *idp, int *starting_id, struct idr_layer **pa)
 		/*
 		 * We run around this while until we reach the leaf node...
 		 */
-		/** 20140712    
+		/** 20140712
 		 * n: id를 shift 시켜 bitmap에서 index를 찾는다.
 		 * bm: bitmap을 반전시켰으므로 가용 id를 보유한 bit가 1이 된다.
 		 * m: bitmap에서 n <= m <= IDR_SIZE 인 최소 index를 찾는다.
@@ -219,13 +219,13 @@ static int sub_alloc(struct idr *idp, int *starting_id, struct idr_layer **pa)
 		n = (id >> (IDR_BITS*l)) & IDR_MASK;
 		bm = ~p->bitmap;
 		m = find_next_bit(&bm, IDR_SIZE, n);
-		/** 20140712    
+		/** 20140712
 		 * 해당 level의 bitmap이 모두 차 있다.
 		 * 해당 level에서 가질 수 있는 모두 id가 사용 중이다.
 		 **/
 		if (m == IDR_SIZE) {
 			/* no space available go back to previous layer. */
-			/** 20140712    
+			/** 20140712
 			 * 옆 idr_layer의 가장 작은 값으로 id를 변경한다.
 			 **/
 			l++;
@@ -233,7 +233,7 @@ static int sub_alloc(struct idr *idp, int *starting_id, struct idr_layer **pa)
 			id = (id | ((1 << (IDR_BITS * l)) - 1)) + 1;
 
 			/* if already at the top layer, we need to grow */
-			/** 20140712    
+			/** 20140712
 			 * id가 현재 layer 구조에서 가질 수 있는 가장 큰 값보다 크다면
 			 * starting_id를 변경하고 확장이 필요하다는 의미를 리턴한다.
 			 **/
@@ -241,7 +241,7 @@ static int sub_alloc(struct idr *idp, int *starting_id, struct idr_layer **pa)
 				*starting_id = id;
 				return IDR_NEED_TO_GROW;
 			}
-			/** 20140712    
+			/** 20140712
 			 * 다시 이전 level의 idr_layer를 가져온다.
 			 **/
 			p = pa[l];
@@ -250,7 +250,7 @@ static int sub_alloc(struct idr *idp, int *starting_id, struct idr_layer **pa)
 			/* If we need to go up one layer, continue the
 			 * loop; otherwise, restart from the top.
 			 */
-			/** 20140712    
+			/** 20140712
 			 * 동일한 상위 layer에 속한다면 상위 layer에서 다시 시작하고,
 			 * 그렇지 않다면 top에서부터 다시 시작한다.
 			 **/
@@ -260,7 +260,7 @@ static int sub_alloc(struct idr *idp, int *starting_id, struct idr_layer **pa)
 			else
 				goto restart;
 		}
-		/** 20140712    
+		/** 20140712
 		 * 해당 layer의 index 값과 찾은 값이 다르면
 		 * bit n~(m-1)에 해당되는 값들은 사용 중이다.
 		 * (m << sh)부터의 값이 할당할 수 있는 id가 된다.
@@ -269,12 +269,12 @@ static int sub_alloc(struct idr *idp, int *starting_id, struct idr_layer **pa)
 			sh = IDR_BITS*l;
 			id = ((id >> sh) ^ n ^ m) << sh;
 		}
-		/** 20140712    
+		/** 20140712
 		 * 생성된 id값 검사.
 		 **/
 		if ((id >= MAX_ID_BIT) || (id < 0))
 			return IDR_NOMORE_SPACE;
-		/** 20140712    
+		/** 20140712
 		 * leaf까지 도달했다면 break.
 		 **/
 		if (l == 0)
@@ -282,7 +282,7 @@ static int sub_alloc(struct idr *idp, int *starting_id, struct idr_layer **pa)
 		/*
 		 * Create the layer below if it is missing.
 		 */
-		/** 20140712    
+		/** 20140712
 		 * id를 할당할 idr_layer이 만들어지지 않았다면
 		 * free_list로부터 idp를 가져와 생성하고 값을 채운다.
 		 *
@@ -297,17 +297,17 @@ static int sub_alloc(struct idr *idp, int *starting_id, struct idr_layer **pa)
 			rcu_assign_pointer(p->ary[m], new);
 			p->count++;
 		}
-		/** 20140712    
+		/** 20140712
 		 * 현재 level에 해당하는 위치에 현재 가리키는 idr_layer 위치를 저장한다.
 		 **/
 		pa[l--] = p;
-		/** 20140712    
+		/** 20140712
 		 * leaf 노드 방향으로 하나 이동한다.
 		 **/
 		p = p->ary[m];
 	}
 
-	/** 20140712    
+	/** 20140712
 	 * p가 해당 layer의 새로운 idr_layer가 된다.
 	 * 찾은 id를 리턴한다.
 	 **/
@@ -334,7 +334,7 @@ build_up:
 	p = idp->top;
 	layers = idp->layers;
 	if (unlikely(!p)) {
-		/** 20140712    
+		/** 20140712
 		 * free list로 idr_layer를 받아오지 못한 경우 -1 리턴.
 		 * _idr_rc_to_errno에 EAGAIN으로 판단.
 		 **/
@@ -428,13 +428,13 @@ build_up:
  */
 static int idr_get_new_above_int(struct idr *idp, void *ptr, int starting_id)
 {
-	/** 20140712    
+	/** 20140712
 	 * pa의 0은 leaf.
 	 **/
 	struct idr_layer *pa[MAX_LEVEL];
 	int id;
 
-	/** 20140712    
+	/** 20140712
 	 * starting_id 이상의 id값을 받아온다.
 	 **/
 	id = idr_get_empty_slot(idp, starting_id, pa);
@@ -473,7 +473,7 @@ static int idr_get_new_above_int(struct idr *idp, void *ptr, int starting_id)
  *
  * @id returns a value in the range @starting_id ... %0x7fffffff
  */
-/** 20140712    
+/** 20140712
  * ptr를 starting_id 이상의 정수값에 mapping 하고,
  * mapping된 handle을 id에 채워 리턴.
  **/
@@ -481,7 +481,7 @@ int idr_get_new_above(struct idr *idp, void *ptr, int starting_id, int *id)
 {
 	int rv;
 
-	/** 20140712    
+	/** 20140712
 	 * ptr를 mapping할 starting_id 이상의 integer handle을 받아온다.
 	 **/
 	rv = idr_get_new_above_int(idp, ptr, starting_id);
@@ -489,12 +489,12 @@ int idr_get_new_above(struct idr *idp, void *ptr, int starting_id, int *id)
 	 * This is a cheap hack until the IDR code can be fixed to
 	 * return proper error values.
 	 */
-	/** 20140712    
+	/** 20140712
 	 * error return value에 따라 errno로 변환해 리턴.
 	 **/
 	if (rv < 0)
 		return _idr_rc_to_errno(rv);
-	/** 20140712    
+	/** 20140712
 	 * 성공적으로 id를 받아온 경우 매개변수에 채워 리턴.
 	 **/
 	*id = rv;
@@ -516,7 +516,7 @@ EXPORT_SYMBOL(idr_get_new_above);
  *
  * @id returns a value in the range %0 ... %0x7fffffff
  */
-/** 20160109    
+/** 20160109
  * idr에서 ptr에 대한 핸들을 받아 리턴한다.
  *
  * starting id, 즉 최저 id 값을 지정하지 않는 버전.
@@ -537,7 +537,7 @@ int idr_get_new(struct idr *idp, void *ptr, int *id)
 }
 EXPORT_SYMBOL(idr_get_new);
 
-/** 20140712    
+/** 20140712
  * 생성하지 않은 id에 대한 잘못된 제거 요청.
  **/
 static void idr_remove_warning(int id)
@@ -547,7 +547,7 @@ static void idr_remove_warning(int id)
 	dump_stack();
 }
 
-/** 20140712    
+/** 20140712
  * id를 idr_layer에서 제거한다.
  *
  * top에서 제거할 id를 보유한 leaf node를 찾아 내려간다.
@@ -561,7 +561,7 @@ static void sub_remove(struct idr *idp, int shift, int id)
 	struct idr_layer *to_free;
 	int n;
 
-	/** 20140712    
+	/** 20140712
 	 * pa	top에서 leaf로 내려가며 순회한 각 level의 idr_layer를 저장.
 	 *		[NULL][TOP ][layer N-2]...[layer 1][layer 0]
 	 * paa  pa 배열의 멤버를 가리키는 pointer.
@@ -569,7 +569,7 @@ static void sub_remove(struct idr *idp, int shift, int id)
 	*paa = NULL;
 	*++paa = &idp->top;
 
-	/** 20140712    
+	/** 20140712
 	 * 전달받은 shift 크기 내에서 top부터 leaf까지 loop.
 	 *
 	 * bitmap에서 제거할 id에 해당하는 위치를 찾아 bit를 clear하고,
@@ -583,19 +583,19 @@ static void sub_remove(struct idr *idp, int shift, int id)
 		p = p->ary[n];
 		shift -= IDR_BITS;
 	}
-	/** 20140712    
+	/** 20140712
 	 * id에 해당하는 index값을 계산하고,
 	 * idr_layer에서 index에 해당하는 bit를 통해 mapping 여부를 확인한다.
 	 **/
 	n = id & IDR_MASK;
 	if (likely(p != NULL && test_bit(n, &p->bitmap))){
-		/** 20140712    
+		/** 20140712
 		 * integer mapping 정보를 제거한다.
 		 **/
 		__clear_bit(n, &p->bitmap);
 		rcu_assign_pointer(p->ary[n], NULL);
 		to_free = NULL;
-		/** 20140712    
+		/** 20140712
 		 * pa에 채웠던 path를 역순회(leaf->top) 하며
 		 * count를 감소시켜 0인 idr_layer를 free시킨다.
 		 *
@@ -608,7 +608,7 @@ static void sub_remove(struct idr *idp, int shift, int id)
 			to_free = **paa;
 			**paa-- = NULL;
 		}
-		/** 20140712    
+		/** 20140712
 		 * top까지 모두 제거된 상태.
 		 **/
 		if (!*paa)
@@ -624,7 +624,7 @@ static void sub_remove(struct idr *idp, int shift, int id)
  * @idp: idr handle
  * @id: unique key
  */
-/** 20140712    
+/** 20140712
  * id의 mapping을 해제하고, 빈 idr_layer는 free한다.
  **/
 void idr_remove(struct idr *idp, int id)
@@ -633,16 +633,16 @@ void idr_remove(struct idr *idp, int id)
 	struct idr_layer *to_free;
 
 	/* Mask off upper bits we don't use for the search. */
-	/** 20140712    
+	/** 20140712
 	 * id는 MAX_ID_MASK를 적용시켜 처리할 수 있는 값으로 만든다.
 	 **/
 	id &= MAX_ID_MASK;
 
-	/** 20140712    
+	/** 20140712
 	 * idp에서 id를 제거한다.
 	 **/
 	sub_remove(idp, (idp->layers - 1) * IDR_BITS, id);
-	/** 20140712    
+	/** 20140712
 	 * top과 ary[0] 하나로만 이루어진 경우,
 	 * ary[0]을 새로운 top으로 지정하고, top이었던 idr_layer를 해제한다.
 	 **/
@@ -661,7 +661,7 @@ void idr_remove(struct idr *idp, int id)
 		to_free->bitmap = to_free->count = 0;
 		free_layer(to_free);
 	}
-	/** 20140712    
+	/** 20140712
 	 * 해제한 결과, free_list에 등록된 idr_layer가 IDR_FREE_MAX 이상이 되면
 	 * free_list에서 idr_layer를 하나 가져와 메모리를 해제한다.
 	 **/
@@ -926,7 +926,7 @@ void *idr_replace(struct idr *idp, void *ptr, int id)
 }
 EXPORT_SYMBOL(idr_replace);
 
-/** 20140510    
+/** 20140510
  * struct idr_layer용 kmem_cache를 생성한다.
  **/
 void __init idr_init_cache(void)
@@ -942,7 +942,7 @@ void __init idr_init_cache(void)
  * This function is use to set up the handle (@idp) that you will pass
  * to the rest of the functions.
  */
-/** 20140517    
+/** 20140517
  * idr handle을 초기화 하는 함수
  **/
 void idr_init(struct idr *idp)
@@ -965,7 +965,7 @@ EXPORT_SYMBOL(idr_init);
  * 2007-04-25  written by Tejun Heo <htejun@gmail.com>
  */
 
-/** 20150228    
+/** 20150228
  * 전달받은 bitmap을 ida의 free_bitmap으로 지정한다.
  **/
 static void free_bitmap(struct ida *ida, struct ida_bitmap *bitmap)
@@ -996,7 +996,7 @@ static void free_bitmap(struct ida *ida, struct ida_bitmap *bitmap)
  * If the system is REALLY out of memory this function returns %0,
  * otherwise %1.
  */
-/** 20150228    
+/** 20150228
  * ida 할당을 위해 필요한 자원을 할당받는다.
  *   - idr_layer를 할당받아 id_free 리스트에 채운다.
  *   - ida_bitmap을 할당받아 free_bitmap에 채운다.
@@ -1004,20 +1004,20 @@ static void free_bitmap(struct ida *ida, struct ida_bitmap *bitmap)
 int ida_pre_get(struct ida *ida, gfp_t gfp_mask)
 {
 	/* allocate idr_layers */
-	/** 20150228    
+	/** 20150228
 	 * idr의 id_free 리스트에 object를 할당받아 채워넣는다.
 	 **/
 	if (!idr_pre_get(&ida->idr, gfp_mask))
 		return 0;
 
 	/* allocate free_bitmap */
-	/** 20150228    
+	/** 20150228
 	 * free_bitmap을 할당받는다.
 	 **/
 	if (!ida->free_bitmap) {
 		struct ida_bitmap *bitmap;
 
-		/** 20150228    
+		/** 20150228
 		 * ida_bitmap을 할당받는다.
 		 **/
 		bitmap = kmalloc(sizeof(struct ida_bitmap), gfp_mask);
@@ -1046,18 +1046,18 @@ EXPORT_SYMBOL(ida_pre_get);
  *
  * @p_id returns a value in the range @starting_id ... %0x7fffffff.
  */
-/** 20150228    
+/** 20150228
  * starting_id 이후의 새로운 id를 할당 받아 p_id에 채운다.
  **/
 int ida_get_new_above(struct ida *ida, int starting_id, int *p_id)
 {
-	/** 20150228    
+	/** 20150228
 	 * 각 레벨당 idr_layer의 위치를 나타내는 임시 구조체.
 	 **/
 	struct idr_layer *pa[MAX_LEVEL];
 	struct ida_bitmap *bitmap;
 	unsigned long flags;
-	/** 20150228    
+	/** 20150228
 	 * idr_id:
 	 *   IDA BITMAP 크기로 계산했을 때, starting id를 포함하는 idr_layer의 위치.
 	 * offset:
@@ -1069,14 +1069,14 @@ int ida_get_new_above(struct ida *ida, int starting_id, int *p_id)
 
  restart:
 	/* get vacant slot */
-	/** 20150228    
+	/** 20150228
 	 * idr 함수를 사용해 id를 하나 할당받아 온다.
 	 **/
 	t = idr_get_empty_slot(&ida->idr, idr_id, pa);
 	if (t < 0)
 		return _idr_rc_to_errno(t);
 
-	/** 20150228    
+	/** 20150228
 	 * BITS로 계산해 최대치 이상이 리턴되었다면 해당 ida로 할당받을 수 있는
 	 * 핸들이 모두 사용 중이다.
 	 **/
@@ -1088,7 +1088,7 @@ int ida_get_new_above(struct ida *ida, int starting_id, int *p_id)
 	idr_id = t;
 
 	/* if bitmap isn't there, create a new one */
-	/** 20150228    
+	/** 20150228
 	 **/
 	bitmap = (void *)pa[0]->ary[idr_id & IDR_MASK];
 	if (!bitmap) {
@@ -1107,12 +1107,12 @@ int ida_get_new_above(struct ida *ida, int starting_id, int *p_id)
 	}
 
 	/* lookup for empty slot */
-	/** 20150228    
+	/** 20150228
 	 * bitmap에서 비어있는 비트의 위치를 받아온다.
 	 **/
 	t = find_next_zero_bit(bitmap->bitmap, IDA_BITMAP_BITS, offset);
 	if (t == IDA_BITMAP_BITS) {
-		/** 20150228    
+		/** 20150228
 		 * offset 이후에 비어 있는 비트가 없으면 다음 chunk로 이동한다.
 		 **/
 		/* no empty slot after offset, continue to the next chunk */
@@ -1121,25 +1121,25 @@ int ida_get_new_above(struct ida *ida, int starting_id, int *p_id)
 		goto restart;
 	}
 
-	/** 20150228    
+	/** 20150228
 	 * 할당받은 id를 재계산한다.
 	 **/
 	id = idr_id * IDA_BITMAP_BITS + t;
 	if (id >= MAX_ID_BIT)
 		return -ENOSPC;
 
-	/** 20150228    
+	/** 20150228
 	 * bitmap에 사용된 값을 표시한다.
 	 **/
 	__set_bit(t, bitmap->bitmap);
-	/** 20150228    
+	/** 20150228
 	 * bitmap의 nr_busy는 id 사용 카운터이다.
 	 * IDA_BITMAP_BITS에 도달했다면 모두 사용했다고 표시한다.
 	 **/
 	if (++bitmap->nr_busy == IDA_BITMAP_BITS)
 		idr_mark_full(pa, idr_id);
 
-	/** 20150228    
+	/** 20150228
 	 * 매개변수에 id를 채운다.
 	 **/
 	*p_id = id;
@@ -1149,11 +1149,11 @@ int ida_get_new_above(struct ida *ida, int starting_id, int *p_id)
 	 * Throw away extra resources one by one after each successful
 	 * allocation.
 	 */
-	/** 20150228    
+	/** 20150228
 	 * 많은 슬롯을 관리하므로 idr_layer에 불필요하게 많은 객체가 있다면 해제한다.
 	 **/
 	if (ida->idr.id_free_cnt || ida->free_bitmap) {
-		/** 20150228    
+		/** 20150228
 		 * idr_layer를 하나 꺼내와 해제한다.
 		 **/
 		struct idr_layer *p = get_from_free_list(&ida->idr);
@@ -1178,7 +1178,7 @@ EXPORT_SYMBOL(ida_get_new_above);
  *
  * @p_id returns a value in the range %0 ... %0x7fffffff.
  */
-/** 20150509    
+/** 20150509
  * 0 다음의 새로운 id를 할당 받아 p_id에 저장한다.
  **/
 int ida_get_new(struct ida *ida, int *p_id)
@@ -1321,7 +1321,7 @@ EXPORT_SYMBOL(ida_simple_remove);
  * This function is use to set up the handle (@ida) that you will pass
  * to the rest of the functions.
  */
-/** 20150704    
+/** 20150704
  * IDA 핸들을 초기화 한다.
  **/
 void ida_init(struct ida *ida)

@@ -10,7 +10,7 @@
  */
 #if __LINUX_ARM_ARCH__ >= 6
 
-/** 20130720    
+/** 20130720
  * local cpu의 현재 cpsr을 가져오고,
  * interrupt를 disable 한다.
  **/
@@ -42,7 +42,7 @@ static inline void arch_local_irq_enable(void)
 		: "memory", "cc");
 }
 
-/** 20131026    
+/** 20131026
  * local cpu에서 interrupt disable.
  * 이전 상태를 리턴하지 않는다.
  **/
@@ -55,7 +55,7 @@ static inline void arch_local_irq_disable(void)
 		: "memory", "cc");
 }
 
-/** 20160220    
+/** 20160220
  * local_fiq_enable : 로컬 cpu가 fiq 수신 가능상태가 된다.
  * local_fiq_disable : 로컬 cpu가 fiq 수신 불가능상태가 된다.
  **/
@@ -145,7 +145,7 @@ static inline void arch_local_irq_disable(void)
 /*
  * Save the current interrupt enable state.
  */
-/** 20130518    
+/** 20130518
  * cpsr 레지스터의 값을 읽어 flags에 저장해 리턴.
  **/
 static inline unsigned long arch_local_save_flags(void)

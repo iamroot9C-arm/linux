@@ -32,7 +32,7 @@ static int INIT nofill(void *buffer, unsigned int len)
 }
 
 /* Included from initramfs et al code */
-/** 20160109    
+/** 20160109
  * gzip으로 압축된 이미지를 해제.
  **/
 STATIC int INIT gunzip(unsigned char *buf, int len,

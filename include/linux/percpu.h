@@ -11,7 +11,7 @@
 
 /* enough to cover all DEFINE_PER_CPUs in modules */
 #ifdef CONFIG_MODULES
-/** 20140322    
+/** 20140322
  * 현재 config에서 CONFIG_MODULES가 선언되어 있음
  * 따라서 MODULE_RESERVE가 8K임
  **/
@@ -68,7 +68,7 @@
  * preallocate for this.  Keep PERCPU_DYNAMIC_RESERVE equal to or
  * larger than PERCPU_DYNAMIC_EARLY_SIZE.
  */
-/** 20140322    
+/** 20140322
  * slab이 초기화 되기 전 pcpu_chunk의 map 자료구조 초기값으로 사용된다.
  **/
 #define PERCPU_DYNAMIC_EARLY_SLOTS	128
@@ -101,7 +101,7 @@ struct pcpu_group_info {
 						 * entries contain NR_CPUS */
 };
 
-/** 20130608    
+/** 20130608
  * pcpu_alloc_alloc_info 에서 nr_groups, __ai_size,
  *      groups[0].cpu_map[unit] 초기화
  **/
@@ -185,7 +185,7 @@ extern void __percpu *__alloc_percpu(size_t size, size_t align);
 extern void free_percpu(void __percpu *__pdata);
 extern phys_addr_t per_cpu_ptr_to_phys(void *addr);
 
-/** 20140517    
+/** 20140517
  * type을 저장할 percpu 공간(메모리)을 할당하고, 위치를 리턴.
  *
  * alloc_percpu는 type을 받고,
@@ -257,7 +257,7 @@ extern void __bad_size_call_parameter(void);
 	pdcrb_ret__;							\
 })
 
-/** 20130831    
+/** 20130831
  * variable의 크기를 구해 각각 다른 stem을 호출한다.
  * 예) stem이 __this_cpu_write_이고, variable이 s8이라면
  *     __this_cpu_write_1
@@ -325,7 +325,7 @@ do {									\
 # define this_cpu_read(pcp)	__pcpu_size_call_return(this_cpu_read_, (pcp))
 #endif
 
-/** 20140607    
+/** 20140607
  * percpu 변수 중 현재 cpu에 해당하는 변수위치에 연산을 수행하는 매크로.
  *
  * irq로 보호된다. percpu이므로 SMP lock (spinlock)은 필요하지 않다.
@@ -354,7 +354,7 @@ do {									\
 # define this_cpu_write(pcp, val)	__pcpu_size_call(this_cpu_write_, (pcp), (val))
 #endif
 
-/** 20140607    
+/** 20140607
  * 공통함수 this_cpu_add.
  * percpu 변수(포인터가 아님) 중 현재 cpu에 대한 위치에 연산을 수행한다.
  *
@@ -590,13 +590,13 @@ do {									\
 # ifndef __this_cpu_read_8
 #  define __this_cpu_read_8(pcp)	(*__this_cpu_ptr(&(pcp)))
 # endif
-/** 20130831    
+/** 20130831
  * pcp의 크기에 따라 각각 다른 __this_cpu_read_##n을 호출하는 매크로.
  **/
 # define __this_cpu_read(pcp)	__pcpu_size_call_return(__this_cpu_read_, (pcp))
 #endif
 
-/** 20130831    
+/** 20130831
  * 현재 cpu에 해당하는 percpu 변수에 val 값만큼을 op 연산 시킨다.
  **/
 #define __this_cpu_generic_to_op(pcp, val, op)				\
@@ -617,13 +617,13 @@ do {									\
 # ifndef __this_cpu_write_8
 #  define __this_cpu_write_8(pcp, val)	__this_cpu_generic_to_op((pcp), (val), =)
 # endif
-/** 20130831    
+/** 20130831
  * percpu 변수의 size에 따라 다른 처리(__this_cpu_write_)하는 함수로 변환하는 매크로.
  **/
 # define __this_cpu_write(pcp, val)	__pcpu_size_call(__this_cpu_write_, (pcp), (val))
 #endif
 
-/** 20130831    
+/** 20130831
  * pcp 변수 중 현재 cpu에 해당하는 변수에 val를 더하는 매크로.
  **/
 #ifndef __this_cpu_add
@@ -646,14 +646,14 @@ do {									\
 # define __this_cpu_sub(pcp, val)	__this_cpu_add((pcp), -(val))
 #endif
 
-/** 20140927    
+/** 20140927
  * 현재 cpu의 percpu 변수를 하나 증가시키는 매크로
  **/
 #ifndef __this_cpu_inc
 # define __this_cpu_inc(pcp)		__this_cpu_add((pcp), 1)
 #endif
 
-/** 20131026    
+/** 20131026
  * percpu 변수에서 1을 감소시킨다.
  **/
 #ifndef __this_cpu_dec

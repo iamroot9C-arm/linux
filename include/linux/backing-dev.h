@@ -38,7 +38,7 @@ enum bdi_state {
 
 typedef int (congested_fn)(void *, int);
 
-/** 20150221    
+/** 20150221
  * bdi 관련 stat 항목들.
  **/
 enum bdi_stat_item {
@@ -51,7 +51,7 @@ enum bdi_stat_item {
 
 #define BDI_STAT_BATCH (8*(1+ilog2(nr_cpu_ids)))
 
-/** 20150221    
+/** 20150221
  * bdi 관련 정보 중 writeback 관련 정보를 표현하는 구조체.
  *
  *     bdi : bdi_writeback을 포함하는 bdi 구조체 포인터
@@ -74,7 +74,7 @@ struct bdi_writeback {
 	spinlock_t list_lock;		/* protects the b_* lists */
 };
 
-/** 20150221    
+/** 20150221
  * block device에 대한 I/O data flow 트래픽 정보를 표현하는 구조체.
  *     readahead 와 request queue 혼잡 상태 등.
  *
@@ -83,7 +83,7 @@ struct bdi_writeback {
  **/
 struct backing_dev_info {
 	struct list_head bdi_list;
-	/** 20150307    
+	/** 20150307
 	 * readahead를 진행할 페이지수.
 	 **/
 	unsigned long ra_pages;	/* max readahead in PAGE_CACHE_SIZE units */
@@ -94,7 +94,7 @@ struct backing_dev_info {
 
 	char *name;
 
-	/** 20150221    
+	/** 20150221
 	 * bdi_stat 관련 percpu counter.
 	 **/
 	struct percpu_counter bdi_stat[NR_BDI_STAT_ITEMS];
@@ -269,7 +269,7 @@ int bdi_set_max_ratio(struct backing_dev_info *bdi, unsigned int max_ratio);
  *
  * BDI_CAP_SWAP_BACKED:    Count shmem/tmpfs objects as swap-backed.
  */
-/** 20150502    
+/** 20150502
  **/
 #define BDI_CAP_NO_ACCT_DIRTY	0x00000001
 #define BDI_CAP_NO_WRITEBACK	0x00000002
@@ -284,7 +284,7 @@ int bdi_set_max_ratio(struct backing_dev_info *bdi, unsigned int max_ratio);
 #define BDI_CAP_VMFLAGS \
 	(BDI_CAP_READ_MAP | BDI_CAP_WRITE_MAP | BDI_CAP_EXEC_MAP)
 
-/** 20150418    
+/** 20150418
  * noop에 해당하는 bdi capability.
  * 실제 디바이스가 없으므로 WRITEBACK이나 ACCT DIRTY 관련 정보가 없다.
  **/
@@ -343,7 +343,7 @@ static inline bool bdi_cap_writeback_dirty(struct backing_dev_info *bdi)
 	return !(bdi->capabilities & BDI_CAP_NO_WRITEBACK);
 }
 
-/** 20140531    
+/** 20140531
  * bdi의 capabilities에 CAP_NO_ACCT_DIRTY가 아니면 dirty account 가능하다.
  **/
 static inline bool bdi_cap_account_dirty(struct backing_dev_info *bdi)
@@ -373,7 +373,7 @@ static inline bool mapping_cap_writeback_dirty(struct address_space *mapping)
 	return bdi_cap_writeback_dirty(mapping->backing_dev_info);
 }
 
-/** 20140531    
+/** 20140531
  * backing_dev_inf에서 account dirty CAP을 조회한다.
  **/
 static inline bool mapping_cap_account_dirty(struct address_space *mapping)

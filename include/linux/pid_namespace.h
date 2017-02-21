@@ -8,7 +8,7 @@
 #include <linux/nsproxy.h>
 #include <linux/kref.h>
 
-/** 20150131    
+/** 20150131
  * 각 pidmap entry가 나타내는 구조체.
  *
  * nr_free :  사용 가능한 pid의 수를 기록한다.
@@ -19,7 +19,7 @@ struct pidmap {
        void *page;
 };
 
-/** 20150131    
+/** 20150131
  * namespace에 속하는 pid를 비트맵으로 표시했을 때, 몇 개의 페이지가 필요한지 결정한다.
  *
  * PID_MAX_LIMIT을 (BITS_PER_PAGE)로 나눠 entry 수를 계산한다.
@@ -31,7 +31,7 @@ struct pidmap {
 
 struct bsd_acct_struct;
 
-/** 20150131    
+/** 20150131
  * 2.6대 버전에 새로 추가된 pid_namespace.
  * [참고] http://studyfoss.egloos.com/5242243
  *        Professional Linux Kernel Architecture Figure 2-5.

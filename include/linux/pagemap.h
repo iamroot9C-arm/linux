@@ -19,7 +19,7 @@
  * Bits in mapping->flags.  The lower __GFP_BITS_SHIFT bits are the page
  * allocation mode flags.
  */
-/** 20150425    
+/** 20150425
  * __GFP_BITS_SHIFT 이후의 address_space 관련 flags 비트.
  **/
 enum mapping_flags {
@@ -39,7 +39,7 @@ static inline void mapping_set_error(struct address_space *mapping, int error)
 	}
 }
 
-/** 20140607    
+/** 20140607
  * mapping을 unevictable로 설정한다.
  * address_space의 flags에 AS_UNEVICTABLE를 설정.
  **/
@@ -48,7 +48,7 @@ static inline void mapping_set_unevictable(struct address_space *mapping)
 	set_bit(AS_UNEVICTABLE, &mapping->flags);
 }
 
-/** 20140607    
+/** 20140607
  * mapping을 evictable로 설정한다.
  * address_space의 flags에 AS_UNEVICTABLE를 제거.
  **/
@@ -77,7 +77,7 @@ static inline gfp_t mapping_gfp_mask(struct address_space * mapping)
  * This is non-atomic.  Only to be used before the mapping is activated.
  * Probably needs a barrier...
  */
-/** 20150425    
+/** 20150425
  * address_space의 flags에서 GFP 부분을 날리고, mask를 지정한다.
  **/
 static inline void mapping_set_gfp_mask(struct address_space *m, gfp_t mask)
@@ -94,7 +94,7 @@ static inline void mapping_set_gfp_mask(struct address_space *m, gfp_t mask)
  *
  * Or rather, it _will_ be done in larger chunks.
  */
-/** 20140531    
+/** 20140531
  * PAGE CACHE를 한 페이지 이상으로 설정할 수 있다. 기본값으로 PAGE 단위로 한다.
  **/
 #define PAGE_CACHE_SHIFT	PAGE_SHIFT
@@ -318,14 +318,14 @@ static inline loff_t page_file_offset(struct page *page)
 extern pgoff_t linear_hugepage_index(struct vm_area_struct *vma,
 				     unsigned long address);
 
-/** 20140531    
+/** 20140531
  * vma에서 page가 mapping 된 page index를 리턴한다.
  **/
 static inline pgoff_t linear_page_index(struct vm_area_struct *vma,
 					unsigned long address)
 {
 	pgoff_t pgoff;
-	/** 20140531    
+	/** 20140531
 	 * hugepage를 사용한다면 hugepage index를 구해 리턴한다.
 	 **/
 	if (unlikely(is_vm_hugetlb_page(vma)))
@@ -346,7 +346,7 @@ static inline void __set_page_locked(struct page *page)
 	__set_bit(PG_locked, &page->flags);
 }
 
-/** 20140607    
+/** 20140607
  * page flags에서 locked 비트를 클리어시켜 unlock 상태로 만든다.
  * non-atomic 함수.
  **/
@@ -430,12 +430,12 @@ static inline void wait_on_page_locked(struct page *page)
 /* 
  * Wait for a page to complete writeback
  */
-/** 20140524    
+/** 20140524
  * writeback page인 경우 writeback이 완료될 때까지 대기한다.
  **/
 static inline void wait_on_page_writeback(struct page *page)
 {
-	/** 20140524    
+	/** 20140524
 	 * writeback page인 경우, PG_writeback가 꺼질 때까지 대기한다.
 	 **/
 	if (PageWriteback(page))

@@ -163,7 +163,7 @@ extern u64 timecounter_cyc2time(struct timecounter *tc,
  * @resume:		resume function for the clocksource, if necessary
  * @cycle_last:		most recent cycle counter value seen by ::read()
  */
-/** 20151010    
+/** 20151010
  * clocksource : 
  *   동작 카운터에 대한 하드웨어 추상 구조체이다.
  *   상태에 상관없이 하위 하드웨어에 대한 접근자를 제공한다.
@@ -214,7 +214,7 @@ struct clocksource {
 #define CLOCK_SOURCE_UNSTABLE			0x40
 
 /* simplify initialization of mask field */
-/** 20141227    
+/** 20141227
  * bits 값에 따라 clocksource의 mask를 구한다.
  * bits가 32로 넘어온 경우, (1ULL << 32) - 1
  **/
@@ -281,7 +281,7 @@ static inline u32 clocksource_hz2mult(u32 hz, u32 shift_constant)
  *
  * XXX - This could use some mult_lxl_ll() asm optimization
  */
-/** 20151010    
+/** 20151010
  * 전달된 cycles을 ns로 변환.
  **/
 static inline s64 clocksource_cyc2ns(cycle_t cycles, u32 mult, u32 shift)
@@ -312,7 +312,7 @@ __clocksource_register_scale(struct clocksource *cs, u32 scale, u32 freq);
 extern void
 __clocksource_updatefreq_scale(struct clocksource *cs, u32 scale, u32 freq);
 
-/** 20141227    
+/** 20141227
  * clocksource와 hz를 받아 계산해 등록하고 clocksource를 선택하는 함수.
  *
  * hz frequency를 갖는 jiffies의 결과를 1 hz로 변환하기 위해 곱하는 값은 1.
@@ -343,7 +343,7 @@ update_vsyscall(struct timespec *ts, struct timespec *wtm,
 			struct clocksource *c, u32 mult);
 extern void update_vsyscall_tz(void);
 #else
-/** 20151212    
+/** 20151212
  **/
 static inline void
 update_vsyscall(struct timespec *ts, struct timespec *wtm,

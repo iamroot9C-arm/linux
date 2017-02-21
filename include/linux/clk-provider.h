@@ -20,7 +20,7 @@
  * top-level framework.  custom flags for dealing with hardware specifics
  * belong in struct clk_foo
  */
-/** 20141220    
+/** 20141220
  * 공통된 struct clk에 사용되는 flags.
  **/
 #define CLK_SET_RATE_GATE	BIT(0) /* must be gated across rate change */
@@ -98,7 +98,7 @@ struct clk_hw;
  * required (eg. from an interrupt). Note that clk_prepare MUST have been
  * called before clk_enable.
  */
-/** 20141227    
+/** 20141227
  * hardware clock을 위한 콜백 함수.
  *
  * common clock framework API를 통해 호출된다.

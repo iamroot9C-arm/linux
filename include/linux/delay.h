@@ -47,7 +47,7 @@ void msleep(unsigned int msecs);
 unsigned long msleep_interruptible(unsigned int msecs);
 void usleep_range(unsigned long min, unsigned long max);
 
-/** 20160123    
+/** 20160123
  * kernel에서 제공하는 second 딜레이
  **/
 static inline void ssleep(unsigned int seconds)

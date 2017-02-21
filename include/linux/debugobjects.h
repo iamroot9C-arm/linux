@@ -83,7 +83,7 @@ extern void debug_objects_mem_init(void);
 #else
 static inline void
 debug_object_init      (void *addr, struct debug_obj_descr *descr) { }
-/** 20140628    
+/** 20140628
  * CONFIG_DEBUG_OBJECTS가 설정되지 않아 NULL 함수.
  **/
 static inline void

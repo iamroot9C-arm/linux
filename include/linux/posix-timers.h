@@ -53,7 +53,7 @@ struct cpu_timer_list {
 #define CLOCKID_TO_FD(clk)	((unsigned int) ~((clk) >> 3))
 
 /* POSIX.1b interval timer structure. */
-/** 20160109    
+/** 20160109
  * user에서 timer_create 요청을 할 때마다 생성되는 구조체.
  **/
 struct k_itimer {
@@ -92,7 +92,7 @@ struct k_itimer {
 	} it;
 };
 
-/** 20160109    
+/** 20160109
  * posix timer를 지원하기 위해 clock_id당 하나씩 생성되는 커널내 자료구조.
  **/
 struct k_clock {

@@ -35,7 +35,7 @@
  * on our cache or tlb entries.
  */
 
-/** 20130803    
+/** 20130803
  * insn  : exception이 발생했을 때 수행할 instruction의 주소
  * fixup : exception handling이 끝난 뒤 계속 수행할 수 있도록 하는 instruction의 주소
  **/
@@ -56,7 +56,7 @@ extern int __put_user_bad(void);
 /*
  * Note that this is actually 0x1,0000,0000
  */
-/** 20160213    
+/** 20160213
  * kernel이 접근가능한 address limit
  **/
 #define KERNEL_DS	0x00000000
@@ -67,7 +67,7 @@ extern int __put_user_bad(void);
 #define USER_DS		TASK_SIZE
 #define get_fs()	(current_thread_info()->addr_limit)
 
-/** 20160213    
+/** 20160213
  * thread의 address limit을 fs로 설정.
  * 도메인을 사용하는 경우 도메인 변경.
  **/
@@ -112,7 +112,7 @@ extern int __get_user_1(void *);
 extern int __get_user_2(void *);
 extern int __get_user_4(void *);
 
-/** 20151003    
+/** 20151003
  * get_user 매크로는 포인터가 가리키는 대상체의 크기에 따라 
  * 1바이트, 2바이트, 4바이트를 읽어오는 함수를 호출한다.
  *
@@ -127,7 +127,7 @@ extern int __get_user_4(void *);
 		: "0" (__p)						\
 		: __i, "cc")
 
-	/** 20151003    
+	/** 20151003
 	 * r0에 p를 저장한 상태에서 __get_user_X로 p에 저장된 값을 가져온다.
 	 * 읽어온 값은 r2에 저장되고 x 위치에 저장한다.
 	 **/

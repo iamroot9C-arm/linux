@@ -153,7 +153,7 @@ static int signalfd_copyinfo(struct signalfd_siginfo __user *uinfo,
 	return err ? -EFAULT: sizeof(*uinfo);
 }
 
-/** 20160409    
+/** 20160409
  * signalfd 인터페이스 함수에서 시그널을 꺼내가기 위해 호출되는 함수.
  *
  * 대기하지 않는 시그널인 경우에도 일단 깨어난다.
@@ -164,20 +164,20 @@ static ssize_t signalfd_dequeue(struct signalfd_ctx *ctx, siginfo_t *info,
 				int nonblock)
 {
 	ssize_t ret;
-	/** 20160409    
+	/** 20160409
 	 * dequeue할 시그널이 도착하지 않았을 경우 대기시킬 waitqueue 선언.
 	 **/
 	DECLARE_WAITQUEUE(wait, current);
 
-	/** 20160409    
+	/** 20160409
 	 * sighand에 대한 spinlock을 건다.
 	 **/
 	spin_lock_irq(&current->sighand->siglock);
-	/** 20160409    
+	/** 20160409
 	 * 현재 task에 도착한 signal을 받아온다.
 	 **/
 	ret = dequeue_signal(current, &ctx->sigmask, info);
-	/** 20160409    
+	/** 20160409
 	 * 도착한 시그널이 없는 경우, nonblock이면 lock을 풀고 -EAGAIN으로 리턴.
 	 **/
 	switch (ret) {
@@ -190,7 +190,7 @@ static ssize_t signalfd_dequeue(struct signalfd_ctx *ctx, siginfo_t *info,
 		return ret;
 	}
 
-	/** 20160409    
+	/** 20160409
 	 * task의 waitqueue에 등록한다.
 	 * 현재 상태를 TASK_INTERRUPTIBLE로 변경하고 schedule.
 	 **/
@@ -208,7 +208,7 @@ static ssize_t signalfd_dequeue(struct signalfd_ctx *ctx, siginfo_t *info,
 		schedule();
 		spin_lock_irq(&current->sighand->siglock);
 	}
-	/** 20160409    
+	/** 20160409
 	 * 시그널이 도착해 깨어났으므로 waitqueue에서 제거한다. 
 	 **/
 	spin_unlock_irq(&current->sighand->siglock);

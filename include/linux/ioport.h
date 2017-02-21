@@ -15,7 +15,7 @@
  * Resources are tree-like, allowing
  * nesting etc..
  */
-/** 20130518    
+/** 20130518
  * tree 형태로 관리되는 resource 구조체
  **/
 struct resource {
@@ -108,7 +108,7 @@ struct resource {
 
 
 /* helpers to define resources */
-/** 20140913    
+/** 20140913
  * resource 선언 관련 helper 매크로
  **/
 #define DEFINE_RES_NAMED(_start, _size, _name, _flags)			\
@@ -170,7 +170,7 @@ static inline resource_size_t resource_size(const struct resource *res)
 {
 	return res->end - res->start + 1;
 }
-/** 20151121    
+/** 20151121
  * resource flags의 TYPE을 리턴.
  **/
 static inline unsigned long resource_type(const struct resource *res)

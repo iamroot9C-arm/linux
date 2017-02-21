@@ -16,7 +16,7 @@
 #include "smpboot.h"
 
 #ifdef CONFIG_USE_GENERIC_SMP_HELPERS
-/** 20140621    
+/** 20140621
  * 전역변수 call_function 를 초기화.
  **/
 static struct {
@@ -32,7 +32,7 @@ enum {
 	CSD_FLAG_LOCK		= 0x01,
 };
 
-/** 20140621    
+/** 20140621
  * call_function_data.
  *	refs : 수신해야 할 cpu의 수를 계산해 넣는다. (송신자 제외)
  *	cpumask : 수신할 cpu 목록 bitmap.
@@ -43,7 +43,7 @@ struct call_function_data {
 	cpumask_var_t		cpumask;
 };
 
-/** 20140621    
+/** 20140621
  * percpu로 struct call_function_data 타입의 cfd_data를 정의한다.
  **/
 static DEFINE_PER_CPU_SHARED_ALIGNED(struct call_function_data, cfd_data);
@@ -53,7 +53,7 @@ struct call_single_queue {
 	raw_spinlock_t		lock;
 };
 
-/** 20140621    
+/** 20140621
  * list와 lock을 보유한 call_single_queue per cpu 변수를 선언한다.
  *
  * call_function_init에서 초기화.
@@ -62,7 +62,7 @@ struct call_single_queue {
  **/
 static DEFINE_PER_CPU_SHARED_ALIGNED(struct call_single_queue, call_single_queue);
 
-/** 20150111    
+/** 20150111
  * action에 따라 call_function_data에 필요한 동작을 수행한다.
  **/
 static int
@@ -97,22 +97,22 @@ static struct notifier_block __cpuinitdata hotplug_cfd_notifier = {
 	.notifier_call		= hotplug_cfd,
 };
 
-/** 20150111    
+/** 20150111
  * call function 관련 초기화를 수행한다.
  **/
 void __init call_function_init(void)
 {
-	/** 20150110    
+	/** 20150110
 	 * 현재 cpu 번호를 받아온다.
 	 **/
 	void *cpu = (void *)(long)smp_processor_id();
 	int i;
 
-	/** 20150110    
+	/** 20150110
 	 * cpu_possible_mask에 설정된 cpu를 순회.
 	 **/
 	for_each_possible_cpu(i) {
-		/** 20150110    
+		/** 20150110
 		 * per_cpu 전역변수로 선언된 call_single_queue에서 cpu에 해당하는
 		 * queue를 받아와 spinlock과 list head를 초기화 한다.
 		 **/
@@ -122,7 +122,7 @@ void __init call_function_init(void)
 		INIT_LIST_HEAD(&q->list);
 	}
 
-	/** 20150111    
+	/** 20150111
 	 * CPU_UP_PREPARE를 먼저 내려 hotplug_cfd를 준비한다.
 	 * hotplug_cfd_notifier를 cpu notify block에 등록한다.
 	 **/
@@ -137,7 +137,7 @@ void __init call_function_init(void)
  * previous function call. For multi-cpu calls its even more interesting
  * as we'll have to ensure no other cpu is observing our csd.
  */
-/** 20140621    
+/** 20140621
  * percpu 변수 call_single_data의 lock이 해제될 때까지 기다린다.
  **/
 static void csd_lock_wait(struct call_single_data *data)
@@ -146,12 +146,12 @@ static void csd_lock_wait(struct call_single_data *data)
 		cpu_relax();
 }
 
-/** 20140621    
+/** 20140621
  * call single data에 lock을 건다.
  **/
 static void csd_lock(struct call_single_data *data)
 {
-	/** 20140621    
+	/** 20140621
 	 * data의 lock이 해제될 때까지 기다린 후,
 	 * lock이 풀리면 data에 lock을 건다.
 	 **/
@@ -163,13 +163,13 @@ static void csd_lock(struct call_single_data *data)
 	 * to ->flags with any subsequent assignments to other
 	 * fields of the specified call_single_data structure:
 	 */
-	/** 20140621    
+	/** 20140621
 	 * memory barrier를 통해 변경을 확보한다.
 	 **/
 	smp_mb();
 }
 
-/** 20140621    
+/** 20140621
  * call single data에 lock을 해제한다.
  **/
 static void csd_unlock(struct call_single_data *data)
@@ -179,7 +179,7 @@ static void csd_unlock(struct call_single_data *data)
 	/*
 	 * ensure we're all done before releasing data:
 	 */
-	/** 20140621    
+	/** 20140621
 	 * 이전 동작의 memory access 명령 이후 다음 memory access가 진행되도록 한다.
 	 **/
 	smp_mb();
@@ -192,21 +192,21 @@ static void csd_unlock(struct call_single_data *data)
  * for execution on the given CPU. data must already have
  * ->func, ->info, and ->flags set.
  */
-/** 20140621    
+/** 20140621
  * single IPI를 통해 cpu에 보낼 data를 target cpu의 queue에 등록하고,
  * architecture 별로 준비된 함수를 호출해 irq를 전달한다.
  **/
 static
 void generic_exec_single(int cpu, struct call_single_data *data, int wait)
 {
-	/** 20140621    
+	/** 20140621
 	 * target cpu의 call_single_queue를 가져온다.
 	 **/
 	struct call_single_queue *dst = &per_cpu(call_single_queue, cpu);
 	unsigned long flags;
 	int ipi;
 
-	/** 20140621    
+	/** 20140621
 	 * atomic context를 확보한 상태에서,
 	 * dst의 list가 비어있는지 여부를 ipi에 저장한다.
 	 * 보낼 cpu의 data를 data를 받을 cpu의 queue list에 등록한다.
@@ -227,13 +227,13 @@ void generic_exec_single(int cpu, struct call_single_data *data, int wait)
 	 * locking and barrier primitives. Generic code isn't really
 	 * equipped to do the right thing...
 	 */
-	/** 20140621    
+	/** 20140621
 	 * 기존의 dst list가 비어 있었다면 cpu에 IPI_CALL_FUNC_SINGLE irq를 날린다.
 	 **/
 	if (ipi)
 		arch_send_call_function_single_ipi(cpu);
 
-	/** 20140621    
+	/** 20140621
 	 * wait이 필요할 경우 wait 해야 한다고 설정되어 있으면
 	 * data의 lock이 해제될 때까지 기다린다.
 	 **/
@@ -245,14 +245,14 @@ void generic_exec_single(int cpu, struct call_single_data *data, int wait)
  * Invoked by arch to handle an IPI for call function. Must be called with
  * interrupts disabled.
  */
-/** 20140621    
+/** 20140621
  * smp call function interrupt에 대한 핸들러 함수.
  * 여러 함수에 전달할 데이터(송신자의 percpu 변수)를 전역 queue에서 꺼낸다.
  **/
 void generic_smp_call_function_interrupt(void)
 {
 	struct call_function_data *data;
-	/** 20140621    
+	/** 20140621
 	 * 현재 processor의 id를 불러온다.
 	 **/
 	int cpu = smp_processor_id();
@@ -268,7 +268,7 @@ void generic_smp_call_function_interrupt(void)
 	 * If we don't have this, then we may miss an entry on the list
 	 * and never get another IPI to process it.
 	 */
-	/** 20140621    
+	/** 20140621
 	 * call_function.queue에 접근을 보장하는 data memory barrier.
 	 **/
 	smp_mb();
@@ -277,7 +277,7 @@ void generic_smp_call_function_interrupt(void)
 	 * It's ok to use list_for_each_rcu() here even though we may
 	 * delete 'pos', since list_del_rcu() doesn't clear ->next
 	 */
-	/** 20140621    
+	/** 20140621
 	 * call_function.queue의 csd.list에 등록된 멤버에 대한 loop.
 	 **/
 	list_for_each_entry_rcu(data, &call_function.queue, csd.list) {
@@ -294,25 +294,25 @@ void generic_smp_call_function_interrupt(void)
 		 * executing the callback on this cpu.
 		 */
 
-		/** 20140621    
+		/** 20140621
 		 * 현재 cpu가 cpumask에 포함되어 있지 않다면 continue.
 		 **/
 		if (!cpumask_test_cpu(cpu, data->cpumask))
 			continue;
 
-		/** 20140621    
+		/** 20140621
 		 * read memory barrier.
 		 **/
 		smp_rmb();
 
-		/** 20140621    
+		/** 20140621
 		 * call_function_data의 refs가 0이라면
 		 * 메시지를 보낼 때 지정한 cpu들이 모두 꺼내갔다 판단해 continue.
 		 **/
 		if (atomic_read(&data->refs) == 0)
 			continue;
 
-		/** 20140621    
+		/** 20140621
 		 * call_single_data 함수를 꺼내 info를 매개변수로 호출.
 		 **/
 		func = data->csd.func;		/* save for later warn */
@@ -324,7 +324,7 @@ void generic_smp_call_function_interrupt(void)
 		 * function interrupt and executed func(info) twice
 		 * on this cpu.  That nested execution decremented refs.
 		 */
-		/** 20140621    
+		/** 20140621
 		 * 현재 cpu가 data의 cpumask에 속하는지 여부를 검사하고,
 		 * 설정되어 있다면 clear 시킨다.
 		 **/
@@ -333,14 +333,14 @@ void generic_smp_call_function_interrupt(void)
 			continue;
 		}
 
-		/** 20140621    
+		/** 20140621
 		 * call_function_data의 refs를 하나 원자적으로 감소시키고
 		 * 결과값을 local 변수에 저장.
 		 **/
 		refs = atomic_dec_return(&data->refs);
 		WARN_ON(refs < 0);
 
-		/** 20140621    
+		/** 20140621
 		 * 마지막 refs를 가져온 cpu는 이후 루틴을 수행함.
 		 **/
 		if (refs)
@@ -348,14 +348,14 @@ void generic_smp_call_function_interrupt(void)
 
 		WARN_ON(!cpumask_empty(data->cpumask));
 
-		/** 20140621    
+		/** 20140621
 		 * spinlock으로 보호된 context에서 data를 queue에서 제거한다.
 		 **/
 		raw_spin_lock(&call_function.lock);
 		list_del_rcu(&data->csd.list);
 		raw_spin_unlock(&call_function.lock);
 
-		/** 20140621    
+		/** 20140621
 		 * data의 lock을 해제한다.
 		 * 마지막 수행된 cpu가 동작을 마무리 하면 lock을 해제해
 		 * smp_call_function_many 에서 송신 함수가 대기 중이라면 이후 루틴이 실행된다.
@@ -369,7 +369,7 @@ void generic_smp_call_function_interrupt(void)
  * Invoked by arch to handle an IPI for call function single. Must be
  * called from the arch with interrupts disabled.
  */
-/** 20140621    
+/** 20140621
  * cpu 하나에 대해 IPI_CALL_FUNC 를 받은 경우 호출되는 핸들러.
  *
  * architecture specific 한 interrupt 핸들러에서 호출된다.
@@ -377,7 +377,7 @@ void generic_smp_call_function_interrupt(void)
  **/
 void generic_smp_call_function_single_interrupt(void)
 {
-	/** 20140621    
+	/** 20140621
 	 * percpu call_single_queue 에서 자신에 해당하는 변수 포인터를 가져온다.
 	 *
 	 * generic_exec_single에서 target의 cpuu번호를 넣어준다.
@@ -389,12 +389,12 @@ void generic_smp_call_function_single_interrupt(void)
 	/*
 	 * Shouldn't receive this interrupt on a cpu that is not yet online.
 	 */
-	/** 20140621    
+	/** 20140621
 	 * 수신 cpu는 online 상태여야 한다.
 	 **/
 	WARN_ON_ONCE(!cpu_online(smp_processor_id()));
 
-	/** 20140621    
+	/** 20140621
 	 * percpu의 list를 지역변수 list에 옮겨단다.
 	 *
 	 * queue는 spin lock을 걸어 atomic context를 보장한다.
@@ -404,13 +404,13 @@ void generic_smp_call_function_single_interrupt(void)
 	list_replace_init(&q->list, &list);
 	raw_spin_unlock(&q->lock);
 
-	/** 20140621    
+	/** 20140621
 	 * list가 빌 때까지 수행한다.
 	 **/
 	while (!list_empty(&list)) {
 		struct call_single_data *data;
 
-		/** 20140621    
+		/** 20140621
 		 * list에서 call_single_data entry를 가져오고 list에서 제거한다.
 		 **/
 		data = list_entry(list.next, struct call_single_data, list);
@@ -421,7 +421,7 @@ void generic_smp_call_function_single_interrupt(void)
 		 * (when called through generic_exec_single()),
 		 * so save them away before making the call:
 		 */
-		/** 20140621    
+		/** 20140621
 		 * data의 flags를 백업 받아두고, func을 info를 전달해 호출한다.
 		 **/
 		data_flags = data->flags;
@@ -431,7 +431,7 @@ void generic_smp_call_function_single_interrupt(void)
 		/*
 		 * Unlocked CSDs are valid through generic_exec_single():
 		 */
-		/** 20140621    
+		/** 20140621
 		 * flag에 CSD_FLAG_LOCK이 포함되어 있다면
 		 * csd_unlock을 해준다. 
 		 **/
@@ -440,7 +440,7 @@ void generic_smp_call_function_single_interrupt(void)
 	}
 }
 
-/** 20140621    
+/** 20140621
  * struct call_single_data 타입의 percpu 변수 csd_data를 선언.
  **/
 static DEFINE_PER_CPU_SHARED_ALIGNED(struct call_single_data, csd_data);
@@ -453,7 +453,7 @@ static DEFINE_PER_CPU_SHARED_ALIGNED(struct call_single_data, csd_data);
  *
  * Returns 0 on success, else a negative status code.
  */
-/** 20140621    
+/** 20140621
  * 특정 cpu가 info를 매개변수로 func을 수행하게 한다.
  * 그 cpu가 자신인 경우 직접 호출하고, 다른 cpu인 경우 architecture별 함수를 호출한다.
  **/
@@ -471,7 +471,7 @@ int smp_call_function_single(int cpu, smp_call_func_t func, void *info,
 	 * prevent preemption and reschedule on another processor,
 	 * as well as CPU removal
 	 */
-	/** 20140621    
+	/** 20140621
 	 * 선점 불가 상태로 현재 cpu의 번호를 가져온다.
 	 **/
 	this_cpu = get_cpu();
@@ -485,7 +485,7 @@ int smp_call_function_single(int cpu, smp_call_func_t func, void *info,
 	WARN_ON_ONCE(cpu_online(this_cpu) && irqs_disabled()
 		     && !oops_in_progress);
 
-	/** 20140621    
+	/** 20140621
 	 * 대상 cpu가 현재 cpu라면, 인터럽트를 막은 상태에서 func을 호출한다.
 	 **/
 	if (cpu == this_cpu) {
@@ -493,38 +493,38 @@ int smp_call_function_single(int cpu, smp_call_func_t func, void *info,
 		func(info);
 		local_irq_restore(flags);
 	} else {
-	/** 20140621    
+	/** 20140621
 	 * 그렇지 않은 경우 percpu 변수 csd_data 중 현재 cpu에 해당하는 변수 위치를 가져와 조건에 따라 실행한다.
 	 **/
 		if ((unsigned)cpu < nr_cpu_ids && cpu_online(cpu)) {
 			struct call_single_data *data = &d;
 
-			/** 20140621    
+			/** 20140621
 			 * wait이 설정되어 있지 않다면 percpu변수 csd_data의 현재 cpu 위치를 data로 전달한다.
 			 **/
 			if (!wait)
 				data = &__get_cpu_var(csd_data);
 
-			/** 20140621    
+			/** 20140621
 			 * data의 lock을 걸고, func과 info를 저장한다.
 			 **/
 			csd_lock(data);
 
 			data->func = func;
 			data->info = info;
-			/** 20140621    
+			/** 20140621
 			 * 특정 cpu에 전달할 data를 채우고 IPI 메시지를 날린다.
 			 **/
 			generic_exec_single(cpu, data, wait);
 		} else {
-			/** 20140621    
+			/** 20140621
 			 * 대상 CPU가 online이 아니다.
 			 **/
 			err = -ENXIO;	/* CPU not online */
 		}
 	}
 
-	/** 20140621    
+	/** 20140621
 	 * cpu 독점을 해제.
 	 **/
 	put_cpu();
@@ -629,7 +629,7 @@ void __smp_call_function_single(int cpu, struct call_single_data *data,
  * hardware interrupt handler or from a bottom half handler. Preemption
  * must be disabled when calling this function.
  */
-/** 20140621    
+/** 20140621
  * mask에 속한 cpu들에 대해 메시지를 날려 func(info)을 수행하도록 한다.
  * wait이 지정된 경우, 모든 함수의 수행이 끝날 때까지 기다려야 한다.
  *
@@ -650,7 +650,7 @@ void smp_call_function_many(const struct cpumask *mask,
 	 * send smp call function interrupt to this cpu and as such deadlocks
 	 * can't happen.
 	 */
-	/** 20140621    
+	/** 20140621
 	 * 현재 cpu가 online이고, irqs는 금지되어 있어야 하며,
 	 * oops_in_progress가 실행 중이지 않은 상태,
 	 * early_boot_irqs_disabled가 아니어야 한다.
@@ -660,32 +660,32 @@ void smp_call_function_many(const struct cpumask *mask,
 	WARN_ON_ONCE(cpu_online(this_cpu) && irqs_disabled()
 		     && !oops_in_progress && !early_boot_irqs_disabled);
 
-	/** 20140621    
+	/** 20140621
 	 * 예를 들어 SMP에서 4개의 cpu가 모두 켜 있고, this_cpu가 0이고,
 	 *
 	 * mask에 4개 모두 속해 있다면 cpu는 1, next_cpu는 2가 될 것이다.
 	 **/
 
 	/* Try to fastpath.  So, what's a CPU they want? Ignoring this one. */
-	/** 20140621    
+	/** 20140621
 	 * mask와 online 상태인 첫번째 cpu를 찾는다.
 	 **/
 	cpu = cpumask_first_and(mask, cpu_online_mask);
-	/** 20140621    
+	/** 20140621
 	 * 현재 cpu라면 그 다음 교차검색된 cpu를 찾는다.
 	 **/
 	if (cpu == this_cpu)
 		cpu = cpumask_next_and(cpu, mask, cpu_online_mask);
 
 	/* No online cpus?  We're done. */
-	/** 20140621    
+	/** 20140621
 	 * 가져온 cpu 번호가 마지막 ids보다 크다면 return.
 	 **/
 	if (cpu >= nr_cpu_ids)
 		return;
 
 	/* Do we have another CPU which isn't us? */
-	/** 20140621    
+	/** 20140621
 	 * 다시 한 번 online mask를 검색해 next_cpu를 삼는다.
 	 **/
 	next_cpu = cpumask_next_and(cpu, mask, cpu_online_mask);
@@ -693,7 +693,7 @@ void smp_call_function_many(const struct cpumask *mask,
 		next_cpu = cpumask_next_and(next_cpu, mask, cpu_online_mask);
 
 	/* Fastpath: do that cpu by itself. */
-	/** 20140621    
+	/** 20140621
 	 * 추가 next가 없을 경우 first로 찾은 cpu에 대해 func을 수행한다.
 	 **/
 	if (next_cpu >= nr_cpu_ids) {
@@ -701,7 +701,7 @@ void smp_call_function_many(const struct cpumask *mask,
 		return;
 	}
 
-	/** 20140621    
+	/** 20140621
 	 * first 외 next가 더 존재할 경우 현재 cpu의 data를 가져와 lock을 건다.
 	 **/
 	data = &__get_cpu_var(cfd_data);
@@ -731,7 +731,7 @@ void smp_call_function_many(const struct cpumask *mask,
 	 * To avoid the use of transitivity, set the counter to 0 here
 	 * so the wmb will pair with the rmb in the interrupt handler.
 	 */
-	/** 20140621    
+	/** 20140621
 	 * 현재 cpu의 cfd_data의 refs 초기화.
 	 * call_single_data의 func와 info 설정.
 	 **/
@@ -741,13 +741,13 @@ void smp_call_function_many(const struct cpumask *mask,
 	data->csd.info = info;
 
 	/* Ensure 0 refs is visible before mask.  Also orders func and info */
-	/** 20140621    
+	/** 20140621
 	 * write memory barrier.
 	 **/
 	smp_wmb();
 
 	/* We rely on the "and" being processed before the store */
-	/** 20140621    
+	/** 20140621
 	 * call_function_data의 cpumask를 mask & cpu_online_mask로 설정하고,
 	 * 현재 cpu는 그 대상에서 제외시키고 남은 bit의 수를 refs로 한다.
 	 **/
@@ -761,7 +761,7 @@ void smp_call_function_many(const struct cpumask *mask,
 		return;
 	}
 
-	/** 20140621    
+	/** 20140621
 	 * call_function에 대해 atomic context를 만든다.
 	 **/
 	raw_spin_lock_irqsave(&call_function.lock, flags);
@@ -770,7 +770,7 @@ void smp_call_function_many(const struct cpumask *mask,
 	 * observing the entry in generic_smp_call_function_interrupt()
 	 * will not miss any other list entries:
 	 */
-	/** 20140621    
+	/** 20140621
 	 * 전역변수 call_function에 call_function_data를 등록한다.
 	 **/
 	list_add_rcu(&data->csd.list, &call_function.queue);
@@ -779,7 +779,7 @@ void smp_call_function_many(const struct cpumask *mask,
 	 * to the cpumask before this write to refs, which indicates
 	 * data is on the list and is ready to be processed.
 	 */
-	/** 20140621    
+	/** 20140621
 	 * call_function_data의 refs를 저장한다.
 	 **/
 	atomic_set(&data->refs, refs);
@@ -790,19 +790,19 @@ void smp_call_function_many(const struct cpumask *mask,
 	 * (IPIs must obey or appear to obey normal Linux cache
 	 * coherency rules -- see comment in generic_exec_single).
 	 */
-	/** 20140621    
+	/** 20140621
 	 * memory barrier.
 	 **/
 	smp_mb();
 
 	/* Send a message to all CPUs in the map */
-	/** 20140621    
+	/** 20140621
 	 * cpumask의 각 cpu에게 ipi를 보낸다.
 	 **/
 	arch_send_call_function_ipi_mask(data->cpumask);
 
 	/* Optionally wait for the CPUs to complete */
-	/** 20140621    
+	/** 20140621
 	 * IPI를 수신한 마지막 cpu의 핸들러에서 lock을 해제할 때까지 기다린다.
 	 **/
 	if (wait)
@@ -843,7 +843,7 @@ EXPORT_SYMBOL(smp_call_function);
 #endif /* USE_GENERIC_SMP_HELPERS */
 
 /* Setup configured maximum number of CPUs to activate */
-/** 20150530    
+/** 20150530
  * activate 시킬 최대 cpu 개수.
  * boot option 등으로 처리할 수 있도록 별도의 변수로 두어 처리한다.
  **/
@@ -900,26 +900,26 @@ static int __init maxcpus(char *str)
 early_param("maxcpus", maxcpus);
 
 /* Setup number of possible processor ids */
-/** 20130518    
+/** 20130518
  * 가능한 cpu id의 개수 nr_cpu_ids는 NR_CPUS
  **/
 int nr_cpu_ids __read_mostly = NR_CPUS;
 EXPORT_SYMBOL(nr_cpu_ids);
 
 /* An arch may set nr_cpu_ids earlier if needed, so this would be redundant */
-/** 20130608    
+/** 20130608
  * nr_cpu_ids에 cpu_possible_mask에 설정해 둔 내용을 바탕으로 값을 채움.
  **/
 void __init setup_nr_cpu_ids(void)
 {
-	/** 20130608    
+	/** 20130608
 	 * NR_CPUS : 4 일 때 find_last_bit에서 3이 리턴 + 1
 	 **/
 	nr_cpu_ids = find_last_bit(cpumask_bits(cpu_possible_mask),NR_CPUS) + 1;
 }
 
 /* Called by boot processor to activate the rest. */
-/** 20150808    
+/** 20150808
  * boot processor로 나머지 프로세서를 깨운다.
  *
  * 나머지 코어들이 처음 실행하는 어셈 코드는 secondary_startup,
@@ -929,14 +929,14 @@ void __init smp_init(void)
 {
 	unsigned int cpu;
 
-	/** 20150801    
+	/** 20150801
 	 * boot cpu를 제외한 cpu들에 해당하는 idle task를 init한다.
 	 * idle task는 percpu로 존재한다.
 	 **/
 	idle_threads_init();
 
 	/* FIXME: This should be done in userspace --RR */
-	/** 20150117    
+	/** 20150117
 	 * cpu_present_mask의 각 cpu를 보며, 현 상태가 online이 아닌 경우 up시킴.
 	 **/
 	for_each_present_cpu(cpu) {
@@ -947,7 +947,7 @@ void __init smp_init(void)
 	}
 
 	/* Any cleanup work */
-	/** 20150808    
+	/** 20150808
 	 * 출력 예 : Brought up 4 CPUs
 	 **/
 	printk(KERN_INFO "Brought up %ld CPUs\n", (long)num_online_cpus());
@@ -988,24 +988,24 @@ EXPORT_SYMBOL(on_each_cpu);
  * You must not call this function with disabled interrupts or
  * from a hardware interrupt handler or from a bottom half handler.
  */
-/** 20140622    
+/** 20140622
  * cpu mask에 속한 cpu가 특정 함수를 실행하도록 한다.
  * wait은 다른 cpu의 동작 완료까지 현재 cpu의 대기 여부를 결정한다.
  **/
 void on_each_cpu_mask(const struct cpumask *mask, smp_call_func_t func,
 			void *info, bool wait)
 {
-	/** 20140622    
+	/** 20140622
 	 * 선점 불가 상태로 만든다.
 	 **/
 	int cpu = get_cpu();
 
-	/** 20140622    
+	/** 20140622
 	 * mask 속한 cpu들이 func(info); 을 수행하도록 한다.
 	 * wait 여부에 따라 완료시까지 대기 여부를 결정한다.
 	 **/
 	smp_call_function_many(mask, func, info, wait);
-	/** 20140622    
+	/** 20140622
 	 * 현재 cpu가 mask에 속해 있다면, 인터럽트를 금지한 상태로 함수를 실행한다.
 	 * 즉, atomic context로 만든다.
 	 **/
@@ -1014,7 +1014,7 @@ void on_each_cpu_mask(const struct cpumask *mask, smp_call_func_t func,
 		func(info);
 		local_irq_enable();
 	}
-	/** 20140622    
+	/** 20140622
 	 * 선점 가능 상태로 만든다.
 	 **/
 	put_cpu();

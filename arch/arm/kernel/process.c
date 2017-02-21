@@ -163,7 +163,7 @@ EXPORT_SYMBOL_GPL(arm_pm_restart);
 
 void (*arm_pm_idle)(void);
 
-/** 20160220    
+/** 20160220
  * arm_pm_idle을 arch에서 별도로 지정한 경우 호출.
  * 그렇지 않은 경우 일반 cpu_do_idle 호출.
  *
@@ -178,7 +178,7 @@ static void default_idle(void)
 	local_irq_enable();
 }
 
-/** 20160220    
+/** 20160220
  * default_idle.
  *
  * 보통 wfi.
@@ -192,7 +192,7 @@ EXPORT_SYMBOL(pm_idle);
  * things like cpuidle get called in the same way.  The only difference
  * is that we always respect 'hlt_counter' to prevent low power idle.
  */
-/** 20160123    
+/** 20160123
  * cpu_idle.
  *
  * 부팅을 모두 완료한 뒤에 idle 함수로 진입한다. 이후 실행할 task가 있으면
@@ -203,33 +203,33 @@ EXPORT_SYMBOL(pm_idle);
  **/
 void cpu_idle(void)
 {
-	/** 20160220    
+	/** 20160220
 	 * fiq enable. 왜 여기서 fiq를 enable???
 	 **/
 	local_fiq_enable();
 
 	/* endless idle loop with no priority at all */
-	/** 20160220    
+	/** 20160220
 	 * 무한 루프.
 	 *
 	 * 다른 수행할 task가 있을 때 그것들을 수행하고, 더 이상 수행할 task가 없다면
 	 * schedule_preempt_disabled부터 수행이 재개되고 다시 무한루프를 수행한다.
 	 **/
 	while (1) {
-		/** 20141018    
+		/** 20141018
 		 **/
 		tick_nohz_idle_enter();
-		/** 20141004    
+		/** 20141004
 		 * rcu_idle_enter 호출.
 		 **/
 		rcu_idle_enter();
 		leds_event(led_idle_start);
-		/** 20160220    
+		/** 20160220
 		 * resched 될 필요가 없을 경우 무한루프를 돌며 반복한다.
 		 **/
 		while (!need_resched()) {
 #ifdef CONFIG_HOTPLUG_CPU
-			/** 20141004    
+			/** 20141004
 			 * 자신의 cpu가 offline으로 들어간 경우 cpu_die를 호출.
 			 **/
 			if (cpu_is_offline(smp_processor_id()))
@@ -240,7 +240,7 @@ void cpu_idle(void)
 			 * We need to disable interrupts here
 			 * to ensure we don't miss a wakeup call.
 			 */
-			/** 20160220    
+			/** 20160220
 			 * wakeup call을 놓치지 않기 위해서 interrupt disable을 하는 이유는???
 			 *
 			 * 인터럽트를 펜딩시켜 놓고 나중에 interrupt 활성화 시켜서 처리하기
@@ -250,7 +250,7 @@ void cpu_idle(void)
 #ifdef CONFIG_PL310_ERRATA_769419
 			wmb();
 #endif
-			/** 20160220    
+			/** 20160220
 			 * halt disalbed 상태인 경우 hlt_counter가 0이 아닌 값이고,
 			 * 이 상태에서 while 문을 need_resched 일 때까지 반복수행하므로
 			 * cpu_relax를 둔다.
@@ -258,12 +258,12 @@ void cpu_idle(void)
 			if (hlt_counter) {
 				local_irq_enable();
 				cpu_relax();
-			/** 20160220    
+			/** 20160220
 			 * 스케쥴링 할 필요가 없을 경우 pm_idle로 진행.
 			 **/
 			} else if (!need_resched()) {
 				stop_critical_timings();
-				/** 20160220    
+				/** 20160220
 				 * cpuidle 선언되지 않을 경우 에러가 리턴되어 pm_idle을 실행.
 				 * pm_idle은 irq가 활성화 된 상태로 리턴되어야 한다.
 				 **/
@@ -278,13 +278,13 @@ void cpu_idle(void)
 			} else
 				local_irq_enable();
 		}
-		/** 20160227    
+		/** 20160227
 		 * need_resched 여서 idle 루프를 벗어나기 위한 함수들을 호출.
 		 **/
 		leds_event(led_idle_end);
 		rcu_idle_exit();
 		tick_nohz_idle_exit();
-		/** 20160227    
+		/** 20160227
 		 * preempt_disable 상태에서 명시적으로 schedule 함수를 호출해
 		 * 대기 중인 다른 task를 동작시킨다.
 		 **/
@@ -411,7 +411,7 @@ void show_regs(struct pt_regs * regs)
 	dump_stack();
 }
 
-/** 20150118    
+/** 20150118
  * thread (struct thread_info) 관련 notify 선언 및 초기화.
  **/
 ATOMIC_NOTIFIER_HEAD(thread_notify_head);
@@ -585,7 +585,7 @@ unsigned long arch_randomize_brk(struct mm_struct *mm)
  * atomic helpers and the signal restart code. Insert it into the
  * gate_vma so that it is visible through ptrace and /proc/<pid>/mem.
  */
-/** 20151114    
+/** 20151114
  * process vectors page에 대한 vm_area_area 구조체.
  *
  * vector page는 user space에서 atomic helper 등에서 사용된다.
@@ -594,7 +594,7 @@ unsigned long arch_randomize_brk(struct mm_struct *mm)
  **/
 static struct vm_area_struct gate_vma;
 
-/** 20151114    
+/** 20151114
  * gate_vma를 vector table 정보로 설정해둔다.
  **/
 static int __init gate_vma_init(void)
@@ -608,7 +608,7 @@ static int __init gate_vma_init(void)
 }
 arch_initcall(gate_vma_init);
 
-/** 20151114    
+/** 20151114
  * __HAVE_ARCH_GATE_AREA이므로 arch_initcall에서 생성해둔 gate_vma를 리턴한다.
  **/
 struct vm_area_struct *get_gate_vma(struct mm_struct *mm)

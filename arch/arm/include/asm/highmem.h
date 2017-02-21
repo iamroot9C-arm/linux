@@ -9,7 +9,7 @@
  * memory layout은 Documentation/arm/memory.txt 참고
  **/
 #define PKMAP_BASE		(PAGE_OFFSET - PMD_SIZE)
-/** 20131026    
+/** 20131026
  * LAST_PKMAP은 PTRS_PER_PTE (512)
  **/
 #define LAST_PKMAP		PTRS_PER_PTE
@@ -18,14 +18,14 @@
 * L2 Page Table의 인덱스를 구한다.
  **/
 #define PKMAP_NR(virt)		(((virt) - PKMAP_BASE) >> PAGE_SHIFT)
-/** 20131102    
+/** 20131102
  * PKMAP_BASE에 PAGE_SHIFT만큼 index를 이동시켜 virtual address 주소를 받아온다.
  **/
 #define PKMAP_ADDR(nr)		(PKMAP_BASE + ((nr) << PAGE_SHIFT))
 
 #define kmap_prot		PAGE_KERNEL
 
-/** 20131026    
+/** 20131026
  * cache type이 vivt인 경우 flush_cache_all.
  * vipt인 경우는???
  **/

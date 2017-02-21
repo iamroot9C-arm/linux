@@ -17,7 +17,7 @@
 #include <asm/types.h>
 
 /* 2^31 + 2^29 - 2^25 + 2^22 - 2^19 - 2^16 + 1 */
-/** 20131026    
+/** 20131026
  * hash golden ration
  **/
 #define GOLDEN_RATIO_PRIME_32 0x9e370001UL
@@ -26,7 +26,7 @@
 
 #if BITS_PER_LONG == 32
 #define GOLDEN_RATIO_PRIME GOLDEN_RATIO_PRIME_32
-/** 20150314    
+/** 20150314
  * 투입된 값을 기준으로 hash table의 index를 가져온다.
  **/
 #define hash_long(val, bits) hash_32(val, bits)
@@ -60,13 +60,13 @@ static inline u64 hash_64(u64 val, unsigned int bits)
 	return hash >> (64 - bits);
 }
 
-/** 20131026    
+/** 20131026
  * 주어진 값과 bits를 이용해 hash table의 index를 가져온다.
  **/
 static inline u32 hash_32(u32 val, unsigned int bits)
 {
 	/* On some cpus multiply is faster, on others gcc will do shifts */
-	/** 20131026    
+	/** 20131026
 	 * hash 값을 구해온다.
 	 **/
 	u32 hash = val * GOLDEN_RATIO_PRIME_32;
@@ -75,7 +75,7 @@ static inline u32 hash_32(u32 val, unsigned int bits)
 	return hash >> (32 - bits);
 }
 
-/** 20140607    
+/** 20140607
  * ptr로 hash 값을 생성하고, 요구되는 bits 만큼 가져온다.
  **/
 static inline unsigned long hash_ptr(const void *ptr, unsigned int bits)

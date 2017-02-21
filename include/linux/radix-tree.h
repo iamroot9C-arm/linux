@@ -61,7 +61,7 @@ static inline int radix_tree_is_indirect_ptr(void *ptr)
 #define RADIX_TREE_MAX_TAGS 3
 
 /* root tags are stored in gfp_mask, shifted by __GFP_BITS_SHIFT */
-/** 20140412    
+/** 20140412
  * radix_tree_root는 tree의 height, gfp_mask, rnode의 주소를 저장한다.
  **/
 struct radix_tree_root {
@@ -76,7 +76,7 @@ struct radix_tree_root {
 	.rnode = NULL,							\
 }
 
-/** 20140412    
+/** 20140412
  * radix_tree_root 선언 및 초기화
  *     선언시 사용할 이름과 gfp mask를 전달한다.
  **/
@@ -260,7 +260,7 @@ unsigned long radix_tree_range_tag_if_tagged(struct radix_tree_root *root,
 int radix_tree_tagged(struct radix_tree_root *root, unsigned int tag);
 unsigned long radix_tree_locate_item(struct radix_tree_root *root, void *item);
 
-/** 20140412    
+/** 20140412
  * radix_tree_preload에서 막아둔 선점기능을 풀어준다.
  **/
 static inline void radix_tree_preload_end(void)

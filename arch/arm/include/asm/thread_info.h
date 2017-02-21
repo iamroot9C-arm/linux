@@ -15,7 +15,7 @@
 #include <linux/compiler.h>
 #include <asm/fpstate.h>
 
-/** 20150118    
+/** 20150118
  * thread_info 관련 define.
  *
  *   order 1 << (1) = 2.
@@ -45,7 +45,7 @@ struct exec_domain;
 
 typedef unsigned long mm_segment_t;
 
-/** 20150118    
+/** 20150118
  * cpu 문맥을 저장할 구조체.
  **/
 struct cpu_context_save {
@@ -66,7 +66,7 @@ struct cpu_context_save {
  * low level task data that entry.S needs immediate access to.
  * __switch_to() assumes cpu_context follows immediately after cpu_domain.
  */
-/** 20150118    
+/** 20150118
  * task 구조체와 연결된 thread_info 구조체.
  *
  * cpu : 현재 task가 실행되는 cpu 정보.
@@ -74,7 +74,7 @@ struct cpu_context_save {
  **/
 struct thread_info {
 	unsigned long		flags;		/* low level flags */
-	/** 20131005    
+	/** 20131005
 	 * preempt_count가 0일 경우 선점 가능, 
 	 **/
 	int			preempt_count;	/* 0 => preemptable, <0 => bug */
@@ -142,7 +142,7 @@ static inline struct thread_info *current_thread_info(void)
 	return (struct thread_info *)(sp & ~(THREAD_SIZE - 1));
 }
 
-/** 20150118    
+/** 20150118
  * 특정 task가 보관 중인 문맥 중 pc, sp, fp를 가져온다.
  *
  * thread_info의 cpu_context에 문맥전환시 사용되는 레지스터들을 보관하므로
@@ -182,7 +182,7 @@ extern int vfp_restore_user_hwstate(struct user_vfp __user *,
  * We use bit 30 of the preempt_count to indicate that kernel
  * preemption is occurring.  See <asm/hardirq.h>.
  */
-/** 20140622    
+/** 20140622
  * kernel premption 중임을 나타내기 위한 상수값. preempt_count에 저장된다.
  **/
 #define PREEMPT_ACTIVE	0x40000000
@@ -197,7 +197,7 @@ extern int vfp_restore_user_hwstate(struct user_vfp __user *,
  *  TIF_USEDFPU		- FPU was used by this task this quantum (SMP)
  *  TIF_POLLING_NRFLAG	- true if poll_idle() is polling TIF_NEED_RESCHED
  */
-/** 20140816    
+/** 20140816
  * thread info의 flags 속성값
  *  TIF_SYSCALL_TRACE	- syscall trace가 활성화 되어 있다. (ptrace attach시 설정)
  *  TIF_SYSCALL_AUDIT	- syscall 감사가 활성화 되어 있다. (audit_alloc시 설정)
@@ -237,7 +237,7 @@ extern int vfp_restore_user_hwstate(struct user_vfp __user *,
 #define _TIF_SECCOMP		(1 << TIF_SECCOMP)
 
 /* Checks for any syscall work in entry-common.S */
-/** 20160305    
+/** 20160305
  * syscall trace / audit 진행 중을 표시
  **/
 #define _TIF_SYSCALL_WORK (_TIF_SYSCALL_TRACE | _TIF_SYSCALL_AUDIT)
@@ -245,7 +245,7 @@ extern int vfp_restore_user_hwstate(struct user_vfp __user *,
 /*
  * Change these and you break ASM code in entry-common.S
  */
-/** 20160220    
+/** 20160220
  * thread_info 중 work 관련 mask.
  **/
 #define _TIF_WORK_MASK		(_TIF_NEED_RESCHED | _TIF_SIGPENDING | _TIF_NOTIFY_RESUME)

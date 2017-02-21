@@ -38,7 +38,7 @@ typedef struct {
 				.owner_cpu = -1,			\
 				RW_DEP_MAP_INIT(lockname) }
 #else
-/** 20130518    
+/** 20130518
  * DEBUG 옵션이 켜있지 않을 경우
  *   raw_lock 구조체 변수를 UNLOCKED된 상태로 초기화.
  * RW_DEP_MAP_INIT 역시 관련된 DEBUG 옵션이 꺼져 있을 경우 생략됨.
@@ -48,7 +48,7 @@ typedef struct {
 				RW_DEP_MAP_INIT(lockname) }
 #endif
 
-/** 20130518    
+/** 20130518
  * rwlock_t 변수를 UNLOCKED된 상태로 초기화.
  **/
 #define DEFINE_RWLOCK(x)	rwlock_t x = __RW_LOCK_UNLOCKED(x)

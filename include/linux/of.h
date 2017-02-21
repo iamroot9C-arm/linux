@@ -424,7 +424,7 @@ static inline int of_machine_is_compatible(const char *compat)
 #endif /* CONFIG_OF */
 
 #ifndef of_node_to_nid
-/** 20140906    
+/** 20140906
  * device tree node에 해당하는 nid를 리턴.
  **/
 static inline int of_node_to_nid(struct device_node *np)

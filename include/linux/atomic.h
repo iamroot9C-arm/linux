@@ -30,7 +30,7 @@ static inline int atomic_add_unless(atomic_t *v, int a, int u)
  * Atomically increments @v by 1, so long as @v is non-zero.
  * Returns non-zero if @v was non-zero, and zero otherwise.
  */
-/** 20140524    
+/** 20140524
  * v의 값이 0이 아니라면 1을 증가시키고, 그 결과가 0이 아니라면 성공.
  * v가 0이 아닌 경우 0이 아닌 값이 리턴. 0인 경우 0이 리턴.
  **/

@@ -57,7 +57,7 @@ bool is_power_of_2(unsigned long n)
 /*
  * round up to nearest power of two
  */
-/** 20130727    
+/** 20130727
  * 2의 제곱수로 올림하는 함수
  **/
 static inline __attribute__((const))
@@ -85,7 +85,7 @@ unsigned long __rounddown_pow_of_two(unsigned long n)
  *
  * selects the appropriately-sized optimised version depending on sizeof(n)
  */
-/** 20130727    
+/** 20130727
  * ilog2는 n이 2의 몇 제곱수 다음의 값인지 구하는 매크로 함수
  * ex) 4000 -> 2^11
  **/
@@ -172,7 +172,7 @@ unsigned long __rounddown_pow_of_two(unsigned long n)
  * - the result is undefined when n == 0
  * - this can be used to initialise global variables from constant data
  */
-/** 20130727    
+/** 20130727
  * 2의 제곱수로 round up.
  * 빌드시에 상수값으로 판단된다면 general 함수 호출.
  **/

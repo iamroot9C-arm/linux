@@ -10,7 +10,7 @@
  * Could be added though, just undo lg_lock_init
  */
 
-/** 20150214    
+/** 20150214
  * lg lock 초기화.
  *
  * LOCK ALLOC을 디버깅하지 않으면 아무 동작도 취하지 않는다.
@@ -65,7 +65,7 @@ void lg_local_unlock_cpu(struct lglock *lg, int cpu)
 }
 EXPORT_SYMBOL(lg_local_unlock_cpu);
 
-/** 20150221    
+/** 20150221
  * lg global lock을 건다.
  * cpu들을 순회하며 각 코어별로 spinlock을 건다. 
  **/
@@ -73,7 +73,7 @@ void lg_global_lock(struct lglock *lg)
 {
 	int i;
 
-	/** 20150221    
+	/** 20150221
 	 * 선점불가 상태로 만든다.
 	 * deadlock을 방지하기 위해.
 	 * [참고] Documentation/locking/lglock.txt history.
@@ -88,14 +88,14 @@ void lg_global_lock(struct lglock *lg)
 }
 EXPORT_SYMBOL(lg_global_lock);
 
-/** 20150221    
+/** 20150221
  * lg global lock을 해제한다.
  **/
 void lg_global_unlock(struct lglock *lg)
 {
 	int i;
 
-	/** 20150221    
+	/** 20150221
 	 **/
 	rwlock_release(&lg->lock_dep_map, 1, _RET_IP_);
 	for_each_possible_cpu(i) {

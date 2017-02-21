@@ -6,7 +6,7 @@
 /*
  * CR1 bits (CP#15 CR1)
  */
-/** 20151128    
+/** 20151128
  * ARM 문서
  * B4.1.130 SCTLR, System Control Register, VMSA
  **/
@@ -40,7 +40,7 @@
 
 #ifndef __ASSEMBLY__
 
-/** 20150620    
+/** 20150620
  * cortex-a9은 ARM architecture 버전이 4 이상이므로 high vector 비트를 검사한다.
  **/
 #if __LINUX_ARM_ARCH__ >= 4
@@ -63,7 +63,7 @@ static inline unsigned int get_cr(void)
 	return val;
 }
 
-/** 20151128    
+/** 20151128
  * SCTRL 레지스터를 설정하는 inline assem.
  *
  * 이후 명령이 레지스터 설정보다 먼저 실행되지 않도록 isb를 사용.

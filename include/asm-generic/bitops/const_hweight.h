@@ -4,7 +4,7 @@
 /*
  * Compile time versions of __arch_hweightN()
  */
-/** 20130608    
+/** 20130608
  * 각 비트가 1로 설정되어 있으면 !!을 거쳐 각각 1이 리턴된다.
  * 따라서 8비트 내에 1로 설정된 비트의 수를 counting.
  **/
@@ -18,7 +18,7 @@
 	(!!((w) & (1ULL << 6))) +	\
 	(!!((w) & (1ULL << 7)))	)
 
-/** 20130608    
+/** 20130608
  * 절반씩 쪼개 count.
  **/
 #define __const_hweight16(w) (__const_hweight8(w)  + __const_hweight8((w)  >> 8 ))
@@ -30,7 +30,7 @@
  */
 #define hweight8(w)  (__builtin_constant_p(w) ? __const_hweight8(w)  : __arch_hweight8(w))
 #define hweight16(w) (__builtin_constant_p(w) ? __const_hweight16(w) : __arch_hweight16(w))
-/** 20130608    
+/** 20130608
  * w가 컴파일 시간에 처리할 수 있는 상수값이면 __const_hweight32,
  * 그렇지 않으면 __arch_hweight32 호출.
  **/

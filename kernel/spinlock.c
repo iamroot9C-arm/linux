@@ -116,7 +116,7 @@ BUILD_LOCK_OPS(write, rwlock);
 #endif
 
 #ifndef CONFIG_INLINE_SPIN_TRYLOCK
-/** 20140809    
+/** 20140809
  **/
 int __lockfunc _raw_spin_trylock(raw_spinlock_t *lock)
 {
@@ -134,7 +134,7 @@ EXPORT_SYMBOL(_raw_spin_trylock_bh);
 #endif
 
 #ifndef CONFIG_INLINE_SPIN_LOCK
-/** 20130706    
+/** 20130706
  * CONFIG_INLINE_SPIN_LOCK  이 설정되어 있지 않아 __raw_spin_lock 함수 호출
  **/
 void __lockfunc _raw_spin_lock(raw_spinlock_t *lock)
@@ -155,11 +155,11 @@ unsigned long __lockfunc _raw_spin_lock_irqsave(raw_spinlock_t *lock)
 EXPORT_SYMBOL(_raw_spin_lock_irqsave);
 #endif
 
-/** 20131026    
+/** 20131026
  * CONFIG_INLINE_SPIN_LOCK_IRQ 는 선언되어 있지 않음.
  **/
 #ifndef CONFIG_INLINE_SPIN_LOCK_IRQ
-/** 20131026    
+/** 20131026
  * irq disable 상태에서 spinlock을 획득하는 함수
  **/
 void __lockfunc _raw_spin_lock_irq(raw_spinlock_t *lock)
@@ -170,7 +170,7 @@ EXPORT_SYMBOL(_raw_spin_lock_irq);
 #endif
 
 #ifndef CONFIG_INLINE_SPIN_LOCK_BH
-/** 20150214    
+/** 20150214
  * bottom-half를 막고, 선점을 금지시킨 상태로 spinlock을 건다.
  **/
 void __lockfunc _raw_spin_lock_bh(raw_spinlock_t *lock)
@@ -227,7 +227,7 @@ EXPORT_SYMBOL(_raw_read_trylock);
 #endif
 
 #ifndef CONFIG_INLINE_READ_LOCK
-/** 20141022    
+/** 20141022
  **/
 void __lockfunc _raw_read_lock(rwlock_t *lock)
 {
@@ -301,7 +301,7 @@ EXPORT_SYMBOL(_raw_write_trylock);
 #endif
 
 #ifndef CONFIG_INLINE_WRITE_LOCK
-/** 20140329    
+/** 20140329
  * inline write lock이 정의되지 않은 경우
  **/
 void __lockfunc _raw_write_lock(rwlock_t *lock)
@@ -320,7 +320,7 @@ EXPORT_SYMBOL(_raw_write_lock_irqsave);
 #endif
 
 #ifndef CONFIG_INLINE_WRITE_LOCK_IRQ
-/** 20151031    
+/** 20151031
  * irq를 막고 rwlock의 write lock을 건다.
  *
  * CONFIG_INLINE_WRITE_LOCK_IRQ가 정의되지 않아 아래 함수가 정의된다.

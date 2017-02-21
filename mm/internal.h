@@ -16,7 +16,7 @@
 void free_pgtables(struct mmu_gather *tlb, struct vm_area_struct *start_vma,
 		unsigned long floor, unsigned long ceiling);
 
-/** 20130803    
+/** 20130803
  * page->_count를 v라는 값으로 설정함
  **/
 static inline void set_page_count(struct page *page, int v)
@@ -28,7 +28,7 @@ static inline void set_page_count(struct page *page, int v)
  * Turn a non-refcounted page (->_count == 0) into refcounted with
  * a count of one.
  */
-/** 20130803    
+/** 20130803
  * non-refcounted page의 _count를 1로 설정해 reference 상태로 만든다.
  **/
 static inline void set_page_refcounted(struct page *page)
@@ -151,7 +151,7 @@ isolate_migratepages_range(struct zone *zone, struct compact_control *cc,
  * zone->lock is already acquired when we use these.
  * So, we don't need atomic page->flags operations here.
  */
-/** 20130921    
+/** 20130921
  * page의 private에 설정된 order값을 리턴한다.
  **/
 static inline unsigned long page_order(struct page *page)
@@ -350,7 +350,7 @@ static inline void mminit_verify_zonelist(void)
 extern void mminit_validate_memmodel_limits(unsigned long *start_pfn,
 				unsigned long *end_pfn);
 #else
-/** 20130330    
+/** 20130330
  **/
 static inline void mminit_validate_memmodel_limits(unsigned long *start_pfn,
 				unsigned long *end_pfn)

@@ -64,23 +64,23 @@ int writeback_in_progress(struct backing_dev_info *bdi)
 	return test_bit(BDI_writeback_running, &bdi->state);
 }
 
-/** 20150404    
+/** 20150404
  * inode에 연결된 bdi 구조체를 찾아 리턴한다.
  **/
 static inline struct backing_dev_info *inode_to_bdi(struct inode *inode)
 {
-	/** 20150404    
+	/** 20150404
 	 * inode가 가리키는 superblock을 받아온다.
 	 **/
 	struct super_block *sb = inode->i_sb;
 
-	/** 20150404    
+	/** 20150404
 	 * superblock type의 name이 "bdev"면 address_space의 bdi를 리턴한다.
 	 **/
 	if (strcmp(sb->s_type->name, "bdev") == 0)
 		return inode->i_mapping->backing_dev_info;
 
-	/** 20150404    
+	/** 20150404
 	 * 그렇지 않을 경우 superblock의 s_bdi를 리턴한다.
 	 **/
 	return sb->s_bdi;
@@ -196,17 +196,17 @@ void bdi_start_background_writeback(struct backing_dev_info *bdi)
 /*
  * Remove the inode from the writeback list it is on.
  */
-/** 20150404    
+/** 20150404
  * inode가 등록되어 있던 writeback list에서 제거한다.
  **/
 void inode_wb_list_del(struct inode *inode)
 {
-	/** 20150404    
+	/** 20150404
 	 * inode에 해당하는 bdi 구조체를 찾아온다.
 	 **/
 	struct backing_dev_info *bdi = inode_to_bdi(inode);
 
-	/** 20150404    
+	/** 20150404
 	 * bdi list에서 inode를 제거하기 위해 spin_lock을 사용한다.
 	 * inode를 i_wb_list에서 제거하고, 연결하고 있던 포인터를 초기화 한다.
 	 **/
@@ -246,21 +246,21 @@ static void requeue_io(struct inode *inode, struct bdi_writeback *wb)
 	list_move(&inode->i_wb_list, &wb->b_more_io);
 }
 
-/** 20150404    
+/** 20150404
  * inode의 sync(writeback)을 기다리는 task를 깨운다.
  *
  * i_state가 변경되기 때문에 이 함수를 호출하는 곳에서 spinlock을 사용해야 한다.
  **/
 static void inode_sync_complete(struct inode *inode)
 {
-	/** 20150404    
+	/** 20150404
 	 * inode를 깨우기 전에 I_SYNC부터 제거하고,
 	 * 깨어난 task가 상태값을 확실히 파악하도록 memory barrier를 사용한다.
 	 **/
 	inode->i_state &= ~I_SYNC;
 	/* Waiters must see I_SYNC cleared before being woken up */
 	smp_mb();
-	/** 20150404    
+	/** 20150404
 	 * __I_SYNC 비트를 기다리며 대기하는 task를 깨운다.
 	 * 
 	 * __inode_wait_for_writeback에 해당.
@@ -360,24 +360,24 @@ static int write_inode(struct inode *inode, struct writeback_control *wbc)
  * Wait for writeback on an inode to complete. Called with i_lock held.
  * Caller must make sure inode cannot go away when we drop i_lock.
  */
-/** 20150404    
+/** 20150404
  * inode가 writeback 되어 I_SYNC가 뜰 때까지 대기한다.
  **/
 static void __inode_wait_for_writeback(struct inode *inode)
 	__releases(inode->i_lock)
 	__acquires(inode->i_lock)
 {
-	/** 20150404    
+	/** 20150404
 	 * __I_SYNC가 풀릴 때까지 대기하는 bit waitqueue를 정의한다.
 	 **/
 	DEFINE_WAIT_BIT(wq, &inode->i_state, __I_SYNC);
 	wait_queue_head_t *wqh;
 
-	/** 20150404    
+	/** 20150404
 	 * i_state의 __I_SYNC를 기다리는 waitqueue head를 가져온다.
 	 **/
 	wqh = bit_waitqueue(&inode->i_state, __I_SYNC);
-	/** 20150404    
+	/** 20150404
 	 * I_SYNC가 뜰 때까지 task를 uninterruptible 상태로 대기 시킨다.
 	 **/
 	while (inode->i_state & I_SYNC) {
@@ -390,12 +390,12 @@ static void __inode_wait_for_writeback(struct inode *inode)
 /*
  * Wait for writeback on an inode to complete. Caller must have inode pinned.
  */
-/** 20150404    
+/** 20150404
  * inode에 대해 writeback 될 때까지 대기한다.
  **/
 void inode_wait_for_writeback(struct inode *inode)
 {
-	/** 20150404    
+	/** 20150404
 	 * writeback 진행을 기다리는 구간동안 inode는 spinlock으로 보호 받아야 한다.
 	 * 내부에서 sleep할 때는 spin_lock을 해제해야 한다.
 	 **/
@@ -1133,7 +1133,7 @@ int bdi_writeback_thread(void *data)
  * Start writeback of `nr_pages' pages.  If `nr_pages' is zero, write back
  * the whole world.
  */
-/** 20140517    
+/** 20140517
  * 추후 분석
  **/
 void wakeup_flusher_threads(long nr_pages, enum wb_reason reason)

@@ -30,7 +30,7 @@ struct hrtimer_cpu_base;
 /*
  * Mode arguments of xxx_hrtimer functions:
  */
-/** 20140419    
+/** 20140419
  * high resolution timer mode 설정
  **/
 enum hrtimer_mode {
@@ -44,7 +44,7 @@ enum hrtimer_mode {
 /*
  * Return values for the callback function
  */
-/** 20140419    
+/** 20140419
  **/
 enum hrtimer_restart {
 	HRTIMER_NORESTART,	/* Timer is not restarted */
@@ -82,7 +82,7 @@ enum hrtimer_restart {
  *
  * All state transitions are protected by cpu_base->lock.
  */
-/** 20141115    
+/** 20141115
  * HRTIMER의 상태.
  *
  * 0x00		비활성 상태
@@ -123,7 +123,7 @@ enum hrtimer_restart {
  *
  * The hrtimer structure must be initialized by hrtimer_init()
  */
-/** 20140419    
+/** 20140419
  * hrtimer
  *
  * node : timer queue, expires값과 rb_tree의 entry point를 갖고 있음.
@@ -150,7 +150,7 @@ enum hrtimer_restart {
 struct hrtimer {
 	struct timerqueue_node		node;
 	ktime_t				_softexpires;
-	/** 20140419    
+	/** 20140419
 	 * init_rt_bandwidth 에서 지정
 	 **/
 	enum hrtimer_restart		(*function)(struct hrtimer *);
@@ -187,7 +187,7 @@ struct hrtimer_sleeper {
  * @softirq_time:	the time when running the hrtimer queue in the softirq
  * @offset:		offset of this clock to the monotonic base
  */
-/** 20141108    
+/** 20141108
  * 특정 clock에 대한 timer base 자료구조.
  *
  * cpu_base : hrtimer_clock_base가 위치하는(포함하는) hrtimer_cpu_base를 가리킨다.
@@ -204,7 +204,7 @@ struct hrtimer_clock_base {
 	ktime_t			offset;
 };
 
-/** 20141101    
+/** 20141101
  * hrtimer의 base type 3가지.
  *   MONOTONIC : 부팅 이후 0부터 시작. 단조 증가.
  *   REALTIME  : 시스템이 파악하는 실제 시간. 시스템 외부 시간에 영향을 받는다.
@@ -233,7 +233,7 @@ enum  hrtimer_base_type {
  * @max_hang_time:	Maximum time spent in hrtimer_interrupt
  * @clock_base:		array of clock bases for this cpu
  */
-/** 20141108    
+/** 20141108
  * hrtimer 프레임워크를 사용하기 위해 cpu별 clock bases를 가진다.
  *
  * expires_next :	clock_set_next_event()에 의해 설정된, 다음 event가 발생할 절대 시간.
@@ -256,7 +256,7 @@ struct hrtimer_cpu_base {
 	struct hrtimer_clock_base	clock_base[HRTIMER_MAX_CLOCK_BASES];
 };
 
-/** 20141108    
+/** 20141108
  * hrtimer node의 만료시간을 같은 시간으로 지정한다.
  **/
 static inline void hrtimer_set_expires(struct hrtimer *timer, ktime_t time)
@@ -265,7 +265,7 @@ static inline void hrtimer_set_expires(struct hrtimer *timer, ktime_t time)
 	timer->_softexpires = time;
 }
 
-/** 20141115    
+/** 20141115
  * hrtimer node의 만료시간을 range로 지정한다.
  * soft expires와 delta를 받는다.
  **/
@@ -275,7 +275,7 @@ static inline void hrtimer_set_expires_range(struct hrtimer *timer, ktime_t time
 	timer->node.expires = ktime_add_safe(time, delta);
 }
 
-/** 20141115    
+/** 20141115
  * hrtimer node의 만료시간을 range로 지정한다.
  * soft expires와 delta를 받는다.
  *
@@ -293,7 +293,7 @@ static inline void hrtimer_set_expires_tv64(struct hrtimer *timer, s64 tv64)
 	timer->_softexpires.tv64 = tv64;
 }
 
-/** 20140419    
+/** 20140419
  * hrtimer의 expires 값을 time만큼 더한다. ktime_t version.
  **/
 static inline void hrtimer_add_expires(struct hrtimer *timer, ktime_t time)
@@ -302,7 +302,7 @@ static inline void hrtimer_add_expires(struct hrtimer *timer, ktime_t time)
 	timer->_softexpires = ktime_add_safe(timer->_softexpires, time);
 }
 
-/** 20140419    
+/** 20140419
  * hrtimer의 expires와 _softexpires에 ns만큼을 증가시킨다.
  **/
 static inline void hrtimer_add_expires_ns(struct hrtimer *timer, u64 ns)
@@ -311,7 +311,7 @@ static inline void hrtimer_add_expires_ns(struct hrtimer *timer, u64 ns)
 	timer->_softexpires = ktime_add_ns(timer->_softexpires, ns);
 }
 
-/** 20140419    
+/** 20140419
  * hrtimer의 node의 expires값을 가져온다.
  **/
 static inline ktime_t hrtimer_get_expires(const struct hrtimer *timer)
@@ -319,7 +319,7 @@ static inline ktime_t hrtimer_get_expires(const struct hrtimer *timer)
 	return timer->node.expires;
 }
 
-/** 20141108    
+/** 20141108
  * hrtimer의 soft expires값을 가져온다.
  **/
 static inline ktime_t hrtimer_get_softexpires(const struct hrtimer *timer)
@@ -327,7 +327,7 @@ static inline ktime_t hrtimer_get_softexpires(const struct hrtimer *timer)
 	return timer->_softexpires;
 }
 
-/** 20140419    
+/** 20140419
  * hrtimer의 expires 값을 반환한다.
  **/
 static inline s64 hrtimer_get_expires_tv64(const struct hrtimer *timer)
@@ -350,7 +350,7 @@ static inline ktime_t hrtimer_expires_remaining(const struct hrtimer *timer)
 }
 
 #ifdef CONFIG_HIGH_RES_TIMERS
-/** 20140419    
+/** 20140419
  * vexress의 default config에는 HIGH_RES_TIMERS를 사용하지 않음
  **/
 struct clock_event_device;
@@ -360,7 +360,7 @@ extern void hrtimer_interrupt(struct clock_event_device *dev);
 /*
  * In high resolution mode the time reference must be read accurate
  */
-/** 20140419    
+/** 20140419
  * hrtimer clock의 현재 time값을 가져오는 callback 함수 호출
  **/
 static inline ktime_t hrtimer_cb_get_time(struct hrtimer *timer)
@@ -399,7 +399,7 @@ static inline void hrtimer_peek_ahead_timers(void) { }
  * In non high resolution mode the time reference is taken from
  * the base softirq time variable.
  */
-/** 20140419    
+/** 20140419
  * softirq_time값을 리턴
  **/
 static inline ktime_t hrtimer_cb_get_time(struct hrtimer *timer)
@@ -467,7 +467,7 @@ __hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim,
 extern int hrtimer_cancel(struct hrtimer *timer);
 extern int hrtimer_try_to_cancel(struct hrtimer *timer);
 
-/** 20141129    
+/** 20141129
  * 현재 cpu에 hrtimer가 expire되도록 등록한다.
  **/
 static inline int hrtimer_start_expires(struct hrtimer *timer,
@@ -475,7 +475,7 @@ static inline int hrtimer_start_expires(struct hrtimer *timer,
 {
 	unsigned long delta;
 	ktime_t soft, hard;
-	/** 20141115    
+	/** 20141115
 	 * hrtimer의 hard, soft expires의 차를 구하고,
 	 * 이 값들을 사용하여 hrtimer_start_range_ns 인터페이스를 통해 호출한다.
 	 **/
@@ -501,7 +501,7 @@ extern ktime_t hrtimer_get_next_event(void);
  * callback function is running or it's in the state of being migrated
  * to another cpu.
  */
-/** 20141129    
+/** 20141129
  * hrtimer가 INACTIVE 상태가 아니라면 active이다.
  * (ENQUEUED, CALLBACK, MIGRATE)
  **/
@@ -513,7 +513,7 @@ static inline int hrtimer_active(const struct hrtimer *timer)
 /*
  * Helper function to check, whether the timer is on one of the queues
  */
-/** 20141108    
+/** 20141108
  * timer가 현재 timerqueue에 포함되어 있는지 검사.
  **/
 static inline int hrtimer_is_queued(struct hrtimer *timer)

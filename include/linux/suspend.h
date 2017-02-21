@@ -346,7 +346,7 @@ void restore_processor_state(void);
 extern int register_pm_notifier(struct notifier_block *nb);
 extern int unregister_pm_notifier(struct notifier_block *nb);
 
-/** 20151010    
+/** 20151010
  * notifier_block을 선언하고, pm notifier list에 등록한다.
  * 
  * 이렇게 등록한 nb은 pm_notifier_call_chain()으로 호출된다.

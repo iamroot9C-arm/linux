@@ -9,7 +9,7 @@ extern char __bss_start[], __bss_stop[];
 extern char __init_begin[], __init_end[];
 extern char _sinittext[], _einittext[];
 extern char _end[];
-/** 20140308    
+/** 20140308
  * __per_cpu_start, __per_cpu_end 는 vmlinux.lds 에서 정의되어
  * vmlinux 내에서의 위치를 가리킨다.
  **/

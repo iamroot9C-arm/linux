@@ -24,7 +24,7 @@
 #include <asm/io.h>
 
 
-/** 20151121    
+/** 20151121
  * IORESOURCE_IO의 parent resource.
  *
  * /proc/ioport로 등록된 resource 확인 가능
@@ -37,7 +37,7 @@ struct resource ioport_resource = {
 };
 EXPORT_SYMBOL(ioport_resource);
 
-/** 20151121    
+/** 20151121
  * IORESOURCE_MEM의 parent resource.
  *
  * /proc/iomem으로 등록된 resource 확인 가능
@@ -151,7 +151,7 @@ static const struct file_operations proc_iomem_operations = {
 	.release	= seq_release,
 };
 
-/** 20160109    
+/** 20160109
  * ioport와 iomem을 proc에서 확인할 수 있도록 생성한다.
  **/
 static int __init ioresources_init(void)
@@ -165,7 +165,7 @@ __initcall(ioresources_init);
 #endif /* CONFIG_PROC_FS */
 
 /* Return the conflict entry if you can't request it */
-/** 20130518    
+/** 20130518
  * root에 새로운 resource entry를 추가한다.
  * 겹치는 영역이 존재할 때는 이미 존재하는 영역에 대한 포인터를 리턴한다.
  **/
@@ -184,7 +184,7 @@ static struct resource * __request_resource(struct resource *root, struct resour
 	p = &root->child;
 	for (;;) {
 		tmp = *p;
-		/** 20130518    
+		/** 20130518
 		 * tmp가 NULL인 경우이거나 기존의 child 보다 작은 주소일 경우
 		 * root->child로 지정함
 		 **/
@@ -194,13 +194,13 @@ static struct resource * __request_resource(struct resource *root, struct resour
 			new->parent = root;
 			return NULL;
 		}
-		/** 20130518    
+		/** 20130518
 		 * 다음 sibling부터 검사
 		 **/
 		p = &tmp->sibling;
 		if (tmp->end < start)
 			continue;
-		/** 20130518    
+		/** 20130518
 		 * conflict된 entry
 		 **/
 		return tmp;
@@ -263,7 +263,7 @@ void release_child_resources(struct resource *r)
  *
  * Returns 0 for success, conflict resource on error.
  */
-/** 20130518    
+/** 20130518
  * resource root에 새로운 resource를 등록.
  * conflict라면 충돌한 이전 resource의 주소를 리턴.
  **/
@@ -284,7 +284,7 @@ struct resource *request_resource_conflict(struct resource *root, struct resourc
  *
  * Returns 0 for success, negative error code on error.
  */
-/** 20130518    
+/** 20130518
  * 새로운 resource를 등록.
  * 충돌시 -EBUSY, 성공적으로 추가되었다면 0 리턴.
  **/
@@ -620,7 +620,7 @@ struct resource *lookup_resource(struct resource *root, resource_size_t start)
  * Insert a resource into the resource tree. If successful, return NULL,
  * otherwise return the conflicting resource (compare to __request_resource())
  */
-/** 20151121    
+/** 20151121
  * resource를 resource tree에 추가한다.
  *
  * 자세한 분석 생략???
@@ -687,7 +687,7 @@ static struct resource * __insert_resource(struct resource *parent, struct resou
  * resource is inserted and the conflicting resources become children of
  * the new resource.
  */
-/** 20151121    
+/** 20151121
  * resource를 resource tree에 추가한다.
  * 성공한 경우 0을 리턴, 추가할 수 없는 경우 conflict된 resource 리턴.
  *
@@ -710,7 +710,7 @@ struct resource *insert_resource_conflict(struct resource *parent, struct resour
  *
  * Returns 0 on success, -EBUSY if the resource can't be inserted.
  */
-/** 20151121    
+/** 20151121
  * resource를 resource tree에 추가한다.
  *
  * conflict가 발생한 경우 EBUSY 리턴. 성공할 경우 0을 리턴.

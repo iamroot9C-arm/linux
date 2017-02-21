@@ -79,7 +79,7 @@ static void __init rcu_bootup_announce_oddness(void)
 		printk(KERN_INFO "\tRCU restricting CPUs from NR_CPUS=%d to nr_cpu_ids=%d.\n", NR_CPUS, nr_cpu_ids);
 }
 
-/** 20140726    
+/** 20140726
  * vexpress는 CONFIG_PREEMPT가 꺼져 있지만,
  * 보편적인 경우 해당하므로 CONFIG_TREE_PREEMPT_RCU를 분석함.
  **/
@@ -142,7 +142,7 @@ EXPORT_SYMBOL_GPL(rcu_force_quiescent_state);
  * must disable irqs in order to protect the assignment to
  * ->rcu_read_unlock_special.
  */
-/** 20140906    
+/** 20140906
  * preemptible-RCU의 qs state를 기록한다.
  **/
 static void rcu_preempt_qs(int cpu)
@@ -154,7 +154,7 @@ static void rcu_preempt_qs(int cpu)
 	if (rdp->passed_quiesce == 0)
 		trace_rcu_grace_period("rcu_preempt", rdp->gpnum, "cpuqs");
 	rdp->passed_quiesce = 1;
-	/** 20140906    
+	/** 20140906
 	 * unlock시 qs state 진행에 대한 속성을 제거한다.
 	 **/
 	current->rcu_read_unlock_special &= ~RCU_READ_UNLOCK_NEED_QS;
@@ -173,7 +173,7 @@ static void rcu_preempt_qs(int cpu)
  *
  * Caller must disable preemption.
  */
-/** 20140823    
+/** 20140823
  * 이제 scheduler로 진입한 상태이고, 현재 task는 context-switch 되어버릴 것이다.
  * 만약 현재 task가 RCU read-side 임계구역 내에 있다면, CPU의 기록에 의지할 수 없으므로
  * task를 blkd_tasks list에 넣는다. 가장 바깥 read-side 임계구역을 벗어날 때 dequeue된다.
@@ -187,7 +187,7 @@ static void rcu_preempt_note_context_switch(int cpu)
 	struct rcu_data *rdp;
 	struct rcu_node *rnp;
 
-	/** 20140823    
+	/** 20140823
 	 * 임계구역에 진입하면 __rcu_read_lock에서 rcu_read_lock_nesting를 증가시킨다.
 	 * 현재 rcu read 임계구역이며, 아직 RCU_READ_UNLOCK_BLOCKED가 아닌 상태라면
 	 **/
@@ -195,13 +195,13 @@ static void rcu_preempt_note_context_switch(int cpu)
 	    (t->rcu_read_unlock_special & RCU_READ_UNLOCK_BLOCKED) == 0) {
 
 		/* Possibly blocking in an RCU read-side critical section. */
-		/** 20140823    
+		/** 20140823
 		 * rcu_preempt_state에서 rcu_data와 rcu_data가 연결된 rcu_node를 가져온다.
 		 **/
 		rdp = per_cpu_ptr(rcu_preempt_state.rda, cpu);
 		rnp = rdp->mynode;
 		raw_spin_lock_irqsave(&rnp->lock, flags);
-		/** 20140823    
+		/** 20140823
 		 * rcu_read_unlock_special에 RCU_READ_UNLOCK_BLOCKED를 기록한다.
 		 * blocked된 node에 rnp를 기록한다.
 		 **/
@@ -228,7 +228,7 @@ static void rcu_preempt_note_context_switch(int cpu)
 		 */
 		WARN_ON_ONCE((rdp->grpmask & rnp->qsmaskinit) == 0);
 		WARN_ON_ONCE(!list_empty(&t->rcu_node_entry));
-		/** 20140823    
+		/** 20140823
 		 * rcu_node의 현재 gp 참여 대상에 rdp의 grpmask가 포함되어 있고,
 		 * gp_tasks에 이미 현재 gp를 block시키는 task가 있다면
 		 * 현재 task를 gp_tasks 앞에 추가하고 gp_tasks를 갱신한다.
@@ -241,12 +241,12 @@ static void rcu_preempt_note_context_switch(int cpu)
 				rnp->boost_tasks = rnp->gp_tasks;
 #endif /* #ifdef CONFIG_RCU_BOOST */
 		} else {
-			/** 20140823    
+			/** 20140823
 			 * rcu_node의 read-side critical section에서 block된 task 리스트에
 			 * 현재 task를 등록한다.
 			 **/
 			list_add(&t->rcu_node_entry, &rnp->blkd_tasks);
-			/** 20140823    
+			/** 20140823
 			 * rcu_node의 qsmask에 등록되어 있다면 현재 task를
 			 * rnp의 gp_tasks로 지정한다.
 			 **/
@@ -288,7 +288,7 @@ static void rcu_preempt_note_context_switch(int cpu)
  * for the specified rcu_node structure.  If the caller needs a reliable
  * answer, it must hold the rcu_node's ->lock.
  */
-/** 20140809    
+/** 20140809
  * 선점된 RCU reader들이 현재 gp를 block 시켰는지 검사.
  * gp_tasks가 NULL이 아니라면 block된 task 가 존재한다.
  **/
@@ -585,7 +585,7 @@ static void rcu_preempt_check_blocked_tasks(struct rcu_node *rnp)
  *
  * The caller must hold rnp->lock with irqs disabled.
  */
-/** 20141018    
+/** 20141018
  * CONFIG_TREE_PREEMPT_RCU인 경우에 해당.
  *
  * offline된 rcu_node에 등록되어 있는 tasklist를 이관.
@@ -621,7 +621,7 @@ static int rcu_preempt_offline_tasks(struct rcu_state *rsp,
 		retval |= RCU_OFL_TASKS_NORM_GP;
 	if (rcu_preempted_readers_exp(rnp))
 		retval |= RCU_OFL_TASKS_EXP_GP;
-	/** 20141018    
+	/** 20141018
 	 * rnp에 등록되어 있는 block된 task를 rnp_root로 이관.
 	 **/
 	lp = &rnp->blkd_tasks;
@@ -666,21 +666,21 @@ static int rcu_preempt_offline_tasks(struct rcu_state *rsp,
  *
  * Caller must disable hard irqs.
  */
-/** 20140906    
+/** 20140906
  * 현재 CPU에서 preempt RCU의 qs 에 대한 check를 수행한다.
  **/
 static void rcu_preempt_check_callbacks(int cpu)
 {
 	struct task_struct *t = current;
 
-	/** 20140906    
+	/** 20140906
 	 * read lock이 nesting 되어 있지 않다면 preempt qs를 기록하고 리턴.
 	 **/
 	if (t->rcu_read_lock_nesting == 0) {
 		rcu_preempt_qs(cpu);
 		return;
 	}
-	/** 20140906    
+	/** 20140906
 	 * read lock이 nesting 되어 있고, qs_pending되어 있다면
 	 * unlock시 QS 상태로 만들어 줘야 함을 표시한다.
 	 **/
@@ -701,7 +701,7 @@ static void rcu_preempt_do_callbacks(void)
 /*
  * Queue a preemptible-RCU callback for invocation after a grace period.
  */
-/** 20141025    
+/** 20141025
  * preemptible-RCU인 경우,
  * rcu_preempt_state에 callback을 등록한다.
  * 여기서 등록한 callback은 gp 이후 호출된다.
@@ -737,7 +737,7 @@ EXPORT_SYMBOL_GPL(kfree_call_rcu);
  * synchronize_rcu() was waiting.  RCU read-side critical sections are
  * delimited by rcu_read_lock() and rcu_read_unlock(), and may be nested.
  */
-/** 20141018    
+/** 20141018
  * gp가 끝날 때까지 block되어 기다리는 함수.
  *
  * Wait For Pre-Existing RCU Readers to Complete
@@ -943,7 +943,7 @@ EXPORT_SYMBOL_GPL(rcu_barrier);
 /*
  * Initialize preemptible RCU's state structures.
  */
-/** 20140726    
+/** 20140726
  * PREEMPT RCU인 경우 rcu state인 rcu_preempt_state를 추가로 초기화 한다.
  **/
 static void __init __rcu_init_preempt(void)
@@ -1045,7 +1045,7 @@ static void rcu_preempt_check_blocked_tasks(struct rcu_node *rnp)
  * such non-existent tasks cannot possibly have been blocking the current
  * grace period.
  */
-/** 20141018    
+/** 20141018
  **/
 static int rcu_preempt_offline_tasks(struct rcu_state *rsp,
 				     struct rcu_node *rnp,
@@ -1391,7 +1391,7 @@ static int __cpuinit rcu_spawn_one_boost_kthread(struct rcu_state *rsp,
 /*
  * Stop the RCU's per-CPU kthread when its CPU goes offline,.
  */
-/** 20141018    
+/** 20141018
  * offline 상태가 되는 cpu의 per-CPU kthread를 가져와 정지시킨다.
  **/
 static void rcu_stop_cpu_kthread(int cpu)
@@ -1767,7 +1767,7 @@ static void __cpuinit rcu_prepare_kthreads(int cpu)
 
 #else /* #ifdef CONFIG_RCU_BOOST */
 
-/** 20140809    
+/** 20140809
  * CONFIG_RCU_BOOST가 정의되지 않아 lock과 irq 상태만 복원해준다.
  **/
 static void rcu_initiate_boost(struct rcu_node *rnp, unsigned long flags)
@@ -1775,7 +1775,7 @@ static void rcu_initiate_boost(struct rcu_node *rnp, unsigned long flags)
 	raw_spin_unlock_irqrestore(&rnp->lock, flags);
 }
 
-/** 20140830    
+/** 20140830
  * CONFIG_RCU_BOOST가 정의되지 않았다.
  **/
 static void invoke_rcu_callbacks_kthread(void)
@@ -1808,7 +1808,7 @@ static void rcu_cpu_kthread_setrt(int cpu, int to_rt)
 {
 }
 
-/** 20150801    
+/** 20150801
  * early initcall 함수에서 rcu_scheduler_fully_active만 1로 설정한다.
  **/
 static int __init rcu_scheduler_really_started(void)
@@ -1818,7 +1818,7 @@ static int __init rcu_scheduler_really_started(void)
 }
 early_initcall(rcu_scheduler_really_started);
 
-/** 20140823    
+/** 20140823
  * CONFIG_RCU_BOOST가 정의되지 않은 경우 NULL 함수.
  **/
 static void __cpuinit rcu_prepare_kthreads(int cpu)
@@ -1847,7 +1847,7 @@ int rcu_needs_cpu(int cpu, unsigned long *delta_jiffies)
 /*
  * Because we do not have RCU_FAST_NO_HZ, don't bother initializing for it.
  */
-/** 20140823    
+/** 20140823
  * CONFIG_RCU_FAST_NO_HZ가 정의되어 있지 않은 경우.
  **/
 static void rcu_prepare_for_idle_init(int cpu)
@@ -1858,7 +1858,7 @@ static void rcu_prepare_for_idle_init(int cpu)
  * Because we do not have RCU_FAST_NO_HZ, don't bother cleaning up
  * after it.
  */
-/** 20141004    
+/** 20141004
  * CONFIG_RCU_FAST_NO_HZ가 정의되어 있지 않아 NULL 함수.
  **/
 static void rcu_cleanup_after_idle(int cpu)
@@ -1869,7 +1869,7 @@ static void rcu_cleanup_after_idle(int cpu)
  * Do the idle-entry grace-period work, which, because CONFIG_RCU_FAST_NO_HZ=n,
  * is nothing.
  */
-/** 20141004    
+/** 20141004
  * CONFIG_RCU_FAST_NO_HZ가 정의되어 있지 않아 NULL 함수.
  **/
 static void rcu_prepare_for_idle(int cpu)
@@ -1880,7 +1880,7 @@ static void rcu_prepare_for_idle(int cpu)
  * Don't bother keeping a running count of the number of RCU callbacks
  * posted because CONFIG_RCU_FAST_NO_HZ=n.
  */
-/** 20140823    
+/** 20140823
  * CONFIG_RCU_FAST_NO_HZ가 정의되지 않아 NULL 함수.
  **/
 static void rcu_idle_count_callbacks_posted(void)
@@ -1940,7 +1940,7 @@ extern int tick_nohz_enabled;
  * the specified CPU?  Both RCU flavor and CPU are specified by the
  * rcu_data structure.
  */
-/** 20141018    
+/** 20141018
  * rdp가 qlen과 qlen_lazy가 다르면 queue에 nonlazy CBs가 존재한다.
  **/
 static bool __rcu_cpu_has_nonlazy_callbacks(struct rcu_data *rdp)
@@ -1954,7 +1954,7 @@ static bool __rcu_cpu_has_nonlazy_callbacks(struct rcu_data *rdp)
  * Are there non-lazy RCU-preempt callbacks?  (There cannot be if there
  * is no RCU-preempt in the kernel.)
  */
-/** 20141018    
+/** 20141018
  * rdp에 nonlazy CBs가 존재하는지 검사한다.
  **/
 static bool rcu_preempt_cpu_has_nonlazy_callbacks(int cpu)
@@ -1976,7 +1976,7 @@ static bool rcu_preempt_cpu_has_nonlazy_callbacks(int cpu)
 /*
  * Does any flavor of RCU have non-lazy callbacks on the specified CPU?
  */
-/** 20141025    
+/** 20141025
  * 각 rcu state들이 특정 cpu에서 nonlazy CBs를 갖고 있는지 판단한다.
  **/
 static bool rcu_cpu_has_nonlazy_callbacks(int cpu)
@@ -2003,7 +2003,7 @@ static bool rcu_cpu_has_nonlazy_callbacks(int cpu)
  * delayed until the wakeup time, which defeats the purpose of posting
  * a timer.
  */
-/** 20141025    
+/** 20141025
  * rcu가 매개변수로 지정된 cpu의 동작을 필요로 하는지 리턴한다.
  *
  * delta_jiffies에 각 상황에 맞는 delta값을 계산해 리턴한다.
@@ -2014,19 +2014,19 @@ int rcu_needs_cpu(int cpu, unsigned long *delta_jiffies)
 	struct rcu_dynticks *rdtp = &per_cpu(rcu_dynticks, cpu);
 
 	/* Flag a new idle sojourn to the idle-entry state machine. */
-	/** 20141018    
+	/** 20141018
 	 * 새로 idle 상태로 들어감을 표시한다.
 	 **/
 	rdtp->idle_first_pass = 1;
 	/* If no callbacks, RCU doesn't need the CPU. */
-	/** 20141025    
+	/** 20141025
 	 * 처리할 CB이 없으면 0을 리턴.
 	 **/
 	if (!rcu_cpu_has_callbacks(cpu)) {
 		*delta_jiffies = ULONG_MAX;
 		return 0;
 	}
-	/** 20141025    
+	/** 20141025
 	 * RCU가 최근에 시도되었고 실패했다면, rcu 관련된 작업이 필요하다.
 	 **/
 	if (rdtp->dyntick_holdoff == jiffies) {
@@ -2035,7 +2035,7 @@ int rcu_needs_cpu(int cpu, unsigned long *delta_jiffies)
 		return 1;
 	}
 	/* Set up for the possibility that RCU will post a timer. */
-	/** 20141025    
+	/** 20141025
 	 * cpu에 해당하는 rcu_data가 nonlazy CBs를 보유 중이라면
 	 * delta_jiffies는 RCU_IDLE_GP_DELAY로 정렬되지 않은 값만큼이다.
 	 * 그렇지 않다면
@@ -2085,7 +2085,7 @@ static void rcu_idle_gp_timer_func(unsigned long cpu_in)
 /*
  * Initialize the timer used to pull CPUs out of dyntick-idle mode.
  */
-/** 20141011    
+/** 20141011
  * CONFIG_RCU_FAST_NO_HZ가 정의되어 있는 경우.
  * cpu를 dyntick-idle mode에서 빠져나오게 하기 위한 timer를 초기화 한다.
  *
@@ -2106,7 +2106,7 @@ static void rcu_prepare_for_idle_init(int cpu)
  * is no longer any point to ->idle_gp_timer, so cancel it.  This will
  * do nothing if this timer is not active, so just cancel it unconditionally.
  */
-/** 20141011    
+/** 20141011
  * idle 상태가 끝나고 rcu 관련된 작업(timer 취소 등)을 정리한다.
  *
  * NO_HZ에서 동작하는 timer를 제거하고, percpu 포인터에 global tick_nohz_enabled 상태를 저장한다.
@@ -2115,7 +2115,7 @@ static void rcu_cleanup_after_idle(int cpu)
 {
 	struct rcu_dynticks *rdtp = &per_cpu(rcu_dynticks, cpu);
 
-	/** 20141011    
+	/** 20141011
 	 * rcu_prepare_for_idle_init에서 설정한 idle_gp_timer.
 	 **/
 	del_timer(&rdtp->idle_gp_timer);
@@ -2142,7 +2142,7 @@ static void rcu_cleanup_after_idle(int cpu)
  *
  * The caller must have disabled interrupts.
  */
-/** 20141011    
+/** 20141011
  **/
 static void rcu_prepare_for_idle(int cpu)
 {
@@ -2151,12 +2151,12 @@ static void rcu_prepare_for_idle(int cpu)
 	int tne;
 
 	/* Handle nohz enablement switches conservatively. */
-	/** 20141011    
+	/** 20141011
 	 * 현재 tick_nohz_enabled를 가져와 이전 값과 다르다면 새로운 snap을 남기고 리턴한다.
 	 **/
 	tne = ACCESS_ONCE(tick_nohz_enabled);
 	if (tne != rdtp->tick_nohz_enabled_snap) {
-		/** 20141011    
+		/** 20141011
 		 * 수행하지 않은 CBs들이 있다면 수행한다.
 		 **/
 		if (rcu_cpu_has_callbacks(cpu))
@@ -2175,7 +2175,7 @@ static void rcu_prepare_for_idle(int cpu)
 	 * Instead, repost the ->idle_gp_timer if this CPU has callbacks
 	 * pending.
 	 */
-	/** 20141018    
+	/** 20141018
 	 * idle로 들어가기 전 호출되는 rcu_needs_cpu에서 idle_first_pass를 1로 설정.
 	 * 두 번째 호출되었을 때 nonlazy_posted가 변경되지 않았다면 timer를 재설정하고 return 한다.
 	 *
@@ -2198,7 +2198,7 @@ static void rcu_prepare_for_idle(int cpu)
 		}
 		return;
 	}
-	/** 20141018    
+	/** 20141018
 	 * idle_first_pass를 한 번 거치게 되어 0으로 변경.
 	 * nonlazy_posted_snap은 nonlazy_posted보다 작게 설정.
 	 **/
@@ -2209,7 +2209,7 @@ static void rcu_prepare_for_idle(int cpu)
 	 * If there are no callbacks on this CPU, enter dyntick-idle mode.
 	 * Also reset state to avoid prejudicing later attempts.
 	 */
-	/** 20141011    
+	/** 20141011
 	 * idle로 진입할 cpu에 수행해야 할 CBs들이 존재하지 않는다면,
 	 * CONFIG_RCU_FAST_NO_HZ 관련 변수를 초기화 하고 dyntick-idle mode로 진입하기 위해 리턴한다.
 	 **/
@@ -2230,13 +2230,13 @@ static void rcu_prepare_for_idle(int cpu)
 	}
 
 	/* Check and update the ->dyntick_drain sequencing. */
-	/** 20141018    
+	/** 20141018
 	 * 최초 실행시 dyntick_drain이 0이므로 RCU_IDLE_FLUSHES 로 초기화.
 	 **/
 	if (rdtp->dyntick_drain <= 0) {
 		/* First time through, initialize the counter. */
 		rdtp->dyntick_drain = RCU_IDLE_FLUSHES;
-	/** 20141018    
+	/** 20141018
 	 * RCU_IDLE_OPT_FLUSHES 상태이며, rcu와 local softirq가 pending 되어 있지 않으면 dyntick_drain을 초기화 한다.
 	 *   nonlazy CBs가 존재하면 idle_gp_timer_expires를 RCU_IDLE_GP_DELAY로,
 	 *   존재하지 않으면 RCU_IDLE_LAZY_GP_DELAY로 설정한다.
@@ -2267,7 +2267,7 @@ static void rcu_prepare_for_idle(int cpu)
 		mod_timer_pinned(tp, rdtp->idle_gp_timer_expires);
 		rdtp->nonlazy_posted_snap = rdtp->nonlazy_posted;
 		return; /* Nothing more to do immediately. */
-	/** 20141018    
+	/** 20141018
 	 * 그렇지 않은 경우 dyntick_drain을 감소시킨다.
 	 * 감소 후 0이 되었다면 재시도 횟수를 초과해
 	 * dyntick을 막고 rcu core를 동작시킨다.
@@ -2280,7 +2280,7 @@ static void rcu_prepare_for_idle(int cpu)
 		return;
 	}
 
-	/** 20141018    
+	/** 20141018
 	 * rdtp->dyntick_drain <= RCU_IDLE_OPT_FLUSHES 이지만,
 	 * rcu_pending인 경우에 수행된다.
 	 **/
@@ -2324,7 +2324,7 @@ static void rcu_prepare_for_idle(int cpu)
  * Of course, callbacks should only be posted from within a trace event
  * designed to be called from idle or from within RCU_NONIDLE().
  */
-/** 20141018    
+/** 20141018
  * CONFIG_RCU_FAST_NO_HZ가 정의된 경우 nonlazy_posted을 증가시킨다.
  *
  * nonlazy_posted 값은 rcu_prepare_for_idle() 함수가
@@ -2441,14 +2441,14 @@ static void print_cpu_stall_info_end(void)
 	printk(KERN_CONT "} ");
 }
 
-/** 20140809    
+/** 20140809
  * CONFIG_RCU_CPU_STALL_INFO가 선언되어 있지 않아 NULL 함수.
  **/
 static void zero_cpu_stall_ticks(struct rcu_data *rdp)
 {
 }
 
-/** 20140809    
+/** 20140809
  * CONFIG_RCU_CPU_STALL_INFO가 선언되어 있지 않아 NULL 함수.
  **/
 static void increment_cpu_stall_ticks(void)
