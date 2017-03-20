@@ -135,6 +135,9 @@ extern void downgrade_write(struct rw_semaphore *sem);
 extern void down_read_nested(struct rw_semaphore *sem, int subclass);
 extern void down_write_nested(struct rw_semaphore *sem, int subclass);
 #else
+/** 20170228
+ * DEBUG 관련 부분 생략
+ **/
 # define down_read_nested(sem, subclass)		down_read(sem)
 # define down_write_nested(sem, subclass)	down_write(sem)
 #endif

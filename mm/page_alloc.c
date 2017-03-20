@@ -4114,7 +4114,7 @@ out:
 	 * check if the cpuset changed during allocation and if so, retry.
 	 */
 	/** 20140705
-	 * get_mems_allowed로 가져온 값과 seqcount현재 값이 다르고, 
+	 * get_mems_allowed로 가져온 값과 seqcount현재 값이 다르고,
 	 * page할당에 실패하면 다시한번 retry_cpuset으로 돌아가서 메모리 할당을 다시 시도한다. 
 	 **/
 	if (unlikely(!put_mems_allowed(cpuset_mems_cookie) && !page))

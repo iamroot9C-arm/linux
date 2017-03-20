@@ -182,6 +182,9 @@ __do_user_fault(struct task_struct *tsk, unsigned long addr,
 	}
 #endif
 
+	/** 20170228
+	 * task의 thread_struct 구조체에 주소와 error 코드를 기록
+	 **/
 	tsk->thread.address = addr;
 	tsk->thread.error_code = fsr;
 	tsk->thread.trap_no = 14;

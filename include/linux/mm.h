@@ -1299,6 +1299,9 @@ static inline unsigned long get_mm_counter(struct mm_struct *mm, int member)
 	return (unsigned long)val;
 }
 
+/** 20170228
+ * mm_struct의 rss_stat 항목에 값을 더한다.
+ **/
 static inline void add_mm_counter(struct mm_struct *mm, int member, long value)
 {
 	atomic_long_add(value, &mm->rss_stat.count[member]);

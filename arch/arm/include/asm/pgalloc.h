@@ -158,22 +158,22 @@ static inline void pte_free(struct mm_struct *mm, pgtable_t pte)
 
 /** 20130309
  * pmd에 pte 주소를 포함한 value를 채운다.
- **/
-/** 20131019
-  * LPAE가 아닐경우 pmdp[0],pmdp[1]에 pte table 각각의 시작주소와 
-  * prot속성으로 엔트리를 채운다.
+ *
+ * 20131019
+ * LPAE가 아닐경우 pmdp[0],pmdp[1]에 pte table 각각의 시작주소와
+ * prot속성으로 엔트리를 채운다.
  **/
 static inline void __pmd_populate(pmd_t *pmdp, phys_addr_t pte,
 				  pmdval_t prot)
 {
-/** 20130302 
-	prot : 0x01 
- 	HW 1단계 PAGE table entry를 사용하겠다는 의미
-	build_mem_type_table 함수 에서 prot속성에 domain 이 세팅 되어있음 
- **/	
- /** 20130309
-  * 할당받은 pte 주소(PA)에 HWTABLE offset을 더하고 prot (0x1)를 더해 pdmval을 구한다.
-  **/	
+	/** 20130302
+	 * prot : 0x01
+         * PAGE table entry를 사용하겠다는 의미
+	 * build_mem_type_table 함수 에서 prot속성에 domain 이 세팅 되어있음
+	 *
+	 * 20130309
+	 * 할당받은 pte 주소(PA)에 HWTABLE offset을 더하고 prot (0x1)를 더해 pdmval을 구한다.
+	 **/
 	pmdval_t pmdval = (pte + PTE_HWTABLE_OFF) | prot;
 	/** 20130309
 	 * pmd에 h/w  pt 0 값을 넣어주고, LPAE가 아닐 경우 다음 pmd에 h/w pt 1의 값을 채운다.

@@ -277,7 +277,7 @@ void pud_clear_bad(pud_t *);
 void pmd_clear_bad(pmd_t *);
 
 /** 20160514
- * pgd entry가 pgd_none이거나 bad여서 clear를 했는지 여부를 리턴.
+ * pgd entry가 pgd_none이거나, bad여서 clear를 했는지 여부를 리턴.
  **/
 static inline int pgd_none_or_clear_bad(pgd_t *pgd)
 {

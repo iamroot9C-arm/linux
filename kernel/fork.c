@@ -467,6 +467,9 @@ free_tsk:
 }
 
 #ifdef CONFIG_MMU
+/** 20170228
+ * oldmm (parent)의 mmap (vm_area_struct)을 순회하며 new mm에 복사한다.
+ **/
 static int dup_mmap(struct mm_struct *mm, struct mm_struct *oldmm)
 {
 	struct vm_area_struct *mpnt, *tmp, *prev, **pprev;
@@ -488,6 +491,9 @@ static int dup_mmap(struct mm_struct *mm, struct mm_struct *oldmm)
 	 */
 	down_write_nested(&mm->mmap_sem, SINGLE_DEPTH_NESTING);
 
+	/** 20170228
+	 * 복사한 mm의 멤버를 초기화 한다.
+	 **/
 	mm->locked_vm = 0;
 	mm->mmap = NULL;
 	mm->mmap_cache = NULL;
@@ -846,6 +852,9 @@ void mmput(struct mm_struct *mm)
 {
 	might_sleep();
 
+	/** 20170228
+	 * mm_users를 감소시키고 0이 되었는지 테스트 한다.
+	 **/
 	if (atomic_dec_and_test(&mm->mm_users)) {
 		uprobe_clear_state(mm);
 		exit_aio(mm);
@@ -1073,6 +1082,10 @@ void mm_release(struct task_struct *tsk, struct mm_struct *mm)
  * Allocate a new mm structure and copy contents from the
  * mm structure of the passed in task structure.
  */
+/** 20170228
+ * 새 tsk를 위해 mm_struct 구조체를 할당 받고 초기화 한다.
+ * oldmm의 mm_struct의 vma 등을 복사한다.
+ **/
 struct mm_struct *dup_mm(struct task_struct *tsk)
 {
 	struct mm_struct *mm, *oldmm = current->mm;
@@ -1117,10 +1130,16 @@ struct mm_struct *dup_mm(struct task_struct *tsk)
 	 **/
 	dup_mm_exe_file(oldmm, mm);
 
+	/** 20170228
+	 * oldmm의 vma 등을 mm에 복사한다.
+	 **/
 	err = dup_mmap(mm, oldmm);
 	if (err)
 		goto free_pt;
 
+	/** 20170228
+	 * taskstat에서 동작하는 High-watermark 메모리 사용량을 설정한다
+	 **/
 	mm->hiwater_rss = get_mm_rss(mm);
 	mm->hiwater_vm = mm->total_vm;
 
@@ -1147,6 +1166,14 @@ fail_nocontext:
 	return NULL;
 }
 
+/** 20170228
+ * copy_process 중 task의 mm을 설정한다.
+ *
+ * 부모가 kernel task일 경우 mm이 NULL이고 context switch시 active_mm이
+ * 결정되므로 새로 생성하지 않는다.
+ * 부모가 user task일 경우, clone_flags에 VM을 공유해야 한다는 속성이 없으면
+ * 새로 생성하고 vma를 복사해 설정한다.
+ **/
 static int copy_mm(unsigned long clone_flags, struct task_struct *tsk)
 {
 	struct mm_struct *mm, *oldmm;
@@ -1177,6 +1204,7 @@ static int copy_mm(unsigned long clone_flags, struct task_struct *tsk)
 	 */
 	/** 20160416
 	 * 부모 프로세스의 mm이 NULL, 즉 kernel thread라면 바로 리턴.
+	 * 이후 user task
 	 **/
 	oldmm = current->mm;
 	if (!oldmm)
@@ -1192,12 +1220,21 @@ static int copy_mm(unsigned long clone_flags, struct task_struct *tsk)
 		goto good_mm;
 	}
 
+	/** 20170228
+	 * 새 task를 위한 mm을 생성하고 기본적인 내용은 초기화 한다.
+	 * 현재 task의 mm_struct를 복사해 설정한다.
+	 *
+	 * 이 부분은 user task에만 해당.
+	 **/
 	retval = -ENOMEM;
 	mm = dup_mm(tsk);
 	if (!mm)
 		goto fail_nomem;
 
 good_mm:
+	/** 20170228
+	 * mm과 active_mm에 설정한다.
+	 **/
 	tsk->mm = mm;
 	tsk->active_mm = mm;
 	return 0;

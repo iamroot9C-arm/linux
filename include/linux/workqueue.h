@@ -369,7 +369,13 @@ __alloc_workqueue_key(const char *fmt, unsigned int flags, int max_active,
 })
 #else
 /** 20150711
- * workqueue를 할당한다.
+ * workqueue(work을 달아놓을 queue)를 생성 및 초기화한다.
+ *
+ * work 등록과정
+ * queue_work
+ *	queue_work_on
+ *		__queue_work
+ *			insert_work
  **/
 #define alloc_workqueue(fmt, flags, max_active, args...)	\
 	__alloc_workqueue_key((fmt), (flags), (max_active),	\

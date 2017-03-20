@@ -56,7 +56,7 @@ static inline const char *memblock_type_name(struct memblock_type *type)
 
 /* adjust *@size so that (@base + *@size) doesn't overflow, return new size */
 /** 20130119
-실제 사용할수 있는 사이즈를 다시 한번 조사해서 리턴한다
+ * 실제 사용할수 있는 사이즈를 조사해서 리턴한다
  **/
 static inline phys_addr_t memblock_cap_size(phys_addr_t base, phys_addr_t *size)
 {
@@ -131,35 +131,36 @@ phys_addr_t __init_memblock memblock_find_in_range_node(phys_addr_t start,
 	 **/
 	start = max_t(phys_addr_t, start, PAGE_SIZE);
 	end = max(start, end);
-/** 20130302 
- 
-#define for_each_free_mem_range_reverse(i, nid, p_start, p_end, p_nid)	\
-	for (i = (u64)ULLONG_MAX,					\
-	     __next_free_mem_range_rev(&i, nid, p_start, p_end, p_nid);	\
-	     i != (u64)ULLONG_MAX;					\
-	     __next_free_mem_range_rev(&i, nid, p_start, p_end, p_nid))
- **/	
+	/** 20130302
+	 *
+	 *#define for_each_free_mem_range_reverse(i, nid, p_start, p_end, p_nid)	\
+	 *        for (i = (u64)ULLONG_MAX,					\
+	 *             __next_free_mem_range_rev(&i, nid, p_start, p_end, p_nid);	\
+	 *             i != (u64)ULLONG_MAX;					\
+	 *             __next_free_mem_range_rev(&i, nid, p_start, p_end, p_nid))
+	 **/
 	for_each_free_mem_range_reverse(i, nid, &this_start, &this_end, NULL) {
-		/** 20130302 
-			사용가능한 메모리영역이 start 와 end사이의 주소로 보장됨
-	 	**/	
+		/** 20130302
+		 * 사용가능한 메모리영역이 start 와 end사이의 주소로 보장됨
+		 **/
 		this_start = clamp(this_start, start, end);
 		this_end = clamp(this_end, start, end);
-		/** 20130302 
-			size : 요구 사이즈
-			요구한 사이즈보다 실제 사용가능한 메모리 region의 끝주소가 작을 경우 다시 찾음
- 		**/	
+		/** 20130302
+		 * size : 요구 사이즈
+		 * 요구한 사이즈보다 실제 사용가능한 메모리 region의 끝주소가 작을 경우 다시 찾음
+ 		**/
 		if (this_end < size)
 			continue;
 
-		/** 20130302 
-		 	메모리 최소 요구 사이즈를 충족시키기는 align된 메모리시작주소 candidate(...???)에 저장한다.
-			
-		 **/	
+		/** 20130302
+		 * 메모리 최소 요구 사이즈를 충족시키기는 align된 메모리시작주소
+		 * candidate(...???)에 저장한다.
+		 **/
 		cand = round_down(this_end - size, align);
-		/** 20130302 
-		 	현재 사용가능한 memblock memory region에 메모리 공간을 잡을 수 있다면 candidate를 리턴한다.
-		 **/	
+		/** 20130302
+		 * 현재 사용가능한 memblock memory region에 메모리 공간을 잡을 수 있다면
+		 * candidate를 리턴한다.
+		 **/
 		if (cand >= this_start)
 			return cand;
 	}

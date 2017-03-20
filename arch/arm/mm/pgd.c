@@ -24,7 +24,7 @@
 #define __pgd_free(pgd)	kfree(pgd)
 #else
 /** 20150613
- * 2 ** 2개의 page를 KERNEL 속성으로 할당 받는다.
+ * 2 << 2개의 page를 KERNEL 속성으로 할당 받는다.
  **/
 #define __pgd_alloc()	(pgd_t *)__get_free_pages(GFP_KERNEL, 2)
 #define __pgd_free(pgd)	free_pages((unsigned long)pgd, 2)
@@ -156,6 +156,9 @@ void pgd_free(struct mm_struct *mm, pgd_t *pgd_base)
 
 	/** 20160625
 	 * pmd entry가 가리키는 page (pte table) 주소를 리턴.
+	 *
+	 * 20170228
+	 * 모든 entry를 다 제거하지 않고 첫번째 주소에 해당하는 엔트리만 제거
 	 **/
 	pte = pmd_pgtable(*pmd);
 	pmd_clear(pmd);

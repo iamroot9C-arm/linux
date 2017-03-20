@@ -98,9 +98,9 @@ void *kmap_atomic(struct page *page)
 	 **/
 	pagefault_disable();
 
-    /** 20131012
+	/** 20131012
 	 * page가 highmem 영역에 속하지 않는다면 page가 매핑된 VA를 바로 리턴한다.
-     **/
+	 **/
 	if (!PageHighMem(page))
 		return page_address(page);
 
@@ -130,27 +130,26 @@ void *kmap_atomic(struct page *page)
 	 **/
 	type = kmap_atomic_idx_push();
 	/** 20131019
-	  idx               smp_id_processor
-	  0    +-------------+       0
-	  1    |     type 0  |
-	  2    |     type 1  |
-	  .    |     ......  |
-	  15   |     type 15 |
-	  16   +-------------+       1
-	  .    |     type 0  |
-	  .    |     type 1  |
-	  .    |     ......  |
-	  .    |     type 15 |
-	  .    +-------------+       2
-	  .    |     type 0  |
-	  .    |     type 1  |
-	  .    |     ......  |
-	  .    |     type 15 |
-	  .    +-------------+       ...
-	  .    |     type 0  |
-	  .    |     type 1  |
-	  ......
-
+	 * idx               smp_id_processor
+	 * 0    +-------------+       0
+	 * 1    |     type 0  |
+	 * 2    |     type 1  |
+	 * .    |     ......  |
+	 * 15   |     type 15 |
+	 * 16   +-------------+       1
+	 * .    |     type 0  |
+	 * .    |     type 1  |
+	 * .    |     ......  |
+	 * .    |     type 15 |
+	 * .    +-------------+       2
+	 * .    |     type 0  |
+	 * .    |     type 1  |
+	 * .    |     ......  |
+	 * .    |     type 15 |
+	 * .    +-------------+       ...
+	 * .    |     type 0  |
+	 * .    |     type 1  |
+	 * ......
 	 **/
 	idx = type + KM_TYPE_NR * smp_processor_id();
 	/** 20131019
@@ -170,7 +169,7 @@ void *kmap_atomic(struct page *page)
 	 * with the new mapping.
 	 */
 	/** 20131019
-	 * top_pmd에서 vaddr에 대한 pte entry의 위치를 구하고, 
+	 * top_pmd에서 vaddr에 대한 pte entry의 위치를 구하고,
 	 * mk_pte로 pte값을 생성해서 넣어준다.
 	 **/
 	set_top_pte(vaddr, mk_pte(page, kmap_prot));
@@ -190,7 +189,7 @@ void __kunmap_atomic(void *kvaddr)
 	int idx, type;
 
 	/** 20131026
-	 * kvaddr >= (void *)FIXADDR_START 라면 
+	 * kvaddr >= (void *)FIXADDR_START 라면
 	 *   kmap_atomic으로 매핑된 경우
 	 **/
 	if (kvaddr >= (void *)FIXADDR_START) {
@@ -243,7 +242,7 @@ void __kunmap_atomic(void *kvaddr)
 		 * vaddr에 해당되는 PKMP_Nr을 구하고, pkmap_page_table에서
 		 * 해당 인덱스에 대한 pte를 가져온다.
 		 * 그리고 pte엔트리에 대한 page를 가져와서 unmapping한다
-		 **/		
+		 **/
 		kunmap_high(pte_page(pkmap_page_table[PKMAP_NR(vaddr)]));
 	}
 	pagefault_enable();

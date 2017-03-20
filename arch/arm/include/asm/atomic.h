@@ -30,27 +30,27 @@
 	멀티스레딩 시스템에서 동기화를 달성하기 위해 사용되는 원자적 명령으로,
 	메모리 영역을 읽고 업데이트 하는 과정에서 다른 업데이트가 발생하지 않았음을 보장한다.
 	기존 SWP 명령은 ABA Problem에 대해 보장하지 못하는 문제가 있다.
-	
+
 	아키텍쳐에서 제공하는 명령을 이용하여 atomic operation, spinlock 같은 primitive를 구현한다.
 
-	
+
 	The L1 memory system of the Cortex-A9 processor has a local monitor. This is a 2-state, open
 	and exclusive, state machine that manages load/store exclusive (LDREXB, LDREXH, LDREX, LDREXD,
 	STREXB, STREXH, STREX and STREXD) accesses and clear exclusive (CLREX) instructions.
 
 		exclusive access state
-		open access state 
+		open access state
 
 	ldrex (load exclusive)
 	strex (store exclusive)
-		ldrex, strex는 항상 짝으로 사용되어 동기화 연산을 보장한다. 
-		특정 address 에 대한 ldrex는 해당 메모리의 상태를 exclusive access state 로 변경한다. 
-		이후, 그 주소에 대한 strex는 해당 메모리의 상태가 
-			- exclusive 이면, str를 수행하고 0(정상)을 리턴한다.  
-			- open 이면, 1(실패)을 리턴한다. 아래 atomic_add 등에서는 이 경우, 다시 ldrex 부터 수행한다. 
-		
-		만약, 
-			context1 				context2 		 
+		ldrex, strex는 항상 짝으로 사용되어 동기화 연산을 보장한다.
+		특정 address 에 대한 ldrex는 해당 메모리의 상태를 exclusive access state 로 변경한다.
+		이후, 그 주소에 대한 strex는 해당 메모리의 상태가
+			- exclusive 이면, str를 수행하고 0(정상)을 리턴한다.
+			- open 이면, 1(실패)을 리턴한다. 아래 atomic_add 등에서는 이 경우, 다시 ldrex 부터 수행한다.
+
+		만약,
+			context1 				context2
 		  1 atomic_add(a, 1)  |  1 atomic_add(a, 2) |
 		  2                   |  2                  |
 		  3                   |  3                  |
@@ -67,14 +67,14 @@
 		  2                   |  2                  |  2                 |
 		  3                   |  3                  |  3                 |
 		  4                   |  4                  |  4                 |
-		  5 ldrex             |  5                  |  5 				 |  exclusive state 
+		  5 ldrex             |  5                  |  5 				 |  exclusive state
 		  6                   |  6 ldrex            |  6                 |	exclusive state
 		  7                   |  7 strex            |  7                 |	open state			a = 2
 		  8                   |~                    |  8 ldrex           |	exclusive state
 		  9 strex             |~                    |  9                 |	open state			a = 1
 		~                     |~                    | 10 strex           |	open state 이므로 fail, reload 시, a = 1 + 3 = 4가 저장됨.
-	
-		이런 문제를 방지하기 위해서 context switching시에 clrex(exclusive -> open)를 수행하여, 데이터의 원자성이 깨지지 않도록 한다. 
+
+		이런 문제를 방지하기 위해서 context switching시에 clrex(exclusive -> open)를 수행하여, 데이터의 원자성이 깨지지 않도록 한다.
 
  * 참고.
 	TRM: 7.4 About the L1 data side memory system
@@ -109,33 +109,33 @@
 /** 20121110
  *
  * UP/ SMP에서 모두 사용할 수 있는 원자적 명령 (atomic operation)
-  참조 사이트 
-http://www.ethernut.de/en/documents/arm-inline-asm.html
-http://ibiblio.org/gferg/ldp/GCC-Inline-Assembly-HOWTO.html#ss5.3
-
-아래 코드를 풀어보면..
-ldrex result, &v->counter
-add result, result, i
-strex tmp, result, &v->counter
-
-Constraints
-= : 쓰기전용
-& : ??? 
-+ : read / write 속성
-Q :  (arm specific) ???
-o : 오프셋화 가능한 주소를 나타난다???
-r : general register ( r0 ~ r15)
-I : Immediate value in data processing instructions(Arm state)
-e.g. ORR R0, R0, #operand
-Ir 같이 쓰이고 있는데 어떤 의미일까???
-
-cc : 명령어가 condition 코드 레지스터를 변경할 경우에 사용한다.
-eg) teq,subs 
-
-+Qo : 만들어놓고 안쓰고 있다 어떤 의미가 있을까???
-
-http://gcc.gnu.org/onlinedocs/gcc/Machine-Constraints.html#Machine-Constraints
-
+ *
+ *  참조 사이트
+ * http://www.ethernut.de/en/documents/arm-inline-asm.html
+ * http://ibiblio.org/gferg/ldp/GCC-Inline-Assembly-HOWTO.html#ss5.3
+ *
+ * 아래 코드를 풀어보면..
+ * ldrex result, &v->counter
+ * add result, result, i
+ * strex tmp, result, &v->counter
+ *
+ * Constraints
+ * = : 쓰기전용
+ * & : ???
+ * + : read / write 속성
+ * Q :  (arm specific) ???
+ * o : 오프셋화 가능한 주소를 나타난다???
+ * r : general register ( r0 ~ r15)
+ * I : Immediate value in data processing instructions(Arm state)
+ * e.g. ORR R0, R0, #operand
+ * Ir 같이 쓰이고 있는데 어떤 의미일까???
+ *
+ * cc : 명령어가 condition 코드 레지스터를 변경할 경우에 사용한다.
+ * eg) teq,subs
+ *
+ * +Qo : 만들어놓고 안쓰고 있다 어떤 의미가 있을까???
+ *
+ * http://gcc.gnu.org/onlinedocs/gcc/Machine-Constraints.html#Machine-Constraints
  **/
 static inline void atomic_add(int i, atomic_t *v)
 {

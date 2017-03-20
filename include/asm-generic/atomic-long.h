@@ -141,8 +141,8 @@ static inline long atomic_long_add_unless(atomic_long_t *l, long a, long u)
 typedef atomic_t atomic_long_t;
 
 /** 20130914
-atomic하게 long타입의 변수를 읽는다.
-**/
+ * atomic하게 long타입의 변수를 읽는다.
+ **/
 #define ATOMIC_LONG_INIT(i)	ATOMIC_INIT(i)
 static inline long atomic_long_read(atomic_long_t *l)
 {
@@ -152,7 +152,7 @@ static inline long atomic_long_read(atomic_long_t *l)
 }
 
 /** 20140517
- * long이 32비트인 경우, long 변수에 i값을 atomic하게 저장.
+ * atomic하게 long 변수에 i값을 저장한다.
  **/
 static inline void atomic_long_set(atomic_long_t *l, long i)
 {
@@ -176,8 +176,8 @@ static inline void atomic_long_dec(atomic_long_t *l)
 }
 
 /** 20130831
- * BITS_PER_LONG이 32일 때
- * i의 값을 l에 더한다.
+ * atomic하게 long 포인터가 가리키는 변수에 값을 더한다.
+ * BITS_PER_LONG이 32일 때.
  **/
 static inline void atomic_long_add(long i, atomic_long_t *l)
 {

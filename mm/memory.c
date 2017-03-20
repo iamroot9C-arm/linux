@@ -138,6 +138,11 @@ core_initcall(init_zero_pfn);
 
 #if defined(SPLIT_RSS_COUNTING)
 
+/** 20170228
+ * task_struct의 rss_stat을 mm에 반영한다.
+ *
+ * thread별 정보를 전체 mm에 반영하는 과정이다.
+ **/
 void sync_mm_rss(struct mm_struct *mm)
 {
 	int i;
@@ -163,6 +168,10 @@ static void add_mm_counter_fast(struct mm_struct *mm, int member, int val)
 #define inc_mm_counter_fast(mm, member) add_mm_counter_fast(mm, member, 1)
 #define dec_mm_counter_fast(mm, member) add_mm_counter_fast(mm, member, -1)
 
+/** 20170228
+ * task의 rss event를 mm과 sync 시키기 위한 임의의 카운트에 도달하면
+ * 업데이트 시킨다.
+ **/
 /* sync counter once per 64 page faults */
 #define TASK_RSS_EVENTS_THRESH	(64)
 static void check_sync_rss_stat(struct task_struct *task)
@@ -3704,12 +3713,22 @@ int handle_mm_fault(struct mm_struct *mm, struct vm_area_struct *vma,
 	pmd_t *pmd;
 	pte_t *pte;
 
+	/** 20170228
+	 * 현재 task의 상태를 RUNNING으로 바꿔준다.
+	 * 의미적으로 폴트 핸들링 과정에서 메모리 관리 과정으로 넘어와서인 듯???
+	 **/
 	__set_current_state(TASK_RUNNING);
 
+	/** 20170228
+	 * 현재 cpu의 page fault 이벤트 카운트를 증가한다.
+	 **/
 	count_vm_event(PGFAULT);
 	mem_cgroup_count_vm_event(mm, PGFAULT);
 
 	/* do counter updates before entering really critical section. */
+	/** 20170228
+	 * rss 카운터 동기화
+	 **/
 	check_sync_rss_stat(current);
 
 	if (unlikely(is_vm_hugetlb_page(vma)))
@@ -3717,7 +3736,9 @@ int handle_mm_fault(struct mm_struct *mm, struct vm_area_struct *vma,
 
 retry:
 	/** 20170110
-	 * mm_struct에서 address에 해당하는 pmd를 받아온다.
+	 * mm_struct에서 address에 해당하는 pgd entry를 받아온다.
+	 * pud_alloc, pmd_alloc을 호출해 pmd를 받아오는데,
+	 * 2level로 pmd 주소가 직접 리턴된다.
 	 **/
 	pgd = pgd_offset(mm, address);
 	pud = pud_alloc(mm, pgd, address);
@@ -3726,6 +3747,9 @@ retry:
 	pmd = pmd_alloc(mm, pud, address);
 	if (!pmd)
 		return VM_FAULT_OOM;
+	/** 20170228
+	 * CONFIG에 의해 transparent_hugepage_enabled가 항상 0이므로 else로 분석
+	 **/
 	if (pmd_none(*pmd) && transparent_hugepage_enabled(vma)) {
 		if (!vma->vm_ops)
 			return do_huge_pmd_anonymous_page(mm, vma, address,
@@ -3735,6 +3759,9 @@ retry:
 		int ret;
 
 		barrier();
+		/** 20170228
+		 * CONFIG에 의해 pmd_trans_huge는 0 리턴으로 분석.
+		 **/
 		if (pmd_trans_huge(orig_pmd)) {
 			if (flags & FAULT_FLAG_WRITE &&
 			    !pmd_write(orig_pmd) &&
@@ -3759,6 +3786,9 @@ retry:
 	 * run pte_offset_map on the pmd, if an huge pmd could
 	 * materialize from under us from a different thread.
 	 */
+	/** 20170228
+	 * pmd가 none이라면 __pte_alloc을 시도. 그 할당이 실패하면 에러
+	 **/
 	if (unlikely(pmd_none(*pmd)) && __pte_alloc(mm, vma, pmd, address))
 		return VM_FAULT_OOM;
 	/* if an huge pmd materialized from under us just retry later */
