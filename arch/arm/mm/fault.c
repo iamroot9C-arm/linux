@@ -192,6 +192,9 @@ __do_user_fault(struct task_struct *tsk, unsigned long addr,
 	si.si_errno = 0;
 	si.si_code = code;
 	si.si_addr = (void __user *)addr;
+	/** 20170414
+	 * task에 signal을 보낸다.
+	 **/
 	force_sig_info(sig, &si, tsk);
 }
 
@@ -294,6 +297,9 @@ do_page_fault(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
 	if (notify_page_fault(regs, fsr))
 		return 0;
 
+	/** 20170414
+	 * current task와 mm을 받아온다
+	 **/
 	tsk = current;
 	mm  = tsk->mm;
 
@@ -307,7 +313,7 @@ do_page_fault(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
 	 */
 	/** 20161206
 	 * atomic context이거나 kernel thread인 경우 user context가 존재하지
-	 * 않는다. 커널 폴트로 처리.
+	 * 않는다(mm). 커널 폴트로 처리.
 	 **/
 	if (in_atomic() || !mm)
 		goto no_context;
@@ -454,9 +460,15 @@ do_translation_fault(unsigned long addr, unsigned int fsr,
 	pud_t *pud, *pud_k;
 	pmd_t *pmd, *pmd_k;
 
+	/** 20170414
+	 * 발생한 주소가 user space 영역의 주소라면 do_page_fault로 처리한다.
+	 **/
 	if (addr < TASK_SIZE)
 		return do_page_fault(addr, fsr, regs);
 
+	/** 20170414
+	 * user mode에서 발생했다면 bad_area
+	 **/
 	if (user_mode(regs))
 		goto bad_area;
 

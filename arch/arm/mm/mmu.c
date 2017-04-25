@@ -212,7 +212,7 @@ void adjust_cr(unsigned long mask, unsigned long set)
 
 /** 20130202
  * arm linux page table 은 2개로 관리되는데, Hardware용과 Linux용 2가지이다.
- * 
+ *
  * .prot_pte 필드는 리눅스용 pte값을 저장하는 곳이다.
  *   L_PTE_xxx 매크로는 리눅스용 페이지 테이블의 설정값이다.
  *   PMD_xxx 매크로는 하드웨어용 페이지 테이블의 설정값이다.
@@ -277,18 +277,18 @@ static struct mem_type mem_types[] = {
 		.prot_l1   = PMD_TYPE_TABLE,
 		.domain    = DOMAIN_USER,
 	},
-/** 20130202
-* prot_pte = 0x43 
-* #define L_PTE_PRESENT		(_AT(pteval_t, 1) << 0)
-* #define L_PTE_YOUNG		(_AT(pteval_t, 1) << 1)
-* #define L_PTE_DIRTY		(_AT(pteval_t, 1) << 6)
-* prot_l1 = 0x1
-* #define PMD_TYPE_TABLE		(_AT(pmdval_t, 1) << 0)
-* prot_sect = 0x402
-* #define PMD_TYPE_SECT		(_AT(pmdval_t, 2) << 0)
-* #define PMD_SECT_AP_WRITE	(_AT(pmdval_t, 1) << 10)
-* domain = 0
-*/
+	/** 20130202
+	 * prot_pte = 0x43
+	 * #define L_PTE_PRESENT		(_AT(pteval_t, 1) << 0)
+	 * #define L_PTE_YOUNG			(_AT(pteval_t, 1) << 1)
+	 * #define L_PTE_DIRTY			(_AT(pteval_t, 1) << 6)
+	 * prot_l1 = 0x1
+	 * #define PMD_TYPE_TABLE		(_AT(pmdval_t, 1) << 0)
+	 * prot_sect = 0x402
+	 * #define PMD_TYPE_SECT		(_AT(pmdval_t, 2) << 0)
+	 * #define PMD_SECT_AP_WRITE		(_AT(pmdval_t, 1) << 10)
+	 * domain = 0
+	 **/
 	[MT_MEMORY] = {
 		.prot_pte  = L_PTE_PRESENT | L_PTE_YOUNG | L_PTE_DIRTY,
 		.prot_l1   = PMD_TYPE_TABLE,
@@ -346,28 +346,28 @@ EXPORT_SYMBOL(get_mem_type);
  * Adjust the PMD section entries according to the CPU in use.
  */
 /** 20130216
- * mem_types 에 architecture에 따른 기본 속성을 추가. 
- * */
+ * mem_types 에 architecture에 따른 기본 속성을 추가.
+ **/
 static void __init build_mem_type_table(void)
 {
 	struct cachepolicy *cp;
-/** 20130202
-* cr in vexpers  = 0x10c53c7d
-*/  
+	/** 20130202
+	 * cr in vexpers  = 0x10c53c7d
+	 **/
 	unsigned int cr = get_cr();
 /**
 *
 */
 	pteval_t user_pgprot, kern_pgprot, vecs_pgprot;
-/** 20130202  
-* CPU_ARCH_ARMv7
-*/
+	/** 20130202
+	 * CPU_ARCH_ARMv7
+	 **/
 	int cpu_arch = cpu_architecture();
 	int i;
 
-/** 20130202  
-* cachepolicy : default is  CPOLICY_WRITEBACK
-*/
+	/** 20130202
+	 * cachepolicy : default is  CPOLICY_WRITEBACK
+	 **/
 	if (cpu_arch < CPU_ARCH_ARMv6) {
 #if defined(CONFIG_CPU_DCACHE_DISABLE)
 		if (cachepolicy > CPOLICY_BUFFERED)
@@ -382,18 +382,17 @@ static void __init build_mem_type_table(void)
 			cachepolicy = CPOLICY_WRITEBACK;
 		ecc_mask = 0;
 	}
-/** 20130202  
-* cachepolicy : smp이므로   CPOLICY_WRITEBACK(default) -> CPOLICY_WRITEALLOC
-*/
-/** 20130810
-write-alloc : write 동작에 대해서 cache miss가 났을때, cacheline을 채워서
-쓴다.
-smp 에서 write-alloc을 하는 이유 : write cache miss시 바로 메모리에 쓰면
-다른 프로세서가 snooping protocol(MSI,MESI) 로 최신값을 알수 없기 때문에
-write-alloc를 사용해서 다른 프로세서가 write된 최신값을 snooping을
-통해서 가져올수 있다.
-참조 : 프로그래머가 몰랐던 멀티코어 CPU 저. 김민장 236쪽 참조.
-**/
+	/** 20130202
+	 * cachepolicy : smp이므로   CPOLICY_WRITEBACK(default) -> CPOLICY_WRITEALLOC
+	 **/
+	/** 20130810
+	 * write-alloc : write 동작에 대해서 cache miss가 났을 때 cacheline을 채워 쓴다.
+	 * smp 에서 write-alloc을 하는 이유 : write cache miss시 바로 메모리에 쓰면
+	 * 다른 프로세서가 snooping protocol(MSI,MESI) 로 최신값을 알수 없기 때문에
+	 * write-alloc를 사용해서 다른 프로세서가 write된 최신값을 snooping을
+	 * 통해서 가져올수 있다.
+	 * 참조 : 프로그래머가 몰랐던 멀티코어 CPU 저. 김민장 236쪽 참조.
+	 **/
 	if (is_smp())
 		cachepolicy = CPOLICY_WRITEALLOC;
 
@@ -405,9 +404,9 @@ write-alloc를 사용해서 다른 프로세서가 write된 최신값을 snoopin
 	if (cpu_arch < CPU_ARCH_ARMv5)
 		for (i = 0; i < ARRAY_SIZE(mem_types); i++)
 			mem_types[i].prot_sect &= ~PMD_SECT_TEX(7);
-/** 20130202
-*  해당사항 없음
-*/ 
+	/** 20130202
+	 *  해당사항 없음
+	 **/
 	if ((cpu_arch < CPU_ARCH_ARMv6 || !(cr & CR_XP)) && !cpu_is_xsc3())
 		for (i = 0; i < ARRAY_SIZE(mem_types); i++)
 			mem_types[i].prot_sect &= ~PMD_SECT_S;
@@ -433,28 +432,28 @@ write-alloc를 사용해서 다른 프로세서가 write된 최신값을 snoopin
 	/*
 	 * Mark the device areas according to the CPU/architecture.
 	 */
-/** 20130202
-* XP : Extended page tables, default 1	
-*/ 
+	/** 20130202
+	 * XP : Extended page tables, default 1
+	 **/
 	if (cpu_is_xsc3() || (cpu_arch >= CPU_ARCH_ARMv6 && (cr & CR_XP))) {
 		if (!cpu_is_xsc3()) {
 			/*
 			 * Mark device regions on ARMv6+ as execute-never
 			 * to prevent speculative instruction fetches.
 			 */
-/** 20130202
-* XN : Excecute Never , determines if the region is Executable (0) or Not-executable (1)
-* MT_DEVICE 영역은 instruction이 fetch되지 않게 Not-executable 영역으로 선언.
-*/ 
+			/** 20130202
+			 * XN : Excecute Never , determines if the region is Executable (0) or Not-executable (1)
+			 * MT_DEVICE 영역은 instruction이 fetch되지 않게 Not-executable 영역으로 선언.
+			 **/
 			mem_types[MT_DEVICE].prot_sect |= PMD_SECT_XN;
 			mem_types[MT_DEVICE_NONSHARED].prot_sect |= PMD_SECT_XN;
 			mem_types[MT_DEVICE_CACHED].prot_sect |= PMD_SECT_XN;
 			mem_types[MT_DEVICE_WC].prot_sect |= PMD_SECT_XN;
 		}
-/** 20130202 ??? CR_TRE가 어디서 설정되었는지 확인 필요..
-* #define CR_TRE	(1 << 28)	 TEX remap enable		
-* TEX : Type extension, refer to ARM Doc page 1688
-*/
+		/** 20130202 ??? CR_TRE가 어디서 설정되었는지 확인 필요..
+		 * #define CR_TRE	(1 << 28)	 TEX remap enable
+		 * TEX : Type extension, refer to ARM Doc page 1688
+		 **/
 		if (cpu_arch >= CPU_ARCH_ARMv7 && (cr & CR_TRE)) {
 			/*
 			 * For ARMv7 with TEX remapping,
@@ -463,12 +462,12 @@ write-alloc를 사용해서 다른 프로세서가 write된 최신값을 snoopin
 			 * - write combine device mem is SXCB=0001
 			 * (Uncached Normal memory)
 			 */
-/** 20130202 ??? 이 부분은 다시 정리 필요..
-* PMD_SECT_TEX(1) ->
-*   #define PMD_SECT_TEX(x)		(_AT(pmdval_t, (x)) << 12)	// v5 
-*   TEX 14.13.12 -> 001
-* PMD_SECT_BUFFERABLE -> B bit
-*/
+			/** 20130202 ??? 이 부분은 다시 정리 필요..
+			 * PMD_SECT_TEX(1) ->
+			 *   #define PMD_SECT_TEX(x)		(_AT(pmdval_t, (x)) << 12)	// v5
+			 *   TEX 14.13.12 -> 001
+			 * PMD_SECT_BUFFERABLE -> B bit
+			 **/
 			mem_types[MT_DEVICE].prot_sect |= PMD_SECT_TEX(1);
 			mem_types[MT_DEVICE_NONSHARED].prot_sect |= PMD_SECT_TEX(1);
 			mem_types[MT_DEVICE_WC].prot_sect |= PMD_SECT_BUFFERABLE;
@@ -484,9 +483,9 @@ write-alloc를 사용해서 다른 프로세서가 write된 최신값을 snoopin
 			mem_types[MT_DEVICE_NONSHARED].prot_sect |= PMD_SECT_TEX(2);
 			mem_types[MT_DEVICE_WC].prot_sect |= PMD_SECT_TEX(1);
 		} else {
-/* 20130202
-* 여기들어오지 않음...
-*/
+			/** 20130202
+			 * 여기들어오지 않음...
+			 **/
 			/*
 			 * For ARMv6 and ARMv7 without TEX remapping,
 			 * - shared device is TEXCB=00001
@@ -508,13 +507,13 @@ write-alloc를 사용해서 다른 프로세서가 write된 최신값을 snoopin
 	/*
 	 * Now deal with the memory-type mappings
 	 */
-/** 20130202
-*	cachepolicy =  WRITEALLOC, 4
-		.policy		= "writealloc",
-		.cr_mask	= 0,
-		.pmd		= PMD_SECT_WBWA,
-		.pte		= L_PTE_MT_WRITEALLOC, (0x1C) -> XCB = 111
-*/
+	/** 20130202
+	 * cachepolicy =  WRITEALLOC, 4
+	 * .policy		= "writealloc",
+	 * .cr_mask	= 0,
+	 * .pmd		= PMD_SECT_WBWA,
+	 * .pte		= L_PTE_MT_WRITEALLOC, (0x1C) -> XCB = 111
+	 **/
 	cp = &cache_policies[cachepolicy];
 	vecs_pgprot = kern_pgprot = user_pgprot = cp->pte;
 
@@ -533,20 +532,20 @@ write-alloc를 사용해서 다른 프로세서가 write된 최신값을 snoopin
 	 * ARMv6 and above have extended page tables.
 	 */
 	if (cpu_arch >= CPU_ARCH_ARMv6 && (cr & CR_XP)) {
-/** 20130202
-* Large Page Table Entry is not set.
-*/
+		/** 20130202
+		 * Large Page Table Entry is not set.
+		 **/
 #ifndef CONFIG_ARM_LPAE
 		/*
 		 * Mark cache clean areas and XIP ROM read only
 		 * from SVC mode and no access from userspace.
 		 */
-/** 20130202
-* PMD_SECT_APX 15 bit
-* PMD_SECT_AP_WRITE 10 bit
-* L1 page table entry format 에서 APX, AP(o1) 를 설정.
-* Kernel mode에서만 접근가능하게 설정. 
-*/
+		/** 20130202
+		 * PMD_SECT_APX 15 bit
+		 * PMD_SECT_AP_WRITE 10 bit
+		 * L1 page table entry format 에서 APX, AP(o1) 를 설정.
+		 * Kernel mode에서만 접근가능하게 설정.
+		 **/
 		mem_types[MT_ROM].prot_sect |= PMD_SECT_APX|PMD_SECT_AP_WRITE;
 		mem_types[MT_MINICLEAN].prot_sect |= PMD_SECT_APX|PMD_SECT_AP_WRITE;
 		mem_types[MT_CACHECLEAN].prot_sect |= PMD_SECT_APX|PMD_SECT_AP_WRITE;
@@ -584,10 +583,11 @@ write-alloc를 사용해서 다른 프로세서가 write된 최신값을 snoopin
 	if (cpu_arch >= CPU_ARCH_ARMv6) {
 		if (cpu_arch >= CPU_ARCH_ARMv7 && (cr & CR_TRE)) {
 			/* Non-cacheable Normal is XCB = 001 */
-/** 20130202
-* cache 사용하지 않지만 write 시 cpu -> buffer -> physical memory 순으로 동작하도록 설정.
-* 실제 sram 영역이 해당 됨. ???
-*/
+			/** 20130202
+			 * cache 사용하지 않지만 write 시
+			 * cpu -> buffer -> physical memory 순으로 동작하도록 설정.
+			 * 실제 sram 영역이 해당 됨. ???
+			 **/
 			mem_types[MT_MEMORY_NONCACHED].prot_sect |=
 				PMD_SECT_BUFFERED;
 		} else {
@@ -618,7 +618,7 @@ write-alloc를 사용해서 다른 프로세서가 write된 최신값을 snoopin
 		 * user_pgprot는 현재 = L_PTE_MT_WRITEALLOC | L_PTE_SHARED
 		 * vecs_pgprot는 현재 = L_PTE_MT_WRITEALLOC | L_PTE_SHARED
 		 * protection_map에 user_pgprot값을 추가
-		 */
+		 **/
 		protection_map[i] = __pgprot(v | user_pgprot);
 	}
 
@@ -630,10 +630,10 @@ write-alloc를 사용해서 다른 프로세서가 write된 최신값을 snoopin
 				 L_PTE_DIRTY | kern_pgprot);
 
 	/** 20130216
-	 * ecc_mask		= 0
-	 * cp->pmd		= PMD_SECT_WBWA,
+	 * ecc_mask	= 0
+	 * cp->pmd	= PMD_SECT_WBWA,
 	 * kern_pgprot	= L_PTE_MT_WRITEALLOC | L_PTE_SHARED
-	 * */
+	 **/
 	mem_types[MT_LOW_VECTORS].prot_l1 |= ecc_mask;
 	mem_types[MT_HIGH_VECTORS].prot_l1 |= ecc_mask;
 	mem_types[MT_MEMORY].prot_sect |= ecc_mask | cp->pmd;
@@ -662,9 +662,9 @@ write-alloc를 사용해서 다른 프로세서가 write된 최신값을 snoopin
 			t->prot_sect |= PMD_DOMAIN(t->domain);
 	}
 
-/** 20130810
-runtime시 최종 값은 추후에 확인???
-**/
+	/** 20130810
+	 * runtime시 최종 값은 추후에 확인???
+	 **/
 }
 
 #ifdef CONFIG_ARM_DMA_MEM_BUFFERABLE
@@ -682,21 +682,21 @@ EXPORT_SYMBOL(phys_mem_access_prot);
 
 /** 20130216
  * cr in vexpress  = 0x10c53c7d
- * vexpress에서는 high vector로 default 세팅되어 있어서 0xffff0000 
+ * vexpress에서는 high vector로 default 세팅되어 있어서 0xffff0000
  **/
 #define vectors_base()	(vectors_high() ? 0xffff0000 : 0)
-/** 20130302 
- 	memblock_alloc된 영역의 시작주소를 align된 가상주소로 변환하여 초기화 하고 리턴한다.
- **/	
+/** 20130302
+ * memblock_alloc된 영역의 시작주소를 align된 가상주소로 변환하여 초기화 하고 리턴한다.
+ **/
 static void __init *early_alloc_aligned(unsigned long sz, unsigned long align)
 {
 	void *ptr = __va(memblock_alloc(sz, align));
 	memset(ptr, 0, sz);
 	return ptr;
 }
-/** 20130302 
- 	size만큼 메모리를 alloc한다.
- **/	
+/** 20130302
+ * size만큼 메모리를 alloc한다.
+ **/
 static void __init *early_alloc(unsigned long sz)
 {
 	return early_alloc_aligned(sz, sz);
@@ -708,34 +708,34 @@ static void __init *early_alloc(unsigned long sz)
  **/
 static pte_t * __init early_pte_alloc(pmd_t *pmd, unsigned long addr, unsigned long prot)
 {
-	/** 20130302 
-	 (*pmd)가 NULL일 경우
-	 **/	
+	/** 20130302
+	 * (*pmd)가 NULL일 경우
+	 **/
 	if (pmd_none(*pmd)) {
-	/** 20130302 	 
- 	*
- 	*    pgd             pte
- 	* |        |
- 	* +--------+
- 	* |        |       +------------+ +0
- 	* +- - - - +       | Linux pt 0 |
- 	* |        |       +------------+ +1024
- 	* +--------+ +0    | Linux pt 1 |
- 	* |        |-----> +------------+ +2048
- 	* +- - - - + +4    |  h/w pt 0  |
- 	* |        |-----> +------------+ +3072
- 	* +--------+ +8    |  h/w pt 1  |
- 	* |        |       +------------+ +4096
- 	*
-	**/
-      /** 20131019
-      * PTE_HWTABLE_OFF : 2KB
-      * PTE_HWTABLE_SIZE : 2KB
-      * memblock에서 4KB크기의 메모리를 받아온다.
-       **/
+		/** 20130302
+		 *
+		 *    pgd             pte
+		 * |        |
+		 * +--------+
+		 * |        |       +------------+ +0
+		 * +- - - - +       | Linux pt 0 |
+		 * |        |       +------------+ +1024
+		 * +--------+ +0    | Linux pt 1 |
+		 * |        |-----> +------------+ +2048
+		 * +- - - - + +4    |  h/w pt 0  |
+		 * |        |-----> +------------+ +3072
+		 * +--------+ +8    |  h/w pt 1  |
+		 * |        |       +------------+ +4096
+		 *
+		 **/
+		/** 20131019
+		 * PTE_HWTABLE_OFF : 2KB
+		 * PTE_HWTABLE_SIZE : 2KB
+		 * memblock에서 4KB크기의 메모리를 받아온다.
+		 **/
 		pte_t *pte = early_alloc(PTE_HWTABLE_OFF + PTE_HWTABLE_SIZE);
 		/** 20131019
-		  pte 물리 주소 정보와 pmd의 prot 속성을 pmd 엔트리에 저장한다.
+		 * pte 물리 주소 정보와 pmd의 prot 속성을 pmd 엔트리에 저장한다.
 		 **/
 		__pmd_populate(pmd, __pa(pte), prot);
 	}
@@ -746,10 +746,10 @@ static pte_t * __init early_pte_alloc(pmd_t *pmd, unsigned long addr, unsigned l
 	/** 20130309
 	 * alloc한 pte에서 addr에 해당하는 pte entry의 주소를 리턴
 	 **/
-    /** 20131019
-      pmd가리키고 있는 pte 테이블에서 addr에 해당되는 
-      pte엔트리의 시작주소를 리턴한다.
-     **/
+	/** 20131019
+	 * pmd가리키고 있는 pte 테이블에서 addr에 해당되는
+	 * pte엔트리의 시작주소를 리턴한다.
+	 **/
 	return pte_offset_kernel(pmd, addr);
 }
 
@@ -1033,8 +1033,8 @@ static void __init create_mapping(struct map_desc *md)
  * Create the architecture specific mappings
  */
 /** 20130323
-*	nr 개수 만큼 vm_struct 메모리를 할당 받아 페이지테이블에 등록하고 vmlist 에 추가함. 
-*/
+ * nr 개수 만큼 vm_struct 메모리를 할당 받아 페이지테이블에 등록하고 vmlist 에 추가함. 
+ **/
 void __init iotable_init(struct map_desc *io_desc, int nr)
 {
 	struct map_desc *md;
@@ -1168,9 +1168,9 @@ static void __init fill_pmd_gaps(void)
 #define fill_pmd_gaps() do { } while (0)
 #endif
 /** 20130810
-early_vmalloc으로 따로 설정 하지 않을 경우 vmalloc 사이즈는 240매가로 설정,
-vmalloc_min 는 최소값 설정인듯???
-**/
+ * early_vmalloc으로 따로 설정 하지 않을 경우 vmalloc 사이즈는 240매가로 설정,
+ * vmalloc_min 는 최소값 설정인듯???
+ **/
 static void * __initdata vmalloc_min =
 	(void *)(VMALLOC_END - (240 << 20) - VMALLOC_OFFSET);
 
@@ -1208,53 +1208,53 @@ early_param("vmalloc", early_vmalloc);
 phys_addr_t arm_lowmem_limit __initdata = 0;
 
 /** 20130119
-  메모리 뱅크들에 대한 적정한 설정이 되어 있는지 조사하고 수정한다
-  1. highmem세팅
-  2. memory bank에 대한 재조정
-  3. highmem세팅시 캐쉬 aliasing을 검사하고
-  4. high_memory(가상주소)를 세팅하고, ZONE_NORMAL에서의 memblock.current_limit를 세팅
+ * 메모리 뱅크들에 대한 적정한 설정이 되어 있는지 조사하고 수정한다
+ * 1. highmem세팅
+ * 2. memory bank에 대한 재조정
+ * 3. highmem세팅시 캐쉬 aliasing을 검사하고
+ * 4. high_memory(가상주소)를 세팅하고, ZONE_NORMAL에서의 memblock.current_limit를 세팅
  **/
 /** 20130817
-meminfo의 채워져있는 내용을 확인하여, vmalloc_min을 기준으로 overlap 되었을 경우
-1. CONFIG_HIGHMEM defined
-	- 겹치는 부분만 신규 뱅크를 만들어주고 그 뱅크의 highmem을 set한다.
-2. not defined.
-	- vmalloc_min까지로 bank size를 줄인다.
-**/
+ * meminfo의 채워져있는 내용을 확인하여, vmalloc_min을 기준으로 overlap 되었을 경우
+ * 1. CONFIG_HIGHMEM defined
+ * - 겹치는 부분만 신규 뱅크를 만들어주고 그 뱅크의 highmem을 set한다.
+ * 2. not defined.
+ * - vmalloc_min까지로 bank size를 줄인다.
+ **/
 void __init sanity_check_meminfo(void)
 {
 	int i, j, highmem = 0;
-/** 20130119
- * meminfo.nr_banks 값은 8까지 가능.
- * CONFIG_HIGHMEM이 꺼져 있을 때, highmem이 1일 경우 해당 뱅크를 삭제한다.
- * j : 앞으로 설정이 될 뱅크의 인덱스
- * i : 앞으로 처리할 뱅크의 인덱스
- **/
+	/** 20130119
+	 * meminfo.nr_banks 값은 8까지 가능.
+	 * CONFIG_HIGHMEM이 꺼져 있을 때, highmem이 1일 경우 해당 뱅크를 삭제한다.
+	 * j : 앞으로 설정이 될 뱅크의 인덱스
+	 * i : 앞으로 처리할 뱅크의 인덱스
+	 **/
 	for (i = 0, j = 0; i < meminfo.nr_banks; i++) {
 		struct membank *bank = &meminfo.bank[j];
 		*bank = meminfo.bank[i];
-/** 20130112
-	bank의 start가 ULONG_MAX이상이면 highmemory를 설정한다.
-**/
+		/** 20130112
+		 * bank의 start가 ULONG_MAX이상이면 highmemory를 설정한다.
+		 **/
 		if (bank->start > ULONG_MAX)
 			highmem = 1;
 
 #ifdef CONFIG_HIGHMEM
-/** 20130112
-	static void * __initdata vmalloc_min =
-	(void *)(VMALLOC_END - (240 << 20) - VMALLOC_OFFSET);
-    early_vmalloc이 실행되지 않으면 default값으로 240M가 세팅된다.
-	
-	bank의 start가 vamalloc_min보다 같거나 크면
-	PAGE_OFFSET(0x8000000)이 bank의 start보다 크다면 
-	highmem 설정한다.
- 	
-	커널은 vexpress의 경우 PAGE_OFFSET(0x80000000)을 시작으로
-    VMALLOC_END (0xff000000)까지의 메모리만 접근가능하다
-	커널 입장에서는 이 영역을 제외한 영역은 High Memory로 인식하다.
-	__va(bank->start) < (void *)PAGE_OFFSET)
-	이 조건문은 뱅크의 Start가 PAGE_OFFSET보다 작을 경우 High Memory로 설정된다.
-**/
+	/** 20130112
+	 *	static void * __initdata vmalloc_min =
+	 *	(void *)(VMALLOC_END - (240 << 20) - VMALLOC_OFFSET);
+	 * early_vmalloc이 실행되지 않으면 default값으로 240M가 세팅된다.
+	 *
+	 *	bank의 start가 vamalloc_min보다 같거나 크면
+	 *	PAGE_OFFSET(0x8000000)이 bank의 start보다 크다면
+	 *	highmem 설정한다.
+	 *
+	 *	커널은 vexpress의 경우 PAGE_OFFSET(0x80000000)을 시작으로
+	 * VMALLOC_END (0xff000000)까지의 메모리만 접근가능하다
+	 *	커널 입장에서는 이 영역을 제외한 영역은 High Memory로 인식하다.
+	 *	__va(bank->start) < (void *)PAGE_OFFSET)
+	 *	이 조건문은 뱅크의 Start가 PAGE_OFFSET보다 작을 경우 High Memory로 설정된다.
+	 **/
 		if (__va(bank->start) >= vmalloc_min ||
 		    __va(bank->start) < (void *)PAGE_OFFSET)
 			highmem = 1;
@@ -1265,24 +1265,24 @@ void __init sanity_check_meminfo(void)
 		 * Split those memory banks which are partially overlapping
 		 * the vmalloc area greatly simplifying things later.
 		 */
-/** 20130112
-		bank의 address range와 vmalloc의 영역이 겹치는지 확인
-**/	
+		/** 20130112
+		 * bank의 address range와 vmalloc의 영역이 겹치는지 확인
+		 **/
 		if (!highmem && __va(bank->start) < vmalloc_min &&
 		    bank->size > (vmalloc_min - __va(bank->start))) {
-/** 20130112
-		사용 가능한 메모리를 나누어서 뱅크로 추가할수 없으면 에러를 출력하고 커널패닉에 빠진다. 
-**/
-		
+			/** 20130112
+			 * 사용 가능한 메모리를 나누어서 뱅크로 추가할수 없으면
+			 * 에러를 출력하고 커널패닉에 빠진다.
+			 **/
 			if (meminfo.nr_banks >= NR_BANKS) {
 				printk(KERN_CRIT "NR_BANKS too low, "
 						 "ignoring high memory\n");
 			} else {
 /** 20130112
-	1. 현재 뱅크에서 vmalloc영역과 겹치는 부분이 있는지 조사
-	2. 겹치는 부분이 있으면 뱅크를 추가하기 위해 뒤의 뱅크를 하나씩 미룬다.
-	3. 겹치는 부분의 데이터(물리 주소 start, 사이즈 size) 를 계산해서 신규뱅크(bank[1])에 저장한다.
-	4. 현재 뱅크의 사이즈를 크기를 조정한다. 
+ * 1. 현재 뱅크에서 vmalloc영역과 겹치는 부분이 있는지 조사
+ * 2. 겹치는 부분이 있으면 뱅크를 추가하기 위해 뒤의 뱅크를 하나씩 미룬다.
+ * 3. 겹치는 부분의 데이터(물리 주소 start, 사이즈 size) 를 계산해서 신규뱅크(bank[1])에 저장한다.
+ * 4. 현재 뱅크의 사이즈를 크기를 조정한다.
 **/
 				memmove(bank + 1, bank,
 					(meminfo.nr_banks - i) * sizeof(*bank));
@@ -1301,10 +1301,10 @@ void __init sanity_check_meminfo(void)
 		/*
 		 * Highmem banks not allowed with !CONFIG_HIGHMEM.
 		 */
-/** 20130112
-		CONFIG_HIGHMEM이 꺼져있고 highmem 변수 1인 경우 현 뱅크의 시작주소가 4기가를 
-		넘어서면  다음 뱅크로 진행한다.
-**/
+		/** 20130112
+		 * CONFIG_HIGHMEM이 꺼져있고 highmem이 1인 경우 현 뱅크의 시작주소가 4기가를 
+		 * 넘어서면  다음 뱅크로 진행한다.
+		 **/
 		if (highmem) {
 			printk(KERN_NOTICE "Ignoring RAM at %.8llx-%.8llx "
 			       "(!CONFIG_HIGHMEM).\n",
@@ -1317,12 +1317,12 @@ void __init sanity_check_meminfo(void)
 		 * Check whether this memory bank would entirely overlap
 		 * the vmalloc area.
 		 */
-/** 20130112
-		CONFIG_HIGHMEM꺼져 있는 상태에서
-		현 뱅크의 address영역이 vmalloc영역 안에 있는 경우
-		또는 커널의 1기가 영역외에 현재 뱅크가 있는 경우
-		다음 뱅크로 진행하다.
-**/
+		/** 20130112
+		 * CONFIG_HIGHMEM꺼져 있는 상태에서
+		 * 현 뱅크의 address영역이 vmalloc영역 안에 있는 경우
+		 * 또는 커널의 1기가 영역외에 현재 뱅크가 있는 경우
+		 * 다음 뱅크로 진행하다.
+		 **/
 		if (__va(bank->start) >= vmalloc_min ||
 		    __va(bank->start) < (void *)PAGE_OFFSET) {
 			printk(KERN_NOTICE "Ignoring RAM at %.8llx-%.8llx "
@@ -1336,11 +1336,11 @@ void __init sanity_check_meminfo(void)
 		 * Check whether this memory bank would partially overlap
 		 * the vmalloc area.
 		 */
-/** 20130112
-		CONFIG_HIGHMEM꺼져 있는 상태에서
-		현 뱅크의 address영역이 vmalloc 영역과 겹치는 경우 
-		현 뱅크의 사이즈를 조정한다.
-**/
+		/** 20130112
+		 * CONFIG_HIGHMEM꺼져 있는 상태에서
+		 * 현 뱅크의 address영역이 vmalloc 영역과 겹치는 경우
+		 * 현 뱅크의 사이즈를 조정한다.
+		 **/
         if (__va(bank->start + bank->size) > vmalloc_min ||
 		    __va(bank->start + bank->size) < __va(bank->start)) {
 			unsigned long newsize = vmalloc_min - __va(bank->start);
@@ -1352,29 +1352,30 @@ void __init sanity_check_meminfo(void)
 			bank->size = newsize;
 		}
 #endif
-/** 20130112
-	high memory 가 설정되어 있을 경우 low memory limit을 의미가 없고
-		- 커널이 4기가의 모든 영역을 쓸수 있으므로...
-	high memory 가 설정이 안되어 있으면 커널이 사용하는 최상위 주소(arm_lowmem_limit)를 지정해줘야 한다. 
-**/
-/** 20130810
-arm_lowmem_limit은 커널이 사용하는 최상위 주소가 아니라
-ZONE_NORMAL에서 물리메모리의 마지막 주소를 가리킨다.
-**/
+		/** 20130112
+		 * high memory 가 설정되어 있을 경우 low memory limit을 의미가 없고
+		 *   - 커널이 4기가의 모든 영역을 쓸수 있으므로...
+		 * high memory 가 설정이 안되어 있으면 커널이 사용하는 최상위
+		 * 주소(arm_lowmem_limit)를 지정해줘야 한다.
+		 *
+		 * 20130810
+		 * arm_lowmem_limit은 커널이 사용하는 최상위 주소가 아니라
+		 * ZONE_NORMAL에서 물리메모리의 마지막 주소를 가리킨다.
+		 **/
 		if ((!bank->highmem) && (bank->start + bank->size > arm_lowmem_limit))
 			arm_lowmem_limit = bank->start + bank->size;
 		/** 20130119
-         각각의 뱅크에 대해서 arm_lowmem_limit를 설정한다
-         **/
-        j++;
+		 * 각각의 뱅크에 대해서 arm_lowmem_limit를 설정한다
+		 **/
+		j++;
 	}
 #ifdef CONFIG_HIGHMEM
 	if (highmem) {
 		const char *reason = NULL;
-		/** 20130119
-        cacheid는 CACHEID_VIPT_NONALIASING, 
-        mask는 CACHEID_VIPT_ALIASING으로 설정 되어 있으므로 
-        cache_is_vipt_aliasing()의 값은 0이 된다
+	/** 20130119
+	 * cacheid는 CACHEID_VIPT_NONALIASING,
+	 * mask는 CACHEID_VIPT_ALIASING으로 설정 되어 있으므로
+	 * cache_is_vipt_aliasing()의 값은 0이 된다
          **/
         if (cache_is_vipt_aliasing()) {
 			/*
@@ -1387,17 +1388,17 @@ ZONE_NORMAL에서 물리메모리의 마지막 주소를 가리킨다.
 		if (reason) {
 			printk(KERN_CRIT "HIGHMEM is not supported %s, ignoring high memory\n",
 				reason);
-            /** 20130119
-            ZONE_NORMAL인 경우 물리주소와 가상주소가 1대1 매핑되므로 
-            ALIASING이 발생하지 않는다고 가정한다.
-            ZONE_HIGHMEM인 경우에는 ALIASING이 발생할 수 있고 
-            ALIASING_CACHE면 HIGHMEM을 지원하지 않으려고 하는 듯 ???
-             **/
+		    /** 20130119
+		     * ZONE_NORMAL인 경우 물리주소와 가상주소가 1대1 매핑되므로
+		     * ALIASING이 발생하지 않는다고 가정한다.
+		     * ZONE_HIGHMEM인 경우에는 ALIASING이 발생할 수 있고
+		     * ALIASING_CACHE면 HIGHMEM을 지원하지 않으려고 하는 듯 ???
+		     **/
 
-            /** 20130119
-            highmem이 셋팅되고, 캐쉬 정책이 VIPT_ALIASING이면 
-            캐쉬 ALIASING문제로 highmem을 지원하는 뱅크를 카운트에서 제외한다.
-             **/
+		    /** 20130119
+		     * highmem이 셋팅되고, 캐쉬 정책이 VIPT_ALIASING이면
+		     * 캐쉬 ALIASING문제로 highmem을 지원하는 뱅크를 카운트에서 제외한다.
+		     **/
 			while (j > 0 && meminfo.bank[j - 1].highmem)
 				j--;
 		}
@@ -1430,7 +1431,7 @@ static inline void prepare_page_table(void)
 	 * MODULES_VADDR : PAGE_OFFSET - 16MB : 0x8000_0000 - 16MB(vexpress)
 	 * PMD_SIZE : 2MB
 	 *
-	 * 왜 16MB를 뺐는지??? 
+	 * 왜 16MB를 뺐는지???
 	 *	20130817:PAGE_OFFSET에서 -16MB는 모듈 영역
 	 *  user 영역을 초기화
 	 * */
@@ -1442,8 +1443,8 @@ static inline void prepare_page_table(void)
 	addr = ((unsigned long)_etext + PMD_SIZE - 1) & PMD_MASK;
 #endif
 	/** 20130817
-	모듈 영역에서 PAGE_OFFSET까지 초기화
-	**/
+	 * 모듈 영역에서 PAGE_OFFSET까지 초기화
+	 **/
 	for ( ; addr < PAGE_OFFSET; addr += PMD_SIZE)
 		pmd_clear(pmd_off_k(addr));
 
@@ -1451,15 +1452,18 @@ static inline void prepare_page_table(void)
 	 * Find the end of the first block of lowmem.
 	 */
 	/** 20130216
-	 * memblock의 첫 번째 region에는 커널이 로딩되어 수행중이므로, pmd_clear에서 제외하기 위함.
+	 * memblock의 첫 번째 region은 커널이 로딩되어 수행 중이므로 pmd_clear에서 제외
 	 **/
-/** 20130810
-	커널이 로딩되어 실행중이 code 는 이미 reserved 메모리 영역에 등록이 되어 있음. 그러면 기존 주석의 근거는???
-	-> 20130817 : meminfo를 오름차순으로 정렬해서 memblock을 만듦으로 첫번째 region에 커널 실행 코드가 등록된다.
-
-	end가 첫번째 bank의 끝주소라면 arm_lowmem_limit(물리 메모리의 마지막 주소)보다 클 경우가 있나??? 
-	-> 20130817 : 첫번째 region이 highmem을 포함하고 있을경우 
-**/
+	/** 20130810
+	 * 커널이 로딩되어 실행중이 code 는 이미 reserved 메모리 영역에 등록 되어 있음.
+	 * 그러면 기존 주석의 근거는???
+	 * -> 20130817 : meminfo를 오름차순으로 정렬해서 memblock을 만듦으로
+	 *  첫번째 region에 커널 실행 코드가 등록된다.
+	 *
+	 * end가 첫번째 bank의 끝주소라면 arm_lowmem_limit(물리 메모리의 마지막 주소)보다
+	 * 클 경우가 있나???
+	 * -> 20130817 : 첫번째 region이 highmem을 포함하고 있을 경우
+	 **/
 	end = memblock.memory.regions[0].base + memblock.memory.regions[0].size;
 	if (end >= arm_lowmem_limit)
 		end = arm_lowmem_limit;
@@ -1471,7 +1475,7 @@ static inline void prepare_page_table(void)
 	/** 20130216
 	 * memblock의 첫 번째 region의 마지막부터 VMALLOC_START까지 pmd_clear
 	 * VMALLOC_START는 마지막 VA(물리메모리 주소)의 8매가 올림 정렬된 값.
-		#define VMALLOC_START		(((unsigned long)high_memory + VMALLOC_OFFSET) & ~(VMALLOC_OFFSET-1))
+	 * #define VMALLOC_START		(((unsigned long)high_memory + VMALLOC_OFFSET) & ~(VMALLOC_OFFSET-1))
 	 **/
 	for (addr = __phys_to_virt(end);
 	     addr < VMALLOC_START; addr += PMD_SIZE)
@@ -1544,13 +1548,13 @@ static void __init devicemaps_init(struct machine_desc *mdesc)
 	vectors = early_alloc(PAGE_SIZE);
 
 	/** 20130316
-		vectors 영역을 채움.	
-	**/
+	 * vectors 영역을 채움.
+	 **/
 	early_trap_init(vectors);
 
 	/** 20130316
-		VMALLOC_START ~ 0Xffff ffff (가상주소의 끝)까지 pmd clear 시킴.
-	**/
+	 * VMALLOC_START ~ 0Xffff ffff (가상주소의 끝)까지 pmd clear 시킴.
+	 **/
 	for (addr = VMALLOC_START; addr; addr += PMD_SIZE)
 		pmd_clear(pmd_off_k(addr));
 
@@ -1724,14 +1728,14 @@ void __init paging_init(struct machine_desc *mdesc)
 	 * 한 페이지를 할당 받아 zero_page에 저장
 	 **/
 	zero_page = early_alloc(PAGE_SIZE);
-	/** 20130511 
+	/** 20130511
 	 * 부팅시 사용할 메모리 초기화
 	 **/
 	bootmem_init();
 
-	/** 20130511 
+	/** 20130511
 	 * 위에서 할당한 zero_page를 관리하는 struct page의 위치를 전역변수에 저장한다.
-	 **/	
+	 **/
 	empty_zero_page = virt_to_page(zero_page);
 	/** 20130518
 	 * empty_zero_page 영역에 대해 flush를 수행한다.
